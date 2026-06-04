@@ -5,11 +5,17 @@ import {
     MapPin, 
     Eye,
     EyeOff,
-    Camera
+    Camera,
+    User as UserIcon,
+    Lock,
+    Phone,
+    Mail,
+    Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
 import { Label } from '@/components/ui/base/Label';
+import { cn } from '@/lib/utils';
 
 export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any }) {
     const {
@@ -39,6 +45,9 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
     const [showNew, setShowNew] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
 
+    const [isEditingInfo, setIsEditingInfo] = useState(false);
+    const [isEditingSecurity, setIsEditingSecurity] = useState(false);
+
     const updateProfile = (e: React.FormEvent) => {
         e.preventDefault();
         patch('/settings/profile', {
@@ -64,169 +73,174 @@ export function ProfileView({ meUser, showToast }: { meUser: any; showToast: any
     };
 
     return (
-        <div className="mx-auto max-w-[1200px] px-6 py-12 select-none animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
-                {/* --- LEFT COLUMN: AVATAR CARD --- */}
-                <div className="md:col-span-4 bg-white dark:bg-surface-base border border-surface-border/60 rounded-2xl p-6 shadow-xs h-fit flex flex-col items-center">
-                    {/* Avatar Rounded Square */}
-                    <div className="relative w-44 h-44 rounded-2xl overflow-hidden bg-surface-muted/30 border border-surface-border/40 group">
+        <div className="mx-auto max-w-[760px] px-4 py-8 select-none animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {/* Header Section */}
+            <div className="mb-6 flex items-center gap-6 border-b border-surface-border/50 pb-8 text-left">
+                <div className="relative group shrink-0">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-surface-muted shadow-sm">
                         {meUser?.avatar_url ? (
-                            <img
-                                src={meUser.avatar_url}
-                                alt={meUser.name}
-                                className="w-full h-full object-cover"
-                            />
+                            <img src={meUser.avatar_url} alt={meUser.name} className="w-full h-full object-cover" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center font-bold text-4xl uppercase bg-primary/10 text-primary">
-                                {meUser?.name?.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || '?'}
+                            <div className="w-full h-full flex items-center justify-center font-bold text-2xl uppercase bg-primary/10 text-primary">
+                                {meUser?.name?.substring(0, 2).toUpperCase() || '?'}
                             </div>
                         )}
-                        <button
-                            type="button"
-                            className="absolute bottom-2.5 right-2.5 bg-black/60 text-white h-8 w-8 rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                            title="Change Photo"
-                        >
-                            <Camera size={14} />
-                        </button>
                     </div>
-
-                    {/* Name & Location */}
-                    <h2 className="mt-5 text-xl font-bold text-text-main text-center">{meUser.name}</h2>
-                    
-                    <div className="mt-3 flex items-start gap-2 text-xs text-text-soft justify-center text-center">
-                        <MapPin size={15} className="shrink-0 text-text-soft mt-0.5" />
-                        <div>
-                            <p className="font-medium text-text-main">{meUser?.location || '-'}</p>
-                            <p className="text-text-desc">{meUser?.position || '-'}</p>
-                        </div>
+                    <button className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-md hover:scale-110 transition-transform cursor-pointer border border-white">
+                        <Camera size={10} />
+                    </button>
+                </div>
+                <div className="min-w-0 flex-1">
+                    <h1 className="text-xl font-bold text-text-main tracking-tight">{meUser.name}</h1>
+                    <div className="flex items-center gap-4 mt-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-text-soft flex items-center gap-1">
+                            <Shield size={12} className="text-primary/70" /> {meUser?.role || 'User'}
+                        </span>
+                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[9px] font-bold text-green-600 uppercase tracking-tighter border border-green-100">
+                            Active Account
+                        </span>
                     </div>
                 </div>
+            </div>
 
-                {/* --- RIGHT COLUMN: PROFILE & PASSWORD FORMS --- */}
-                <div className="md:col-span-8 bg-white dark:bg-surface-base border border-surface-border/60 rounded-2xl p-6 md:p-8 shadow-xs">
-                    <h1 className="text-xl font-bold text-text-main mb-6">Profile</h1>
-
-                    {/* User Information Subsection */}
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-text-soft border-b border-surface-border/40 pb-2 mb-4">
-                        User Information
-                    </h3>
-
-                    <form onSubmit={updateProfile} className="space-y-4">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-text-main">Name</Label>
-                            <Input
-                                value={pData.name}
-                                onChange={(e) => setPData('name', e.target.value)}
-                                className="h-10 rounded-lg border-surface-border bg-white dark:bg-surface-base text-sm font-medium"
-                            />
+            <div className="bg-white dark:bg-surface-base border border-surface-border/50 rounded-2xl overflow-hidden shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-surface-border/40">
+                    {/* --- LEFT: PROFILE --- */}
+                    <div className="p-6 lg:p-8 space-y-5">
+                        <div className="flex items-center gap-2 mb-1">
+                            <UserIcon size={16} className="text-primary" />
+                            <h2 className="text-[11px] font-bold uppercase tracking-widest text-text-soft">Informasi Profil</h2>
                         </div>
 
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-text-main">Email</Label>
-                            <Input
-                                type="email"
-                                value={pData.email}
-                                onChange={(e) => setPData('email', e.target.value)}
-                                className="h-10 rounded-lg border-surface-border bg-white dark:bg-surface-base text-sm font-medium"
-                            />
-                        </div>
-
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-text-main">Phone</Label>
-                            <Input
-                                value={pData.phone}
-                                onChange={(e) => setPData('phone', e.target.value)}
-                                className="h-10 rounded-lg border-surface-border bg-white dark:bg-surface-base text-sm font-medium"
-                            />
-                        </div>
-
-                        <Button
-                            type="submit"
-                            disabled={pProcessing}
-                            className="bg-slate-500 hover:bg-slate-600 text-white font-semibold text-xs tracking-wider uppercase px-6 h-10 rounded-lg shadow-sm cursor-pointer"
-                        >
-                            {pProcessing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                            Save Now
-                        </Button>
-                    </form>
-
-                    {/* Password Subsection */}
-                    <h3 className="mt-10 text-[11px] font-bold uppercase tracking-wider text-text-soft border-b border-surface-border/40 pb-2 mb-4">
-                        Password
-                    </h3>
-
-                    <form onSubmit={updatePassword} className="space-y-4">
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-text-main">Current Password</Label>
-                            <div className="relative">
+                        <form onSubmit={updateProfile} className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Nama Lengkap</Label>
                                 <Input
-                                    type={showCurrent ? 'text' : 'password'}
-                                    value={qData.current_password}
-                                    onChange={(e) => setQData('current_password', e.target.value)}
-                                    placeholder="••••••••••••••••"
-                                    className="h-10 rounded-lg border-surface-border bg-white dark:bg-surface-base text-sm font-medium pr-10"
+                                    value={pData.name}
+                                    onChange={(e) => setPData('name', e.target.value)}
+                                    className="h-9 rounded-lg border-surface-border bg-surface-muted/5 text-xs focus:bg-white transition-all shadow-none"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowCurrent(!showCurrent)}
-                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-text-main transition-colors cursor-pointer"
-                                >
-                                    {showCurrent ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
                             </div>
-                        </div>
 
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-text-main">New Password</Label>
-                            <div className="relative">
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Email Kerja</Label>
                                 <Input
-                                    type={showNew ? 'text' : 'password'}
-                                    value={qData.password}
-                                    onChange={(e) => setQData('password', e.target.value)}
-                                    placeholder="New Password"
-                                    className="h-10 rounded-lg border-surface-border bg-white dark:bg-surface-base text-sm font-medium pr-10"
+                                    type="email"
+                                    value={pData.email}
+                                    onChange={(e) => setPData('email', e.target.value)}
+                                    className="h-9 rounded-lg border-surface-border bg-surface-muted/5 text-xs focus:bg-white transition-all shadow-none"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowNew(!showNew)}
-                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-text-main transition-colors cursor-pointer"
-                                >
-                                    {showNew ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
                             </div>
-                        </div>
 
-                        <div className="space-y-1">
-                            <Label className="text-xs font-semibold text-text-main">Confirm New Password</Label>
-                            <div className="relative">
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Nomor Telepon</Label>
                                 <Input
-                                    type={showConfirm ? 'text' : 'password'}
-                                    value={qData.password_confirmation}
-                                    onChange={(e) => setQData('password_confirmation', e.target.value)}
-                                    placeholder="Confirm New Password"
-                                    className="h-10 rounded-lg border-surface-border bg-white dark:bg-surface-base text-sm font-medium pr-10"
+                                    value={pData.phone}
+                                    onChange={(e) => setPData('phone', e.target.value)}
+                                    className="h-9 rounded-lg border-surface-border bg-surface-muted/5 text-xs focus:bg-white transition-all shadow-none"
                                 />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowConfirm(!showConfirm)}
-                                    className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-text-main transition-colors cursor-pointer"
-                                >
-                                    {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-                                </button>
                             </div>
+
+                            <div className="pt-2">
+                                <Button
+                                    type="submit"
+                                    disabled={pProcessing}
+                                    className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-[9px] tracking-widest uppercase h-9 rounded-lg shadow-sm cursor-pointer"
+                                >
+                                    {pProcessing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                                    Simpan Profil
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
+
+                    {/* --- RIGHT: PASSWORD --- */}
+                    <div className="p-6 lg:p-8 space-y-5 bg-surface-muted/5">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Lock size={16} className="text-primary" />
+                            <h2 className="text-[11px] font-bold uppercase tracking-widest text-text-soft">Keamanan Akun</h2>
                         </div>
 
-                        <Button
-                            type="submit"
-                            disabled={qProcessing}
-                            variant="outline"
-                            className="h-10 rounded-lg border-surface-border text-xs uppercase font-semibold hover:bg-surface-muted cursor-pointer"
-                        >
-                            {qProcessing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                            Change Password
-                        </Button>
-                    </form>
+                        <form onSubmit={updatePassword} className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Password Saat Ini</Label>
+                                <div className="relative">
+                                    <Input
+                                        type={showCurrent ? 'text' : 'password'}
+                                        value={qData.current_password}
+                                        onChange={(e) => setQData('current_password', e.target.value)}
+                                        placeholder="••••••••"
+                                        className="h-9 rounded-lg border-surface-border bg-white text-xs pr-10 shadow-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCurrent(!showCurrent)}
+                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-primary transition-colors cursor-pointer"
+                                    >
+                                        {showCurrent ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Password Baru</Label>
+                                <div className="relative">
+                                    <Input
+                                        type={showNew ? 'text' : 'password'}
+                                        value={qData.password}
+                                        onChange={(e) => setQData('password', e.target.value)}
+                                        className="h-9 rounded-lg border-surface-border bg-white text-xs pr-10 shadow-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowNew(!showNew)}
+                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-primary transition-colors cursor-pointer"
+                                    >
+                                        {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-[9px] font-bold uppercase tracking-widest text-text-desc ml-0.5">Konfirmasi Password</Label>
+                                <div className="relative">
+                                    <Input
+                                        type={showConfirm ? 'text' : 'password'}
+                                        value={qData.password_confirmation}
+                                        onChange={(e) => setQData('password_confirmation', e.target.value)}
+                                        className="h-9 rounded-lg border-surface-border bg-white text-xs pr-10 shadow-none"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirm(!showConfirm)}
+                                        className="absolute top-1/2 right-3 -translate-y-1/2 text-text-soft hover:text-primary transition-colors cursor-pointer"
+                                    >
+                                        {showConfirm ? <EyeOff size={14} /> : <Eye size={14} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="pt-2">
+                                <Button
+                                    type="submit"
+                                    disabled={qProcessing}
+                                    variant="outline"
+                                    className="w-full h-9 rounded-lg border-surface-border text-[9px] tracking-widest uppercase font-bold hover:bg-slate-50 transition-all cursor-pointer shadow-none"
+                                >
+                                    {qProcessing ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                                    Update Password
+                                </Button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
+            </div>
+
+            {/* Account Metadata / Footer */}
+            <div className="mt-8 pt-6 border-t border-surface-border/40 text-center">
+                <p className="text-[9px] text-text-soft uppercase tracking-widest font-medium opacity-60">
+                    ID: {meUser.id} • {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
             </div>
         </div>
     );
