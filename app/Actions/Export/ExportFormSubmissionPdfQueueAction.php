@@ -4,8 +4,8 @@ namespace App\Actions\Export;
 
 use App\Jobs\GeneratePdfJob;
 use App\Models\Contract;
-use App\Models\ContractFormSubmission;
-use App\Models\ContractFormSubmissionVersion;
+use App\Models\FormSubmission;
+use App\Models\FormSubmissionHistory;
 use App\Models\FormTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -21,7 +21,7 @@ class ExportFormSubmissionPdfQueueAction
     {
         Log::info("PDF Queue Request: id={$contract->id}, type={$type}");
 
-        $submission = ContractFormSubmission::where('contract_id', $contract->id)
+        $submission = FormSubmission::where('contract_id', $contract->id)
             ->where('document_type', $type)
             ->first();
 
@@ -42,13 +42,13 @@ class ExportFormSubmissionPdfQueueAction
         if ($formDataRaw) {
             $formData = is_string($formDataRaw) ? json_decode($formDataRaw, true) : $formDataRaw;
         } else {
-            /** @var ContractFormSubmissionVersion|null $latestVersion */
+            /** @var FormSubmissionHistory|null $latestVersion */
             $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
             $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
         }
 
         if ($type === 'f2') {
-            $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
+            $f1Submission = FormSubmission::where('contract_id', $contract->id)
                 ->where('document_type', 'f1')
                 ->first();
 

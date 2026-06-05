@@ -116,7 +116,7 @@ class Contract extends Model
 
     public function formSubmissions(): HasMany
     {
-        return $this->hasMany(ContractFormSubmission::class);
+        return $this->hasMany(FormSubmission::class);
     }
 
     public function workflow(): BelongsTo

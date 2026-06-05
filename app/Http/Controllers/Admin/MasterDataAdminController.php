@@ -1285,13 +1285,13 @@ class MasterDataAdminController extends Controller
                             DB::table('t_contracts')->update(['parent_id' => null]);
                         }
                         DB::table('t_approvals')->delete();
-                        DB::table('t_contract_attachments')->delete();
-                        DB::table('t_contract_form_submission_h')->delete();
-                        DB::table('t_contract_form_submissions')->delete();
-                        DB::table('t_contract_messages')->delete();
+                        DB::table('t_attachments')->delete();
+                        DB::table('t_form_submission_histories')->delete();
+                        DB::table('t_form_submissions')->delete();
+                        DB::table('t_messages')->delete();
                         DB::table('t_contract_meta')->delete();
                         DB::table('t_contract_versions')->delete();
-                        DB::table('t_contract_h')->delete();
+                        DB::table('t_contract_histories')->delete();
                         DB::table('t_contracts')->delete();
                     }
 

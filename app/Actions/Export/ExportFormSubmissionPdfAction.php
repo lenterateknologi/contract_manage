@@ -3,8 +3,8 @@
 namespace App\Actions\Export;
 
 use App\Models\Contract;
-use App\Models\ContractFormSubmission;
-use App\Models\ContractFormSubmissionVersion;
+use App\Models\FormSubmission;
+use App\Models\FormSubmissionHistory;
 use App\Models\FormTemplate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -25,20 +25,20 @@ class ExportFormSubmissionPdfAction
             return response()->json(['message' => "Form template $type not found."], 404);
         }
 
-        $submission = ContractFormSubmission::where('contract_id', $contract->id)
+        $submission = FormSubmission::where('contract_id', $contract->id)
             ->where('document_type', $type)
             ->first();
 
-        /** @var ContractFormSubmissionVersion|null $latestVersion */
+        /** @var FormSubmissionHistory|null $latestVersion */
         $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
         $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
 
         if ($type === 'f2') {
-            $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
+            $f1Submission = FormSubmission::where('contract_id', $contract->id)
                 ->where('document_type', 'f1')
                 ->first();
 
-            /** @var ContractFormSubmissionVersion|null $latestF1 */
+            /** @var FormSubmissionHistory|null $latestF1 */
             $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
             $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
 

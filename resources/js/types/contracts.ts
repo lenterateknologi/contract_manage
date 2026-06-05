@@ -110,7 +110,7 @@ export interface SubmissionType {
     name: string;
 }
 
-export interface ContractFormSubmissionInfo {
+export interface FormSubmissionInfo {
     id: string;
     document_type: 'f1' | 'f2';
     form_template_id: string;
@@ -181,7 +181,7 @@ export interface Contract {
     histories: ContractHistory[];
     messages?: ContractMessage[];
     attachments?: ContractAttachment[];
-    form_submissions?: ContractFormSubmissionInfo[];
+    form_submissions?: FormSubmissionInfo[];
     initiator?: UserProfile;
     workflow_phase?: string;
     sla_deadline?: string | null;

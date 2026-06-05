@@ -8,7 +8,7 @@ class HttpLog extends Model
 {
     protected $connection = 'log';
 
-    protected $table = 't_http_log';
+    protected $table = 't_http_logs';
 
     protected $fillable = [
         'id',

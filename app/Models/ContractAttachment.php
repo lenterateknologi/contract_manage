@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractAttachment extends Model
 {
-    protected $table = 't_contract_attachments';
+    protected $table = 't_attachments';
 
     use HasUuids, SoftDeletes;
 

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ContractMessage extends Model
 {
-    protected $table = 't_contract_messages';
+    protected $table = 't_messages';
 
     use HasUuids, SoftDeletes;
 

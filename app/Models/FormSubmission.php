@@ -9,9 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ContractFormSubmission extends Model
+class FormSubmission extends Model
 {
-    protected $table = 't_contract_form_submissions';
+    protected $table = 't_form_submissions';
 
     use HasUuids, SoftDeletes;
 
@@ -35,18 +35,18 @@ class ContractFormSubmission extends Model
 
     public function versions(): HasMany
     {
-        return $this->hasMany(ContractFormSubmissionVersion::class, 'submission_id')->orderByDesc('version_no');
+        return $this->hasMany(FormSubmissionHistory::class, 'submission_id')->orderByDesc('version_no');
     }
 
     public function currentVersionData(): HasOne
     {
-        return $this->hasOne(ContractFormSubmissionVersion::class, 'submission_id')
+        return $this->hasOne(FormSubmissionHistory::class, 'submission_id')
             ->whereColumn('version_no', 't_form_submissions.current_version');
     }
 
     public function latestVersion(): HasOne
     {
-        return $this->hasOne(ContractFormSubmissionVersion::class, 'submission_id')->latestOfMany('version_no');
+        return $this->hasOne(FormSubmissionHistory::class, 'submission_id')->latestOfMany('version_no');
     }
 
     public function submittedBy(): BelongsTo

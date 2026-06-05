@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class ContractFormSubmissionVersion extends Model
+class FormSubmissionHistory extends Model
 {
-    protected $table = 't_contract_form_submission_h';
+    protected $table = 't_form_submission_histories';
 
     use HasUuids, SoftDeletes;
 
@@ -30,7 +30,7 @@ class ContractFormSubmissionVersion extends Model
 
     public function submission(): BelongsTo
     {
-        return $this->belongsTo(ContractFormSubmission::class, 'submission_id');
+        return $this->belongsTo(FormSubmission::class, 'submission_id');
     }
 
     public function createdBy(): BelongsTo

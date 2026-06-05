@@ -145,7 +145,7 @@ test('it can add adhoc approver during active review', function () {
     ]);
 
     // Verify contract history logged the event
-    $this->assertDatabaseHas('t_contract_h', [
+    $this->assertDatabaseHas('t_contract_histories', [
         'contract_id' => $contract->id,
         'action' => 'ADHOC_APPROVER_ADDED',
     ]);

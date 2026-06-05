@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Contract;
 use App\Formatters\ContractFormatter;
 use App\Http\Controllers\Controller;
 use App\Models\Contract;
-use App\Models\ContractFormSubmission;
-use App\Models\ContractFormSubmissionVersion;
 use App\Models\ContractHistory;
+use App\Models\FormSubmission;
+use App\Models\FormSubmissionHistory;
 use App\Models\FormTemplate;
 use App\Models\Vendor;
 use App\Queries\Contract\ContractDetailQuery;
@@ -17,7 +17,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class ContractFormController extends Controller
@@ -50,7 +49,7 @@ class ContractFormController extends Controller
         $isNewVersion = $request->input('is_new_version', true);
 
         // Find or create submission
-        $submission = ContractFormSubmission::firstOrNew([
+        $submission = FormSubmission::firstOrNew([
             'contract_id' => $contract->id,
             'document_type' => $docType,
         ]);
@@ -106,7 +105,7 @@ class ContractFormController extends Controller
 
         // Create or Update version
         if (! $isNewVersion && ! $isNew) {
-            $existingVersion = ContractFormSubmissionVersion::where('submission_id', $submission->id)
+            $existingVersion = FormSubmissionHistory::where('submission_id', $submission->id)
                 ->where('version_no', $versionNo)
                 ->first();
 
@@ -116,7 +115,7 @@ class ContractFormController extends Controller
                     'change_summary' => $changeSummary ?: $existingVersion->change_summary,
                 ]);
             } else {
-                ContractFormSubmissionVersion::create([
+                FormSubmissionHistory::create([
                     'submission_id' => $submission->id,
                     'version_no' => $versionNo,
                     'form_data' => $formData,
@@ -125,7 +124,7 @@ class ContractFormController extends Controller
                 ]);
             }
         } else {
-            ContractFormSubmissionVersion::create([
+            FormSubmissionHistory::create([
                 'submission_id' => $submission->id,
                 'version_no' => $versionNo,
                 'form_data' => $formData,
@@ -236,7 +235,7 @@ class ContractFormController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        $submission = ContractFormSubmission::where('contract_id', $contract->id)
+        $submission = FormSubmission::where('contract_id', $contract->id)
             ->where('document_type', $type)
             ->first();
 
@@ -244,7 +243,7 @@ class ContractFormController extends Controller
         $prefillData = null;
 
         if ($submission) {
-            /** @var Collection<int, ContractFormSubmissionVersion> $versionsCollection */
+            /** @var Collection<int, FormSubmissionHistory> $versionsCollection */
             $versionsCollection = $submission->versions()->with('createdBy')->get();
             $versions = $versionsCollection->map(fn ($v) => [
                 'id' => $v->id,
@@ -258,7 +257,7 @@ class ContractFormController extends Controller
 
         // For F2: ALWAYS generate prefill_data
         if ($type === 'f2') {
-            $f1Submission = ContractFormSubmission::where('contract_id', $contract->id)
+            $f1Submission = FormSubmission::where('contract_id', $contract->id)
                 ->where('document_type', 'f1')
                 ->first();
 
@@ -377,13 +376,13 @@ class ContractFormController extends Controller
             ->orderByRaw('contract_type_id IS NULL ASC')
             ->first();
 
-        $submission = ContractFormSubmission::where('contract_id', $contract->id)
+        $submission = FormSubmission::where('contract_id', $contract->id)
             ->where('document_type', $type)
             ->first();
 
         $versions = [];
         if ($submission) {
-            /** @var Collection<int, ContractFormSubmissionVersion> $versionsCollection */
+            /** @var Collection<int, FormSubmissionHistory> $versionsCollection */
             $versionsCollection = $submission->versions()->orderByDesc('version_no')->get();
             $versions = $versionsCollection->map(fn ($v) => [
                 'id' => $v->id,
