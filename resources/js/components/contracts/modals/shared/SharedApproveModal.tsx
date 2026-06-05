@@ -5,7 +5,7 @@ import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSele
 import { SearchableSelect } from '@/components/ui/forms/SearchableSelect';
 import { Modal } from '@/components/ui/overlays/Modal';
 import { contractApi } from '@/lib/contract-api';
-import { cn } from '@/lib/utils';
+import { cn, matchUserAgainstWorkflowPool } from '@/lib/utils';
 import { CheckCircle2, Gavel, Loader2, Paperclip, PenTool, Send, UserCheck, UserPen, Users, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
@@ -236,28 +236,9 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                 return;
             }
 
-            // Filter users based on next step requirements (Department and Roles)
-            let requirements = contract.next_step;
-
-            const actionAssigneeConfig = activeAction?.assignee_config;
-            if (actionAssigneeConfig && actionAssigneeConfig.type === 'role') {
-                requirements = {
-                    department_ids: actionAssigneeConfig.department_ids || [],
-                    roles: actionAssigneeConfig.roles || [],
-                };
-            }
-
-            const filtered = allUsers.filter((u: any) => {
-                // Backend returns department_ids array or department_id singular
-                const nextDeptIds = requirements?.department_ids || (requirements?.department_id ? [requirements.department_id] : []);
-                const matchesDept = nextDeptIds.length === 0 || nextDeptIds.includes(u.department_id);
-
-                // Backend returns roles as an array of role names
-                const nextRoles = requirements?.roles || [];
-                const matchesRole = nextRoles.length === 0 || nextRoles.some((r: string) => r.toLowerCase() === u.role?.toLowerCase());
-
-                return matchesDept && matchesRole;
-            });
+            // Filter users based on assignee_config or next step requirements
+            const config = activeAction?.assignee_config || contract.next_step;
+            const filtered = allUsers.filter((u: any) => matchUserAgainstWorkflowPool(u, config, contract));
 
             // Fallback to all Staff if filter returns nothing, but prefer filtered
             if (filtered.length > 0) {
@@ -556,36 +537,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                                             const userObj = users.find((u: any) => String(u.id) === String(opt.value));
                                             if (!userObj) return false;
 
-                                            // 1. Custom Actors
-                                            if (signingConfig.custom && signingConfig.custom.length > 0) {
-                                                if (signingConfig.custom.includes('initiator') && String(contract?.initiator?.id) === String(opt.value)) return true;
-                                                if (signingConfig.custom.includes('assigned_pic') && String(contract?.assigned_pic?.id) === String(opt.value)) return true;
-                                            }
-
-                                            // 2. Roles
-                                            if (signingConfig.is_initiator_role) {
-                                                const initiatorRole = contract?.initiator?.role;
-                                                if (initiatorRole && String(userObj.role).toLowerCase() === String(initiatorRole).toLowerCase()) return true;
-                                            } else if (signingConfig.roles && signingConfig.roles.length > 0) {
-                                                if (signingConfig.roles.map((r: string) => r.toLowerCase()).includes(String(userObj.role).toLowerCase())) return true;
-                                            }
-
-                                            // 3. Departments
-                                            if (signingConfig.is_initiator_department) {
-                                                const initiatorDeptId = contract?.initiator?.department_id || contract?.initiator?.department?.id;
-                                                const userDeptId = userObj.department_id || userObj.department?.id;
-                                                if (initiatorDeptId && String(userDeptId) === String(initiatorDeptId)) return true;
-                                            } else if (signingConfig.departments && signingConfig.departments.length > 0) {
-                                                const userDeptId = userObj.department_id || userObj.department?.id;
-                                                if (userDeptId && signingConfig.departments.map(String).includes(String(userDeptId))) return true;
-                                            }
-
-                                            // 4. Specific Users
-                                            if (signingConfig.users && signingConfig.users.length > 0) {
-                                                if (signingConfig.users.map(String).includes(String(opt.value))) return true;
-                                            }
-
-                                            return false;
+                                            return matchUserAgainstWorkflowPool(userObj, signingConfig, contract);
                                         });
                                     }
 

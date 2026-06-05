@@ -202,23 +202,26 @@ class ContractWorkflowService
                     }
                 }
 
-                // 2. Resolve Roles
+                // 2 & 3. Resolve Roles and Departments (Intersection if both present)
                 $targetRoles = ! empty($config['roles']) ? $config['roles'] : [];
                 if (! empty($config['is_initiator_role']) && $contract->initiator && $contract->initiator->role) {
                     $targetRoles[] = $contract->initiator->role;
                 }
-                if (! empty($targetRoles)) {
-                    $query = User::whereIn('role', $targetRoles);
-                    $query = $this->applyStepFilters($query, $step, $contract);
-                    $approvers = $approvers->merge($query->get());
-                }
 
-                // 3. Resolve Departments
                 $targetDepts = ! empty($config['departments']) ? $config['departments'] : [];
                 if (! empty($config['is_initiator_department']) && $contract->initiator && $contract->initiator->department_id) {
                     $targetDepts[] = $contract->initiator->department_id;
                 }
-                if (! empty($targetDepts)) {
+
+                if (! empty($targetRoles) && ! empty($targetDepts)) {
+                    $query = User::whereIn('role', $targetRoles)->whereIn('department_id', $targetDepts);
+                    $query = $this->applyStepFilters($query, $step, $contract);
+                    $approvers = $approvers->merge($query->get());
+                } elseif (! empty($targetRoles)) {
+                    $query = User::whereIn('role', $targetRoles);
+                    $query = $this->applyStepFilters($query, $step, $contract);
+                    $approvers = $approvers->merge($query->get());
+                } elseif (! empty($targetDepts)) {
                     $query = User::whereIn('department_id', $targetDepts);
                     $query = $this->applyStepFilters($query, $step, $contract);
                     $approvers = $approvers->merge($query->get());

@@ -5,6 +5,7 @@ import { FormTextarea } from '@/components/ui/forms/FormTextarea';
 import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
 import { Modal } from '@/components/ui/overlays/Modal';
 import { contractApi } from '@/lib/contract-api';
+import { matchUserAgainstWorkflowPool } from '@/lib/utils';
 import { CheckCircle2, Loader2, UserPlus, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -94,18 +95,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
             const availableUsers = allUsers.filter((u: any) => {
                 if (existingMainUserIds.has(String(u.id))) return false;
-                if (!config.type || config.type === 'all') return true;
-                if (config.type === 'user') {
-                    const allowedUserIds = (config.user_ids || []).map(String);
-                    return allowedUserIds.includes(String(u.id));
-                }
-                if (config.type === 'role') {
-                    const targetRoles = config.roles || [];
-                    const matchesRole = targetRoles.length === 0 || targetRoles.some((r: string) => r.toLowerCase() === u.role?.toLowerCase());
-                    const targetDeptIds = (config.department_ids || []).map(String);
-                    return (targetDeptIds.length === 0 || targetDeptIds.includes(String(u.department_id))) && matchesRole;
-                }
-                return false;
+                return matchUserAgainstWorkflowPool(u, config, contract);
             });
 
             const uniqueUsers = Array.from(new Map(availableUsers.map((u: any) => [u.id, u])).values());
