@@ -1,5 +1,9 @@
+import { Button } from '@/components/ui/base/Button';
+import { FormTextarea } from '@/components/ui/forms/FormTextarea';
+import { Modal } from '@/components/ui/overlays/Modal';
 import { contractApi } from '@/lib/contract-api';
-import { Paperclip, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { AlertCircle, Loader2, Paperclip, X, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props {
@@ -20,6 +24,8 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, contra
     useEffect(() => {
         if (open) {
             contractApi.getWorkflows().then(setAllWorkflows).catch(console.error);
+            setReason('');
+            setAttachment(null);
         }
     }, [open]);
 
@@ -92,117 +98,113 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, contra
 
     const preview = getTransitionPreview();
 
-    if (!open) return null;
-
     const handleSubmit = async () => {
         if (!reason.trim()) return;
         setLoading(true);
         try {
             await onSubmit(reason, attachment || undefined);
             onClose();
-            setReason('');
-            setAttachment(null);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div
-                className="dark:bg-sidebar w-[800px] max-w-[95vw] rounded-xl border border-black/10 bg-white shadow-2xl dark:border-white/10"
-                style={{ animation: 'modal-in .18s ease' }}
-            >
-                <div className="flex items-center justify-between border-b border-black/5 px-5 py-4 dark:border-white/5">
-                    <h6 className="flex items-center gap-2 text-[14px] font-semibold tracking-tight text-black uppercase dark:text-white">
-                        <i className="fa-solid fa-circle-xmark text-[13px]" /> {actionAlias || 'Tolak Kontrak'}
-                    </h6>
-                    <button
-                        onClick={onClose}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-black/40 hover:bg-black/5 dark:text-white/40 dark:hover:bg-white/5"
-                    >
-                        <i className="fa-solid fa-xmark" />
-                    </button>
-                </div>
-                <div className="space-y-4 p-5">
-                    {preview && (
-                        <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-3.5 text-left dark:border-rose-950/30 dark:bg-rose-950/10">
-                            <div className="flex items-center gap-2 text-[10px] font-extrabold tracking-wider text-rose-700 dark:text-rose-400 uppercase">
-                                <span className="relative flex h-2 w-2">
-                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
-                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
-                                </span>
-                                Proyeksi Mundur Alur Kerja
-                            </div>
-                            <div className="mt-1.5 flex flex-col gap-0.5">
-                                <span className="text-[9px] font-medium text-slate-400 uppercase">{preview.label}</span>
-                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{preview.target}</span>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="space-y-1">
-                        <p className="mb-3 text-[12px] font-medium tracking-tight text-black/50 uppercase dark:text-white/50">
-                            Berikan alasan penolakan agar initiator dapat melakukan revisi.
-                        </p>
-                        <label className="mb-1 block text-[11px] font-bold text-black/40 uppercase dark:text-white/40">Alasan Penolakan *</label>
-                        <textarea
-                            value={reason}
-                            onChange={(e) => setReason(e.target.value)}
-                            rows={3}
-                            placeholder="Jelaskan alasan penolakan..."
-                            className="w-full resize-none rounded-lg border border-black/10 bg-black/[0.02] px-3 py-2 text-[12px] text-black shadow-inner transition-all outline-none placeholder:text-black/20 focus:border-black dark:border-white/10 dark:bg-white/[0.02] dark:text-white dark:placeholder:text-white/20 dark:focus:border-white"
-                        />
+        <Modal
+            isOpen={open}
+            onClose={onClose}
+            maxWidth="2xl"
+            title={
+                <div className="flex items-center gap-3">
+                    <div className="bg-danger/10 text-danger flex h-10 w-10 items-center justify-center rounded-2xl shadow-inner">
+                        <XCircle size={20} />
                     </div>
-
-                    <div className="space-y-1">
-                        <label className="mb-1 block text-[11px] font-bold text-black/40 uppercase dark:text-white/40">
-                            Lampiran Pendukung (Optional)
-                        </label>
-                        <div className="mt-1">
-                            {!attachment ? (
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="flex w-full items-center justify-center gap-2 rounded-lg border border-black/10 py-4 text-black/40 transition-all hover:border-black hover:text-black dark:border-white/10 dark:text-white/40 dark:hover:border-white dark:hover:text-white"
-                                >
-                                    <Paperclip size={14} />
-                                    <span className="text-[10px] font-bold uppercase">Lampirkan File</span>
-                                </button>
-                            ) : (
-                                <div className="flex items-center justify-between rounded-lg border border-black/10 bg-black/[0.02] p-3 dark:border-white/10 dark:bg-white/[0.02]">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <Paperclip size={12} className="shrink-0 text-black/40 dark:text-white/40" />
-                                        <span className="truncate text-[10px] font-bold text-black dark:text-white">{attachment.name}</span>
-                                    </div>
-                                    <button
-                                        onClick={() => setAttachment(null)}
-                                        className="text-black/40 transition-colors hover:text-rose-500 dark:text-white/40"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            )}
-                            <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setAttachment(e.target.files?.[0] || null)} />
-                        </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">
+                            {actionAlias || 'Tolak Kontrak'}
+                        </h3>
+                        <p className="mt-0.5 text-[10px] font-medium text-slate-400 uppercase">Berikan alasan penolakan</p>
                     </div>
                 </div>
-                <div className="flex justify-end gap-2 border-t border-black/5 bg-black/[0.01] px-5 py-3 dark:border-white/5 dark:bg-white/[0.01]">
-                    <button
-                        onClick={onClose}
-                        className="rounded-lg px-4 py-2 text-[11px] font-bold text-black/40 uppercase transition-all hover:text-black dark:text-white/40 dark:hover:text-white"
-                    >
+            }
+            footer={
+                <div className="flex w-full gap-3">
+                    <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 rounded-xl">
                         Batal
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant="destructive"
                         onClick={handleSubmit}
                         disabled={loading || !reason.trim()}
-                        className="flex items-center gap-1.5 rounded-lg bg-black px-5 py-2 text-[11px] font-semibold tracking-[0.2em] text-white uppercase shadow-lg transition-all active:scale-95 disabled:opacity-30 dark:bg-white dark:text-black"
+                        className="shadow-destructive/20 flex-1 rounded-xl shadow-lg"
                     >
-                        <i className="fa-solid fa-xmark text-[11px]" />{' '}
-                        {loading ? 'Mengirim...' : actionAlias ? `Konfirmasi ${actionAlias}` : 'Konfirmasi Tolak'}
-                    </button>
+                        {loading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <XCircle size={16} className="mr-2" />}
+                        Konfirmasi Penolakan
+                    </Button>
+                </div>
+            }
+        >
+            <div className="space-y-6">
+                {preview && (
+                    <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-3.5 text-left dark:border-rose-950/30 dark:bg-rose-950/10">
+                        <div className="flex items-center gap-2 text-[10px] font-extrabold tracking-wider text-rose-700 dark:text-rose-400 uppercase">
+                            <AlertCircle size={12} />
+                            Proyeksi Mundur Alur Kerja
+                        </div>
+                        <div className="mt-1.5 flex flex-col gap-0.5">
+                            <span className="text-[9px] font-medium text-slate-400 uppercase">{preview.label}</span>
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{preview.target}</span>
+                        </div>
+                    </div>
+                )}
+
+                <p className="text-text-desc text-sm leading-relaxed font-medium">
+                    Mohon jelaskan alasan penolakan kontrak ini agar pihak inisiator dapat melakukan perbaikan yang diperlukan.
+                </p>
+
+                <FormTextarea
+                    label="Alasan Penolakan"
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    rows={4}
+                    placeholder="Jelaskan alasan penolakan secara detail..."
+                    required
+                />
+
+                <div className="space-y-1.5">
+                    <label className="text-text-desc text-[11px] font-bold uppercase">Lampiran Pendukung (Optional)</label>
+                    <div className="mt-1">
+                        {!attachment ? (
+                            <Button
+                                variant="outline"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="border-surface-border text-text-desc hover:border-danger hover:text-danger hover:bg-danger/5 flex h-auto w-full items-center justify-center gap-2 border-2 border-dashed py-6 transition-all"
+                            >
+                                <Paperclip size={18} className="opacity-40" />
+                                <span className="text-xs font-bold tracking-wide uppercase">Lampirkan File</span>
+                            </Button>
+                        ) : (
+                            <div className="border-surface-border bg-surface-muted flex items-center justify-between rounded-xl border p-4">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className="bg-danger/10 rounded-lg p-2">
+                                        <Paperclip size={16} className="text-danger" />
+                                    </div>
+                                    <span className="text-text-main truncate text-xs font-bold">{attachment.name}</span>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setAttachment(null)}
+                                    className="text-text-desc hover:text-danger hover:bg-danger/10 h-8 w-8"
+                                >
+                                    <X size={16} />
+                                </Button>
+                            </div>
+                        )}
+                        <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setAttachment(e.target.files?.[0] || null)} />
+                    </div>
                 </div>
             </div>
-        </div>
+        </Modal>
     );
 }

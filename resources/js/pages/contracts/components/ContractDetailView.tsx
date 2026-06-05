@@ -30,6 +30,8 @@ import { DraftEditableInfoCard } from '@/components/contracts/parts/DraftEditabl
 // Lazy load modals
 const SharedAddhocModal = lazy(() => import('@/components/contracts/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
 const SharedApproveModal = lazy(() => import('@/components/contracts/modals/shared/SharedApproveModal').then(m => ({ default: m.SharedApproveModal })));
+const SharedAssignModal = lazy(() => import('@/components/contracts/modals/shared/SharedAssignModal').then(m => ({ default: m.SharedAssignModal })));
+const SharedSignerModal = lazy(() => import('@/components/contracts/modals/shared/SharedSignerModal').then(m => ({ default: m.SharedSignerModal })));
 const SharedRejectModal = lazy(() => import('@/components/contracts/modals/shared/SharedRejectModal').then(m => ({ default: m.SharedRejectModal })));
 
 // Lazy load Tab Components for performance
@@ -110,6 +112,8 @@ const ContractDetailView = ({
 
     const [processing, setProcessing] = useState(false);
     const [approveOpen, setApproveOpen] = useState(false);
+    const [assignOpen, setAssignOpen] = useState(false);
+    const [signerOpen, setSignerOpen] = useState(false);
     const [rejectOpen, setRejectOpen] = useState(false);
     const [addhocOpen, setAddhocOpen] = useState(false);
 
@@ -570,10 +574,20 @@ const ContractDetailView = ({
                                                     key={action.id}
                                                     variant={variant}
                                                     onClick={() => {
+                                                        const code = action.action_code?.toLowerCase();
                                                         setActiveActionCode(action.action_code);
-                                                        if (isApproveType) setApproveOpen(true);
-                                                        else if (isRejectType) setRejectOpen(true);
-                                                        else if (isForwardType) setAddhocOpen(true);
+                                                        
+                                                        if (isForwardType) {
+                                                            setAddhocOpen(true);
+                                                        } else if (isRejectType) {
+                                                            setRejectOpen(true);
+                                                        } else if (code === 'assign' || code === 'assign_pic') {
+                                                            setAssignOpen(true);
+                                                        } else if (code === 'sign' || code === 'signature') {
+                                                            setSignerOpen(true);
+                                                        } else {
+                                                            setApproveOpen(true);
+                                                        }
                                                     }}
                                                     className={cn(
                                                         'w-full text-xs  uppercase shadow-sm transition-all',
@@ -608,7 +622,11 @@ const ContractDetailView = ({
                                                     variant="primary"
                                                     onClick={() => {
                                                         setActiveActionCode('approve');
-                                                        setApproveOpen(true);
+                                                        if (contract.requires_pic_assignment) {
+                                                            setAssignOpen(true);
+                                                        } else {
+                                                            setApproveOpen(true);
+                                                        }
                                                     }}
                                                     className="shadow-primary/20 w-full text-xs  uppercase shadow-lg"
                                                 >
@@ -772,9 +790,38 @@ const ContractDetailView = ({
                         setActiveActionCode(undefined);
                     }}
                     onSubmit={handleApprove}
-                    isAssign={!!contract.requires_pic_assignment || ['assign', 'assign_pic'].includes(activeActionCode?.toLowerCase() || '')}
                     contract={contract}
                     onUpdate={onUpdate}
+                    actionCode={activeActionCode}
+                    actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
+                />
+            </Suspense>
+
+            <Suspense fallback={null}>
+                <SharedAssignModal
+                    open={assignOpen}
+                    onClose={() => {
+                        setAssignOpen(false);
+                        setActiveActionCode(undefined);
+                    }}
+                    contract={contract}
+                    onUpdate={onUpdate}
+                    showToast={showToast}
+                    actionCode={activeActionCode}
+                    actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
+                />
+            </Suspense>
+
+            <Suspense fallback={null}>
+                <SharedSignerModal
+                    open={signerOpen}
+                    onClose={() => {
+                        setSignerOpen(false);
+                        setActiveActionCode(undefined);
+                    }}
+                    contract={contract}
+                    onUpdate={onUpdate}
+                    showToast={showToast}
                     actionCode={activeActionCode}
                     actionAlias={contract.workflow_step?.actions?.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined}
                 />

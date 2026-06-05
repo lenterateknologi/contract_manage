@@ -1,4 +1,4 @@
-import { SharedApproveModal } from '@/components/contracts/modals/shared/SharedApproveModal';
+import { SharedSignerModal } from '@/components/contracts/modals/shared/SharedSignerModal';
 
 interface SignerModalProps {
     isOpen: boolean;
@@ -16,21 +16,15 @@ export function SignerModal({ isOpen, onClose, step, idx, userOptions, showToast
     };
 
     return (
-        <SharedApproveModal
+        <SharedSignerModal
             open={isOpen}
             onClose={onClose}
             contract={mockContract}
+            onUpdate={() => {}}
+            showToast={showToast}
             actionCode="sign"
             actionAlias="Upload Tanda Tangan"
             users={userOptions}
-            onSubmit={async () => {
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        showToast('Simulasi Pemilihan Pihak Penandatangan berhasil!', 'success');
-                        resolve();
-                    }, 850);
-                });
-            }}
         />
     );
 }

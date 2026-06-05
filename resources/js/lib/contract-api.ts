@@ -54,6 +54,7 @@ export const contractApi = {
         note?: string,
         isSequential: boolean = false,
         targetStepId?: string,
+        role?: string,
     ): Promise<Contract> => {
         const uids = Array.isArray(userIds) ? userIds : [userIds];
         return api
@@ -62,6 +63,7 @@ export const contractApi = {
                 note,
                 is_sequential: isSequential,
                 target_step_id: targetStepId,
+                role,
             })
             .then((r) => r.data);
     },

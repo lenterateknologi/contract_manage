@@ -336,9 +336,9 @@ export function StepActionConfigCard({
                                     <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">Aktor Kustom</span>
                                 </div>
                                 <SearchableMultiSelect
-                                    values={act.signing_config?.custom || []}
+                                    values={act.signing_parties?.custom || []}
                                     onValuesChange={(vals) =>
-                                        updateAction(actIdx, { signing_config: { ...act.signing_config, custom: vals } })
+                                        updateAction(actIdx, { signing_parties: { ...act.signing_parties, custom: vals } })
                                     }
                                     options={[
                                         { value: 'initiator', label: 'INISIATOR' },
@@ -355,9 +355,9 @@ export function StepActionConfigCard({
                                     <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">User Spesifik</span>
                                 </div>
                                 <SearchableMultiSelect
-                                    values={act.signing_config?.users || []}
+                                    values={act.signing_parties?.users || []}
                                     onValuesChange={(vals) =>
-                                        updateAction(actIdx, { signing_config: { ...act.signing_config, users: vals } })
+                                        updateAction(actIdx, { signing_parties: { ...act.signing_parties, users: vals } })
                                     }
                                     options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
                                     placeholder="Pilih User..."
@@ -374,22 +374,22 @@ export function StepActionConfigCard({
                                     <div className="flex items-center gap-1">
                                         <Checkbox
                                             id={`act-sign-role-${actIdx}`}
-                                            checked={act.signing_config?.is_initiator_role === true}
+                                            checked={act.signing_parties?.is_initiator_role === true}
                                             onCheckedChange={(checked) =>
-                                                updateAction(actIdx, { signing_config: { ...act.signing_config, is_initiator_role: checked === true } })
+                                                updateAction(actIdx, { signing_parties: { ...act.signing_parties, is_initiator_role: checked === true } })
                                             }
                                         />
                                         <label htmlFor={`act-sign-role-${actIdx}`} className="text-[8px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
                                     </div>
                                 </div>
                                 <SearchableMultiSelect
-                                    values={act.signing_config?.roles || []}
+                                    values={act.signing_parties?.roles || []}
                                     onValuesChange={(vals) =>
-                                        updateAction(actIdx, { signing_config: { ...act.signing_config, roles: vals } })
+                                        updateAction(actIdx, { signing_parties: { ...act.signing_parties, roles: vals } })
                                     }
                                     options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                    placeholder={act.signing_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
-                                    disabled={act.signing_config?.is_initiator_role === true}
+                                    placeholder={act.signing_parties?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
+                                    disabled={act.signing_parties?.is_initiator_role === true}
                                 />
                             </div>
 
@@ -403,22 +403,22 @@ export function StepActionConfigCard({
                                     <div className="flex items-center gap-1">
                                         <Checkbox
                                             id={`act-sign-dept-${actIdx}`}
-                                            checked={act.signing_config?.is_initiator_department === true}
+                                            checked={act.signing_parties?.is_initiator_department === true}
                                             onCheckedChange={(checked) =>
-                                                updateAction(actIdx, { signing_config: { ...act.signing_config, is_initiator_department: checked === true } })
+                                                updateAction(actIdx, { signing_parties: { ...act.signing_parties, is_initiator_department: checked === true } })
                                             }
                                         />
                                         <label htmlFor={`act-sign-dept-${actIdx}`} className="text-[8px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
                                     </div>
                                 </div>
                                 <SearchableMultiSelect
-                                    values={act.signing_config?.departments || []}
+                                    values={act.signing_parties?.departments || []}
                                     onValuesChange={(vals) =>
-                                        updateAction(actIdx, { signing_config: { ...act.signing_config, departments: vals } })
+                                        updateAction(actIdx, { signing_parties: { ...act.signing_parties, departments: vals } })
                                     }
                                     options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                    placeholder={act.signing_config?.is_initiator_department ? "DITENTUKAN DARI DEPT INISIATOR" : "Pilih Unit..."}
-                                    disabled={act.signing_config?.is_initiator_department === true}
+                                    placeholder={act.signing_parties?.is_initiator_department ? "DITENTUKAN DARI DEPT INISIATOR" : "Pilih Unit..."}
+                                    disabled={act.signing_parties?.is_initiator_department === true}
                                 />
                             </div>
                         </div>

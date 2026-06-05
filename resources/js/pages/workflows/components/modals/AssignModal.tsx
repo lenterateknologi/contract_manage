@@ -1,4 +1,4 @@
-import { SharedApproveModal } from '@/components/contracts/modals/shared/SharedApproveModal';
+import { SharedAssignModal } from '@/components/contracts/modals/shared/SharedAssignModal';
 
 interface AssignModalProps {
     isOpen: boolean;
@@ -15,21 +15,14 @@ export function AssignModal({ isOpen, onClose, assigneeOptions, showToast }: Ass
     };
 
     return (
-        <SharedApproveModal
+        <SharedAssignModal
             open={isOpen}
             onClose={onClose}
             contract={mockContract}
-            isAssign={true}
+            onUpdate={() => {}}
+            showToast={showToast}
             actionAlias="Tugaskan PIC"
             users={assigneeOptions}
-            onSubmit={async () => {
-                return new Promise((resolve) => {
-                    setTimeout(() => {
-                        showToast('Simulasi Penugasan PIC berhasil!', 'success');
-                        resolve();
-                    }, 850);
-                });
-            }}
         />
     );
 }

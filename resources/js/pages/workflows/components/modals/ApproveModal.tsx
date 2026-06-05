@@ -23,6 +23,7 @@ export function ApproveModal({ isOpen, onClose, step, idx, userOptions, showToas
             actionCode="approve"
             actionAlias="Setuju"
             users={userOptions}
+            onUpdate={() => {}}
             onSubmit={async () => {
                 return new Promise((resolve) => {
                     setTimeout(() => {

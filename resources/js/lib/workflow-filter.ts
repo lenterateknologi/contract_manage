@@ -4,6 +4,19 @@
 export function matchUserAgainstWorkflowPool(user: any, config: any, contract: any): boolean {
     if (!config) return true;
 
+    // Handle legacy simple array format
+    if (Array.isArray(config)) {
+        return config.some((party: string) => {
+            if (party === 'initiator') return String(user.id) === String(contract?.initiator?.id);
+            if (party === 'assigned_pic' || party === 'pic') {
+                const picId = contract?.assigned_pic_id || contract?.metadata?.assigned_pic_id;
+                return picId && String(user.id) === String(picId);
+            }
+            // Fallback: treat as role name
+            return user.role?.toLowerCase() === party.toLowerCase();
+        });
+    }
+
     const hasNewConfig = (
         config.custom !== undefined ||
         config.users !== undefined ||

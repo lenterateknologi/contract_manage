@@ -192,13 +192,14 @@ class ContractApprovalController extends Controller
             'note' => 'nullable|string|max:1000',
             'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
             'is_sequential' => 'nullable|boolean',
+            'role' => 'nullable|string|max:100',
         ]);
 
         try {
             $contract = $this->contractDetailQuery->find($id);
 
             if (! in_array($contract->status, ['draft', 'in_review', 'revision'])) {
-                return response()->json(['message' => 'Persetujuan tambahan hanya dapat ditambahkan pada kontrak yang sedang berjalan.'], 422);
+                return response()->json(['message' => 'Partisipan tambahan hanya dapat ditambahkan pada kontrak yang sedang berjalan.'], 422);
             }
 
             $targetStepId = $request->input('target_step_id');
@@ -212,6 +213,7 @@ class ContractApprovalController extends Controller
                 return response()->json(['message' => 'Tahap alur kerja tidak aktif saat ini.'], 422);
             }
 
+            $role = $request->input('role', Role::ADHOC_APPROVER);
             $userIds = $request->input('user_ids', []);
             $singleUserId = $request->input('user_id');
             if (empty($userIds) && $singleUserId) {
@@ -220,9 +222,10 @@ class ContractApprovalController extends Controller
                 $existing = Approval::where('contract_id', $contract->id)
                     ->where('workflow_step_id', $targetStepId)
                     ->where('user_id', $singleUserId)
+                    ->where('role', $role)
                     ->exists();
                 if ($existing) {
-                    return response()->json(['message' => 'User sudah terdaftar sebagai approver tambahan.'], 422);
+                    return response()->json(['message' => "User sudah terdaftar sebagai {$role}."], 422);
                 }
             }
 
@@ -243,20 +246,20 @@ class ContractApprovalController extends Controller
             // Validate that we are not removing any non-pending/waiting approvers
             $existingNonPendingUserIds = Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $targetStepId)
-                ->where('role', Role::ADHOC_APPROVER)
+                ->where('role', $role)
                 ->whereNotIn('status', ['pending', 'waiting'])
                 ->pluck('user_id')
                 ->toArray();
 
             $removedNonPending = array_diff($existingNonPendingUserIds, $userIds);
             if (! empty($removedNonPending)) {
-                return response()->json(['message' => 'Tidak dapat menghapus approver yang sudah memberikan keputusan.'], 422);
+                return response()->json(['message' => 'Tidak dapat menghapus partisipan yang sudah memberikan keputusan.'], 422);
             }
 
-            // Remove unselected pending/waiting ad-hoc approvers
+            // Remove unselected pending/waiting participants of this role
             $query = Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $targetStepId)
-                ->where('role', Role::ADHOC_APPROVER)
+                ->where('role', $role)
                 ->whereIn('status', ['pending', 'waiting']);
 
             if (empty($userIds)) {
@@ -268,10 +271,11 @@ class ContractApprovalController extends Controller
             $addedUsers = [];
 
             foreach ($userIds as $index => $userId) {
-                // Prevent duplicate approval for the same step
+                // Prevent duplicate for the same step and role
                 $existing = Approval::where('contract_id', $contract->id)
                     ->where('workflow_step_id', $targetStepId)
                     ->where('user_id', $userId)
+                    ->where('role', $role)
                     ->exists();
 
                 if ($existing) {
@@ -284,7 +288,7 @@ class ContractApprovalController extends Controller
                 // 1. If it's not the current active step of the contract, it must be 'waiting'.
                 // 2. If it is the current step:
                 //    - If parallel (not sequential), it's 'pending'.
-                //    - If sequential, it's 'pending' only if it's the first in the batch AND no other adhoc is already pending.
+                //    - If sequential, it's 'pending' only if it's the first in the batch AND no other participant of this role is already pending.
                 $status = 'pending';
 
                 if (! $isCurrentStep) {
@@ -292,7 +296,7 @@ class ContractApprovalController extends Controller
                 } elseif ($isSequential) {
                     $hasPending = Approval::where('contract_id', $contract->id)
                         ->where('workflow_step_id', $targetStepId)
-                        ->where('role', Role::ADHOC_APPROVER)
+                        ->where('role', $role)
                         ->where('status', 'pending')
                         ->exists();
 
@@ -315,7 +319,7 @@ class ContractApprovalController extends Controller
                     'workflow_step_id' => $targetStepId,
                     'user_id' => $user->id,
                     'approver_name' => $user->name,
-                    'role' => Role::ADHOC_APPROVER,
+                    'role' => $role,
                     'job_title' => $user->job_title ?? null,
                     'status' => $status,
                     'sequence' => $targetStep->step,
@@ -334,22 +338,28 @@ class ContractApprovalController extends Controller
             if ($isCurrentStep) {
                 $hasActiveAdhoc = Approval::where('contract_id', $contract->id)
                     ->where('workflow_step_id', $targetStepId)
-                    ->where('role', Role::ADHOC_APPROVER)
+                    ->where('role', $role)
                     ->whereIn('status', ['pending', 'waiting'])
                     ->exists();
 
                 if ($hasActiveAdhoc) {
-                    Approval::where('contract_id', $contract->id)
-                        ->where('workflow_step_id', $targetStepId)
-                        ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
-                        ->where('status', 'pending')
-                        ->update(['status' => 'waiting']);
+                    // Logic for blocking main approvers should only apply for ADHOC_APPROVER role
+                    if ($role === Role::ADHOC_APPROVER) {
+                        Approval::where('contract_id', $contract->id)
+                            ->where('workflow_step_id', $targetStepId)
+                            ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
+                            ->where('status', 'pending')
+                            ->update(['status' => 'waiting']);
+                    }
                 } else {
-                    Approval::where('contract_id', $contract->id)
-                        ->where('workflow_step_id', $targetStepId)
-                        ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
-                        ->where('status', 'waiting')
-                        ->update(['status' => 'pending']);
+                    // Restore status logic
+                    if ($role === Role::ADHOC_APPROVER) {
+                        Approval::where('contract_id', $contract->id)
+                            ->where('workflow_step_id', $targetStepId)
+                            ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
+                            ->where('status', 'waiting')
+                            ->update(['status' => 'pending']);
+                    }
                 }
             }
 
@@ -358,8 +368,8 @@ class ContractApprovalController extends Controller
                 $actorName = Auth::user()->name;
                 $count = count($addedUsers);
                 $contract->histories()->create([
-                    'action' => 'ADHOC_APPROVER_ADDED',
-                    'description' => "{$count} persetujuan tambahan ditambahkan oleh {$actorName}. Catatan: ".$request->input('note'),
+                    'action' => 'ADHOC_PARTICIPANT_ADDED',
+                    'description' => "{$count} {$role} ditambahkan oleh {$actorName}. Catatan: ".$request->input('note'),
                     'actor_id' => Auth::id(),
                 ]);
             }
