@@ -1,6 +1,7 @@
+import { Checkbox } from '@/components/ui/base/Checkbox';
 import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
-import { FileSignature, Trash2, Users as UsersIcon } from 'lucide-react';
+import { Briefcase, FileSignature, Settings2, Shield, Trash2, Users as UsersIcon } from 'lucide-react';
 import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS } from '../constants';
 
 interface StepActionConfigCardProps {
@@ -120,76 +121,89 @@ export function StepActionConfigCard({
                     />
                 </div>
 
-                {/* Cell 2: Transisi Ke & Conditional Details */}
-                <div className="space-y-3 sm:col-span-2">
-                    <div className="space-y-1">
-                        <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Transisi Ke</label>
-                        <Select
-                            value={transitionType}
-                            onValueChange={(val) => {
-                                if (val === 'sequential') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'relative', offset: 1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'stay') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'relative', offset: 0 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'back') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'relative', offset: -1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'initial') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'absolute', sequence: 1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'cross_workflow') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'cross_workflow', workflow_id: '', sequence: 1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                }
-                            }}
-                        >
-                            <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-slate-50/50 text-left text-[10px] font-semibold tracking-tight uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900 [&>span]:w-full [&>span]:text-left">
-                                <SelectValue placeholder="PILIH TRANSISI" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-                                <SelectItem value="sequential" className="text-[9px] font-bold uppercase">
-                                    LANGKAH + 1 (DEFAULT)
-                                </SelectItem>
-                                <SelectItem value="stay" className="text-[9px] font-bold uppercase">
-                                    TETAP DI LANGKAH SAAT INI (STAY)
-                                </SelectItem>
-                                <SelectItem value="back" className="text-[9px] font-bold uppercase">
-                                    LANGKAH - 1 (BACK)
-                                </SelectItem>
-                                <SelectItem value="initial" className="text-[9px] font-bold uppercase">
-                                    LANGKAH AWAL (INITIAL STEP)
-                                </SelectItem>
-                                <SelectItem value="cross_workflow" className="text-[9px] font-bold uppercase">
-                                    LANGKAH KE WORKFLOW N & STEP N
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                {/* Cell 2: Transisi Ke */}
+                <div className="space-y-1">
+                    <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Transisi Ke</label>
+                    <Select
+                        value={transitionType}
+                        onValueChange={(val) => {
+                            if (val === 'sequential') {
+                                updateAction(actIdx, {
+                                    transition_config: { type: 'relative', offset: 1 },
+                                    next_step_id: null,
+                                    next_workflow_id: null,
+                                    next_workflow_step_id: null,
+                                });
+                            } else if (val === 'stay') {
+                                updateAction(actIdx, {
+                                    transition_config: { type: 'relative', offset: 0 },
+                                    next_step_id: null,
+                                    next_workflow_id: null,
+                                    next_workflow_step_id: null,
+                                });
+                            } else if (val === 'back') {
+                                updateAction(actIdx, {
+                                    transition_config: { type: 'relative', offset: -1 },
+                                    next_step_id: null,
+                                    next_workflow_id: null,
+                                    next_workflow_step_id: null,
+                                });
+                            } else if (val === 'initial') {
+                                updateAction(actIdx, {
+                                    transition_config: { type: 'absolute', sequence: 1 },
+                                    next_step_id: null,
+                                    next_workflow_id: null,
+                                    next_workflow_step_id: null,
+                                });
+                            } else if (val === 'cross_workflow') {
+                                updateAction(actIdx, {
+                                    transition_config: { type: 'cross_workflow', workflow_id: '', sequence: 1 },
+                                    next_step_id: null,
+                                    next_workflow_id: null,
+                                    next_workflow_step_id: null,
+                                });
+                            }
+                        }}
+                    >
+                        <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-slate-50/50 text-left text-[10px] font-semibold tracking-tight uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900 [&>span]:w-full [&>span]:text-left">
+                            <SelectValue placeholder="PILIH TRANSISI" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                            <SelectItem value="sequential" className="text-[9px] font-bold uppercase">
+                                LANGKAH + 1 (DEFAULT)
+                            </SelectItem>
+                            <SelectItem value="stay" className="text-[9px] font-bold uppercase">
+                                TETAP DI LANGKAH SAAT INI (STAY)
+                            </SelectItem>
+                            <SelectItem value="back" className="text-[9px] font-bold uppercase">
+                                LANGKAH - 1 (BACK)
+                            </SelectItem>
+                            <SelectItem value="initial" className="text-[9px] font-bold uppercase">
+                                LANGKAH AWAL (INITIAL STEP)
+                            </SelectItem>
+                            <SelectItem value="cross_workflow" className="text-[9px] font-bold uppercase">
+                                LANGKAH KE WORKFLOW N & STEP N
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-                    {showCrossWorkflowSelector && (
-                        <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-100 bg-slate-50/40 p-2.5 sm:grid-cols-2 dark:border-slate-800 dark:bg-slate-900/10">
+                {/* Cell 2b: Deskripsi Aksi */}
+                <div className="space-y-1">
+                    <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Deskripsi Aksi (Tooltip)</label>
+                    <input
+                        type="text"
+                        value={act.description || ''}
+                        onChange={(e) => updateAction(actIdx, { description: e.target.value })}
+                        className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
+                        placeholder="Deskripsi singkat fungsi tombol ini..."
+                    />
+                </div>
+
+                {/* Cell 2c: Cross Workflow Selector (Full Width if active) */}
+                {showCrossWorkflowSelector && (
+                    <div className="sm:col-span-2 rounded-xl border border-slate-100 bg-slate-50/40 p-2.5 dark:border-slate-800 dark:bg-slate-900/10">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             <div className="space-y-1">
                                 <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Target Alur Kerja</label>
                                 <Select
@@ -247,20 +261,8 @@ export function StepActionConfigCard({
                                 </Select>
                             </div>
                         </div>
-                    )}
-                </div>
-
-                {/* Cell 2b: Deskripsi Aksi */}
-                <div className="space-y-1">
-                    <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Deskripsi Aksi (Tooltip)</label>
-                    <input
-                        type="text"
-                        value={act.description || ''}
-                        onChange={(e) => updateAction(actIdx, { description: e.target.value })}
-                        className="h-8 w-full rounded-lg border border-slate-200 bg-slate-50/50 px-2.5 text-[10px] font-bold transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
-                        placeholder="Deskripsi singkat fungsi tombol ini..."
-                    />
-                </div>
+                    </div>
+                )}
 
                 {/* Cell 3: Required Fields */}
                 <div className="space-y-1">
@@ -285,6 +287,7 @@ export function StepActionConfigCard({
                 </div>
 
                 {/* Cell 5: Signers (Conditional) */}
+                {/* Cell 5: Signers (Conditional) */}
                 {isSignatureAction && (
                     <div className="col-span-1 space-y-3 rounded-xl border border-amber-100/50 bg-amber-50/50 p-3 sm:col-span-2 dark:border-amber-800/30 dark:bg-amber-900/10">
                         <div className="flex items-center gap-1.5">
@@ -294,52 +297,129 @@ export function StepActionConfigCard({
                             </label>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="space-y-1">
-                                <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">
-                                    Pilihan Penandatangan (Signers)
-                                </label>
+                        {/* Target Langkah (Sub-Step) - Full Width */}
+                        <div className="space-y-1">
+                            <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Target Langkah (Sub-Step)</label>
+                            <Select
+                                value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
+                                onValueChange={(val) =>
+                                    updateAction(actIdx, {
+                                        assignee_config: {
+                                            ...act.assignee_config,
+                                            signature_target_step: val,
+                                        },
+                                    })
+                                }
+                            >
+                                <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                    <SelectValue placeholder="PILIH TAHAP TARGET" />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                    {allWorkflowSteps.map((s: any, sIdx: number) => (
+                                        <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
+                                            TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-[9px] leading-tight text-amber-600/70 italic dark:text-amber-500/70">
+                                Penandatangan akan dimasukkan sebagai sub-step pada langkah yang dipilih ini.
+                            </p>
+                        </div>
+
+                        {/* Multi-Source Pools for Signers (2x2 Grid) */}
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-t border-amber-200/30 pt-2">
+                            {/* 1. Custom Targets */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5 px-0.5">
+                                    <Settings2 size={11} className="text-slate-400" />
+                                    <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">Aktor Kustom</span>
+                                </div>
                                 <SearchableMultiSelect
-                                    values={act.signing_parties || []}
-                                    onValuesChange={(vals: string[]) => updateAction(actIdx, { signing_parties: vals })}
+                                    values={act.signing_config?.custom || []}
+                                    onValuesChange={(vals) =>
+                                        updateAction(actIdx, { signing_config: { ...act.signing_config, custom: vals } })
+                                    }
                                     options={[
-                                        { value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' },
-                                        { value: 'pic', label: 'PIC DITUGASKAN' },
+                                        { value: 'initiator', label: 'INISIATOR' },
+                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' }
                                     ]}
-                                    placeholder="Pilih Pemeran Penandatangan..."
+                                    placeholder="Pilih Aktor..."
                                 />
-                                <p className="text-[9px] leading-tight text-amber-600/70 italic dark:text-amber-500/70">
-                                    Pilih peran yang diizinkan untuk menandatangani dokumen pada aksi ini.
-                                </p>
                             </div>
 
-                            <div className="space-y-1">
-                                <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Target Langkah (Sub-Step)</label>
-                                <Select
-                                    value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
-                                    onValueChange={(val) =>
-                                        updateAction(actIdx, {
-                                            assignee_config: {
-                                                ...act.assignee_config,
-                                                signature_target_step: val,
-                                            },
-                                        })
+                            {/* 2. User Spesifik */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5 px-0.5">
+                                    <UsersIcon size={11} className="text-slate-400" />
+                                    <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">User Spesifik</span>
+                                </div>
+                                <SearchableMultiSelect
+                                    values={act.signing_config?.users || []}
+                                    onValuesChange={(vals) =>
+                                        updateAction(actIdx, { signing_config: { ...act.signing_config, users: vals } })
                                     }
-                                >
-                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                        <SelectValue placeholder="PILIH TAHAP TARGET" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                            <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
-                                                TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <p className="text-[9px] leading-tight text-amber-600/70 italic dark:text-amber-500/70">
-                                    Penandatangan akan dimasukkan sebagai sub-step pada langkah yang dipilih ini.
-                                </p>
+                                    options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
+                                    placeholder="Pilih User..."
+                                />
+                            </div>
+
+                            {/* 3. Role Pool */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-0.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Shield size={11} className="text-slate-400" />
+                                        <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">Berdasarkan Role</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Checkbox
+                                            id={`act-sign-role-${actIdx}`}
+                                            checked={act.signing_config?.is_initiator_role === true}
+                                            onCheckedChange={(checked) =>
+                                                updateAction(actIdx, { signing_config: { ...act.signing_config, is_initiator_role: checked === true } })
+                                            }
+                                        />
+                                        <label htmlFor={`act-sign-role-${actIdx}`} className="text-[8px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                    </div>
+                                </div>
+                                <SearchableMultiSelect
+                                    values={act.signing_config?.roles || []}
+                                    onValuesChange={(vals) =>
+                                        updateAction(actIdx, { signing_config: { ...act.signing_config, roles: vals } })
+                                    }
+                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                    placeholder={act.signing_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
+                                    disabled={act.signing_config?.is_initiator_role === true}
+                                />
+                            </div>
+
+                            {/* 4. Departemen Pool */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-0.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Briefcase size={11} className="text-slate-400" />
+                                        <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">Departemen Pool</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Checkbox
+                                            id={`act-sign-dept-${actIdx}`}
+                                            checked={act.signing_config?.is_initiator_department === true}
+                                            onCheckedChange={(checked) =>
+                                                updateAction(actIdx, { signing_config: { ...act.signing_config, is_initiator_department: checked === true } })
+                                            }
+                                        />
+                                        <label htmlFor={`act-sign-dept-${actIdx}`} className="text-[8px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                    </div>
+                                </div>
+                                <SearchableMultiSelect
+                                    values={act.signing_config?.departments || []}
+                                    onValuesChange={(vals) =>
+                                        updateAction(actIdx, { signing_config: { ...act.signing_config, departments: vals } })
+                                    }
+                                    options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                    placeholder={act.signing_config?.is_initiator_department ? "DITENTUKAN DARI DEPT INISIATOR" : "Pilih Unit..."}
+                                    disabled={act.signing_config?.is_initiator_department === true}
+                                />
                             </div>
                         </div>
                     </div>
@@ -354,9 +434,38 @@ export function StepActionConfigCard({
                                 {isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Konfigurasi Penugasan (Assignee)'}
                             </label>
                         </div>
-                        <div className="space-y-4">
+                        
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            {isForwardAction && (
+                                <div className={isForwardAction && isSignatureAction ? "space-y-1" : "space-y-1 sm:col-span-2"}>
+                                    <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Target Langkah (Insert To)</label>
+                                    <Select
+                                        value={act.next_step_id || 'current'}
+                                        onValueChange={(val) => {
+                                            updateAction(actIdx, {
+                                                next_step_id: val === 'current' ? null : val,
+                                            });
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                            <SelectValue placeholder="PILIH TAHAP TARGET" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                            <SelectItem value="current" className="text-[9px] font-bold uppercase">
+                                                LANGKAH SAAT INI (DEFAULT)
+                                            </SelectItem>
+                                            {allWorkflowSteps.map((s: any, sIdx: number) => (
+                                                <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
+                                                    TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
                             {isSignatureAction && (
-                                <div className="mt-4 space-y-1 border-t border-slate-100 pt-4 dark:border-slate-800">
+                                <div className={isForwardAction && isSignatureAction ? "space-y-1" : "space-y-1 sm:col-span-2"}>
                                     <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">
                                         Target Langkah Upload Tanda Tangan (Insert To)
                                     </label>
@@ -382,136 +491,108 @@ export function StepActionConfigCard({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-[9px] text-slate-400 italic">
-                                        Langkah di mana Pihak 1 & 2 akan disisipkan sebagai sub-step (contoh: 2.1, 2.2).
-                                    </p>
                                 </div>
                             )}
 
-                            {isForwardAction && (
-                                <div className="space-y-1">
-                                    <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Target Langkah (Insert To)</label>
-                                    <Select
-                                        value={act.next_step_id || 'current'}
-                                        onValueChange={(val) => {
-                                            updateAction(actIdx, {
-                                                next_step_id: val === 'current' ? null : val,
-                                            });
-                                        }}
-                                    >
-                                        <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                            <SelectValue placeholder="PILIH TAHAP TARGET" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                            <SelectItem value="current" className="text-[9px] font-bold uppercase">
-                                                LANGKAH SAAT INI (DEFAULT)
-                                            </SelectItem>
-                                            {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                                <SelectItem key={s.id} value={String(s.id)} className="text-[9px] font-bold uppercase">
-                                                    TAHAP {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-[9px] text-slate-400 italic">
-                                        Tentukan pada langkah mana approver tambahan ini akan disisipkan.
-                                    </p>
-                                </div>
+                            {/* Divider line if targets are present */}
+                            {(isForwardAction || isSignatureAction) && (
+                                <div className="sm:col-span-2 border-b border-indigo-200/20 my-1"></div>
                             )}
 
-                            <div className="space-y-1">
-                                <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">
-                                    {isForwardAction ? 'Kategori Reviewer' : 'Tipe Assignee'}
-                                </label>
-                                <Select
-                                    value={act.assignee_config?.type || ''}
-                                    onValueChange={(val) => {
-                                        updateAction(actIdx, {
-                                            assignee_config: {
-                                                ...(act.assignee_config || {}),
-                                                type: val,
-                                            },
-                                        });
-                                    }}
-                                >
-                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                        <SelectValue placeholder={isForwardAction ? 'PILIH KATEGORI' : 'PILIH TIPE ASSIGNEE'} />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                        {isForwardAction ? (
-                                            <>
-                                                <SelectItem value="role" className="text-[9px] font-bold uppercase">
-                                                    BERDASARKAN ROLE / UNIT
-                                                </SelectItem>
-                                                <SelectItem value="user" className="text-[9px] font-bold uppercase">
-                                                    DAFTAR USER SPESIFIK
-                                                </SelectItem>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <SelectItem value="initiator" className="text-[9px] font-bold uppercase">
-                                                    INISIATOR
-                                                </SelectItem>
-                                                <SelectItem value="assigned_pic" className="text-[9px] font-bold uppercase">
-                                                    PIC DITUGASKAN
-                                                </SelectItem>
-                                                <SelectItem value="role" className="text-[9px] font-bold uppercase">
-                                                    BERDASARKAN ROLE / UNIT
-                                                </SelectItem>
-                                                <SelectItem value="user" className="text-[9px] font-bold uppercase">
-                                                    DAFTAR USER SPESIFIK
-                                                </SelectItem>
-                                            </>
-                                        )}
-                                    </SelectContent>
-                                </Select>
+                            {/* 1. Custom Targets */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5 px-0.5">
+                                    <Settings2 size={11} className="text-slate-400" />
+                                    <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">Aktor Kustom</span>
+                                </div>
+                                <SearchableMultiSelect
+                                    values={act.assignee_config?.custom || []}
+                                    onValuesChange={(vals) =>
+                                        updateAction(actIdx, { assignee_config: { ...act.assignee_config, custom: vals } })
+                                    }
+                                    options={[
+                                        { value: 'initiator', label: 'INISIATOR' },
+                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' }
+                                    ]}
+                                    placeholder="Pilih Aktor..."
+                                />
                             </div>
 
-                            {act.assignee_config?.type === 'role' && (
-                                <>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">Role Tujuan</label>
-                                        <SearchableMultiSelect
-                                            values={act.assignee_config?.roles || []}
-                                            onValuesChange={(vals) =>
-                                                updateAction(actIdx, { assignee_config: { ...act.assignee_config, roles: vals } })
-                                            }
-                                            options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                            placeholder="Pilih Role..."
-                                        />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">
-                                            Unit / Department Tujuan
-                                        </label>
-                                        <SearchableMultiSelect
-                                            values={act.assignee_config?.department_ids || []}
-                                            onValuesChange={(vals) =>
-                                                updateAction(actIdx, { assignee_config: { ...act.assignee_config, department_ids: vals } })
-                                            }
-                                            options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                            placeholder="Pilih Unit..."
-                                        />
-                                    </div>
-                                </>
-                            )}
-
-                            {act.assignee_config?.type === 'user' && (
-                                <div className="space-y-1 md:col-span-2">
-                                    <label className="text-[9px] font-bold tracking-tight text-slate-400 uppercase">
-                                        {isForwardAction ? 'Pilih User Khusus' : 'User Tujuan'}
-                                    </label>
-                                    <SearchableMultiSelect
-                                        values={act.assignee_config?.user_ids || []}
-                                        onValuesChange={(vals) =>
-                                            updateAction(actIdx, { assignee_config: { ...act.assignee_config, user_ids: vals } })
-                                        }
-                                        options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
-                                        placeholder="Pilih User..."
-                                    />
+                            {/* 2. User Spesifik */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-1.5 px-0.5">
+                                    <UsersIcon size={11} className="text-slate-400" />
+                                    <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">User Spesifik</span>
                                 </div>
-                            )}
+                                <SearchableMultiSelect
+                                    values={act.assignee_config?.users || []}
+                                    onValuesChange={(vals) =>
+                                        updateAction(actIdx, { assignee_config: { ...act.assignee_config, users: vals } })
+                                    }
+                                    options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
+                                    placeholder="Pilih User..."
+                                />
+                            </div>
+
+                            {/* 3. Role Pool */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-0.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Shield size={11} className="text-slate-400" />
+                                        <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">Berdasarkan Role</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Checkbox
+                                            id={`act-init-role-${actIdx}`}
+                                            checked={act.assignee_config?.is_initiator_role === true}
+                                            onCheckedChange={(checked) =>
+                                                updateAction(actIdx, { assignee_config: { ...act.assignee_config, is_initiator_role: checked === true } })
+                                            }
+                                        />
+                                        <label htmlFor={`act-init-role-${actIdx}`} className="text-[8px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                    </div>
+                                </div>
+                                <SearchableMultiSelect
+                                    values={act.assignee_config?.roles || []}
+                                    onValuesChange={(vals) =>
+                                        updateAction(actIdx, { assignee_config: { ...act.assignee_config, roles: vals } })
+                                    }
+                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                    placeholder={act.assignee_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
+                                    disabled={act.assignee_config?.is_initiator_role === true}
+                                />
+                            </div>
+
+                            {/* 4. Departemen Pool */}
+                            <div className="space-y-1.5">
+                                <div className="flex items-center justify-between px-0.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Briefcase size={11} className="text-slate-400" />
+                                        <span className="text-[9px] font-semibold text-slate-500 uppercase font-bold">Departemen Pool</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Checkbox
+                                            id={`act-init-dept-${actIdx}`}
+                                            checked={act.assignee_config?.is_initiator_department === true}
+                                            onCheckedChange={(checked) =>
+                                                updateAction(actIdx, { assignee_config: { ...act.assignee_config, is_initiator_department: checked === true } })
+                                            }
+                                        />
+                                        <label htmlFor={`act-init-dept-${actIdx}`} className="text-[8px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                    </div>
+                                </div>
+                                <SearchableMultiSelect
+                                    values={act.assignee_config?.departments || []}
+                                    onValuesChange={(vals) =>
+                                        updateAction(actIdx, { assignee_config: { ...act.assignee_config, departments: vals } })
+                                    }
+                                    options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                    placeholder={act.assignee_config?.is_initiator_department ? "DITENTUKAN DARI DEPT INISIATOR" : "Pilih Unit..."}
+                                    disabled={act.assignee_config?.is_initiator_department === true}
+                                />
+                            </div>
                         </div>
+
                         <p className="text-[9px] leading-tight text-indigo-600/70 italic dark:text-indigo-500/70">
                             {isForwardAction
                                 ? 'Tentukan siapa saja yang boleh dipilih untuk memberikan approval tambahan.'

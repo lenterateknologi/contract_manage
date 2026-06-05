@@ -42,6 +42,7 @@ class UpdateWorkflowStepsAction
                         'hierarchy_level' => isset($stepData['hierarchy_level']) ? (int) $stepData['hierarchy_level'] : null,
                         'role_id' => $stepData['role_id'] ?? null,
                         'meta' => $stepData['meta'] ?? null,
+                        'approver_config' => $stepData['approver_config'] ?? null,
                         'company_group_ids' => $stepData['company_group_ids'] ?? null,
                         'region_ids' => $stepData['region_ids'] ?? null,
                         'company_ids' => $stepData['company_ids'] ?? null,
@@ -54,14 +55,16 @@ class UpdateWorkflowStepsAction
                     $stepClientId = $stepData['id'] ?? $index;
                     $stepIdMap[$stepClientId] = $step->id;
 
-                    if (! empty($stepData['role'])) {
-                        foreach ((array) $stepData['role'] as $role) {
+                    $rolesToSync = $stepData['approver_config']['roles'] ?? $stepData['role'] ?? [];
+                    if (! empty($rolesToSync)) {
+                        foreach ((array) $rolesToSync as $role) {
                             $step->approverRoles()->create(['role_name' => $role]);
                         }
                     }
 
-                    if (! empty($stepData['department_ids'])) {
-                        foreach ((array) $stepData['department_ids'] as $deptId) {
+                    $deptsToSync = $stepData['approver_config']['departments'] ?? $stepData['department_ids'] ?? [];
+                    if (! empty($deptsToSync)) {
+                        foreach ((array) $deptsToSync as $deptId) {
                             $resolvedId = $this->resolveDepartmentId($deptId);
                             if ($resolvedId) {
                                 $step->approverDepartments()->create(['department_id' => $resolvedId]);
@@ -69,8 +72,9 @@ class UpdateWorkflowStepsAction
                         }
                     }
 
-                    if (! empty($stepData['user_ids'])) {
-                        foreach ((array) $stepData['user_ids'] as $userId) {
+                    $usersToSync = $stepData['approver_config']['users'] ?? $stepData['user_ids'] ?? [];
+                    if (! empty($usersToSync)) {
+                        foreach ((array) $usersToSync as $userId) {
                             $resolvedId = $this->resolveUserId($userId);
                             if ($resolvedId) {
                                 $step->approverUsers()->create(['user_id' => $resolvedId]);

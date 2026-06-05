@@ -103,6 +103,41 @@ export default function SortableStepItem({
     const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
     const [conditionModalOpen, setConditionModalOpen] = useState(false);
 
+    const updateConfig = (key: 'custom' | 'roles' | 'departments' | 'users' | 'is_default' | 'is_initiator_role' | 'is_initiator_department', value: any) => {
+        const nextConfig = {
+            custom: [],
+            roles: [],
+            departments: [],
+            users: [],
+            is_default: false,
+            is_initiator_role: false,
+            is_initiator_department: false,
+            ...(step.approver_config || {}),
+            [key]: value
+        };
+        if (nextConfig.is_default) {
+            nextConfig.custom = ['initiator'];
+            nextConfig.roles = [];
+            nextConfig.departments = [];
+            nextConfig.users = [];
+            nextConfig.is_initiator_role = false;
+            nextConfig.is_initiator_department = false;
+        }
+        if (nextConfig.is_initiator_role) {
+            nextConfig.roles = [];
+        }
+        if (nextConfig.is_initiator_department) {
+            nextConfig.departments = [];
+        }
+        updateLocalStep(idx, {
+            approver_config: nextConfig,
+            approver_type: nextConfig.custom.length > 0 ? nextConfig.custom[0] : (nextConfig.users.length > 0 ? 'user' : (nextConfig.roles.length > 0 ? 'role' : 'role')),
+            role: nextConfig.roles,
+            department_ids: nextConfig.departments,
+            user_ids: nextConfig.users
+        });
+    };
+
 
     const assigneeOptions = useMemo(() => {
         const assignAction = actions.find(
@@ -112,73 +147,136 @@ export default function SortableStepItem({
 
         if (assignAction?.assignee_config) {
             const cfg = assignAction.assignee_config;
-            if (cfg.type === 'initiator') {
-                options.push({ value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' });
-            } else if (cfg.type === 'atasan') {
-                options.push({ value: 'atasan', label: 'ATASAN LANGSUNG' });
-            } else if (cfg.type === 'assigned_pic') {
-                options.push({ value: 'assigned_pic', label: 'PIC DITUGASKAN' });
-            } else if (cfg.type === 'role' && cfg.roles) {
-                cfg.roles.forEach((r: string) => options.push({ value: `role_${r}`, label: `ROLE: ${r.toUpperCase()}` }));
-            } else if (cfg.type === 'user' && cfg.user_ids) {
-                cfg.user_ids.forEach((uid: string) => {
-                    const u = users.find((x: any) => String(x.id) === String(uid));
-                    if (u) {
-                        options.push({ value: `user_${u.id}`, label: `USER: ${u.name.toUpperCase()} (${u.role})` });
-                    }
-                });
+            
+            // Legacy single type handling
+            if (cfg.type) {
+                if (cfg.type === 'initiator') {
+                    options.push({ value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' });
+                } else if (cfg.type === 'atasan') {
+                    options.push({ value: 'atasan', label: 'ATASAN LANGSUNG' });
+                } else if (cfg.type === 'assigned_pic') {
+                    options.push({ value: 'assigned_pic', label: 'PIC DITUGASKAN' });
+                } else if (cfg.type === 'role' && cfg.roles) {
+                    cfg.roles.forEach((r: string) => options.push({ value: `role_${r}`, label: `ROLE: ${r.toUpperCase()}` }));
+                } else if (cfg.type === 'user' && cfg.user_ids) {
+                    cfg.user_ids.forEach((uid: string) => {
+                        const u = users.find((x: any) => String(x.id) === String(uid));
+                        if (u) {
+                            options.push({ value: `user_${u.id}`, label: `USER: ${u.name.toUpperCase()} (${u.role})` });
+                        }
+                    });
+                }
+            } else {
+                // Multi-Source handling
+                // 1. Custom Actors
+                if (cfg.custom && cfg.custom.length > 0) {
+                    cfg.custom.forEach((c: string) => {
+                        if (c === 'initiator') {
+                            options.push({ value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' });
+                        } else if (c === 'assigned_pic') {
+                            options.push({ value: 'assigned_pic', label: 'PIC DITUGASKAN' });
+                        }
+                    });
+                }
+                // 2. Roles
+                if (cfg.is_initiator_role) {
+                    options.push({ value: 'initiator_role', label: 'ROLE SESUAI INISIATOR' });
+                } else if (cfg.roles && cfg.roles.length > 0) {
+                    cfg.roles.forEach((r: string) => {
+                        options.push({ value: `role_${r}`, label: `ROLE: ${r.toUpperCase()}` });
+                    });
+                }
+                // 3. Departments
+                if (cfg.is_initiator_department) {
+                    options.push({ value: 'initiator_department', label: 'DEPARTEMEN SESUAI INISIATOR' });
+                } else if (cfg.departments && cfg.departments.length > 0) {
+                    cfg.departments.forEach((deptId: string) => {
+                        const dept = departments.find((d: any) => String(d.id) === String(deptId));
+                        options.push({ value: `dept_${deptId}`, label: `DEPARTEMEN: ${dept ? dept.name.toUpperCase() : deptId}` });
+                    });
+                }
+                // 4. Users
+                if (cfg.users && cfg.users.length > 0) {
+                    cfg.users.forEach((uid: string) => {
+                        const u = users.find((x: any) => String(x.id) === String(uid));
+                        if (u) {
+                            options.push({ value: `user_${u.id}`, label: `USER: ${u.name.toUpperCase()} (${u.role})` });
+                        }
+                    });
+                }
             }
         }
         return options.length ? options : undefined;
-    }, [actions, users]);
+    }, [actions, users, departments]);
 
     const signerOptions = useMemo(() => {
-        const signAction = actions.find(
-            (a: any) =>
-                a.master_action?.code?.toLowerCase().includes('sign') ||
-                a.master_action_name?.toLowerCase().includes('sign') ||
-                a.master_action_name?.toLowerCase().includes('tangan') ||
-                a.master_action_name?.toLowerCase().includes('paraf'),
-        );
-        return signAction?.signing_parties?.length
-            ? signAction.signing_parties.map((role: string) => ALL_ROLES.find((o) => o.value === role) || { value: role, label: role.toUpperCase() })
-            : undefined;
-    }, [actions]);
+        return users;
+    }, [users]);
 
     const approverLabel = useMemo(() => {
-        switch (step.approver_type) {
-            case 'initiator':
-                return 'INISIATOR';
-            case 'assigned_pic':
-                return 'PIC DITUGASKAN';
-            case 'role': {
-                const rolesList = step.role || [];
-                const deptsList = step.department_ids || [];
-                if (rolesList.length === 0 && deptsList.length === 0) {
-                    return 'ROLE POOL (SEMUA)';
-                }
-                const parts = [];
-                if (rolesList.length > 0) {
-                    parts.push(rolesList.join(', '));
-                }
-                if (deptsList.length > 0) {
-                    const deptNames = deptsList.map((id: string) => departments.find((d) => String(d.id) === id)?.name || id);
-                    parts.push(`[${deptNames.join(', ')}]`);
-                }
-                return `ROLE: ${parts.join(' ')}`;
-            }
-            case 'user': {
-                const usersList = step.user_ids || [];
-                if (usersList.length === 0) {
-                    return 'USER POOL (SEMUA)';
-                }
-                const userNames = usersList.map((id: any) => (users || []).find((u) => String(u.id) === String(id))?.name || id);
-                return `USER: ${userNames.join(', ')}`;
-            }
-            default:
-                return 'BELUM DIATUR';
+        const cfg = step.approver_config || {};
+        const parts: string[] = [];
+
+        if (cfg.custom && cfg.custom.length > 0) {
+            cfg.custom.forEach((c: string) => {
+                if (c === 'initiator') parts.push('INISIATOR');
+                if (c === 'assigned_pic') parts.push('PIC DITUGASKAN');
+                if (c === 'atasan') parts.push('ATASAN LANGSUNG');
+            });
         }
-    }, [step.approver_type, step.role, step.department_ids, step.user_ids, departments, users]);
+        if (cfg.is_initiator_role) {
+            parts.push('ROLE INISIATOR');
+        } else if (cfg.roles && cfg.roles.length > 0) {
+            parts.push(`ROLE: ${cfg.roles.join(', ')}`);
+        }
+        if (cfg.is_initiator_department) {
+            parts.push('DEPT INISIATOR');
+        } else if (cfg.departments && cfg.departments.length > 0) {
+            const deptNames = cfg.departments.map((id: string) => departments.find((d) => String(d.id) === id)?.name || id);
+            parts.push(`DEPT: ${deptNames.join(', ')}`);
+        }
+        if (cfg.users && cfg.users.length > 0) {
+            const userNames = cfg.users.map((id: any) => (users || []).find((u) => String(u.id) === String(id))?.name || id);
+            parts.push(`USER: ${userNames.join(', ')}`);
+        }
+
+        if (parts.length === 0) {
+            switch (step.approver_type) {
+                case 'initiator':
+                    return 'INISIATOR';
+                case 'assigned_pic':
+                    return 'PIC DITUGASKAN';
+                case 'role': {
+                    const rolesList = step.role || [];
+                    const deptsList = step.department_ids || [];
+                    if (rolesList.length === 0 && deptsList.length === 0) {
+                        return 'ROLE POOL (SEMUA)';
+                    }
+                    const partsList = [];
+                    if (rolesList.length > 0) {
+                        partsList.push(rolesList.join(', '));
+                    }
+                    if (deptsList.length > 0) {
+                        const deptNames = deptsList.map((id: string) => departments.find((d) => String(d.id) === id)?.name || id);
+                        partsList.push(`[${deptNames.join(', ')}]`);
+                    }
+                    return `ROLE: ${partsList.join(' ')}`;
+                }
+                case 'user': {
+                    const usersList = step.user_ids || [];
+                    if (usersList.length === 0) {
+                        return 'USER POOL (SEMUA)';
+                    }
+                    const userNames = usersList.map((id: any) => (users || []).find((u) => String(u.id) === String(id))?.name || id);
+                    return `USER: ${userNames.join(', ')}`;
+                }
+                default:
+                    return 'BELUM DIATUR';
+            }
+        }
+
+        return parts.join(' + ');
+    }, [step.approver_config, step.approver_type, step.role, step.department_ids, step.user_ids, departments, users]);
 
     const selectedStatus = useMemo(() => {
         return (contractStatuses || []).find((s: any) => s.code === step.meta?.target_status);
@@ -352,63 +450,33 @@ export default function SortableStepItem({
             {isExpanded && (
                 <div className="border-primary/10 animate-in fade-in slide-in-from-top-6 relative overflow-visible rounded-b-3xl border-x border-b bg-white shadow-xl duration-500 dark:bg-black/40">
                     <div className="relative z-10 p-4">
-                        <div className="grid grid-cols-12 gap-5">
-                            {/* --- Section 1: Basic Config --- */}
-                            <div className="col-span-12 space-y-4 lg:col-span-12">
-                                <div>
-                                    <h4 className="text-primary/30 mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase">
-                                        <Settings2 size={12} /> Konfigurasi Dasar
+                        <div className="grid grid-cols-12 gap-6">
+                            {/* --- Column 1: Step Settings (Basic Settings & Conditions) --- */}
+                            <div className="col-span-12 lg:col-span-5 space-y-6">
+                                <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                                    <Settings2 size={14} className="text-slate-400" />
+                                    <h4 className="text-[10px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+                                        Konfigurasi Langkah
                                     </h4>
-                                    {/* --- Section 3: Actor Pools (Per-Step) --- */}
-                                    <div className="col-span-12 mt-2 border-t border-slate-100 pt-6 dark:border-slate-800">
-                                        <div className="mb-4 flex items-center gap-2">
-                                            <UsersIcon size={14} className="text-primary/40" />
-                                            <h4 className="text-[10px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
-                                                Pool Otoritas Langkah
-                                            </h4>
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-                                            <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Pemeran (Actor)</label>
-                                                <Select
-                                                    value={step.approver_type || 'initiator'}
-                                                    onValueChange={(v) => {
-                                                        const approverType = String(v);
-                                                        const updates: any = { approver_type: approverType };
-                                                        if (approverType !== 'role') {
-                                                            updates.role = [];
-                                                            updates.department_ids = [];
-                                                            updates.filter_department = false;
-                                                            updates.filter_company_group = false;
-                                                            updates.filter_region = false;
-                                                            updates.filter_company = false;
-                                                        }
-                                                        if (approverType !== 'user') {
-                                                            updates.user_ids = [];
-                                                        }
-                                                        updateLocalStep(idx, updates);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-xl">
-                                                        <SelectItem value="initiator" className="py-2 text-[10px] font-bold uppercase">
-                                                            INISIATOR
-                                                        </SelectItem>
-                                                        <SelectItem value="assigned_pic" className="py-2 text-[10px] font-bold uppercase">
-                                                            PIC DITUGASKAN
-                                                        </SelectItem>
-                                                        <SelectItem value="role" className="py-2 text-[10px] font-bold uppercase">
-                                                            BERDASARKAN ROLE / UNIT
-                                                        </SelectItem>
-                                                        <SelectItem value="user" className="py-2 text-[10px] font-bold uppercase">
-                                                            DAFTAR USER SPESIFIK
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                </div>
 
+                                <div className="space-y-4">
+                                    {/* Deskripsi */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase">Deskripsi Tahap</label>
+                                        <input
+                                            value={step.description || step.label || ''}
+                                            onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
+                                            placeholder="Contoh: Review Legal Staff"
+                                            className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[11px] font-bold transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                        />
+                                        <p className="text-[9px] leading-tight text-slate-400">Nama atau penjelasan tahap ini.</p>
+                                    </div>
+
+                                    {/* Target Status & Advanced Settings Group (2 Columns) */}
+                                    <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 dark:border-slate-800/50 dark:bg-card/20 space-y-3">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                                            {/* Column 1: Target Status */}
                                             <div className="space-y-1.5">
                                                 <label className="text-[10px] font-bold text-slate-400 uppercase">Status Kontrak Target</label>
                                                 <Select
@@ -457,32 +525,15 @@ export default function SortableStepItem({
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
-                                                <p className="text-[9px] leading-tight text-slate-400">Status otomatis jika langkah ini aktif.</p>
                                             </div>
 
+                                            {/* Column 2: Advanced Settings Button */}
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Deskripsi Tahap</label>
-                                                <input
-                                                    value={step.description || step.label || ''}
-                                                    onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
-                                                    placeholder="Contoh: Review Legal Staff"
-                                                    className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[11px] font-bold transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
-                                                />
-                                                <p className="text-[9px] leading-tight text-slate-400">Nama atau penjelasan tahap ini.</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-4 grid grid-cols-12 gap-6 border-t border-slate-100 pt-4 dark:border-slate-800">
-                                            {/* Column 1: Advanced Settings */}
-                                            <div className="col-span-12 md:col-span-4 space-y-3">
-                                                <div className="flex items-center gap-2">
-                                                    <Settings2 size={14} className="text-slate-400" />
-                                                    <h4 className="text-[10px] font-semibold text-slate-500 uppercase">Pengaturan Lanjutan Tahap</h4>
-                                                </div>
+                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Pengaturan Lanjutan</label>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="w-fit"
+                                                    className="w-full justify-start h-9 rounded-xl text-[11px] font-bold bg-white dark:bg-slate-900"
                                                     onClick={() => setAdvancedSettingsOpen(true)}
                                                 >
                                                     <Settings2 className="mr-2 h-4 w-4" />
@@ -495,214 +546,150 @@ export default function SortableStepItem({
                                                     onUpdateStep={(updates) => updateLocalStep(idx, updates)}
                                                 />
                                             </div>
-
-                                            {/* Column 2: Condition Expression */}
-                                            <div className="col-span-12 md:col-span-8 space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2">
-                                                        <GitBranch size={14} className="text-slate-400" />
-                                                        <h4 className="text-[10px] font-semibold text-slate-500 uppercase">Ekspresi Kondisi (Metadata)</h4>
-                                                    </div>
-                                                    <span className={cn(
-                                                        "px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
-                                                        step.condition_expression !== null 
-                                                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                                                    )}>
-                                                        {step.condition_expression !== null ? 'AKTIF' : 'NON-AKTIF'}
-                                                    </span>
-                                                </div>
-
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    type="button"
-                                                    className="w-fit"
-                                                    onClick={() => setConditionModalOpen(true)}
-                                                >
-                                                    <GitBranch className="mr-2 h-4 w-4" />
-                                                    {step.condition_expression !== null ? 'Ubah Kondisi' : 'Atur Kondisi'}
-                                                </Button>
-                                                
-                                                {step.condition_expression !== null && (
-                                                    <p className="mt-2 text-[10px] text-slate-400">
-                                                        Ekspresi Aktif:{' '}
-                                                        <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300 break-all">
-                                                            {step.condition_expression}
-                                                        </code>
-                                                    </p>
-                                                )}
-                                            </div>
                                         </div>
+                                        <p className="text-[9px] leading-tight text-slate-400">Status otomatis jika langkah ini aktif.</p>
+                                    </div>
+
+                                    {/* Condition Expression */}
+                                    <div className="space-y-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <GitBranch size={13} className="text-slate-400" />
+                                                <h4 className="text-[10px] font-semibold text-slate-500 uppercase">Ekspresi Kondisi (Metadata)</h4>
+                                            </div>
+                                            <span className={cn(
+                                                "px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                                                step.condition_expression !== null 
+                                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                            )}>
+                                                {step.condition_expression !== null ? 'AKTIF' : 'NON-AKTIF'}
+                                            </span>
+                                        </div>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            type="button"
+                                            className="w-fit"
+                                            onClick={() => setConditionModalOpen(true)}
+                                        >
+                                            <GitBranch className="mr-2 h-4 w-4" />
+                                            {step.condition_expression !== null ? 'Ubah Kondisi' : 'Atur Kondisi'}
+                                        </Button>
+                                        
+                                        {step.condition_expression !== null && (
+                                            <p className="mt-2 text-[10px] text-slate-400">
+                                                Ekspresi Aktif:{' '}
+                                                <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300 break-all">
+                                                    {step.condition_expression}
+                                                </code>
+                                            </p>
+                                        )}
+                                        <ConditionExpressionModal
+                                            open={conditionModalOpen}
+                                            onOpenChange={setConditionModalOpen}
+                                            step={step}
+                                            idx={idx}
+                                            updateLocalStep={updateLocalStep}
+                                            parsedCondition={parsedCondition}
+                                            handleConditionChange={handleConditionChange}
+                                        />
                                     </div>
                                 </div>
+                            </div>
 
-                                {(step.approver_type === 'role' || step.approver_type === 'user') && (
-                                    <>
-                                        <div className="m-5"></div>
-                                        <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-                                            {step.approver_type === 'role' && (
-                                                <>
-                                                    {/* Role Pool (multi-select) */}
-                                                    <div className="space-y-3 md:col-span-6">
-                                                        <div className="flex items-center justify-between px-1">
-                                                            <div className="flex items-center gap-2">
-                                                                <Shield size={12} className="text-slate-400" />
-                                                                <span className="text-[10px] font-semibold text-slate-500 uppercase">ROLE POOL</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 px-1">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => updateLocalStep(idx, { role: [] })}
-                                                                className={cn(
-                                                                    'rounded-lg px-2 py-1 text-[10px] font-bold uppercase transition-all',
-                                                                    !step.role || step.role.length === 0
-                                                                        ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
-                                                                        : 'border-transparent text-slate-400 italic hover:bg-slate-100',
-                                                                )}
-                                                            >
-                                                                SEMUA ROLE
-                                                            </button>
-                                                            <div className="flex-1">
-                                                                <SearchableMultiSelect
-                                                                    values={step.role || []}
-                                                                    onValuesChange={(vals: string[]) => updateLocalStep(idx, { role: vals })}
-                                                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                                                    placeholder="Pilih Role..."
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                            {/* --- Column 2: Actors / People Settings --- */}
+                            <div className="col-span-12 lg:col-span-7 space-y-6 lg:border-l lg:border-slate-100 dark:lg:border-slate-800 lg:pl-6 pt-6 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
+                                <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                                    <UsersIcon size={14} className="text-slate-400" />
+                                    <h4 className="text-[10px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+                                        Pool Otoritas Langkah (Multi-Source)
+                                    </h4>
+                                </div>
 
-                                                    {/* Unit Pool (multi-select) */}
-                                                    <div
-                                                        className={cn(
-                                                            'space-y-3 border-l border-slate-100 pl-6 transition-opacity md:col-span-6 dark:border-slate-800',
-                                                            step.filter_department && 'opacity-50',
-                                                        )}
-                                                    >
-                                                        <div className="flex items-center gap-2 px-1">
-                                                            <Briefcase size={12} className="text-slate-400" />
-                                                            <span className="text-[10px] font-semibold text-slate-500 uppercase">DEPARTEMEN POOL</span>
-                                                            {step.filter_department && (
-                                                                <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[8px] font-bold text-indigo-500 italic">
-                                                                    TERKUNCI KE DEPT. INISIATOR
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div className="flex items-center gap-2 px-1">
-                                                            <button
-                                                                type="button"
-                                                                disabled={step.filter_department}
-                                                                onClick={() => updateLocalStep(idx, { department_ids: [] })}
-                                                                className={cn(
-                                                                    'rounded-lg px-2 py-1 text-[10px] font-bold uppercase transition-all',
-                                                                    !step.department_ids || step.department_ids.length === 0
-                                                                        ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
-                                                                        : 'border-transparent text-slate-400 italic hover:bg-slate-100',
-                                                                    step.filter_department && 'cursor-not-allowed opacity-50',
-                                                                )}
-                                                            >
-                                                                SEMUA UNIT
-                                                            </button>
-                                                            <div className="flex-1">
-                                                                <SearchableMultiSelect
-                                                                    values={step.department_ids || []}
-                                                                    onValuesChange={(vals: string[]) =>
-                                                                        !step.filter_department && updateLocalStep(idx, { department_ids: vals })
-                                                                    }
-                                                                    options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                                    placeholder={step.filter_department ? 'Departemen Terkunci...' : 'Pilih Unit...'}
-                                                                    disabled={step.filter_department}
-                                                                />
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </>
-                                            )}
-                                            {step.approver_type === 'user' && (
-                                                <div className="space-y-3 md:col-span-12">
-                                                    <div className="flex items-center gap-2 px-1">
-                                                        <UsersIcon size={12} className="text-slate-400" />
-                                                        <span className="text-[10px] font-semibold text-slate-500 uppercase">USER POOL</span>
-                                                    </div>
-                                                    {step.user_ids && step.user_ids.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1 px-1 py-1">
-                                                            {step.user_ids.map((uId: any) => {
-                                                                const uName =
-                                                                    (users || []).find((u) => String(u.id) === String(uId))?.name ||
-                                                                    `User ID: ${uId}`;
-                                                                return (
-                                                                    <span
-                                                                        key={uId}
-                                                                        className="inline-flex items-center gap-1 rounded bg-slate-900 px-2 py-0.5 text-[8px] font-bold text-white uppercase dark:bg-white dark:text-black"
-                                                                    >
-                                                                        {uName}
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                const next = (step.user_ids || []).filter(
-                                                                                    (u: any) => String(u) !== String(uId),
-                                                                                );
-                                                                                updateLocalStep(idx, { user_ids: next });
-                                                                            }}
-                                                                            className="font-bold hover:text-rose-500 focus:outline-none"
-                                                                        >
-                                                                            ×
-                                                                        </button>
-                                                                    </span>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-                                                    <div className="custom-scrollbar max-h-[160px] space-y-1 overflow-y-auto pr-2">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => updateLocalStep(idx, { user_ids: [] })}
-                                                            className={cn(
-                                                                'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                !step.user_ids || step.user_ids.length === 0
-                                                                    ? 'border-slate-900 bg-slate-900 text-white shadow-lg'
-                                                                    : 'border-transparent text-slate-400 italic hover:bg-slate-100',
-                                                            )}
-                                                        >
-                                                            <span className="w-full text-center text-[10px] font-bold uppercase">SEMUA USER</span>
-                                                        </button>
-                                                        {users.map((user: any) => {
-                                                            const isSelected = step.user_ids?.includes(String(user.id));
-                                                            return (
-                                                                <button
-                                                                    key={user.id}
-                                                                    type="button"
-                                                                    onClick={() => {
-                                                                        const current = step.user_ids || [];
-                                                                        const next = isSelected
-                                                                            ? current.filter((u: string) => u !== String(user.id))
-                                                                            : [...current, String(user.id)];
-                                                                        updateLocalStep(idx, { user_ids: next });
-                                                                    }}
-                                                                    className={cn(
-                                                                        'flex w-full items-center justify-between rounded-xl border p-2 text-left transition-all',
-                                                                        isSelected
-                                                                            ? 'border-slate-900 bg-slate-900 text-white'
-                                                                            : 'border-transparent hover:bg-slate-100',
-                                                                    )}
-                                                                >
-                                                                    <div className="flex flex-col">
-                                                                        <span className="text-[10px] font-bold uppercase">{user.name}</span>
-                                                                        <span className="text-[8px] uppercase opacity-50">{user.role}</span>
-                                                                    </div>
-                                                                    {isSelected && <CheckCircle2 size={10} />}
-                                                                </button>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            )}
+                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                    {/* 1. Custom Targets */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2 px-1">
+                                            <Settings2 size={12} className="text-slate-400" />
+                                            <span className="text-[10px] font-semibold text-slate-500 uppercase font-bold">Aktor Kustom</span>
                                         </div>
-                                    </>
-                                )}
+                                        <SearchableMultiSelect
+                                            values={step.approver_config?.custom || []}
+                                            onValuesChange={(vals: string[]) => updateConfig('custom', vals)}
+                                            options={[
+                                                { value: 'initiator', label: 'INISIATOR' },
+                                                { value: 'assigned_pic', label: 'PIC DITUGASKAN' }
+                                            ]}
+                                            placeholder="Pilih Aktor..."
+                                        />
+                                    </div>
+
+                                    {/* 2. Role Pool */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between px-1">
+                                            <div className="flex items-center gap-2">
+                                                <Shield size={12} className="text-slate-400" />
+                                                <span className="text-[10px] font-semibold text-slate-500 uppercase font-bold">Berdasarkan Role</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <Checkbox
+                                                    id={`step-init-role-${idx}`}
+                                                    checked={step.approver_config?.is_initiator_role === true}
+                                                    onCheckedChange={(checked) => updateConfig('is_initiator_role', checked === true)}
+                                                />
+                                                <label htmlFor={`step-init-role-${idx}`} className="text-[9px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                            </div>
+                                        </div>
+                                        <SearchableMultiSelect
+                                            values={step.approver_config?.roles || []}
+                                            onValuesChange={(vals: string[]) => updateConfig('roles', vals)}
+                                            options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                            placeholder={step.approver_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
+                                            disabled={step.approver_config?.is_initiator_role === true}
+                                        />
+                                    </div>
+
+                                    {/* 3. Departemen Pool */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between px-1">
+                                            <div className="flex items-center gap-2">
+                                                <Briefcase size={12} className="text-slate-400" />
+                                                <span className="text-[10px] font-semibold text-slate-500 uppercase font-bold">Departemen Pool</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <Checkbox
+                                                    id={`step-init-dept-${idx}`}
+                                                    checked={step.approver_config?.is_initiator_department === true}
+                                                    onCheckedChange={(checked) => updateConfig('is_initiator_department', checked === true)}
+                                                />
+                                                <label htmlFor={`step-init-dept-${idx}`} className="text-[9px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                            </div>
+                                        </div>
+                                        <SearchableMultiSelect
+                                            values={step.approver_config?.departments || []}
+                                            onValuesChange={(vals: string[]) => updateConfig('departments', vals)}
+                                            options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                            placeholder={step.approver_config?.is_initiator_department ? "DITENTUKAN DARI DEPT INISIATOR" : "Pilih Unit..."}
+                                            disabled={step.approver_config?.is_initiator_department === true}
+                                        />
+                                    </div>
+
+                                    {/* 4. User Spesifik */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center gap-2 px-1">
+                                            <UsersIcon size={12} className="text-slate-400" />
+                                            <span className="text-[10px] font-semibold text-slate-500 uppercase font-bold">User Spesifik</span>
+                                        </div>
+                                        <SearchableMultiSelect
+                                            values={step.approver_config?.users || []}
+                                            onValuesChange={(vals: string[]) => updateConfig('users', vals)}
+                                            options={userOptions}
+                                            placeholder="Pilih User..."
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -50,30 +50,35 @@ class WorkflowStep extends Model
         'updated_by',
         'is_active',
         'meta',
+        'approver_config',
         'filter_department',
         'filter_company_group',
         'filter_region',
         'filter_company',
     ];
 
-    protected $casts = [
-        'step' => 'integer',
-        'is_active' => 'boolean',
-        'meta' => 'array',
-        'is_optional' => 'boolean',
-        'hierarchy_level' => 'integer',
-        'approver_type' => 'string',
-        'step_category' => 'string',
-        'company_group_ids' => 'array',
-        'region_ids' => 'array',
-        'company_ids' => 'array',
-        'allowed_actions' => 'array',
-        'is_mandatory' => 'boolean',
-        'filter_department' => 'boolean',
-        'filter_company_group' => 'boolean',
-        'filter_region' => 'boolean',
-        'filter_company' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'step' => 'integer',
+            'is_active' => 'boolean',
+            'meta' => 'array',
+            'approver_config' => 'array',
+            'is_optional' => 'boolean',
+            'hierarchy_level' => 'integer',
+            'approver_type' => 'string',
+            'step_category' => 'string',
+            'company_group_ids' => 'array',
+            'region_ids' => 'array',
+            'company_ids' => 'array',
+            'allowed_actions' => 'array',
+            'is_mandatory' => 'boolean',
+            'filter_department' => 'boolean',
+            'filter_company_group' => 'boolean',
+            'filter_region' => 'boolean',
+            'filter_company' => 'boolean',
+        ];
+    }
 
     protected $with = ['approverRoles', 'approverDepartments.department', 'approverUsers', 'users'];
 

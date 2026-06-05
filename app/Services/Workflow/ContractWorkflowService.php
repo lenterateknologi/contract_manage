@@ -12,6 +12,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
 use App\Services\Workflow\Concerns\EvaluatesWorkflowSteps;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -133,7 +134,7 @@ class ContractWorkflowService
         $approvers = collect();
 
         if ($step->step_category === 'joint_upload') {
-        $metadata = $contract->metadata ?? [];
+            $metadata = $contract->metadata ?? [];
             $order = $metadata['step_12_order'] ?? null;
             $finished = $metadata['step_12_finished'] ?? [];
 
@@ -170,55 +171,132 @@ class ContractWorkflowService
         }
 
         if ($approvers->isEmpty()) {
-            if ($step->approver_type === 'atasan') {
-                $approvers = $this->queryService->resolveHierarchyApprover($contract, $step);
-            } elseif ($step->approver_type === 'user') {
-                $approvers = $step->users()->get();
-            } elseif ($step->approver_type === 'initiator' || in_array('initiator', $lowerRoles)) {
-                $approvers = collect([$contract->initiator]);
-            } else {
-                $metadata = $contract->metadata ?? [];
-                $picId = $contract->assigned_pic_id ?? ($metadata['assigned_pic_id'] ?? null);
-
-                if ($step->approver_type === 'assigned_pic' && $picId) {
-                    $pic = User::find($picId);
-                    if ($pic) {
-                        $approvers = collect([$pic]);
+            $config = $step->approver_config;
+            if (! empty($config) && (
+                ! empty($config['custom']) ||
+                ! empty($config['roles']) ||
+                ! empty($config['departments']) ||
+                ! empty($config['users'])
+            )) {
+                // 1. Resolve Custom
+                if (! empty($config['custom'])) {
+                    if (in_array('initiator', $config['custom'])) {
+                        if ($contract->initiator) {
+                            $approvers->push($contract->initiator);
+                        }
+                    }
+                    if (in_array('assigned_pic', $config['custom'])) {
+                        $picId = $contract->assigned_pic_id ?? ($contract->metadata['assigned_pic_id'] ?? null);
+                        if ($picId) {
+                            $pic = User::find($picId);
+                            if ($pic) {
+                                $approvers->push($pic);
+                            }
+                        }
+                    }
+                    if (in_array('atasan', $config['custom'])) {
+                        $atasanList = $this->queryService->resolveHierarchyApprover($contract, $step);
+                        if ($atasanList) {
+                            $approvers = $approvers->merge($atasanList);
+                        }
                     }
                 }
 
-                if ($approvers->isEmpty()) {
-                    $query = User::query();
-                    if (! empty($roles)) {
-                        $query->whereIn('role', $roles);
-                    }
-                    $targetDeptIds = $step->department_ids ?? [];
+                // 2. Resolve Roles
+                $targetRoles = ! empty($config['roles']) ? $config['roles'] : [];
+                if (! empty($config['is_initiator_role']) && $contract->initiator && $contract->initiator->role) {
+                    $targetRoles[] = $contract->initiator->role;
+                }
+                if (! empty($targetRoles)) {
+                    $query = User::whereIn('role', $targetRoles);
+                    $query = $this->applyStepFilters($query, $step, $contract);
+                    $approvers = $approvers->merge($query->get());
+                }
 
-                    if ($step->filter_department) {
-                        $query->where('department_id', $contract->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
-                    } elseif (! empty($targetDeptIds)) {
-                        $query->whereIn('department_id', $targetDeptIds);
+                // 3. Resolve Departments
+                $targetDepts = ! empty($config['departments']) ? $config['departments'] : [];
+                if (! empty($config['is_initiator_department']) && $contract->initiator && $contract->initiator->department_id) {
+                    $targetDepts[] = $contract->initiator->department_id;
+                }
+                if (! empty($targetDepts)) {
+                    $query = User::whereIn('department_id', $targetDepts);
+                    $query = $this->applyStepFilters($query, $step, $contract);
+                    $approvers = $approvers->merge($query->get());
+                }
+
+                // 4. Resolve Users
+                $targetUsers = ! empty($config['users']) ? $config['users'] : [];
+                if (! empty($config['is_initiator_user']) && $contract->initiator) {
+                    $targetUsers[] = $contract->initiator->id;
+                }
+                if (! empty($targetUsers)) {
+                    $approvers = $approvers->merge(User::whereIn('id', $targetUsers)->get());
+                }
+
+                // Ensure unique IDs
+                $approvers = $approvers->unique('id');
+
+                // Re-populate roles tags
+                $roles = array_merge(
+                    ! empty($config['roles']) ? $config['roles'] : [],
+                    ! empty($config['is_initiator_role']) ? ['Role Inisiator'] : [],
+                    ! empty($config['is_initiator_department']) ? ['Dept Inisiator'] : [],
+                    ! empty($config['is_initiator_user']) ? ['User Inisiator'] : [],
+                    in_array('initiator', $config['custom'] ?? []) ? ['Initiator'] : [],
+                    in_array('atasan', $config['custom'] ?? []) ? ['Atasan Langsung'] : [],
+                    in_array('assigned_pic', $config['custom'] ?? []) ? ['Staff Legal'] : []
+                );
+            } else {
+                if ($step->approver_type === 'atasan') {
+                    $approvers = $this->queryService->resolveHierarchyApprover($contract, $step);
+                } elseif ($step->approver_type === 'user') {
+                    $approvers = $step->users()->get();
+                } elseif ($step->approver_type === 'initiator' || in_array('initiator', $lowerRoles)) {
+                    $approvers = collect([$contract->initiator]);
+                } else {
+                    $metadata = $contract->metadata ?? [];
+                    $picId = $contract->assigned_pic_id ?? ($metadata['assigned_pic_id'] ?? null);
+
+                    if ($step->approver_type === 'assigned_pic' && $picId) {
+                        $pic = User::find($picId);
+                        if ($pic) {
+                            $approvers = collect([$pic]);
+                        }
                     }
 
-                    $initiatorCompany = $contract->initiator->company;
-                    if ($step->filter_company_group || $step->filter_region) {
-                        $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
-                            if ($step->filter_company_group) {
-                                $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
-                                $q->where('company_group_id', $groupId);
-                            }
-                            if ($step->filter_region) {
-                                $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
-                                $q->where('region_id', $regionId);
-                            }
-                        });
-                    }
+                    if ($approvers->isEmpty()) {
+                        $query = User::query();
+                        if (! empty($roles)) {
+                            $query->whereIn('role', $roles);
+                        }
+                        $targetDeptIds = $step->department_ids ?? [];
 
-                    if ($step->filter_company) {
-                        $query->where('company_id', $contract->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
-                    }
+                        if ($step->filter_department) {
+                            $query->where('department_id', $contract->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
+                        } elseif (! empty($targetDeptIds)) {
+                            $query->whereIn('department_id', $targetDeptIds);
+                        }
 
-                    $approvers = $query->get();
+                        $initiatorCompany = $contract->initiator->company;
+                        if ($step->filter_company_group || $step->filter_region) {
+                            $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
+                                if ($step->filter_company_group) {
+                                    $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                                    $q->where('company_group_id', $groupId);
+                                }
+                                if ($step->filter_region) {
+                                    $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                                    $q->where('region_id', $regionId);
+                                }
+                            });
+                        }
+
+                        if ($step->filter_company) {
+                            $query->where('company_id', $contract->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
+                        }
+
+                        $approvers = $query->get();
+                    }
                 }
             }
         }
@@ -767,5 +845,32 @@ class ContractWorkflowService
         }
 
         return $stepAction->next_step_id ? WorkflowStep::find($stepAction->next_step_id) : null;
+    }
+
+    private function applyStepFilters(Builder $query, WorkflowStep $step, Contract $contract): Builder
+    {
+        if ($step->filter_department) {
+            $query->where('department_id', $contract->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
+        }
+
+        $initiatorCompany = $contract->initiator?->company;
+        if ($step->filter_company_group || $step->filter_region) {
+            $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
+                if ($step->filter_company_group) {
+                    $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                    $q->where('company_group_id', $groupId);
+                }
+                if ($step->filter_region) {
+                    $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                    $q->where('region_id', $regionId);
+                }
+            });
+        }
+
+        if ($step->filter_company) {
+            $query->where('company_id', $contract->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
+        }
+
+        return $query;
     }
 }

@@ -168,21 +168,50 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                     .map((a: any) => String(a.user_id)),
             );
 
-            // Auto-resolve based on signing_parties configuration from the workflow action
-            if (signerUserIds.length === 0 && signingParties.length > 0) {
+            // Auto-resolve based on signing_parties / signing_config configuration from the workflow action
+            const signingConfig = activeAction?.signing_config;
+            const hasSigningConfig = signingConfig && (
+                (signingConfig.custom && signingConfig.custom.length > 0) ||
+                signingConfig.is_initiator_role ||
+                (signingConfig.roles && signingConfig.roles.length > 0) ||
+                signingConfig.is_initiator_department ||
+                (signingConfig.departments && signingConfig.departments.length > 0) ||
+                (signingConfig.users && signingConfig.users.length > 0)
+            );
+
+            if (signerUserIds.length === 0 && (hasSigningConfig || signingParties.length > 0)) {
                 const ids: string[] = [];
 
-                if (signingParties.includes('initiator') && contract.initiator?.id) {
-                    // Only add if NOT already registered
-                    if (!existingUserIds.has(String(contract.initiator.id))) {
-                        ids.push(contract.initiator.id);
+                if (hasSigningConfig) {
+                    // Custom Actors
+                    if (signingConfig.custom?.includes('initiator') && contract.initiator?.id) {
+                        if (!existingUserIds.has(String(contract.initiator.id))) {
+                            ids.push(contract.initiator.id);
+                        }
                     }
-                }
-
-                if (signingParties.includes('assigned_pic') && contract.assigned_pic?.id) {
-                    // Only add if NOT already registered
-                    if (!existingUserIds.has(String(contract.assigned_pic.id))) {
-                        ids.push(contract.assigned_pic.id);
+                    if (signingConfig.custom?.includes('assigned_pic') && contract.assigned_pic?.id) {
+                        if (!existingUserIds.has(String(contract.assigned_pic.id))) {
+                            ids.push(contract.assigned_pic.id);
+                        }
+                    }
+                    // Specific Users
+                    if (signingConfig.users && signingConfig.users.length > 0) {
+                        signingConfig.users.forEach((uid: string) => {
+                            if (!existingUserIds.has(String(uid))) {
+                                ids.push(uid);
+                            }
+                        });
+                    }
+                } else {
+                    if (signingParties.includes('initiator') && contract.initiator?.id) {
+                        if (!existingUserIds.has(String(contract.initiator.id))) {
+                            ids.push(contract.initiator.id);
+                        }
+                    }
+                    if (signingParties.includes('assigned_pic') && contract.assigned_pic?.id) {
+                        if (!existingUserIds.has(String(contract.assigned_pic.id))) {
+                            ids.push(contract.assigned_pic.id);
+                        }
                     }
                 }
 
@@ -192,7 +221,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                 }
             }
         }
-    }, [open, isAssign, contract, isSigningSetup, signingParties]);
+    }, [open, isAssign, contract, isSigningSetup, signingParties, activeAction]);
 
     const fetchUsers = async () => {
         if (initialUsers && initialUsers.length > 0) return;
@@ -509,7 +538,57 @@ export function SharedApproveModal({ open, onClose, onSubmit, isAssign, contract
                                             label: `${u.name} (${u.role})`,
                                         }));
 
-                                    // 4. Tambahan: Filter berdasarkan signing_parties jika ada konfigurasi
+                                    // 4. Tambahan: Filter berdasarkan signing_config / signing_parties jika ada konfigurasi
+                                    const signingConfig = activeAction?.signing_config;
+                                    const hasSigningConfig = signingConfig && (
+                                        (signingConfig.custom && signingConfig.custom.length > 0) ||
+                                        signingConfig.is_initiator_role ||
+                                        (signingConfig.roles && signingConfig.roles.length > 0) ||
+                                        signingConfig.is_initiator_department ||
+                                        (signingConfig.departments && signingConfig.departments.length > 0) ||
+                                        (signingConfig.users && signingConfig.users.length > 0)
+                                    );
+
+                                    if (hasSigningConfig) {
+                                        return baseOptions.filter((opt) => {
+                                            if (signerUserIds.includes(opt.value)) return true;
+
+                                            const userObj = users.find((u: any) => String(u.id) === String(opt.value));
+                                            if (!userObj) return false;
+
+                                            // 1. Custom Actors
+                                            if (signingConfig.custom && signingConfig.custom.length > 0) {
+                                                if (signingConfig.custom.includes('initiator') && String(contract?.initiator?.id) === String(opt.value)) return true;
+                                                if (signingConfig.custom.includes('assigned_pic') && String(contract?.assigned_pic?.id) === String(opt.value)) return true;
+                                            }
+
+                                            // 2. Roles
+                                            if (signingConfig.is_initiator_role) {
+                                                const initiatorRole = contract?.initiator?.role;
+                                                if (initiatorRole && String(userObj.role).toLowerCase() === String(initiatorRole).toLowerCase()) return true;
+                                            } else if (signingConfig.roles && signingConfig.roles.length > 0) {
+                                                if (signingConfig.roles.map((r: string) => r.toLowerCase()).includes(String(userObj.role).toLowerCase())) return true;
+                                            }
+
+                                            // 3. Departments
+                                            if (signingConfig.is_initiator_department) {
+                                                const initiatorDeptId = contract?.initiator?.department_id || contract?.initiator?.department?.id;
+                                                const userDeptId = userObj.department_id || userObj.department?.id;
+                                                if (initiatorDeptId && String(userDeptId) === String(initiatorDeptId)) return true;
+                                            } else if (signingConfig.departments && signingConfig.departments.length > 0) {
+                                                const userDeptId = userObj.department_id || userObj.department?.id;
+                                                if (userDeptId && signingConfig.departments.map(String).includes(String(userDeptId))) return true;
+                                            }
+
+                                            // 4. Specific Users
+                                            if (signingConfig.users && signingConfig.users.length > 0) {
+                                                if (signingConfig.users.map(String).includes(String(opt.value))) return true;
+                                            }
+
+                                            return false;
+                                        });
+                                    }
+
                                     if (signingParties.length > 0) {
                                         return baseOptions.filter((opt) => {
                                             // WAJIB: Selalu tampilkan yang sedang dipilih di UI agar label tidak hilang/uuid
