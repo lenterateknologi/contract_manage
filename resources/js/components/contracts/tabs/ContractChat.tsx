@@ -323,7 +323,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     );
 
     return (
-        <div className="animate-in fade-in relative flex h-[680px] min-h-[620px] flex-col p-5 duration-500">
+        <div className="animate-in fade-in relative flex h-full flex-col p-5 duration-500">
             <div className="border-surface-border mb-1 flex items-center justify-between border-b pb-3">
                 <div className="flex-1">
                     <SearchInput
@@ -336,7 +336,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
                 <div className="flex items-center gap-2">
                     <div className="border-surface-border hidden h-7 items-center border-r px-3 sm:flex">
-                        <span className="text-text-soft text-[8px] font-black tracking-[0.2em] uppercase tabular-nums">{msgs.length} LOGS</span>
+                        <span className="text-text-soft text-[8px] font-semibold tracking-[0.2em] uppercase tabular-nums">{msgs.length} LOGS</span>
                     </div>
                     <button
                         onClick={handleRefresh}
@@ -394,16 +394,16 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 </button>
             )}
 
-            <div className="border-surface-border border-t pt-3">
+            <div className="border-surface-border mt-auto border-t pt-3">
                 {selectedFile && (
                     <div className="bg-surface-muted animate-in slide-in-from-bottom-1 mb-3 flex items-center justify-between rounded-lg p-2.5 duration-300">
                         <div className="flex items-center gap-2.5">
                             <FileIcon size={14} strokeWidth={2.5} />
                             <div className="flex flex-col">
-                                <span className="text-text-main mb-1 text-[9px] leading-none font-black tracking-tight uppercase">
+                                <span className="text-text-main mb-1 text-[9px] leading-none font-semibold tracking-tight uppercase">
                                     {selectedFile?.name}
                                 </span>
-                                <span className="text-text-soft text-[7.5px] font-black uppercase tabular-nums opacity-40">
+                                <span className="text-text-soft text-[7.5px] font-semibold uppercase tabular-nums opacity-40">
                                     {((selectedFile?.size || 0) / 1024).toFixed(1)} KB
                                 </span>
                             </div>

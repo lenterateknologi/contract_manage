@@ -19,7 +19,7 @@ class ContractDetailQuery
         'approvals.approver:id,name,role,role_id,department_id,company_id,email',
         'approvals.approver.department:id,name',
         'approvals.workflowStep:id,step,description,step_category,workflow_id',
-        'approvals.workflowStep.workflow:id,name',
+        'approvals.workflowStep.workflow:id,name,contract_type_id,meta',
         'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company',
         'workflowStep:id,workflow_id,step,description,step_category,meta',
         'workflowStep.actions',

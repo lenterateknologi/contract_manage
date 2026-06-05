@@ -11,7 +11,7 @@ const WorkflowNameCell = ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
             <span className="text-text-main text-xs font-semibold tracking-tight uppercase">{row.name}</span>
             {row.is_default && (
-                <div className="bg-success/10 border-success/20 text-success rounded-lg border px-1.5 py-0.5 text-[7px] font-semibold tracking-wider uppercase">
+                <div className="bg-success/10 border-success/20 text-success rounded-lg border px-1.5 py-0.5 text-[7px] font-semibold  uppercase">
                     DEFAULT
                 </div>
             )}
@@ -25,16 +25,16 @@ const InitiatorCell = ({ row }: { row: any }) => {
         row.initiator_type === 'all'
             ? 'Seluruh Staff'
             : row.initiator_type === 'department'
-              ? 'Per Departemen'
-              : row.initiator_type === 'role'
-                ? 'Per Jabatan'
-                : 'Spesifik User';
+                ? 'Per Departemen'
+                : row.initiator_type === 'role'
+                    ? 'Per Jabatan'
+                    : 'Spesifik User';
     return (
         <div className="flex items-center gap-2">
             <div className="bg-surface-muted rounded-lg p-1.5">
                 <UserCircle size={12} className="text-text-soft" />
             </div>
-            <span className="text-text-desc text-[10px] font-medium tracking-wider uppercase">{label}</span>
+            <span className="text-text-desc text-[10px] font-medium  uppercase">{label}</span>
         </div>
     );
 };

@@ -144,7 +144,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 <div className="bg-surface-muted text-text-soft mb-6 flex h-20 w-20 items-center justify-center rounded-full">
                     <FileIcon size={40} />
                 </div>
-                <h4 className="text-text-main text-[11px] font-black tracking-[0.3em] uppercase">Vendor Belum Dipilih</h4>
+                <h4 className="text-text-main text-[11px] font-semibold tracking-[0.3em] uppercase">Vendor Belum Dipilih</h4>
                 <p className="text-text-desc mt-2 max-w-[280px] text-[10px] leading-relaxed font-bold uppercase">
                     Silakan pilih vendor terlebih dahulu pada panel informasi kontrak untuk mengelola lampiran.
                 </p>
@@ -245,8 +245,8 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
 
             <div className="mb-6 flex items-center justify-between px-1">
                 <div>
-                    <h4 className="text-text-main text-[11px] font-black tracking-[0.3em] uppercase">Dokumen & Lampiran</h4>
-                    <p className="text-text-soft mt-1 text-[9px] font-bold tracking-wider uppercase">
+                    <h4 className="text-text-main text-[11px] font-semibold tracking-[0.3em] uppercase">Dokumen & Lampiran</h4>
+                    <p className="text-text-soft mt-1 text-[9px] font-bold  uppercase">
                         Daftar kelengkapan dokumen dari Vendor dan Kontrak
                     </p>
                 </div>
@@ -346,13 +346,13 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                             </div>
 
                             <div className="min-w-0">
-                                <div className="text-text-main truncate text-[12px] font-black tracking-tight uppercase" title={at.label}>
+                                <div className="text-text-main truncate text-[12px] font-semibold tracking-tight uppercase" title={at.label}>
                                     {at.label}
                                 </div>
                                 <div className="mt-1 flex items-center gap-2">
                                     <span
                                         className={cn(
-                                            'rounded px-1.5 py-0.5 text-[8px] font-black uppercase',
+                                            'rounded px-1.5 py-0.5 text-[8px] font-semibold uppercase',
                                             at.is_vendor_doc ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700',
                                         )}
                                     >
@@ -368,7 +368,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 {allItems.length === 0 && (
                     <div className="col-span-full flex flex-col items-center justify-center py-20 text-center opacity-40">
                         <FolderOpen size={48} className="mb-4" />
-                        <p className="text-xs font-black tracking-widest uppercase">Belum ada lampiran</p>
+                        <p className="text-xs font-semibold tracking-widest uppercase">Belum ada lampiran</p>
                     </div>
                 )}
             </div>

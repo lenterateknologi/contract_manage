@@ -81,7 +81,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
 
             {selectedField.type === 'labeled_value' && (
                 <div className="border-border/50 bg-muted/10 space-y-3 rounded-lg border p-3">
-                    <Label className="text-muted-foreground font-sans text-[8px] font-semibold tracking-wider uppercase">
+                    <Label className="text-muted-foreground font-sans text-[8px] font-semibold  uppercase">
                         Pengaturan Label : Nilai
                     </Label>
 
@@ -147,14 +147,12 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                     show_colon: !selectedField.options?.show_colon,
                                 })
                             }
-                            className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
-                                selectedField.options?.show_colon !== false ? 'bg-primary' : 'bg-muted-foreground/30'
-                            }`}
+                            className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${selectedField.options?.show_colon !== false ? 'bg-primary' : 'bg-muted-foreground/30'
+                                }`}
                         >
                             <span
-                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
-                                    selectedField.options?.show_colon !== false ? 'translate-x-4' : 'translate-x-0'
-                                }`}
+                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${selectedField.options?.show_colon !== false ? 'translate-x-4' : 'translate-x-0'
+                                    }`}
                             />
                         </button>
                     </div>

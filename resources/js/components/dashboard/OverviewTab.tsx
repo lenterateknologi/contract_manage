@@ -70,7 +70,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                     <div className="dark:bg-surface-base border-surface-border/60 hover:border-primary/20 group flex h-full flex-col rounded-2xl border bg-white p-6 shadow-sm transition-all hover:shadow-xl">
                         <div className="space-y-1 pb-6">
                             <h3 className="text-text-main text-sm font-semibold tracking-[0.2em] uppercase">Proporsi Dokumen</h3>
-                            <p className="text-text-soft text-[10px] font-medium tracking-wider uppercase">Berdasarkan Tipe Submission</p>
+                            <p className="text-text-soft text-[10px] font-medium  uppercase">Berdasarkan Tipe Submission</p>
                         </div>
 
                         <div className="relative h-[300px] w-full">
@@ -138,7 +138,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                         <div className="flex items-start justify-between pb-2">
                             <div className="space-y-1">
                                 <h3 className="text-text-main text-sm font-semibold tracking-[0.2em] uppercase">Analisis Klasifikasi</h3>
-                                <p className="text-text-soft text-[10px] font-medium tracking-wider uppercase">Volume Per Kategori Kontrak</p>
+                                <p className="text-text-soft text-[10px] font-medium  uppercase">Volume Per Kategori Kontrak</p>
                             </div>
                         </div>
 
@@ -166,7 +166,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                                 if (active && payload && payload.length) {
                                                     return (
                                                         <div className="dark:bg-surface-base/90 border-surface-border/40 flex flex-col gap-1 rounded-2xl border bg-white/90 p-3 shadow-xl backdrop-blur-sm">
-                                                            <p className="text-text-soft text-[10px] leading-none font-semibold tracking-wider uppercase">
+                                                            <p className="text-text-soft text-[10px] leading-none font-semibold  uppercase">
                                                                 {label}
                                                             </p>
                                                             <p className="text-primary text-xs leading-none font-bold">{payload[0].value}</p>

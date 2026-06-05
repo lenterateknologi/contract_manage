@@ -212,7 +212,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                             </div>
 
                             <div className="relative z-10 mb-6 flex items-center gap-3">
-                                <span className="text-text-main text-[10px] font-black tracking-widest uppercase opacity-60">
+                                <span className="text-text-main text-[10px] font-semibold tracking-widest uppercase opacity-60">
                                     Authority Architecture
                                 </span>
                             </div>
@@ -225,7 +225,7 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
                                 </p>
                                 <div className="bg-primary/5 border-primary/10 flex w-fit items-center gap-2 rounded-xl border px-4 py-2">
                                     <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
-                                    <span className="text-primary text-[9px] font-black tracking-widest uppercase">Parameter Otoritas Aktif</span>
+                                    <span className="text-primary text-[9px] font-semibold tracking-widest uppercase">Parameter Otoritas Aktif</span>
                                 </div>
                             </div>
                         </div>
@@ -264,23 +264,23 @@ export function RoleManagement({ roles, filters }: Readonly<RoleManagementProps>
             bulkActions={
                 canDelete
                     ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Hapus ${ids.length} role terpilih?`)) {
-                                      router.post(
-                                          '/admin/roles/bulk-delete',
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} role telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[] | number[]) => {
+                                if (confirm(`Hapus ${ids.length} role terpilih?`)) {
+                                    router.post(
+                                        '/admin/roles/bulk-delete',
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} role telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
                     : undefined
             }
             pagination={{

@@ -181,7 +181,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                             className="h-10 w-16 cursor-pointer rounded-lg border-none bg-transparent"
                                         />
                                         <div className="flex flex-col">
-                                            <span className="text-text-main font-mono text-sm font-semibold tracking-wider uppercase">
+                                            <span className="text-text-main font-mono text-sm font-semibold  uppercase">
                                                 {form.data.color}
                                             </span>
                                             <span className="text-[9px] font-semibold text-slate-400 uppercase">HEX Code</span>
@@ -200,7 +200,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                             className="h-10 w-16 cursor-pointer rounded-lg border-none bg-transparent"
                                         />
                                         <div className="flex flex-col">
-                                            <span className="text-text-main font-mono text-sm font-semibold tracking-wider uppercase">
+                                            <span className="text-text-main font-mono text-sm font-semibold  uppercase">
                                                 {form.data.bg_color}
                                             </span>
                                             <span className="text-[9px] font-semibold text-slate-400 uppercase">HEX Code</span>
@@ -222,7 +222,7 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
                                     <Checkbox
                                         id="is_active"
                                         checked={!!form.data.is_active}
-                                        onCheckedChange={() => {}}
+                                        onCheckedChange={() => { }}
                                         className="border-border data-[state=checked]:bg-primary h-6 w-6 rounded-lg"
                                     />
                                     <div className="flex flex-col">
@@ -267,23 +267,23 @@ export function StatusManagement({ statuses, filters }: StatusManagementProps) {
             bulkActions={
                 canDelete
                     ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} status terpilih?`)) {
-                                      router.post(
-                                          '/admin/contract-statuses/bulk-delete',
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[] | number[]) => {
+                                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} status terpilih?`)) {
+                                    router.post(
+                                        '/admin/contract-statuses/bulk-delete',
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} status telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
                     : undefined
             }
             pagination={{

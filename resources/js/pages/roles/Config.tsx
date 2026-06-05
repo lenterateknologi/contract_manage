@@ -133,7 +133,7 @@ const ModuleRow = React.memo(
                             <span className="text-text-main group-hover:text-primary truncate text-xs font-semibold tracking-wide">
                                 {module.name}
                             </span>
-                            <span className="text-text-desc/50 font-mono text-[9px] tracking-wider uppercase">{module.identifier}</span>
+                            <span className="text-text-desc/50 font-mono text-[9px]  uppercase">{module.identifier}</span>
                             {module.description && (
                                 <span className="text-text-desc/40 mt-0.5 text-[10px] leading-normal font-normal whitespace-pre-wrap">
                                     {module.description}
@@ -206,7 +206,7 @@ const SortableModuleItem = ({
                 isDragging && 'border-primary ring-primary/10 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
-            <div className="bg-primary/5 text-primary ring-primary/20 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-black tabular-nums ring-1">
+            <div className="bg-primary/5 text-primary ring-primary/20 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold tabular-nums ring-1">
                 {index + 1}
             </div>
             <div
@@ -306,7 +306,7 @@ const SortableGroupItem = ({
         >
             <div className="border-border bg-card flex items-center justify-between border-b px-4 py-3.5">
                 <div className="flex items-center gap-3">
-                    <div className="bg-foreground text-background flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-black tabular-nums shadow-sm">
+                    <div className="bg-foreground text-background flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold tabular-nums shadow-sm">
                         {index + 1}
                     </div>
                     <div
@@ -399,7 +399,7 @@ const AvailableListContainer = ({
         <div ref={setNodeRef} className="border-surface-border/60 bg-card flex flex-col overflow-hidden rounded-xl border">
             <div className="border-border bg-muted/10 flex shrink-0 items-center justify-between border-b px-4 py-3">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-foreground text-[10px] font-black tracking-widest uppercase opacity-70">Repository</h2>
+                    <h2 className="text-foreground text-[10px] font-semibold tracking-widest uppercase opacity-70">Repository</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -1177,7 +1177,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 <table className="w-full min-w-[800px] border-collapse text-left">
                                     <thead>
                                         <tr className="border-surface-border/60 bg-surface-muted/40 border-b backdrop-blur-md select-none">
-                                            <th className="border-surface-border/60 bg-surface-muted/50 text-text-desc sticky left-0 z-30 min-w-[220px] border-r px-4 py-3.5 text-left text-[11px] font-medium tracking-wider uppercase shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
+                                            <th className="border-surface-border/60 bg-surface-muted/50 text-text-desc sticky left-0 z-30 min-w-[220px] border-r px-4 py-3.5 text-left text-[11px] font-medium  uppercase shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
                                                 Scope Modul
                                             </th>
                                             {PERMISSIONS.map((p) => {
@@ -1185,7 +1185,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                 return (
                                                     <th
                                                         key={p}
-                                                        className="border-surface-border/60 text-text-desc min-w-[100px] border-r px-1 py-3.5 text-center text-[11px] font-medium tracking-wider uppercase last:border-r-0"
+                                                        className="border-surface-border/60 text-text-desc min-w-[100px] border-r px-1 py-3.5 text-center text-[11px] font-medium  uppercase last:border-r-0"
                                                     >
                                                         <div className="flex flex-col items-center gap-1.5">
                                                             <span>{permissionLabels[p]}</span>
@@ -1198,7 +1198,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     </th>
                                                 );
                                             })}
-                                            <th className="border-surface-border/60 bg-surface-muted/30 text-text-desc min-w-[60px] border-l px-1 py-3.5 text-center text-[11px] font-medium tracking-wider uppercase">
+                                            <th className="border-surface-border/60 bg-surface-muted/30 text-text-desc min-w-[60px] border-l px-1 py-3.5 text-center text-[11px] font-medium  uppercase">
                                                 Full
                                             </th>
                                         </tr>
@@ -1226,7 +1226,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                                 <div className="bg-primary/5 text-primary ring-primary/10 rounded-lg p-1 ring-1">
                                                                     <LayoutGrid className="h-3 w-3" />
                                                                 </div>
-                                                                <span className="text-text-main text-[11px] font-black tracking-wide uppercase">
+                                                                <span className="text-text-main text-[11px] font-semibold tracking-wide uppercase">
                                                                     {group.name}
                                                                 </span>
                                                             </div>
@@ -1259,15 +1259,15 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                                             accessForm.data.accesses.map((access) =>
                                                                                 groupModuleIds.includes(access.module_id)
                                                                                     ? {
-                                                                                          ...access,
-                                                                                          can_read: !!checked,
-                                                                                          can_create: !!checked,
-                                                                                          can_update: !!checked,
-                                                                                          can_delete: !!checked,
-                                                                                          can_approve: !!checked,
-                                                                                          can_bulk_approve: !!checked,
-                                                                                          can_bulk_delete: !!checked,
-                                                                                      }
+                                                                                        ...access,
+                                                                                        can_read: !!checked,
+                                                                                        can_create: !!checked,
+                                                                                        can_update: !!checked,
+                                                                                        can_delete: !!checked,
+                                                                                        can_approve: !!checked,
+                                                                                        can_bulk_approve: !!checked,
+                                                                                        can_bulk_delete: !!checked,
+                                                                                    }
                                                                                     : access,
                                                                             ),
                                                                         );
@@ -1303,10 +1303,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 <ShieldAlert className="h-7 w-7 animate-pulse" />
                             </div>
                             <div className="space-y-3">
-                                <h4 className="text-foreground text-base font-black tracking-tight">Protokol Keamanan Perubahan</h4>
+                                <h4 className="text-foreground text-base font-semibold tracking-tight">Protokol Keamanan Perubahan</h4>
                                 <p className="text-muted-foreground/80 text-xs leading-relaxed font-bold tracking-wide uppercase">
                                     Setiap modifikasi hak akses akan langsung mengikat seluruh personil dengan role{' '}
-                                    <span className="text-primary decoration-primary/30 font-black underline underline-offset-4">{role.name}</span>.
+                                    <span className="text-primary decoration-primary/30 font-semibold underline underline-offset-4">{role.name}</span>.
                                     Pastikan tingkat otorisasi sudah sesuai dengan batas wewenang struktural sebelum melakukan finalisasi penyimpanan.
                                 </p>
                             </div>
@@ -1396,7 +1396,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
                 <DialogContent className="rounded-2xl sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-black tracking-tight uppercase">
+                        <DialogTitle className="text-foreground text-base font-semibold tracking-tight uppercase">
                             {editingGroup ? 'Ubah Grup Navigasi' : 'Tambah Grup Navigasi'}
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground text-xs font-medium">
@@ -1405,7 +1405,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     </DialogHeader>
                     <div className="py-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Nama Grup</label>
+                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Nama Grup</label>
                             <input
                                 value={groupName}
                                 onChange={(e) => setGroupName(e.target.value)}
@@ -1435,7 +1435,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             <Dialog open={isModuleModalOpen} onOpenChange={setIsModuleModalOpen}>
                 <DialogContent className="rounded-2xl sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-black tracking-tight uppercase">
+                        <DialogTitle className="text-foreground text-base font-semibold tracking-tight uppercase">
                             {editingModuleItem ? 'Ubah Modul' : 'Tambah Modul Baru'}
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground text-xs font-medium">
@@ -1444,7 +1444,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Nama Modul</label>
+                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Nama Modul</label>
                             <input
                                 value={moduleName}
                                 onChange={(e) => setModuleName(e.target.value)}
@@ -1453,7 +1453,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Identifier</label>
+                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Identifier</label>
                             <input
                                 value={moduleIdentifier}
                                 onChange={(e) => setModuleIdentifier(e.target.value)}
@@ -1466,7 +1466,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Path Rute / URL</label>
+                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Path Rute / URL</label>
                             <input
                                 value={moduleRoute}
                                 onChange={(e) => setModuleRoute(e.target.value)}
@@ -1476,7 +1476,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         </div>
                         {!editingModuleItem && (
                             <div className="flex flex-col gap-2">
-                                <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Grup Navigasi</label>
+                                <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Grup Navigasi</label>
                                 <select
                                     value={moduleGroupId}
                                     onChange={(e) => setModuleGroupId(e.target.value)}
@@ -1494,7 +1494,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             </div>
                         )}
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Icon Modul</label>
+                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Icon Modul</label>
                             <Select value={moduleIcon} onValueChange={setModuleIcon}>
                                 <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2">
                                     <SelectValue />
@@ -1515,7 +1515,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             </Select>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-black tracking-widest uppercase">Deskripsi Modul</label>
+                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Deskripsi Modul</label>
                             <textarea
                                 value={moduleDescription}
                                 onChange={(e) => setModuleDescription(e.target.value)}

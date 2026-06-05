@@ -319,7 +319,7 @@ const ContractDetailView = ({
                             className="border-surface-border bg-surface-base w-56 rounded-xl p-1.5 shadow-2xl backdrop-blur-xl"
                         >
                             <div className="mb-1 px-2 py-1.5">
-                                <p className="text-text-soft text-[10px] font-semibold tracking-wider uppercase">Opsi Kontrak</p>
+                                <p className="text-text-soft text-[10px] font-semibold  uppercase">Opsi Kontrak</p>
                             </div>
                             <DropdownMenuItem
                                 onClick={() => handleUpdate({}, true)}
@@ -346,7 +346,7 @@ const ContractDetailView = ({
                 <div className="flex flex-col gap-6">
                     <div className="bg-surface-base border-surface-border overflow-hidden rounded-2xl border shadow-sm">
                         <div className="bg-primary border-surface-border flex h-12 items-center justify-between border-b px-4">
-                            <div className="text-primary-foreground flex items-center gap-2 text-sm font-semibold tracking-wider uppercase">
+                            <div className="text-primary-foreground flex items-center gap-2 text-sm font-semibold  uppercase">
                                 <FileText size={16} className="text-primary-foreground/70" /> Detail Dokumen & Alur Kerja
                             </div>
                             <div className="flex items-center gap-2">
@@ -364,7 +364,7 @@ const ContractDetailView = ({
                                         align="end"
                                         className="border-surface-border bg-surface-base w-56 rounded-xl p-1.5 shadow-2xl backdrop-blur-xl"
                                     >
-                                        <div className="text-text-soft mb-1 px-2 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
+                                        <div className="text-text-soft mb-1 px-2 py-1.5 text-[10px] font-semibold  uppercase">
                                             Menu Tambahan
                                         </div>
                                         <DropdownMenuItem
@@ -503,7 +503,7 @@ const ContractDetailView = ({
                                         <Button
                                             variant="outline"
                                             onClick={() => handleSigningAction('download')}
-                                            className="w-full gap-1.5 border-blue-200 text-xs tracking-wider text-blue-700 uppercase shadow-sm hover:bg-blue-100/50 dark:border-blue-900/30 dark:text-blue-400"
+                                            className="w-full gap-1.5 border-blue-200 text-xs  text-blue-700 uppercase shadow-sm hover:bg-blue-100/50 dark:border-blue-900/30 dark:text-blue-400"
                                         >
                                             <Download size={16} /> Download
                                         </Button>
@@ -524,7 +524,7 @@ const ContractDetailView = ({
                                                 variant="primary"
                                                 onClick={() => document.getElementById('sidebar-upload-draft')?.click()}
                                                 disabled={!stepDownloaded || signingUploading}
-                                                className="shadow-primary/20 w-full gap-1.5 bg-blue-600 text-xs tracking-wider text-white uppercase shadow-lg hover:bg-blue-700 hover:text-white"
+                                                className="shadow-primary/20 w-full gap-1.5 bg-blue-600 text-xs  text-white uppercase shadow-lg hover:bg-blue-700 hover:text-white"
                                             >
                                                 {signingUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
                                                 Upload
@@ -576,7 +576,7 @@ const ContractDetailView = ({
                                                         else if (isForwardType) setAddhocOpen(true);
                                                     }}
                                                     className={cn(
-                                                        'w-full text-xs tracking-wider uppercase shadow-sm transition-all',
+                                                        'w-full text-xs  uppercase shadow-sm transition-all',
                                                         isApproveType && 'shadow-primary/20 shadow-lg',
                                                         isRejectType && 'border-danger/20 hover:bg-danger hover:text-white',
                                                         isForwardType && 'border border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10',
@@ -588,15 +588,15 @@ const ContractDetailView = ({
                                                             ? contract.workflow_step?.step === 1
                                                                 ? 'Kirim Persetujuan'
                                                                 : contract.requires_pic_assignment
-                                                                  ? 'Tugaskan PIC'
-                                                                  : 'Setujui Kontrak'
+                                                                    ? 'Tugaskan PIC'
+                                                                    : 'Setujui Kontrak'
                                                             : action.action_code === 'forward'
-                                                              ? 'Approval Tambahan'
-                                                              : action.action_code === 'reject'
-                                                                ? 'Tolak Kontrak'
-                                                                : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
-                                                                  ? 'Upload Tanda Tangan'
-                                                                  : action.action_code)}
+                                                                ? 'Approval Tambahan'
+                                                                : action.action_code === 'reject'
+                                                                    ? 'Tolak Kontrak'
+                                                                    : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
+                                                                        ? 'Upload Tanda Tangan'
+                                                                        : action.action_code)}
                                                 </Button>
                                             );
                                         })}
@@ -610,14 +610,14 @@ const ContractDetailView = ({
                                                         setActiveActionCode('approve');
                                                         setApproveOpen(true);
                                                     }}
-                                                    className="shadow-primary/20 w-full text-xs tracking-wider uppercase shadow-lg"
+                                                    className="shadow-primary/20 w-full text-xs  uppercase shadow-lg"
                                                 >
                                                     <CheckCircle2 size={16} />{' '}
                                                     {contract.workflow_step?.step === 1
                                                         ? 'Kirim Persetujuan'
                                                         : contract.requires_pic_assignment
-                                                          ? 'Tugaskan PIC'
-                                                          : 'Setujui Kontrak'}
+                                                            ? 'Tugaskan PIC'
+                                                            : 'Setujui Kontrak'}
                                                 </Button>
                                                 <Button
                                                     variant="outline"
@@ -625,7 +625,7 @@ const ContractDetailView = ({
                                                         setActiveActionCode('reject');
                                                         setRejectOpen(true);
                                                     }}
-                                                    className="border-danger/20 hover:bg-danger w-full text-xs tracking-wider uppercase shadow-sm transition-all hover:text-white"
+                                                    className="border-danger/20 hover:bg-danger w-full text-xs  uppercase shadow-sm transition-all hover:text-white"
                                                 >
                                                     <AlertCircle size={16} /> Tolak Kontrak
                                                 </Button>
@@ -658,7 +658,7 @@ const ContractDetailView = ({
                         <div className="mb-3 flex items-center justify-between border-b border-black/10 pb-2">
                             <div className="flex items-center gap-2">
                                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-                                <h4 className="text-text-soft text-[10px] font-black tracking-[0.2em] uppercase">Debug Access Control</h4>
+                                <h4 className="text-text-soft text-[10px] font-semibold tracking-[0.2em] uppercase">Debug Access Control</h4>
                             </div>
                             <div className="rounded bg-black px-2 py-0.5 text-[9px] font-bold text-white">
                                 STEP {contract.workflow_step?.step || 'N/A'}

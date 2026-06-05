@@ -260,45 +260,45 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                 bulkActions={
                     canUpdate
                         ? [
-                              {
-                                  label: 'Hapus Terpilih',
-                                  icon: Trash2,
-                                  variant: 'destructive',
-                                  onClick: (ids: string[] | number[]) => {
-                                      const typeLabel = isModuleView ? 'modul' : 'grup menu';
-                                      if (confirm(`Hapus ${ids.length} ${typeLabel} terpilih? Tindakan ini akan menghapus akses permanen.`)) {
-                                          const path = isModuleView ? 'modules' : 'module-groups';
-                                          router.post(
-                                              `/admin/${path}/bulk-delete`,
-                                              { ids },
-                                              {
-                                                  onSuccess: () => showToast(`${ids.length} ${typeLabel} telah dihapus dari sistem`, 'success'),
-                                              },
-                                          );
-                                      }
-                                  },
-                              },
-                          ]
+                            {
+                                label: 'Hapus Terpilih',
+                                icon: Trash2,
+                                variant: 'destructive',
+                                onClick: (ids: string[] | number[]) => {
+                                    const typeLabel = isModuleView ? 'modul' : 'grup menu';
+                                    if (confirm(`Hapus ${ids.length} ${typeLabel} terpilih? Tindakan ini akan menghapus akses permanen.`)) {
+                                        const path = isModuleView ? 'modules' : 'module-groups';
+                                        router.post(
+                                            `/admin/${path}/bulk-delete`,
+                                            { ids },
+                                            {
+                                                onSuccess: () => showToast(`${ids.length} ${typeLabel} telah dihapus dari sistem`, 'success'),
+                                            },
+                                        );
+                                    }
+                                },
+                            },
+                        ]
                         : undefined
                 }
                 pagination={
                     isModuleView && modules && modules.meta
                         ? {
-                              currentPage: modules.meta.current_page || 1,
-                              lastPage: modules.meta.last_page || 1,
-                              total: modules.meta.total || 0,
-                              onPageChange: (page: number) =>
-                                  router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                          }
+                            currentPage: modules.meta.current_page || 1,
+                            lastPage: modules.meta.last_page || 1,
+                            total: modules.meta.total || 0,
+                            onPageChange: (page: number) =>
+                                router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                        }
                         : groups && groups.meta
-                          ? {
+                            ? {
                                 currentPage: groups.meta.current_page || 1,
                                 lastPage: groups.meta.last_page || 1,
                                 total: groups.meta.total || 0,
                                 onPageChange: (page: number) =>
                                     router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
                             }
-                          : undefined
+                            : undefined
                 }
                 rowActions={(row: any) => (
                     <div className="flex items-center justify-end gap-1">
@@ -353,7 +353,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                         <DialogTitle className="relative z-10 flex items-center gap-3 text-2xl font-semibold tracking-tight uppercase">
                             {editingItem ? 'Edit' : 'Registrasi'} {isModuleView ? 'Modul' : 'Grup'}
                         </DialogTitle>
-                        <DialogDescription className="relative z-10 mt-2 text-[10px] leading-relaxed font-medium tracking-wider text-white/50 uppercase">
+                        <DialogDescription className="relative z-10 mt-2 text-[10px] leading-relaxed font-medium  text-white/50 uppercase">
                             Konfigurasi struktur hierarki navigasi dan endpoint sistem administrasi
                         </DialogDescription>
                     </div>

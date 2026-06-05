@@ -56,13 +56,13 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
             <div className="flex h-full flex-col">
                 <div className="mb-4 flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
                     <Building2 size={14} className="text-primary" />
-                    <h3 className="text-[11px] font-black text-slate-900 uppercase dark:text-white">Ruang Lingkup Organisasi</h3>
+                    <h3 className="text-[11px] font-semibold text-slate-900 uppercase dark:text-white">Ruang Lingkup Organisasi</h3>
                 </div>
 
                 <div className="space-y-3">
                     {/* Selector 1: Group */}
                     <div className="space-y-1.5">
-                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                        <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
                             <Landmark size={10} /> Group
                         </label>
                         <SearchableMultiSelect
@@ -83,7 +83,8 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
 
                     {/* Selector 2: Region */}
                     <div className="space-y-1.5">
-                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+
+                        <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
                             <Globe size={10} /> Region
                         </label>
                         <SearchableMultiSelect
@@ -108,7 +109,8 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
 
                     {/* Selector 3: Perusahaan */}
                     <div className="space-y-1.5">
-                        <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+
+                        <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
                             <Building2 size={10} /> Perusahaan
                         </label>
                         <SearchableMultiSelect

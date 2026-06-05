@@ -168,7 +168,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
 
     Route::prefix('reports')->group(function () {
         Route::get('/analytics', function () {
-            return Inertia::render('admin/reports/analytics', [
+            return Inertia::render('reports/analytics', [
                 'breadcrumbs' => [
                     ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                     ['title' => 'Analitik Kontrak', 'href' => route('admin.reports.analytics'), 'description' => 'Statistik dan rekapitulasi data kontrak.', 'icon' => 'BarChart3'],
@@ -177,7 +177,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         })->name('admin.reports.analytics');
 
         Route::get('/audit', function () {
-            return Inertia::render('admin/reports/audit', [
+            return Inertia::render('reports/audit', [
                 'breadcrumbs' => [
                     ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                     ['title' => 'Jejak Audit', 'href' => route('admin.reports.audit'), 'description' => 'Log aktivitas dan riwayat perubahan sistem.', 'icon' => 'History'],

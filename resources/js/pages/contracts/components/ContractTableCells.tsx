@@ -164,15 +164,15 @@ export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: C
             >
                 {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
             </span>
-            <span className="text-text-soft truncate text-[11px] font-medium">{vendorName}</span>
+            <span className="text-text-normal truncate text-[11px] font-medium">{vendorName}</span>
         </div>
     );
 };
 
 export const ContractNoAndTitleCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col gap-0.5 py-0.5">
-        <span className="text-primary font-mono text-[10px] leading-none font-semibold">{c.contract_no || 'N/A'}</span>
-        <span className="text-text-main mt-1.5 line-clamp-1 text-[13px] leading-tight font-semibold">{c.title}</span>
+        <span className="text-primary font-mono text-[11px] leading-none font-semibold">{c.contract_no || 'N/A'}</span>
+        <span className="text-text-main mt-1.5 line-clamp-1 text-[12px] leading-tight font-normal">{c.title}</span>
     </div>
 );
 
@@ -183,9 +183,9 @@ export const InitiatorCell = ({ c }: Readonly<{ c: Contract }>) => {
 
     return (
         <div className="flex flex-col gap-0.5 py-0.5">
-            <span className="text-text-soft text-[10px] leading-none font-medium">{roleDept || 'Staff UMUM'}</span>
-            <span className="text-text-main mt-1.5 truncate text-[13px] leading-tight font-semibold">
-                {c.initiator?.name || '—'}
+            <span className="text-text-normal text-[11px] leading-none font-medium">{roleDept || 'Staff UMUM'}</span>
+            <span className="text-text-normal truncate text-[11px] leading-tight font-medium">
+                ({c.initiator?.name || '—'})
             </span>
         </div>
     );

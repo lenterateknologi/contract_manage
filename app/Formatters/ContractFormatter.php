@@ -134,6 +134,7 @@ class ContractFormatter
                         'next_workflow_step_id' => $action->next_workflow_step_id,
                         'next_step_id' => $action->next_step_id,
                         'assignee_config' => $action->assignee_config,
+                        'transition_config' => $action->transition_config,
                         'required_fields' => $action->required_fields,
                         'autofilled_fields' => $action->autofilled_fields,
                         'signing_parties' => $action->signing_parties,

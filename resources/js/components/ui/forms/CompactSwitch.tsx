@@ -20,7 +20,7 @@ export function CompactSwitch({
     return (
         <div className={cn("flex items-center justify-between gap-4 rounded-2xl border border-primary/5 dark:border-white/5 bg-primary/[0.02] dark:bg-white/[0.02] p-4 transition-all hover:bg-primary/[0.04] dark:hover:bg-white/[0.04]", containerClassName)}>
             <div className="space-y-0.5">
-                <Label className="text-[11px] font-black uppercase  text-primary dark:text-white leading-none block">
+                <Label className="text-[11px] font-semibold uppercase  text-primary dark:text-white leading-none block">
                     {label}
                 </Label>
                 {description && (

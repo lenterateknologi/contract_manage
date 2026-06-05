@@ -40,7 +40,7 @@ export function TaxToggle({ taxRequired, setTaxRequired }: TaxToggleProps) {
                     </div>
                     <div className="flex flex-col">
                         <span
-                            className={cn('text-[11px] font-semibold tracking-wider uppercase', taxRequired ? 'text-primary' : 'text-text-soft/40')}
+                            className={cn('text-[11px] font-semibold  uppercase', taxRequired ? 'text-primary' : 'text-text-soft/40')}
                         >
                             Ada Pajak
                         </span>
@@ -64,7 +64,7 @@ export function TaxToggle({ taxRequired, setTaxRequired }: TaxToggleProps) {
                 <input
                     type="checkbox"
                     checked={taxRequired}
-                    onChange={() => {}} // Controlled by div click for better feel
+                    onChange={() => { }} // Controlled by div click for better feel
                     className="hidden"
                 />
             </label>

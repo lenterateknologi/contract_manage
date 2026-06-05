@@ -19,7 +19,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
     const { auth } = usePage<any>().props;
     const [search, setSearch] = useState('');
     const [selectedContractId, setSelectedContractId] = useState<string | null>(initialContractId || null);
-    
+
     // Manage local contracts state to reflect new messages immediately
     const [contracts, setContracts] = useState(initialContracts);
 
@@ -27,8 +27,8 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
     const filteredContracts = useMemo(() => {
         if (!search) return contracts;
         const s = search.toLowerCase();
-        return contracts.filter(c => 
-            c.title.toLowerCase().includes(s) || 
+        return contracts.filter(c =>
+            c.title.toLowerCase().includes(s) ||
             c.contract_no?.toLowerCase().includes(s)
         );
     }, [contracts, search]);
@@ -47,22 +47,22 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
             <SidebarInset className="bg-surface-muted/30 font-sans">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 <Head title="Chat Center" />
-                
-                <div className="flex h-[calc(100vh-64px)] overflow-hidden font-sans">
+
+                <div className="flex h-[calc(100vh-84px)] overflow-hidden font-sans">
                     {/* Sidebar: Daftar Kontrak */}
                     <div className="flex w-80 flex-col border-r border-surface-border bg-surface-base">
                         <div className="p-4 border-b border-surface-border">
                             <h2 className="text-sm font-bold uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
                                 <MessageSquare size={16} /> Percakapan
                             </h2>
-                            <SearchInput 
-                                placeholder="Cari kontrak..." 
+                            <SearchInput
+                                placeholder="Cari kontrak..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="h-9 text-xs"
                             />
                         </div>
-                        
+
                         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {filteredContracts.length === 0 ? (
                                 <div className="p-8 text-center opacity-40">
@@ -71,7 +71,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                 </div>
                             ) : (
                                 filteredContracts.map(c => (
-                                    <ContractListItem 
+                                    <ContractListItem
                                         key={c.id}
                                         contract={c}
                                         isSelected={selectedContractId === c.id}
@@ -96,7 +96,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button 
+                                        <button
                                             onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
                                             className="px-3 py-1.5 rounded-lg border border-surface-border text-xs font-medium text-text-main hover:bg-surface-muted transition-all"
                                         >
@@ -105,7 +105,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                     </div>
                                 </div>
                                 <div className="flex-1 overflow-hidden">
-                                    <ContractChat 
+                                    <ContractChat
                                         key={selectedContract.id}
                                         contract={selectedContract}
                                         meId={auth.user.id}
@@ -119,7 +119,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                     <MessageSquare size={48} strokeWidth={1} />
                                 </div>
                                 <div className="text-center">
-                                    <h3 className="text-lg font-black uppercase tracking-widest">Chat Center</h3>
+                                    <h3 className="text-lg font-semibold uppercase tracking-widest">Chat Center</h3>
                                     <p className="text-xs font-bold uppercase tracking-tight">Pilih percakapan untuk memulai diskusi</p>
                                 </div>
                             </div>

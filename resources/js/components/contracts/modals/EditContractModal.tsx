@@ -103,12 +103,12 @@ export function EditContractModal({
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <div className="space-y-1.5">
-                        <label className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Tipe Kontrak</label>
+                        <label className="text-muted-foreground text-[11px] font-bold  uppercase">Tipe Kontrak</label>
                         <TreeSelect value={typeId} onValueChange={(val) => setTypeId(val)} items={types} placeholder="Pilih Tipe Kontrak" />
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Perjanjian</label>
+                        <label className="text-muted-foreground text-[11px] font-bold  uppercase">Perjanjian</label>
                         <PortalSelect
                             value={submissionTypeId}
                             onValueChange={(val) => setSubmissionTypeId(val)}
@@ -118,7 +118,7 @@ export function EditContractModal({
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">Pihak Kedua (Vendor)</label>
+                        <label className="text-muted-foreground text-[11px] font-bold  uppercase">Pihak Kedua (Vendor)</label>
                         <PortalSelect
                             value={vendorId}
                             onValueChange={(val) => setVendorId(val)}

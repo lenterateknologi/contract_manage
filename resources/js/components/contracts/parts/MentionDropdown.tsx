@@ -15,7 +15,7 @@ export function MentionDropdown({ isOpen, users, mentionIndex, setMentionIndex, 
     return (
         <div className="border-border animate-in slide-in-from-bottom-1 absolute bottom-full left-0 z-50 mb-2 w-56 overflow-hidden rounded-xl border bg-white shadow-2xl duration-200 dark:bg-slate-900">
             <div className="border-border bg-muted/60 flex items-center justify-between border-b px-3 py-1.5 dark:bg-white/5">
-                <span className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">PILIH PENGGUNA</span>
+                <span className="text-muted-foreground text-[10px] font-bold  uppercase">PILIH PENGGUNA</span>
                 <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[9px] font-bold">{users.length}</span>
             </div>
             <div className="divide-border/40 max-h-[200px] divide-y overflow-y-auto">

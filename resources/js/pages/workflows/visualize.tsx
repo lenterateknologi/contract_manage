@@ -86,7 +86,7 @@ export default function Visualize({ breadcrumbs }: Props) {
                         <GitBranch size={20} className="text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-sm leading-none font-black text-slate-900 uppercase dark:text-white">Workflow Board</h1>
+                        <h1 className="text-sm leading-none font-semibold text-slate-900 uppercase dark:text-white">Workflow Board</h1>
                         <p className="mt-1 text-[10px] font-bold tracking-tight text-slate-400 uppercase">Interactive Oversight Management</p>
                     </div>
                 </div>
@@ -96,7 +96,7 @@ export default function Visualize({ breadcrumbs }: Props) {
                         <button
                             onClick={() => setViewMode('visual')}
                             className={cn(
-                                'flex items-center gap-2 rounded-lg px-4 py-1.5 text-[10px] font-black uppercase transition-all',
+                                'flex items-center gap-2 rounded-lg px-4 py-1.5 text-[10px] font-semibold uppercase transition-all',
                                 viewMode === 'visual'
                                     ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
                                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
@@ -108,7 +108,7 @@ export default function Visualize({ breadcrumbs }: Props) {
                         <button
                             onClick={() => setViewMode('table')}
                             className={cn(
-                                'flex items-center gap-2 rounded-lg px-4 py-1.5 text-[10px] font-black uppercase transition-all',
+                                'flex items-center gap-2 rounded-lg px-4 py-1.5 text-[10px] font-semibold uppercase transition-all',
                                 viewMode === 'table'
                                     ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white'
                                     : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
@@ -161,11 +161,11 @@ export default function Visualize({ breadcrumbs }: Props) {
                                 <table className="w-full border-collapse text-left">
                                     <thead>
                                         <tr className="border-b border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/50">
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Step</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Pemeran</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Kategori</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Status Target</th>
-                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Deskripsi</th>
+                                            <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase">Step</th>
+                                            <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase">Pemeran</th>
+                                            <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase">Kategori</th>
+                                            <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase">Status Target</th>
+                                            <th className="px-6 py-4 text-[10px] font-semibold text-slate-400 uppercase">Deskripsi</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -177,12 +177,12 @@ export default function Visualize({ breadcrumbs }: Props) {
                                                 return (
                                                     <tr key={idx} className="group transition-colors hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
                                                         <td className="px-6 py-4">
-                                                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-black text-slate-500 dark:bg-slate-800">
+                                                            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800">
                                                                 {idx + 1}
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <span className="text-[10px] font-black tracking-tight text-slate-700 uppercase dark:text-slate-300">
+                                                            <span className="text-[10px] font-semibold tracking-tight text-slate-700 uppercase dark:text-slate-300">
                                                                 {getActorLabel(step.approver_type)}
                                                             </span>
                                                         </td>
@@ -191,7 +191,7 @@ export default function Visualize({ breadcrumbs }: Props) {
                                                                 <div className="bg-primary/5 text-primary rounded-lg p-2">
                                                                     <Icon size={14} />
                                                                 </div>
-                                                                <span className="text-[10px] font-black tracking-tight text-slate-700 uppercase dark:text-slate-300">
+                                                                <span className="text-[10px] font-semibold tracking-tight text-slate-700 uppercase dark:text-slate-300">
                                                                     {step.step_category || 'REGULER'}
                                                                 </span>
                                                             </div>
@@ -199,7 +199,7 @@ export default function Visualize({ breadcrumbs }: Props) {
                                                         <td className="px-6 py-4">
                                                             {targetStatus ? (
                                                                 <div
-                                                                    className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-black uppercase"
+                                                                    className="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase"
                                                                     style={{
                                                                         backgroundColor: `${targetStatus.color}10`,
                                                                         borderColor: `${targetStatus.color}30`,
@@ -229,7 +229,7 @@ export default function Visualize({ breadcrumbs }: Props) {
                                                 <td colSpan={4} className="px-6 py-20 text-center">
                                                     <div className="flex flex-col items-center gap-3 opacity-20">
                                                         <LayoutGrid size={48} />
-                                                        <span className="text-xs font-black uppercase">No Steps Configured</span>
+                                                        <span className="text-xs font-semibold uppercase">No Steps Configured</span>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -242,7 +242,7 @@ export default function Visualize({ breadcrumbs }: Props) {
                 )}
 
                 {/* Status Indicator */}
-                <div className="pointer-events-none absolute right-8 bottom-6 z-50 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-5 py-2.5 text-[10px] font-black tracking-[0.2em] text-white uppercase shadow-2xl backdrop-blur-xl">
+                <div className="pointer-events-none absolute right-8 bottom-6 z-50 flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-900/90 px-5 py-2.5 text-[10px] font-semibold tracking-[0.2em] text-white uppercase shadow-2xl backdrop-blur-xl">
                     <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
                     Live Visualization Mode
                 </div>

@@ -44,10 +44,10 @@ export function ChatInput({
                     <div className="flex items-center gap-2.5">
                         <FileIcon size={14} strokeWidth={2.5} />
                         <div className="flex flex-col">
-                            <span className="text-text-main mb-1 text-[9px] leading-none font-black tracking-tight uppercase">
+                            <span className="text-text-main mb-1 text-[9px] leading-none font-semibold tracking-tight uppercase">
                                 {selectedFile?.name}
                             </span>
-                            <span className="text-text-soft text-[7.5px] font-black uppercase tabular-nums opacity-40">
+                            <span className="text-text-soft text-[7.5px] font-semibold uppercase tabular-nums opacity-40">
                                 {((selectedFile?.size || 0) / 1024).toFixed(1)} KB
                             </span>
                         </div>
@@ -71,11 +71,11 @@ export function ChatInput({
                 />
 
                 <div className="border-surface-border bg-surface-muted/30 focus-within:border-primary/30 focus-within:bg-surface-muted relative flex flex-1 items-end rounded-2xl border transition-all duration-300">
-                    <input 
-                        type="file" 
-                        className="hidden" 
-                        ref={fileInputRef} 
-                        onChange={(e) => e.target.files?.[0] && setSelectedFile(e.target.files[0])} 
+                    <input
+                        type="file"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={(e) => e.target.files?.[0] && setSelectedFile(e.target.files[0])}
                     />
                     <button
                         onClick={() => fileInputRef.current?.click()}

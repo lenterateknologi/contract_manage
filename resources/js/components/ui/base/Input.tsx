@@ -1,15 +1,34 @@
 import * as React from 'react';
-
+import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(({ className, type, ...props }, ref) => {
+const inputVariants = cva(
+    'flex w-full transition-all focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50',
+    {
+        variants: {
+            variant: {
+                outline: 'border border-border bg-surface-base text-foreground font-semibold placeholder:text-muted-foreground',
+                filled: 'border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-card focus:bg-white dark:focus:bg-slate-900 text-foreground font-bold',
+            },
+            size: {
+                default: 'h-11 px-4 py-2 text-sm rounded-lg',
+                sm: 'h-10 px-4 text-xs rounded-xl',
+            },
+        },
+        defaultVariants: {
+            variant: 'outline',
+            size: 'default',
+        },
+    }
+);
+
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, variant, size, ...props }, ref) => {
     return (
         <input
             type={type}
-            className={cn(
-                'flex h-11 w-full rounded-lg border border-border bg-surface-base px-4 py-2 text-sm font-sans text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 transition-all font-semibold',
-                className,
-            )}
+            className={cn(inputVariants({ variant, size, className }))}
             ref={ref}
             {...props}
         />
@@ -18,4 +37,4 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
 
 Input.displayName = 'Input';
 
-export { Input };
+export { Input, inputVariants };

@@ -68,6 +68,7 @@ trait HasWorkflowHelpers
                 'autofilled_fields' => $actData['autofilled_fields'] ?? [],
                 'signing_parties' => $actData['signing_parties'] ?? [],
                 'assignee_config' => $assigneeConfig,
+                'transition_config' => $actData['transition_config'] ?? null,
                 'alias' => $actData['alias'] ?? null,
                 'description' => $actData['description'] ?? null,
                 'is_active' => $actData['is_active'] ?? true,

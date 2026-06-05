@@ -5,7 +5,7 @@ import {
     ComboboxOption,
     ComboboxOptions,
 } from '@headlessui/react';
-import { 
+import {
     Search,
     RotateCcw,
     X,
@@ -29,7 +29,7 @@ export interface FilterCategory {
     label: string;
     key: string;
     options?: FilterOption[];
-    type?: 'grid' | 'searchable' | 'date-range'; 
+    type?: 'grid' | 'searchable' | 'date-range';
 }
 
 export interface FilterPopoverProps {
@@ -70,7 +70,7 @@ function SearchableCategoryOptions({
             <div className="space-y-2">
                 {/* Label + count */}
                 <div className="flex items-center justify-between">
-                    <Label className="text-[10px] font-bold text-text-desc uppercase tracking-wider">
+                    <Label className="text-[10px] font-bold text-text-desc uppercase ">
                         {category.label}
                     </Label>
                     {activeValues.length > 0 && (
@@ -171,14 +171,14 @@ function SearchableCategoryOptions({
     );
 }
 
-function DateRangeCategoryOptions({ 
-    category, 
-    activeFilters, 
-    onFilterChange 
-}: { 
-    category: FilterCategory; 
-    activeFilters: Record<string, any>; 
-    onFilterChange: (key: string, value: any) => void 
+function DateRangeCategoryOptions({
+    category,
+    activeFilters,
+    onFilterChange
+}: {
+    category: FilterCategory;
+    activeFilters: Record<string, any>;
+    onFilterChange: (key: string, value: any) => void
 }) {
     const fromKey = `${category.key}_from`;
     const toKey = `${category.key}_to`;
@@ -187,13 +187,13 @@ function DateRangeCategoryOptions({
 
     return (
         <div className="space-y-2">
-            <Label className="text-[10px] font-bold text-text-desc uppercase tracking-wider">
+            <Label className="text-[10px] font-bold text-text-desc uppercase ">
                 {category.label}
             </Label>
             <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                     <span className="text-[9px] font-bold text-text-soft uppercase">Mulai</span>
-                    <input 
+                    <input
                         type="date"
                         value={fromVal}
                         onChange={(e) => onFilterChange(fromKey, e.target.value)}
@@ -202,7 +202,7 @@ function DateRangeCategoryOptions({
                 </div>
                 <div className="space-y-1">
                     <span className="text-[9px] font-bold text-text-soft uppercase">Sampai</span>
-                    <input 
+                    <input
                         type="date"
                         value={toVal}
                         onChange={(e) => onFilterChange(toKey, e.target.value)}
@@ -244,9 +244,9 @@ export function FilterPopover({
                     <PopoverTrigger as={Fragment}>
                         {children}
                     </PopoverTrigger>
-                    
-                    <PopoverContent 
-                        align="start" 
+
+                    <PopoverContent
+                        align="start"
                         className="w-80 sm:w-96 p-0 border border-surface-border/80 bg-surface-base/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden z-[9999]"
                     >
                         {/* Header */}
@@ -260,15 +260,15 @@ export function FilterPopover({
                                     <p className="text-[9px] font-medium text-text-desc">Persempit hasil pencarian</p>
                                 </div>
                             </div>
-                            
+
                             {hasActiveFilters && (
-                                <button 
+                                <button
                                     type="button"
                                     onClick={onReset}
                                     className="flex h-7 px-2 items-center gap-1 rounded-lg bg-danger/10 hover:bg-danger hover:text-white text-danger transition-all shadow-sm"
                                 >
                                     <RotateCcw size={10} />
-                                    <span className="text-[9px] font-bold uppercase tracking-wider">Reset</span>
+                                    <span className="text-[9px] font-bold uppercase ">Reset</span>
                                 </button>
                             )}
                         </div>
@@ -276,18 +276,18 @@ export function FilterPopover({
                         {/* Body - Filter Categories */}
                         <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
                             {categories.map((category) => {
-                                const currentVals = Array.isArray(activeFilters[category.key]) 
-                                    ? activeFilters[category.key] 
-                                    : activeFilters[category.key] 
-                                        ? [activeFilters[category.key]] 
+                                const currentVals = Array.isArray(activeFilters[category.key])
+                                    ? activeFilters[category.key]
+                                    : activeFilters[category.key]
+                                        ? [activeFilters[category.key]]
                                         : [];
 
                                 return (
                                     <div key={category.key} className="space-y-2">
                                         {category.type === 'searchable' ? (
-                                            <SearchableCategoryOptions 
-                                                category={category} 
-                                                activeValues={currentVals.map(String)} 
+                                            <SearchableCategoryOptions
+                                                category={category}
+                                                activeValues={currentVals.map(String)}
                                                 onToggle={(val) => {
                                                     const valStr = String(val);
                                                     const next = currentVals.map(String).includes(valStr)
@@ -297,21 +297,21 @@ export function FilterPopover({
                                                 }}
                                             />
                                         ) : category.type === 'date-range' ? (
-                                            <DateRangeCategoryOptions 
-                                                category={category} 
-                                                activeFilters={activeFilters} 
+                                            <DateRangeCategoryOptions
+                                                category={category}
+                                                activeFilters={activeFilters}
                                                 onFilterChange={onFilterChange}
                                             />
                                         ) : (
                                             <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-text-desc uppercase tracking-wider">
+                                                <Label className="text-[10px] font-bold text-text-desc uppercase ">
                                                     {category.label}
                                                 </Label>
                                                 <div className="grid grid-cols-1 gap-1 border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5">
                                                     {category.options?.map((opt) => {
                                                         const isSelected = currentVals.map(String).includes(String(opt.value));
                                                         return (
-                                                            <button 
+                                                            <button
                                                                 key={String(opt.value)}
                                                                 type="button"
                                                                 onClick={() => {
@@ -323,16 +323,16 @@ export function FilterPopover({
                                                                 }}
                                                                 className={cn(
                                                                     "w-full flex items-center justify-between p-1.5 rounded-md text-left transition-all text-xs font-semibold uppercase tracking-wide",
-                                                                    isSelected 
-                                                                        ? "bg-primary-muted text-primary" 
+                                                                    isSelected
+                                                                        ? "bg-primary-muted text-primary"
                                                                         : "text-text-main hover:bg-surface-muted"
                                                                 )}
                                                             >
                                                                 <span>{opt.label}</span>
                                                                 <div className={cn(
                                                                     "h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0",
-                                                                    isSelected 
-                                                                        ? "border-primary bg-primary text-white" 
+                                                                    isSelected
+                                                                        ? "border-primary bg-primary text-white"
                                                                         : "border-surface-border bg-white"
                                                                 )}>
                                                                     {isSelected && <Check size={10} strokeWidth={3} />}
@@ -350,7 +350,7 @@ export function FilterPopover({
 
                         {/* Footer */}
                         <div className="p-3 border-t border-surface-border bg-surface-muted/20 flex justify-end gap-2">
-                            <Button 
+                            <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => {
@@ -360,7 +360,7 @@ export function FilterPopover({
                             >
                                 BATAL
                             </Button>
-                            <Button 
+                            <Button
                                 type="button"
                                 onClick={() => {
                                     close();

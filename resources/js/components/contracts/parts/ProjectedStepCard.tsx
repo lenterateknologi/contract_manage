@@ -17,9 +17,9 @@ export function ProjectedStepCard({ creator }: ProjectedStepCardProps) {
 
                 <div className="flex flex-col gap-2">
                     <div className="text-foreground flex items-center justify-between pl-1">
-                        <span className="text-[10px] leading-tight font-black tracking-widest text-slate-400 uppercase">Atasan Langsung</span>
+                        <span className="text-[10px] leading-tight font-semibold tracking-widest text-slate-400 uppercase">Atasan Langsung</span>
                         <div className="flex origin-right scale-85 items-center">
-                            <span className="rounded-full bg-slate-200/50 px-2 py-0.5 text-[8px] font-black tracking-wider text-slate-500 uppercase dark:bg-slate-800">
+                            <span className="rounded-full bg-slate-200/50 px-2 py-0.5 text-[8px] font-semibold  text-slate-500 uppercase dark:bg-slate-800">
                                 Estimasi
                             </span>
                         </div>

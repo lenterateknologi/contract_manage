@@ -28,7 +28,7 @@ export const HeaderLanguage = memo(function HeaderLanguage() {
                     className="text-sidebar-foreground/80 hover:text-sidebar-primary hover:bg-sidebar-accent group h-9 gap-2 rounded-lg px-2 transition-all"
                 >
                     <Languages className="h-[1.1rem] w-[1.1rem] transition-transform group-hover:rotate-12" />
-                    <span className="text-[12px] font-bold tracking-wider">{currentLang}</span>
+                    <span className="text-[12px] font-bold ">{currentLang}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="mt-1 w-56" align="end">

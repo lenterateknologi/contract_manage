@@ -34,7 +34,7 @@ const VendorCell = ({ name, companyType, code, isActive }: Readonly<{ name: stri
         <div className="flex min-w-0 flex-col">
             <div className="mb-0.5 flex items-center gap-2">
                 <span className="text-text-main truncate text-sm leading-tight font-semibold tracking-wide">{name}</span>
-                <span className="text-text-soft border-surface-border border-l pl-2 text-[10px] font-semibold tracking-wider uppercase select-none">
+                <span className="text-text-soft border-surface-border border-l pl-2 text-[10px] font-semibold  uppercase select-none">
                     {companyType || 'CV'}
                 </span>
             </div>
@@ -82,7 +82,7 @@ const CategoryCell = ({ category, email, phone }: Readonly<{ category?: string; 
 const PicCell = ({ picName, directorName, picPosition }: Readonly<{ picName?: string; directorName?: string; picPosition?: string }>) => (
     <div className="flex flex-col select-none">
         <span className="text-text-main truncate text-sm font-semibold tracking-wide">{picName || directorName || '—'}</span>
-        <span className="text-text-desc mt-0.5 text-[11px] leading-none font-semibold tracking-wider uppercase">
+        <span className="text-text-desc mt-0.5 text-[11px] leading-none font-semibold  uppercase">
             {picPosition || 'DIREKTUR UTAMA'}
         </span>
     </div>
@@ -95,7 +95,7 @@ const ComplianceCell = ({ docCount }: Readonly<{ docCount?: number }>) => {
 
     return (
         <div className="flex flex-col items-end gap-1.5 select-none">
-            <div className={cn('rounded-xl px-3 py-1 text-xs font-semibold tracking-wider shadow-sm backdrop-blur-sm', colorClass)}>{status}</div>
+            <div className={cn('rounded-xl px-3 py-1 text-xs font-semibold  shadow-sm backdrop-blur-sm', colorClass)}>{status}</div>
             <div className="flex items-center gap-2">
                 <div className="bg-muted border-surface-border h-1.5 w-20 overflow-hidden rounded-full border">
                     <div
@@ -210,43 +210,43 @@ export function VendorManagement({ vendors, filters }: Readonly<VendorManagement
             bulkActions={
                 canDelete
                     ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Hapus ${ids.length} vendor terpilih?`)) {
-                                      router.post(
-                                          '/admin/vendors/bulk-delete',
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} vendor telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[] | number[]) => {
+                                if (confirm(`Hapus ${ids.length} vendor terpilih?`)) {
+                                    router.post(
+                                        '/admin/vendors/bulk-delete',
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} vendor telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
                     : undefined
             }
             pagination={
                 vendors
                     ? {
-                          currentPage: vendors.current_page || 1,
-                          lastPage: vendors.last_page || 1,
-                          total: vendors.total || 0,
-                          from: vendors.from || 1,
-                          to: vendors.to || 1,
-                          perPage: vendors.per_page || 10,
-                          onPageChange: (page: number) =>
-                              router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
-                          onPerPageChange: (pp: number) =>
-                              router.get(
-                                  globalThis.location.pathname,
-                                  { ...filters, per_page: pp, page: 1 },
-                                  { preserveState: true, preserveScroll: true },
-                              ),
-                      }
+                        currentPage: vendors.current_page || 1,
+                        lastPage: vendors.last_page || 1,
+                        total: vendors.total || 0,
+                        from: vendors.from || 1,
+                        to: vendors.to || 1,
+                        perPage: vendors.per_page || 10,
+                        onPageChange: (page: number) =>
+                            router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true, preserveScroll: true }),
+                        onPerPageChange: (pp: number) =>
+                            router.get(
+                                globalThis.location.pathname,
+                                { ...filters, per_page: pp, page: 1 },
+                                { preserveState: true, preserveScroll: true },
+                            ),
+                    }
                     : undefined
             }
         />

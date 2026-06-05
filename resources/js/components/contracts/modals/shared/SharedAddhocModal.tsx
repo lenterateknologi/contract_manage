@@ -193,13 +193,13 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             }
             footer={
                 <div className="flex w-full gap-3">
-                    <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 text-[10px] tracking-wider uppercase">
+                    <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 text-[10px]  uppercase">
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading || selectedUserIds.length === 0}
-                        className="flex-1 bg-indigo-600 text-[10px] tracking-wider text-white uppercase transition-all duration-200 hover:bg-indigo-700 dark:bg-indigo-50 dark:text-black dark:hover:bg-indigo-100"
+                        className="flex-1 bg-indigo-600 text-[10px]  text-white uppercase transition-all duration-200 hover:bg-indigo-700 dark:bg-indigo-50 dark:text-black dark:hover:bg-indigo-100"
                     >
                         {loading ? <Loader2 size={14} className="mr-2 animate-spin" /> : <CheckCircle2 size={14} className="mr-2" />}
                         Simpan Perubahan
@@ -219,7 +219,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 {/* --- EXISTING DELEGATES LIST --- */}
                 {currentStepDelegates.length > 0 && (
                     <div className="space-y-2.5">
-                        <div className="text-text-soft flex items-center justify-between text-[10px] font-bold tracking-wider uppercase">
+                        <div className="text-text-soft flex items-center justify-between text-[10px] font-bold  uppercase">
                             <div className="flex items-center gap-1.5">
                                 <Users size={12} className="text-indigo-500" />
                                 {isSigningAction ? 'Penandatangan Terdaftar' : 'Approver Terdaftar'}
@@ -250,7 +250,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 {/* ------------------------------ */}
 
                 <div className="space-y-2">
-                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">
+                    <label className="text-text-soft text-[10px] font-bold  uppercase">
                         {isSigningAction ? 'Tambah Penandatangan Baru' : 'Tambah Approver Baru'} <span className="text-danger">*</span>
                     </label>
                     {fetchingUsers ? (
@@ -274,7 +274,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-text-soft text-[10px] font-bold tracking-wider uppercase">Disisipkan Ke Langkah</label>
+                    <label className="text-text-soft text-[10px] font-bold  uppercase">Disisipkan Ke Langkah</label>
                     <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
                         {(() => {
                             const currentStep = contract?.workflow_step;
@@ -315,7 +315,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 {/* Selected Users Detailed List */}
                 {selectedUserIds.length > 0 && (
                     <div className="animate-in fade-in slide-in-from-top-1 space-y-2.5 duration-200">
-                        <div className="text-text-soft flex items-center gap-1.5 text-[10px] font-bold tracking-wider uppercase">
+                        <div className="text-text-soft flex items-center gap-1.5 text-[10px] font-bold  uppercase">
                             <Users size={12} />
                             Persetujuan Tambahan
                             <span>Approver Terpilih ({selectedUserIds.length})</span>

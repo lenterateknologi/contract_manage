@@ -238,7 +238,7 @@ export default function Templates({ folders, templates }: Props) {
                 <div className="border-border bg-card/40 flex w-72 shrink-0 flex-col gap-6 overflow-y-auto border-r p-6 select-none">
                     <div className="flex items-center justify-between px-1">
                         <div className="space-y-1">
-                            <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">Struktur Folder</h3>
+                            <h3 className="text-foreground text-xs font-bold  uppercase">Struktur Folder</h3>
                             <p className="text-muted-foreground text-[10px] font-semibold tracking-wide uppercase">Hierarchy Explorer</p>
                         </div>
                         <Button
@@ -347,7 +347,7 @@ export default function Templates({ folders, templates }: Props) {
                                         className={cn(
                                             'border-border hover:bg-muted h-10 gap-2 rounded-xl border px-4 text-xs font-semibold active:scale-95',
                                             fileTypeFilter &&
-                                                'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground border-none',
+                                            'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground border-none',
                                         )}
                                     >
                                         <Filter size={14} />

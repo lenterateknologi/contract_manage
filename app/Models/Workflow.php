@@ -107,7 +107,7 @@ class Workflow extends Model
         'meta' => 'array',
     ];
 
-    protected $with = ['initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'];
+    protected $with = ['initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData', 'contractType'];
 
     protected $appends = ['initiator_roles', 'initiator_users', 'initiator_departments', 'contract_type_name'];
 
@@ -143,6 +143,10 @@ class Workflow extends Model
 
     public function getContractTypeNameAttribute()
     {
+        if (! array_key_exists('contract_type_id', $this->attributes)) {
+            return null;
+        }
+
         return $this->contractType?->name;
     }
 

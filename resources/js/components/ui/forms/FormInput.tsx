@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/base/Label';
 import InputError from '@/components/ui/base/InputError';
 
 export interface FormInputProps extends React.ComponentProps<typeof Input> {
-    label?: string;
+    label?: React.ReactNode;
     error?: string;
     containerClassName?: string;
     labelClassName?: string;
@@ -23,10 +23,10 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
             <div className={cn('space-y-1.5 w-full group', containerClassName)}>
                 {label && (
                     <div className="flex items-center justify-between px-0.5">
-                        <Label 
-                            htmlFor={inputId} 
+                        <Label
+                            htmlFor={inputId}
                             className={cn(
-                                'font-bold uppercase tracking-wider transition-colors',
+                                'font-bold transition-colors flex items-center gap-1.5',
                                 isCompact ? 'text-[10px]' : 'text-[11px]',
                                 error ? 'text-rose-500' : 'text-muted-foreground group-focus-within:text-primary',
                                 labelClassName

@@ -83,7 +83,7 @@ export default function ContractTypeForm({ contractType, parentTypes = [] }: Pro
                                 type="button"
                                 variant="outline"
                                 onClick={() => setIsConfirmOpen(true)}
-                                className="h-10 rounded-xl border-rose-500/20 px-6 text-[10px] font-black uppercase transition-all hover:bg-rose-500 hover:text-white active:scale-95"
+                                className="h-10 rounded-xl border-rose-500/20 px-6 text-[10px] font-semibold uppercase transition-all hover:bg-rose-500 hover:text-white active:scale-95"
                             >
                                 <Trash2 size={14} className="mr-2" /> Hapus Klasifikasi
                             </Button>
@@ -162,7 +162,7 @@ export default function ContractTypeForm({ contractType, parentTypes = [] }: Pro
 
                             <FormSection title="Relasi Hierarki" subtitle="Menentukan posisi klasifikasi dalam pohon kategori">
                                 <div className="space-y-4">
-                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                         <Settings2 size={12} className="opacity-50" /> Klasifikasi Induk
                                     </label>
                                     <Select value={String(form.data.parent_id)} onValueChange={(v: string) => form.setData('parent_id', String(v))}>
@@ -203,7 +203,7 @@ export default function ContractTypeForm({ contractType, parentTypes = [] }: Pro
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setIsSubCreateOpen(true)}
-                                            className="border-primary/20 text-primary hover:bg-primary h-8 rounded-lg text-[9px] font-black tracking-widest uppercase transition-all hover:text-white"
+                                            className="border-primary/20 text-primary hover:bg-primary h-8 rounded-lg text-[9px] font-semibold tracking-widest uppercase transition-all hover:text-white"
                                         >
                                             <PlusCircle size={12} className="mr-1.5" /> Tambah Sub
                                         </Button>

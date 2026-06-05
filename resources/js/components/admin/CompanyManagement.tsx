@@ -201,7 +201,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                             <div className="grid grid-cols-1 gap-y-10">
                                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                                     <div className="space-y-2.5">
-                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                             Grup Perusahaan / Group
                                         </label>
                                         <Select value={form.data.company_group_id} onValueChange={(v: string) => form.setData('company_group_id', v)}>
@@ -227,7 +227,7 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
                                         )}
                                     </div>
                                     <div className="space-y-2.5">
-                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                             Wilayah / Region
                                         </label>
                                         <Select value={form.data.region_id} onValueChange={(v: string) => form.setData('region_id', v)}>
@@ -338,23 +338,23 @@ export function CompanyManagement({ companies, regions, groups, filters }: Reado
             bulkActions={
                 canDelete
                     ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Hapus ${ids.length} perusahaan terpilih?`)) {
-                                      router.post(
-                                          '/admin/companies/bulk-delete',
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} perusahaan telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[] | number[]) => {
+                                if (confirm(`Hapus ${ids.length} perusahaan terpilih?`)) {
+                                    router.post(
+                                        '/admin/companies/bulk-delete',
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} perusahaan telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
                     : undefined
             }
             pagination={{

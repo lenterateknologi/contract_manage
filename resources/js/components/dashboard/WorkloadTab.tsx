@@ -196,7 +196,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                     {filteredWorkloads.length === 0 ? (
                         <Card className="col-span-full flex flex-col items-center justify-center border-dashed py-10 opacity-60">
                             <Briefcase className="mb-2 h-8 w-8 opacity-20" />
-                            <p className="text-text-desc text-xs font-medium tracking-wider uppercase">PIC tidak ditemukan</p>
+                            <p className="text-text-desc text-xs font-medium  uppercase">PIC tidak ditemukan</p>
                         </Card>
                     ) : (
                         filteredWorkloads.map((user) => {
@@ -254,7 +254,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                                 </div>
                                                 <div className="divide-surface-border/40 grid grid-cols-3 gap-2 divide-x text-center">
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-text-soft text-[9px] font-semibold tracking-wider uppercase">
+                                                        <span className="text-text-soft text-[9px] font-semibold  uppercase">
                                                             Menunggu
                                                         </span>
                                                         <span className="text-warning text-sm font-semibold">
@@ -262,7 +262,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                                         </span>
                                                     </div>
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-text-soft text-[9px] leading-tight font-semibold tracking-wider uppercase">
+                                                        <span className="text-text-soft text-[9px] leading-tight font-semibold  uppercase">
                                                             Dikerjakan
                                                         </span>
                                                         <span className="text-primary text-sm font-semibold">
@@ -270,7 +270,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                                         </span>
                                                     </div>
                                                     <div className="flex flex-col gap-1">
-                                                        <span className="text-text-soft text-[9px] font-semibold tracking-wider uppercase">
+                                                        <span className="text-text-soft text-[9px] font-semibold  uppercase">
                                                             Selesai
                                                         </span>
                                                         <span className="text-success text-sm font-semibold">

@@ -96,22 +96,22 @@ const WorkflowNode = ({ data }: NodeProps<Node<WorkflowNodeData>>) => {
                     <Icon size={14} />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col text-left">
-                    <span className="text-text-soft mb-0.5 text-[9px] leading-none font-bold tracking-wider uppercase">{data.type || 'STEP'}</span>
+                    <span className="text-text-soft mb-0.5 text-[9px] leading-none font-bold  uppercase">{data.type || 'STEP'}</span>
                     <span className="text-text-main truncate text-xs font-bold">{data.label}</span>
                     {data.organization && (data.organization.group || data.organization.region || data.organization.company) && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                             {data.organization.group && (
-                                <span className="bg-role-manager-bg text-role-manager-text rounded px-1.5 py-0.5 text-[8px] font-black tracking-tighter uppercase">
+                                <span className="bg-role-manager-bg text-role-manager-text rounded px-1.5 py-0.5 text-[8px] font-semibold tracking-tighter uppercase">
                                     {data.organization.group}
                                 </span>
                             )}
                             {data.organization.region && (
-                                <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[8px] font-black tracking-tighter uppercase">
+                                <span className="bg-primary/10 text-primary rounded px-1.5 py-0.5 text-[8px] font-semibold tracking-tighter uppercase">
                                     {data.organization.region}
                                 </span>
                             )}
                             {data.organization.company && (
-                                <span className="bg-role-staff-bg text-role-staff-text rounded px-1.5 py-0.5 text-[8px] font-black tracking-tighter uppercase">
+                                <span className="bg-role-staff-bg text-role-staff-text rounded px-1.5 py-0.5 text-[8px] font-semibold tracking-tighter uppercase">
                                     {data.organization.company}
                                 </span>
                             )}
@@ -423,7 +423,7 @@ export function WorkflowVisualizer({
                 <div className="absolute bottom-6 left-1/2 z-50 -translate-x-1/2">
                     <Button
                         onClick={addStep}
-                        className="bg-primary flex items-center gap-2 rounded-2xl px-6 py-4 text-[10px] font-black text-white uppercase shadow-2xl transition-transform hover:scale-105"
+                        className="bg-primary flex items-center gap-2 rounded-2xl px-6 py-4 text-[10px] font-semibold text-white uppercase shadow-2xl transition-transform hover:scale-105"
                     >
                         <Plus size={16} />
                         Add New Step

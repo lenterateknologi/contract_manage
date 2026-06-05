@@ -637,7 +637,7 @@ function ContractPage({
                                         </div>
                                         <div className="ml-auto flex items-center gap-2">
                                             <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
-                                            <Button variant="white" onClick={() => setCreateOpen(true)}>
+                                            <Button variant="white" fontSize="11px" onClick={() => setCreateOpen(true)}>
                                                 <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
                                             </Button>
                                         </div>
@@ -648,6 +648,7 @@ function ContractPage({
                                             onClick={() => handleFilterChange({ submission_type_id: undefined, page: 1 })}
                                             variant={!filters.submission_type_id ? 'primary' : 'ghost'}
                                             size="sm"
+                                            fontSize="11px"
                                             className="whitespace-nowrap"
                                         >
                                             Semua Kontrak
@@ -658,6 +659,7 @@ function ContractPage({
                                                 onClick={() => handleFilterChange({ submission_type_id: type.id, page: 1 })}
                                                 variant={filters.submission_type_id === type.id ? 'primary' : 'ghost'}
                                                 size="sm"
+                                                fontSize="11px"
                                                 className="whitespace-nowrap"
                                             >
                                                 {type.name}

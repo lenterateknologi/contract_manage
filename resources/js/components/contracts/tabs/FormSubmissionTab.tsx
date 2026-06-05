@@ -269,10 +269,10 @@ function GenericFormTab({
         docType === 'f1'
             ? selected.allow_f1_edit
             : docType === 'f2'
-              ? selected.allow_f2_edit
-              : docType === 'contract'
-                ? selected.allow_agreement_edit
-                : selected.allow_info_edit;
+                ? selected.allow_f2_edit
+                : docType === 'contract'
+                    ? selected.allow_agreement_edit
+                    : selected.allow_info_edit;
 
     // Strict enforcement: permissions follow workflow flags and participant status ONLY.
     // User must be the current active actor (isApprover) AND the step must allow editing.
@@ -497,7 +497,7 @@ function GenericFormTab({
                             <h3 className="text-text-main flex items-center gap-2 text-[11px] font-semibold uppercase">
                                 <FileText size={16} /> Preview Dokumen {docType.toUpperCase()}
                             </h3>
-                            <span className="text-text-soft text-[9px] font-medium tracking-wider uppercase">
+                            <span className="text-text-soft text-[9px] font-medium  uppercase">
                                 {selected.contract_no} — Ready for Download
                             </span>
                         </div>
@@ -719,7 +719,7 @@ function GenericFormTab({
                 {/* Visual Debug Banner */}
                 {/* <div className="flex justify-center pt-6 px-6">
                     <div className={cn(
-                        "flex items-center gap-3 px-4 py-2 rounded-full border text-[10px] font-bold uppercase tracking-wider shadow-sm",
+                        "flex items-center gap-3 px-4 py-2 rounded-full border text-[10px] font-bold uppercase  shadow-sm",
                         canEdit ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-700"
                     )}>
                         <div className={cn("h-2 w-2 rounded-full animate-pulse", canEdit ? "bg-green-500" : "bg-amber-500")} />

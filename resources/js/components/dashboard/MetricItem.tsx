@@ -72,7 +72,7 @@ export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert }
             />
 
             <div className="z-10 space-y-1.5 pr-4">
-                <p className="text-text-soft text-[10px] leading-none font-semibold tracking-wider uppercase">{label}</p>
+                <p className="text-text-soft text-[10px] leading-none font-semibold  uppercase">{label}</p>
                 <p className="text-text-main text-3xl leading-none font-extrabold tracking-tight">{value}</p>
             </div>
 

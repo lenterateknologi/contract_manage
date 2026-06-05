@@ -107,7 +107,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                         <button
                             type="button"
                             onClick={onRemoveAll}
-                            className="bg-muted hover:bg-destructive/10 hover:text-destructive text-muted-foreground/60 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[8px] font-black uppercase transition-all"
+                            className="bg-muted hover:bg-destructive/10 hover:text-destructive text-muted-foreground/60 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[8px] font-semibold uppercase transition-all"
                         >
                             <Trash2 size={10} /> Clear All
                         </button>
@@ -116,7 +116,7 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                         <button
                             type="button"
                             onClick={onRemoveSelected}
-                            className="bg-primary/5 hover:bg-primary/10 text-primary ring-primary/20 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[8px] font-black uppercase ring-1 transition-all"
+                            className="bg-primary/5 hover:bg-primary/10 text-primary ring-primary/20 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[8px] font-semibold uppercase ring-1 transition-all"
                         >
                             <X size={10} strokeWidth={3} /> Hapus Terpilih ({selectedFieldIds.length})
                         </button>

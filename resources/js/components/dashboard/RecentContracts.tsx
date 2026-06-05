@@ -45,7 +45,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                 <SectionTitle>Kontrak Terbaru</SectionTitle>
                 <button
                     onClick={onViewAll}
-                    className="text-primary/70 hover:text-primary cursor-pointer text-[11px] font-medium tracking-wider uppercase transition-colors"
+                    className="text-primary/70 hover:text-primary cursor-pointer text-[11px] font-medium  uppercase transition-colors"
                 >
                     Lihat Semua →
                 </button>
@@ -54,13 +54,13 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                 <table className="w-full border-collapse text-left">
                     <thead>
                         <tr className="border-border/40 bg-muted/20 border-b dark:border-slate-800/40 dark:bg-slate-900/35">
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">No. Kontrak</th>
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">Judul & Pembuat</th>
-                            <th className="text-muted-foreground hidden px-5 py-3 text-[9px] font-medium tracking-wider uppercase md:table-cell">
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">No. Kontrak</th>
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">Judul & Pembuat</th>
+                            <th className="text-muted-foreground hidden px-5 py-3 text-[9px] font-medium  uppercase md:table-cell">
                                 Tipe
                             </th>
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium tracking-wider uppercase">Status</th>
-                            <th className="text-muted-foreground hidden px-5 py-3 text-right text-[9px] font-medium tracking-wider uppercase lg:table-cell">
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">Status</th>
+                            <th className="text-muted-foreground hidden px-5 py-3 text-right text-[9px] font-medium  uppercase lg:table-cell">
                                 Tanggal
                             </th>
                         </tr>

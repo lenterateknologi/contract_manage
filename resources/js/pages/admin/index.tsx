@@ -155,7 +155,7 @@ export default function AdminIndex({
                 return <MasterDataSync counts={counts} />;
             default:
                 return (
-                    <div className="flex h-full items-center justify-center text-xs font-black text-slate-400 uppercase">
+                    <div className="flex h-full items-center justify-center text-xs font-semibold text-slate-400 uppercase">
                         Pilih menu administrasi untuk mengelola sistem
                     </div>
                 );

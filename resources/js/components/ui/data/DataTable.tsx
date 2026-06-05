@@ -265,7 +265,7 @@ export function DataTable<T extends Record<string, any>>({
                                         <th
                                             key={idx}
                                             className={cn(
-                                                "py-3.5 px-4 text-[11px] font-medium uppercase tracking-wider text-text-desc select-none",
+                                                "py-3.5 px-4 text-[11px] font-medium uppercase  text-text-desc select-none",
                                                 isSortable && "cursor-pointer hover:text-text-main transition-colors",
                                                 col.className
                                             )}
@@ -288,7 +288,7 @@ export function DataTable<T extends Record<string, any>>({
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-semibold uppercase tracking-wider text-text-desc select-none">Aksi</th>}
+                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-semibold uppercase  text-text-desc select-none">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">
@@ -312,7 +312,7 @@ export function DataTable<T extends Record<string, any>>({
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0)} className="p-16 text-center">
                                         <div className="flex flex-col items-center gap-3 opacity-40 select-none">
                                             <Search size={40} strokeWidth={1} className="text-text-desc" />
-                                            <p className="text-xs font-medium uppercase tracking-wider text-text-desc">Tidak ada data ditemukan</p>
+                                            <p className="text-xs font-medium uppercase  text-text-desc">Tidak ada data ditemukan</p>
                                         </div>
                                     </td>
                                 </tr>

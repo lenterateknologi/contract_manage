@@ -224,7 +224,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                         variant="white"
                                         size="sm"
                                         onClick={() => router.get('/admin/companies', { action: 'create', region_id: editingRegion.id })}
-                                        className="border-primary/20 text-primary hover:bg-primary h-8 rounded-lg text-[9px] font-black tracking-widest uppercase transition-all hover:text-white"
+                                        className="border-primary/20 text-primary hover:bg-primary h-8 rounded-lg text-[9px] font-semibold tracking-widest uppercase transition-all hover:text-white"
                                     >
                                         <Plus size={12} className="mr-1.5" /> Tambah Company
                                     </Button>
@@ -250,7 +250,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
-                                                    className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-black tracking-widest uppercase opacity-0 transition-opacity group-hover:opacity-100"
+                                                    className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-semibold tracking-widest uppercase opacity-0 transition-opacity group-hover:opacity-100"
                                                 >
                                                     Kelola
                                                 </Button>
@@ -259,7 +259,7 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
                                     </div>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-black/[0.03] bg-black/[0.01] py-12 dark:border-white/[0.03] dark:bg-white/[0.01]">
-                                        <p className="text-[10px] font-black tracking-widest text-slate-300 uppercase">Belum ada company terdaftar</p>
+                                        <p className="text-[10px] font-semibold tracking-widest text-slate-300 uppercase">Belum ada company terdaftar</p>
                                     </div>
                                 )}
                             </FormSection>
@@ -303,23 +303,23 @@ export function RegionManagement({ regions, filters }: Readonly<RegionManagement
             bulkActions={
                 canDelete
                     ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Hapus ${ids.length} region terpilih?`)) {
-                                      router.post(
-                                          '/admin/regions/bulk-delete',
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} region telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[] | number[]) => {
+                                if (confirm(`Hapus ${ids.length} region terpilih?`)) {
+                                    router.post(
+                                        '/admin/regions/bulk-delete',
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} region telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
                     : undefined
             }
         />

@@ -263,7 +263,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
                     <div className="flex flex-col">
                         <h1 className="text-text-main text-base font-semibold tracking-tight uppercase italic">Sync & Control Center</h1>
-                        <p className="text-text-desc text-[10px] font-medium tracking-wider uppercase">
+                        <p className="text-text-desc text-[10px] font-medium  uppercase">
                             Manajemen migrasi dan granular export-import data master
                         </p>
                     </div>
@@ -284,11 +284,11 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                                             onCheckedChange={toggleAll}
                                         />
                                     </th>
-                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium tracking-wider uppercase">Entitas Data</th>
-                                    <th className="text-text-desc px-4 py-3.5 text-center text-[11px] font-medium tracking-wider uppercase">
+                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium  uppercase">Entitas Data</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-center text-[11px] font-medium  uppercase">
                                         Volume
                                     </th>
-                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium tracking-wider uppercase">Deskripsi</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium  uppercase">Deskripsi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-surface-border/30 divide-y">
@@ -332,7 +332,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     {/* Export Card */}
                     <div className="border-surface-border bg-surface-base/40 rounded-2xl border p-6 shadow-sm backdrop-blur-sm">
                         <div className="mb-4 flex items-center justify-between">
-                            <h3 className="text-text-main text-[11px] font-semibold tracking-wider uppercase">Export Configuration</h3>
+                            <h3 className="text-text-main text-[11px] font-semibold  uppercase">Export Configuration</h3>
                             <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-[10px] font-semibold">
                                 {selectedEntities.length} Terpilih
                             </span>
@@ -353,7 +353,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
 
                     {/* Import Card */}
                     <div className="border-surface-border bg-surface-base/40 rounded-2xl border p-6 shadow-sm backdrop-blur-sm">
-                        <h3 className="text-text-main mb-4 text-[11px] font-semibold tracking-wider uppercase">Quick Import</h3>
+                        <h3 className="text-text-main mb-4 text-[11px] font-semibold  uppercase">Quick Import</h3>
                         <div
                             onDragEnter={handleDrag}
                             onDragOver={handleDrag}
@@ -395,7 +395,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                         <div className="mb-4 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle size={16} className="text-danger" />
-                                <h3 className="text-danger text-[11px] font-semibold tracking-wider uppercase">Danger Zone</h3>
+                                <h3 className="text-danger text-[11px] font-semibold  uppercase">Danger Zone</h3>
                             </div>
                             <span className="bg-danger/10 text-danger rounded-lg px-2 py-0.5 text-[10px] font-semibold">
                                 {selectedEntities.length} Terpilih

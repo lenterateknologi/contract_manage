@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { CheckCircle2, XCircle, Info } from 'lucide-react';
 
 // ─── Toast Types ──────────────────────────────────────────────────────
 interface ToastMsg {
@@ -21,9 +22,9 @@ interface ToastCtx {
 }
 
 const ToastContext = createContext<ToastCtx>({
-    showToast: () => {},
-    showProgress: () => {},
-    hideProgress: () => {},
+    showToast: () => { },
+    showProgress: () => { },
+    hideProgress: () => { },
 });
 
 export const useToast = () => useContext(ToastContext);
@@ -37,7 +38,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const showToast = useCallback((msg: string, type: ToastMsg['type'] = 'info') => {
         setToast({ id: Date.now(), msg, type });
         if (timerRef.current) window.clearTimeout(timerRef.current);
-        timerRef.current = window.setTimeout(() => setToast(null), 3000);
+        timerRef.current = window.setTimeout(() => setToast(null), 4000);
     }, []);
 
     // Auto-show Flash Messages from Backend
@@ -70,20 +71,35 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         [],
     );
 
-    const iconMap = { success: 'fa-circle-check', danger: 'fa-circle-xmark', info: 'fa-circle-info' };
+    const iconMap = {
+        success: <CheckCircle2 className="h-5 w-5 text-emerald-600" />,
+        danger: <XCircle className="h-5 w-5 text-rose-600" />,
+        info: <Info className="h-5 w-5 text-blue-600" />
+    };
+
+    const borderMap = {
+        success: 'border-l-emerald-500',
+        danger: 'border-l-rose-500',
+        info: 'border-l-blue-500'
+    };
 
     return (
         <ToastContext.Provider value={{ showToast, showProgress, hideProgress }}>
             {children}
 
-            {/* Standard Center Toast */}
+            {/* Premium Toast (White background with colored left border) */}
             {toast && (
                 <div
                     key={toast.id}
-                    className="animate-in slide-in-from-bottom-5 fixed bottom-10 left-1/2 z-[1000] flex -translate-x-1/2 items-center gap-3 rounded-2xl border border-black/10 bg-black/90 px-6 py-3.5 text-[10px] font-black text-white shadow-2xl backdrop-blur-xl duration-300 dark:border-white/20 dark:bg-white/95 dark:text-black"
+                    className={`animate-in slide-in-from-bottom-5 fade-in zoom-in-95 fixed bottom-6 right-6 z-[1000] flex items-center gap-4 rounded-xl border border-slate-100 bg-white p-4 pr-8 shadow-xl shadow-slate-200/50 border-l-4 ${borderMap[toast.type]} duration-500 ease-out`}
                 >
-                    <i className={`fa-solid ${iconMap[toast.type]} text-[12px] text-white dark:text-black`} />
-                    <span className="uppercase">{toast.msg}</span>
+                    {iconMap[toast.type]}
+                    <div className="flex flex-col">
+                        <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                            {toast.type === 'success' ? 'Sukses' : toast.type === 'danger' ? 'Error' : 'Info'}
+                        </span>
+                        <span className="text-[12px] text-slate-600">{toast.msg}</span>
+                    </div>
                 </div>
             )}
 
@@ -97,7 +113,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                         <div className="mb-2.5 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="h-3 w-3 animate-spin rounded-full border-2 border-black border-t-transparent dark:border-white" />
-                                <span className="text-[9px] font-black text-black uppercase dark:text-white">{p.msg}</span>
+                                <span className="text-[9px] font-semibold text-black uppercase dark:text-white">{p.msg}</span>
                             </div>
                             <span className="font-mono text-[10px] font-bold text-black dark:text-white">{Math.round(p.progress)}%</span>
                         </div>

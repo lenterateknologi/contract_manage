@@ -152,7 +152,7 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
             {
                 header: 'Kode Sistem',
                 accessorKey: 'code',
-                cell: (row) => <span className="font-mono text-[10px] font-semibold tracking-wider text-slate-400 uppercase">{row.code}</span>,
+                cell: (row) => <span className="font-mono text-[10px] font-semibold  text-slate-400 uppercase">{row.code}</span>,
             },
             {
                 header: 'Keterangan Konten',
@@ -199,13 +199,13 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
             headerActions={
                 <div className="flex items-center gap-2">
                     {allParentIds.length > 0 && (
-                        <Button variant="white" onClick={toggleAll} className="text-[10px] font-black tracking-widest uppercase">
+                        <Button variant="white" onClick={toggleAll} className="text-[10px] font-semibold tracking-widest uppercase">
                             <ChevronDown size={14} className={cn('transition-transform duration-200', !isAllExpanded && '-rotate-90')} />
                             {isAllExpanded ? 'Minimize Semua' : 'Expand Semua'}
                         </Button>
                     )}
                     {canCreate && (
-                        <Button variant="white" onClick={openCreate} className="text-[10px] font-black tracking-widest uppercase">
+                        <Button variant="white" onClick={openCreate} className="text-[10px] font-semibold tracking-widest uppercase">
                             <Plus size={14} className="text-primary mr-2" /> Registrasi Klasifikasi
                         </Button>
                     )}
@@ -215,23 +215,23 @@ export function ContractTypeManagement({ contractTypes, filters }: Readonly<Cont
             bulkActions={
                 canDelete
                     ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[]) => {
-                                  if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
-                                      router.post(
-                                          route('admin.contract-types.bulk-destroy'),
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[]) => {
+                                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} tipe kontrak terpilih secara permanen?`)) {
+                                    router.post(
+                                        route('admin.contract-types.bulk-destroy'),
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} tipe kontrak telah dihapus dari registri`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
                     : undefined
             }
             pagination={{

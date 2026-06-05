@@ -77,18 +77,18 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                                 </div>
                                 <div className="flex min-w-0 flex-col">
                                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                                        <span className="text-muted-foreground font-mono text-[10px] font-bold tracking-wider uppercase">
+                                        <span className="text-muted-foreground font-mono text-[10px] font-bold  uppercase">
                                             {parent.contract_no || 'DRAFT'}
                                         </span>
                                         <span className="h-1 w-1 rounded-full bg-black/10 dark:bg-white/10" />
-                                        <span className="bg-primary/10 text-primary dark:bg-primary/20 rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-wider uppercase shadow-sm dark:text-white">
+                                        <span className="bg-primary/10 text-primary dark:bg-primary/20 rounded-full px-2.5 py-0.5 text-[9px] font-bold  uppercase shadow-sm dark:text-white">
                                             {parent.status}
                                         </span>
                                     </div>
                                     <h4 className="text-foreground line-clamp-2 text-[14px] leading-snug font-bold tracking-tight dark:text-white">
                                         {parent.title}
                                     </h4>
-                                    <div className="text-muted-foreground/60 mt-2 text-[10px] font-semibold tracking-wider uppercase">
+                                    <div className="text-muted-foreground/60 mt-2 text-[10px] font-semibold  uppercase">
                                         DIBUAT{' '}
                                         {new Date(parent.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                                     </div>
@@ -129,7 +129,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                         <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-black/5 text-black/20 dark:bg-white/5 dark:text-white/20">
                             <LinkIcon size={24} />
                         </div>
-                        <h4 className="text-foreground text-[11px] font-bold tracking-wider dark:text-white">Tidak Ada Referensi</h4>
+                        <h4 className="text-foreground text-[11px] font-bold  dark:text-white">Tidak Ada Referensi</h4>
                         <p className="text-muted-foreground mt-1 max-w-[280px] text-[10px] leading-relaxed font-semibold">
                             Kontrak ini tidak terhubung dengan referensi apa pun.
                         </p>
@@ -177,7 +177,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="CARI BERDASARKAN NO. KONTRAK ATAU JUDUL..."
-                                    className="h-11 text-xs tracking-wider"
+                                    className="h-11 text-xs "
                                 />
                             </div>
                         </div>
@@ -186,7 +186,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                             {isSearching ? (
                                 <div className="flex flex-col items-center justify-center py-20">
                                     <Loader2 className="text-primary mb-3 h-6 w-6 animate-spin" />
-                                    <span className="text-muted-foreground text-[11px] font-semibold tracking-wider">Searching Datastore...</span>
+                                    <span className="text-muted-foreground text-[11px] font-semibold ">Searching Datastore...</span>
                                 </div>
                             ) : results.length > 0 ? (
                                 <div className="flex flex-col gap-2">
@@ -206,7 +206,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                                                 <div className="mt-2 flex items-center gap-3">
                                                     <span
                                                         className={cn(
-                                                            'rounded px-2.5 py-0.5 text-[8px] font-bold tracking-wider uppercase',
+                                                            'rounded px-2.5 py-0.5 text-[8px] font-bold  uppercase',
                                                             c.status === 'approved'
                                                                 ? 'bg-primary text-white'
                                                                 : 'text-muted-foreground bg-black/5 dark:bg-white/5',

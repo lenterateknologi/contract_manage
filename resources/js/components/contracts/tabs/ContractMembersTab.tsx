@@ -57,7 +57,7 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
         <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-1 flex-col p-6 duration-500">
             <div className="mb-6 flex flex-col gap-1 px-1">
                 <h3 className="text-text-main text-base font-semibold tracking-tight uppercase italic">Personil Terlibat</h3>
-                <p className="text-text-desc text-[10px] font-medium tracking-wider uppercase">
+                <p className="text-text-desc text-[10px] font-medium  uppercase">
                     Daftar pemangku kepentingan dalam siklus hidup kontrak
                 </p>
             </div>
@@ -66,9 +66,9 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
                 <table className="w-full border-collapse text-left">
                     <thead>
                         <tr className="border-surface-border/60 bg-surface-muted/40 border-b select-none">
-                            <th className="text-text-desc px-4 py-3 text-[11px] font-semibold tracking-wider uppercase">Identitas Personil</th>
-                            <th className="text-text-desc px-4 py-3 text-[11px] font-semibold tracking-wider uppercase">Kontak & Departemen</th>
-                            <th className="text-text-desc px-4 py-3 text-right text-[11px] font-semibold tracking-wider uppercase">
+                            <th className="text-text-desc px-4 py-3 text-[11px] font-semibold  uppercase">Identitas Personil</th>
+                            <th className="text-text-desc px-4 py-3 text-[11px] font-semibold  uppercase">Kontak & Departemen</th>
+                            <th className="text-text-desc px-4 py-3 text-right text-[11px] font-semibold  uppercase">
                                 Peran dalam Kontrak
                             </th>
                         </tr>
@@ -86,7 +86,7 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-text-main text-sm leading-none font-semibold tracking-tight">{user.name}</span>
-                                            <span className="text-text-soft mt-1 text-[10px] font-medium tracking-wider uppercase">{user.role}</span>
+                                            <span className="text-text-soft mt-1 text-[10px] font-medium  uppercase">{user.role}</span>
                                         </div>
                                     </div>
                                 </td>
@@ -109,7 +109,7 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
                                         {roles.map((role) => (
                                             <div
                                                 key={role}
-                                                className="border-primary/20 bg-primary/[0.03] text-primary inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[9px] font-semibold tracking-wider uppercase"
+                                                className="border-primary/20 bg-primary/[0.03] text-primary inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[9px] font-semibold  uppercase"
                                             >
                                                 <ShieldCheck size={10} />
                                                 {role}

@@ -65,7 +65,7 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
 
     return (
         <div className="ml-4 flex items-center gap-2 border-l border-slate-200 pl-4 dark:border-slate-800">
-            <span className="text-[8px] font-black tracking-wider text-slate-400 uppercase">Simulasi:</span>
+            <span className="text-[8px] font-semibold  text-slate-400 uppercase">Simulasi:</span>
             <div className="flex flex-wrap items-center gap-1.5">
                 {buttons.map((btn, bIdx) => (
                     <button

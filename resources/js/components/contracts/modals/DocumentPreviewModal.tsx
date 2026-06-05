@@ -76,12 +76,12 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2">
                                 <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
-                                <h3 className="text-[11px] font-black tracking-tighter text-black uppercase dark:text-white">{fileName}</h3>
-                                <span className="bg-background rounded px-1.5 py-0.5 text-[8px] font-black text-white uppercase dark:bg-white dark:text-black">
+                                <h3 className="text-[11px] font-semibold tracking-tighter text-black uppercase dark:text-white">{fileName}</h3>
+                                <span className="bg-background rounded px-1.5 py-0.5 text-[8px] font-semibold text-white uppercase dark:bg-white dark:text-black">
                                     Preview
                                 </span>
                             </div>
-                            <span className="mt-1.5 text-[9px] leading-none font-black tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
+                            <span className="mt-1.5 text-[9px] leading-none font-semibold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
                                 Documentation Inspection &bull; Format Preserved
                             </span>
                         </div>
@@ -91,7 +91,7 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                         <a
                             href={url}
                             download={fileName}
-                            className="flex h-9 items-center gap-2 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-black text-black uppercase shadow-sm transition-all hover:bg-black/5 active:scale-95 dark:border-white/10 dark:bg-black dark:text-white dark:hover:bg-white/5"
+                            className="flex h-9 items-center gap-2 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-semibold text-black uppercase shadow-sm transition-all hover:bg-black/5 active:scale-95 dark:border-white/10 dark:bg-black dark:text-white dark:hover:bg-white/5"
                         >
                             <Download size={14} className="text-black dark:text-white" /> Download
                         </a>
@@ -111,7 +111,7 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
                         {loading && (
                             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm transition-all dark:bg-black/80">
                                 <Loader2 className="mb-4 h-10 w-10 animate-spin text-black dark:text-white" />
-                                <span className="animate-pulse text-[10px] font-black tracking-[0.3em] text-black uppercase dark:text-white">
+                                <span className="animate-pulse text-[10px] font-semibold tracking-[0.3em] text-black uppercase dark:text-white">
                                     Rendering Layout...
                                 </span>
                             </div>

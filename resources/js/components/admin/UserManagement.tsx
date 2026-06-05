@@ -119,7 +119,7 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                         <span className="text-text-main text-xs font-semibold tracking-wide uppercase">{row.position || '—'}</span>
                         <div
                             className={cn(
-                                'w-fit rounded-full px-2.5 py-0.5 text-[9px] font-black tracking-widest uppercase shadow-sm ring-1 ring-black/[0.03]',
+                                'w-fit rounded-full px-2.5 py-0.5 text-[9px] font-semibold tracking-widest uppercase shadow-sm ring-1 ring-black/[0.03]',
                                 ROLE_COLORS[row.role] || 'bg-surface-muted text-text-desc',
                             )}
                         >
@@ -161,7 +161,7 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                         <div className={cn('h-1.5 w-1.5 rounded-full', row.is_active ? 'bg-success animate-pulse' : 'bg-surface-muted')} />
                         <span
                             className={cn(
-                                'text-[10px] font-black tracking-widest uppercase transition-colors duration-200 select-none',
+                                'text-[10px] font-semibold tracking-widest uppercase transition-colors duration-200 select-none',
                                 row.is_active ? 'text-text-main' : 'text-text-desc',
                             )}
                         >
@@ -354,7 +354,7 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                             <div className="grid grid-cols-1 gap-y-10">
                                 <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                                     <div className="space-y-2.5">
-                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                             <ShieldAlert size={12} className="opacity-50" /> Role Akses
                                         </label>
                                         <Select value={form.data.role} onValueChange={(v: string) => form.setData('role', String(v))}>
@@ -378,7 +378,7 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                                         )}
                                     </div>
                                     <div className="space-y-2.5">
-                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                        <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                             <Building2 size={12} className="opacity-50" /> Unit / Departemen
                                         </label>
                                         <Select
@@ -408,7 +408,7 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                                     </div>
                                 </div>
                                 <div className="space-y-2.5">
-                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                         <Building2 size={12} className="opacity-50" /> Perusahaan / Company
                                     </label>
                                     <Select
@@ -448,7 +448,7 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                                                         Company Group
                                                     </span>
                                                 </div>
-                                                <span className="text-text-main text-[10px] font-black tracking-widest uppercase">
+                                                <span className="text-text-main text-[10px] font-semibold tracking-widest uppercase">
                                                     {companies.find((c) => c.id === form.data.company_id)?.group?.name || '—'}
                                                 </span>
                                             </div>
@@ -462,7 +462,7 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                                                         Region / Wilayah
                                                     </span>
                                                 </div>
-                                                <span className="text-text-main text-[10px] font-black tracking-widest uppercase">
+                                                <span className="text-text-main text-[10px] font-semibold tracking-widest uppercase">
                                                     {companies.find((c) => c.id === form.data.company_id)?.region?.name || '—'}
                                                 </span>
                                             </div>
@@ -535,23 +535,23 @@ export function UserManagement({ users, roles, departments, companies = [], filt
             bulkActions={
                 canDelete
                     ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} akun pengguna terpilih?`)) {
-                                      router.post(
-                                          route('admin.users.bulk-destroy'),
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} akun pengguna telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[] | number[]) => {
+                                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} akun pengguna terpilih?`)) {
+                                    router.post(
+                                        route('admin.users.bulk-destroy'),
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} akun pengguna telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
                     : undefined
             }
             pagination={{

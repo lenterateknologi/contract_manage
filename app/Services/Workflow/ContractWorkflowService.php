@@ -133,7 +133,7 @@ class ContractWorkflowService
         $approvers = collect();
 
         if ($step->step_category === 'joint_upload') {
-            $metadata = $contract->metadata ?? [];
+        $metadata = $contract->metadata ?? [];
             $order = $metadata['step_12_order'] ?? null;
             $finished = $metadata['step_12_finished'] ?? [];
 
@@ -188,7 +188,10 @@ class ContractWorkflowService
                 }
 
                 if ($approvers->isEmpty()) {
-                    $query = User::whereIn('role', $roles);
+                    $query = User::query();
+                    if (! empty($roles)) {
+                        $query->whereIn('role', $roles);
+                    }
                     $targetDeptIds = $step->department_ids ?? [];
 
                     if ($step->filter_department) {
@@ -403,7 +406,8 @@ class ContractWorkflowService
                 return strtolower((string) $code) === strtolower($actionCode) || in_array(strtolower((string) $code), ['signature', 'sign']);
             })->first();
 
-            $targetStepId = $targetStepId ?: (request()->input('target_step_id') ?: ($signingAction?->assignee_config['signature_target_step'] ?? $approval->workflow_step_id));
+            $transitionStep = $signingAction ? $this->evaluateTransition($contract, $approval->workflowStep, $signingAction) : null;
+            $targetStepId = $targetStepId ?: ($transitionStep ? $transitionStep->id : null) ?: (request()->input('target_step_id') ?: ($signingAction?->assignee_config['signature_target_step'] ?? $approval->workflow_step_id));
             $targetStep = $targetStepId == $approval->workflow_step_id ? $approval->workflowStep : WorkflowStep::find($targetStepId);
             $targetSequence = $targetStep->step ?? $approval->workflowStep->step;
             $currentSequence = $approval->workflowStep->step;
@@ -448,7 +452,25 @@ class ContractWorkflowService
 
                 $approval->update(['status' => 'waiting', 'comment' => $comment]);
             } else {
-                $approval->update(['comment' => $comment]);
+                $approval->update(['status' => 'approved', 'comment' => $comment]);
+
+                $statusStr = $targetStep->meta['target_status'] ?? 'locked';
+                $nextStatus = ContractStatus::where('code', $statusStr)->first();
+
+                $contract->update([
+                    'workflow_step_id' => $targetStepId,
+                    'status' => $nextStatus?->code ?: $statusStr,
+                ]);
+
+                // Activate the first signer approval of the new step
+                $firstSigner = Approval::where('contract_id', $contract->id)
+                    ->where('workflow_step_id', $targetStepId)
+                    ->whereIn('role', ['Penandatangan', 'Pihak 1', 'Pihak 2'])
+                    ->orderBy('sub_step')
+                    ->first();
+                if ($firstSigner) {
+                    $firstSigner->update(['status' => 'pending']);
+                }
             }
 
             return $contract->fresh();
@@ -610,12 +632,13 @@ class ContractWorkflowService
             $contract->update(['metadata' => $metadata]);
         }
 
+        $hasExplicitTransition = $stepAction && ($stepAction->transition_config || $stepAction->next_workflow_id || $stepAction->next_step_id);
         $nextStep = $stepAction ? $this->evaluateTransition($contract, $approval->workflowStep, $stepAction) : null;
         while ($nextStep && ! $this->shouldExecuteStep($contract, $nextStep)) {
             $nextStep = $this->findNextValidStep($contract, $nextStep);
         }
 
-        if (! $nextStep) {
+        if (! $nextStep && ! $hasExplicitTransition) {
             $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
         }
 
@@ -657,7 +680,7 @@ class ContractWorkflowService
             ->delete();
 
         $stepAction = $approval->workflowStep->actions()->where('action_code', 'reject')->first();
-        $targetStep = $stepAction ? $this->evaluateTransition($contract, $approval->workflowStep, $stepAction) : WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', 1)->first();
+        $targetStep = $stepAction ? ($this->evaluateTransition($contract, $approval->workflowStep, $stepAction) ?: WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', 1)->first()) : WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', 1)->first();
 
         $statusStr = $targetStep->meta['target_status'] ?? 'revision';
         $revisionStatus = ContractStatus::where('code', $statusStr)->first();
@@ -699,6 +722,8 @@ class ContractWorkflowService
                     $offset = (int) ($transition['offset'] ?? 1);
                     if ($offset === 1) {
                         return $this->findNextValidStep($contract, $currentStep);
+                    } elseif ($offset === 0) {
+                        return $currentStep;
                     } elseif ($offset > 1) {
                         $targetSequence = $currentStep->step + $offset;
                         $allSteps = WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', '>=', $targetSequence)->orderBy('step')->get();

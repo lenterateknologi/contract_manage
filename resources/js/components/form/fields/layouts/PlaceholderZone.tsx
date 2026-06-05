@@ -28,7 +28,7 @@ export const PlaceholderZone: React.FC<PlaceholderZoneProps> = ({ id, icon: Icon
             )}
         >
             <Icon size={16} className={cn('mb-1', isOver ? 'text-primary' : 'text-primary/30')} />
-            <span className="text-[9px] font-semibold tracking-wider uppercase">{label}</span>
+            <span className="text-[9px] font-semibold  uppercase">{label}</span>
             {description && <span className="mt-0.5 text-[7px] opacity-60">{description}</span>}
         </div>
     );

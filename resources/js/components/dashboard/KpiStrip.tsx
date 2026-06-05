@@ -30,10 +30,10 @@ function KpiCard({ label, value, subtext, icon, accentClass, onClick }: KpiCardP
                 >
                     {icon}
                 </div>
-                <span className="text-text-desc text-[9px] font-medium tracking-wider uppercase">{subtext}</span>
+                <span className="text-text-desc text-[9px] font-medium  uppercase">{subtext}</span>
             </div>
             <div>
-                <p className="text-text-desc mb-0.5 text-[10px] font-medium tracking-wider uppercase">{label}</p>
+                <p className="text-text-desc mb-0.5 text-[10px] font-medium  uppercase">{label}</p>
                 <span className="text-text-main text-2xl font-extrabold tracking-tight tabular-nums">{value}</span>
             </div>
         </div>

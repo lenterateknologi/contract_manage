@@ -101,7 +101,7 @@ export const TimelineTab = ({ contract, meId, onApprove, showToast }: TimelineTa
                     size="sm"
                     onClick={handleExportTimelinePdf}
                     disabled={isExporting}
-                    className="h-8 gap-2 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all active:scale-95"
+                    className="h-8 gap-2 rounded-xl text-[10px] font-bold  uppercase transition-all active:scale-95"
                 >
                     {isExporting ? <Loader2 size={14} className="animate-spin" /> : <FileDown size={14} />}
                     {isExporting ? 'Mengekspor...' : 'Export PDF'}

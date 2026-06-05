@@ -47,7 +47,7 @@ The profile page will be transformed from an always-editable form into a clean, 
 
 ### 3.1 Styles (Tailwind CSS v4)
 - **Card Styles:** `bg-white border border-surface-border/50 rounded-xl shadow-sm`.
-- **Labels:** `text-[10px] font-bold uppercase tracking-wider text-text-soft`.
+- **Labels:** `text-[10px] font-bold uppercase  text-text-soft`.
 - **Values:** `text-sm font-medium text-text-main`.
 - **Transitions:** Use `transition-all duration-200` for mode swapping and hover effects.
 

@@ -127,7 +127,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                                 <Send className="h-5 w-5 text-white" />
                             </div>
                             <div className="flex flex-col">
-                                <h2 className="text-xl leading-none font-black tracking-tight text-white uppercase">Kirim Approval</h2>
+                                <h2 className="text-xl leading-none font-semibold tracking-tight text-white uppercase">Kirim Approval</h2>
                                 <span className="mt-1 text-[10px] font-bold tracking-[0.2em] text-white/40 uppercase">
                                     Initialize Workflow Engine
                                 </span>
@@ -142,7 +142,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                 <div className="space-y-7 p-7">
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <label className="text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
+                            <label className="text-[10px] font-semibold tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
                                 Pilih Workflow Alur
                             </label>
                             {initLoading && <Activity className="h-3 w-3 animate-pulse text-indigo-500" />}
@@ -169,7 +169,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                         <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500">
                             {selectedWorkflow.steps?.some((s: any) => s.is_optional) && (
                                 <div className="space-y-4">
-                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
                                         <div className="h-1.5 w-1.5 rounded-full bg-indigo-500" /> Step Opsional
                                     </label>
                                     <div className="grid grid-cols-1 gap-2.5">
@@ -238,7 +238,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
 
                             {selectedWorkflow.steps?.some((s: any) => s.step_type === 'selection') && (
                                 <div className="space-y-4">
-                                    <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
+                                    <label className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
                                         <div className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Pilih Personel Manual
                                     </label>
                                     <div className="space-y-4">
@@ -295,7 +295,7 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                     )}
 
                     <div className="space-y-3 pt-2">
-                        <label className="flex items-center gap-2 text-[10px] font-black tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
+                        <label className="flex items-center gap-2 text-[10px] font-semibold tracking-[0.15em] text-slate-400 uppercase dark:text-slate-500">
                             <MessageSquare size={12} /> Catatan untuk Approver
                         </label>
                         <textarea
@@ -310,14 +310,14 @@ export default function SendApprovalModal({ open, onClose, onSubmit, contractTyp
                 <div className="flex gap-4 border-t border-slate-100 bg-slate-50 p-7 dark:border-slate-800 dark:bg-slate-950/50">
                     <button
                         onClick={onClose}
-                        className="h-12 flex-1 text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase transition-colors hover:text-slate-900 dark:hover:text-white"
+                        className="h-12 flex-1 text-[10px] font-semibold tracking-[0.2em] text-slate-400 uppercase transition-colors hover:text-slate-900 dark:hover:text-white"
                     >
                         Batalkan
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={loading || initLoading || workflows.length === 0 || !selectedWorkflowId}
-                        className="flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-slate-950 text-[11px] font-black tracking-[0.2em] text-white uppercase transition-all hover:shadow-2xl hover:shadow-slate-500/20 active:scale-95 disabled:opacity-20 disabled:grayscale dark:bg-white dark:text-slate-950"
+                        className="flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-slate-950 text-[11px] font-semibold tracking-[0.2em] text-white uppercase transition-all hover:shadow-2xl hover:shadow-slate-500/20 active:scale-95 disabled:opacity-20 disabled:grayscale dark:bg-white dark:text-slate-950"
                     >
                         {loading ? (
                             <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />

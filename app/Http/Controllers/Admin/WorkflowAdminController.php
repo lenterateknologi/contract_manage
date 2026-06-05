@@ -119,6 +119,7 @@ class WorkflowAdminController extends Controller
                     'autofilled_fields' => $action->autofilled_fields ?? [],
                     'signing_parties' => $action->signing_parties ?? [],
                     'assignee_config' => $action->assignee_config ?? [],
+                    'transition_config' => $action->transition_config,
                     'alias' => $action->alias,
                     'description' => $action->description,
                     'is_active' => $action->is_active,
@@ -172,7 +173,7 @@ class WorkflowAdminController extends Controller
         try {
             $action->execute($workflow, $request->validated());
 
-            return redirect()->route('admin.workflows.edit', $workflow->id)->with('success', 'Workflow berhasil diperbarui.');
+            return back()->with('success', 'Workflow berhasil diperbarui.');
         } catch (\Exception $e) {
             Log::error('Workflow Update Error: '.$e->getMessage());
 
@@ -220,7 +221,7 @@ class WorkflowAdminController extends Controller
         try {
             $action->execute($workflow, $request->validated());
 
-            return redirect()->route('admin.workflows.edit', $workflow->id)->with('success', 'Tahapan alur kerja berhasil diperbarui.');
+            return back()->with('success', 'Tahapan alur kerja berhasil diperbarui.');
         } catch (\Exception $e) {
             Log::error('Workflow Steps Update Error: '.$e->getMessage());
 

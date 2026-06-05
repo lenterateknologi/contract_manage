@@ -180,9 +180,8 @@ function ImportFormTemplateModal({ isOpen, onClose, showToast }: Readonly<Import
                     onDragLeave={handleDrag}
                     onDrop={handleDrop}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 ${
-                        dragActive ? 'border-primary bg-primary/[0.02]' : 'border-border hover:border-primary/50 hover:bg-muted/30'
-                    }`}
+                    className={`relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all duration-200 ${dragActive ? 'border-primary bg-primary/[0.02]' : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                        }`}
                 >
                     <input ref={fileInputRef} type="file" accept=".json" onChange={handleChange} className="hidden" disabled={loading} />
 
@@ -220,10 +219,10 @@ function ImportFormTemplateModal({ isOpen, onClose, showToast }: Readonly<Import
                                             {item.description || 'Tidak ada deskripsi'}
                                         </p>
                                         <div className="mt-2 flex items-center gap-2">
-                                            <span className="border-border/30 bg-muted text-muted-foreground rounded-xs border px-1.5 py-0.5 text-[8px] font-bold tracking-wider uppercase">
+                                            <span className="border-border/30 bg-muted text-muted-foreground rounded-xs border px-1.5 py-0.5 text-[8px] font-bold  uppercase">
                                                 {item.document_type || 'Custom'}
                                             </span>
-                                            <span className="bg-primary/10 text-primary rounded-xs px-1.5 py-0.5 text-[8px] font-bold tracking-wider uppercase">
+                                            <span className="bg-primary/10 text-primary rounded-xs px-1.5 py-0.5 text-[8px] font-bold  uppercase">
                                                 {item.fields?.length || 0} Elemen
                                             </span>
                                         </div>

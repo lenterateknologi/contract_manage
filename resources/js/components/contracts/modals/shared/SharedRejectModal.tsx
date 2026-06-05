@@ -1,18 +1,96 @@
+import { contractApi } from '@/lib/contract-api';
 import { Paperclip, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
     open: boolean;
     onClose: () => void;
     onSubmit: (reason: string, attachment?: File) => Promise<void>;
     actionAlias?: string;
+    contract?: any;
 }
 
-export function SharedRejectModal({ open, onClose, onSubmit, actionAlias }: Props) {
+export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, contract }: Props) {
     const [reason, setReason] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [allWorkflows, setAllWorkflows] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (open) {
+            contractApi.getWorkflows().then(setAllWorkflows).catch(console.error);
+        }
+    }, [open]);
+
+    const getTransitionPreview = () => {
+        if (!contract) return null;
+
+        const rejectAction = contract?.workflow_step?.actions?.find((a: any) => a.action_code === 'reject');
+        let transition = rejectAction?.transition_config;
+
+        const currentStep = contract?.workflow_step;
+        if (!currentStep) return null;
+
+        const currentStepSeq = Number(currentStep.step || 1);
+        const steps = contract?.workflow?.steps || [];
+
+        const formatStepInfo = (stepObj: any) => {
+            if (!stepObj) return 'Selesai / Disetujui (Langkah Terakhir)';
+            return `Tahap ${stepObj.step} - ${stepObj.description || stepObj.label || 'Tanpa Keterangan'}`;
+        };
+
+        if (transition && typeof transition === 'object') {
+            const { type, offset, sequence, workflow_id } = transition;
+            if (type === 'relative') {
+                const offNum = Number(offset ?? -1);
+                if (offNum === 0) {
+                    return {
+                        label: 'Tetap di Tahap Ini (Stay / Offset 0)',
+                        target: formatStepInfo(currentStep)
+                    };
+                } else if (offNum < 0) {
+                    const targetSeq = Math.max(1, currentStepSeq + offNum);
+                    const prevStep = steps.find((s: any) => Number(s.step) === targetSeq) || steps.find((s: any) => Number(s.step) < currentStepSeq);
+                    return {
+                        label: `Mundur ${Math.abs(offNum)} Langkah (Offset ${offNum})`,
+                        target: formatStepInfo(prevStep)
+                    };
+                } else {
+                    const targetSeq = currentStepSeq + offNum;
+                    const nextStep = steps.find((s: any) => Number(s.step) === targetSeq);
+                    return {
+                        label: `Maju ${offNum} Langkah (Offset +${offNum})`,
+                        target: formatStepInfo(nextStep)
+                    };
+                }
+            } else if (type === 'absolute') {
+                const targetSeq = Number(sequence ?? 1);
+                const targetStep = steps.find((s: any) => Number(s.step) === targetSeq);
+                return {
+                    label: `Kembali ke Tahap Spesifik (Tahap ${targetSeq})`,
+                    target: formatStepInfo(targetStep)
+                };
+            } else if (type === 'cross_workflow') {
+                const targetWf = allWorkflows.find((w: any) => String(w.id) === String(workflow_id));
+                const targetStep = targetWf?.steps?.find((s: any) => Number(s.step) === Number(sequence));
+                const wfName = targetWf?.name || 'Alur Kerja Target';
+                const stepLabel = targetStep ? `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || 'Tanpa Keterangan'}` : `Tahap ${sequence}`;
+                return {
+                    label: `Pindah ke Alur Kerja: ${wfName}`,
+                    target: stepLabel
+                };
+            }
+        }
+
+        const step1 = steps.find((s: any) => Number(s.step) === 1);
+        return {
+            label: 'Kembali untuk Revisi (Default Reject)',
+            target: formatStepInfo(step1)
+        };
+    };
+
+    const preview = getTransitionPreview();
 
     if (!open) return null;
 
@@ -36,7 +114,7 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias }: Prop
                 style={{ animation: 'modal-in .18s ease' }}
             >
                 <div className="flex items-center justify-between border-b border-black/5 px-5 py-4 dark:border-white/5">
-                    <h6 className="flex items-center gap-2 text-[14px] font-black tracking-tight text-black uppercase dark:text-white">
+                    <h6 className="flex items-center gap-2 text-[14px] font-semibold tracking-tight text-black uppercase dark:text-white">
                         <i className="fa-solid fa-circle-xmark text-[13px]" /> {actionAlias || 'Tolak Kontrak'}
                     </h6>
                     <button
@@ -47,6 +125,22 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias }: Prop
                     </button>
                 </div>
                 <div className="space-y-4 p-5">
+                    {preview && (
+                        <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-3.5 text-left dark:border-rose-950/30 dark:bg-rose-950/10">
+                            <div className="flex items-center gap-2 text-[10px] font-extrabold tracking-wider text-rose-700 dark:text-rose-400 uppercase">
+                                <span className="relative flex h-2 w-2">
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                                    <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500"></span>
+                                </span>
+                                Proyeksi Mundur Alur Kerja
+                            </div>
+                            <div className="mt-1.5 flex flex-col gap-0.5">
+                                <span className="text-[9px] font-medium text-slate-400 uppercase">{preview.label}</span>
+                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{preview.target}</span>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="space-y-1">
                         <p className="mb-3 text-[12px] font-medium tracking-tight text-black/50 uppercase dark:text-white/50">
                             Berikan alasan penolakan agar initiator dapat melakukan revisi.
@@ -102,7 +196,7 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias }: Prop
                     <button
                         onClick={handleSubmit}
                         disabled={loading || !reason.trim()}
-                        className="flex items-center gap-1.5 rounded-lg bg-black px-5 py-2 text-[11px] font-black tracking-[0.2em] text-white uppercase shadow-lg transition-all active:scale-95 disabled:opacity-30 dark:bg-white dark:text-black"
+                        className="flex items-center gap-1.5 rounded-lg bg-black px-5 py-2 text-[11px] font-semibold tracking-[0.2em] text-white uppercase shadow-lg transition-all active:scale-95 disabled:opacity-30 dark:bg-white dark:text-black"
                     >
                         <i className="fa-solid fa-xmark text-[11px]" />{' '}
                         {loading ? 'Mengirim...' : actionAlias ? `Konfirmasi ${actionAlias}` : 'Konfirmasi Tolak'}

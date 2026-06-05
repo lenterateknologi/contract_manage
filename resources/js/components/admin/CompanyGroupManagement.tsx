@@ -230,7 +230,7 @@ export function CompanyGroupManagement({ groups, regions, filters }: Readonly<Co
                                         variant="white"
                                         size="sm"
                                         onClick={() => router.get('/admin/companies', { action: 'create', company_group_id: editingGroup.id })}
-                                        className="border-primary/20 text-primary hover:bg-primary h-8 rounded-lg text-[9px] font-black tracking-widest uppercase transition-all hover:text-white"
+                                        className="border-primary/20 text-primary hover:bg-primary h-8 rounded-lg text-[9px] font-semibold tracking-widest uppercase transition-all hover:text-white"
                                     >
                                         <Plus size={12} className="mr-1.5" /> Tambah Company
                                     </Button>
@@ -257,7 +257,7 @@ export function CompanyGroupManagement({ groups, regions, filters }: Readonly<Co
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => router.get('/admin/companies', { action: 'edit', id: company.id })}
-                                                        className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-black tracking-widest uppercase opacity-0 transition-opacity group-hover:opacity-100"
+                                                        className="text-text-desc hover:text-primary h-8 rounded-lg text-[10px] font-semibold tracking-widest uppercase opacity-0 transition-opacity group-hover:opacity-100"
                                                     >
                                                         Kelola
                                                     </Button>
@@ -266,7 +266,7 @@ export function CompanyGroupManagement({ groups, regions, filters }: Readonly<Co
                                         </div>
                                     ) : (
                                         <div className="flex flex-col items-center justify-center rounded-xl bg-black/[0.01] py-12 dark:bg-white/[0.01]">
-                                            <p className="text-[10px] font-black tracking-widest text-slate-300 uppercase">
+                                            <p className="text-[10px] font-semibold tracking-widest text-slate-300 uppercase">
                                                 Belum ada unit bisnis terdaftar
                                             </p>
                                         </div>
@@ -316,23 +316,23 @@ export function CompanyGroupManagement({ groups, regions, filters }: Readonly<Co
             bulkActions={
                 canDelete
                     ? [
-                          {
-                              label: 'Hapus Terpilih',
-                              icon: Trash2,
-                              variant: 'destructive',
-                              onClick: (ids: string[] | number[]) => {
-                                  if (confirm(`Hapus ${ids.length} group terpilih?`)) {
-                                      router.post(
-                                          '/admin/company-groups/bulk-delete',
-                                          { ids },
-                                          {
-                                              onSuccess: () => showToast(`${ids.length} group telah dihapus`, 'success'),
-                                          },
-                                      );
-                                  }
-                              },
-                          },
-                      ]
+                        {
+                            label: 'Hapus Terpilih',
+                            icon: Trash2,
+                            variant: 'destructive',
+                            onClick: (ids: string[] | number[]) => {
+                                if (confirm(`Hapus ${ids.length} group terpilih?`)) {
+                                    router.post(
+                                        '/admin/company-groups/bulk-delete',
+                                        { ids },
+                                        {
+                                            onSuccess: () => showToast(`${ids.length} group telah dihapus`, 'success'),
+                                        },
+                                    );
+                                }
+                            },
+                        },
+                    ]
                     : undefined
             }
             pagination={{

@@ -147,7 +147,7 @@ export function SearchableMultiSelect({
                     {/* Option list */}
                     <div className="max-h-52 overflow-y-auto bg-white dark:bg-slate-950">
                         {filtered.length === 0 && !search && (
-                            <div className="py-6 text-center text-[9px] font-black uppercase text-slate-300 dark:text-slate-700 italic">{emptyText}</div>
+                            <div className="py-6 text-center text-[9px] font-semibold uppercase text-slate-300 dark:text-slate-700 italic">{emptyText}</div>
                         )}
                         {filtered.map(opt => {
                             const isSelected = values.includes(opt.value);
@@ -161,8 +161,8 @@ export function SearchableMultiSelect({
                                     }}
                                     className={cn(
                                         'flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50',
-                                        isSelected 
-                                            ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200' 
+                                        isSelected
+                                            ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200'
                                             : 'text-slate-900 dark:text-slate-100',
                                         opt.italic && 'italic text-slate-500 dark:text-slate-500'
                                     )}
@@ -183,7 +183,7 @@ export function SearchableMultiSelect({
                                         setSearch('');
                                     }
                                 }}
-                                className="flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-[11px] font-black uppercase tracking-tight text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 transition-colors"
+                                className="flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-tight text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 transition-colors"
                             >
                                 <span>+ Tambah Kustom: "{search}"</span>
                             </div>

@@ -71,8 +71,8 @@ export function DraftEditableInfoCard({
         const typeVal = selected.contract_type_id
             ? String(selected.contract_type_id)
             : types.find((x) => x.name === selected.contract_type)?.id
-              ? String(types.find((x) => x.name === selected.contract_type)?.id)
-              : '';
+                ? String(types.find((x) => x.name === selected.contract_type)?.id)
+                : '';
         setTypeId(typeVal);
         setVendorId(selected.vendor_id || '');
         setSubmissionTypeId(selected.submission_type_id || '');
@@ -99,8 +99,8 @@ export function DraftEditableInfoCard({
         const origTypeId = selected.contract_type_id
             ? String(selected.contract_type_id)
             : types.find((x) => x.name === selected.contract_type)?.id
-              ? String(types.find((x) => x.name === selected.contract_type)?.id)
-              : '';
+                ? String(types.find((x) => x.name === selected.contract_type)?.id)
+                : '';
         return (
             title !== selected.title ||
             description !== (selected.description || '') ||
@@ -281,12 +281,12 @@ export function DraftEditableInfoCard({
                                 </div>
                                 <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-emerald-700">Langkah Aktif: {selected.workflow_step.description}</span>
-                                    <span className="text-[10px] font-semibold tracking-wider text-emerald-600/70 uppercase">
+                                    <span className="text-[10px] font-semibold  text-emerald-600/70 uppercase">
                                         PIC/Role: {selected.workflow_step.role}
                                     </span>
                                     {selected.workflow_step.target_approvers && (
                                         <div className="mt-1 flex items-center gap-1.5 rounded-md bg-white/50 px-2 py-0.5 dark:bg-black/20">
-                                            <span className="text-[9px] font-black tracking-tighter text-emerald-600 uppercase">Target:</span>
+                                            <span className="text-[9px] font-semibold tracking-tighter text-emerald-600 uppercase">Target:</span>
                                             <span className="truncate text-[9px] font-bold text-emerald-700">
                                                 {selected.workflow_step.target_approvers}
                                             </span>

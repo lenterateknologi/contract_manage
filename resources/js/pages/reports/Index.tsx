@@ -142,7 +142,7 @@ export default function ReportsPage() {
             <div className="space-y-5 border-b border-slate-200 bg-slate-50/50 px-5 py-5">
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-0.5">
-                        <h1 className="flex items-center gap-2 text-[13px] font-black tracking-[0.3em] text-slate-900 uppercase">
+                        <h1 className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.3em] text-slate-900 uppercase">
                             <BarChart3 size={16} className="text-slate-900" />
                             Laporan & Statistik
                         </h1>
@@ -183,7 +183,7 @@ export default function ReportsPage() {
                         >
                             <Button
                                 className={cn(
-                                    'h-9 rounded-none border px-5 text-[10px] font-black tracking-[0.2em] uppercase transition-all',
+                                    'h-9 rounded-none border px-5 text-[10px] font-semibold tracking-[0.2em] uppercase transition-all',
                                     activeFilterCount > 0
                                         ? 'border-black bg-black text-white hover:bg-slate-800'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-black hover:bg-slate-50 hover:text-black',
@@ -197,7 +197,7 @@ export default function ReportsPage() {
                         {activeFilterCount > 0 && (
                             <button
                                 onClick={resetFilters}
-                                className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase transition-colors hover:text-rose-600"
+                                className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-400 uppercase transition-colors hover:text-rose-600"
                             >
                                 <History size={12} />
                                 RESET FILTER
@@ -208,7 +208,7 @@ export default function ReportsPage() {
                     <div className="flex h-9 items-center gap-2">
                         <Button
                             variant="outline"
-                            className="flex h-full items-center gap-2 rounded-none border-slate-200 px-6 text-[10px] font-black uppercase transition-all hover:border-black active:bg-slate-50"
+                            className="flex h-full items-center gap-2 rounded-none border-slate-200 px-6 text-[10px] font-semibold uppercase transition-all hover:border-black active:bg-slate-50"
                             onClick={exportCsv}
                         >
                             <Download size={14} />
@@ -221,7 +221,7 @@ export default function ReportsPage() {
                 <div className="-mb-5 flex items-center gap-8 border-b border-slate-200">
                     <button
                         className={cn(
-                            'relative px-2 pb-3 text-[10px] font-black tracking-[0.2em] uppercase transition-all',
+                            'relative px-2 pb-3 text-[10px] font-semibold tracking-[0.2em] uppercase transition-all',
                             activeTab === 'contracts' ? 'text-black' : 'text-slate-400 hover:text-slate-600',
                         )}
                         onClick={() => setActiveTab('contracts')}
@@ -231,7 +231,7 @@ export default function ReportsPage() {
                     </button>
                     <button
                         className={cn(
-                            'relative px-2 pb-3 text-[10px] font-black tracking-[0.2em] uppercase transition-all',
+                            'relative px-2 pb-3 text-[10px] font-semibold tracking-[0.2em] uppercase transition-all',
                             activeTab === 'audit' ? 'text-black' : 'text-slate-400 hover:text-slate-600',
                         )}
                         onClick={() => setActiveTab('audit')}
@@ -269,32 +269,32 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
         <table className="w-full border-collapse bg-white text-[12px]">
             <thead className="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
                 <tr>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Parameter</th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Judul Rekap</th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-black tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">Tipe</th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-black tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
+                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Parameter</th>
+                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Judul Rekap</th>
+                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">Tipe</th>
+                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
                         Pemilik
                     </th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-black tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
+                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
                         Registrasi
                     </th>
-                    <th className="px-5 py-3.5 text-center text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Status</th>
-                    <th className="px-5 py-3.5 text-right text-[9px] font-black tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
+                    <th className="px-5 py-3.5 text-center text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Status</th>
+                    <th className="px-5 py-3.5 text-right text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
                         Aging
                     </th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-black tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">Stage</th>
+                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">Stage</th>
                 </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
                 {contracts.map((c) => (
                     <tr key={c.id} className="group transition-colors hover:bg-slate-50/80">
                         <td className="px-5 py-3">
-                            <span className="font-mono text-[9px] font-black text-slate-400 transition-colors group-hover:text-slate-900">
+                            <span className="font-mono text-[9px] font-semibold text-slate-400 transition-colors group-hover:text-slate-900">
                                 {c.contract_no}
                             </span>
                         </td>
                         <td className="px-5 py-3">
-                            <span className="block max-w-[180px] truncate text-[10px] leading-tight font-black tracking-tight text-slate-800 uppercase">
+                            <span className="block max-w-[180px] truncate text-[10px] leading-tight font-semibold tracking-tight text-slate-800 uppercase">
                                 {c.title}
                             </span>
                         </td>
@@ -303,7 +303,7 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
                         </td>
                         <td className="px-5 py-3 text-[9px] font-bold tracking-tight whitespace-nowrap text-slate-500 uppercase">{c.creator}</td>
                         <td className="px-5 py-3">
-                            <span className="font-mono text-[9px] font-black text-slate-400 uppercase">
+                            <span className="font-mono text-[9px] font-semibold text-slate-400 uppercase">
                                 {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
                             </span>
                         </td>
@@ -315,29 +315,29 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
                                         c.status === 'approved'
                                             ? 'bg-emerald-500'
                                             : c.status === 'pending'
-                                              ? 'bg-amber-500'
-                                              : c.status === 'rejected'
-                                                ? 'bg-rose-500'
-                                                : 'bg-slate-300',
+                                                ? 'bg-amber-500'
+                                                : c.status === 'rejected'
+                                                    ? 'bg-rose-500'
+                                                    : 'bg-slate-300',
                                     )}
                                 />
                                 <span
                                     className={cn(
-                                        'text-[9px] font-black uppercase',
+                                        'text-[9px] font-semibold uppercase',
                                         c.status === 'approved'
                                             ? 'text-emerald-700'
                                             : c.status === 'pending'
-                                              ? 'text-amber-700'
-                                              : c.status === 'rejected'
-                                                ? 'text-rose-700'
-                                                : 'text-slate-500',
+                                                ? 'text-amber-700'
+                                                : c.status === 'rejected'
+                                                    ? 'text-rose-700'
+                                                    : 'text-slate-500',
                                     )}
                                 >
                                     {c.status}
                                 </span>
                             </div>
                         </td>
-                        <td className="px-5 py-3 text-right font-mono text-[9px] leading-none font-black whitespace-nowrap text-slate-400 uppercase">
+                        <td className="px-5 py-3 text-right font-mono text-[9px] leading-none font-semibold whitespace-nowrap text-slate-400 uppercase">
                             {formatRelativeTime(c.created_at)}
                         </td>
                         <td className="px-5 py-3">
@@ -360,7 +360,7 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
     return (
         <div className="flex-1 overflow-auto bg-slate-50/50 p-6 font-mono text-[11px] selection:bg-emerald-100">
             <div className="w-full space-y-0.5">
-                <div className="mb-6 flex items-center gap-6 border-b border-slate-200 pb-3 text-[8px] font-black tracking-[0.3em] text-slate-400 uppercase">
+                <div className="mb-6 flex items-center gap-6 border-b border-slate-200 pb-3 text-[8px] font-semibold tracking-[0.3em] text-slate-400 uppercase">
                     <div className="w-28 text-left">TIMESTAMP</div>
                     <div className="w-24 text-left">REF_ID</div>
                     <div className="w-32 text-left">ACTION_EVENT</div>
@@ -401,14 +401,14 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
                             <div className="w-32 shrink-0">
                                 <span
                                     className={cn(
-                                        'block border px-2 py-0.5 text-center text-[9px] font-black uppercase',
+                                        'block border px-2 py-0.5 text-center text-[9px] font-semibold uppercase',
                                         isAlert
                                             ? 'border-rose-100 bg-rose-50 text-rose-700'
                                             : isSuccess
-                                              ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
-                                              : isSystem
-                                                ? 'border-blue-100 bg-blue-50 text-blue-700'
-                                                : 'border-slate-200 bg-slate-100 text-slate-600',
+                                                ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
+                                                : isSystem
+                                                    ? 'border-blue-100 bg-blue-50 text-blue-700'
+                                                    : 'border-slate-200 bg-slate-100 text-slate-600',
                                     )}
                                 >
                                     {h.action}
@@ -416,7 +416,7 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
                             </div>
 
                             <div className="flex-1 leading-relaxed text-slate-500">
-                                <span className="mr-2 text-[8px] font-black tracking-tighter text-slate-300">LOG::</span>
+                                <span className="mr-2 text-[8px] font-semibold tracking-tighter text-slate-300">LOG::</span>
                                 <span className="font-medium text-slate-700">{h.description}</span>
                             </div>
 
@@ -431,7 +431,7 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
                 <div className="pt-12 text-center">
                     <div className="inline-flex items-center gap-4">
                         <div className="h-px w-10 bg-slate-200" />
-                        <span className="text-[8px] font-black tracking-[0.5em] text-slate-300 uppercase">SYSTEM_TRANS_LOG_END</span>
+                        <span className="text-[8px] font-semibold tracking-[0.5em] text-slate-300 uppercase">SYSTEM_TRANS_LOG_END</span>
                         <div className="h-px w-10 bg-slate-200" />
                     </div>
                 </div>
@@ -470,9 +470,9 @@ function formatRelativeTime(dateString: string) {
 function MetricCard({ label, value, color = 'text-slate-900', unit = '' }: { label: string; value: number; color?: string; unit?: string }) {
     return (
         <div className="flex min-w-[110px] flex-col gap-0.5 border-none bg-white px-4 py-2">
-            <span className="text-[7px] leading-none font-black text-slate-400 uppercase">{label}</span>
+            <span className="text-[7px] leading-none font-semibold text-slate-400 uppercase">{label}</span>
             <div className="flex items-baseline gap-0.5">
-                <span className={cn('text-[14px] leading-none font-black tracking-tighter', color)}>{value}</span>
+                <span className={cn('text-[14px] leading-none font-semibold tracking-tighter', color)}>{value}</span>
                 {unit && <span className="text-[8px] font-bold text-slate-400 uppercase">{unit}</span>}
             </div>
         </div>

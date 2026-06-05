@@ -5,10 +5,13 @@ namespace App\Queries\Master;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\Contract;
+use App\Models\ContractStatus;
+use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\Region;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class OrganizationQuery
 {

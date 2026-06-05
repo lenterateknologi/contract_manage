@@ -21,7 +21,7 @@ export function WelcomeStrip({ metrics: m }: WelcomeStripProps) {
             </div>
             {m.avgCycleTime > 0 && (
                 <div className="hidden flex-col items-end md:flex">
-                    <span className="text-muted-foreground text-[9px] font-medium tracking-wider uppercase">Rata-rata Siklus</span>
+                    <span className="text-muted-foreground text-[9px] font-medium  uppercase">Rata-rata Siklus</span>
                     <span className="text-foreground mt-0.5 text-xl font-medium tracking-tight">
                         {m.avgCycleTime} <span className="text-muted-foreground text-xs font-normal">hari</span>
                     </span>

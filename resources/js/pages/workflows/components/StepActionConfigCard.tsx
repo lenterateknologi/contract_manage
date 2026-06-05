@@ -40,6 +40,7 @@ export function StepActionConfigCard({
             if (act.transition_config.type === 'relative') {
                 if (act.transition_config.offset === 1) return 'sequential';
                 if (act.transition_config.offset === -1) return 'back';
+                if (act.transition_config.offset === 0) return 'stay';
             }
             if (act.transition_config.type === 'absolute') {
                 return 'initial';
@@ -64,7 +65,7 @@ export function StepActionConfigCard({
         <div className="relative space-y-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/40">
             {/* Card Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 dark:border-slate-800">
-                <span className="text-[9px] font-black tracking-widest text-slate-400 uppercase">Aksi #{actIdx + 1}</span>
+                <span className="text-[9px] font-semibold tracking-widest text-slate-400 uppercase">Aksi #{actIdx + 1}</span>
                 <button
                     type="button"
                     onClick={() => removeAction(actIdx)}
@@ -93,7 +94,7 @@ export function StepActionConfigCard({
                                 });
                             }}
                         >
-                            <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-slate-50/50 text-[10px] font-black tracking-tight uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900">
+                            <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-slate-50/50 text-[10px] font-semibold tracking-tight uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900">
                                 <SelectValue placeholder="PILIH AKSI" />
                             </SelectTrigger>
                             <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
@@ -133,6 +134,13 @@ export function StepActionConfigCard({
                                         next_workflow_id: null,
                                         next_workflow_step_id: null,
                                     });
+                                } else if (val === 'stay') {
+                                    updateAction(actIdx, {
+                                        transition_config: { type: 'relative', offset: 0 },
+                                        next_step_id: null,
+                                        next_workflow_id: null,
+                                        next_workflow_step_id: null,
+                                    });
                                 } else if (val === 'back') {
                                     updateAction(actIdx, {
                                         transition_config: { type: 'relative', offset: -1 },
@@ -157,12 +165,15 @@ export function StepActionConfigCard({
                                 }
                             }}
                         >
-                            <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-slate-50/50 text-left text-[10px] font-black tracking-tight uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900 [&>span]:w-full [&>span]:text-left">
+                            <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-slate-50/50 text-left text-[10px] font-semibold tracking-tight uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900 [&>span]:w-full [&>span]:text-left">
                                 <SelectValue placeholder="PILIH TRANSISI" />
                             </SelectTrigger>
                             <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
                                 <SelectItem value="sequential" className="text-[9px] font-bold uppercase">
                                     LANGKAH + 1 (DEFAULT)
+                                </SelectItem>
+                                <SelectItem value="stay" className="text-[9px] font-bold uppercase">
+                                    TETAP DI LANGKAH SAAT INI (STAY)
                                 </SelectItem>
                                 <SelectItem value="back" className="text-[9px] font-bold uppercase">
                                     LANGKAH - 1 (BACK)
@@ -196,7 +207,7 @@ export function StepActionConfigCard({
                                         });
                                     }}
                                 >
-                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                         <SelectValue placeholder="PILIH WORKFLOW" />
                                     </SelectTrigger>
                                     <SelectContent className="z-[9999] rounded-lg bg-white dark:bg-slate-950">
@@ -219,7 +230,7 @@ export function StepActionConfigCard({
                                         })
                                     }
                                 >
-                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                         <SelectValue placeholder="PILIH TAHAP TARGET" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
@@ -315,7 +326,7 @@ export function StepActionConfigCard({
                                         })
                                     }
                                 >
-                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                         <SelectValue placeholder="PILIH TAHAP TARGET" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
@@ -360,7 +371,7 @@ export function StepActionConfigCard({
                                             })
                                         }
                                     >
-                                        <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                        <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                             <SelectValue placeholder="PILIH TAHAP TARGET" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
@@ -388,7 +399,7 @@ export function StepActionConfigCard({
                                             });
                                         }}
                                     >
-                                        <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                        <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                             <SelectValue placeholder="PILIH TAHAP TARGET" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
@@ -423,7 +434,7 @@ export function StepActionConfigCard({
                                         });
                                     }}
                                 >
-                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-black uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                    <SelectTrigger className="h-8 rounded-lg border-slate-200 bg-white text-[10px] font-semibold uppercase focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                         <SelectValue placeholder={isForwardAction ? 'PILIH KATEGORI' : 'PILIH TIPE ASSIGNEE'} />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg bg-white dark:bg-slate-950">

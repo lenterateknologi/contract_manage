@@ -21,9 +21,9 @@ export function InitiatorStepCard({ isOnly, creator, submittedAt }: InitiatorSte
 
                 <div className="flex flex-col gap-2.5">
                     <div className="text-foreground flex flex-wrap items-center justify-between gap-1.5 pl-1">
-                        <span className="text-text-main text-[10px] leading-tight font-black tracking-widest uppercase">Pengajuan Awal --ss</span>
+                        <span className="text-text-main text-[10px] leading-tight font-semibold tracking-widest uppercase">Pengajuan Awal --ss</span>
                         <div className="flex origin-right scale-85 items-center">
-                            <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[8px] font-black tracking-wider text-emerald-600 uppercase dark:text-emerald-400">
+                            <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[8px] font-semibold  text-emerald-600 uppercase dark:text-emerald-400">
                                 SELESAI
                             </span>
                         </div>
@@ -33,7 +33,7 @@ export function InitiatorStepCard({ isOnly, creator, submittedAt }: InitiatorSte
                         <Avatar user={creator} size="sm" className="h-6 w-6 shadow-sm ring-2 ring-white dark:ring-slate-900" />
                         <div className="flex flex-col overflow-hidden">
                             <div className="flex items-center gap-1.5">
-                                <span className="text-text-main truncate text-[10px] leading-tight font-black">{creator?.name}</span>
+                                <span className="text-text-main truncate text-[10px] leading-tight font-semibold">{creator?.name}</span>
                                 <Check size={10} className="shrink-0 text-emerald-500" strokeWidth={4} />
                             </div>
                             <span className="text-text-soft mt-0.5 flex items-center gap-1 text-[8.5px] leading-none font-bold">

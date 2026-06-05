@@ -28,8 +28,8 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                         <Hash size={28} />
                     </div>
                     <div>
-                        <h2 className="text-text-desc mb-1 text-[11px] font-black tracking-[0.4em] uppercase">Serial Architecture</h2>
-                        <p className="text-text-main text-2xl font-black tracking-tight uppercase italic">Sistem Penomoran Otomatis</p>
+                        <h2 className="text-text-desc mb-1 text-[11px] font-semibold tracking-[0.4em] uppercase">Serial Architecture</h2>
+                        <p className="text-text-main text-2xl font-semibold tracking-tight uppercase italic">Sistem Penomoran Otomatis</p>
                     </div>
                 </div>
             </div>
@@ -42,7 +42,7 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                 {formats.length === 0 && (
                     <div className="border-surface-border bg-surface-muted flex flex-col items-center justify-center rounded-[2.5rem] border-4 border-dashed py-32">
                         <Hash className="text-text-main/10 mb-6 h-16 w-16" />
-                        <span className="text-text-main/20 text-[13px] font-black tracking-[0.5em] uppercase">Konfigurasi Belum Terdaftar</span>
+                        <span className="text-text-main/20 text-[13px] font-semibold tracking-[0.5em] uppercase">Konfigurasi Belum Terdaftar</span>
                     </div>
                 )}
             </div>
@@ -57,7 +57,7 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                     </div>
                     <div className="flex flex-col gap-8">
                         <div className="flex flex-col">
-                            <span className="text-text-main mb-2 text-[11px] font-black tracking-[0.3em] uppercase">Panduan Sintaks Placeholder</span>
+                            <span className="text-text-main mb-2 text-[11px] font-semibold tracking-[0.3em] uppercase">Panduan Sintaks Placeholder</span>
                             <p className="text-text-desc text-[9px] font-bold uppercase">
                                 Gunakan tag di bawah ini untuk membangun pola penomoran dokumen yang dinamis
                             </p>
@@ -76,7 +76,7 @@ export function NumberingFormatManagement({ formats }: Readonly<Props>) {
                                         <item.icon size={12} />
                                     </div>
                                     <div className="flex flex-col">
-                                        <code className="text-text-main text-[10px] font-black uppercase">{item.tag}</code>
+                                        <code className="text-text-main text-[10px] font-semibold uppercase">{item.tag}</code>
                                         <span className="text-text-main/30 mt-0.5 text-[8px] font-bold uppercase">{item.desc}</span>
                                     </div>
                                 </div>
@@ -123,10 +123,10 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                         <Settings2 size={20} />
                     </div>
                     <div className="flex flex-col">
-                        <h3 className="text-text-main mb-1 text-[11px] font-black tracking-[0.3em] uppercase">Modul: {format.module}</h3>
+                        <h3 className="text-text-main mb-1 text-[11px] font-semibold tracking-[0.3em] uppercase">Modul: {format.module}</h3>
                         <div className="flex items-center gap-2">
                             <div className={cn('h-1.5 w-1.5 rounded-full', format.is_active ? 'bg-success animate-pulse' : 'bg-primary/20')} />
-                            <span className="text-text-desc text-[9px] font-black tracking-[0.1em] uppercase">
+                            <span className="text-text-desc text-[9px] font-semibold tracking-[0.1em] uppercase">
                                 {format.is_active ? 'Sistem Aktif & Terpantau' : 'Sistem Penomoran Non-Aktif'}
                             </span>
                         </div>
@@ -136,7 +136,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                     <Button
                         variant="primary"
                         onClick={() => setIsEditing(true)}
-                        className="h-10 rounded-xl px-8 text-[10px] font-black uppercase shadow-xl active:scale-95"
+                        className="h-10 rounded-xl px-8 text-[10px] font-semibold uppercase shadow-xl active:scale-95"
                     >
                         Konfigurasi Serial
                     </Button>
@@ -181,9 +181,9 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                                 className="bg-primary/[0.03] border-surface-border group hover:bg-primary/[0.05] flex cursor-pointer items-center gap-4 rounded-xl border p-4 transition-colors"
                                 onClick={() => setData('is_active', !data.is_active)}
                             >
-                                <Checkbox checked={data.is_active} onCheckedChange={() => {}} />
+                                <Checkbox checked={data.is_active} onCheckedChange={() => { }} />
                                 <div className="flex flex-col">
-                                    <span className="text-text-main text-[10px] font-black uppercase">Aktivasi Sistem</span>
+                                    <span className="text-text-main text-[10px] font-semibold uppercase">Aktivasi Sistem</span>
                                     <span className="text-text-main/30 mt-0.5 text-[8px] font-bold uppercase">Aktifkan generator nomor otomatis</span>
                                 </div>
                             </div>
@@ -213,7 +213,7 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                 ) : (
                     <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
                         <div className="lg:col-span-7">
-                            <span className="text-text-main/30 mb-4 block px-1 text-[10px] font-black tracking-[0.3em] uppercase italic">
+                            <span className="text-text-main/30 mb-4 block px-1 text-[10px] font-semibold tracking-[0.3em] uppercase italic">
                                 Preview Aktual Pattern
                             </span>
                             <div className="group bg-primary shadow-primary/20 relative flex min-h-[100px] items-center gap-6 overflow-hidden rounded-[2rem] p-8 shadow-2xl dark:bg-white dark:shadow-white/5">
@@ -221,30 +221,30 @@ function FormatCard({ format }: Readonly<{ format: NumberingFormat }>) {
                                     <Hash size={120} strokeWidth={3} />
                                 </div>
                                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 dark:bg-black/10">
-                                    <span className="text-2xl font-black text-white/40 italic dark:text-black/40">#</span>
+                                    <span className="text-2xl font-semibold text-white/40 italic dark:text-black/40">#</span>
                                 </div>
-                                <span className="relative z-10 truncate font-mono text-[18px] font-black tracking-[0.1em] text-white uppercase lg:text-[22px] dark:text-black">
+                                <span className="relative z-10 truncate font-mono text-[18px] font-semibold tracking-[0.1em] text-white uppercase lg:text-[22px] dark:text-black">
                                     {format.format_pattern.replace('{{nomor}}', '0'.repeat(format.padding - 1) + '1')}
                                 </span>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-6 lg:col-span-5">
                             <div className="border-surface-border bg-surface-muted rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md">
-                                <span className="text-text-main/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase">Index Terakhir</span>
+                                <span className="text-text-main/30 mb-4 block text-[9px] font-semibold tracking-[0.2em] uppercase">Index Terakhir</span>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-text-main text-4xl leading-none font-black tracking-tighter tabular-nums">
+                                    <span className="text-text-main text-4xl leading-none font-semibold tracking-tighter tabular-nums">
                                         {format.current_number}
                                     </span>
-                                    <span className="text-text-main/20 text-[9px] font-black uppercase italic">Serial</span>
+                                    <span className="text-text-main/20 text-[9px] font-semibold uppercase italic">Serial</span>
                                 </div>
                             </div>
                             <div className="border-surface-border bg-surface-muted rounded-[1.5rem] border p-6 shadow-sm transition-all hover:shadow-md">
-                                <span className="text-text-main/30 mb-4 block text-[9px] font-black tracking-[0.2em] uppercase">Padding Digit</span>
+                                <span className="text-text-main/30 mb-4 block text-[9px] font-semibold tracking-[0.2em] uppercase">Padding Digit</span>
                                 <div className="flex items-baseline gap-2">
-                                    <span className="text-text-main text-4xl leading-none font-black tracking-tighter tabular-nums">
+                                    <span className="text-text-main text-4xl leading-none font-semibold tracking-tighter tabular-nums">
                                         {format.padding}
                                     </span>
-                                    <span className="text-text-main/20 text-[9px] font-black uppercase italic">Digit</span>
+                                    <span className="text-text-main/20 text-[9px] font-semibold uppercase italic">Digit</span>
                                 </div>
                             </div>
                         </div>

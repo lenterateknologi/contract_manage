@@ -48,7 +48,7 @@ export function CreateSubCategoryModal({ open, onClose, parentId, parentName }: 
                         <PlusCircle size={20} />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-sm font-black tracking-tight uppercase">Tambah Sub-Klasifikasi</span>
+                        <span className="text-sm font-semibold tracking-tight uppercase">Tambah Sub-Klasifikasi</span>
                         <span className="text-text-desc mt-0.5 text-[10px] font-bold tracking-widest uppercase">Induk: {parentName}</span>
                     </div>
                 </div>
@@ -82,13 +82,13 @@ export function CreateSubCategoryModal({ open, onClose, parentId, parentName }: 
                 </div>
 
                 <div className="border-surface-border flex items-center justify-end gap-3 border-t pt-4">
-                    <Button type="button" variant="ghost" onClick={onClose} className="h-10 px-6 text-[10px] font-black tracking-widest uppercase">
+                    <Button type="button" variant="ghost" onClick={onClose} className="h-10 px-6 text-[10px] font-semibold tracking-widest uppercase">
                         Batal
                     </Button>
                     <Button
                         type="submit"
                         disabled={form.processing}
-                        className="shadow-primary/20 h-10 px-8 text-[10px] font-black tracking-widest uppercase shadow-lg"
+                        className="shadow-primary/20 h-10 px-8 text-[10px] font-semibold tracking-widest uppercase shadow-lg"
                     >
                         {form.processing ? 'Memproses...' : 'Daftarkan Sub-Kategori'}
                     </Button>

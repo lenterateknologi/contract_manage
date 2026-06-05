@@ -40,7 +40,7 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 1. Monthly Volume Growth */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-text-main text-xs font-semibold tracking-wider uppercase">Pertumbuhan Kontrak Bulanan</CardTitle>
+                        <CardTitle className="text-text-main text-xs font-semibold  uppercase">Pertumbuhan Kontrak Bulanan</CardTitle>
                         <p className="text-text-desc mt-0.5 text-[9px] font-semibold">Tren penambahan volume kontrak baru selama 6 bulan terakhir.</p>
                     </CardHeader>
                     <CardContent className="p-5">
@@ -96,7 +96,7 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 2. Monthly Value Trend */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-text-main text-xs font-semibold tracking-wider uppercase">Tren Nilai Kontrak Bulanan</CardTitle>
+                        <CardTitle className="text-text-main text-xs font-semibold  uppercase">Tren Nilai Kontrak Bulanan</CardTitle>
                         <p className="text-text-desc mt-0.5 text-[9px] font-semibold">
                             Akumulasi finansial dari kontrak-kontrak baru yang masuk per bulan.
                         </p>
@@ -166,7 +166,7 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 3. Renewal vs Expired Trend */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-text-main text-xs font-semibold tracking-wider uppercase">
+                        <CardTitle className="text-text-main text-xs font-semibold  uppercase">
                             Perbandingan Renewal vs Kadaluarsa
                         </CardTitle>
                         <p className="text-text-desc mt-0.5 text-[9px] font-semibold">
@@ -233,7 +233,7 @@ export function TrendTab({ data }: TrendTabProps) {
                 {/* 4. Approval Outcomes (Stacked Area) */}
                 <Card>
                     <CardHeader className="p-5 pb-0">
-                        <CardTitle className="text-text-main text-xs font-semibold tracking-wider uppercase">
+                        <CardTitle className="text-text-main text-xs font-semibold  uppercase">
                             Output Hasil Kelayakan Kontrak
                         </CardTitle>
                         <p className="text-text-desc mt-0.5 text-[9px] font-semibold">Distribusi penyelesaian status persetujuan kontrak bulanan.</p>

@@ -67,7 +67,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
         >
             <div className="space-y-6">
                 <div>
-                    <label className="text-muted-foreground mb-2 block text-[11px] font-bold tracking-wider uppercase">Jenis Dokumen</label>
+                    <label className="text-muted-foreground mb-2 block text-[11px] font-bold  uppercase">Jenis Dokumen</label>
                     <div className="bg-muted border-border flex gap-2 rounded-xl border p-1">
                         {(['f1', 'f2'] as const).map((t) => (
                             <button
@@ -75,7 +75,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                                 type="button"
                                 onClick={() => setType(t)}
                                 className={cn(
-                                    'flex-1 rounded-lg py-2 text-[11px] font-black uppercase transition-all',
+                                    'flex-1 rounded-lg py-2 text-[11px] font-semibold uppercase transition-all',
                                     type === t
                                         ? 'bg-white text-black shadow-sm dark:bg-slate-800 dark:text-white'
                                         : 'text-black/40 hover:text-black dark:text-white/40 dark:hover:text-white',
@@ -110,7 +110,7 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
                         <div className="max-w-full text-center">
                             <div
                                 className={cn(
-                                    'truncate px-4 text-[11px] font-black uppercase',
+                                    'truncate px-4 text-[11px] font-semibold uppercase',
                                     file ? 'text-primary dark:text-white' : 'text-black/40 dark:text-white/40',
                                 )}
                             >

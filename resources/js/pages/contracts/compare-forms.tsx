@@ -105,17 +105,17 @@ export default function CompareForms({ contract, docType, template, versions, in
 
     const templateForRenderer = template
         ? {
-              ...template,
-              has_letterhead: true,
-              letterhead_json: template.letterhead_json || { margins: { top: 10, bottom: 10, left: 15, right: 15 } },
-          }
+            ...template,
+            has_letterhead: true,
+            letterhead_json: template.letterhead_json || { margins: { top: 10, bottom: 10, left: 15, right: 15 } },
+        }
         : null;
 
     if (!template) {
         return (
             <div className="flex h-screen items-center justify-center bg-slate-900 text-white">
                 <div className="text-center">
-                    <h1 className="text-2xl font-black italic">ERROR: TEMPLATE NOT FOUND</h1>
+                    <h1 className="text-2xl font-semibold italic">ERROR: TEMPLATE NOT FOUND</h1>
                     <p className="mt-2 text-[10px] font-bold text-slate-400 uppercase">No form template matches this context.</p>
                 </div>
             </div>

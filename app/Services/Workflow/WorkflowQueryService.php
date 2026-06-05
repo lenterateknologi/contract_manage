@@ -68,22 +68,19 @@ class WorkflowQueryService
         }
 
         return $query->where(function ($q) use ($user) {
-            // Anyone can initiate if initiator_type is 'all'
+            // Include workflows available to all
             $q->where('initiator_type', 'all');
 
             if ($user) {
-                // Check by Role
-                $q->orWhereHas('initiatorRolesData', function ($sq) use ($user) {
-                    $sq->where('role_name', $user->role);
-                })
-                // Check by Department
-                    ->orWhereHas('initiatorDepartmentsData', function ($sq) use ($user) {
-                        $sq->where('department_id', $user->department_id);
-                    })
-                // Check by specific User
-                    ->orWhereHas('initiatorUsersData', function ($sq) use ($user) {
-                        $sq->where('user_id', $user->id);
-                    });
+                // Include workflows restricted by initiator_type = 'specific' AND matched by user/role/dept
+                $q->orWhere(function ($sq) use ($user) {
+                    $sq->where('initiator_type', 'specific')
+                        ->where(function ($ssq) use ($user) {
+                            $ssq->whereHas('initiatorRolesData', fn ($s) => $s->where('role_name', $user->role))
+                                ->orWhereHas('initiatorDepartmentsData', fn ($s) => $s->where('department_id', $user->department_id))
+                                ->orWhereHas('initiatorUsersData', fn ($s) => $s->where('user_id', $user->id));
+                        });
+                });
             }
         })
             ->with(['steps', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
@@ -167,7 +164,7 @@ class WorkflowQueryService
     /**
      * Apply organizational filters from a workflow step to a user query
      */
-    private function applyStepFilters(Builder $query, WorkflowStep $step, User $initiator): void
+    public function applyStepFilters(Builder $query, WorkflowStep $step, User $initiator): void
     {
         if ($step->filter_department) {
             $query->where('department_id', $initiator->department_id ?? '00000000-0000-0000-0000-000000000000');

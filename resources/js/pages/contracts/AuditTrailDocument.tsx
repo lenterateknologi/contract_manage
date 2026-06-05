@@ -22,7 +22,7 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
             <div className="fixed top-4 right-4 z-50 flex gap-2 print:hidden">
                 <button
                     onClick={handlePrint}
-                    className="flex h-10 items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-6 text-[10px] font-black text-white uppercase shadow-xl transition-all hover:bg-slate-800 active:scale-95"
+                    className="flex h-10 items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-6 text-[10px] font-semibold text-white uppercase shadow-xl transition-all hover:bg-slate-800 active:scale-95"
                 >
                     <i className="fa-solid fa-print" /> CETAK DOKUMEN
                 </button>
@@ -34,32 +34,32 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                 <div className="mb-8 border-b-2 border-slate-900 pb-8 text-left">
                     <div className="mb-6 flex items-center justify-between">
                         <div className="flex flex-col">
-                            <h1 className="text-2xl leading-none font-black tracking-tighter text-slate-950 uppercase italic">
+                            <h1 className="text-2xl leading-none font-semibold tracking-tighter text-slate-950 uppercase italic">
                                 Catatan Audit Kontrak
                             </h1>
                             <span className="mt-1 text-[10px] font-bold text-slate-500 uppercase">Audit Trail Log Report</span>
                         </div>
                         <div className="text-right">
-                            <div className="mb-1 text-[10px] leading-none font-black text-slate-400 uppercase">Contract No.</div>
+                            <div className="mb-1 text-[10px] leading-none font-semibold text-slate-400 uppercase">Contract No.</div>
                             <div className="font-mono text-sm font-bold text-slate-900">{contract.contract_no}</div>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-8 pt-4">
                         <div>
-                            <div className="mb-1.5 text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Judul Kontrak</div>
+                            <div className="mb-1.5 text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Judul Kontrak</div>
                             <div className="text-[12px] leading-tight font-bold text-slate-900">{contract.title}</div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <div className="mb-1.5 text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Masa Berlaku</div>
+                                <div className="mb-1.5 text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Masa Berlaku</div>
                                 <div className="text-[10px] font-bold text-slate-900">
                                     {formatDate(contract.contract_date)}
                                     {contract.end_date && ` — ${formatDate(contract.end_date)}`}
                                 </div>
                             </div>
                             <div>
-                                <div className="mb-1.5 text-[9px] font-black tracking-[0.2em] text-slate-400 uppercase">Dicetak Pada</div>
+                                <div className="mb-1.5 text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Dicetak Pada</div>
                                 <div className="text-[10px] font-bold text-slate-900">{formatDateTime(new Date())}</div>
                             </div>
                         </div>
@@ -70,15 +70,15 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                 <div className="mb-8 rounded-lg border border-slate-200 bg-slate-50 p-6">
                     <div className="grid grid-cols-3 gap-6">
                         <div>
-                            <div className="mb-1 text-[8px] font-black text-slate-400 uppercase">Tipe Kontrak</div>
+                            <div className="mb-1 text-[8px] font-semibold text-slate-400 uppercase">Tipe Kontrak</div>
                             <div className="text-[11px] font-bold uppercase">{contract.contract_type}</div>
                         </div>
                         <div>
-                            <div className="mb-1 text-[8px] font-black text-slate-400 uppercase">Tipe Perjanjian</div>
+                            <div className="mb-1 text-[8px] font-semibold text-slate-400 uppercase">Tipe Perjanjian</div>
                             <div className="text-[11px] font-bold uppercase">{contract.transaction_type || 'Perjanjian Baru'}</div>
                         </div>
                         <div>
-                            <div className="mb-1 text-[8px] font-black text-slate-400 uppercase">Pihak Kedua</div>
+                            <div className="mb-1 text-[8px] font-semibold text-slate-400 uppercase">Pihak Kedua</div>
                             <div className="text-[11px] font-bold uppercase">{contract.p2_entity || (contract as any).vendor?.name || '-'}</div>
                         </div>
                     </div>
@@ -89,10 +89,10 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                     <table className="w-full border-collapse text-left">
                         <thead>
                             <tr className="border-y border-slate-300 bg-slate-100">
-                                <th className="w-[160px] px-4 py-3 text-[10px] font-black text-slate-600 uppercase">Waktu (WIB)</th>
-                                <th className="w-[160px] px-4 py-3 text-[10px] font-black text-slate-600 uppercase">Aktor</th>
-                                <th className="w-[120px] px-4 py-3 text-[10px] font-black text-slate-600 uppercase">Aksi</th>
-                                <th className="px-4 py-3 text-[10px] font-black text-slate-600 uppercase">Keterangan</th>
+                                <th className="w-[160px] px-4 py-3 text-[10px] font-semibold text-slate-600 uppercase">Waktu (WIB)</th>
+                                <th className="w-[160px] px-4 py-3 text-[10px] font-semibold text-slate-600 uppercase">Aktor</th>
+                                <th className="w-[120px] px-4 py-3 text-[10px] font-semibold text-slate-600 uppercase">Aksi</th>
+                                <th className="px-4 py-3 text-[10px] font-semibold text-slate-600 uppercase">Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -103,7 +103,7 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                                     </td>
                                     <td className="border-b border-slate-100 px-4 py-4">
                                         <div className="flex flex-col">
-                                            <span className="text-[11px] leading-tight font-black text-black uppercase">
+                                            <span className="text-[11px] leading-tight font-semibold text-black uppercase">
                                                 {h.actor?.name || 'System'}
                                             </span>
                                             {h.actor?.id && (
@@ -114,12 +114,12 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                                     <td className="border-b border-slate-100 px-4 py-4">
                                         <span
                                             className={cn(
-                                                'inline-block rounded px-1.5 py-0.5 text-[8px] font-black tracking-tighter uppercase ring-1 ring-inset',
+                                                'inline-block rounded px-1.5 py-0.5 text-[8px] font-semibold tracking-tighter uppercase ring-1 ring-inset',
                                                 h.action.includes('APPROVE')
                                                     ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
                                                     : h.action.includes('REJECT')
-                                                      ? 'bg-rose-50 text-rose-700 ring-rose-200'
-                                                      : 'bg-indigo-50 text-indigo-700 ring-indigo-200',
+                                                        ? 'bg-rose-50 text-rose-700 ring-rose-200'
+                                                        : 'bg-indigo-50 text-indigo-700 ring-indigo-200',
                                             )}
                                         >
                                             {h.action.replace(/_/g, ' ')}
@@ -144,7 +144,7 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                 {/* Document Footer */}
                 <div className="mt-12 flex items-end justify-between border-t border-slate-100 pt-8">
                     <div className="flex flex-col">
-                        <span className="mb-1 text-[9px] font-black text-slate-400 uppercase">Generated by CMS System</span>
+                        <span className="mb-1 text-[9px] font-semibold text-slate-400 uppercase">Generated by CMS System</span>
                         <span className="text-[10px] font-bold text-slate-900 italic">
                             Laporan ini dibuat secara otomatis oleh sistem managemen kontrak digital.
                         </span>

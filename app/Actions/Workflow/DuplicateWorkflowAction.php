@@ -64,6 +64,12 @@ class DuplicateWorkflowAction
 
             // Duplicate steps and keep a map of old step ID -> new step ID
             $stepIdMap = [];
+            $workflow->load([
+                'steps.approverRoles',
+                'steps.approverDepartments',
+                'steps.approverUsers',
+                'steps.actions',
+            ]);
             $oldSteps = $workflow->steps; // Ordered by step
 
             /** @var WorkflowStep $oldStep */

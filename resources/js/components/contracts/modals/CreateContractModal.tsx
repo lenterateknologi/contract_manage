@@ -44,11 +44,11 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         { value: String(auth?.user?.id), label: `Diri Sendiri (${auth?.user?.name})` },
         ...(Array.isArray(users)
             ? users
-                  .filter((u) => u.id !== auth?.user?.id)
-                  .map((u) => ({
-                      value: String(u.id),
-                      label: `${u.name} — ${u.role} (${u.department_name || 'No Dept'})`,
-                  }))
+                .filter((u) => u.id !== auth?.user?.id)
+                .map((u) => ({
+                    value: String(u.id),
+                    label: `${u.name} — ${u.role} (${u.department_name || 'No Dept'})`,
+                }))
             : []),
     ];
 
@@ -60,13 +60,13 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     }, [open, auth]);
 
     useEffect(() => {
-        if (typeId) {
+        if (open) {
             fetchWorkflows(typeId, initiatedById);
         } else {
             setWorkflows([]);
             setWorkflowId('');
         }
-    }, [typeId, initiatedById]);
+    }, [open, typeId, initiatedById]);
 
     const fetchWorkflows = async (tId: string, initId?: string) => {
         setFetchingWorkflows(true);
@@ -79,7 +79,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             } else if (data.length > 1) {
                 const defaultWf = data.find((w: any) => w.is_default);
                 if (defaultWf) setWorkflowId(defaultWf.id);
-                else setWorkflowId('');
             }
         } catch (err) {
             console.error('Failed to fetch workflows', err);
@@ -186,7 +185,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             <div className="space-y-6">
                 {isLegalOrAdmin && (
                     <div className="border-primary/10 bg-primary/5 space-y-3 rounded-2xl border p-5">
-                        <label className="text-primary flex items-center gap-2 text-[11px] font-bold tracking-wider uppercase">
+                        <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
                             <ShieldCheck size={14} /> Dibuat Untuk (Initiator)
                         </label>
                         <PortalSelect
@@ -203,7 +202,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <div className="space-y-1.5">
-                        <label className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
+                        <label className="text-muted-foreground text-[11px] font-bold  uppercase">
                             Tipe Pengajuan <span className="text-rose-500">*</span>
                         </label>
                         <PortalSelect
@@ -216,7 +215,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-muted-foreground text-[11px] font-bold tracking-wider uppercase">
+                        <label className="text-muted-foreground text-[11px] font-bold  uppercase">
                             Klasifikasi & Jenis Kontrak <span className="text-rose-500">*</span>
                         </label>
                         <TreeSelect
@@ -234,23 +233,21 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     </div>
                 </div>
 
-                {workflows.length > 0 && (
-                    <div className="animate-in fade-in slide-in-from-top-2 border-primary/10 bg-primary/[0.02] space-y-1.5 rounded-2xl border p-4">
-                        <label className="text-primary flex items-center gap-2 text-[11px] font-bold tracking-wider uppercase">
-                            <ShieldCheck size={14} /> Pilih Alur Kerja (Workflow) <span className="text-rose-500">*</span>
-                        </label>
-                        <PortalSelect
-                            value={workflowId}
-                            onValueChange={(val) => setWorkflowId(val)}
-                            options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
-                            placeholder="Pilih Alur Kerja"
-                        />
-                        <p className="text-muted-foreground text-[9px] leading-relaxed font-medium italic">
-                            Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
-                        </p>
-                        {errors.workflow_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
-                    </div>
-                )}
+                <div className="animate-in fade-in slide-in-from-top-2  py-2">
+                    <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
+                        <ShieldCheck size={14} /> Pilih Alur Kerja (Workflow) <span className="text-rose-500">*</span>
+                    </label>
+                    <PortalSelect
+                        value={workflowId}
+                        onValueChange={(val) => setWorkflowId(val)}
+                        options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
+                        placeholder={fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
+                    />
+                    <p className="text-muted-foreground text-[9px] leading-relaxed font-medium italic">
+                        Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
+                    </p>
+                    {errors.workflow_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
+                </div>
 
                 <FormInput
                     label="Nama Project / Judul Kontrak *"

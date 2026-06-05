@@ -73,11 +73,11 @@ export function SiteCustomizer() {
                             <Palette size={16} strokeWidth={2.5} />
                         </div>
                         <div>
-                            <SheetTitle className="text-sidebar-primary text-sm font-black tracking-tight dark:text-white">Customizer</SheetTitle>
-                            <p className="text-sidebar-foreground/30 mt-0.5 text-[8px] font-black tracking-[0.2em] uppercase">Personalisasi</p>
+                            <SheetTitle className="text-sidebar-primary text-sm font-semibold tracking-tight dark:text-white">Customizer</SheetTitle>
+                            <p className="text-sidebar-foreground/30 mt-0.5 text-[8px] font-semibold tracking-[0.2em] uppercase">Personalisasi</p>
                         </div>
                     </div>
-                    <p className="text-sidebar-foreground/40 text-[10px] leading-relaxed font-bold tracking-wider uppercase">
+                    <p className="text-sidebar-foreground/40 text-[10px] leading-relaxed font-bold  uppercase">
                         Sesuaikan tampilan platform Anda.
                     </p>
                 </div>
@@ -89,7 +89,7 @@ export function SiteCustomizer() {
                         <div className="space-y-3">
                             <div className="flex items-center gap-2 px-1">
                                 <Type className="text-sidebar-foreground/30 h-3 w-3" />
-                                <h3 className="text-sidebar-foreground/50 text-[9px] font-black tracking-[0.2em] uppercase">Jenis Font</h3>
+                                <h3 className="text-sidebar-foreground/50 text-[9px] font-semibold tracking-[0.2em] uppercase">Jenis Font</h3>
                             </div>
                             <div className="grid grid-cols-1 gap-1.5">
                                 {fonts.map((font) => (
@@ -104,7 +104,7 @@ export function SiteCustomizer() {
                                         )}
                                     >
                                         <div className="flex flex-col">
-                                            <span className="text-xs font-black tracking-tight" style={{ fontFamily: font.value }}>
+                                            <span className="text-xs font-semibold tracking-tight" style={{ fontFamily: font.value }}>
                                                 {font.name}
                                             </span>
                                             <span
@@ -126,7 +126,7 @@ export function SiteCustomizer() {
                         <div className="space-y-3">
                             <div className="flex items-center gap-2 px-1">
                                 <Maximize2 className="text-sidebar-foreground/30 h-3 w-3" />
-                                <h3 className="text-sidebar-foreground/50 text-[9px] font-black tracking-[0.2em] uppercase">Ukuran Tampilan</h3>
+                                <h3 className="text-sidebar-foreground/50 text-[9px] font-semibold tracking-[0.2em] uppercase">Ukuran Tampilan</h3>
                             </div>
                             <div className="grid grid-cols-3 gap-1.5">
                                 {fontSizes.map((size) => (
@@ -142,13 +142,13 @@ export function SiteCustomizer() {
                                     >
                                         <span
                                             className={cn(
-                                                'mb-0.5 font-black tracking-tight',
+                                                'mb-0.5 font-semibold tracking-tight',
                                                 size.name === 'Small' ? 'text-[10px]' : size.name === 'Normal' ? 'text-xs' : 'text-base',
                                             )}
                                         >
                                             Aa
                                         </span>
-                                        <span className="text-[9px] leading-none font-black tracking-tighter uppercase">{size.name}</span>
+                                        <span className="text-[9px] leading-none font-semibold tracking-tighter uppercase">{size.name}</span>
                                     </button>
                                 ))}
                             </div>

@@ -21,7 +21,7 @@ function MsgBubble({ msg, isMe }: { msg: any; isMe: boolean }) {
         return (
             <div className="mb-1 flex flex-col items-end gap-1">
                 <div className="mr-1 flex items-center gap-1.5">
-                    <span className="text-[10px] font-black text-black uppercase dark:text-white">You</span>
+                    <span className="text-[10px] font-semibold text-black uppercase dark:text-white">You</span>
                     {role && (
                         <span className="px-1.2 py-0.3 rounded-md border border-gray-100 bg-gray-50 text-[10px] font-medium text-gray-400">
                             {role}
@@ -197,7 +197,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
             >
                 <i className={`fa-solid ${open ? 'fa-xmark' : 'fa-comments'} text-[18px]`} />
                 {totalUnread > 0 && (
-                    <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-black text-[10px] font-black text-white shadow-lg dark:border-black dark:bg-white dark:text-black">
+                    <span className="pointer-events-none absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border border-white bg-black text-[10px] font-semibold text-white shadow-lg dark:border-black dark:bg-white dark:text-black">
                         {totalUnread}
                     </span>
                 )}

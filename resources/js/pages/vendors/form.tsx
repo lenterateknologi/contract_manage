@@ -170,12 +170,12 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                         )}
                         <div className="bg-primary/5 border-primary/10 flex items-center gap-4 rounded-2xl border px-4 py-2 dark:border-white/10 dark:bg-white/5">
                             <div className="flex flex-col items-end">
-                                <span className="text-primary/40 mb-1 text-[10px] leading-none font-black tracking-widest uppercase dark:text-white/40">
+                                <span className="text-primary/40 mb-1 text-[10px] leading-none font-semibold tracking-widest uppercase dark:text-white/40">
                                     Kepatuhan Audit
                                 </span>
                                 <span
                                     className={cn(
-                                        'text-xs font-black tracking-tight uppercase',
+                                        'text-xs font-semibold tracking-tight uppercase',
                                         auditScore >= 80 ? 'text-emerald-500' : auditScore >= 50 ? 'text-amber-500' : 'text-rose-500',
                                     )}
                                 >
@@ -185,7 +185,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                             <div className="bg-primary/10 h-8 w-[1px] dark:bg-white/10" />
                             <div className="flex items-center gap-2">
                                 <div className={cn('h-1.5 w-1.5 animate-pulse rounded-full', data.is_active ? 'bg-emerald-500' : 'bg-rose-500')} />
-                                <span className="text-primary text-[10px] font-black tracking-widest uppercase dark:text-white">
+                                <span className="text-primary text-[10px] font-semibold tracking-widest uppercase dark:text-white">
                                     {data.is_active ? 'Aktif' : 'Nonaktif'}
                                 </span>
                             </div>
@@ -204,7 +204,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                         <div className="grid grid-cols-1 gap-y-10">
                             <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
                                 <div className="space-y-2.5">
-                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                         Bentuk
                                     </label>
                                     <Select value={data.company_type} onValueChange={(v: string) => setData('company_type', String(v))}>
@@ -252,7 +252,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                     icon={Truck}
                                 />
                                 <div className="space-y-2.5">
-                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-black tracking-widest uppercase dark:text-white/60">
+                                    <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                         Kategori Bisnis
                                     </label>
                                     <Select value={data.category} onValueChange={(v: string) => setData('category', String(v))}>
@@ -332,7 +332,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                     />
                                     <label
                                         htmlFor="is_individual"
-                                        className="text-primary cursor-pointer text-[10px] font-bold tracking-wider uppercase"
+                                        className="text-primary cursor-pointer text-[10px] font-bold  uppercase"
                                     >
                                         Registrasi Sebagai Perorangan
                                     </label>
@@ -412,7 +412,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                         headerAction={
                             isEdit && (
                                 <div className="flex items-center gap-2">
-                                    <span className="bg-primary/10 text-primary rounded-lg px-2.5 py-1 text-[10px] leading-none font-black tracking-widest uppercase dark:bg-white/10 dark:text-white">
+                                    <span className="bg-primary/10 text-primary rounded-lg px-2.5 py-1 text-[10px] leading-none font-semibold tracking-widest uppercase dark:bg-white/10 dark:text-white">
                                         {vendor?.documents?.length || 0} / {docCats.flatMap((c) => c.types).length} Berkas
                                     </span>
                                 </div>
@@ -422,7 +422,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                         {!isEdit ? (
                             <div className="border-primary/10 bg-primary/[0.01] rounded-3xl border-2 border-dashed p-12 text-center dark:border-white/10 dark:bg-white/[0.01]">
                                 <Clock className="text-primary/20 mx-auto mb-4 dark:text-white/20" size={40} strokeWidth={1} />
-                                <p className="text-primary/40 text-[11px] leading-relaxed font-black tracking-widest uppercase dark:text-white/40">
+                                <p className="text-primary/40 text-[11px] leading-relaxed font-semibold tracking-widest uppercase dark:text-white/40">
                                     SIMPAN PROFIL UNTUK
                                     <br />
                                     MENGAKTIFKAN MODUL AUDIT
@@ -432,7 +432,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                             <div className="grid grid-cols-1 gap-8">
                                 {docCats.map((cat) => (
                                     <div key={cat.label} className="space-y-4">
-                                        <div className="text-primary/40 px-2 text-[10px] font-black tracking-widest uppercase dark:text-white/40">
+                                        <div className="text-primary/40 px-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/40">
                                             {cat.label}
                                         </div>
                                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -449,7 +449,7 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                                                         )}
                                                     >
                                                         <div className="min-w-0">
-                                                            <div className="text-primary truncate text-[11px] font-black tracking-tight uppercase dark:text-white">
+                                                            <div className="text-primary truncate text-[11px] font-semibold tracking-tight uppercase dark:text-white">
                                                                 {type.replace(/_/g, ' ')}
                                                             </div>
                                                             <div className="mt-1 flex items-center gap-1.5">
@@ -506,11 +506,11 @@ export default function VendorForm({ vendor, breadcrumbs }: Props) {
                             <Checkbox
                                 id="is_active"
                                 checked={!!data.is_active}
-                                onCheckedChange={() => {}}
+                                onCheckedChange={() => { }}
                                 className="border-success/30 data-[state=checked]:bg-success h-6 w-6 rounded-lg"
                             />
                             <div className="flex flex-col">
-                                <span className="text-success text-sm font-black tracking-tight uppercase">Status Terverifikasi</span>
+                                <span className="text-success text-sm font-semibold tracking-tight uppercase">Status Terverifikasi</span>
                                 <span className="text-success/60 mt-1 text-[10px] leading-tight font-semibold tracking-widest uppercase">
                                     Aktif dalam ekosistem rekanan
                                 </span>

@@ -41,7 +41,7 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                         <div className="truncate text-[13px] font-semibold" title={title}>
                             {title}
                         </div>
-                        <div className="text-[10px] tracking-wider text-gray-400 uppercase">Adobe PDF Render v2.0</div>
+                        <div className="text-[10px]  text-gray-400 uppercase">Adobe PDF Render v2.0</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -74,7 +74,7 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                 {loading && (
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black text-white">
                         <i className="fa-solid fa-spinner fa-spin text-3xl text-white" />
-                        <span className="text-[10px] font-black uppercase">Generating PDF Preview...</span>
+                        <span className="text-[10px] font-semibold uppercase">Generating PDF Preview...</span>
                     </div>
                 )}
 
@@ -101,7 +101,7 @@ export default function PreviewModal({ open, onClose, title, url, hasFile }: Pro
                 ) : (
                     <div className="flex h-full flex-col items-center justify-center gap-3 text-white/40">
                         <i className="fa-solid fa-triangle-exclamation text-3xl text-white/20" />
-                        <span className="text-[11px] font-black uppercase">Gagal memuat preview PDF</span>
+                        <span className="text-[11px] font-semibold uppercase">Gagal memuat preview PDF</span>
                     </div>
                 )}
             </div>

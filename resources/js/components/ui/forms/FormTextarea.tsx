@@ -22,10 +22,10 @@ const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaProps>(
             <div className={cn('space-y-1.5 w-full group', containerClassName)}>
                 {label && (
                     <div className="flex items-center justify-between px-0.5">
-                        <Label 
-                            htmlFor={inputId} 
+                        <Label
+                            htmlFor={inputId}
                             className={cn(
-                                'font-bold uppercase tracking-wider transition-colors',
+                                'font-bold uppercase  transition-colors',
                                 isCompact ? 'text-[10px]' : 'text-[11px]',
                                 error ? 'text-rose-500' : 'text-muted-foreground group-focus-within:text-primary',
                                 labelClassName

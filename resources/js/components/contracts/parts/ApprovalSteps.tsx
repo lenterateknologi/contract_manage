@@ -30,6 +30,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const debouncedSearch = useDebounce(search, 500);
     const [isExporting, setIsExporting] = useState(false);
     const [jobStatus, setJobStatus] = useState<any>(null);
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
     const roles = useMemo(
         () =>
@@ -289,13 +290,13 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                             className={cn(
                                 'relative space-y-6',
                                 block.isSubWorkflow &&
-                                    'ml-4 rounded-r-xl border-l-2 border-dashed border-indigo-200 bg-indigo-50/20 py-2 pl-4 dark:border-indigo-900/40 dark:bg-indigo-950/5',
+                                'ml-4 rounded-r-xl border-l-2 border-dashed border-indigo-200 bg-indigo-50/20 py-2 pl-4 dark:border-indigo-900/40 dark:bg-indigo-950/5',
                             )}
                         >
                             {block.isSubWorkflow && (
                                 <div className="mb-4 flex items-center gap-2">
                                     <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
-                                    <span className="text-[10px] font-black tracking-tighter text-indigo-600 uppercase dark:text-indigo-400">
+                                    <span className="text-[10px] font-semibold tracking-tighter text-indigo-600 uppercase dark:text-indigo-400">
                                         Sub-Workflow: {block.workflowName}
                                     </span>
                                 </div>
@@ -324,8 +325,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                         isCompleted
                                                             ? 'bg-emerald-500 dark:bg-emerald-600'
                                                             : isActive
-                                                              ? 'bg-amber-400/40 dark:bg-amber-500/30'
-                                                              : 'bg-slate-200 dark:bg-slate-800',
+                                                                ? 'bg-amber-400/40 dark:bg-amber-500/30'
+                                                                : 'bg-slate-200 dark:bg-slate-800',
                                                     )}
                                                 />
                                             )}
@@ -337,12 +338,12 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                     isCompleted
                                                         ? 'border-emerald-500 bg-emerald-500 text-white dark:border-emerald-600 dark:bg-emerald-600'
                                                         : isRejectedState
-                                                          ? 'border-rose-500 bg-rose-500 text-white dark:border-rose-600 dark:bg-rose-600'
-                                                          : isActive
-                                                            ? 'animate-pulse border-amber-500 bg-amber-500 text-white shadow-md ring-2 shadow-amber-500/20 ring-amber-500/15 dark:border-amber-600 dark:bg-amber-600'
-                                                            : block.isSubWorkflow
-                                                              ? 'border-indigo-300 bg-indigo-100 text-indigo-600 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-400'
-                                                              : 'border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400',
+                                                            ? 'border-rose-500 bg-rose-500 text-white dark:border-rose-600 dark:bg-rose-600'
+                                                            : isActive
+                                                                ? 'animate-pulse border-amber-500 bg-amber-500 text-white shadow-md ring-2 shadow-amber-500/20 ring-amber-500/15 dark:border-amber-600 dark:bg-amber-600'
+                                                                : block.isSubWorkflow
+                                                                    ? 'border-indigo-300 bg-indigo-100 text-indigo-600 dark:border-indigo-800 dark:bg-indigo-950 dark:text-indigo-400'
+                                                                    : 'border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400',
                                                 )}
                                             >
                                                 {group.sequence}
@@ -353,14 +354,14 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                 <div className="flex flex-col">
                                                     <h3
                                                         className={cn(
-                                                            'text-[11px] font-black tracking-wider uppercase transition-colors duration-300',
+                                                            'text-[11px] font-semibold transition-colors duration-300',
                                                             isCompleted
                                                                 ? 'text-emerald-700 dark:text-emerald-400'
                                                                 : isActive
-                                                                  ? 'font-extrabold text-amber-600 dark:text-amber-400'
-                                                                  : isRejectedState
-                                                                    ? 'text-rose-600 dark:text-rose-400'
-                                                                    : 'text-text-main',
+                                                                    ? 'font-extrabold text-amber-600 dark:text-amber-400'
+                                                                    : isRejectedState
+                                                                        ? 'text-rose-600 dark:text-rose-400'
+                                                                        : 'text-text-main',
                                                         )}
                                                     >
                                                         {group.stepName === 'Persetujuan Tambahan' ? 'Persetujuan Tambahan' : `${group.stepName}`}
@@ -372,8 +373,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                 isCompleted
                                                                     ? 'text-emerald-600/70 dark:text-emerald-400/70'
                                                                     : isActive
-                                                                      ? 'text-amber-600/70 dark:text-amber-400/70'
-                                                                      : 'text-text-soft',
+                                                                        ? 'text-amber-600/70 dark:text-amber-400/70'
+                                                                        : 'text-text-soft',
                                                             )}
                                                         >
                                                             {group.stepDescription}
@@ -386,62 +387,78 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                     {(() => {
                                                         const subStepItems = group.items.filter((item: ContractApproval) => item.sub_step != null);
                                                         const hasMainStep = group.items.some((item: ContractApproval) => item.sub_step == null);
+                                                        const groupKey = `${block.workflowId}_${group.sequence}`;
+                                                        const isExpanded = !!expandedGroups[groupKey];
+                                                        const visibleItems = isExpanded ? group.items : group.items.slice(0, 3);
 
-                                                        return group.items.map((a: ContractApproval) => {
-                                                            const isSubStep = a.sub_step != null;
-                                                            const itemIdx = group.items.indexOf(a);
-                                                            const isLastItemInGroup = itemIdx === group.items.length - 1;
-                                                            const isFirstInGroup = itemIdx === 0;
+                                                        return (
+                                                            <>
+                                                                {visibleItems.map((a: ContractApproval) => {
+                                                                    const isSubStep = a.sub_step != null;
+                                                                    const itemIdx = group.items.indexOf(a);
+                                                                    const isLastItemInGroup = itemIdx === group.items.length - 1;
+                                                                    const isFirstInGroup = itemIdx === 0;
 
-                                                            if (!isSubStep) {
-                                                                const stepNumber = `${group.sequence}`;
-                                                                return (
-                                                                    <div key={a.id} className="relative">
-                                                                        {isFirstInGroup && subStepItems.length > 0 && (
-                                                                            <div className="absolute top-6 bottom-0 left-[9px] w-0.5 bg-slate-200 dark:bg-slate-800" />
-                                                                        )}
-                                                                        <ApprovalCard approval={a} stepNumber={stepNumber} displaySubSteps={false} />
-                                                                    </div>
-                                                                );
-                                                            } else {
-                                                                const stepNumber = `${group.sequence}.${a.sub_step}`;
-                                                                const isApproved = a.status === 'approved';
-                                                                const isPending = a.status === 'pending' && a.is_active;
-
-                                                                return (
-                                                                    <div key={a.id} className="animate-in fade-in relative mt-2 pl-12 duration-300">
-                                                                        {/* Tree connector branch */}
-                                                                        <div className="pointer-events-none absolute top-0 bottom-0 left-[9px]">
-                                                                            {/* Vertical line segment */}
-                                                                            <div
-                                                                                className={cn(
-                                                                                    'absolute left-0 w-0.5 transition-colors duration-300',
-                                                                                    isApproved
-                                                                                        ? 'bg-emerald-500 dark:bg-emerald-600'
-                                                                                        : isPending
-                                                                                          ? 'bg-amber-400 dark:bg-amber-500/50'
-                                                                                          : 'bg-slate-200 dark:bg-slate-800',
-                                                                                    !hasMainStep && isFirstInGroup ? '-top-6' : 'top-0',
-                                                                                    isLastItemInGroup ? 'h-[16px]' : 'bottom-0',
+                                                                    if (!isSubStep) {
+                                                                        const stepNumber = `${group.sequence}`;
+                                                                        return (
+                                                                            <div key={a.id} className="relative animate-in fade-in duration-200">
+                                                                                {isFirstInGroup && subStepItems.length > 0 && (
+                                                                                    <div className="absolute top-6 bottom-0 left-[9px] w-0.5 bg-slate-200 dark:bg-slate-800" />
                                                                                 )}
-                                                                            />
-                                                                            {/* Horizontal branch line segment */}
-                                                                            <div
-                                                                                className={cn(
-                                                                                    'absolute top-[16px] left-0 h-0.5 w-[39px] transition-colors duration-300',
-                                                                                    isApproved
-                                                                                        ? 'bg-emerald-500 dark:bg-emerald-600'
-                                                                                        : isPending
-                                                                                          ? 'bg-amber-400 dark:bg-amber-500/50'
-                                                                                          : 'bg-slate-200 dark:bg-slate-800',
-                                                                                )}
-                                                                            />
-                                                                        </div>
-                                                                        <ApprovalCard approval={a} stepNumber={stepNumber} displaySubSteps={false} />
-                                                                    </div>
-                                                                );
-                                                            }
-                                                        });
+                                                                                <ApprovalCard approval={a} stepNumber={stepNumber} displaySubSteps={false} />
+                                                                            </div>
+                                                                        );
+                                                                    } else {
+                                                                        const stepNumber = `${group.sequence}.${a.sub_step}`;
+                                                                        const isApproved = a.status === 'approved';
+                                                                        const isPending = a.status === 'pending' && a.is_active;
+
+                                                                        return (
+                                                                            <div key={a.id} className="animate-in fade-in relative mt-2 pl-12 duration-200">
+                                                                                {/* Tree connector branch */}
+                                                                                <div className="pointer-events-none absolute top-0 bottom-0 left-[9px]">
+                                                                                    {/* Vertical line segment */}
+                                                                                    <div
+                                                                                        className={cn(
+                                                                                            'absolute left-0 w-0.5 transition-colors duration-300',
+                                                                                            isApproved
+                                                                                                ? 'bg-emerald-500 dark:bg-emerald-600'
+                                                                                                : isPending
+                                                                                                    ? 'bg-amber-400 dark:bg-amber-500/50'
+                                                                                                    : 'bg-slate-200 dark:bg-slate-800',
+                                                                                            !hasMainStep && isFirstInGroup ? '-top-6' : 'top-0',
+                                                                                            isLastItemInGroup ? 'h-[16px]' : 'bottom-0',
+                                                                                        )}
+                                                                                    />
+                                                                                    {/* Horizontal branch line segment */}
+                                                                                    <div
+                                                                                        className={cn(
+                                                                                            'absolute top-[16px] left-0 h-0.5 w-[39px] transition-colors duration-300',
+                                                                                            isApproved
+                                                                                                ? 'bg-emerald-500 dark:bg-emerald-600'
+                                                                                                : isPending
+                                                                                                    ? 'bg-amber-400 dark:bg-amber-500/50'
+                                                                                                    : 'bg-slate-200 dark:bg-slate-800',
+                                                                                        )}
+                                                                                    />
+                                                                                </div>
+                                                                                <ApprovalCard approval={a} stepNumber={stepNumber} displaySubSteps={false} />
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                })}
+                                                                {group.items.length > 3 && (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setExpandedGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
+                                                                        className="text-primary hover:underline mt-2 flex items-center gap-1.5 px-1 text-[9px] font-extrabold tracking-wider uppercase"
+                                                                    >
+                                                                        {isExpanded ? 'Sembunyikan' : `+ Tampilkan ${group.items.length - 3} Penerima Persetujuan Lainnya`}
+                                                                    </button>
+                                                                )}
+                                                            </>
+                                                        );
                                                     })()}
                                                 </div>
                                             </div>
