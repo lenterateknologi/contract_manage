@@ -28,6 +28,7 @@ Route::prefix('contracts')->group(function () {
         Route::post('/send', 'send');
         Route::post('/approve', 'approve');
         Route::post('/reject', 'reject');
+        Route::post('/recall', 'recall');
         Route::post('/add-approver', 'addAdhocApprover');
         Route::post('/submit-approvers', 'submitAdhocApprovers');
         Route::delete('/approver/{approvalId}', 'removeAdhocApprover');
