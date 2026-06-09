@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Contract;
+use App\Models\ContractMeta;
 use App\Models\ContractType;
 use App\Models\SubmissionType;
 use App\Models\User;
@@ -43,8 +44,18 @@ class ContractFactory extends Factory
             'created_by' => User::inRandomOrder()->first()?->id ?? User::factory(),
             'initiated_by_id' => User::inRandomOrder()->first()?->id ?? User::factory(),
             'vendor_id' => Vendor::inRandomOrder()->first()?->id ?? Vendor::factory(),
-            'kop_topik' => $this->faker->word(),
-            'f1_sifat' => $this->faker->randomElement(['BIASA', 'RAHASIA', 'SANGAT RAHASIA']),
         ];
+    }
+
+    /**
+     * Configure the factory.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Contract $contract) {
+            ContractMeta::factory()->create([
+                'contract_id' => $contract->id,
+            ]);
+        });
     }
 }
