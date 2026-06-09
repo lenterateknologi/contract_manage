@@ -174,7 +174,7 @@ class ContractController extends Controller
             ['title' => $viewTitle, 'href' => '#', 'description' => $viewDesc, 'icon' => $viewIcon],
         ];
 
-        return Inertia::render('contracts/index', $data);
+        return Inertia::render('contracts/Index', $data);
     }
 
     public function showView(Request $request, string $id): Response
