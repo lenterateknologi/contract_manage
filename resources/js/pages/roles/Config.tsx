@@ -37,6 +37,7 @@ import {
     Key,
     Layers,
     LayoutGrid,
+    Move,
     Plus,
     RefreshCw,
     Save,
@@ -184,6 +185,8 @@ const SortableModuleItem = ({
     onMoveUp,
     onMoveDown,
     onEditModule,
+    onMoveToGroup,
+    groups,
 }: {
     module: Module;
     onRemove: (id: string) => void;
@@ -192,6 +195,8 @@ const SortableModuleItem = ({
     onMoveUp: () => void;
     onMoveDown: () => void;
     onEditModule: (m: Module) => void;
+    onMoveToGroup: (moduleId: string, targetGroupId: string) => void;
+    groups: Group[];
 }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: module.id,
@@ -251,6 +256,23 @@ const SortableModuleItem = ({
                     <p className="text-muted-foreground/50 mt-1 text-[11px] leading-relaxed font-normal whitespace-pre-wrap">{module.description}</p>
                 )}
             </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button
+                        className="text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 active:scale-90"
+                        title="Pindahkan Modul"
+                    >
+                        <Move size={13} />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    {groups.map((g) => (
+                        <DropdownMenuItem key={g.id} onClick={() => onMoveToGroup(module.id, g.id)}>
+                            {g.name}
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
             <button
                 onClick={() => onEditModule(module)}
                 className="text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 active:scale-90"
@@ -277,9 +299,12 @@ const SortableGroupItem = ({
     total,
     onMoveGroupUp,
     onMoveGroupDown,
+    onMoveGroupTo,
     onMoveModule,
+    onMoveModuleToGroup,
     onEditModule,
     isGlobalDraggingGroup,
+    groups,
 }: {
     group: Group;
     onRemoveModule: (id: string) => void;
@@ -289,9 +314,12 @@ const SortableGroupItem = ({
     total: number;
     onMoveGroupUp: () => void;
     onMoveGroupDown: () => void;
+    onMoveGroupTo: (targetIndex: number) => void;
     onMoveModule: (groupId: string, moduleIndex: number, direction: 'up' | 'down') => void;
+    onMoveModuleToGroup: (moduleId: string, targetGroupId: string) => void;
     onEditModule: (m: Module) => void;
     isGlobalDraggingGroup: boolean;
+    groups: Group[];
 }) => {
     const [isExpanded, setIsExpanded] = useState(true);
     
@@ -299,6 +327,14 @@ const SortableGroupItem = ({
         id: group.id,
         data: { type: 'group', group },
     });
+
+    useEffect(() => {
+        const handleToggleAll = (e: any) => {
+            setIsExpanded(e.detail.expanded);
+        };
+        window.addEventListener('toggle-all-groups', handleToggleAll);
+        return () => window.removeEventListener('toggle-all-groups', handleToggleAll);
+    }, []);
 
     useEffect(() => {
         if (isGlobalDraggingGroup) {
@@ -357,9 +393,46 @@ const SortableGroupItem = ({
                         <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-xs font-bold shadow-sm">
                             {group.modules.length} UNITS
                         </span>
+                        {/* Order jump dropdown */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger
+                                onClick={(e) => e.stopPropagation()}
+                                asChild
+                            >
+                                <button
+                                    type="button"
+                                    className="bg-surface-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-surface-border/40 flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-all"
+                                    title="Pindah ke urutan"
+                                >
+                                    #{index + 1}
+                                    <ChevronDown size={9} />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+                                {Array.from({ length: total }, (_, i) => i).map((targetIdx) => (
+                                    <DropdownMenuItem
+                                        key={targetIdx}
+                                        disabled={targetIdx === index}
+                                        onClick={() => onMoveGroupTo(targetIdx)}
+                                        className={cn(
+                                            'flex items-center gap-2 text-xs',
+                                            targetIdx === index && 'font-bold text-primary',
+                                        )}
+                                    >
+                                        <span className="bg-foreground/10 flex h-4 w-4 shrink-0 items-center justify-center rounded text-[9px] font-semibold tabular-nums">
+                                            {targetIdx + 1}
+                                        </span>
+                                        {groups[targetIdx]?.name ?? `Grup ${targetIdx + 1}`}
+                                        {targetIdx === index && (
+                                            <span className="text-primary ml-auto text-[9px] font-semibold uppercase">sekarang</span>
+                                        )}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         <ChevronDown 
                             size={14} 
-                            className={cn("text-muted-foreground/50 transition-transform duration-300 ml-2", isExpanded ? "rotate-180" : "rotate-0")} 
+                            className={cn("text-muted-foreground/50 transition-transform duration-300 ml-1", isExpanded ? "rotate-180" : "rotate-0")} 
                         />
                     </div>
                 </div>
@@ -392,6 +465,8 @@ const SortableGroupItem = ({
                                     onMoveUp={() => onMoveModule(group.id, mIdx, 'up')}
                                     onMoveDown={() => onMoveModule(group.id, mIdx, 'down')}
                                     onEditModule={onEditModule}
+                                    onMoveToGroup={onMoveModuleToGroup}
+                                    groups={groups}
                                 />
                             ))}
                         </SortableContext>
@@ -1037,6 +1112,24 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         setAvailableModules((prev) => [...prev, module]);
     };
 
+    const handleMoveModuleToGroup = (moduleId: string, targetGroupId: string) => {
+        const sourceGroup = navItems.find((g) => g.modules.find((m) => m.id === moduleId));
+        if (!sourceGroup || sourceGroup.id === targetGroupId) return;
+
+        const module = sourceGroup.modules.find((m) => m.id === moduleId)!;
+        setNavItems((prev) =>
+            prev.map((g) => {
+                if (g.id === sourceGroup.id) {
+                    return { ...g, modules: g.modules.filter((m) => m.id !== moduleId) };
+                }
+                if (g.id === targetGroupId) {
+                    return { ...g, modules: [...g.modules, module] };
+                }
+                return g;
+            }),
+        );
+    };
+
     const handleQuickAdd = (module: Module) => {
         if (navItems.length === 0) {
             showToast('Buat grup navigasi terlebih dahulu', 'danger');
@@ -1051,6 +1144,11 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         const targetIdx = direction === 'up' ? groupIdx - 1 : groupIdx + 1;
         if (targetIdx < 0 || targetIdx >= navItems.length) return;
         setNavItems((prev) => arrayMove(prev, groupIdx, targetIdx));
+    };
+
+    const handleMoveGroupTo = (fromIdx: number, toIdx: number) => {
+        if (toIdx < 0 || toIdx >= navItems.length || toIdx === fromIdx) return;
+        setNavItems((prev) => arrayMove(prev, fromIdx, toIdx));
     };
 
     const handleMoveModuleIndex = (groupId: string, moduleIdx: number, direction: 'up' | 'down') => {
@@ -1358,14 +1456,38 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     <div className="flex flex-col gap-6">
                         <div className="flex items-center justify-between">
                             <FormSection title="Arsitektur Navigasi" subtitle="Atur pengelompokan dan urutan menu yang tampil di sidebar" />
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-primary/30 text-primary hover:bg-primary/5 h-9 rounded-xl font-bold transition-all"
-                                onClick={() => openGroupModal()}
-                            >
-                                <Plus className="mr-1.5 h-4 w-4" /> TAMBAH GRUP MENU
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const event = new CustomEvent('toggle-all-groups', { detail: { expanded: true } });
+                                        window.dispatchEvent(event);
+                                    }}
+                                    className="h-9 rounded-xl font-bold"
+                                >
+                                    Expand All
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        const event = new CustomEvent('toggle-all-groups', { detail: { expanded: false } });
+                                        window.dispatchEvent(event);
+                                    }}
+                                    className="h-9 rounded-xl font-bold"
+                                >
+                                    Minimize All
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="border-primary/30 text-primary hover:bg-primary/5 h-9 rounded-xl font-bold transition-all"
+                                    onClick={() => openGroupModal()}
+                                >
+                                    <Plus className="mr-1.5 h-4 w-4" /> TAMBAH GRUP MENU
+                                </Button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
@@ -1384,9 +1506,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     total={navItems.length}
                                                     onMoveGroupUp={() => handleMoveGroup(gIdx, 'up')}
                                                     onMoveGroupDown={() => handleMoveGroup(gIdx, 'down')}
+                                                    onMoveGroupTo={(targetIdx) => handleMoveGroupTo(gIdx, targetIdx)}
                                                     onMoveModule={handleMoveModuleIndex}
+                                                    onMoveModuleToGroup={handleMoveModuleToGroup}
                                                     onEditModule={openModuleModal}
                                                     isGlobalDraggingGroup={activeType === 'group'}
+                                                    groups={navItems}
                                                 />
                                             </div>
                                         ))}

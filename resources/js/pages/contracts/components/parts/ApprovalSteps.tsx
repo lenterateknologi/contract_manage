@@ -213,7 +213,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const activeCount = (statusFilter ? 1 : 0) + (roleFilter ? 1 : 0) + (deptFilter ? 1 : 0);
 
     return (
-        <div className="animate-in fade-in relative flex flex-col gap-4 duration-500">
+        <div className="animate-in fade-in relative flex min-w-0 flex-col gap-4 overflow-x-hidden duration-500">
             <div className="mb-1 flex items-center gap-3">
                 <div className="flex-1">
                     <SearchInput

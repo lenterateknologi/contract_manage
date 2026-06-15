@@ -94,7 +94,7 @@ export const TimelineTab = ({ contract, meId, onApprove, showToast }: TimelineTa
     };
 
     return (
-        <div className="flex flex-col gap-4 p-5">
+        <div className="flex flex-col gap-4 overflow-y-auto p-5">
             <div className="flex justify-end px-1">
                 <Button
                     variant="outline"
