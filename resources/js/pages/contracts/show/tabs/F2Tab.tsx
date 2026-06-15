@@ -1,6 +1,6 @@
-import AgreementView from '@/components/contracts/tabs/AgreementView';
-import { FormSubmissionTab } from '@/components/contracts/tabs/FormSubmissionTab';
-import { Contract } from '@/types/contracts';
+import AgreementView from '@/pages/contracts/components/tabs/AgreementView';
+import { FormSubmissionTab } from '@/pages/contracts/components/tabs/FormSubmissionTab';
+import { Contract } from '@/pages/contracts/types';
 
 interface F2TabProps {
     contract: Contract;

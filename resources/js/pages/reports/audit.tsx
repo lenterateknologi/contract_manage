@@ -104,7 +104,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                                 fetchData(nextFilters);
                             }}
                             onReset={() => {
-                                const clear = { date_from: '', date_to: '', creator_ids: [] };
+                                const clear = { date_from: '', date_to: '', creator_ids: [], audit_page: 1 };
                                 setFilters(clear);
                                 fetchData(clear);
                             }}

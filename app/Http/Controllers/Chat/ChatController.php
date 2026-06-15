@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Chat;
 
-use App\Formatters\ContractFormatter;
 use App\Http\Controllers\Controller;
+use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractMessage;
 use Illuminate\Http\JsonResponse;

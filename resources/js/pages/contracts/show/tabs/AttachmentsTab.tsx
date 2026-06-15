@@ -1,5 +1,5 @@
-import ContractAttachments from '@/components/contracts/tabs/ContractAttachments';
-import { Contract } from '@/types/contracts';
+import ContractAttachments from '@/pages/contracts/components/tabs/ContractAttachments';
+import { Contract } from '@/pages/contracts/types';
 
 interface AttachmentsTabProps {
     contract: Contract;

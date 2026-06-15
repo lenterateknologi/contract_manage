@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\DepartmentsWorkbookExport;
 use App\Http\Controllers\Controller;
+use App\Http\Queries\Master\OrganizationQuery;
 use App\Http\Requests\Common\BulkDeleteRequest;
 use App\Http\Requests\Common\ImportFileRequest;
 use App\Http\Requests\ContractStatus\StoreContractStatusRequest;
@@ -28,7 +29,6 @@ use App\Models\FormTemplate;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\NumberingFormat;
-use App\Queries\Master\OrganizationQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;

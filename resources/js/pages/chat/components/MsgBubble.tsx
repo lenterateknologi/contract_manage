@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { ContractMessage } from '@/types/contracts';
+import { ContractMessage } from '@/pages/contracts/types';
 import { FileIcon, Download } from 'lucide-react';
 
 interface MsgBubbleProps {

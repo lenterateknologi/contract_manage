@@ -1,5 +1,5 @@
-import ContractAuditTrail from '@/components/contracts/tabs/ContractAuditTrail';
-import { Contract } from '@/types/contracts';
+import ContractAuditTrail from '@/pages/contracts/components/tabs/ContractAuditTrail';
+import { Contract } from '@/pages/contracts/types';
 
 interface AuditTrailTabProps {
     contract: Contract;

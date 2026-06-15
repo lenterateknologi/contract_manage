@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/base/Button';
 import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { cn } from '@/lib/utils';
-import { Contract, ContractType } from '@/types/contracts';
+import { Contract, ContractType } from '@/pages/contracts/types';
 import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Eye, FileEdit, MoreVertical, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

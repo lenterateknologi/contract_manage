@@ -1,5 +1,5 @@
 import { cn, formatDate, formatDateTime } from '@/lib/utils';
-import { Contract } from '@/types/contracts';
+import { Contract } from '@/pages/contracts/types';
 import { Head } from '@inertiajs/react';
 import React from 'react';
 

@@ -293,8 +293,9 @@ export default function SortableStepItem({
             )}
         >
             <div
+                onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
-                    'group/header dark:bg-card relative flex gap-3 rounded-2xl border p-3 transition-all duration-500',
+                    'group/header dark:bg-card relative flex cursor-pointer gap-3 rounded-2xl border p-3 transition-all duration-500',
                     isExpanded
                         ? 'rounded-b-none border-b-0 bg-white shadow-xl dark:bg-white/[0.02]'
                         : 'bg-white/50 shadow-sm hover:bg-white dark:bg-black/20 dark:hover:bg-white/[0.05]',
@@ -306,6 +307,7 @@ export default function SortableStepItem({
                     <div
                         {...attributes}
                         {...listeners}
+                        onClick={(e) => e.stopPropagation()}
                         className="border-primary/5 bg-primary/[0.03] hover:bg-primary/10 hover:border-primary/20 flex h-10 w-10 cursor-grab items-center justify-center rounded-xl border transition-all"
                     >
                         <div className="bg-primary/30 mb-0.5 h-1.5 w-1.5 rounded-full" />
@@ -393,7 +395,10 @@ export default function SortableStepItem({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => duplicateLocalStep(idx)}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    duplicateLocalStep(idx);
+                                }}
                                 className="hover:text-primary h-7 w-7 rounded-md text-slate-400 transition-all hover:bg-white dark:hover:bg-slate-700"
                                 title="Duplikat Tahap"
                             >
@@ -402,7 +407,10 @@ export default function SortableStepItem({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => moveLocalStep(idx, 'up')}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveLocalStep(idx, 'up');
+                                }}
                                 disabled={idx === 0}
                                 className="hover:text-primary h-7 w-7 rounded-md text-slate-400 transition-all hover:bg-white disabled:opacity-10 dark:hover:bg-slate-700"
                                 title="Pindah ke Atas"
@@ -412,7 +420,10 @@ export default function SortableStepItem({
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => moveLocalStep(idx, 'down')}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    moveLocalStep(idx, 'down');
+                                }}
                                 disabled={idx === totalSteps - 1}
                                 className="hover:text-primary h-7 w-7 rounded-md text-slate-400 transition-all hover:bg-white disabled:opacity-10 dark:hover:bg-slate-700"
                                 title="Pindah ke Bawah"
@@ -422,22 +433,12 @@ export default function SortableStepItem({
                         </div>
 
                         <Button
-                            variant={isExpanded ? 'default' : 'outline'}
-                            onClick={() => setIsExpanded(!isExpanded)}
-                            className={cn(
-                                'h-8 gap-2 rounded-lg px-3 text-[10px] font-bold tracking-tight uppercase transition-all',
-                                isExpanded
-                                    ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20'
-                                    : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800',
-                            )}
-                        >
-                            {isExpanded ? <ChevronUp size={12} /> : <Settings2 size={12} />}
-                            {isExpanded ? 'TUTUP' : 'EDIT'}
-                        </Button>
-                        <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => removeLocalStep(idx)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                removeLocalStep(idx);
+                            }}
                             className="h-8 w-8 rounded-lg text-slate-300 transition-all hover:bg-rose-50 hover:text-rose-500 dark:text-slate-700 dark:hover:bg-rose-500/10"
                         >
                             <Trash2 size={14} />

@@ -25,7 +25,7 @@ class FormTemplateController extends Controller
      */
     public function index()
     {
-        return Inertia::render('forms/Templates', [
+        return Inertia::render('form-management/Templates', [
             'templates' => FormTemplate::withCount('fields')->get(),
             'contract_types' => ContractType::all(),
             'breadcrumbs' => [
@@ -198,7 +198,7 @@ class FormTemplateController extends Controller
             }
         }
 
-        return Inertia::render('forms/Print', [
+        return Inertia::render('form-management/Print', [
             'template' => $templateData,
             'formData' => $data['formData'],
         ]);
@@ -296,7 +296,7 @@ class FormTemplateController extends Controller
             }
         }
 
-        return Inertia::render('forms/Print', [
+        return Inertia::render('form-management/Print', [
             'template' => $template,
             'formData' => $formData,
         ]);

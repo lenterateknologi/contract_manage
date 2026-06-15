@@ -1,7 +1,7 @@
-import ApprovalSteps from '@/components/contracts/parts/ApprovalSteps';
+import ApprovalSteps from '@/pages/contracts/components/parts/ApprovalSteps';
 import { Button } from '@/components/ui/base/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { Contract } from '@/types/contracts';
+import { Contract } from '@/pages/contracts/types';
 import axios from 'axios';
 import { FileDown, Loader2 } from 'lucide-react';
 import { useState } from 'react';

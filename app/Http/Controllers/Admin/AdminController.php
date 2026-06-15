@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\Role\RoleAccessAction;
 use App\Exports\UsersExport;
+use App\Http\Actions\Role\RoleAccessAction;
 use App\Http\Controllers\Controller;
+use App\Http\Queries\Master\OrganizationQuery;
+use App\Http\Queries\Master\UserQuery;
 use App\Http\Requests\Common\ImportFileRequest;
 use App\Http\Requests\Role\ReorderRoleNavigationRequest;
 use App\Http\Requests\Role\StoreRoleRequest;
@@ -19,8 +21,6 @@ use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
 use App\Models\User;
-use App\Queries\Master\OrganizationQuery;
-use App\Queries\Master\UserQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers\Contract;
 
-use App\Formatters\ContractFormatter;
 use App\Http\Controllers\Controller;
+use App\Http\Formatters\ContractFormatter;
+use App\Http\Queries\Contract\ContractDetailQuery;
 use App\Models\Contract;
 use App\Models\ContractHistory;
 use App\Models\FormSubmission;
 use App\Models\FormSubmissionHistory;
 use App\Models\FormTemplate;
 use App\Models\Vendor;
-use App\Queries\Contract\ContractDetailQuery;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

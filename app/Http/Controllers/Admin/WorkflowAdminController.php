@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Actions\Workflow\DestroyWorkflowAction;
-use App\Actions\Workflow\DuplicateWorkflowAction;
-use App\Actions\Workflow\StoreWorkflowAction;
-use App\Actions\Workflow\UpdateWorkflowAction;
-use App\Actions\Workflow\UpdateWorkflowStepsAction;
+use App\Http\Actions\Workflow\DestroyWorkflowAction;
+use App\Http\Actions\Workflow\DuplicateWorkflowAction;
+use App\Http\Actions\Workflow\StoreWorkflowAction;
+use App\Http\Actions\Workflow\UpdateWorkflowAction;
+use App\Http\Actions\Workflow\UpdateWorkflowStepsAction;
 use App\Http\Controllers\Controller;
+use App\Http\Queries\Master\UserQuery;
+use App\Http\Queries\Master\WorkflowQuery;
 use App\Http\Requests\Workflow\ImportWorkflowRequest;
 use App\Http\Requests\Workflow\StoreWorkflowRequest;
 use App\Http\Requests\Workflow\UpdateWorkflowRequest;
@@ -22,8 +24,6 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
-use App\Queries\Master\UserQuery;
-use App\Queries\Master\WorkflowQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -55,17 +55,6 @@ class WorkflowAdminController extends Controller
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
-            ],
-        ]);
-    }
-
-    public function visualize()
-    {
-        return Inertia::render('workflows/visualize', [
-            'breadcrumbs' => [
-                ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Workflow', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
-                ['title' => 'Visualisasi Fullscreen', 'href' => '#', 'description' => 'Visualisasi alur workflow dalam layar penuh.', 'icon' => 'Layout'],
             ],
         ]);
     }

@@ -1,5 +1,5 @@
-import { ProfileView } from '@/components/contracts/parts/ProfileView';
-import { DashboardMetrics } from '@/components/dashboard/DashboardMetrics';
+import { ProfileView } from '@/pages/contracts/components/parts/ProfileView';
+import { DashboardMetrics } from '@/pages/dashboard/components/DashboardMetrics';
 import { Button } from '@/components/ui/base/Button';
 import { Column, DataTable as TableContract } from '@/components/ui/data/DataTable';
 import { FilterPopover } from '@/components/ui/data/FilterPopover';
@@ -13,9 +13,9 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
 import { useDebounce } from '@/hooks/use-debounce';
 import { usePermissions } from '@/hooks/use-permissions';
-import { contractApi } from '@/lib/contract-api';
+import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
-import { Contract, ContractType, PaginatedData } from '@/types/contracts';
+import { Contract, ContractType, PaginatedData } from '@/pages/contracts/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import {
@@ -32,20 +32,25 @@ import {
     FileText,
     FileType,
     Filter,
+    GitBranch,
+    Hash,
     Layers,
     MoreVertical,
     PlusCircle,
     Trash2,
+    User,
+    UserPlus,
+    Calendar,
     Zap,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, memo } from 'react';
 import ContractDetailView from './components/ContractDetailView';
 
 // Lazy loaded modals for performance
-const CreateContractModal = lazy(() => import('@/components/contracts/modals/CreateContractModal'));
-const EditContractModal = lazy(() => import('@/components/contracts/modals/EditContractModal').then(m => ({ default: m.EditContractModal })));
-const PreviewModal = lazy(() => import('@/components/contracts/modals/PreviewModal'));
-const SendApprovalModal = lazy(() => import('@/components/contracts/modals/SendApprovalModal'));
+const CreateContractModal = lazy(() => import('@/pages/contracts/components/modals/CreateContractModal'));
+const EditContractModal = lazy(() => import('@/pages/contracts/components/modals/EditContractModal').then(m => ({ default: m.EditContractModal })));
+const PreviewModal = lazy(() => import('@/pages/contracts/components/modals/PreviewModal'));
+const SendApprovalModal = lazy(() => import('@/pages/contracts/components/modals/SendApprovalModal'));
 
 const ensureArray = (val: any): any[] => {
     if (Array.isArray(val)) return val;
@@ -464,37 +469,72 @@ function ContractPage({
         () => [
             {
                 accessorKey: 'contract_no_title',
-                header: 'No. & Judul Kontrak',
+                header: (
+                    <div className="flex items-center gap-2">
+                        <Hash size={14} className="text-text-desc" />
+                        <span>No. & Judul Kontrak</span>
+                    </div>
+                ),
                 cell: renderContractNoAndTitle,
             },
             {
                 accessorKey: 'contract_type_id',
-                header: 'Tipe & Vendor',
+                header: (
+                    <div className="flex items-center gap-2">
+                        <FileType size={14} className="text-text-desc" />
+                        <span>Tipe & Vendor</span>
+                    </div>
+                ),
                 cell: renderTypeAndVendor,
             },
             {
                 accessorKey: 'initiator',
-                header: 'Pembuat',
+                header: (
+                    <div className="flex items-center gap-2">
+                        <User size={14} className="text-text-desc" />
+                        <span>Pembuat</span>
+                    </div>
+                ),
                 cell: renderInitiator,
             },
             {
                 accessorKey: 'status',
-                header: 'Status & Step',
+                header: (
+                    <div className="flex items-center gap-2">
+                        <GitBranch size={14} className="text-text-desc" />
+                        <span>Status & Step</span>
+                    </div>
+                ),
                 cell: renderStatusAndStep,
             },
             {
                 accessorKey: 'assigned_by',
-                header: 'Disetujui Oleh',
+                header: (
+                    <div className="flex items-center gap-2">
+                        <CheckCircle2 size={14} className="text-text-desc" />
+                        <span>Disetujui Oleh</span>
+                    </div>
+                ),
                 cell: renderAssignedBy,
             },
             {
                 accessorKey: 'assigned_pic',
-                header: 'Ditugaskan',
+                header: (
+                    <div className="flex items-center gap-2">
+                        <UserPlus size={14} className="text-text-desc" />
+                        <span>Ditugaskan</span>
+                    </div>
+                ),
                 cell: renderAssignedPic,
             },
             {
                 accessorKey: 'created_at',
-                header: 'Dibuat',
+                header: (
+                    <div className="flex items-center gap-2">
+                        <Calendar size={14} className="text-text-desc" />
+                        <span>Dibuat</span>
+                    </div>
+                ),
                 cell: renderCreatedAt,
             },
         ],
@@ -963,7 +1003,7 @@ export default function ContractsIndex({
                     .then((res) => res.data)
                     .catch(() => []),
                 axios
-                    .post('/admin/api/reports/data', {})
+                    .post('/admin/reports/api/data', {})
                     .then((res) => res.data)
                     .catch(() => null),
             ])

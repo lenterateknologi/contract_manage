@@ -1,19 +1,19 @@
 import { Head } from '@inertiajs/react';
 
-import { CompanyGroupManagement } from '@/components/admin/CompanyGroupManagement';
-import { CompanyManagement } from '@/components/admin/CompanyManagement';
-import { ContractTypeManagement } from '@/components/admin/ContractTypeManagement';
-import { DepartmentManagement } from '@/components/admin/DepartmentManagement';
-import { MasterDataSync } from '@/components/admin/MasterDataSync';
-import { NavigationManagement } from '@/components/admin/NavigationManagement';
-import { NumberingFormatManagement } from '@/components/admin/NumberingFormatManagement';
-import { RegionManagement } from '@/components/admin/RegionManagement';
-import { RoleManagement } from '@/components/admin/RoleManagement';
-import { StatusManagement } from '@/components/admin/StatusManagement';
-import { UserManagement } from '@/components/admin/UserManagement';
-import { VendorManagement } from '@/components/admin/VendorManagement';
-import { WorkflowManagement } from '@/components/admin/WorkflowManagement';
-import { MembersPerDivision } from '@/components/dashboard/MembersPerDivision';
+import { CompanyGroupManagement } from '@/pages/admin/components/CompanyGroupManagement';
+import { CompanyManagement } from '@/pages/admin/components/CompanyManagement';
+import { ContractTypeManagement } from '@/pages/admin/components/ContractTypeManagement';
+import { DepartmentManagement } from '@/pages/admin/components/DepartmentManagement';
+import { MasterDataSync } from '@/pages/admin/components/MasterDataSync';
+import { NavigationManagement } from '@/pages/admin/components/NavigationManagement';
+import { NumberingFormatManagement } from '@/pages/admin/components/NumberingFormatManagement';
+import { RegionManagement } from '@/pages/admin/components/RegionManagement';
+import { RoleManagement } from '@/pages/admin/components/RoleManagement';
+import { StatusManagement } from '@/pages/admin/components/StatusManagement';
+import { UserManagement } from '@/pages/admin/components/UserManagement';
+import { VendorManagement } from '@/pages/admin/components/VendorManagement';
+import { WorkflowManagement } from '@/pages/admin/components/WorkflowManagement';
+import { MembersPerDivision } from '@/pages/dashboard/components/MembersPerDivision';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
 
 interface PaginatedData<T> {

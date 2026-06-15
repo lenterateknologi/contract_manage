@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Building2, User } from 'lucide-react';
-import { Contract } from '@/types/contracts';
+import { Contract } from '@/pages/contracts/types';
 
 interface ContractListItemProps {
     contract: Contract;

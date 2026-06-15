@@ -30,8 +30,8 @@ import {
 } from 'lucide-react';
 import { FormEventHandler, useMemo, useState } from 'react';
 
-import { Avatar } from '@/components/contracts/ui/ui';
-import AppearanceToggleTab from '@/components/layout/AppearanceTabs';
+import { Avatar } from '@/pages/contracts/components/ui/ui';
+import AppearanceToggleTab from '@/layouts/app/components/AppearanceTabs';
 import { Button } from '@/components/ui/base/Button';
 import { Input } from '@/components/ui/base/Input';
 import InputError from '@/components/ui/base/InputError';
@@ -41,7 +41,7 @@ import DeleteUser from '@/components/user/DeleteUser';
 import SettingsLayout from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 
-import { UserProfile as BaseUserProfile } from '@/types/contracts';
+import { UserProfile as BaseUserProfile } from '@/pages/contracts/types';
 
 interface RecentContract {
     id: string;

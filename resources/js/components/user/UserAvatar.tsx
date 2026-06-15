@@ -1,5 +1,5 @@
 import { avatarColor, cn } from '@/lib/utils';
-import { UserProfile } from '@/types/contracts';
+import { UserProfile } from '@/pages/contracts/types';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import * as React from 'react';
 

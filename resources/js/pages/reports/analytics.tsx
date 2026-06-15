@@ -142,7 +142,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                                 fetchData(nextFilters);
                             }}
                             onReset={() => {
-                                const clear = { date_from: '', date_to: '', contract_type_ids: [], creator_ids: [] };
+                                const clear = { date_from: '', date_to: '', contract_type_ids: [], creator_ids: [], contracts_page: 1 };
                                 setFilters(clear);
                                 fetchData(clear);
                             }}

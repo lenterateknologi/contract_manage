@@ -1,4 +1,4 @@
-import { FormSection, ManagementForm } from '@/components/admin/ManagementForm';
+import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
 import { Button } from '@/components/ui/base/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { CompactInput } from '@/components/ui/forms/CompactInput';

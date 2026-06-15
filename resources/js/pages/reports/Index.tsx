@@ -43,7 +43,7 @@ export default function ReportsPage() {
     const fetchData = (currentFilters = activeFilters) => {
         setLoading(true);
         axios
-            .post('/admin/api/reports/data', currentFilters)
+            .post('/admin/reports/api/data', currentFilters)
             .then((res) => {
                 setData(res.data);
                 setLoading(false);
@@ -87,7 +87,7 @@ export default function ReportsPage() {
         activeFilters.creator_ids.forEach((id: string) => params.append('creator_ids[]', id));
         activeFilters.involved_ids.forEach((id: string) => params.append('involved_ids[]', id));
 
-        const endpoint = activeTab === 'contracts' ? '/admin/api/reports/export' : '/admin/api/reports/audit/export';
+        const endpoint = activeTab === 'contracts' ? '/admin/reports/api/export' : '/admin/reports/api/audit/export';
         window.location.href = `${endpoint}?${params.toString()}`;
     };
 

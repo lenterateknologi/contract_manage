@@ -1,5 +1,5 @@
-import { ContractMembersTab } from '@/components/contracts/tabs/ContractMembersTab';
-import { Contract } from '@/types/contracts';
+import { ContractMembersTab } from '@/pages/contracts/components/tabs/ContractMembersTab';
+import { Contract } from '@/pages/contracts/types';
 
 interface MembersTabProps {
     contract: Contract;

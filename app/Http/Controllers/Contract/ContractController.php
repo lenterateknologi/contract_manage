@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Contract;
 
-use App\Actions\Contract\StoreContractAction;
-use App\Actions\Contract\UpdateContractAction;
 use App\Exports\ContractExport;
-use App\Formatters\ContractFormatter;
+use App\Http\Actions\Contract\StoreContractAction;
+use App\Http\Actions\Contract\UpdateContractAction;
 use App\Http\Controllers\Controller;
+use App\Http\Formatters\ContractFormatter;
+use App\Http\Queries\Contract\ContractDashboardQuery;
+use App\Http\Queries\Contract\ContractDetailQuery;
+use App\Http\Queries\Contract\ContractListQuery;
+use App\Http\Queries\Contract\ContractOptionsQuery;
 use App\Http\Requests\Contract\StoreContractRequest;
 use App\Http\Requests\Contract\UpdateContractRequest;
 use App\Imports\ContractImport;
@@ -14,10 +18,6 @@ use App\Models\AccessModule;
 use App\Models\Contract;
 use App\Models\Role;
 use App\Models\User;
-use App\Queries\Contract\ContractDashboardQuery;
-use App\Queries\Contract\ContractDetailQuery;
-use App\Queries\Contract\ContractListQuery;
-use App\Queries\Contract\ContractOptionsQuery;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

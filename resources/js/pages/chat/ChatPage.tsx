@@ -1,12 +1,12 @@
-import { AppSidebar } from '@/components/layout/AppSidebar';
-import { AppSidebarHeader } from '@/components/layout/AppSidebarHeader';
+import { AppSidebar } from '@/layouts/app/components/AppSidebar';
+import { AppSidebarHeader } from '@/layouts/app/components/AppSidebarHeader';
 import { SidebarInset, SidebarProvider } from '@/components/ui/navigation/Sidebar';
 import { Head, usePage } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import { MessageSquare, Search } from 'lucide-react';
 import { SearchInput } from '@/components/ui/forms/SearchInput';
-import ContractChat from '@/components/contracts/tabs/ContractChat';
-import { Contract } from '@/types/contracts';
+import ContractChat from '@/pages/contracts/components/tabs/ContractChat';
+import { Contract } from '@/pages/contracts/types';
 import { ContractListItem } from './ui/ContractListItem';
 
 interface Props {

@@ -1,4 +1,4 @@
-import AppLogoIcon from '@/components/layout/AppLogoIcon';
+import AppLogoIcon from '@/layouts/app/components/AppLogoIcon';
 import { Link } from '@inertiajs/react';
 
 interface AuthLayoutProps {

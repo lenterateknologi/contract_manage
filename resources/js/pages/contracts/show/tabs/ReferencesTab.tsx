@@ -1,5 +1,5 @@
-import { ContractReferenceCard } from '@/components/contracts/tabs/ContractReferenceCard';
-import { Contract } from '@/types/contracts';
+import { ContractReferenceCard } from '@/pages/contracts/components/tabs/ContractReferenceCard';
+import { Contract } from '@/pages/contracts/types';
 
 interface ReferencesTabProps {
     contract: Contract;

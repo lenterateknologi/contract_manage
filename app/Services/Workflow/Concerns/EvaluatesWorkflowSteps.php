@@ -2,7 +2,7 @@
 
 namespace App\Services\Workflow\Concerns;
 
-use App\Formatters\ContractFormatter;
+use App\Http\Formatters\ContractFormatter;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\Department;

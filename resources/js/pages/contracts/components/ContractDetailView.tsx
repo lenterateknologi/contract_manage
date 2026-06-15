@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/base/Button';
 import { StatusBadge } from '@/components/ui/data/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
-import { contractApi } from '@/lib/contract-api';
+import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
-import { Contract, ContractType } from '@/types/contracts';
+import { Contract, ContractType } from '@/pages/contracts/types';
 import { router } from '@inertiajs/react';
 import {
     AlertCircle,
@@ -25,14 +25,14 @@ import {
 } from 'lucide-react';
 import React, { useMemo, useState, lazy, Suspense } from 'react';
 
-import { DraftEditableInfoCard } from '@/components/contracts/parts/DraftEditableInfoCard';
+import { DraftEditableInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
 
 // Lazy load modals
-const SharedAddhocModal = lazy(() => import('@/components/contracts/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
-const SharedApproveModal = lazy(() => import('@/components/contracts/modals/shared/SharedApproveModal').then(m => ({ default: m.SharedApproveModal })));
-const SharedAssignModal = lazy(() => import('@/components/contracts/modals/shared/SharedAssignModal').then(m => ({ default: m.SharedAssignModal })));
-const SharedSignerModal = lazy(() => import('@/components/contracts/modals/shared/SharedSignerModal').then(m => ({ default: m.SharedSignerModal })));
-const SharedRejectModal = lazy(() => import('@/components/contracts/modals/shared/SharedRejectModal').then(m => ({ default: m.SharedRejectModal })));
+const SharedAddhocModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
+const SharedApproveModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedApproveModal').then(m => ({ default: m.SharedApproveModal })));
+const SharedAssignModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAssignModal').then(m => ({ default: m.SharedAssignModal })));
+const SharedSignerModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedSignerModal').then(m => ({ default: m.SharedSignerModal })));
+const SharedRejectModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedRejectModal').then(m => ({ default: m.SharedRejectModal })));
 
 // Lazy load Tab Components for performance
 const AgreementTab = lazy(() => import('../show/tabs/AgreementTab').then(m => ({ default: m.AgreementTab })));
@@ -283,7 +283,7 @@ const ContractDetailView = ({
     );
 
     return (
-        <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-6 p-4">
+        <div className="mx-auto flex w-full max-w-full flex-1 flex-col gap-6 p-4">
             <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-6">
                     <Button

@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Contract;
 
-use App\Actions\Contract\GetAuditTrailAction;
-use App\Actions\Export\ExportApprovalTimelinePdfQueueAction;
-use App\Actions\Export\ExportAuditExcelAction;
-use App\Actions\Export\ExportAuditPdfAction;
-use App\Actions\Export\ExportAuditPdfQueueAction;
-use App\Actions\Export\ExportFormSubmissionPdfAction;
-use App\Actions\Export\ExportFormSubmissionPdfQueueAction;
-use App\Formatters\ContractFormatter;
+use App\Http\Actions\Contract\GetAuditTrailAction;
+use App\Http\Actions\Export\ExportApprovalTimelinePdfQueueAction;
+use App\Http\Actions\Export\ExportAuditExcelAction;
+use App\Http\Actions\Export\ExportAuditPdfAction;
+use App\Http\Actions\Export\ExportAuditPdfQueueAction;
+use App\Http\Actions\Export\ExportFormSubmissionPdfAction;
+use App\Http\Actions\Export\ExportFormSubmissionPdfQueueAction;
 use App\Http\Controllers\Controller;
-use App\Queries\Contract\ContractDetailQuery;
+use App\Http\Formatters\ContractFormatter;
+use App\Http\Queries\Contract\ContractDetailQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;

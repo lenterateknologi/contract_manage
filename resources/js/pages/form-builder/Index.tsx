@@ -1,9 +1,9 @@
-import { CanvasArea } from '@/components/form/builder/CanvasArea';
-import { FIELD_TYPES } from '@/components/form/builder/constants';
-import { JSONEditorPanel } from '@/components/form/builder/JSONEditorPanel';
-import { LibraryPanel } from '@/components/form/builder/LibraryPanel';
-import { PropertiesPanel } from '@/components/form/builder/PropertiesPanel';
-import { StructurePanel } from '@/components/form/builder/StructurePanel';
+import { CanvasArea } from '@/pages/form-builder/components/builder/CanvasArea';
+import { FIELD_TYPES } from '@/pages/form-builder/components/builder/constants';
+import { JSONEditorPanel } from '@/pages/form-builder/components/builder/JSONEditorPanel';
+import { LibraryPanel } from '@/pages/form-builder/components/builder/LibraryPanel';
+import { PropertiesPanel } from '@/pages/form-builder/components/builder/PropertiesPanel';
+import { StructurePanel } from '@/pages/form-builder/components/builder/StructurePanel';
 import { Button } from '@/components/ui/base/Button';
 import { ScrollArea } from '@/components/ui/base/ScrollArea';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';

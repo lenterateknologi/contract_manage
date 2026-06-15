@@ -50,7 +50,7 @@ Gunakan ekspresi logika jika sebuah tahapan hanya perlu muncul pada kriteria ter
 ## 5. Prinsip "The Right Way" (Best Practices)
 1. **Step 1 sebagai Safety Net**: Selalu jadikan Step 1 sebagai tahap bagi Initiator untuk memperbaiki dokumen jika terjadi penolakan dari tim Legal atau Manager.
 2. **Satu Default Per Tipe**: Pastikan setiap Tipe Kontrak memiliki minimal satu workflow yang ditandai sebagai **Default**.
-3. **Validasi Visual**: Gunakan menu **Visualisasi Workflow** di Admin Panel untuk memastikan alur panah sudah benar dan tidak ada alur yang memutar tanpa ujung.
+3. **Validasi Alur**: Periksa kembali urutan langkah dan aksi (Approve/Reject) untuk memastikan tidak ada alur yang memutar tanpa ujung.
 4. **Gunakan Mandatory**: Tandai tahapan krusial (seperti Legal Review) sebagai *Mandatory* agar tidak bisa dilewati secara tidak sengaja.
 
 ---

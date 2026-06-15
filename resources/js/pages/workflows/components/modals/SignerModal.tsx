@@ -1,4 +1,4 @@
-import { SharedSignerModal } from '@/components/contracts/modals/shared/SharedSignerModal';
+import { SharedSignerModal } from '@/pages/contracts/components/modals/shared/SharedSignerModal';
 
 interface SignerModalProps {
     isOpen: boolean;

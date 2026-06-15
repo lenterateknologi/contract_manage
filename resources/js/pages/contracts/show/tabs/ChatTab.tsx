@@ -1,5 +1,5 @@
-import ContractChat from '@/components/contracts/tabs/ContractChat';
-import { Contract } from '@/types/contracts';
+import ContractChat from '@/pages/contracts/components/tabs/ContractChat';
+import { Contract } from '@/pages/contracts/types';
 
 interface ChatTabProps {
     contract: Contract;

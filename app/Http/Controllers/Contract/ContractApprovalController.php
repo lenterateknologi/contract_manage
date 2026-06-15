@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers\Contract;
 
-use App\Actions\Contract\ApproveContractAction;
-use App\Actions\Contract\RejectContractAction;
-use App\Formatters\ContractFormatter;
+use App\Http\Actions\Contract\ApproveContractAction;
+use App\Http\Actions\Contract\RejectContractAction;
 use App\Http\Controllers\Controller;
+use App\Http\Formatters\ContractFormatter;
+use App\Http\Queries\Contract\ContractDetailQuery;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
-use App\Queries\Contract\ContractDetailQuery;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
