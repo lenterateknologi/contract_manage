@@ -14,7 +14,7 @@ import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
  * Unified Column Configuration
  */
 export interface Column<T> {
-    header: string;
+    header: React.ReactNode;
     accessorKey: keyof T | string;
     cell?: (row: T) => React.ReactNode;
     className?: string;

@@ -164,6 +164,7 @@ export default function WorkflowEditor({
                     isDirty={form.isDirty}
                     isEdit={!!workflow}
                     onCollapseAll={() => setExpandedStepId(null)}
+                    flat={true}
                     headerActions={
                         <Button
                             type="button"
@@ -181,7 +182,7 @@ export default function WorkflowEditor({
                             type="button"
                             onClick={() => setMainTab('settings')}
                             className={cn(
-                                'border-b-2 px-6 py-3 text-[11px] font-semibold   transition-all',
+                                'border-b-2 px-6 py-3 text-sm font-medium transition-all',
                                 mainTab === 'settings'
                                     ? 'border-primary text-primary dark:text-white'
                                     : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
@@ -193,14 +194,14 @@ export default function WorkflowEditor({
                             type="button"
                             onClick={() => setMainTab('steps')}
                             className={cn(
-                                'flex items-center gap-2 border-b-2 px-6 py-3 text-[11px] font-semibold   transition-all',
+                                'flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-medium transition-all',
                                 mainTab === 'steps'
                                     ? 'border-primary text-primary dark:text-white'
                                     : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
                             )}
                         >
                             Tahapan Workflow
-                            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] dark:bg-slate-800">{form.data.steps.length}</span>
+                            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold dark:bg-slate-800">{form.data.steps.length}</span>
                         </button>
                     </div>
 
@@ -212,7 +213,7 @@ export default function WorkflowEditor({
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
                                             <Edit3 size={14} className="text-primary" />
-                                            <h3 className="text-[11px] font-semibold text-slate-900  dark:text-white">Informasi Dasar</h3>
+                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Informasi Dasar</h3>
                                         </div>
                                         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                                             <div className="lg:col-span-6">
@@ -235,25 +236,25 @@ export default function WorkflowEditor({
                                             <div className="lg:col-span-3">
                                                 <div className="space-y-2">
 
-                                                    <label className="flex items-center gap-1.5  text-[11px] font-semi-bold">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <LayoutTemplate size={10} /> Jenis Kontrak
                                                     </label>
                                                     <Select
                                                         value={form.data.contract_type_id || 'all'}
                                                         onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
                                                     >
-                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-semibold tracking-tight  transition-all focus:ring-1 dark:border-slate-800 dark:bg-card /50">
+                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-medium transition-all focus:ring-1 dark:border-slate-800 dark:bg-card /50">
                                                             <SelectValue placeholder="SEMUA JENIS" />
                                                         </SelectTrigger>
                                                         <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                            <SelectItem value="all" className="py-2.5 text-[10px] font-semibold ">
+                                                            <SelectItem value="all" className="py-2.5 text-xs font-medium">
                                                                 SEMUA JENIS
                                                             </SelectItem>
                                                             {contractTypes.map((t: any) => (
                                                                 <SelectItem
                                                                     key={t.id}
                                                                     value={t.id}
-                                                                    className="py-2.5 text-[10px] font-semibold "
+                                                                    className="py-2.5 text-xs font-medium"
                                                                 >
                                                                     {t.name}
                                                                 </SelectItem>
@@ -264,7 +265,7 @@ export default function WorkflowEditor({
                                             </div>
                                             <div className="lg:col-span-3">
                                                 <div className="space-y-2">
-                                                    <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         Status Alur
                                                     </label>
                                                     <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-4 dark:border-slate-800 dark:bg-card /50">
@@ -276,7 +277,7 @@ export default function WorkflowEditor({
                                                         />
                                                         <label
                                                             htmlFor="is_default"
-                                                            className="text-primary cursor-pointer text-[10px] font-bold  dark:text-white"
+                                                            className="text-primary cursor-pointer text-xs font-medium dark:text-white"
                                                         >
                                                             Alur Default
                                                         </label>
@@ -292,13 +293,13 @@ export default function WorkflowEditor({
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
                                                 <LayoutTemplate size={14} className="text-primary" />
-                                                <h3 className="text-[11px] font-semibold text-slate-900  dark:text-white">Mode Dokumen</h3>
+                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Mode Dokumen</h3>
                                             </div>
                                             <div className="space-y-3">
                                                 {/* MODE F1 */}
                                                 <div className="space-y-1.5">
 
-                                                    <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <LayoutTemplate size={10} /> Mode F1
                                                     </label>
                                                     <Select
@@ -311,21 +312,21 @@ export default function WorkflowEditor({
                                                             })
                                                         }
                                                     >
-                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold  transition-all focus:ring-1 dark:border-slate-800 dark:bg-card">
+                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-xs font-medium transition-all focus:ring-1 dark:border-slate-800 dark:bg-card">
                                                             <SelectValue placeholder="UPLOAD FORM" />
                                                         </SelectTrigger>
                                                         <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-card">
-                                                            <SelectItem value="upload" className="py-2 text-[11px] font-semi-bold">
+                                                            <SelectItem value="upload" className="py-2 text-xs font-medium">
                                                                 Upload Form
                                                             </SelectItem>
-                                                            <SelectItem value="interactive" className="py-2 text-[11px] font-semi-bold">
+                                                            <SelectItem value="interactive" className="py-2 text-xs font-medium">
                                                                 Form Builder
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     {form.data.meta?.f1_mode === 'interactive' && (
                                                         <div className="space-y-1.5">
-                                                            <label className="flex items-center gap-1.5 text-primary dark:text-white text-[11px] font-semibold">
+                                                            <label className="flex items-center gap-1.5 text-primary dark:text-white text-xs font-semibold">
                                                                 <LayoutTemplate size={10} /> Template Form F1
                                                             </label>
                                                             <Select
@@ -334,7 +335,7 @@ export default function WorkflowEditor({
                                                                     form.setData('meta', { ...form.data.meta, f1_form_template_id: v })
                                                                 }
                                                             >
-                                                                <SelectTrigger className="focus:border-primary focus:ring-primary border-primary/30 dark:border-primary/20 h-9 rounded-xl bg-white text-[11px] font-bold  transition-all focus:ring-1 dark:bg-card ">
+                                                                <SelectTrigger className="focus:border-primary focus:ring-primary border-primary/30 dark:border-primary/20 h-9 rounded-xl bg-white text-xs font-medium transition-all focus:ring-1 dark:bg-card ">
                                                                     <SelectValue placeholder="Pilih Template..." />
                                                                 </SelectTrigger>
                                                                 <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-card">
@@ -342,7 +343,7 @@ export default function WorkflowEditor({
                                                                         <SelectItem
                                                                             key={t.id}
                                                                             value={t.id}
-                                                                            className="py-2 text-[10px] font-bold "
+                                                                            className="py-2 text-xs font-medium"
                                                                         >
                                                                             {t.name}
                                                                         </SelectItem>
@@ -356,7 +357,7 @@ export default function WorkflowEditor({
                                                 {/* MODE F2 */}
                                                 <div className="space-y-1.5">
 
-                                                    <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <LayoutTemplate size={10} /> Mode F2
                                                     </label>
                                                     <Select
@@ -369,21 +370,21 @@ export default function WorkflowEditor({
                                                             })
                                                         }
                                                     >
-                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold  transition-all focus:ring-1 dark:border-slate-800 dark:bg-card">
+                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-xs font-medium transition-all focus:ring-1 dark:border-slate-800 dark:bg-card">
                                                             <SelectValue placeholder="UPLOAD FORM" />
                                                         </SelectTrigger>
                                                         <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                            <SelectItem value="upload" className="py-2 text-[10px] font-bold ">
+                                                            <SelectItem value="upload" className="py-2 text-xs font-medium">
                                                                 Upload Form
                                                             </SelectItem>
-                                                            <SelectItem value="interactive" className="py-2 text-[10px] font-bold ">
+                                                            <SelectItem value="interactive" className="py-2 text-xs font-medium">
                                                                 Form Builder
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     {form.data.meta?.f2_mode === 'interactive' && (
                                                         <div className="space-y-1.5">
-                                                            <label className="flex items-center gap-1.5 text-primary dark:text-white text-[11px] font-semibold">
+                                                            <label className="flex items-center gap-1.5 text-primary dark:text-white text-xs font-semibold">
                                                                 <LayoutTemplate size={10} /> Template Form F2
                                                             </label>
                                                             <Select
@@ -392,7 +393,7 @@ export default function WorkflowEditor({
                                                                     form.setData('meta', { ...form.data.meta, f2_form_template_id: v })
                                                                 }
                                                             >
-                                                                <SelectTrigger className="focus:border-primary focus:ring-primary border-primary/30 dark:border-primary/20 h-9 rounded-xl bg-white text-[11px] font-bold  transition-all focus:ring-1 dark:bg-card ">
+                                                                <SelectTrigger className="focus:border-primary focus:ring-primary border-primary/30 dark:border-primary/20 h-9 rounded-xl bg-white text-xs font-medium transition-all focus:ring-1 dark:bg-card ">
                                                                     <SelectValue placeholder="Pilih Template..." />
                                                                 </SelectTrigger>
                                                                 <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
@@ -400,7 +401,7 @@ export default function WorkflowEditor({
                                                                         <SelectItem
                                                                             key={t.id}
                                                                             value={t.id}
-                                                                            className="py-2 text-[10px] font-bold "
+                                                                            className="py-2 text-xs font-medium"
                                                                         >
                                                                             {t.name}
                                                                         </SelectItem>
@@ -414,7 +415,7 @@ export default function WorkflowEditor({
                                                 {/* MODE KONTRAK AGREEMENT */}
                                                 <div className="space-y-1.5">
 
-                                                    <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <LayoutTemplate size={10} /> Mode Agreement
                                                     </label>
                                                     <Select
@@ -427,21 +428,21 @@ export default function WorkflowEditor({
                                                             })
                                                         }
                                                     >
-                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold  transition-all focus:ring-1 dark:border-slate-800 dark:bg-card">
-                                                            <SelectValue placeholder="UPLOAD FORM" />
+                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-9 rounded-xl border-slate-200 bg-white text-xs font-medium transition-all focus:ring-1 dark:border-slate-800 dark:bg-card">
+                                                            <SelectValue placeholder="Upload Contract" />
                                                         </SelectTrigger>
                                                         <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                            <SelectItem value="upload" className="py-2 text-[10px] font-bold ">
-                                                                UPLOAD FORM
+                                                            <SelectItem value="upload" className="py-2 text-xs font-medium">
+                                                                Upload Contract
                                                             </SelectItem>
-                                                            <SelectItem value="interactive" className="py-2 text-[10px] font-bold ">
-                                                                FORM BUILDER
+                                                            <SelectItem value="interactive" className="py-2 text-xs font-medium">
+                                                                Form Builder
                                                             </SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                     {form.data.meta?.contract_mode === 'interactive' && (
                                                         <div className="space-y-1.5">
-                                                            <label className="flex items-center gap-1.5 text-primary dark:text-white text-[11px] font-semibold">
+                                                            <label className="flex items-center gap-1.5 text-primary dark:text-white text-xs font-semibold">
                                                                 <LayoutTemplate size={10} /> Template Agreement
                                                             </label>
                                                             <Select
@@ -450,7 +451,7 @@ export default function WorkflowEditor({
                                                                     form.setData('meta', { ...form.data.meta, contract_form_template_id: v })
                                                                 }
                                                             >
-                                                                <SelectTrigger className="focus:border-primary focus:ring-primary border-primary/30 dark:border-primary/20 h-9 rounded-xl bg-white text-[11px] font-bold  transition-all focus:ring-1 dark:bg-card ">
+                                                                <SelectTrigger className="focus:border-primary focus:ring-primary border-primary/30 dark:border-primary/20 h-9 rounded-xl bg-white text-xs font-medium transition-all focus:ring-1 dark:bg-card ">
                                                                     <SelectValue placeholder="Pilih Template..." />
                                                                 </SelectTrigger>
                                                                 <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
@@ -458,7 +459,7 @@ export default function WorkflowEditor({
                                                                         <SelectItem
                                                                             key={t.id}
                                                                             value={t.id}
-                                                                            className="py-2 text-[10px] font-bold "
+                                                                            className="py-2 text-xs font-medium"
                                                                         >
                                                                             {t.name}
                                                                         </SelectItem>
@@ -485,7 +486,7 @@ export default function WorkflowEditor({
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
                                                 <Shield size={14} className="text-primary" />
-                                                <h3 className="text-[11px] font-semibold text-slate-900  dark:text-white">
+                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                                                     Otoritas Inisiator
                                                 </h3>
                                             </div>
@@ -494,7 +495,7 @@ export default function WorkflowEditor({
                                                 {/* Selector 1: Role */}
                                                 <div className="space-y-1.5">
 
-                                                    <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <Shield size={10} /> Role
                                                     </label>
                                                     <SearchableMultiSelect
@@ -502,14 +503,14 @@ export default function WorkflowEditor({
                                                         onValuesChange={(vals: string[]) => form.setData('initiator_roles', vals)}
                                                         options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
                                                         placeholder="Semua Role..."
-                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold  bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
+                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
                                                     />
                                                 </div>
 
                                                 {/* Selector 2: Unit / Department */}
                                                 <div className="space-y-1.5">
 
-                                                    <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <UsersIcon size={10} /> Unit / Department
                                                     </label>
                                                     <SearchableMultiSelect
@@ -517,14 +518,14 @@ export default function WorkflowEditor({
                                                         onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
                                                         options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
                                                         placeholder="Semua Unit..."
-                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold  bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
+                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
                                                     />
                                                 </div>
 
                                                 {/* Selector 3: User */}
                                                 <div className="space-y-1.5">
 
-                                                    <label className="flex items-center gap-1.5 text-[11px] font-semi-bold">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <UsersIcon size={10} /> User
                                                     </label>
                                                     <SearchableMultiSelect
@@ -535,7 +536,7 @@ export default function WorkflowEditor({
                                                             label: `${u.name} (${u.role})`,
                                                         }))}
                                                         placeholder="Semua User..."
-                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-[11px] font-bold  bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
+                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
                                                     />
                                                 </div>
                                             </div>
@@ -554,10 +555,10 @@ export default function WorkflowEditor({
                                                 <GitBranch size={16} />
                                             </div>
                                             <div>
-                                                <h4 className="text-[11px] font-semibold text-slate-900  dark:text-white">
+                                                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
                                                     Tahapan Alur Kerja
                                                 </h4>
-                                                <p className="text-[9px] font-bold text-slate-400 ">
+                                                <p className="text-xs font-normal text-slate-500 dark:text-slate-400">
                                                     Konfigurasi Urutan Approval & Penugasan
                                                 </p>
                                             </div>
@@ -570,10 +571,10 @@ export default function WorkflowEditor({
                                                 <div className="bg-primary/5 mb-4 rounded-2xl p-4">
                                                     <PlusCircle size={32} className="text-primary/20" />
                                                 </div>
-                                                <span className="text-primary/30 text-xs font-semibold tracking-[0.2em] ">
+                                                <span className="text-xs font-medium uppercase tracking-widest text-slate-400/80">
                                                     Belum Ada Tahapan Terdefinisi
                                                 </span>
-                                                <p className="mt-2 text-[10px] font-bold tracking-tight text-slate-400 ">
+                                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-normal">
                                                     Klik tombol "Tambah Tahap" di header untuk memulai
                                                 </p>
                                             </div>
@@ -658,7 +659,7 @@ export default function WorkflowEditor({
                                 {form.data.steps.length > 0 && (
                                     <div className="flex items-center gap-4 py-8">
                                         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-800" />
-                                        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-2.5 text-[9px] font-semibold tracking-[0.3em] text-slate-400  dark:border-white/5 dark:bg-white/[0.02]">
+                                        <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-6 py-2.5 text-[10px] font-semibold tracking-widest text-slate-400 dark:border-white/5 dark:bg-white/[0.02]">
                                             <CheckCircle2 size={12} className="opacity-50" /> AKHIR ALUR KERJA
                                         </div>
                                         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-800" />

@@ -434,7 +434,12 @@ const ContractDetailView = ({
                                 </Button>
                             ))}
                         </div>
-                        <div className={cn('flex min-h-[600px] flex-1 flex-col')}>
+                        <div className={cn(
+                            'flex flex-1 flex-col',
+                            ['chat', 'attachments', 'timeline'].includes(detailTab)
+                                ? 'h-[calc(100vh-180px)] min-h-[600px]'
+                                : 'min-h-[600px]'
+                        )}>
                             <Suspense fallback={<TabSkeleton />}>
                                 {detailTab === 'form_template' && (
                                     <F1Tab contract={contract} formTemplates={formTemplates} vendors={vendors} meUser={meUser} onUpdate={onUpdate} />
@@ -576,7 +581,7 @@ const ContractDetailView = ({
                                                     onClick={() => {
                                                         const code = action.action_code?.toLowerCase();
                                                         setActiveActionCode(action.action_code);
-                                                        
+
                                                         if (isForwardType) {
                                                             setAddhocOpen(true);
                                                         } else if (isRejectType) {
@@ -672,7 +677,7 @@ const ContractDetailView = ({
                     />
 
                     {/* Debug Access Control Panel */}
-                    <div className="text-text-main rounded-2xl border border-black/5 bg-black/5 p-4 opacity-60 transition-opacity hover:opacity-100 dark:border-white/5 dark:bg-white/5">
+                    {/* <div className="text-text-main rounded-2xl border border-black/5 bg-black/5 p-4 opacity-60 transition-opacity hover:opacity-100 dark:border-white/5 dark:bg-white/5">
                         <div className="mb-3 flex items-center justify-between border-b border-black/10 pb-2">
                             <div className="flex items-center gap-2">
                                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
@@ -778,7 +783,7 @@ const ContractDetailView = ({
                                 STEP_ID: {contract.workflow_step_id || 'N/A'}
                             </div>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
             </div>
 

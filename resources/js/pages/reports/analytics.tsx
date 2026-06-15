@@ -126,7 +126,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                 {/* Header Section */}
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div className="space-y-1">
-                        <h1 className="text-foreground font-montserrat text-2xl font-bold tracking-tight">Analitik Kontrak</h1>
+                        <h1 className="text-foreground text-2xl font-bold tracking-tight">Analitik Kontrak</h1>
                         <p className="text-muted-foreground text-sm font-medium">
                             Pantau performa operasional dan statistik kontrak secara real-time.
                         </p>
@@ -275,11 +275,11 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                                             setFilters(nextFilters);
                                             fetchData(nextFilters);
                                         }}
-                                        className="h-8 text-[10px] font-bold uppercase"
+                                        className="h-8 text-xs font-semibold"
                                     >
                                         Prev
                                     </Button>
-                                    <span className="text-muted-foreground mx-2 text-[10px] font-bold">
+                                    <span className="text-muted-foreground mx-2 text-xs font-semibold">
                                         {pagination.current_page} / {pagination.last_page}
                                     </span>
                                     <Button
@@ -291,7 +291,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                                             setFilters(nextFilters);
                                             fetchData(nextFilters);
                                         }}
-                                        className="h-8 text-[10px] font-bold uppercase"
+                                        className="h-8 text-xs font-semibold"
                                     >
                                         Next
                                     </Button>
@@ -308,16 +308,16 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                                     <TrendingUp className="text-primary-foreground h-5 w-5" />
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold  uppercase opacity-70">Insights Operasional</p>
-                                    <h4 className="text-lg font-bold">Tren Kontrak</h4>
+                                    <p className="text-xs font-semibold uppercase tracking-wider opacity-70">Insights Operasional</p>
+                                    <h4 className="text-lg font-bold tracking-tight">Tren Kontrak</h4>
                                 </div>
-                                <p className="text-xs leading-relaxed font-medium opacity-90">
+                                <p className="text-xs leading-relaxed opacity-90">
                                     Volume kontrak bulan ini meningkat sebesar <span className="font-bold text-emerald-300">12%</span> dibandingkan
                                     bulan lalu.
                                 </p>
                                 <Button
                                     variant="link"
-                                    className="border-primary-foreground/30 hover:border-primary-foreground text-primary-foreground h-auto border-b p-0 pb-0.5 text-xs font-bold  uppercase transition-all hover:no-underline"
+                                    className="border-primary-foreground/30 hover:border-primary-foreground text-primary-foreground h-auto border-b p-0 pb-0.5 text-xs font-bold uppercase transition-all hover:no-underline"
                                 >
                                     Lihat Detail Tren
                                 </Button>
@@ -328,7 +328,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                         </div>
 
                         <div className="bg-card border-border rounded-2xl border p-6 shadow-sm">
-                            <h3 className="text-foreground mb-6 flex items-center gap-2 text-sm font-bold  uppercase">
+                            <h3 className="text-foreground mb-6 flex items-center gap-2 text-sm font-bold uppercase">
                                 <Users className="h-4 w-4" />
                                 Departemen Teraktif
                             </h3>
@@ -343,8 +343,8 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                                             #{idx + 1}
                                         </div>
                                         <div className="min-w-0 flex-1">
-                                            <p className="text-foreground truncate text-xs font-semibold uppercase">{dept.name}</p>
-                                            <p className="text-muted-foreground text-xs font-medium  uppercase">
+                                            <p className="text-foreground truncate text-xs font-semibold">{dept.name}</p>
+                                            <p className="text-muted-foreground text-xs font-medium">
                                                 {dept.count} Kontrak Aktif
                                             </p>
                                         </div>
@@ -383,10 +383,10 @@ function MetricCard({
             <div className="relative z-10 flex items-start justify-between">
                 <div className="flex-1 space-y-4">
                     <div className="space-y-1">
-                        <p className="text-muted-foreground text-xs font-bold  uppercase">{title}</p>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{title}</p>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-foreground text-2xl font-bold tracking-tight">{value}</span>
-                            {unit && <span className="text-muted-foreground text-sm font-semibold uppercase">{unit}</span>}
+                            <span className="text-foreground text-2xl font-bold tracking-tight tabular-nums">{value}</span>
+                            {unit && <span className="text-muted-foreground text-xs font-semibold">{unit}</span>}
                         </div>
                     </div>
 
@@ -394,7 +394,7 @@ function MetricCard({
                         <div className="flex items-center gap-1.5">
                             <div
                                 className={cn(
-                                    'flex items-center rounded-lg px-1.5 py-0.5 text-xs font-semibold',
+                                    'flex items-center rounded-lg px-1.5 py-0.5 text-xs font-semibold tabular-nums',
                                     isPositive
                                         ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400'
                                         : 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400',
@@ -403,10 +403,10 @@ function MetricCard({
                                 {isPositive ? <ArrowUpRight className="mr-0.5 h-3 w-3" /> : <ArrowDownRight className="mr-0.5 h-3 w-3" />}
                                 {trend}
                             </div>
-                            <span className="text-muted-foreground text-xs font-medium  uppercase">vs Bulan Lalu</span>
+                            <span className="text-muted-foreground text-xs font-medium">vs. bulan lalu</span>
                         </div>
                     ) : description ? (
-                        <p className="text-muted-foreground text-xs font-medium tracking-tight uppercase">{description}</p>
+                        <p className="text-muted-foreground text-xs font-medium leading-relaxed">{description}</p>
                     ) : null}
                 </div>
                 <div className="bg-muted group-hover:bg-primary/5 rounded-xl p-3 transition-colors">{icon}</div>

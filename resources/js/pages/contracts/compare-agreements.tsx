@@ -51,7 +51,7 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                     <ArrowLeftRight className="h-5 w-5 text-indigo-600" />
                     <div className="flex flex-col">
                         <h1 className="font-montserrat text-sm font-bold text-slate-900">Audit {titleLabel}</h1>
-                        <p className="text-[11px] font-medium text-slate-500">
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                             {contract.contract_no} &bull; {contract.title}
                         </p>
                     </div>
@@ -74,7 +74,7 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-900">Versi {v1}</span>
                             </div>
-                            <div className="hidden items-center gap-3 border-l border-slate-200 pl-4 text-[10px] text-slate-500 lg:flex">
+                            <div className="hidden items-center gap-3 border-l border-slate-200 pl-4 text-xs text-slate-500 lg:flex">
                                 <div className="flex items-center gap-1.5">
                                     <User size={12} className="text-slate-400" />
                                     <span>{meta1?.uploader?.name || 'System'}</span>
@@ -123,7 +123,7 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                             <div className="flex flex-col">
                                 <span className="text-xs font-bold text-slate-900">Versi {v2}</span>
                             </div>
-                            <div className="hidden items-center gap-3 border-l border-slate-200 pl-4 text-[10px] text-slate-500 lg:flex">
+                            <div className="hidden items-center gap-3 border-l border-slate-200 pl-4 text-xs text-slate-500 lg:flex">
                                 <div className="flex items-center gap-1.5">
                                     <User size={12} className="text-slate-400" />
                                     <span>{meta2?.uploader?.name || 'System'}</span>

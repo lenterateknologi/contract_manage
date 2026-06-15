@@ -14,6 +14,7 @@ interface ManagementFormProps {
     children: React.ReactNode;
     headerActions?: React.ReactNode;
     onCollapseAll?: () => void;
+    flat?: boolean;
 }
 
 export function ManagementForm({
@@ -27,11 +28,15 @@ export function ManagementForm({
     children,
     headerActions,
     onCollapseAll,
+    flat = false,
 }: ManagementFormProps) {
     return (
         <div
-            className="animate-in fade-in slide-in-from-right-5 bg-surface-base border-surface-border text-text-main m-5 flex flex-col overflow-hidden rounded-2xl border font-sans antialiased shadow-sm"
-            style={{ maxHeight: 'calc(100svh - 2.5rem)' }}
+            className={cn(
+                "animate-in fade-in slide-in-from-right-5 bg-surface-base text-text-main flex flex-col overflow-hidden font-sans antialiased",
+                flat ? "h-full w-full" : "border-surface-border m-5 rounded-2xl border shadow-sm"
+            )}
+            style={{ maxHeight: flat ? '100%' : 'calc(100svh - 2.5rem)' }}
         >
             {/* COMPACT STICKY HEADER */}
             <div className="border-surface-border bg-surface-muted/95 sticky top-0 z-50 flex shrink-0 items-center justify-between border-b px-6 py-4 backdrop-blur">

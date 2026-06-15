@@ -17,7 +17,8 @@ import {
     DragStartEvent,
     KeyboardSensor,
     PointerSensor,
-    rectIntersection,
+    closestCenter,
+    pointerWithin,
     UniqueIdentifier,
     useDroppable,
     useSensor,
@@ -278,6 +279,7 @@ const SortableGroupItem = ({
     onMoveGroupDown,
     onMoveModule,
     onEditModule,
+    isGlobalDraggingGroup,
 }: {
     group: Group;
     onRemoveModule: (id: string) => void;
@@ -289,12 +291,23 @@ const SortableGroupItem = ({
     onMoveGroupDown: () => void;
     onMoveModule: (groupId: string, moduleIndex: number, direction: 'up' | 'down') => void;
     onEditModule: (m: Module) => void;
+    isGlobalDraggingGroup: boolean;
 }) => {
+    const [isExpanded, setIsExpanded] = useState(true);
+    
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: group.id,
         data: { type: 'group', group },
     });
+
+    useEffect(() => {
+        if (isGlobalDraggingGroup) {
+            setIsExpanded(false);
+        }
+    }, [isGlobalDraggingGroup]);
+
     const style = { transform: CSS.Translate.toString(transform), transition };
+    
     return (
         <div
             ref={setNodeRef}
@@ -304,7 +317,10 @@ const SortableGroupItem = ({
                 isDragging && 'border-primary ring-primary/5 z-40 opacity-50 shadow-2xl ring-2',
             )}
         >
-            <div className="border-border bg-card flex items-center justify-between border-b px-4 py-3.5">
+            <div 
+                className="border-border bg-card flex cursor-pointer items-center justify-between border-b px-4 py-3.5 transition-colors hover:bg-surface-muted/50"
+                onClick={() => !isDragging && setIsExpanded(!isExpanded)}
+            >
                 <div className="flex items-center gap-3">
                     <div className="bg-foreground text-background flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold tabular-nums shadow-sm">
                         {index + 1}
@@ -312,12 +328,13 @@ const SortableGroupItem = ({
                     <div
                         {...listeners}
                         {...attributes}
+                        onClick={(e) => e.stopPropagation()}
                         className="text-muted-foreground/40 hover:bg-muted hover:text-foreground cursor-grab rounded-xl p-2 active:cursor-grabbing"
                     >
                         <GripVertical size={16} />
                     </div>
                     {/* Reorder Group buttons */}
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-col gap-0.5" onClick={(e) => e.stopPropagation()}>
                         <button
                             type="button"
                             disabled={index === 0}
@@ -340,9 +357,13 @@ const SortableGroupItem = ({
                         <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-xs font-bold shadow-sm">
                             {group.modules.length} UNITS
                         </span>
+                        <ChevronDown 
+                            size={14} 
+                            className={cn("text-muted-foreground/50 transition-transform duration-300 ml-2", isExpanded ? "rotate-180" : "rotate-0")} 
+                        />
                     </div>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => onEditGroup(group)}>
                         <Edit2 size={12} className="text-muted-foreground" />
                     </Button>
@@ -356,26 +377,31 @@ const SortableGroupItem = ({
                     </Button>
                 </div>
             </div>
-            <div className="min-h-[80px] space-y-2.5 p-4">
-                <SortableContext id={'context-' + group.id} items={group.modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
-                    {group.modules.map((module, mIdx) => (
-                        <SortableModuleItem
-                            key={module.id}
-                            module={module}
-                            onRemove={onRemoveModule}
-                            index={mIdx}
-                            total={group.modules.length}
-                            onMoveUp={() => onMoveModule(group.id, mIdx, 'up')}
-                            onMoveDown={() => onMoveModule(group.id, mIdx, 'down')}
-                            onEditModule={onEditModule}
-                        />
-                    ))}
-                </SortableContext>
-                {group.modules.length === 0 && (
-                    <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-xl border border-dashed py-8">
-                        <span className="text-muted-foreground/60 text-xs font-medium uppercase">Drop module here</span>
+            
+            <div className={cn("grid transition-all duration-300 ease-in-out", isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+                <div className="overflow-hidden">
+                    <div className="min-h-[80px] space-y-2.5 p-4">
+                        <SortableContext id={'context-' + group.id} items={group.modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+                            {group.modules.map((module, mIdx) => (
+                                <SortableModuleItem
+                                    key={module.id}
+                                    module={module}
+                                    onRemove={onRemoveModule}
+                                    index={mIdx}
+                                    total={group.modules.length}
+                                    onMoveUp={() => onMoveModule(group.id, mIdx, 'up')}
+                                    onMoveDown={() => onMoveModule(group.id, mIdx, 'down')}
+                                    onEditModule={onEditModule}
+                                />
+                            ))}
+                        </SortableContext>
+                        {group.modules.length === 0 && (
+                            <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-xl border border-dashed py-8">
+                                <span className="text-muted-foreground/60 text-xs font-medium uppercase">Drop module here</span>
+                            </div>
+                        )}
                     </div>
-                )}
+                </div>
             </div>
         </div>
     );
@@ -908,6 +934,8 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
     );
 
     const findContainer = (id: UniqueIdentifier) => {
+        if (id === 'available-list') return 'available-list';
+        if (availableModules.find((m) => m.id === id)) return 'available-list';
         if (navItems.find((g) => g.id === id)) return id;
         return navItems.find((g) => g.modules.find((m) => m.id === id))?.id;
     };
@@ -928,23 +956,29 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         if (!activeContainer || !overContainer || activeContainer === overContainer) return;
 
         const activeItems = activeContainer === 'available-list' ? availableModules : navItems.find((g) => g.id === activeContainer)?.modules || [];
-        const movedItem = activeItems.find((m) => m.id === activeId);
+        const movedItem = activeItems.find((m) => m.id === active.id);
         if (!movedItem) return;
 
         if (activeContainer === 'available-list') {
-            setAvailableModules((prevAvail) => prevAvail.filter((m) => m.id !== activeId));
+            setAvailableModules((prevAvail) => prevAvail.filter((m) => m.id !== active.id));
         }
 
         if (overContainer === 'available-list') {
-            setAvailableModules((prevAvail) => [...prevAvail, movedItem]);
+            setAvailableModules((prevAvail) => {
+                // Prevent duplicate addition
+                if (prevAvail.find(m => m.id === active.id)) return prevAvail;
+                return [...prevAvail, movedItem];
+            });
         }
 
         setNavItems((prev) => {
             return prev.map((g) => {
                 if (g.id === activeContainer) {
-                    return { ...g, modules: g.modules.filter((m) => m.id !== activeId) };
+                    return { ...g, modules: g.modules.filter((m) => m.id !== active.id) };
                 }
                 if (g.id === overContainer) {
+                    // Prevent duplicate addition
+                    if (g.modules.find(m => m.id === active.id)) return g;
                     const newModules = [...g.modules];
                     const overIndex = over.id === overContainer ? newModules.length : g.modules.findIndex((m) => m.id === over.id);
                     newModules.splice(overIndex === -1 ? newModules.length : overIndex, 0, movedItem);
@@ -1316,7 +1350,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             ) : (
                 <DndContext
                     sensors={sensors}
-                    collisionDetection={rectIntersection}
+                    collisionDetection={pointerWithin}
                     onDragStart={handleDragStart}
                     onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
@@ -1335,9 +1369,9 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         </div>
 
                         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-                            {/* Masonry-style Container for Groups */}
+                            {/* Grid Container for Groups (Replaced Masonry to prevent DND infinite loops) */}
                             <div className="col-span-12 lg:col-span-8">
-                                <div className="columns-1 gap-6 space-y-6 md:columns-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                                     <SortableContext id="groups-context" items={navItems.map((g) => g.id)} strategy={verticalListSortingStrategy}>
                                         {navItems.map((group, gIdx) => (
                                             <div key={group.id} className="break-inside-avoid">
@@ -1352,6 +1386,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     onMoveGroupDown={() => handleMoveGroup(gIdx, 'down')}
                                                     onMoveModule={handleMoveModuleIndex}
                                                     onEditModule={openModuleModal}
+                                                    isGlobalDraggingGroup={activeType === 'group'}
                                                 />
                                             </div>
                                         ))}
@@ -1375,9 +1410,22 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }) }}>
                         {activeId ? (
                             activeType === 'group' ? (
-                                <div className="border-border bg-card ring-primary/5 flex w-[400px] cursor-grabbing items-center gap-3 rounded-2xl border p-3 opacity-90 shadow-2xl ring-4">
-                                    <GripVertical className="text-primary" size={16} />
-                                    <h3 className="text-foreground text-sm font-bold">{navItems.find((g) => g.id === activeId)?.name}</h3>
+                                <div className="border-primary bg-card ring-primary/20 w-full md:w-[calc(100vw/2-3rem)] max-w-2xl cursor-grabbing overflow-hidden rounded-xl border opacity-95 shadow-2xl ring-4">
+                                    <div className="flex items-center justify-between border-b px-4 py-3.5 bg-card">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-inner">
+                                                <Layers size={14} strokeWidth={2.5} />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <h3 className="text-foreground text-[13px] font-bold tracking-tight uppercase">
+                                                    {navItems.find((g) => g.id === activeId)?.name}
+                                                </h3>
+                                                <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                                                    {navItems.find((g) => g.id === activeId)?.modules?.length || 0} MODUL TERDAFTAR
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="border-border bg-card flex w-[280px] scale-105 cursor-grabbing items-center gap-3 rounded-xl border p-3 opacity-95 shadow-2xl">

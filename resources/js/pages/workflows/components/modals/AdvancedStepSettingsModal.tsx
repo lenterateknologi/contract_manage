@@ -57,7 +57,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                             <div className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="space-y-0.5">
                                     <label className="text-sm font-medium text-slate-900 dark:text-slate-100">Edit Info</label>
-                                    <p className="text-[11px] text-slate-500">Ubah data utama kontrak</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Ubah data utama kontrak</p>
                                 </div>
                                 <Checkbox
                                     checked={step.meta?.allow_info_edit !== false}
@@ -67,7 +67,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                             <div className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="space-y-0.5">
                                     <label className="text-sm font-medium text-slate-900 dark:text-slate-100">Edit F1</label>
-                                    <p className="text-[11px] text-slate-500">Ubah form permohonan</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Ubah form permohonan</p>
                                 </div>
                                 <Checkbox
                                     checked={step.meta?.allow_f1_edit !== false}
@@ -77,7 +77,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                             <div className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="space-y-0.5">
                                     <label className="text-sm font-medium text-slate-900 dark:text-slate-100">Edit F2</label>
-                                    <p className="text-[11px] text-slate-500">Ubah form ringkasan</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Ubah form ringkasan</p>
                                 </div>
                                 <Checkbox
                                     checked={step.meta?.allow_f2_edit !== false}
@@ -87,7 +87,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                             <div className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="space-y-0.5">
                                     <label className="text-sm font-medium text-slate-900 dark:text-slate-100">Edit Draf Perjanjian</label>
-                                    <p className="text-[11px] text-slate-500">Upload & ubah dokumen</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Upload & ubah dokumen</p>
                                 </div>
                                 <Checkbox
                                     checked={step.meta?.allow_agreement_edit !== false}
@@ -97,7 +97,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                             <div className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="space-y-0.5">
                                     <label className="text-sm font-medium text-slate-900 dark:text-slate-100">Upload Lampiran</label>
-                                    <p className="text-[11px] text-slate-500">Tambah dokumen pendukung</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Tambah dokumen pendukung</p>
                                 </div>
                                 <Checkbox
                                     checked={step.meta?.allow_attachment_edit !== false}
@@ -107,7 +107,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                             <div className="flex flex-row items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
                                 <div className="space-y-0.5">
                                     <label className="text-sm font-medium text-slate-900 dark:text-slate-100">Ubah Referensi</label>
-                                    <p className="text-[11px] text-slate-500">Tautkan ke kontrak lain</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Tautkan ke kontrak lain</p>
                                 </div>
                                 <Checkbox
                                     checked={step.meta?.allow_reference !== false}

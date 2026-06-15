@@ -2,6 +2,7 @@
 
 namespace App\Http\Actions\Workflow;
 
+use App\Enums\WorkflowAction;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\WorkflowStep;
@@ -31,8 +32,11 @@ trait HasWorkflowHelpers
                 $code = strtolower(str_replace(' ', '_', trim($actData['master_action_name'])));
             }
 
-            if (! $code) {
-                continue;
+            $enumCode = null;
+            if ($code instanceof WorkflowAction) {
+                $enumCode = $code;
+            } elseif (is_string($code)) {
+                $enumCode = WorkflowAction::tryFrom($code);
             }
 
             // Resolve next step in the current workflow
@@ -60,7 +64,7 @@ trait HasWorkflowHelpers
             }
 
             $actionFields = [
-                'action_code' => $code,
+                'action_code' => $enumCode,
                 'next_step_id' => $nextStepId,
                 'next_workflow_id' => $actData['next_workflow_id'] ?? null,
                 'next_workflow_step_id' => $actData['next_workflow_step_id'] ?? null,

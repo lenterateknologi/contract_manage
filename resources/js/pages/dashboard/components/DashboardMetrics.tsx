@@ -94,7 +94,7 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
                     </div>
                 </div>
 
-                <ScrollArea className="max-h-[200px]">
+                <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
                     <div className="space-y-0.5 p-1">
                         {filteredOptions.length === 0 ? (
                             <div className="py-6 text-center">
@@ -129,7 +129,7 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
                             })
                         )}
                     </div>
-                </ScrollArea>
+                </div>
             </PopoverContent>
         </Popover>
     );

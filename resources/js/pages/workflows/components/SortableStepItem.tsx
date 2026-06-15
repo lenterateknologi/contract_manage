@@ -72,7 +72,7 @@ export default function SortableStepItem({
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
-        zIndex: isDragging ? 50 : 'auto',
+        zIndex: isDragging ? 50 : (isExpanded ? 30 : 'auto'),
         opacity: isDragging ? 0.5 : 1,
     };
 
@@ -311,7 +311,7 @@ export default function SortableStepItem({
                         className="border-primary/5 bg-primary/[0.03] hover:bg-primary/10 hover:border-primary/20 flex h-10 w-10 cursor-grab items-center justify-center rounded-xl border transition-all"
                     >
                         <div className="bg-primary/30 mb-0.5 h-1.5 w-1.5 rounded-full" />
-                        <span className="text-primary/40 text-[10px] leading-none font-semibold">#{step.step}</span>
+                        <span className="text-primary/40 text-xs leading-none font-semibold">#{step.step}</span>
                     </div>
                 </div>
 
@@ -321,7 +321,7 @@ export default function SortableStepItem({
                             <div
                                 title={approverLabel}
                                 className={cn(
-                                    'flex max-w-[280px] items-center gap-1.5 truncate rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase',
+                                    'flex max-w-[280px] items-center gap-1.5 truncate rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase',
                                     APPROVER_TYPE_STYLES[step.approver_type] || APPROVER_TYPE_STYLES.role,
                                 )}
                             >
@@ -330,7 +330,7 @@ export default function SortableStepItem({
 
                             {/* Conditional Flag */}
                             {step.condition_expression && (
-                                <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[9px] font-semibold text-slate-600 uppercase dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
+                                <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-600 uppercase dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
                                     <GitBranch size={10} /> BERSYARAT
                                 </div>
                             )}
@@ -338,7 +338,7 @@ export default function SortableStepItem({
                             {/* Target Status Badge */}
                             {selectedStatus && (
                                 <div
-                                    className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase"
+                                    className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase"
                                     style={{
                                         backgroundColor: `${selectedStatus.color}10`,
                                         borderColor: `${selectedStatus.color}30`,
@@ -352,7 +352,7 @@ export default function SortableStepItem({
 
                             {/* Data Filters Indicator */}
                             {(step.filter_department || step.filter_company_group || step.filter_region || step.filter_company) && (
-                                <div className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[8px] font-semibold text-indigo-600 uppercase dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400">
+                                <div className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[10px] font-medium text-indigo-600 uppercase dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400">
                                     <Shield size={10} className="shrink-0" />
                                     <div className="flex gap-1">
                                         {step.filter_department && <span>UNIT</span>}
@@ -376,13 +376,13 @@ export default function SortableStepItem({
 
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                             {step.description && (
-                                <span className="text-[10px] font-medium text-slate-500 italic dark:text-slate-400">"{step.description}"</span>
+                                <span className="text-xs font-normal text-slate-500 italic dark:text-slate-400">"{step.description}"</span>
                             )}
 
                             {step.allowed_actions?.length > 0 && (
                                 <div className="flex items-center gap-1">
                                     <Shield size={10} className="text-slate-400" />
-                                    <span className="text-[9px] font-bold  text-slate-500 uppercase dark:text-slate-400">
+                                    <span className="text-[10px] font-medium text-slate-500 uppercase dark:text-slate-400">
                                         AKSI: {step.allowed_actions.map((a: string) => a.toUpperCase()).join(', ')}
                                     </span>
                                 </div>
@@ -456,7 +456,7 @@ export default function SortableStepItem({
                             <div className="col-span-12 lg:col-span-5 space-y-6">
                                 <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
                                     <Settings2 size={14} className="text-slate-400" />
-                                    <h4 className="text-[10px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+                                    <h4 className="text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
                                         Konfigurasi Langkah
                                     </h4>
                                 </div>
@@ -464,14 +464,14 @@ export default function SortableStepItem({
                                 <div className="space-y-4">
                                     {/* Deskripsi */}
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase">Deskripsi Tahap</label>
+                                        <label className="text-xs font-semibold text-slate-500 uppercase">Deskripsi Tahap</label>
                                         <input
                                             value={step.description || step.label || ''}
                                             onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
                                             placeholder="Contoh: Review Legal Staff"
-                                            className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-[11px] font-bold transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                            className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-xs font-medium transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
                                         />
-                                        <p className="text-[9px] leading-tight text-slate-400">Nama atau penjelasan tahap ini.</p>
+                                        <p className="text-xs text-slate-500">Nama atau penjelasan tahap ini.</p>
                                     </div>
 
                                     {/* Target Status & Advanced Settings Group (2 Columns) */}
@@ -479,7 +479,7 @@ export default function SortableStepItem({
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
                                             {/* Column 1: Target Status */}
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Status Kontrak Target</label>
+                                                <label className="text-xs font-semibold text-slate-500 uppercase">Status Kontrak Target</label>
                                                 <Select
                                                     value={step.meta?.target_status || 'default'}
                                                     onValueChange={(v) => {
@@ -491,7 +491,7 @@ export default function SortableStepItem({
                                                         });
                                                     }}
                                                 >
-                                                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-[11px] font-bold transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
+                                                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-xs font-medium transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
                                                         <div className="flex items-center gap-2">
                                                             {selectedStatus && (
                                                                 <div
@@ -503,16 +503,16 @@ export default function SortableStepItem({
                                                         </div>
                                                     </SelectTrigger>
                                                     <SelectContent className="rounded-xl">
-                                                        <SelectItem value="default" className="py-2 text-[10px] font-bold text-slate-500 uppercase">
+                                                        <SelectItem value="default" className="py-2 text-xs font-medium text-slate-500 uppercase">
                                                             DEFAULT (OTOMATIS)
                                                         </SelectItem>
                                                         {contractStatuses.map((status: any) => (
                                                             <SelectItem
                                                                 key={status.id}
                                                                 value={status.code}
-                                                                className="py-2 text-[10px] font-bold uppercase"
+                                                                className="py-2 text-xs font-medium uppercase"
                                                             >
-                                                                <div className="flex items-center gap-2">
+                                                                    <div className="flex items-center gap-2">
                                                                     <div
                                                                         className="h-2 w-2 rounded-full"
                                                                         style={{ backgroundColor: status.color || '#cbd5e1' }}
@@ -530,11 +530,11 @@ export default function SortableStepItem({
 
                                             {/* Column 2: Advanced Settings Button */}
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Pengaturan Lanjutan</label>
+                                                <label className="text-xs font-semibold text-slate-500 uppercase">Pengaturan Lanjutan</label>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    className="w-full justify-start h-9 rounded-xl text-[11px] font-bold bg-white dark:bg-slate-900"
+                                                    className="w-full justify-start h-9 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900"
                                                     onClick={() => setAdvancedSettingsOpen(true)}
                                                 >
                                                     <Settings2 className="mr-2 h-4 w-4" />
@@ -548,7 +548,7 @@ export default function SortableStepItem({
                                                 />
                                             </div>
                                         </div>
-                                        <p className="text-[9px] leading-tight text-slate-400">Status otomatis jika langkah ini aktif.</p>
+                                        <p className="text-xs text-slate-500">Status otomatis jika langkah ini aktif.</p>
                                     </div>
 
                                     {/* Condition Expression */}
@@ -556,10 +556,10 @@ export default function SortableStepItem({
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <GitBranch size={13} className="text-slate-400" />
-                                                <h4 className="text-[10px] font-semibold text-slate-500 uppercase">Ekspresi Kondisi (Metadata)</h4>
+                                                <h4 className="text-xs font-semibold text-slate-500 uppercase">Ekspresi Kondisi (Metadata)</h4>
                                             </div>
                                             <span className={cn(
-                                                "px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                                                "px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase",
                                                 step.condition_expression !== null 
                                                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
                                                     : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
@@ -580,9 +580,9 @@ export default function SortableStepItem({
                                         </Button>
                                         
                                         {step.condition_expression !== null && (
-                                            <p className="mt-2 text-[10px] text-slate-400">
+                                            <p className="mt-2 text-xs text-slate-500">
                                                 Ekspresi Aktif:{' '}
-                                                <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300 break-all">
+                                                <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300 break-all">
                                                     {step.condition_expression}
                                                 </code>
                                             </p>
@@ -604,7 +604,7 @@ export default function SortableStepItem({
                             <div className="col-span-12 lg:col-span-7 space-y-6 lg:border-l lg:border-slate-100 dark:lg:border-slate-800 lg:pl-6 pt-6 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
                                 <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
                                     <UsersIcon size={14} className="text-slate-400" />
-                                    <h4 className="text-[10px] font-semibold tracking-[0.2em] text-slate-400 uppercase">
+                                    <h4 className="text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
                                         Pool Otoritas Langkah (Multi-Source)
                                     </h4>
                                 </div>
@@ -614,7 +614,7 @@ export default function SortableStepItem({
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2 px-1">
                                             <Settings2 size={12} className="text-slate-400" />
-                                            <span className="text-[10px] font-semibold text-slate-500 uppercase font-bold">Aktor Kustom</span>
+                                            <span className="text-xs font-semibold text-slate-500 uppercase">Aktor Kustom</span>
                                         </div>
                                         <SearchableMultiSelect
                                             values={step.approver_config?.custom || []}
@@ -632,7 +632,7 @@ export default function SortableStepItem({
                                         <div className="flex items-center justify-between px-1">
                                             <div className="flex items-center gap-2">
                                                 <Shield size={12} className="text-slate-400" />
-                                                <span className="text-[10px] font-semibold text-slate-500 uppercase font-bold">Berdasarkan Role</span>
+                                                <span className="text-xs font-semibold text-slate-500 uppercase">Berdasarkan Role</span>
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <Checkbox
@@ -640,7 +640,7 @@ export default function SortableStepItem({
                                                     checked={step.approver_config?.is_initiator_role === true}
                                                     onCheckedChange={(checked) => updateConfig('is_initiator_role', checked === true)}
                                                 />
-                                                <label htmlFor={`step-init-role-${idx}`} className="text-[9px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                                <label htmlFor={`step-init-role-${idx}`} className="text-xs font-medium text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
                                             </div>
                                         </div>
                                         <SearchableMultiSelect
@@ -657,7 +657,7 @@ export default function SortableStepItem({
                                         <div className="flex items-center justify-between px-1">
                                             <div className="flex items-center gap-2">
                                                 <Briefcase size={12} className="text-slate-400" />
-                                                <span className="text-[10px] font-semibold text-slate-500 uppercase font-bold">Departemen Pool</span>
+                                                <span className="text-xs font-semibold text-slate-500 uppercase">Departemen Pool</span>
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <Checkbox
@@ -665,7 +665,7 @@ export default function SortableStepItem({
                                                     checked={step.approver_config?.is_initiator_department === true}
                                                     onCheckedChange={(checked) => updateConfig('is_initiator_department', checked === true)}
                                                 />
-                                                <label htmlFor={`step-init-dept-${idx}`} className="text-[9px] font-bold text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                                <label htmlFor={`step-init-dept-${idx}`} className="text-xs font-medium text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
                                             </div>
                                         </div>
                                         <SearchableMultiSelect
@@ -681,7 +681,7 @@ export default function SortableStepItem({
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-2 px-1">
                                             <UsersIcon size={12} className="text-slate-400" />
-                                            <span className="text-[10px] font-semibold text-slate-500 uppercase font-bold">User Spesifik</span>
+                                            <span className="text-xs font-semibold text-slate-500 uppercase">User Spesifik</span>
                                         </div>
                                         <SearchableMultiSelect
                                             values={step.approver_config?.users || []}
@@ -700,22 +700,22 @@ export default function SortableStepItem({
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[10px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Konfigurasi Aksi</span>
-                                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-bold text-slate-500 dark:bg-slate-800">
+                                    <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">Konfigurasi Aksi</span>
+                                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800">
                                         {actions.length} Aksi
                                     </span>
                                 </div>
                                 <button
                                     type="button"
                                     onClick={addAction}
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[9px] font-semibold text-slate-700 uppercase shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium text-slate-700 uppercase shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
                                 >
                                     + Tambah Aksi
                                 </button>
                             </div>
 
                             {actions.length === 0 ? (
-                                <div className="rounded-xl border border-dashed border-slate-200 py-6 text-center text-[10px] font-bold text-slate-400 uppercase italic dark:border-slate-800">
+                                <div className="rounded-xl border border-dashed border-slate-200 py-6 text-center text-xs text-slate-500 uppercase italic dark:border-slate-800">
                                     Belum ada aksi yang dikonfigurasi. Klik tombol di atas untuk menambah.
                                 </div>
                             ) : (

@@ -29,4 +29,7 @@ Homestead.yaml
 npm-debug.log
 yarn-error.log
 repomix-output.xml
-
+.impeccable
+impeccable.config.ts
+PRODUCT.md
+GEMINI.MD

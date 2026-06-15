@@ -52,8 +52,8 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                     {/* Sidebar: Daftar Kontrak */}
                     <div className="flex w-80 flex-col border-r border-surface-border bg-surface-base">
                         <div className="p-4 border-b border-surface-border">
-                            <h2 className="text-sm font-bold uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
-                                <MessageSquare size={16} /> Percakapan
+                            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                                <MessageSquare className="h-4 w-4 text-slate-500" /> Percakapan
                             </h2>
                             <SearchInput
                                 placeholder="Cari kontrak..."
@@ -67,7 +67,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                             {filteredContracts.length === 0 ? (
                                 <div className="p-8 text-center opacity-40">
                                     <Search size={24} className="mx-auto mb-2" />
-                                    <p className="text-xs font-medium uppercase tracking-tight">Tidak ada kontrak</p>
+                                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Tidak ada kontrak</p>
                                 </div>
                             ) : (
                                 filteredContracts.map(c => (
@@ -114,13 +114,15 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-full opacity-30 gap-4">
-                                <div className="bg-surface-muted p-6 rounded-full">
-                                    <MessageSquare size={48} strokeWidth={1} />
+                            <div className="flex flex-col items-center justify-center h-full gap-4 text-text-soft/60">
+                                <div className="bg-surface-muted p-6 rounded-full text-text-soft/40">
+                                    <MessageSquare size={48} strokeWidth={1.5} />
                                 </div>
-                                <div className="text-center">
-                                    <h3 className="text-lg font-semibold uppercase tracking-widest">Chat Center</h3>
-                                    <p className="text-xs font-bold uppercase tracking-tight">Pilih percakapan untuk memulai diskusi</p>
+                                <div className="text-center max-w-xs px-4">
+                                    <h3 className="text-base font-semibold text-text-main tracking-tight mb-1">Chat Center</h3>
+                                    <p className="text-xs text-text-soft leading-relaxed">
+                                        Pilih percakapan dari daftar kontrak untuk memulai diskusi dan kolaborasi.
+                                    </p>
                                 </div>
                             </div>
                         )}
