@@ -1371,7 +1371,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
                             {/* Grid Container for Groups (Replaced Masonry to prevent DND infinite loops) */}
                             <div className="col-span-12 lg:col-span-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                                <div className="grid grid-cols-1 gap-6 items-start">
                                     <SortableContext id="groups-context" items={navItems.map((g) => g.id)} strategy={verticalListSortingStrategy}>
                                         {navItems.map((group, gIdx) => (
                                             <div key={group.id} className="break-inside-avoid">
