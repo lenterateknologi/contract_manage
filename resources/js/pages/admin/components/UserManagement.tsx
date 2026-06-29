@@ -4,7 +4,7 @@ import { ExcelActions } from '@/components/ui/data/ExcelActions';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { CompactInput } from '@/components/ui/forms/CompactInput';
 import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
+import { SearchableSelect } from '@/components/ui/forms/SearchableSelect';
 import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { avatarColor, cn } from '@/lib/utils';
@@ -377,22 +377,12 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                                         <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                             <ShieldAlert size={12} className="opacity-50" /> Role Akses
                                         </label>
-                                        <Select value={form.data.role} onValueChange={(v: string) => form.setData('role', String(v))}>
-                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold shadow-sm ring-1 ring-black/[0.03] transition-all">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="border-surface-border bg-surface-base rounded-xl shadow-2xl">
-                                                {roles.map((r) => (
-                                                    <SelectItem
-                                                        key={r.id}
-                                                        value={r.name}
-                                                        className="py-3 text-xs font-bold text-black uppercase dark:text-white"
-                                                    >
-                                                        {r.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <SearchableSelect
+                                            value={form.data.role}
+                                            onValueChange={(v: string) => form.setData('role', String(v))}
+                                            options={roles.map(r => ({ value: r.name, label: r.name }))}
+                                            placeholder="PILIH ROLE"
+                                        />
                                         {form.errors.role && (
                                             <p className="text-danger mt-1.5 text-[10px] font-bold tracking-tight uppercase">{form.errors.role}</p>
                                         )}
@@ -401,25 +391,12 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                                         <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                             <Building2 size={12} className="opacity-50" /> Unit / Departemen
                                         </label>
-                                        <Select
+                                        <SearchableSelect
                                             value={String(form.data.department_id)}
                                             onValueChange={(v: string) => form.setData('department_id', String(v))}
-                                        >
-                                            <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold shadow-sm ring-1 ring-black/[0.03] transition-all">
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent className="border-surface-border bg-surface-base rounded-xl shadow-2xl">
-                                                {departments.map((d) => (
-                                                    <SelectItem
-                                                        key={d.id}
-                                                        value={String(d.id)}
-                                                        className="py-3 text-xs font-bold text-black uppercase dark:text-white"
-                                                    >
-                                                        {d.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                            options={departments.map(d => ({ value: String(d.id), label: d.name }))}
+                                            placeholder="PILIH DEPARTEMEN"
+                                        />
                                         {form.errors.department_id && (
                                             <p className="text-danger mt-1.5 text-[10px] font-bold tracking-tight uppercase">
                                                 {form.errors.department_id}
@@ -431,25 +408,12 @@ export function UserManagement({ users, roles, departments, companies = [], filt
                                     <label className="text-primary/60 flex items-center gap-2 text-[10px] font-semibold tracking-widest uppercase dark:text-white/60">
                                         <Building2 size={12} className="opacity-50" /> Perusahaan / Company
                                     </label>
-                                    <Select
+                                    <SearchableSelect
                                         value={String(form.data.company_id)}
                                         onValueChange={(v: string) => form.setData('company_id', String(v))}
-                                    >
-                                        <SelectTrigger className="border-primary/10 bg-primary/5 focus:border-primary h-11 rounded-xl text-xs font-bold shadow-sm ring-1 ring-black/[0.03] transition-all">
-                                            <SelectValue placeholder="PILIH PERUSAHAAN" />
-                                        </SelectTrigger>
-                                        <SelectContent className="border-surface-border bg-surface-base rounded-xl shadow-2xl">
-                                            {companies.map((c) => (
-                                                <SelectItem
-                                                    key={c.id}
-                                                    value={String(c.id)}
-                                                    className="py-3 text-xs font-bold text-black uppercase dark:text-white"
-                                                >
-                                                    {c.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        options={companies.map(c => ({ value: String(c.id), label: c.name }))}
+                                        placeholder="PILIH PERUSAHAAN"
+                                    />
                                     {form.errors.company_id && (
                                         <p className="text-danger mt-1.5 text-[10px] font-bold tracking-tight uppercase">
                                             {form.errors.company_id}

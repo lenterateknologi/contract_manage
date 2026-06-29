@@ -17,6 +17,7 @@ interface SearchableSelectProps {
     className?: string;
     triggerClassName?: string;
     emptyText?: string;
+    disabled?: boolean;
 }
 
 export function SearchableSelect({
@@ -25,8 +26,10 @@ export function SearchableSelect({
     options,
     placeholder = 'Pilih...',
     searchPlaceholder = 'Cari...',
+    className,
     triggerClassName,
     emptyText = 'Tidak ada hasil',
+    disabled = false,
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
@@ -52,25 +55,22 @@ export function SearchableSelect({
     }, [open]);
 
     return (
-        <div ref={containerRef} className={cn("relative w-full", open && "z-50")}>
+        <div ref={containerRef} className={cn("relative w-full", open && "z-50", className)}>
             <button
                 type="button"
-                onClick={() => { setOpen(o => !o); setSearch(''); }}
+                disabled={disabled}
+                onClick={() => { if (!disabled) { setOpen(o => !o); setSearch(''); } }}
                 className={cn(
-                    'flex min-h-10 w-full items-center justify-between border border-slate-200 bg-white px-3 py-1.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors rounded-lg cursor-pointer hover:border-slate-400',
-                    open && 'border-black',
+                    'flex min-h-[44px] w-full items-center justify-between rounded-lg border border-border bg-surface-base px-4 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
+                    !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
+                    disabled && 'bg-slate-50 border-slate-200 text-slate-500 opacity-50 cursor-not-allowed shadow-none',
+                    open && 'border-primary ring-1 ring-primary',
                     triggerClassName
                 )}
             >
-                <div className="flex flex-wrap gap-1.5 pr-2">
-                    {selected ? (
-                        <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-800 px-2 py-0.5 rounded text-[10px] hover:bg-slate-200 transition-colors">
-                            {selected.label}
-                        </span>
-                    ) : (
-                        <span className="text-slate-400 py-0.5">{placeholder}</span>
-                    )}
-                </div>
+                <span className={cn('block truncate', !selected && 'text-slate-400 font-medium')}>
+                    {selected ? selected.label : placeholder}
+                </span>
                 <ChevronsUpDown size={13} className="text-slate-400 shrink-0 ml-2" />
             </button>
 

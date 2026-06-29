@@ -15,6 +15,7 @@ interface SearchableSelectProps {
     placeholder?: string;
     className?: string;
     error?: string;
+    disabled?: boolean;
 }
 
 export function SearchableSelect({
@@ -23,7 +24,8 @@ export function SearchableSelect({
     onChange,
     placeholder = 'Pilih...',
     className,
-    error
+    error,
+    disabled = false
 }: Readonly<SearchableSelectProps>) {
     const [query, setQuery] = useState('');
 
@@ -38,14 +40,15 @@ export function SearchableSelect({
 
     return (
         <div className={cn("w-full", className)}>
-            <Combobox value={String(value)} onChange={(val: any) => {
+            <Combobox value={String(value)} disabled={disabled} onChange={(val: any) => {
                 onChange(String(val));
                 setQuery('');
             }}>
                 <div className="relative">
                     <div className={cn(
                         "relative w-full cursor-default overflow-hidden rounded-md border border-border bg-white text-left transition-all duration-200 outline-none focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500/20",
-                        error && "border-red-500"
+                        error && "border-red-500",
+                        disabled && "bg-slate-50 border-slate-200 text-slate-500 opacity-50 cursor-not-allowed shadow-none"
                     )}>
                         <ComboboxInput
                             className={cn(

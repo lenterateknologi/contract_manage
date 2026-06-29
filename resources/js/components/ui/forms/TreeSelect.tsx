@@ -18,6 +18,7 @@ interface TreeSelectProps {
     emptyText?: string;
     triggerClassName?: string;
     multiple?: boolean;
+    disabled?: boolean;
 }
 
 export function TreeSelect({
@@ -29,6 +30,7 @@ export function TreeSelect({
     emptyText = 'Tidak ada hasil',
     triggerClassName,
     multiple = false,
+    disabled = false,
 }: TreeSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
@@ -347,13 +349,17 @@ export function TreeSelect({
             <button
                 ref={buttonRef}
                 type="button"
+                disabled={disabled}
                 onClick={() => {
-                    setOpen(!open);
-                    setSearch('');
+                    if (!disabled) {
+                        setOpen(!open);
+                        setSearch('');
+                    }
                 }}
                 className={cn(
-                    'border-sidebar-border bg-sidebar-accent/20 text-sidebar-foreground focus:ring-sidebar-primary flex min-h-10 w-full items-center justify-between rounded-lg border px-3 py-2.5 text-[12px] font-medium transition-all outline-none focus:ring-1 text-left',
-                    open && 'ring-sidebar-primary ring-1 border-sidebar-primary',
+                    'flex min-h-[44px] w-full items-center justify-between rounded-lg border border-border bg-surface-base px-4 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
+                    !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
+                    disabled && 'bg-slate-50 border-slate-200 text-slate-500 opacity-50 cursor-not-allowed shadow-none',
                     triggerClassName
                 )}
             >

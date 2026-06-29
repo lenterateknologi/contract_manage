@@ -94,8 +94,8 @@ export function SearchableMultiSelect({
                     }
                 }}
                 className={cn(
-                    'flex min-h-10 w-full items-center justify-between border border-slate-200 bg-white text-slate-900 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 px-3 py-1.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors rounded-lg',
-                    !disabled && 'cursor-pointer hover:border-slate-400 dark:hover:border-slate-700',
+                    'flex min-h-[44px] w-full items-center justify-between rounded-lg border border-border bg-surface-base px-4 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
+                    !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
                     open && 'border-black dark:border-slate-100',
                     disabled && 'bg-slate-50 border-slate-100 dark:bg-slate-950 dark:border-slate-900 dark:text-slate-500',
                     triggerClassName

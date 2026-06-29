@@ -11,17 +11,17 @@ interface MetricItemProps {
 
 export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert }: MetricItemProps) {
     const getCardBgColor = (textColor: string) => {
-        if (textColor.includes('primary')) return 'bg-primary/80 text-white border-primary/20';
-        if (textColor.includes('amber')) return 'bg-amber-500/80 text-white border-amber-500/20';
-        if (textColor.includes('emerald')) return 'bg-emerald-500/80 text-white border-emerald-500/20';
-        if (textColor.includes('rose')) return 'bg-rose-500/80 text-white border-rose-500/20';
-        if (textColor.includes('indigo')) return 'bg-indigo-500/80 text-white border-indigo-500/20';
-        if (textColor.includes('cyan')) return 'bg-cyan-500/80 text-white border-cyan-500/20';
-        if (textColor.includes('purple')) return 'bg-purple-500/80 text-white border-purple-500/20';
-        if (textColor.includes('success')) return 'bg-success/80 text-white border-success/20';
-        if (textColor.includes('warning')) return 'bg-warning/80 text-white border-warning/20';
-        if (textColor.includes('danger')) return 'bg-danger/80 text-white border-danger/20';
-        return 'bg-surface-muted/80 text-white border-surface-border/50';
+        if (textColor.includes('primary')) return 'bg-white border-primary/20 text-primary';
+        if (textColor.includes('amber')) return 'bg-white border-amber-500/20 text-amber-500';
+        if (textColor.includes('emerald')) return 'bg-white border-emerald-500/20 text-emerald-500';
+        if (textColor.includes('rose')) return 'bg-white border-rose-500/20 text-rose-500';
+        if (textColor.includes('indigo')) return 'bg-white border-indigo-500/20 text-indigo-500';
+        if (textColor.includes('cyan')) return 'bg-white border-cyan-500/20 text-cyan-500';
+        if (textColor.includes('purple')) return 'bg-white border-purple-500/20 text-purple-500';
+        if (textColor.includes('success')) return 'bg-white border-success/20 text-success';
+        if (textColor.includes('warning')) return 'bg-white border-warning/20 text-warning';
+        if (textColor.includes('danger')) return 'bg-white border-danger/20 text-danger';
+        return 'bg-white border-surface-border/50 text-text-main';
     };
 
     const getHoverBorderColor = (textColor: string) => {
@@ -68,12 +68,12 @@ export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert }
         >
             {/* Large Background Icon */}
             <div className="pointer-events-none absolute -right-6 -bottom-6 opacity-10 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-20">
-                <Icon size={120} strokeWidth={1.5} />
+                <Icon size={120} strokeWidth={1.5} className="currentColor" />
             </div>
 
             <div className="z-10 space-y-1.5">
-                <p className="text-[10px] leading-none font-semibold uppercase opacity-80">{label}</p>
-                <p className="text-3xl leading-none font-extrabold tracking-tight">{value}</p>
+                <p className="text-text-soft text-[10px] leading-none font-semibold uppercase">{label}</p>
+                <p className="text-text-main text-3xl leading-none font-extrabold tracking-tight">{value}</p>
             </div>
 
         </div>

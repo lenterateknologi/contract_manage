@@ -43,7 +43,8 @@ const CompactInput = React.forwardRef<HTMLInputElement, CompactInputProps>(
                             Icon && "pl-9",
                             error
                                 ? "border-rose-500 text-rose-500 focus:ring-1 focus:ring-rose-500"
-                                : "border-primary/5 dark:border-white/5 text-black dark:text-white focus:border-primary/20 dark:focus:border-white/20 focus:bg-primary/[0.01] dark:focus:bg-white/[0.01] shadow-sm",
+                                : "border-primary/20 dark:border-white/20 text-black dark:text-white focus:border-primary/40 dark:focus:border-white/40 focus:bg-primary/[0.01] dark:focus:bg-white/[0.01]",
+                            "disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-50 dark:disabled:bg-slate-800/50",
                             className
                         )}
                         ref={ref}
