@@ -67,11 +67,15 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                 {/* Distribution Pie */}
                 <div className="lg:col-span-4">
-                    <div className="dark:bg-surface-base border-surface-border/60 hover:border-primary/20 group flex h-full flex-col rounded-2xl border bg-white p-6 shadow-sm transition-all hover:shadow-xl">
-                        <div className="space-y-1 pb-6">
-                            <h3 className="text-text-main text-sm font-semibold tracking-[0.2em] uppercase">Proporsi Dokumen</h3>
-                            <p className="text-text-soft text-[10px] font-medium  uppercase">Berdasarkan Tipe Submission</p>
+                    <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg group flex h-full flex-col transition-all overflow-hidden">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-primary px-6 py-4 bg-primary text-primary-foreground">
+                            <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase">Proporsi Dokumen</h3>
                         </div>
+                        <div className="p-6 flex-1 flex flex-col">
+                            <div className="space-y-1 pb-6">
+                                <p className="text-text-soft text-[10px] font-medium uppercase">Berdasarkan Tipe Submission</p>
+                            </div>
 
                         <div className="relative h-[300px] w-full">
                             {isMounted && submissionTypeData.length > 0 ? (
@@ -119,7 +123,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                             {submissionTypeData.map((entry: any, index: number) => (
                                 <div
                                     key={index}
-                                    className="bg-surface-muted/30 border-surface-border/40 flex items-center gap-2.5 rounded-xl border px-3 py-2"
+                                    className="bg-surface-muted/30 border-surface-border/40 flex items-center gap-2.5 rounded-lg border px-3 py-2"
                                 >
                                     <div className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                                     <div className="flex min-w-0 flex-col">
@@ -129,18 +133,21 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                 </div>
                             ))}
                         </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* Distribution Bar */}
                 <div className="lg:col-span-8">
-                    <div className="dark:bg-surface-base border-surface-border/60 hover:border-primary/20 group flex h-full flex-col rounded-2xl border bg-white p-6 shadow-sm transition-all hover:shadow-xl">
-                        <div className="flex items-start justify-between pb-2">
-                            <div className="space-y-1">
-                                <h3 className="text-text-main text-sm font-semibold tracking-[0.2em] uppercase">Analisis Klasifikasi</h3>
-                                <p className="text-text-soft text-[10px] font-medium  uppercase">Volume Per Kategori Kontrak</p>
-                            </div>
+                    <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg group flex h-full flex-col transition-all overflow-hidden">
+                        {/* Header */}
+                        <div className="flex items-center justify-between border-b border-primary px-6 py-4 bg-primary text-primary-foreground">
+                            <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase">Analisis Klasifikasi</h3>
                         </div>
+                        <div className="p-6 flex-1 flex flex-col">
+                            <div className="space-y-1 pb-6">
+                                <p className="text-text-soft text-[10px] font-medium uppercase">Volume Per Kategori Kontrak</p>
+                            </div>
 
                         <div className="h-[400px] w-full">
                             {isMounted && contractTypeData.length > 0 ? (
@@ -165,7 +172,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                             content={({ active, payload, label }: any) => {
                                                 if (active && payload && payload.length) {
                                                     return (
-                                                        <div className="dark:bg-surface-base/90 border-surface-border/40 flex flex-col gap-1 rounded-2xl border bg-white/90 p-3 shadow-xl backdrop-blur-sm">
+                                                        <div className="dark:bg-surface-base/90 border-surface-border/40 flex flex-col gap-1 rounded-lg border bg-white/90 p-3 shadow-xl backdrop-blur-sm">
                                                             <p className="text-text-soft text-[10px] leading-none font-semibold  uppercase">
                                                                 {label}
                                                             </p>
@@ -193,6 +200,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                     <p className="text-xs font-medium tracking-[0.2em] uppercase">Analisis tidak tersedia</p>
                                 </div>
                             )}
+                        </div>
                         </div>
                     </div>
                 </div>

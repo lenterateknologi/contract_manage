@@ -26,7 +26,7 @@ interface ActivityFeedProps {
 
 export function ActivityFeed({ items }: ActivityFeedProps) {
     return (
-        <div className="border-surface-border/60 bg-surface-base/40 text-text-main animate-in fade-in w-full rounded-2xl border shadow-sm backdrop-blur-sm duration-300 select-none">
+        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg animate-in fade-in w-full duration-300 select-none">
             <div className="border-surface-border/60 flex items-center justify-between border-b px-6 py-4">
                 <SectionTitle>Aktivitas Terbaru</SectionTitle>
                 <span className="bg-success flex h-2 w-2 animate-pulse rounded-full" />

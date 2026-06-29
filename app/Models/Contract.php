@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasContractMeta;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contract extends Model
 {
+    use HasContractMeta;
+
     protected $table = 't_contracts';
 
     use HasFactory, HasUuids, SoftDeletes;
@@ -34,7 +37,6 @@ class Contract extends Model
         'created_by',
         'current_version',
         'workflow_id',
-        'origin_workflow_id',
         'workflow_step_id',
         'metadata',
         'submitted_at',
@@ -44,6 +46,13 @@ class Contract extends Model
         'parent_id',
         'assigned_pic_id',
         'assigned_by_id',
+
+        // Meta columns transparently handled by HasContractMeta
+        'kop_topik', 'kop_sub_topik', 'p1_entity', 'p1_address', 'p1_contact_person',
+        'p1_email', 'p1_phone', 'p2_entity', 'p2_address', 'p2_contact_person',
+        'p2_email', 'p2_phone', 'f1_name', 'f1_start_date', 'f1_end_date',
+        'f2_price', 'f2_payment_terms', 'f3_penalties', 'f3_insurance',
+        'f4_special_conditions', 'f4_guarantees',
     ];
 
     protected $casts = [

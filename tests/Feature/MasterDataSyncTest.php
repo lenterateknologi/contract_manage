@@ -4,6 +4,7 @@ use App\Models\CompanyGroup;
 use App\Models\ContractType;
 use App\Models\Module;
 use App\Models\ModuleGroup;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
@@ -14,13 +15,13 @@ use Inertia\Testing\AssertableInertia;
 
 beforeEach(function () {
     $this->admin = User::factory()->create([
-        'role' => 'Admin',
+        'role_id' => Role::firstOrCreate(['name' => 'Admin'])->id,
     ]);
 });
 
 test('unauthorized users cannot access master data sync index', function () {
     $user = User::factory()->create([
-        'role' => 'User',
+        'role_id' => Role::firstOrCreate(['name' => 'User'])->id,
     ]);
 
     $this->actingAs($user)

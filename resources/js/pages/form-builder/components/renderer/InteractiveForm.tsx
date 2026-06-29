@@ -190,7 +190,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
 
                         {isBuilder && pages.length === 1 && pageFields.length === 0 && (
                             <div className="border-border bg-muted/30 hover:border-primary/30 hover:bg-primary/5 flex h-[180mm] w-full flex-col items-center justify-center rounded-3xl border-2 border-dashed p-12 text-center transition-all">
-                                <div className="bg-primary/10 ring-primary/20 mb-6 flex h-20 w-20 items-center justify-center rounded-2xl shadow-sm ring-1">
+                                <div className="bg-primary/10 ring-primary/20 mb-6 flex h-20 w-20 items-center justify-center rounded-none ring-1">
                                     <FileText className="text-primary" size={32} />
                                 </div>
                                 <div className="max-w-[280px]">

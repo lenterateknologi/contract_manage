@@ -63,8 +63,6 @@ class ContractWorkflowService
             throw new \Exception('Alur kerja tidak ditemukan dan tidak ada alur default untuk tipe kontrak ini.');
         }
 
-        $originWorkflowId = $contract->origin_workflow_id ?: $workflow->id;
-
         $draftingHours = $workflow->sla_drafting_hours ?: 72;
         $totalHours = $workflow->sla_total_hours ?: 240;
         $cutoffHour = $workflow->sla_cutoff_hour ?: 16;
@@ -111,7 +109,6 @@ class ContractWorkflowService
 
         $contract->update([
             'workflow_id' => $workflow->id,
-            'origin_workflow_id' => $originWorkflowId,
             'workflow_step_id' => $firstStep->id,
             'status' => $nextStatus?->code ?: $statusStr,
             'submitted_at' => $firstStep->step === 1 ? $contract->submitted_at : now(),

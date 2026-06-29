@@ -20,7 +20,6 @@ class UserSeeder extends Seeder
         User::updateOrCreate(['email' => 'admin@example.com'], [
             'name' => 'System Administrator',
             'password' => Hash::make('password'),
-            'role' => 'Admin',
             'role_id' => $adminRole?->id,
             'department_id' => $legalDept?->id,
             'is_active' => true,
@@ -29,7 +28,6 @@ class UserSeeder extends Seeder
         User::updateOrCreate(['email' => 'staff@example.com'], [
             'name' => 'Ahmad Staff',
             'password' => Hash::make('password'),
-            'role' => 'Staff',
             'role_id' => $staffRole?->id,
             'department_id' => $legalDept?->id,
             'is_active' => true,
@@ -38,7 +36,6 @@ class UserSeeder extends Seeder
         User::updateOrCreate(['email' => 'manager@example.com'], [
             'name' => 'Budi Manager',
             'password' => Hash::make('password'),
-            'role' => 'Manager',
             'role_id' => $managerRole?->id,
             'department_id' => $legalDept?->id,
             'is_active' => true,

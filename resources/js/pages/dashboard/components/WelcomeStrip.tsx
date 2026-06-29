@@ -7,7 +7,7 @@ interface WelcomeStripProps {
 
 export function WelcomeStrip({ metrics: m }: WelcomeStripProps) {
     return (
-        <div className="bg-card/40 border-border/60 flex items-center justify-between rounded-2xl border px-6 py-4 shadow-sm backdrop-blur-sm select-none dark:border-slate-800/60 dark:bg-slate-900/20">
+        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg flex items-center justify-between px-6 py-4 select-none">
             <div>
                 <h2 className="text-foreground text-base font-medium tracking-tight">Dashboard Kontrak</h2>
                 <p className="text-muted-foreground mt-0.5 text-[11px] font-medium">

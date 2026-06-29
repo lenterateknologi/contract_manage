@@ -158,7 +158,7 @@ class MasterDataAdminController extends Controller
                 $exportData['workflows'] = Workflow::all()->map(function ($w) {
                     return [
                         'id' => $w->id,
-                        'contract_type' => $w->contract_type,
+                        'contract_type_id' => $w->contract_type_id,
                         'department_id' => $w->department_id,
                         'name' => $w->name,
                         'description' => $w->description,
@@ -251,7 +251,7 @@ class MasterDataAdminController extends Controller
                     return [
                         'id' => $a->id,
                         'workflow_step_id' => $a->workflow_step_id,
-                        'master_action_id' => $a->master_action_id,
+
                         'action_code' => $a->action_code ? $a->action_code->value : null,
                         'next_step_id' => $a->next_step_id,
                         'next_workflow_id' => $a->next_workflow_id,

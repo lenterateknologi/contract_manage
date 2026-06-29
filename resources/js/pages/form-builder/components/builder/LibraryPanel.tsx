@@ -9,7 +9,7 @@ interface LibraryPanelProps {
     onAddField: (type: string) => void;
 }
 
-const LibPreview = ({ type }: { type: any }) => {
+const LibPreview = ({ type, cat }: { type: any, cat?: any }) => {
     const isPreset = type.value.startsWith('preset_');
 
     const renderPreview = () => {
@@ -189,22 +189,13 @@ const LibPreview = ({ type }: { type: any }) => {
         }
     };
 
-    return (
-        <div
-            className={cn(
-                'bg-muted/20 group-hover:bg-primary/5 flex h-20 w-full flex-col items-center justify-center overflow-hidden rounded-lg p-3 transition-colors',
-                isPreset ? 'border-primary/10 bg-primary/5 border' : '',
-            )}
-        >
-            {renderPreview()}
-        </div>
-    );
+    return renderPreview();
 };
 
-const LibDraggable = ({ type, color, onClick }: { type: any; color: string; onClick: () => void }) => {
+const DraggableField = ({ type, cat }: { type: any, cat: any }) => {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `lib-${type.value}`,
-        data: { type: type.value, isLibraryItem: true },
+        data: { type: type.value, fromLibrary: true },
     });
 
     return (
@@ -212,18 +203,21 @@ const LibDraggable = ({ type, color, onClick }: { type: any; color: string; onCl
             ref={setNodeRef}
             {...listeners}
             {...attributes}
-            onClick={onClick}
             className={cn(
-                'group hover:border-primary/20 bg-card flex cursor-grab flex-col rounded-xl border border-transparent p-2 shadow-sm transition-all hover:shadow-md active:cursor-grabbing',
+                'group flex cursor-grab flex-col rounded-none border p-2 transition-all active:cursor-grabbing border-l-4',
+                cat?.borderColor || 'border-border hover:border-primary',
+                cat?.bgColor || 'bg-card hover:bg-muted/50',
                 isDragging && 'opacity-50 grayscale',
             )}
         >
-            <LibPreview type={type} />
+            <div className="flex h-12 w-full items-center justify-center rounded-sm bg-white/50 dark:bg-black/10">
+                <LibPreview type={type} cat={cat} />
+            </div>
             <div className="mt-2 flex flex-col px-1">
-                <span className="text-foreground group-hover:text-primary font-sans text-[9px] leading-tight font-semibold tracking-tight uppercase transition-colors">
+                <span className={cn('font-sans text-[9px] leading-tight font-semibold tracking-tight uppercase transition-colors', cat?.textColor || 'text-foreground group-hover:text-primary')}>
                     {type.label}
                 </span>
-                <span className="text-muted-foreground/30 font-sans text-[7px] font-semibold uppercase">Element</span>
+                <span className="text-muted-foreground/40 font-sans text-[7px] font-semibold uppercase mt-0.5">Element</span>
             </div>
         </div>
     );
@@ -274,7 +268,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onAddField }) => {
                         </h3>
                         <div className="grid grid-cols-2 gap-2">
                             {cat.items.map((type: any) => (
-                                <LibDraggable key={type.value} type={type} color={cat.color} onClick={() => onAddField(type.value)} />
+                                <DraggableField key={type.value} type={type} cat={cat} />
                             ))}
                         </div>
                     </div>

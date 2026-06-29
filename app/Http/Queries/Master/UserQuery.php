@@ -41,7 +41,7 @@ class UserQuery
     public function options(): Builder
     {
         return User::query()
-            ->select(['id', 'name', 'company_id', 'department_id', 'role'])
+            ->select(['id', 'name', 'company_id', 'department_id', 'role_id'])
             ->orderBy('name');
     }
 }

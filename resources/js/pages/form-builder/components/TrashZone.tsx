@@ -11,7 +11,7 @@ export const TrashZone = () => {
             className={cn(
                 'fixed bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-2xl border-2 border-dashed px-8 py-4 transition-all duration-300',
                 isOver
-                    ? 'border-destructive bg-destructive/10 text-destructive shadow-destructive/20 scale-110 shadow-2xl'
+                    ? 'border-destructive bg-destructive/10 text-destructive scale-110'
                     : 'border-border bg-card text-muted-foreground translate-y-20 opacity-0',
             )}
         >

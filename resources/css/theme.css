@@ -9,11 +9,11 @@
     --foreground: #1a2332;
 
     /* Primary (Professional Navy/Deep Blue) */
-    --primary: #172554;
+    --primary: #1e3a8a; /* blue-900 */
     --primary-foreground: #ffffff;
-    --primary-hover: #1e1b4b;
-    --primary-active: #0f172a;
-    --primary-muted: #e0e7ff;
+    --primary-hover: #1e40af; /* blue-800 */
+    --primary-active: #172554; /* blue-950 */
+    --primary-muted: #dbeafe; /* blue-100 */
 
     /* Secondary (Soft Gray/Blue) */
     --secondary: #f1f5f9;
@@ -43,17 +43,17 @@
     /* Border & Inputs */
     --border: #e2e8f0;
     --input: #ffffff;
-    --ring: #172554;
+    --ring: #1e3a8a;
 
     /* Sidebar - Light (Clean White) */
     --sidebar-background: #ffffff;
-    --sidebar-foreground: #0f2a4a;
-    --sidebar-primary: #0f2a4a;
+    --sidebar-foreground: #0f172a;
+    --sidebar-primary: #1e3a8a;
     --sidebar-primary-foreground: #ffffff;
     --sidebar-accent: #f1f5f9;
-    --sidebar-accent-foreground: #0f2a4a;
+    --sidebar-accent-foreground: #1e3a8a;
     --sidebar-border: #e2e8f0;
-    --sidebar-ring: #0f2a4a;
+    --sidebar-ring: #1e3a8a;
 
     /* Semantic Surface Colors for Cards/Groups */
     --surface-base: #ffffff;

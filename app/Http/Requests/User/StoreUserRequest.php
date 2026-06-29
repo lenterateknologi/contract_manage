@@ -29,7 +29,7 @@ class StoreUserRequest extends FormRequest
             'password' => 'required|string|min:8',
             'role' => 'required|string',
             'position' => 'nullable|string',
-            'phone' => 'nullable|string',
+            'phone_number' => 'nullable|string',
             'department_id' => 'nullable|uuid|exists:m_departments,id',
             'company_id' => 'nullable|uuid|exists:m_companies,id',
             'is_active' => 'boolean',

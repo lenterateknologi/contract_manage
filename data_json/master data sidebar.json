@@ -712,6 +712,97 @@
             "can_bulk_approve": false,
             "can_bulk_delete": false,
             "sequence": 1
+        },
+        {
+            "role_name": "Admin",
+            "module_identifier": "CHAT",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 99
+        },
+        {
+            "role_name": "Manager",
+            "module_identifier": "CHAT",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 99
+        },
+        {
+            "role_name": "Staff",
+            "module_identifier": "CHAT",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 99
+        },
+        {
+            "role_name": "Director",
+            "module_identifier": "CHAT",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 99
+        },
+        {
+            "role_name": "Vendor",
+            "module_identifier": "CHAT",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 99
+        },
+        {
+            "role_name": "VP",
+            "module_identifier": "CHAT",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 99
+        },
+        {
+            "role_name": "CEO",
+            "module_identifier": "CHAT",
+            "module_group_name": "Modul Kontrak",
+            "can_read": true,
+            "can_create": true,
+            "can_update": true,
+            "can_delete": true,
+            "can_approve": true,
+            "can_bulk_approve": false,
+            "can_bulk_delete": false,
+            "sequence": 99
         }
     ],
     "role_navigation_mappings": [
@@ -1252,7 +1343,7 @@
         {
             "identifier": "ADMIN_COMPANIES",
             "name": "Company",
-            "route": "\/admin\/companies",
+            "route": "/admin/companies",
             "icon": "Building2",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1261,7 +1352,7 @@
         {
             "identifier": "ADMIN_DEPTS",
             "name": "Departemen",
-            "route": "\/admin\/departments",
+            "route": "/admin/departments",
             "icon": "Building2",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1270,7 +1361,7 @@
         {
             "identifier": "EXPIRY",
             "name": "Masa Berlaku",
-            "route": "\/contracts\/expiry",
+            "route": "/contracts/expiry",
             "icon": "History",
             "description": null,
             "module_group_name": null,
@@ -1279,7 +1370,7 @@
         {
             "identifier": "ADMIN_TYPES",
             "name": "Kategori Kontrak",
-            "route": "\/admin\/contract-types",
+            "route": "/admin/contract-types",
             "icon": "FolderClosed",
             "description": null,
             "module_group_name": "Formulir",
@@ -1288,7 +1379,7 @@
         {
             "identifier": "ADMIN_WORKFLOWS",
             "name": "Alur Persetujuan",
-            "route": "\/admin\/workflows",
+            "route": "/admin/workflows",
             "icon": "Workflow",
             "description": null,
             "module_group_name": null,
@@ -1297,7 +1388,7 @@
         {
             "identifier": "ADMIN_STATUS",
             "name": "Master Status",
-            "route": "\/admin\/contract-statuses",
+            "route": "/admin/contract-statuses",
             "icon": "Tags",
             "description": null,
             "module_group_name": null,
@@ -1306,7 +1397,7 @@
         {
             "identifier": "ADMIN_ACCESS_MAPPING",
             "name": "Pemetaan Hak Akses",
-            "route": "\/admin\/access-mapping",
+            "route": "/admin/access-mapping",
             "icon": "ShieldCheck",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1315,7 +1406,7 @@
         {
             "identifier": "ADMIN_NAV_MAPPING",
             "name": "Pemetaan Navigasi",
-            "route": "\/admin\/navigation-mapping",
+            "route": "/admin/navigation-mapping",
             "icon": "LayoutGrid",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1324,7 +1415,7 @@
         {
             "identifier": "ADMIN_VENDORS",
             "name": "Daftar Vendor",
-            "route": "\/admin\/vendors",
+            "route": "/admin/vendors",
             "icon": "Truck",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1333,7 +1424,7 @@
         {
             "identifier": "ADMIN_MEMBERS",
             "name": "Anggota Divisi",
-            "route": "\/admin\/members",
+            "route": "/admin/members",
             "icon": "Users",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1342,7 +1433,7 @@
         {
             "identifier": "DASH",
             "name": "Dashboard Utama",
-            "route": "\/dashboard",
+            "route": "/dashboard",
             "icon": "LayoutGrid",
             "description": null,
             "module_group_name": "Beranda",
@@ -1351,7 +1442,7 @@
         {
             "identifier": "ADMIN_USERS",
             "name": "Pengguna",
-            "route": "\/admin\/users",
+            "route": "/admin/users",
             "icon": "UserCog",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1360,7 +1451,7 @@
         {
             "identifier": "ADMIN_ROLES",
             "name": "Peran",
-            "route": "\/admin\/roles",
+            "route": "/admin/roles",
             "icon": "KeyRound",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1369,7 +1460,7 @@
         {
             "identifier": "ANLTX",
             "name": "Kontrak",
-            "route": "\/admin\/reports\/analytics",
+            "route": "/admin/reports/analytics",
             "icon": "BarChart3",
             "description": null,
             "module_group_name": "Laporan",
@@ -1378,7 +1469,7 @@
         {
             "identifier": "AUDIT",
             "name": "Aktivitas",
-            "route": "\/admin\/reports\/audit",
+            "route": "/admin/reports/audit",
             "icon": "ClipboardList",
             "description": null,
             "module_group_name": "Laporan",
@@ -1387,7 +1478,7 @@
         {
             "identifier": "ADMIN_FORMS",
             "name": "Custom",
-            "route": "\/admin\/form-templates",
+            "route": "/admin/form-templates",
             "icon": "ScanLine",
             "description": null,
             "module_group_name": "Formulir",
@@ -1396,7 +1487,7 @@
         {
             "identifier": "ADMIN_TEMPLATES",
             "name": "Digital",
-            "route": "\/admin\/templates",
+            "route": "/admin/templates",
             "icon": "FileCode",
             "description": null,
             "module_group_name": "Formulir",
@@ -1405,7 +1496,7 @@
         {
             "identifier": "CONTRACTS",
             "name": "Semua",
-            "route": "\/contracts",
+            "route": "/contracts",
             "icon": "FileText",
             "description": null,
             "module_group_name": "Beranda",
@@ -1414,7 +1505,7 @@
         {
             "identifier": "MY_CTC",
             "name": "Saya",
-            "route": "\/contracts\/mine",
+            "route": "/contracts/mine",
             "icon": "UserCheck",
             "description": null,
             "module_group_name": "Beranda",
@@ -1423,7 +1514,7 @@
         {
             "identifier": "PENDING",
             "name": "Perlu Persetujuan",
-            "route": "\/contracts\/pending",
+            "route": "/contracts/pending",
             "icon": "Clock",
             "description": null,
             "module_group_name": "Beranda",
@@ -1432,7 +1523,7 @@
         {
             "identifier": "ADMIN_REGIONS",
             "name": "Region",
-            "route": "\/admin\/regions",
+            "route": "/admin/regions",
             "icon": "GitBranch",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
@@ -1441,10 +1532,19 @@
         {
             "identifier": "ADMIN_GROUPS",
             "name": "Group",
-            "route": "\/admin\/company-groups",
+            "route": "/admin/company-groups",
             "icon": "Users",
             "description": null,
             "module_group_name": "Manajemen Pengguna",
+            "showed_as_menu": true
+        },
+        {
+            "identifier": "CHAT",
+            "name": "Chat / Diskusi",
+            "route": "/admin/chat",
+            "icon": "MessageSquare",
+            "description": null,
+            "module_group_name": "Modul Kontrak",
             "showed_as_menu": true
         }
     ]

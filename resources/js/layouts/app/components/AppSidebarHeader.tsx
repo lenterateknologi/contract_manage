@@ -20,15 +20,13 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
     return (
         <div
             className={cn(
-                'origin-top overflow-hidden transition-all duration-300 ease-in-out',
-                isDetailRoute ? 'pointer-events-none h-0 opacity-0' : 'h-[88px] opacity-100',
+                'origin-top overflow-hidden transition-all duration-300 ease-in-out border-b border-border/60 bg-background',
+                isDetailRoute ? 'pointer-events-none h-0 opacity-0' : 'h-16 opacity-100',
             )}
         >
             <header
                 className={cn(
-                    'm-4 flex h-14 items-center justify-between rounded-2xl px-6',
-                    'bg-card/90 dark:bg-card/90 backdrop-blur-xl',
-                    'border-border/60 dark:border-border/60 border shadow-sm dark:shadow-black/20',
+                    'flex h-full items-center justify-between px-6',
                     'transform transition-all duration-300 ease-in-out',
                     isDetailRoute ? 'scale-[0.97] opacity-0' : 'scale-100 opacity-100',
                 )}

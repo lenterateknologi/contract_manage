@@ -157,12 +157,12 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
             <div className="grid grid-cols-1 gap-6 select-none md:grid-cols-2 lg:grid-cols-4">
                 <MetricItem label="Total Kontrak Diproses" value={totalInProcessThisMonth} icon={Layers} color="text-primary" />
                 <MetricItem label="Kontrak Pending" value={totalPendingThisMonth} icon={Clock} color="text-warning" />
-                <MetricItem label="Kontrak Dikerjakan" value={totalActiveThisMonth} icon={Briefcase} color="text-indigo-500" />
+                <MetricItem label="Kontrak Dikerjakan" value={totalActiveThisMonth} icon={Briefcase} color="text-cyan-500" />
                 <MetricItem label="Total Kontrak Selesai" value={totalCompletedThisMonth} icon={UserCheck} color="text-success" />
             </div>
 
             <div className="space-y-4 lg:col-span-1">
-                <div className="border-border/40 bg-card/40 flex flex-col items-stretch justify-between gap-3 rounded-xl border p-3 sm:flex-row sm:items-center">
+                <div className="flex flex-col items-stretch justify-between gap-3 p-3 sm:flex-row sm:items-center">
                     <div className="flex flex-1 flex-col items-stretch gap-2 md:flex-row md:items-center">
                         <div className="relative flex-1">
                             <SearchInput
@@ -245,7 +245,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                                 {user.department_name || 'Direksi & Staff Umum'}
                                             </div>
 
-                                            <div className="bg-surface-muted/30 border-surface-border/40 rounded-xl border p-3">
+                                            <div className="bg-surface-muted/30 border-surface-border/40 rounded-lg border p-3">
                                                 <div className="border-surface-border/40 mb-3 flex items-center gap-1.5 border-b pb-2">
                                                     <Calendar size={10} className="text-primary opacity-60" />
                                                     <span className="text-text-desc text-[9px] font-semibold tracking-widest uppercase">
@@ -319,7 +319,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                 <div
                                     key={i}
                                     className={cn(
-                                        'flex max-w-[80%] flex-col rounded-xl px-3 py-2 text-xs',
+                                        'flex max-w-[80%] flex-col rounded-lg px-3 py-2 text-xs',
                                         msg.sender === 'me'
                                             ? 'bg-primary text-primary-foreground ml-auto rounded-tr-none shadow-sm'
                                             : 'dark:bg-muted text-foreground border-border/10 mr-auto rounded-tl-none border bg-white',
@@ -330,7 +330,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                 </div>
                             ))}
                         </CardContent>
-                        <form onSubmit={handleSendMessage} className="bg-card flex gap-2 border-t p-3">
+                        <form onSubmit={handleSendMessage} className="bg-background flex gap-2 border-t p-3">
                             <Input
                                 placeholder={`Kirim pesan...`}
                                 value={chatMessage}

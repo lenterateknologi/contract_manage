@@ -20,11 +20,7 @@ use Illuminate\Notifications\Notifiable;
  * @property string $email
  * @property string|null $email_verified_at
  * @property string $password
- * @property string|null $initials
- * @property string|null $role
- * @property string|null $position
- * @property string|null $bio
- * @property string|null $phone
+ * @property string|null $phone_number
  * @property string|null $username
  * @property string|null $role_id
  * @property string|null $department_id
@@ -56,16 +52,42 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'role',
-        'position',
-        'bio',
-        'phone',
+        'phone_number',
         'username',
         'role_id',
         'department_id',
-        'company_id',
         'is_active',
+        'company_id',
+        'spv_id',
+        'code',
+        'company_group_id',
+        'division_id',
+        'login_status',
+        'last_login',
+        'last_connected',
+        'address',
+        'birth_date',
+        'gender',
+        'created_by',
+        'updated_by',
+        'is_verified',
+        'verified_by',
+        'verified_at',
+        'job_position_id',
+        'job_level_id',
+        'image_src',
+        'location_id',
+        'region_id',
+        'is_employee',
+        'id_employee_portal_master',
     ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $with = ['roleRelation'];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -84,6 +106,7 @@ class User extends Authenticatable
      */
     protected $appends = [
         'initials',
+        'role',
     ];
 
     /**
@@ -117,6 +140,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user's role name.
+     */
+    public function getRoleAttribute(): ?string
+    {
+        return $this->roleRelation?->name;
+    }
+
+    /**
      * @return BelongsTo<Company, User>
      */
     public function company(): BelongsTo
@@ -139,7 +170,7 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return $this->role === 'Admin' || $this->role === 'Super Admin';
+        return in_array($this->role, ['Admin', 'Super Admin']);
     }
 
     public function isSuperAdmin(): bool

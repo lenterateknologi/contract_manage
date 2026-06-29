@@ -40,7 +40,7 @@ interface RecentContractsProps {
 
 export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
     return (
-        <div className="border-border/60 bg-card/40 text-foreground w-full overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm dark:border-slate-800/60 dark:bg-slate-900/20">
+        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg text-foreground w-full overflow-hidden">
             <div className="border-border/60 flex items-center justify-between border-b px-6 py-4 dark:border-slate-800/60">
                 <SectionTitle>Kontrak Terbaru</SectionTitle>
                 <button
@@ -83,7 +83,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                         key={c.id}
                                         onClick={() => router.get(`/contracts/${c.id}`)}
                                         className={cn(
-                                            'group bg-card/10 hover:bg-muted/40 text-foreground border-border/20 cursor-pointer border-b border-l-3 transition-all duration-200 last:border-b-0 dark:border-slate-800/40 dark:bg-slate-900/10 dark:hover:bg-slate-800/20',
+                                            'group hover:bg-muted/40 text-foreground cursor-pointer transition-all duration-200 border-b',
                                             accentCfg.border,
                                         )}
                                     >

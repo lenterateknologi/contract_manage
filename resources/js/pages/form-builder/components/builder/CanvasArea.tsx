@@ -32,7 +32,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     return (
         <section className="bg-muted/10 relative flex flex-1 flex-col overflow-hidden">
             {/* STICKY VIEW TABS */}
-            <div className="border-border bg-card/80 sticky top-0 z-30 flex h-[60px] w-full shrink-0 items-center justify-center border-b shadow-sm backdrop-blur-md">
+            <div className="border-border bg-card/80 sticky top-0 z-30 flex h-[60px] w-full shrink-0 items-center justify-center border-b backdrop-blur-md">
                 <div className="bg-muted/30 ring-border/20 flex gap-1.5 rounded-2xl p-1.5 ring-1">
                     {[
                         { id: 'visual-editor', label: 'Visual Editor', icon: Edit3 },
@@ -46,8 +46,8 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                             className={cn(
                                 'flex items-center gap-2.5 rounded-xl px-5 py-2 transition-all duration-300',
                                 viewMode === mode.id
-                                    ? 'bg-card ring-border/50 text-foreground z-10 scale-105 shadow-lg ring-1'
-                                    : 'text-muted-foreground/30 hover:text-foreground/60 hover:bg-muted/20',
+                                    ? 'bg-card ring-border/50 text-foreground z-10 scale-105 ring-1'
+                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
                             )}
                         >
                             <mode.icon size={14} strokeWidth={2.5} />

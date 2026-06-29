@@ -9,6 +9,7 @@ import { LabeledValueField, TextAreaField, TextField } from './InputFields';
 import { EmptyDropZone, GridXLayout, GridYLayout, GroupLayout } from './LayoutFields';
 import { CheckboxField, RadioField, SelectField } from './SelectionFields';
 import { ImageField, PageBreakField, SignatureBoxField, StaticTextField } from './VisualFields';
+import { getFieldCategory } from '../builder/constants';
 
 export interface FormField {
     id: string;
@@ -199,6 +200,10 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
         }
     };
 
+    const cat = getFieldCategory(field.type);
+    const ringColor = cat ? cat.color.replace('bg-', 'ring-') : 'ring-primary';
+    const bgDashed = cat ? cat.color.replace('bg-', 'bg-').replace('-500', '-50/50').replace('-600', '-50/50') : 'bg-primary/5';
+
     return (
         <div
             ref={setNodeRef}
@@ -207,13 +212,13 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             {...listeners}
             className={cn(
                 'group/element form-element-container relative',
-                isBuilder && 'hover:ring-primary/40 rounded-sm transition-all hover:ring-1',
-                isBuilder && isSelected && 'ring-primary shadow-primary/20 z-30 shadow-lg ring-2',
+                isBuilder && `hover:${ringColor}/40 rounded-sm transition-all hover:ring-1`,
+                isBuilder && isSelected && `${ringColor} z-30 ring-2`,
                 isBuilder &&
                     isOver &&
                     !isDragging &&
                     ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) &&
-                    'ring-primary ring-dashed bg-primary/5 ring-2',
+                    `${ringColor} ring-dashed ${bgDashed} ring-2`,
                 isBuilder && ['group', 'grid_x', 'grid_y'].includes(field.type) && 'border-muted-foreground/10 border border-dashed p-4',
             )}
             onClick={(e) => {
@@ -226,7 +231,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             {renderContent()}
 
             {isBuilder && isOver && !isDragging && !['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) && (
-                <div className="bg-primary absolute right-0 -bottom-1 left-0 z-40 h-1 animate-pulse rounded-full" />
+                <div className={cn("absolute right-0 -bottom-1 left-0 z-40 h-1 animate-pulse rounded-full", cat?.color || 'bg-primary')} />
             )}
         </div>
     );

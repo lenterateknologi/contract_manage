@@ -40,6 +40,7 @@ import {
     Users,
     Workflow,
     X,
+    MessageSquare,
     type LucideIcon,
 } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
@@ -68,6 +69,7 @@ const iconMap: Record<string, LucideIcon> = {
     UserCog,
     KeyRound,
     ShieldAlert,
+    MessageSquare,
 };
 
 const footerNavItems: NavItem[] = [];

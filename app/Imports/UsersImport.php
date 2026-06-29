@@ -101,13 +101,11 @@ class UsersImport implements ToCollection, WithHeadingRow
                     'name' => $name,
                     'username' => $username,
                     'email' => $email,
-                    'phone' => isset($row['no_telepon']) ? trim((string) $row['no_telepon']) : $user->phone,
-                    'position' => isset($row['jabatan']) ? trim((string) $row['jabatan']) : $user->position,
+                    'phone_number' => isset($row['no_telepon']) ? trim((string) $row['no_telepon']) : $user->phone_number,
                     'is_active' => $isActive,
                 ];
 
                 if ($roleObj) {
-                    $updateData['role'] = $roleObj->name;
                     $updateData['role_id'] = $roleObj->id;
                 }
 
@@ -129,10 +127,8 @@ class UsersImport implements ToCollection, WithHeadingRow
                     'name' => $name,
                     'username' => $username,
                     'email' => $email,
-                    'phone' => isset($row['no_telepon']) ? trim((string) $row['no_telepon']) : null,
-                    'position' => isset($row['jabatan']) ? trim((string) $row['jabatan']) : 'Staf',
+                    'phone_number' => isset($row['no_telepon']) ? trim((string) $row['no_telepon']) : null,
                     'is_active' => $isActive,
-                    'role' => $roleObj ? $roleObj->name : 'Staff',
                     'role_id' => $roleObj ? $roleObj->id : null,
                     'department_id' => $department ? $department->id : null,
                     'password' => bcrypt('Karyawan123!'), // Default password
