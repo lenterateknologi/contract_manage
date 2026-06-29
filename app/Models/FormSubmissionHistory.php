@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FormSubmissionHistory extends Model
 {
-    protected $table = 't_form_submission_histories';
+    protected $table = 't_form_submission_h';
 
     use HasUuids, SoftDeletes;
 

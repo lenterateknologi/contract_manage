@@ -535,21 +535,21 @@ class ContractDashboardQuery
     /** @return array<int, array<string, mixed>> */
     private function getRecentActivity(mixed $user, bool $isAdmin): array
     {
-        return DB::table('t_contract_histories')
-            ->leftJoin('m_users', 't_contract_histories.actor_id', '=', 'm_users.id')
-            ->leftJoin('t_contracts', 't_contract_histories.contract_id', '=', 't_contracts.id')
+        return DB::table('t_contract_h')
+            ->leftJoin('m_users', 't_contract_h.actor_id', '=', 'm_users.id')
+            ->leftJoin('t_contracts', 't_contract_h.contract_id', '=', 't_contracts.id')
             ->when(! $isAdmin, fn ($q) => $q->where('t_contracts.created_by', $user->id))
             ->select(
-                't_contract_histories.id',
-                't_contract_histories.action',
-                't_contract_histories.description',
-                't_contract_histories.created_at',
+                't_contract_h.id',
+                't_contract_h.action',
+                't_contract_h.description',
+                't_contract_h.created_at',
                 'm_users.name as actor_name',
                 't_contracts.id as contract_id',
                 't_contracts.title as contract_title',
                 't_contracts.contract_no',
             )
-            ->orderByDesc('t_contract_histories.created_at')
+            ->orderByDesc('t_contract_h.created_at')
             ->limit(10)
             ->get()
             ->map(fn ($item) => [
