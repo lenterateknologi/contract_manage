@@ -108,7 +108,7 @@ test('it does not auto-approve step 1 even if the user is the initiator', functi
     expect($approval->status)->toBe('pending');
 });
 
-test.skip('it still auto-approves step 2 if the approver is the same as the step 1 actor (the creator)', function () {
+test('it still auto-approves step 2 if the approver is the same as the step 1 actor (the creator)', function () {
     // 1. Create contract
     $contract = Contract::create([
         'title' => 'Test Step 2 Auto Approve',

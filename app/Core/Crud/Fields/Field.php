@@ -21,6 +21,10 @@ class Field implements JsonSerializable
 
     protected int $columnSpan = 1;
 
+    protected ?string $placeholder = null;
+
+    protected ?string $icon = null;
+
     public function __construct(string $name, ?string $label = null)
     {
         $this->name = $name;
@@ -63,6 +67,20 @@ class Field implements JsonSerializable
         return $this;
     }
 
+    public function placeholder(string $placeholder): static
+    {
+        $this->placeholder = $placeholder;
+
+        return $this;
+    }
+
+    public function icon(string $icon): static
+    {
+        $this->icon = $icon;
+
+        return $this;
+    }
+
     public function type(string $type): static
     {
         $this->type = $type;
@@ -80,6 +98,23 @@ class Field implements JsonSerializable
         return $this->rules;
     }
 
+    public function getPlaceholder(): ?string
+    {
+        if ($this->placeholder !== null) {
+            return $this->placeholder;
+        }
+
+        if (in_array($this->type, ['text', 'textarea'])) {
+            return 'Masukkan '.strtolower($this->label).'...';
+        }
+
+        if ($this->type === 'select') {
+            return 'Pilih '.strtolower($this->label).'...';
+        }
+
+        return null;
+    }
+
     public function toArray(): array
     {
         return [
@@ -89,6 +124,8 @@ class Field implements JsonSerializable
             'required' => $this->isRequired,
             'defaultValue' => $this->defaultValue,
             'columnSpan' => $this->columnSpan,
+            'placeholder' => $this->getPlaceholder(),
+            'icon' => $this->icon,
         ];
     }
 

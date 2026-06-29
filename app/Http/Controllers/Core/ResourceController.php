@@ -190,6 +190,21 @@ class ResourceController extends Controller
         return redirect()->route('core.index', $resourceSlug)->with('success', $resourceClass::getTitle().' deleted successfully.');
     }
 
+    public function bulkDestroy(string $resourceSlug, \Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required',
+        ]);
+
+        $resourceClass = $this->getResourceClass($resourceSlug);
+        $modelClass = $resourceClass::$model;
+
+        $modelClass::whereIn('id', $request->input('ids'))->delete();
+
+        return redirect()->route('core.index', $resourceSlug)->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil dihapus.');
+    }
+
     public function export(string $resourceSlug)
     {
         $resourceClass = $this->getResourceClass($resourceSlug);

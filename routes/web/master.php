@@ -156,6 +156,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::prefix('core')->group(function () {
         Route::get('{resource}/export', [\App\Http\Controllers\Core\ResourceController::class, 'export'])->name('core.export');
         Route::post('{resource}/import', [\App\Http\Controllers\Core\ResourceController::class, 'import'])->name('core.import');
+        Route::post('{resource}/bulk-delete', [\App\Http\Controllers\Core\ResourceController::class, 'bulkDestroy'])->name('core.bulk-delete');
         Route::get('{resource}', [\App\Http\Controllers\Core\ResourceController::class, 'index'])->name('core.index');
         Route::get('{resource}/create', [\App\Http\Controllers\Core\ResourceController::class, 'create'])->name('core.create');
         Route::post('{resource}', [\App\Http\Controllers\Core\ResourceController::class, 'store'])->name('core.store');

@@ -5,6 +5,7 @@ import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
 import { ArrowLeft } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 
 interface Props {
     resourceSlug: string;
@@ -63,7 +64,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     </Link>
                     <div>
                         <h1 className="text-lg font-bold text-text-main">
-                            {isEdit ? `Edit ${title}` : `Tambah ${title}`}
+                             {isEdit ? `Edit ${title}` : `Tambah ${title}`}
                         </h1>
                         <p className="text-xs text-text-soft">
                             {isEdit ? 'Ubah informasi data yang sudah ada.' : 'Tambahkan data master baru ke sistem.'}
@@ -73,26 +74,34 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
                     <div className={getGridClass()}>
-                        {formSchema.map((field: any) => (
-                            <div key={field.name} className={getSpanClass(field)}>
-                                {field.type === 'text' && (
-                                    <FormInput
-                                        label={field.label}
-                                        value={data[field.name]}
-                                        onChange={(e) => setData(field.name, e.target.value)}
-                                        error={errors[field.name]}
-                                        required={field.required}
-                                    />
-                                )}
-                                {field.type === 'textarea' && (
-                                    <FormTextarea
-                                        label={field.label}
-                                        value={data[field.name]}
-                                        onChange={(e) => setData(field.name, e.target.value)}
-                                        error={errors[field.name]}
-                                        required={field.required}
-                                    />
-                                )}
+                        {formSchema.map((field: any) => {
+                            const IconComponent = field.icon && (LucideIcons as any)[field.icon]
+                                ? (LucideIcons as any)[field.icon]
+                                : undefined;
+
+                            return (
+                                <div key={field.name} className={getSpanClass(field)}>
+                                    {field.type === 'text' && (
+                                        <FormInput
+                                            label={field.label}
+                                            value={data[field.name]}
+                                            onChange={(e) => setData(field.name, e.target.value)}
+                                            error={errors[field.name]}
+                                            required={field.required}
+                                            placeholder={field.placeholder}
+                                            icon={IconComponent}
+                                        />
+                                    )}
+                                    {field.type === 'textarea' && (
+                                        <FormTextarea
+                                            label={field.label}
+                                            value={data[field.name]}
+                                            onChange={(e) => setData(field.name, e.target.value)}
+                                            error={errors[field.name]}
+                                            required={field.required}
+                                            placeholder={field.placeholder}
+                                        />
+                                    )}
                                 {field.type === 'select' && (
                                     <div className="flex flex-col gap-1.5 w-full">
                                         <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5">
@@ -101,15 +110,19 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                         <select
                                             value={data[field.name]}
                                             onChange={(e) => setData(field.name, e.target.value)}
-                                            className="flex h-11 w-full rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-sm text-foreground font-sans font-semibold placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50 disabled:border-slate-200"
+                                            className={`flex h-11 w-full rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-sm font-sans font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50 disabled:border-slate-200 ${
+                                                data[field.name] ? 'text-foreground' : 'text-muted-foreground'
+                                            }`}
                                             required={field.required}
                                         >
-                                            <option value="">PILIH {field.label.toUpperCase()}...</option>
+                                            <option value="" className="text-muted-foreground">
+                                                {field.placeholder || `Pilih ${field.label.toLowerCase()}...`}
+                                            </option>
                                             {(Array.isArray(field.options) ? field.options : Object.entries(field.options || {})).map((option: any) => {
                                                 const val = Array.isArray(field.options) ? option : option[0];
                                                 const label = Array.isArray(field.options) ? option : option[1];
                                                 return (
-                                                    <option key={val} value={val}>
+                                                    <option key={val} value={val} className="text-foreground">
                                                         {label}
                                                     </option>
                                                 );
@@ -145,9 +158,10 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                             </button>
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        ))}
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4 border-t border-surface-border mt-4">

@@ -20,6 +20,11 @@ interface Props {
 
 export default function ResourceIndex({ resourceSlug, title, tableSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [selectedRows, setSelectedRows] = useState<any[]>([]);
+
+    React.useEffect(() => {
+        setSelectedRows([]);
+    }, [resourceSlug]);
 
     const handleDelete = () => {
         if (!deleteId) return;
@@ -70,6 +75,26 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, data, 
                 sortBy={activeFilters.sort_by}
                 sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
                 onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}
+                onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
+                selectedRows={selectedRows}
+                bulkActions={(selected: any[]) => (
+                    <Button
+                        variant="white"
+                        size="sm"
+                        onClick={() => {
+                            if (confirm(`Hapus ${selected.length} data terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
+                                router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
+                                    ids: selected.map((r: any) => r.id)
+                                }, {
+                                    onSuccess: () => setSelectedRows([])
+                                });
+                            }
+                        }}
+                        className="text-xs py-1.5 px-3 h-8 hover:bg-rose-50 hover:border-rose-200 text-rose-500 rounded-xl flex items-center gap-1.5 font-bold uppercase tracking-wider bg-white border border-surface-border shadow-sm"
+                    >
+                        <Trash2 size={13} /> Hapus Terpilih
+                    </Button>
+                )}
                 headerActions={
                     <div className="flex items-center gap-2">
                         {(hasExport || hasImport) && (
