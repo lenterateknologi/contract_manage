@@ -4,9 +4,9 @@ import { JSONEditorPanel } from '@/pages/form-builder/components/builder/JSONEdi
 import { LibraryPanel } from '@/pages/form-builder/components/builder/LibraryPanel';
 import { PropertiesPanel } from '@/pages/form-builder/components/builder/PropertiesPanel';
 import { StructurePanel } from '@/pages/form-builder/components/builder/StructurePanel';
-import { Button } from '@/components/ui/base/Button';
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { Button } from '@/components/ui/buttons/Button';
+import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';

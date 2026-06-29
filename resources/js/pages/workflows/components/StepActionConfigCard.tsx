@@ -1,6 +1,6 @@
-import { Checkbox } from '@/components/ui/base/Checkbox';
-import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { Briefcase, FileSignature, Settings2, Shield, Trash2, Users as UsersIcon } from 'lucide-react';
 import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS } from '../constants';
 

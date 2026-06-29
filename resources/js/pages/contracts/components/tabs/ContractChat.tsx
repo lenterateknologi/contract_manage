@@ -1,4 +1,5 @@
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { MsgBubble } from '@/components/chat/MsgBubble';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract, ContractMessage } from '@/pages/contracts/types';

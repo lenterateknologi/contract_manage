@@ -1,9 +1,9 @@
 import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { CompactInput } from '@/components/ui/inputs/CompactInput';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Info, LayoutTemplate, PlusCircle, Settings2, Trash2 } from 'lucide-react';
 import React from 'react';

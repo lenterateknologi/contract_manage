@@ -32,12 +32,12 @@ import { FormEventHandler, useMemo, useState } from 'react';
 
 import { Avatar } from '@/pages/contracts/components/ui/ui';
 import AppearanceToggleTab from '@/layouts/app/components/AppearanceTabs';
-import { Button } from '@/components/ui/base/Button';
-import { Input } from '@/components/ui/base/Input';
-import InputError from '@/components/ui/base/InputError';
-import { Label } from '@/components/ui/base/Label';
-import { StatusBadge } from '@/components/ui/data/StatusBadge';
-import DeleteUser from '@/components/user/DeleteUser';
+import { Button } from '@/components/ui/buttons/Button';
+import { Input } from '@/components/ui/inputs/Input';
+import InputError from '@/components/ui/forms/InputError';
+import { Label } from '@/components/ui/forms/Label';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import DeleteUser from '@/components/profile/DeleteUser';
 import SettingsLayout from '@/layouts/settings/layout';
 import { cn } from '@/lib/utils';
 

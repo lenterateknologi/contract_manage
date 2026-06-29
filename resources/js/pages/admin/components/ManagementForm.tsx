@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, ChevronsUp, Loader2, Save } from 'lucide-react';
 import React from 'react';
@@ -50,7 +50,7 @@ export function ManagementForm({
                             <h1 className="text-text-main text-lg font-semibold">{title}</h1>
                             {isEdit && <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />}
                         </div>
-                        {subtitle && <p className="text-text-desc text-[10px] font-bold  uppercase">{subtitle}</p>}
+                        {subtitle && <p className="text-text-desc text-sm font-bold  ">{subtitle}</p>}
                     </div>
                 </div>
 
@@ -71,7 +71,7 @@ export function ManagementForm({
                         variant="primary"
                         onClick={onSave}
                         disabled={processing || (!isDirty && isEdit)}
-                        className="h-9 rounded-xl px-5 text-[10px] font-semibold uppercase shadow-sm"
+                        className="h-9 rounded-xl px-5 text-sm font-semibold  shadow-sm"
                     >
                         {processing ? (
                             <Loader2 size={14} className="animate-spin" />
@@ -111,8 +111,8 @@ export function FormSection({
             {(title || subtitle || headerAction) && (
                 <div className="flex items-center justify-between gap-4 border-b border-black/[0.03] pb-4 dark:border-white/[0.03]">
                     <div className="space-y-1">
-                        {title && <h3 className="text-text-main text-xs font-semibold tracking-widest uppercase">{title}</h3>}
-                        {subtitle && <p className="text-text-desc text-[10px] leading-relaxed font-medium italic">{subtitle}</p>}
+                        {title && <h3 className="text-text-main text-xs font-semibold  ">{title}</h3>}
+                        {subtitle && <p className="text-text-desc text-sm leading-relaxed font-medium ">{subtitle}</p>}
                     </div>
                     {headerAction}
                 </div>

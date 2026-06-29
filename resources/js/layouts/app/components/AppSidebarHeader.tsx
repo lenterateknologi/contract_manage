@@ -5,7 +5,7 @@ import { HeaderLanguage } from '@/layouts/app/components/header/HeaderLanguage';
 import { HeaderNotifications } from '@/layouts/app/components/header/HeaderNotifications';
 import { HeaderUserMenu } from '@/layouts/app/components/header/HeaderUserMenu';
 import { SiteCustomizer } from '@/layouts/app/components/SiteCustomizer';
-import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { Breadcrumbs } from '@/layouts/app/components/nav/Breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/navigation/Sidebar';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';

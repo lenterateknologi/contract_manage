@@ -1,4 +1,4 @@
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract, ContractAttachment } from '@/pages/contracts/types';

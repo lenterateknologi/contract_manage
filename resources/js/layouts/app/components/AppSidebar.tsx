@@ -1,7 +1,7 @@
-import { NavFooter } from '@/components/navigation/NavFooter';
-import { NavMain } from '@/components/navigation/NavMain';
-import { NavUser } from '@/components/navigation/NavUser';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { NavFooter } from '@/layouts/app/components/nav/NavFooter';
+import { NavMain } from '@/layouts/app/components/nav/NavMain';
+import { NavUser } from '@/layouts/app/components/nav/NavUser';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import {
     Sidebar,
     SidebarContent,

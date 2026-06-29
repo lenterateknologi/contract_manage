@@ -1,6 +1,6 @@
-import { Input } from '@/components/ui/base/Input';
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/overlays/Popover';
+import { Input } from '@/components/ui/inputs/Input';
+import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { cn } from '@/lib/utils';
 import { router, usePage } from '@inertiajs/react';
 import { Briefcase, Check, ChevronDown, LayoutDashboard, Search, X, Loader2 } from 'lucide-react';

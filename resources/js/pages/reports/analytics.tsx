@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/base/Button';
-import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
+import { Button } from '@/components/ui/buttons/Button';
+import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
 import { cn } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';

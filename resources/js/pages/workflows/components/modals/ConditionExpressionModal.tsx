@@ -1,8 +1,8 @@
 import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/overlays/Dialog';
-import { Button } from '@/components/ui/base/Button';
-import { FormInput } from '@/components/ui/forms/FormInput';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialogs/Dialog';
+import { Button } from '@/components/ui/buttons/Button';
+import { FormInput } from '@/components/ui/inputs/FormInput';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { GitBranch, Key } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

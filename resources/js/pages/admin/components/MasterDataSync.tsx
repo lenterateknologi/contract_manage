@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/base/Button';
-import { Checkbox } from '@/components/ui/base/Checkbox';
+import { Button } from '@/components/ui/buttons/Button';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';

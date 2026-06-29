@@ -2,11 +2,11 @@ import { Head, useForm } from '@inertiajs/react';
 import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 
-import { Button } from '@/components/ui/base/Button';
-import { Checkbox } from '@/components/ui/base/Checkbox';
-import { Label } from '@/components/ui/base/Label';
-import TextLink from '@/components/ui/base/TextLink';
-import { FormInput } from '@/components/ui/forms/FormInput';
+import { Button } from '@/components/ui/buttons/Button';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { Label } from '@/components/ui/forms/Label';
+import TextLink from '@/components/ui/navigation/TextLink';
+import { FormInput } from '@/components/ui/inputs/FormInput';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 
 interface LoginForm {

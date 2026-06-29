@@ -2,11 +2,11 @@ import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
-import { Button } from '@/components/ui/base/Button';
-import { Input } from '@/components/ui/base/Input';
-import InputError from '@/components/ui/base/InputError';
-import { Label } from '@/components/ui/base/Label';
-import TextLink from '@/components/ui/base/TextLink';
+import { Button } from '@/components/ui/buttons/Button';
+import { Input } from '@/components/ui/inputs/Input';
+import InputError from '@/components/ui/forms/InputError';
+import { Label } from '@/components/ui/forms/Label';
+import TextLink from '@/components/ui/navigation/TextLink';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
 
 interface RegisterForm {

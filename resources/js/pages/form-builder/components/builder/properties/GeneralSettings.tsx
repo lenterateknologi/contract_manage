@@ -1,6 +1,6 @@
-import { Input } from '@/components/ui/base/Input';
-import { Label } from '@/components/ui/base/Label';
-import { Textarea } from '@/components/ui/base/Textarea';
+import { Input } from '@/components/ui/inputs/Input';
+import { Label } from '@/components/ui/forms/Label';
+import { Textarea } from '@/components/ui/inputs/Textarea';
 import { Image as ImageIcon } from 'lucide-react';
 import React from 'react';
 import { parseNumber } from './utils';

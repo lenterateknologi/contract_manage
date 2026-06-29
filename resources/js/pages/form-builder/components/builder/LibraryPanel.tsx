@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/base/Input';
+import { Input } from '@/components/ui/inputs/Input';
 import { cn } from '@/lib/utils';
 import { useDraggable } from '@dnd-kit/core';
 import { Search, X } from 'lucide-react';

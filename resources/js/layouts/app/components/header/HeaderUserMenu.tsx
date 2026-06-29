@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/base/Button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/data/Avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
-import { UserMenuContent } from '@/components/user/UserMenuContent';
+import { Button } from '@/components/ui/buttons/Button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/user/Avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
+import { UserMenuContent } from '@/components/profile/UserMenuContent';
 import { useInitials } from '@/hooks/use-initials';
 import { type SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';

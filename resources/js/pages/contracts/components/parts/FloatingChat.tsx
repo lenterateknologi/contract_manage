@@ -1,4 +1,5 @@
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { MsgBubble } from '@/components/chat/MsgBubble';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/pages/contracts/utils';
 import { Contract } from '@/pages/contracts/types';

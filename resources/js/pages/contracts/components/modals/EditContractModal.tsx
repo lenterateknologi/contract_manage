@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/base/Button';
-import { FormInput } from '@/components/ui/forms/FormInput';
-import { FormTextarea } from '@/components/ui/forms/FormTextarea';
-import { PortalSelect } from '@/components/ui/forms/PortalSelect';
-import { TreeSelect } from '@/components/ui/forms/TreeSelect';
-import { Modal } from '@/components/ui/overlays/Modal';
+import { Button } from '@/components/ui/buttons/Button';
+import { FormInput } from '@/components/ui/inputs/FormInput';
+import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
+import { PortalSelect } from '@/components/ui/selection/PortalSelect';
+import { TreeSelect } from '@/components/ui/selection/TreeSelect';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { Check, FileEdit, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';

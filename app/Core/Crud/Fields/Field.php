@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Core\Crud\Fields;
+
+use Illuminate\Support\Str;
+use JsonSerializable;
+
+class Field implements JsonSerializable
+{
+    protected string $name;
+    protected string $label;
+    protected string $type = 'text';
+    protected bool $isRequired = false;
+    protected array $rules = [];
+    protected mixed $defaultValue = null;
+
+    public function __construct(string $name, ?string $label = null)
+    {
+        $this->name = $name;
+        $this->label = $label ?? Str::headline($name);
+    }
+
+    public static function make(string $name, ?string $label = null): static
+    {
+        return new static($name, $label);
+    }
+
+    public function required(bool $condition = true): static
+    {
+        $this->isRequired = $condition;
+        if ($condition) {
+            $this->rules[] = 'required';
+        }
+        return $this;
+    }
+
+    public function rules(array $rules): static
+    {
+        $this->rules = array_merge($this->rules, $rules);
+        return $this;
+    }
+
+    public function default(mixed $value): static
+    {
+        $this->defaultValue = $value;
+        return $this;
+    }
+
+    public function type(string $type): static
+    {
+        $this->type = $type;
+        return $this;
+    }
+
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    public function getRules(): array
+    {
+        return $this->rules;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'label' => $this->label,
+            'type' => $this->type,
+            'required' => $this->isRequired,
+            'defaultValue' => $this->defaultValue,
+        ];
+    }
+
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
+    }
+}

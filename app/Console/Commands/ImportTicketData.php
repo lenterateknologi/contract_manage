@@ -2,13 +2,13 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Database\Eloquent\Model;
-use App\Models\Region;
-use App\Models\CompanyGroup;
 use App\Models\Company;
+use App\Models\CompanyGroup;
+use App\Models\Region;
 use App\Models\User;
+use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class ImportTicketData extends Command
@@ -33,7 +33,7 @@ class ImportTicketData extends Command
     public function handle()
     {
         $this->info('Starting data import from database/from_tiket...');
-        
+
         Model::unguard();
         Schema::disableForeignKeyConstraints();
 
@@ -44,7 +44,7 @@ class ImportTicketData extends Command
             'company_group_id' => null,
             'region_id' => null,
         ]);
-        
+
         Company::query()->forceDelete();
         CompanyGroup::query()->forceDelete();
         Region::query()->forceDelete();
@@ -54,7 +54,7 @@ class ImportTicketData extends Command
         $regionJson = file_get_contents(database_path('from_tiket/region.json'));
         $regionData = json_decode($regionJson, true);
         $regions = $this->extractArray($regionData);
-        
+
         $regionCount = 0;
         foreach ($regions as $item) {
             Region::create([
@@ -62,7 +62,7 @@ class ImportTicketData extends Command
                 'code' => $item['code'] ?? null,
                 'alias' => $item['alias'] ?? null,
                 'name' => $item['name'] ?? null,
-                'id_portal_master' => isset($item['id_portal_master']) ? (string)$item['id_portal_master'] : null,
+                'id_portal_master' => isset($item['id_portal_master']) ? (string) $item['id_portal_master'] : null,
                 'is_active' => $item['is_active'] ?? true,
                 'created_at' => $this->parseDate($item['created_at'] ?? null),
                 'updated_at' => $this->parseDate($item['updated_at'] ?? null),
@@ -76,7 +76,7 @@ class ImportTicketData extends Command
         $groupJson = file_get_contents(database_path('from_tiket/company_group.json'));
         $groupData = json_decode($groupJson, true);
         $groups = $this->extractArray($groupData);
-        
+
         $groupCount = 0;
         foreach ($groups as $item) {
             CompanyGroup::create([
@@ -96,7 +96,7 @@ class ImportTicketData extends Command
         $companyJson = file_get_contents(database_path('from_tiket/company.json'));
         $companyData = json_decode($companyJson, true);
         $companies = $this->extractArray($companyData);
-        
+
         $companyCount = 0;
         foreach ($companies as $item) {
             Company::create([
@@ -120,7 +120,7 @@ class ImportTicketData extends Command
         $userJson = file_get_contents(database_path('from_tiket/user helpdesk.json'));
         $userData = json_decode($userJson, true);
         $users = $this->extractArray($userData);
-        
+
         $validDepartments = array_flip(DB::table('m_departments')->pluck('id')->toArray());
         $validRoles = array_flip(DB::table('m_roles')->pluck('id')->toArray());
 
@@ -158,7 +158,7 @@ class ImportTicketData extends Command
 
         Model::reguard();
         Schema::enableForeignKeyConstraints();
-        
+
         $this->info('Data import completed successfully!');
     }
 
@@ -172,12 +172,16 @@ class ImportTicketData extends Command
                 }
             }
         }
+
         return [];
     }
 
     private function parseDate($dateStr)
     {
-        if (!$dateStr) return now();
+        if (! $dateStr) {
+            return now();
+        }
+
         return date('Y-m-d H:i:s', strtotime($dateStr));
     }
 }

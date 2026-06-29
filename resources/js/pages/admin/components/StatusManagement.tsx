@@ -1,9 +1,9 @@
 import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
-import { Button } from '@/components/ui/base/Button';
-import { Checkbox } from '@/components/ui/base/Checkbox';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Button } from '@/components/ui/buttons/Button';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { Column, DataTable } from '@/components/ui/tables/DataTable';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
+import { CompactInput } from '@/components/ui/inputs/CompactInput';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';

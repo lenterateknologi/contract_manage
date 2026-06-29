@@ -1,10 +1,10 @@
-import { Button } from '@/components/ui/base/Button';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Button } from '@/components/ui/buttons/Button';
+import { Column, DataTable } from '@/components/ui/tables/DataTable';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/overlays/Dialog';
+import { CompactInput } from '@/components/ui/inputs/CompactInput';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { router, useForm } from '@inertiajs/react';
 import {

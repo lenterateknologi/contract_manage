@@ -1,11 +1,11 @@
 import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
-import { Button } from '@/components/ui/base/Button';
-import { Checkbox } from '@/components/ui/base/Checkbox';
+import { Button } from '@/components/ui/buttons/Button';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
-import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/overlays/Dialog';
+import { CompactInput } from '@/components/ui/inputs/CompactInput';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
+import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';

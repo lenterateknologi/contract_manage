@@ -1,5 +1,5 @@
 import ApprovalSteps from '@/pages/contracts/components/parts/ApprovalSteps';
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { Contract } from '@/pages/contracts/types';
 import axios from 'axios';

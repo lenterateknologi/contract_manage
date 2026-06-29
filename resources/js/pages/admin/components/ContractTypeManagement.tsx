@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/base/Button';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
+import { Button } from '@/components/ui/buttons/Button';
+import { Column, DataTable } from '@/components/ui/tables/DataTable';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';

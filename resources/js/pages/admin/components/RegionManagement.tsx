@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/base/Button';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
-import { ExcelActions } from '@/components/ui/data/ExcelActions';
+import { Button } from '@/components/ui/buttons/Button';
+import { Column, DataTable } from '@/components/ui/tables/DataTable';
+import { ExcelActions } from '@/components/ui/tables/ExcelActions';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { CompactInput } from '@/components/ui/inputs/CompactInput';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn, regionColor } from '@/lib/utils';
 import { router, useForm } from '@inertiajs/react';

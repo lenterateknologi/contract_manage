@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { Edit3, Layout, Trash2 } from 'lucide-react';
 import React from 'react';
 import { GeneralSettings } from './properties/GeneralSettings';

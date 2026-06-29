@@ -1,4 +1,6 @@
 import { ContractType } from '@/pages/contracts/types';
+import { Input } from '@/components/ui/inputs/Input';
+import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 
 // --- CONFIGURATION ---
 const SHOW_META_KEYS = true; // Set to false to hide technical keys from the UI
@@ -59,7 +61,7 @@ export function ContractInfoForm({
                     <MetaBadge name="crown_no" />
                 </div>
                 {isDraft ? (
-                    <input
+                    <Input
                         value={crownNo}
                         onChange={(e) => setCrownNo(e.target.value)}
                         placeholder="Masukkan nomor kontrak F2..."
@@ -78,7 +80,7 @@ export function ContractInfoForm({
                         <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Judul Kontrak</div>
                         <MetaBadge name="meta_judul_kontrak" />
                     </div>
-                    <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Masukkan nama kontrak..." className={inputCls} />
+                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Masukkan nama kontrak..." className={inputCls} />
                 </div>
             ) : null}
 
@@ -88,15 +90,12 @@ export function ContractInfoForm({
                     <MetaBadge name="meta_jenis_kontrak" />
                 </div>
                 {isDraft ? (
-                    <select value={typeId} onChange={(e) => setTypeId(e.target.value)} className={inputCls}>
-                        <option value="">Pilih Tipe</option>
-                        {Array.isArray(types) &&
-                            types.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                    {t.name}
-                                </option>
-                            ))}
-                    </select>
+                    <SearchableSelect
+                        value={typeId}
+                        onChange={setTypeId}
+                        options={Array.isArray(types) ? types.map(t => ({ value: String(t.id), label: t.name })) : []}
+                        placeholder="Pilih Tipe"
+                    />
                 ) : (
                     <div className="text-text-main text-sm font-semibold">{selected.contract_type}</div>
                 )}
@@ -108,15 +107,12 @@ export function ContractInfoForm({
                     <MetaBadge name="meta_tipe_perjanjian" />
                 </div>
                 {isDraft ? (
-                    <select value={submissionTypeId} onChange={(e) => setSubmissionTypeId(e.target.value)} className={inputCls}>
-                        <option value="">Pilih Tipe</option>
-                        {Array.isArray(submissionTypes) &&
-                            submissionTypes.map((st) => (
-                                <option key={st.id} value={st.id}>
-                                    {st.name}
-                                </option>
-                            ))}
-                    </select>
+                    <SearchableSelect
+                        value={submissionTypeId}
+                        onChange={setSubmissionTypeId}
+                        options={Array.isArray(submissionTypes) ? submissionTypes.map(st => ({ value: String(st.id), label: st.name })) : []}
+                        placeholder="Pilih Tipe"
+                    />
                 ) : (
                     <div className="text-text-main text-sm font-semibold">{selected.submission_type || '—'}</div>
                 )}
@@ -128,15 +124,12 @@ export function ContractInfoForm({
                     <MetaBadge name="meta_vendor_name" />
                 </div>
                 {isDraft ? (
-                    <select value={vendorId} onChange={(e) => setVendorId(e.target.value)} className={inputCls}>
-                        <option value="">Pilih Vendor</option>
-                        {Array.isArray(vendors) &&
-                            vendors.map((v) => (
-                                <option key={v.id} value={v.id}>
-                                    {v.name}
-                                </option>
-                            ))}
-                    </select>
+                    <SearchableSelect
+                        value={vendorId}
+                        onChange={setVendorId}
+                        options={Array.isArray(vendors) ? vendors.map(v => ({ value: String(v.id), label: v.name })) : []}
+                        placeholder="Pilih Vendor"
+                    />
                 ) : (
                     <div className="text-text-main text-sm font-semibold">{selected.vendor?.name || '-'}</div>
                 )}

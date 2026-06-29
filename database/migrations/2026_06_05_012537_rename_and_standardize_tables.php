@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::rename('t_contract_h', 't_contract_histories');
         Schema::rename('t_contract_form_submission_h', 't_contract_form_submission_histories');
 
-        if (Schema::connection('log')->hasTable('t_http_log') && !Schema::connection('log')->hasTable('t_http_logs')) {
+        if (Schema::connection('log')->hasTable('t_http_log') && ! Schema::connection('log')->hasTable('t_http_logs')) {
             Schema::connection('log')->rename('t_http_log', 't_http_logs');
         } elseif (Schema::connection('log')->hasTable('t_http_log') && Schema::connection('log')->hasTable('t_http_logs')) {
             Schema::connection('log')->dropIfExists('t_http_log');
@@ -37,7 +37,7 @@ return new class extends Migration
             });
         }
 
-        if (Schema::connection('log')->hasTable('t_http_log_h') && !Schema::connection('log')->hasTable('t_http_log_histories')) {
+        if (Schema::connection('log')->hasTable('t_http_log_h') && ! Schema::connection('log')->hasTable('t_http_log_histories')) {
             Schema::connection('log')->rename('t_http_log_h', 't_http_log_histories');
         } elseif (Schema::connection('log')->hasTable('t_http_log_h') && Schema::connection('log')->hasTable('t_http_log_histories')) {
             Schema::connection('log')->dropIfExists('t_http_log_h');

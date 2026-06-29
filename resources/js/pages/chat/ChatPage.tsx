@@ -4,7 +4,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/navigation/Sideba
 import { Head, usePage } from '@inertiajs/react';
 import { useState, useMemo } from 'react';
 import { MessageSquare, Search } from 'lucide-react';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import ContractChat from '@/pages/contracts/components/tabs/ContractChat';
 import { Contract } from '@/pages/contracts/types';
 import { ContractListItem } from './ui/ContractListItem';

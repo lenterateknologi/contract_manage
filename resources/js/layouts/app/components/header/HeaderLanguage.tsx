@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -6,7 +6,7 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/overlays/DropdownMenu';
+} from '@/components/ui/selection/DropdownMenu';
 import { cn } from '@/lib/utils';
 import { Check, Languages } from 'lucide-react';
 import { memo, useState } from 'react';

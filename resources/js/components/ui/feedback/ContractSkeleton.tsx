@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/base/Skeleton";
+import { Skeleton } from "@/components/ui/feedback/Skeleton";
 
 export function ContractTableSkeleton() {
     return (

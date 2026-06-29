@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/base/Button';
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/overlays/Sheet';
+import { Button } from '@/components/ui/buttons/Button';
+import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/dialogs/Sheet';
 import { cn } from '@/lib/utils';
 import { Check, Maximize2, Palette, Settings2, Type } from 'lucide-react';
 import { useEffect, useState } from 'react';

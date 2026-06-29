@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/base/Button';
-import { FilterCategory, FilterPopover } from '@/components/ui/data/FilterPopover';
+import { Button } from '@/components/ui/buttons/Button';
+import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';

@@ -19,7 +19,7 @@ class DepartmentSeeder extends Seeder
 
         foreach ($jsonData['departments'] ?? [] as $dept) {
             $companyId = null;
-            if (!empty($dept['company_code'])) {
+            if (! empty($dept['company_code'])) {
                 $company = Company::where('code', $dept['company_code'])->first();
                 $companyId = $company ? $company->id : null;
             }

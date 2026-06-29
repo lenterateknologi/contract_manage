@@ -1,4 +1,4 @@
-import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Building2, Globe, Landmark } from 'lucide-react';
 
 interface OrgScopeSelectorProps {

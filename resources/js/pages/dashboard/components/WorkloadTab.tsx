@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/base/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/base/Card';
-import { Input } from '@/components/ui/base/Input';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { Button } from '@/components/ui/buttons/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/cards/Card';
+import { Input } from '@/components/ui/inputs/Input';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';

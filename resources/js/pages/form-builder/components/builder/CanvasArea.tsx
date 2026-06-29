@@ -1,4 +1,4 @@
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
+import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
 import { cn } from '@/lib/utils';
 import { Edit3, Eye, Play } from 'lucide-react';
 import React from 'react';

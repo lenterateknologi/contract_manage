@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/base/Button';
-import { StatusBadge } from '@/components/ui/data/StatusBadge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
+import { Button } from '@/components/ui/buttons/Button';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/pages/contracts/types';

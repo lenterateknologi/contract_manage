@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/base/Button';
-import { Column, DataTable } from '@/components/ui/data/DataTable';
-import { ExcelActions } from '@/components/ui/data/ExcelActions';
+import { Button } from '@/components/ui/buttons/Button';
+import { Column, DataTable } from '@/components/ui/tables/DataTable';
+import { ExcelActions } from '@/components/ui/tables/ExcelActions';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn, vendorColor } from '@/lib/utils';

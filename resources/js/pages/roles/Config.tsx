@@ -1,12 +1,12 @@
 import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
 import { SELECTABLE_ICONS } from '@/pages/admin/components/NavigationManagement';
-import { Button } from '@/components/ui/base/Button';
-import { Checkbox } from '@/components/ui/base/Checkbox';
+import { Button } from '@/components/ui/buttons/Button';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/overlays/Dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { cn } from '@/lib/utils';
 import {
     defaultDropAnimationSideEffects,
@@ -132,12 +132,12 @@ const ModuleRow = React.memo(
                             </div>
                         )}
                         <div className="flex min-w-0 flex-col leading-tight">
-                            <span className="text-text-main group-hover:text-primary truncate text-xs font-semibold tracking-wide">
+                            <span className="text-text-main group-hover:text-primary truncate text-xs font-semibold ">
                                 {module.name}
                             </span>
-                            <span className="text-text-desc/50 font-mono text-[9px]  uppercase">{module.identifier}</span>
+                            <span className="text-text-desc/50 font-mono text-sm  ">{module.identifier}</span>
                             {module.description && (
-                                <span className="text-text-desc/40 mt-0.5 text-[10px] leading-normal font-normal whitespace-pre-wrap">
+                                <span className="text-text-desc/40 mt-0.5 text-sm leading-normal font-normal whitespace-pre-wrap">
                                     {module.description}
                                 </span>
                             )}
@@ -212,7 +212,7 @@ const SortableModuleItem = ({
                 isDragging && 'border-primary ring-primary/10 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
-            <div className="bg-primary/5 text-primary ring-primary/20 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold tabular-nums ring-1">
+            <div className="bg-primary/5 text-primary ring-primary/20 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-sm font-semibold  ring-1">
                 {index + 1}
             </div>
             <div
@@ -249,11 +249,11 @@ const SortableModuleItem = ({
                             size: 14,
                             className: 'text-muted-foreground/70 shrink-0',
                         })}
-                    <p className="text-foreground truncate text-sm font-bold tracking-tight">{module.name}</p>
+                    <p className="text-foreground truncate text-sm font-bold ">{module.name}</p>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs font-semibold tracking-wide">{module.route || 'SYSTEM_INTERNAL'}</p>
+                <p className="text-muted-foreground mt-0.5 truncate text-xs font-semibold ">{module.route || 'SYSTEM_INTERNAL'}</p>
                 {module.description && (
-                    <p className="text-muted-foreground/50 mt-1 text-[11px] leading-relaxed font-normal whitespace-pre-wrap">{module.description}</p>
+                    <p className="text-muted-foreground/50 mt-1 text-sm leading-relaxed font-normal whitespace-pre-wrap">{module.description}</p>
                 )}
             </div>
             <DropdownMenu>
@@ -358,7 +358,7 @@ const SortableGroupItem = ({
                 onClick={() => !isDragging && setIsExpanded(!isExpanded)}
             >
                 <div className="flex items-center gap-3">
-                    <div className="bg-foreground text-background flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[11px] font-semibold tabular-nums shadow-sm">
+                    <div className="bg-foreground text-background flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-sm font-semibold  shadow-sm">
                         {index + 1}
                     </div>
                     <div
@@ -389,7 +389,7 @@ const SortableGroupItem = ({
                         </button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <h3 className="text-foreground text-sm font-bold tracking-tight">{group.name}</h3>
+                        <h3 className="text-foreground text-sm font-bold ">{group.name}</h3>
                         <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-xs font-bold shadow-sm">
                             {group.modules.length} UNITS
                         </span>
@@ -401,7 +401,7 @@ const SortableGroupItem = ({
                             >
                                 <button
                                     type="button"
-                                    className="bg-surface-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-surface-border/40 flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-all"
+                                    className="bg-surface-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-surface-border/40 flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-sm font-bold  transition-all"
                                     title="Pindah ke urutan"
                                 >
                                     #{index + 1}
@@ -419,12 +419,12 @@ const SortableGroupItem = ({
                                             targetIdx === index && 'font-bold text-primary',
                                         )}
                                     >
-                                        <span className="bg-foreground/10 flex h-4 w-4 shrink-0 items-center justify-center rounded text-[9px] font-semibold tabular-nums">
+                                        <span className="bg-foreground/10 flex h-4 w-4 shrink-0 items-center justify-center rounded text-sm font-semibold ">
                                             {targetIdx + 1}
                                         </span>
                                         {groups[targetIdx]?.name ?? `Grup ${targetIdx + 1}`}
                                         {targetIdx === index && (
-                                            <span className="text-primary ml-auto text-[9px] font-semibold uppercase">sekarang</span>
+                                            <span className="text-primary ml-auto text-sm font-semibold ">sekarang</span>
                                         )}
                                     </DropdownMenuItem>
                                 ))}
@@ -472,7 +472,7 @@ const SortableGroupItem = ({
                         </SortableContext>
                         {group.modules.length === 0 && (
                             <div className="border-border bg-muted/20 flex flex-col items-center justify-center rounded-xl border border-dashed py-8">
-                                <span className="text-muted-foreground/60 text-xs font-medium uppercase">Drop module here</span>
+                                <span className="text-muted-foreground/60 text-xs font-medium ">Drop module here</span>
                             </div>
                         )}
                     </div>
@@ -500,7 +500,7 @@ const AvailableListContainer = ({
         <div ref={setNodeRef} className="border-surface-border/60 bg-card flex flex-col overflow-hidden rounded-xl border">
             <div className="border-border bg-muted/10 flex shrink-0 items-center justify-between border-b px-4 py-3">
                 <div className="flex items-center gap-2">
-                    <h2 className="text-foreground text-[10px] font-semibold tracking-widest uppercase opacity-70">Repository</h2>
+                    <h2 className="text-foreground text-sm font-semibold   opacity-70">Repository</h2>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -510,7 +510,7 @@ const AvailableListContainer = ({
                     >
                         <Plus size={12} />
                     </button>
-                    <span className="bg-primary/5 text-primary rounded-lg px-2 py-0.5 text-[10px] font-bold shadow-xs">{modules.length} UNITS</span>
+                    <span className="bg-primary/5 text-primary rounded-lg px-2 py-0.5 text-sm font-bold shadow-xs">{modules.length} UNITS</span>
                 </div>
             </div>
             <div className="scrollbar-hide flex-1 space-y-2 p-3">
@@ -528,7 +528,7 @@ const AvailableListContainer = ({
                 {modules.length === 0 && (
                     <div className="flex flex-col items-center justify-center px-4 py-12 text-center opacity-30 select-none">
                         <Layers className="text-muted-foreground/40 mb-2" size={32} strokeWidth={1} />
-                        <p className="text-muted-foreground text-[10px] font-bold tracking-widest uppercase">Kosong</p>
+                        <p className="text-muted-foreground text-sm font-bold  ">Kosong</p>
                     </div>
                 )}
             </div>
@@ -577,13 +577,13 @@ const AvailableModuleItem = ({
                                 size: 14,
                                 className: 'text-muted-foreground/70 shrink-0',
                             })}
-                        <span className="text-foreground block truncate text-sm font-bold tracking-tight uppercase">{module.name}</span>
+                        <span className="text-foreground block truncate text-sm font-bold  ">{module.name}</span>
                     </div>
-                    <span className="text-muted-foreground/70 mt-0.5 block truncate text-xs font-semibold tracking-wide uppercase">
+                    <span className="text-muted-foreground/70 mt-0.5 block truncate text-xs font-semibold  ">
                         {module.route || 'NO_PATH'}
                     </span>
                     {module.description && (
-                        <p className="text-muted-foreground/50 mt-1 text-[11px] leading-relaxed font-normal whitespace-pre-wrap">
+                        <p className="text-muted-foreground/50 mt-1 text-sm leading-relaxed font-normal whitespace-pre-wrap">
                             {module.description}
                         </p>
                     )}
@@ -1189,6 +1189,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             processing={accessForm.processing || isSavingNav}
             isDirty={accessForm.isDirty || true}
             isEdit={true}
+            flat={true}
             headerActions={
                 <div className="flex items-center">
                     {/* Role Switcher Selector */}
@@ -1207,7 +1208,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-[240px] rounded-xl p-1.5 shadow-xl">
-                                <div className="text-muted-foreground px-3 py-2 text-[10px] font-bold tracking-widest uppercase">
+                                <div className="text-muted-foreground px-3 py-2 text-sm font-bold  ">
                                     Pilih Role Otoritas
                                 </div>
                                 <div className="max-h-[300px] overflow-y-auto">
@@ -1309,7 +1310,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 <table className="w-full min-w-[800px] border-collapse text-left">
                                     <thead>
                                         <tr className="border-surface-border/60 bg-surface-muted/40 border-b backdrop-blur-md select-none">
-                                            <th className="border-surface-border/60 bg-surface-muted/50 text-text-desc sticky left-0 z-30 min-w-[220px] border-r px-4 py-3.5 text-left text-[11px] font-medium  uppercase shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
+                                            <th className="border-surface-border/60 bg-surface-muted/50 text-text-desc sticky left-0 z-30 min-w-[220px] border-r px-4 py-3.5 text-left text-sm font-medium   shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
                                                 Scope Modul
                                             </th>
                                             {PERMISSIONS.map((p) => {
@@ -1317,7 +1318,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                 return (
                                                     <th
                                                         key={p}
-                                                        className="border-surface-border/60 text-text-desc min-w-[100px] border-r px-1 py-3.5 text-center text-[11px] font-medium  uppercase last:border-r-0"
+                                                        className="border-surface-border/60 text-text-desc min-w-[100px] border-r px-1 py-3.5 text-center text-sm font-medium   last:border-r-0"
                                                     >
                                                         <div className="flex flex-col items-center gap-1.5">
                                                             <span>{permissionLabels[p]}</span>
@@ -1330,7 +1331,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     </th>
                                                 );
                                             })}
-                                            <th className="border-surface-border/60 bg-surface-muted/30 text-text-desc min-w-[60px] border-l px-1 py-3.5 text-center text-[11px] font-medium  uppercase">
+                                            <th className="border-surface-border/60 bg-surface-muted/30 text-text-desc min-w-[60px] border-l px-1 py-3.5 text-center text-sm font-medium  ">
                                                 Full
                                             </th>
                                         </tr>
@@ -1358,7 +1359,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                                 <div className="bg-primary/5 text-primary ring-primary/10 rounded-lg p-1 ring-1">
                                                                     <LayoutGrid className="h-3 w-3" />
                                                                 </div>
-                                                                <span className="text-text-main text-[11px] font-semibold tracking-wide uppercase">
+                                                                <span className="text-text-main text-sm font-semibold  ">
                                                                     {group.name}
                                                                 </span>
                                                             </div>
@@ -1435,8 +1436,8 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 <ShieldAlert className="h-7 w-7 animate-pulse" />
                             </div>
                             <div className="space-y-3">
-                                <h4 className="text-foreground text-base font-semibold tracking-tight">Protokol Keamanan Perubahan</h4>
-                                <p className="text-muted-foreground/80 text-xs leading-relaxed font-bold tracking-wide uppercase">
+                                <h4 className="text-foreground text-base font-semibold ">Protokol Keamanan Perubahan</h4>
+                                <p className="text-muted-foreground/80 text-xs leading-relaxed font-bold  ">
                                     Setiap modifikasi hak akses akan langsung mengikat seluruh personil dengan role{' '}
                                     <span className="text-primary decoration-primary/30 font-semibold underline underline-offset-4">{role.name}</span>.
                                     Pastikan tingkat otorisasi sudah sesuai dengan batas wewenang struktural sebelum melakukan finalisasi penyimpanan.
@@ -1542,10 +1543,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                 <Layers size={14} strokeWidth={2.5} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <h3 className="text-foreground text-[13px] font-bold tracking-tight uppercase">
+                                                <h3 className="text-foreground text-sm font-bold  ">
                                                     {navItems.find((g) => g.id === activeId)?.name}
                                                 </h3>
-                                                <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+                                                <span className="text-muted-foreground text-sm font-semibold  ">
                                                     {navItems.find((g) => g.id === activeId)?.modules?.length || 0} MODUL TERDAFTAR
                                                 </span>
                                             </div>
@@ -1569,7 +1570,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
                 <DialogContent className="rounded-2xl sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-semibold tracking-tight uppercase">
+                        <DialogTitle className="text-foreground text-base font-semibold  ">
                             {editingGroup ? 'Ubah Grup Navigasi' : 'Tambah Grup Navigasi'}
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground text-xs font-medium">
@@ -1578,7 +1579,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     </DialogHeader>
                     <div className="py-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Nama Grup</label>
+                            <label className="text-muted-foreground text-sm font-semibold  ">Nama Grup</label>
                             <input
                                 value={groupName}
                                 onChange={(e) => setGroupName(e.target.value)}
@@ -1608,7 +1609,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             <Dialog open={isModuleModalOpen} onOpenChange={setIsModuleModalOpen}>
                 <DialogContent className="rounded-2xl sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-semibold tracking-tight uppercase">
+                        <DialogTitle className="text-foreground text-base font-semibold  ">
                             {editingModuleItem ? 'Ubah Modul' : 'Tambah Modul Baru'}
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground text-xs font-medium">
@@ -1617,7 +1618,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Nama Modul</label>
+                            <label className="text-muted-foreground text-sm font-semibold  ">Nama Modul</label>
                             <input
                                 value={moduleName}
                                 onChange={(e) => setModuleName(e.target.value)}
@@ -1626,7 +1627,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Identifier</label>
+                            <label className="text-muted-foreground text-sm font-semibold  ">Identifier</label>
                             <input
                                 value={moduleIdentifier}
                                 onChange={(e) => setModuleIdentifier(e.target.value)}
@@ -1639,7 +1640,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Path Rute / URL</label>
+                            <label className="text-muted-foreground text-sm font-semibold  ">Path Rute / URL</label>
                             <input
                                 value={moduleRoute}
                                 onChange={(e) => setModuleRoute(e.target.value)}
@@ -1649,7 +1650,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         </div>
                         {!editingModuleItem && (
                             <div className="flex flex-col gap-2">
-                                <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Grup Navigasi</label>
+                                <label className="text-muted-foreground text-sm font-semibold  ">Grup Navigasi</label>
                                 <select
                                     value={moduleGroupId}
                                     onChange={(e) => setModuleGroupId(e.target.value)}
@@ -1667,7 +1668,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             </div>
                         )}
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Icon Modul</label>
+                            <label className="text-muted-foreground text-sm font-semibold  ">Icon Modul</label>
                             <Select value={moduleIcon} onValueChange={setModuleIcon}>
                                 <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2">
                                     <SelectValue />
@@ -1676,7 +1677,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     {Object.keys(SELECTABLE_ICONS).map((iconName) => {
                                         const IconComponent = SELECTABLE_ICONS[iconName];
                                         return (
-                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium uppercase">
+                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium ">
                                                 <div className="flex items-center gap-2">
                                                     {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
                                                     <span>{iconName}</span>
@@ -1688,7 +1689,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             </Select>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-[10px] font-semibold tracking-widest uppercase">Deskripsi Modul</label>
+                            <label className="text-muted-foreground text-sm font-semibold  ">Deskripsi Modul</label>
                             <textarea
                                 value={moduleDescription}
                                 onChange={(e) => setModuleDescription(e.target.value)}

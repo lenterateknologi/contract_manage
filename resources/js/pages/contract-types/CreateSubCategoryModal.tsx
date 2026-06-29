@@ -1,7 +1,7 @@
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
-import { Modal } from '@/components/ui/overlays/Modal';
+import { CompactInput } from '@/components/ui/inputs/CompactInput';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { useForm } from '@inertiajs/react';
 import { PlusCircle, Settings2 } from 'lucide-react';
 import React from 'react';
