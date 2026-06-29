@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Core\Crud\Resources;
+
+use App\Core\Crud\Columns\TextColumn;
+use App\Core\Crud\Fields\TextInput;
+use App\Core\Crud\Resource;
+use App\Models\Region;
+
+class RegionResource extends Resource
+{
+    public static string $model = Region::class;
+
+    public static ?string $title = 'Data Region';
+
+    public static ?string $slug = 'regions';
+
+    public static ?string $exportClass = \App\Exports\RegionsExport::class;
+
+    public static ?string $importClass = \App\Imports\RegionsImport::class;
+
+    public static function table(): array
+    {
+        return [
+            TextColumn::make('code', 'Kode')->sortable()->searchable(),
+            TextColumn::make('name', 'Nama Region')->sortable()->searchable(),
+            TextColumn::make('alias', 'Alias')->sortable()->searchable(),
+            TextColumn::make('description', 'Deskripsi')->searchable(),
+        ];
+    }
+
+    public static function form(): array
+    {
+        return [
+            TextInput::make('code', 'Kode')
+                ->required()
+                ->rules(['string', 'max:50']),
+            TextInput::make('name', 'Nama Region')
+                ->required()
+                ->rules(['string', 'max:255']),
+            TextInput::make('alias', 'Alias')
+                ->rules(['nullable', 'string', 'max:50']),
+            TextInput::make('description', 'Deskripsi')
+                ->rules(['nullable', 'string']),
+        ];
+    }
+}

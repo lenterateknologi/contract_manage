@@ -33,7 +33,7 @@ class VendorAdminController extends Controller
             'filters' => $request->only(['search', 'category', 'is_active']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Master Vendor', 'href' => route('admin.vendors'), 'description' => 'Kelola database pihak ketiga dan mitra.', 'icon' => 'Truck'],
+                ['title' => 'Master Vendor', 'href' => route('core.index', 'vendors'), 'description' => 'Kelola database pihak ketiga dan mitra.', 'icon' => 'Truck'],
             ],
         ]);
     }
@@ -44,7 +44,7 @@ class VendorAdminController extends Controller
             'vendor' => null,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Master Vendor', 'href' => route('admin.vendors'), 'icon' => 'Truck'],
+                ['title' => 'Master Vendor', 'href' => route('core.index', 'vendors'), 'icon' => 'Truck'],
                 ['title' => 'Tambah Vendor', 'href' => '#', 'description' => 'Registrasi rekanan baru.'],
             ],
         ]);
@@ -58,7 +58,7 @@ class VendorAdminController extends Controller
             'vendor' => $vendor,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Master Vendor', 'href' => route('admin.vendors'), 'icon' => 'Truck'],
+                ['title' => 'Master Vendor', 'href' => route('core.index', 'vendors'), 'icon' => 'Truck'],
                 ['title' => 'Kelola Vendor', 'href' => '#', 'description' => 'Update profil & kelola dokumen legal.'],
             ],
         ]);

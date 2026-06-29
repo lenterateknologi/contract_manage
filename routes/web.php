@@ -16,3 +16,4 @@ Route::middleware(['auth'])->group(function () {
 
 require __DIR__.'/web/settings.php';
 require __DIR__.'/web/auth.php';
+

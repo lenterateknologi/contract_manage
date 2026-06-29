@@ -68,7 +68,7 @@ class AdminController extends Controller
             'filters' => $request->only(['search', 'role', 'department_id', 'company_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Manajemen User', 'href' => route('admin.users'), 'description' => 'Kelola akses dan profil pengguna sistem.', 'icon' => 'Users'],
+                ['title' => 'Manajemen User', 'href' => route('core.index', 'users'), 'description' => 'Kelola akses dan profil pengguna sistem.', 'icon' => 'Users'],
             ],
         ]);
     }
@@ -127,7 +127,7 @@ class AdminController extends Controller
             'filters' => $request->only(['search', 'created_from', 'created_to']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'description' => 'Pengaturan peran dan otorisasi.', 'icon' => 'ShieldCheck'],
+                ['title' => 'Manajemen Role', 'href' => route('core.index', 'roles'), 'description' => 'Pengaturan peran dan otorisasi.', 'icon' => 'ShieldCheck'],
             ],
         ]);
     }
@@ -182,7 +182,7 @@ class AdminController extends Controller
     {
         $role = $role ?? Role::orderBy('name')->first();
         if (! $role) {
-            return redirect()->route('admin.roles');
+            return redirect()->route('core.index', 'roles');
         }
 
         return $this->roleConfig($role, $request, 'access');
@@ -192,7 +192,7 @@ class AdminController extends Controller
     {
         $role = $role ?? Role::orderBy('name')->first();
         if (! $role) {
-            return redirect()->route('admin.roles');
+            return redirect()->route('core.index', 'roles');
         }
 
         return $this->roleConfig($role, $request, 'navigation');
@@ -248,7 +248,7 @@ class AdminController extends Controller
             'isIndependent' => ! is_null($forcedTab),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Manajemen Role', 'href' => route('admin.roles'), 'icon' => 'ShieldCheck'],
+                ['title' => 'Manajemen Role', 'href' => route('core.index', 'roles'), 'icon' => 'ShieldCheck'],
                 ['title' => 'Konfigurasi Role', 'href' => '#', 'description' => "Pengaturan menyeluruh untuk role {$role->name}.", 'icon' => 'Settings2'],
             ],
         ]);

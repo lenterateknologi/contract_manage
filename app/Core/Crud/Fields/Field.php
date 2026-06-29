@@ -8,11 +8,18 @@ use JsonSerializable;
 class Field implements JsonSerializable
 {
     protected string $name;
+
     protected string $label;
+
     protected string $type = 'text';
+
     protected bool $isRequired = false;
+
     protected array $rules = [];
+
     protected mixed $defaultValue = null;
+
+    protected int $columnSpan = 1;
 
     public function __construct(string $name, ?string $label = null)
     {
@@ -31,24 +38,35 @@ class Field implements JsonSerializable
         if ($condition) {
             $this->rules[] = 'required';
         }
+
         return $this;
     }
 
     public function rules(array $rules): static
     {
         $this->rules = array_merge($this->rules, $rules);
+
         return $this;
     }
 
     public function default(mixed $value): static
     {
         $this->defaultValue = $value;
+
+        return $this;
+    }
+
+    public function columnSpan(int $span): static
+    {
+        $this->columnSpan = $span;
+
         return $this;
     }
 
     public function type(string $type): static
     {
         $this->type = $type;
+
         return $this;
     }
 
@@ -70,6 +88,7 @@ class Field implements JsonSerializable
             'type' => $this->type,
             'required' => $this->isRequired,
             'defaultValue' => $this->defaultValue,
+            'columnSpan' => $this->columnSpan,
         ];
     }
 

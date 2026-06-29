@@ -45,7 +45,7 @@ class OrganizationController extends Controller
             'filters' => $request->only(['search', 'action', 'id', 'region_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Data Group', 'href' => route('admin.company-groups'), 'icon' => 'Users'],
+                ['title' => 'Data Group', 'href' => route('core.index', 'company-groups'), 'icon' => 'Users'],
             ],
         ]);
     }
@@ -94,7 +94,7 @@ class OrganizationController extends Controller
             'filters' => $request->only(['search', 'action', 'id', 'company_group_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Data Region', 'href' => route('admin.regions'), 'icon' => 'GitBranch'],
+                ['title' => 'Data Region', 'href' => route('core.index', 'regions'), 'icon' => 'GitBranch'],
             ],
         ]);
     }
@@ -146,7 +146,7 @@ class OrganizationController extends Controller
             'filters' => $request->only(['search', 'action', 'id', 'region_id', 'company_group_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Data Company', 'href' => route('admin.companies'), 'icon' => 'Building2'],
+                ['title' => 'Data Company', 'href' => route('core.index', 'companies'), 'icon' => 'Building2'],
             ],
         ]);
     }

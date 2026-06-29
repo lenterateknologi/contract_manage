@@ -36,7 +36,8 @@ export function ExcelActions({ exportRoute, importRoute, label, className }: Rea
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const handleExport = () => {
-        window.location.href = route(exportRoute);
+        const url = exportRoute.includes('/') ? exportRoute : route(exportRoute);
+        window.location.href = url;
         showToast(`Mengunduh file Excel${label ? ` ${label}` : ''}...`, 'success');
     };
 
@@ -62,7 +63,9 @@ export function ExcelActions({ exportRoute, importRoute, label, className }: Rea
         const formData = new FormData();
         formData.append('file', file);
 
-        router.post(route(importRoute), formData, {
+        const url = importRoute.includes('/') ? importRoute : route(importRoute);
+
+        router.post(url, formData, {
             forceFormData: true,
             onSuccess: () => {
                 showToast(`Data${label ? ` ${label}` : ''} berhasil diimpor dari Excel.`, 'success');

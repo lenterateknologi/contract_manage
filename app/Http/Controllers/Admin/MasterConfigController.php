@@ -68,7 +68,7 @@ class MasterConfigController extends Controller
             'filters' => $request->only(['search', 'sort_by', 'sort_dir']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Tipe Kontrak', 'href' => route('admin.contract-types'), 'icon' => 'FileText'],
+                ['title' => 'Tipe Kontrak', 'href' => route('core.index', 'contract-types'), 'icon' => 'FileText'],
             ],
         ]);
     }
@@ -187,7 +187,7 @@ class MasterConfigController extends Controller
             'filters' => $request->only(['search', 'is_active']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Master Departemen', 'href' => route('admin.departments'), 'icon' => 'Building2'],
+                ['title' => 'Master Departemen', 'href' => route('core.index', 'departments'), 'icon' => 'Building2'],
             ],
         ]);
     }

@@ -337,7 +337,7 @@ export function DataTable<T extends Record<string, any>>({
                                         )}
                                         {columns.map((col, colIdx) => (
                                             <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-normal text-text-main", col.className)}>
-                                                {col.cell ? col.cell(row) : (row[col.accessorKey as keyof T] as React.ReactNode)}
+                                                {col.cell ? col.cell(row) : (col.accessorKey.split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
                                             </td>
                                         ))}
                                         {rowActions && (
