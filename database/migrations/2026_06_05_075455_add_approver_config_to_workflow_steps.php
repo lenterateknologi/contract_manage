@@ -15,8 +15,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('m_workflow_steps', function (Blueprint $table) {
-            $table->dropColumn('approver_config');
-        });
+        if (Schema::hasColumn('m_workflow_steps', 'approver_config')) {
+            Schema::table('m_workflow_steps', function (Blueprint $table) {
+                $table->dropColumn('approver_config');
+            });
+        }
     }
 };
