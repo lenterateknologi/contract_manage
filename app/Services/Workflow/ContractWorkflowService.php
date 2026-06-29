@@ -185,6 +185,11 @@ class ContractWorkflowService
                             $approvers->push($contract->initiator);
                         }
                     }
+                    if (in_array('creator', $config['custom'])) {
+                        if ($contract->creator) {
+                            $approvers->push($contract->creator);
+                        }
+                    }
                     if (in_array('assigned_pic', $config['custom'])) {
                         $picId = $contract->assigned_pic_id ?? ($contract->metadata['assigned_pic_id'] ?? null);
                         if ($picId) {
@@ -246,6 +251,7 @@ class ContractWorkflowService
                     ! empty($config['is_initiator_department']) ? ['Dept Inisiator'] : [],
                     ! empty($config['is_initiator_user']) ? ['User Inisiator'] : [],
                     in_array('initiator', $config['custom'] ?? []) ? ['Initiator'] : [],
+                    in_array('creator', $config['custom'] ?? []) ? ['Creator'] : [],
                     in_array('atasan', $config['custom'] ?? []) ? ['Atasan Langsung'] : [],
                     in_array('assigned_pic', $config['custom'] ?? []) ? ['Staff Legal'] : []
                 );

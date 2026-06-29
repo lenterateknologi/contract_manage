@@ -341,7 +341,8 @@ export function StepActionConfigCard({
                                     }
                                     options={[
                                         { value: 'initiator', label: 'INISIATOR' },
-                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' }
+                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
+                                        { value: 'creator', label: 'PEMBUAT' }
                                     ]}
                                     placeholder="Pilih Aktor..."
                                 />
@@ -511,7 +512,8 @@ export function StepActionConfigCard({
                                     }
                                     options={[
                                         { value: 'initiator', label: 'INISIATOR' },
-                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' }
+                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
+                                        { value: 'creator', label: 'PEMBUAT' }
                                     ]}
                                     placeholder="Pilih Aktor..."
                                 />

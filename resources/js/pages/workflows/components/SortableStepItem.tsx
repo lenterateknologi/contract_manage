@@ -175,6 +175,8 @@ export default function SortableStepItem({
                             options.push({ value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' });
                         } else if (c === 'assigned_pic') {
                             options.push({ value: 'assigned_pic', label: 'PIC DITUGASKAN' });
+                        } else if (c === 'creator') {
+                            options.push({ value: 'creator', label: 'PEMBUAT' });
                         }
                     });
                 }
@@ -222,6 +224,7 @@ export default function SortableStepItem({
                 if (c === 'initiator') parts.push('INISIATOR');
                 if (c === 'assigned_pic') parts.push('PIC DITUGASKAN');
                 if (c === 'atasan') parts.push('ATASAN LANGSUNG');
+                if (c === 'creator') parts.push('PEMBUAT');
             });
         }
         if (cfg.is_initiator_role) {
@@ -246,6 +249,8 @@ export default function SortableStepItem({
                     return 'INISIATOR';
                 case 'assigned_pic':
                     return 'PIC DITUGASKAN';
+                case 'creator':
+                    return 'PEMBUAT';
                 case 'role': {
                     const rolesList = step.role || [];
                     const deptsList = step.department_ids || [];
@@ -621,7 +626,8 @@ export default function SortableStepItem({
                                             onValuesChange={(vals: string[]) => updateConfig('custom', vals)}
                                             options={[
                                                 { value: 'initiator', label: 'INISIATOR' },
-                                                { value: 'assigned_pic', label: 'PIC DITUGASKAN' }
+                                                { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
+                                                { value: 'creator', label: 'PEMBUAT' }
                                             ]}
                                             placeholder="Pilih Aktor..."
                                         />
