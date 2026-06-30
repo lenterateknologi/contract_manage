@@ -1,4 +1,4 @@
-import { Input } from '@/components/ui/base/Input';
+import { Input } from '@/components/ui/inputs/Input';
 import { cn } from '@/lib/utils';
 import { ChevronDown, FileText, Layout, Search, Trash2, X } from 'lucide-react';
 import React, { useState } from 'react';

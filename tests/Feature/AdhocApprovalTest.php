@@ -3,6 +3,7 @@
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\ContractType;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
@@ -19,10 +20,10 @@ beforeEach(function () {
     ]);
 
     // Set up users
-    $this->creator = User::factory()->create(['role' => 'Staff']);
-    $this->manager = User::factory()->create(['role' => 'Manager']);
-    $this->vp = User::factory()->create(['role' => 'VP']);
-    $this->adhocUser = User::factory()->create(['role' => 'VP']);
+    $this->creator = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Staff'])->id]);
+    $this->manager = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Manager'])->id]);
+    $this->vp = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'VP'])->id]);
+    $this->adhocUser = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'VP'])->id]);
 
     // Set up a simple 2-step workflow
     $this->workflow = Workflow::create([
@@ -194,7 +195,7 @@ test('it can add multiple adhoc approvers at once', function () {
         'workflow_id' => $this->workflow->id,
     ])->assertSuccessful();
 
-    $anotherAdhocUser = User::factory()->create(['role' => 'VP']);
+    $anotherAdhocUser = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'VP'])->id]);
 
     $response = $this->postJson("/api/contracts/{$contract->id}/add-approver", [
         'user_ids' => [$this->adhocUser->id, $anotherAdhocUser->id],

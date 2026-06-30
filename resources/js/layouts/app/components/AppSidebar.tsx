@@ -1,7 +1,7 @@
-import { NavFooter } from '@/components/navigation/NavFooter';
-import { NavMain } from '@/components/navigation/NavMain';
-import { NavUser } from '@/components/navigation/NavUser';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { NavFooter } from '@/layouts/app/components/nav/NavFooter';
+import { NavMain } from '@/layouts/app/components/nav/NavMain';
+import { NavUser } from '@/layouts/app/components/nav/NavUser';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import {
     Sidebar,
     SidebarContent,
@@ -40,6 +40,7 @@ import {
     Users,
     Workflow,
     X,
+    MessageSquare,
     type LucideIcon,
 } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
@@ -68,6 +69,7 @@ const iconMap: Record<string, LucideIcon> = {
     UserCog,
     KeyRound,
     ShieldAlert,
+    MessageSquare,
 };
 
 const footerNavItems: NavItem[] = [];

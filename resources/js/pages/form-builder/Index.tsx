@@ -4,9 +4,9 @@ import { JSONEditorPanel } from '@/pages/form-builder/components/builder/JSONEdi
 import { LibraryPanel } from '@/pages/form-builder/components/builder/LibraryPanel';
 import { PropertiesPanel } from '@/pages/form-builder/components/builder/PropertiesPanel';
 import { StructurePanel } from '@/pages/form-builder/components/builder/StructurePanel';
-import { Button } from '@/components/ui/base/Button';
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
-import { ConfirmationModal } from '@/components/ui/overlays/ConfirmationModal';
+import { Button } from '@/components/ui/buttons/Button';
+import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, DragOverlay, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
@@ -1752,33 +1752,36 @@ function FormBuilder({ template }: Props) {
             />
 
             <form onSubmit={handleSave} className="flex h-full flex-col overflow-hidden">
-                <header className="border-border bg-card z-50 flex h-14 shrink-0 items-center justify-between border-b px-6 shadow-sm">
-                    <div className="flex items-center gap-4">
-                        <Button variant="ghost" size="icon" asChild className="border-border/50 h-9 w-9 border">
+                <header className="border-border bg-card z-50 flex h-14 shrink-0 border-b">
+                    <div
+                        style={{ width: `${leftWidth}px` }}
+                        className="border-border flex shrink-0 items-center gap-3 border-r px-4 lg:gap-4 lg:px-6 min-w-0"
+                    >
+                        <Button variant="ghost" size="icon" asChild className="h-9 w-9 rounded-none hover:bg-muted/50 transition-colors">
                             <Link href={route('admin.form-templates.index')}>
-                                <ArrowLeft size={18} />
+                                <ArrowLeft size={16} />
                             </Link>
                         </Button>
-                        <div className="flex flex-col">
-                            <h1 className="text-foreground font-sans text-sm font-semibold tracking-tight uppercase">{data.name}</h1>
+                        <div className="flex flex-col min-w-0">
+                            <h1 className="text-foreground font-sans text-xs lg:text-sm font-semibold tracking-tight uppercase truncate">{data.name}</h1>
                             <div className="flex items-center gap-1.5 opacity-60">
-                                <Layout size={10} className="text-primary" />
-                                <span className="text-[9px] font-semibold tracking-[0.2em] uppercase">Visual Multi-Block Designer</span>
+                                <span className="text-[8px] lg:text-[9px] font-semibold tracking-[0.2em] uppercase text-primary">Form Builder</span>
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <div className="mr-2 flex items-center gap-1 border-r pr-3">
+
+                    <div className="flex flex-1 items-center px-4 lg:px-6">
+                        <div className="flex items-center gap-1">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
                                 onClick={undo}
                                 disabled={historyIndex <= 0}
-                                className="h-8 w-8 transition-all active:scale-90"
+                                className="h-8 w-8 rounded-none transition-all active:scale-95"
                                 title="Undo (Ctrl+Z)"
                             >
-                                <Undo size={16} />
+                                <Undo size={14} />
                             </Button>
                             <Button
                                 type="button"
@@ -1786,26 +1789,34 @@ function FormBuilder({ template }: Props) {
                                 size="icon"
                                 onClick={redo}
                                 disabled={historyIndex >= history.length - 1}
-                                className="h-8 w-8 transition-all active:scale-90"
+                                className="h-8 w-8 rounded-none transition-all active:scale-95"
                                 title="Redo (Ctrl+Y)"
                             >
-                                <Redo size={16} />
+                                <Redo size={14} />
                             </Button>
                         </div>
+                    </div>
 
+                    <div
+                        style={{ width: `${rightWidth}px` }}
+                        className="border-border flex shrink-0 items-center justify-end gap-2 border-l px-4 lg:gap-3 lg:px-6"
+                    >
                         <Button
                             type="button"
                             variant="outline"
                             onClick={handleTestDownload}
                             disabled={saving || !!pdfJobId}
-                            className="h-8 px-4 text-[10px] active:scale-95"
+                            className="h-8 px-3 lg:px-4 text-[10px] rounded-none active:scale-95 border-border/50 hover:bg-muted/50"
                         >
                             {saving && !!pdfJobId ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
-                            {saving && !!pdfJobId ? 'Generating...' : 'Download'}
+                            <span className="hidden lg:inline">{saving && !!pdfJobId ? 'Generating...' : 'Download PDF'}</span>
+                            <span className="inline lg:hidden">{saving && !!pdfJobId ? 'Gen...' : 'PDF'}</span>
                         </Button>
 
-                        <Button type="submit" variant="primary" className="h-8 px-6 text-[10px] shadow-xl active:scale-95" disabled={processing}>
-                            <Save size={14} className="mr-1.5" /> {processing ? 'Saving...' : 'Simpan'}
+                        <Button type="submit" variant="primary" className="h-8 px-4 lg:px-6 text-[10px] active:scale-95 rounded-none" disabled={processing}>
+                            <Save size={14} className="mr-1.5" />
+                            <span className="hidden lg:inline">{processing ? 'Saving...' : 'Simpan Form'}</span>
+                            <span className="inline lg:hidden">{processing ? 'Save' : 'Simpan'}</span>
                         </Button>
                     </div>
                 </header>
@@ -1815,7 +1826,7 @@ function FormBuilder({ template }: Props) {
                         {/* LEFT: WORKSPACE SIDEBAR */}
                         <aside
                             style={{ width: `${leftWidth}px` }}
-                            className="border-border bg-card z-20 flex shrink-0 flex-col overflow-hidden border-r shadow-sm"
+                            className="border-border bg-card z-20 flex shrink-0 flex-col overflow-hidden border-r"
                         >
                             <div className="border-border bg-muted/20 border-b p-4">
                                 <div className="mb-4 flex items-center justify-between">
@@ -1837,9 +1848,9 @@ function FormBuilder({ template }: Props) {
                                             key={tab.id}
                                             onClick={() => setLeftPanelTab(tab.id as any)}
                                             className={cn(
-                                                'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 transition-all duration-200',
+                                                'flex flex-1 items-center justify-center gap-1.5 rounded-none py-2 transition-all duration-200',
                                                 leftPanelTab === tab.id
-                                                    ? 'bg-card text-primary ring-border shadow-sm ring-1'
+                                                    ? 'bg-card text-primary border-border border-b-2'
                                                     : 'text-muted-foreground/40 hover:text-foreground',
                                             )}
                                         >
@@ -1933,7 +1944,7 @@ function FormBuilder({ template }: Props) {
                     <TrashZone />
                     <DragOverlay>
                         {activeLibItem && (
-                            <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-2xl border-2 px-6 py-4 font-sans text-[10px] font-semibold text-white uppercase shadow-2xl backdrop-blur-md">
+                            <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-none border-2 px-6 py-4 font-sans text-[10px] font-semibold text-white uppercase backdrop-blur-md">
                                 <Plus size={16} strokeWidth={3} /> New {activeLibItem.replace('_', ' ')}
                             </div>
                         )}

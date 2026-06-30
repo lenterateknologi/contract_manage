@@ -61,6 +61,7 @@ class MasterDataAdminController extends Controller
                 'navigation_mappings' => RoleModuleGroup::count(),
                 'form_templates' => FormTemplate::count(),
                 'form_fields' => FormField::count(),
+                'users' => User::count(),
             ],
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -158,7 +159,7 @@ class MasterDataAdminController extends Controller
                 $exportData['workflows'] = Workflow::all()->map(function ($w) {
                     return [
                         'id' => $w->id,
-                        'contract_type' => $w->contract_type,
+                        'contract_type_id' => $w->contract_type_id,
                         'department_id' => $w->department_id,
                         'name' => $w->name,
                         'description' => $w->description,
@@ -251,7 +252,7 @@ class MasterDataAdminController extends Controller
                     return [
                         'id' => $a->id,
                         'workflow_step_id' => $a->workflow_step_id,
-                        'master_action_id' => $a->master_action_id,
+
                         'action_code' => $a->action_code ? $a->action_code->value : null,
                         'next_step_id' => $a->next_step_id,
                         'next_workflow_id' => $a->next_workflow_id,
@@ -389,6 +390,26 @@ class MasterDataAdminController extends Controller
                 })->toArray();
             }
 
+            // 10. Users
+            if (! $requestedEntities || in_array('users', $requestedEntities)) {
+                $exportData['users'] = User::with(['roleRelation', 'department', 'company', 'companyGroup'])->get()->map(function ($u) {
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->name,
+                        'email' => $u->email,
+                        'username' => $u->username,
+                        'code' => $u->code,
+                        'phone_number' => $u->phone_number,
+                        'is_active' => $u->is_active,
+                        'is_employee' => $u->is_employee,
+                        'role_name' => $u->roleRelation->name ?? null,
+                        'department_name' => $u->department->name ?? null,
+                        'company_code' => $u->company->code ?? null,
+                        'company_group_code' => $u->companyGroup->code ?? null,
+                    ];
+                })->toArray();
+            }
+
             $fileName = 'master_data_export_'.date('Ymd_His').'.json';
 
             return response()->streamDownload(function () use ($exportData) {
@@ -404,18 +425,10 @@ class MasterDataAdminController extends Controller
     }
 
     /**
-     * Import master data from JSON.
+     * Parse and process import of master data array.
      */
-    public function import(ImportMasterDataRequest $request)
+    private function executeImport(array $data): array
     {
-        try {
-            $content = file_get_contents($request->file('file')->getRealPath());
-            $data = json_decode($content, true);
-
-            if (! is_array($data)) {
-                return back()->withErrors(['error' => 'Format file JSON tidak valid.']);
-            }
-
             $counts = [
                 'company_groups' => 0,
                 'regions' => 0,
@@ -437,6 +450,7 @@ class MasterDataAdminController extends Controller
                 'role_navigation_mappings' => 0,
                 'form_templates' => 0,
                 'form_fields' => 0,
+                'users' => 0,
             ];
 
             Model::unguard();
@@ -1239,8 +1253,101 @@ class MasterDataAdminController extends Controller
                 }
             }
 
+            // 12. Users (Import from either standard json or user helpdesk.json)
+            $usersData = null;
+            if (! empty($data['users']) && is_array($data['users'])) {
+                $usersData = $data['users'];
+            } else {
+                foreach ($data as $key => $val) {
+                    if (str_contains($key, 'select * from users') && is_array($val)) {
+                        $usersData = $val;
+                        break;
+                    }
+                }
+            }
+
+            if (! empty($usersData) && is_array($usersData)) {
+                $validDepartments = array_flip(DB::table('m_departments')->pluck('id')->toArray());
+                $validRoles = array_flip(DB::table('m_roles')->pluck('id')->toArray());
+                $defaultRole = Role::whereRaw('lower(name) = ?', ['staff'])->first();
+
+                foreach ($usersData as $u) {
+                    try {
+                        if (empty($u['name']) && empty($u['username']) && empty($u['email'])) {
+                            continue;
+                        }
+
+                        // Skip system admin to prevent lockout/overwrite
+                        if (($u['email'] ?? '') === 'admin@example.com' || ($u['username'] ?? '') === 'admin') {
+                            continue;
+                        }
+
+                        $email = filter_var($u['email'] ?? '', FILTER_VALIDATE_EMAIL) ? $u['email'] : '-';
+                        $password = $u['password'] ?? bcrypt('Karyawan123!');
+
+                        $roleId = null;
+                        if (! empty($u['role_name'])) {
+                            $roleId = Role::whereRaw('lower(name) = ?', [strtolower($u['role_name'])])->value('id');
+                        } elseif (! empty($u['role_id'])) {
+                            $roleId = isset($validRoles[$u['role_id']]) ? $u['role_id'] : null;
+                        }
+
+                        if (! $roleId && $defaultRole) {
+                            $roleId = $defaultRole->id;
+                        }
+
+                        $deptId = null;
+                        if (! empty($u['department_name'])) {
+                            $deptId = Department::whereRaw('lower(name) = ?', [strtolower($u['department_name'])])->value('id');
+                        } elseif (! empty($u['department_id'])) {
+                            $deptId = isset($validDepartments[$u['department_id']]) ? $u['department_id'] : null;
+                        }
+
+                        User::updateOrCreate(
+                            ! empty($u['id']) ? ['id' => $u['id']] : ['username' => $u['username']],
+                            [
+                                'username' => $u['username'] ?? null,
+                                'code' => $u['code'] ?? null,
+                                'name' => $u['name'] ?? null,
+                                'email' => $email,
+                                'password' => $password,
+                                'phone_number' => $u['phone_number'] ?? null,
+                                'company_id' => $u['company_id'] ?? null,
+                                'company_group_id' => $u['company_group_id'] ?? null,
+                                'department_id' => $deptId,
+                                'division_id' => $u['division_id'] ?? null,
+                                'role_id' => $roleId,
+                                'is_active' => $u['is_active'] ?? true,
+                                'is_employee' => $u['is_employee'] ?? true,
+                            ]
+                        );
+                        $counts['users']++;
+                    } catch (\Exception $e) {
+                        Log::warning('Gagal mengimpor User '.($u['name'] ?? '').': '.$e->getMessage());
+                    }
+                }
+            }
+
+            return $counts;
+    }
+
+    /**
+     * Import master data from JSON.
+     */
+    public function import(ImportMasterDataRequest $request)
+    {
+        try {
+            $content = file_get_contents($request->file('file')->getRealPath());
+            $data = json_decode($content, true);
+
+            if (! is_array($data)) {
+                return back()->withErrors(['error' => 'Format file JSON tidak valid.']);
+            }
+
+            $counts = $this->executeImport($data);
+
             $successMsg = sprintf(
-                'Data master berhasil diimpor: %d Group, %d Region, %d Company, %d Departemen, %d Status, %d Tipe Kontrak, %d Workflow, %d Form Template, %d Role, %d Mapping Akses, %d Mapping Navigasi.',
+                'Data master berhasil diimpor: %d Group, %d Region, %d Company, %d Departemen, %d Status, %d Tipe Kontrak, %d Workflow, %d Form Template, %d Role, %d Mapping Akses, %d Mapping Navigasi, %d Pengguna.',
                 $counts['company_groups'],
                 $counts['regions'],
                 $counts['companies'],
@@ -1252,6 +1359,7 @@ class MasterDataAdminController extends Controller
                 $counts['roles'],
                 $counts['access_mappings'],
                 $counts['role_navigation_mappings'],
+                $counts['users'],
             );
 
             return redirect()->route('admin.master-data-sync')->with('success', $successMsg);
@@ -1368,6 +1476,11 @@ class MasterDataAdminController extends Controller
                         DB::table('m_role_module_groups')->delete();
                         DB::table('m_modules')->delete();
                         DB::table('m_module_groups')->delete();
+                    }
+
+                    // 12. Users
+                    if (in_array('users', $entities)) {
+                        DB::table('m_users')->where('email', '!=', 'admin@example.com')->delete();
                     }
                 } finally {
                     if ($driver === 'pgsql') {

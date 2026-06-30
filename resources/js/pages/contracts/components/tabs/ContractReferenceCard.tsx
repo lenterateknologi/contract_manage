@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/base/Button';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { Button } from '@/components/ui/buttons/Button';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';

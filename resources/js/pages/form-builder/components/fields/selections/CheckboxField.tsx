@@ -1,4 +1,4 @@
-import { Label } from '@/components/ui/base/Label';
+import { Label } from '@/components/ui/forms/Label';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { getTypographyStyle } from '../../utils';

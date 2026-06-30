@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/base/Button';
-import { Input } from '@/components/ui/base/Input';
-import { Label } from '@/components/ui/base/Label';
+import { Button } from '@/components/ui/buttons/Button';
+import { Input } from '@/components/ui/inputs/Input';
+import { Label } from '@/components/ui/forms/Label';
 import { User } from '@/types';
 import { useForm } from '@inertiajs/react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';

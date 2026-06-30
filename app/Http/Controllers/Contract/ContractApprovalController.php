@@ -7,6 +7,10 @@ use App\Http\Actions\Contract\RejectContractAction;
 use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
 use App\Http\Queries\Contract\ContractDetailQuery;
+use App\Http\Requests\Contract\AddAdhocApproverRequest;
+use App\Http\Requests\Contract\ApproveContractRequest;
+use App\Http\Requests\Contract\BulkApproveContractRequest;
+use App\Http\Requests\Contract\RejectContractRequest;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\Role;
@@ -47,21 +51,8 @@ class ContractApprovalController extends Controller
         }
     }
 
-    public function approve(Request $request, string $id): JsonResponse
+    public function approve(ApproveContractRequest $request, string $id): JsonResponse
     {
-        $request->validate([
-            'note' => 'nullable|string',
-            'attachment' => 'nullable|file|max:10240', // 10MB limit
-            'assigned_pic_id' => 'nullable|uuid|exists:m_users,id',
-            'execution_order' => 'nullable|string',
-            'signer_user_ids' => 'nullable|array',
-            'signer_user_ids.*' => 'uuid|exists:m_users,id',
-            'p1_user_id' => 'nullable|uuid|exists:m_users,id',
-            'p2_user_id' => 'nullable|uuid|exists:m_users,id',
-            'action_code' => 'nullable|string',
-            'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
-        ]);
-
         $contract = $this->contractDetailQuery->find($id);
 
         // Find the pending approval for the current user
@@ -117,13 +108,8 @@ class ContractApprovalController extends Controller
         return response()->json(ContractFormatter::formatContract($contract->fresh()));
     }
 
-    public function reject(Request $request, string $id): JsonResponse
+    public function reject(RejectContractRequest $request, string $id): JsonResponse
     {
-        $request->validate([
-            'reason' => 'required|string',
-            'attachment' => 'nullable|file|max:10240', // 10MB limit
-        ]);
-
         $contract = $this->contractDetailQuery->find($id);
 
         // Find the pending approval for the current user
@@ -147,16 +133,11 @@ class ContractApprovalController extends Controller
         return response()->json(ContractFormatter::formatContract($contract->fresh()));
     }
 
-    public function bulkApprove(Request $request): JsonResponse
+    public function bulkApprove(BulkApproveContractRequest $request): JsonResponse
     {
         if (! $this->approveAction->checkBulkPermission('can_bulk_approve')) {
             return response()->json(['message' => 'Anda tidak memiliki izin untuk aksi massal ini.'], 403);
         }
-
-        $request->validate([
-            'ids' => 'required|array',
-            'note' => 'required|string|min:10',
-        ]);
 
         $ids = $request->input('ids');
         $note = $request->input('note');
@@ -183,18 +164,8 @@ class ContractApprovalController extends Controller
         return $nextStep && $nextStep->approver_type === 'assigned_pic';
     }
 
-    public function addAdhocApprover(Request $request, string $id): JsonResponse
+    public function addAdhocApprover(AddAdhocApproverRequest $request, string $id): JsonResponse
     {
-        $request->validate([
-            'user_ids' => 'nullable|array',
-            'user_ids.*' => 'uuid|exists:m_users,id',
-            'user_id' => 'nullable|uuid|exists:m_users,id',
-            'note' => 'nullable|string|max:1000',
-            'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
-            'is_sequential' => 'nullable|boolean',
-            'role' => 'nullable|string|max:100',
-        ]);
-
         try {
             $contract = $this->contractDetailQuery->find($id);
 

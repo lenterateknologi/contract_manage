@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/overlays/Dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialogs/Dialog';
 import axios from 'axios';
 import { renderAsync } from 'docx-preview';
 import { Download, Loader2, X } from 'lucide-react';

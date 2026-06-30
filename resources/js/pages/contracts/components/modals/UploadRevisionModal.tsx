@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/base/Button';
-import { FormInput } from '@/components/ui/forms/FormInput';
-import { Modal } from '@/components/ui/overlays/Modal';
+import { Button } from '@/components/ui/buttons/Button';
+import { FormInput } from '@/components/ui/inputs/FormInput';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { cn } from '@/lib/utils';
 import { CloudUpload, FileCheck, FileUp } from 'lucide-react';
 import React, { useState } from 'react';

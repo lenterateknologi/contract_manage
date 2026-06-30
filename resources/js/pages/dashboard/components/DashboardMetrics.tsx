@@ -1,6 +1,6 @@
-import { Input } from '@/components/ui/base/Input';
-import { ScrollArea } from '@/components/ui/base/ScrollArea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/overlays/Popover';
+import { Input } from '@/components/ui/inputs/Input';
+import { ScrollArea } from '@/components/ui/utilities/ScrollArea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { cn } from '@/lib/utils';
 import { router, usePage } from '@inertiajs/react';
 import { Briefcase, Check, ChevronDown, LayoutDashboard, Search, X, Loader2 } from 'lucide-react';
@@ -57,10 +57,10 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
         <Popover className="relative">
             <PopoverTrigger
                 className={cn(
-                    'hover:bg-muted/10 flex h-10 cursor-pointer items-center gap-2 rounded-xl border px-4 text-xs font-semibold shadow-sm transition-all outline-none select-none',
+                    'hover:bg-muted/10 flex h-10 cursor-pointer items-center gap-2 rounded-lg border px-4 text-xs font-semibold shadow-sm transition-all outline-none select-none',
                     selectedValues.length > 0
-                        ? 'bg-primary/5 text-primary border-primary/50'
-                        : 'dark:bg-surface-base border-surface-border text-text-soft hover:text-text-main bg-white',
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-transparent border-surface-border text-text-main hover:bg-surface-muted/50',
                 )}
             >
                 <span className="max-w-[120px] truncate">{selectedValues.length > 0 ? `${label}: ${selectedLabels.join(', ')}` : label}</span>
@@ -80,7 +80,7 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
 
             <PopoverContent
                 align="start"
-                className="border-surface-border dark:bg-surface-base absolute top-full z-[999] mt-2 w-[240px] overflow-hidden rounded-xl border bg-white p-0 shadow-xl"
+                className="border-surface-border dark:bg-surface-base absolute top-full z-[999] mt-2 w-[240px] overflow-hidden rounded-lg border bg-white p-0 shadow-xl"
             >
                 <div className="border-surface-border bg-muted/10 border-b p-2">
                     <div className="relative">
@@ -110,7 +110,7 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
                                         onClick={() => handleToggle(opt.value)}
                                         className={cn(
                                             'flex w-full items-center justify-between rounded-md p-2 text-left text-xs font-semibold transition-all select-none',
-                                            isSelected ? 'bg-primary-muted text-primary' : 'text-text-main hover:bg-surface-muted',
+                                            isSelected ? 'bg-primary text-primary-foreground' : 'bg-transparent text-text-main hover:bg-surface-muted/50',
                                         )}
                                     >
                                         <span className="truncate pr-2">{opt.label}</span>
@@ -118,8 +118,8 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
                                             className={cn(
                                                 'flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border transition-all',
                                                 isSelected
-                                                    ? 'border-primary bg-primary text-white'
-                                                    : 'border-surface-border dark:bg-surface-base bg-white',
+                                                    ? 'border-primary-foreground bg-primary-foreground text-primary'
+                                                    : 'border-surface-border bg-transparent',
                                             )}
                                         >
                                             {isSelected && <Check size={10} strokeWidth={3} />}
@@ -287,15 +287,15 @@ function DashboardTab({ active, onClick, label, icon: Icon }: { active: boolean;
         <button
             onClick={onClick}
             className={cn(
-                'group relative flex cursor-pointer items-center gap-2.5 rounded-2xl border px-5 py-2.5 text-[11px] font-semibold tracking-[0.15em] whitespace-nowrap uppercase transition-all duration-300 outline-none',
+                'group relative flex cursor-pointer items-center gap-2.5 rounded-lg border px-5 py-2.5 text-[11px] font-semibold tracking-[0.15em] whitespace-nowrap uppercase transition-all duration-300 outline-none',
                 active
-                    ? 'bg-primary text-primary-foreground border-primary shadow-[0_8px_20px_-8px_rgba(79,70,229,0.5)]'
-                    : 'bg-surface-muted/30 text-text-soft border-surface-border/60 hover:bg-surface-muted/60 hover:text-text-main',
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-transparent text-primary border-primary/50 hover:bg-primary/10 hover:border-primary',
             )}
         >
             <Icon
                 size={14}
-                className={cn('transition-colors', active ? 'text-primary-foreground' : 'text-text-soft group-hover:text-primary opacity-60')}
+                className={cn('transition-colors', active ? 'text-primary-foreground' : 'text-primary opacity-70 group-hover:opacity-100')}
             />
             {label}
         </button>

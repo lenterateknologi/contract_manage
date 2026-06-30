@@ -1,7 +1,7 @@
 import { FilterChips } from '@/pages/contracts/components/parts/FilterChips';
-import { Button } from '@/components/ui/base/Button';
-import { Input } from '@/components/ui/base/Input';
-import { SimpleFilters } from '@/components/ui/data/SimpleFilters';
+import { Button } from '@/components/ui/buttons/Button';
+import { Input } from '@/components/ui/inputs/Input';
+import { SimpleFilters } from '@/components/ui/selection/SimpleFilters';
 import { cn } from '@/lib/utils';
 import { AdvancedFilters } from '@/types/filters';
 import { router } from '@inertiajs/react';

@@ -10,9 +10,11 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
     const total = items.reduce((sum, s) => sum + s.count, 0) || 1;
 
     return (
-        <div className="border-surface-border/60 bg-surface-base/40 text-text-main dark:border-surface-border/60 dark:bg-surface-base/20 rounded-2xl border p-6 shadow-sm backdrop-blur-sm select-none lg:col-span-4">
-            <SectionTitle>Distribusi Status</SectionTitle>
-            <div className="space-y-3.5">
+        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg text-text-main select-none lg:col-span-4">
+            <div className="border-surface-border/60 flex items-center justify-between border-b px-6 py-4">
+                <SectionTitle>Distribusi Status</SectionTitle>
+            </div>
+            <div className="space-y-3.5 p-6">
                 {items.length === 0 ? (
                     <p className="text-text-desc/40 py-4 text-center text-[12px] font-semibold">Belum ada data</p>
                 ) : (

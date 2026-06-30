@@ -1,17 +1,8 @@
 import { Head } from '@inertiajs/react';
 
-import { CompanyGroupManagement } from '@/pages/admin/components/CompanyGroupManagement';
-import { CompanyManagement } from '@/pages/admin/components/CompanyManagement';
-import { ContractTypeManagement } from '@/pages/admin/components/ContractTypeManagement';
-import { DepartmentManagement } from '@/pages/admin/components/DepartmentManagement';
 import { MasterDataSync } from '@/pages/admin/components/MasterDataSync';
 import { NavigationManagement } from '@/pages/admin/components/NavigationManagement';
 import { NumberingFormatManagement } from '@/pages/admin/components/NumberingFormatManagement';
-import { RegionManagement } from '@/pages/admin/components/RegionManagement';
-import { RoleManagement } from '@/pages/admin/components/RoleManagement';
-import { StatusManagement } from '@/pages/admin/components/StatusManagement';
-import { UserManagement } from '@/pages/admin/components/UserManagement';
-import { VendorManagement } from '@/pages/admin/components/VendorManagement';
 import { WorkflowManagement } from '@/pages/admin/components/WorkflowManagement';
 import { MembersPerDivision } from '@/pages/dashboard/components/MembersPerDivision';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
@@ -123,32 +114,14 @@ export default function AdminIndex({
 
     const renderView = () => {
         switch (currentView) {
-            case 'users':
-                return <UserManagement users={users} roles={rolesArray} departments={deptsArray} companies={companies} filters={filters} />;
-            case 'roles':
-                return <RoleManagement roles={roles} filters={filters} />;
             case 'workflows':
                 return <WorkflowManagement workflows={workflows} contractTypes={typesArray} filters={filters} />;
-            case 'departments':
-                return <DepartmentManagement departments={departments} filters={filters} />;
-            case 'contract-types':
-                return <ContractTypeManagement contractTypes={contractTypes || types} filters={filters} />;
-            case 'contract-statuses':
-                return <StatusManagement statuses={statuses} filters={filters} />;
             case 'module-groups':
                 return <NavigationManagement groups={navigationsArray} modules={modules} isModuleView={false} filters={filters} />;
             case 'modules':
                 return <NavigationManagement groups={navigationsArray} modules={modules} isModuleView={true} filters={filters} />;
-            case 'vendors':
-                return <VendorManagement vendors={vendors} filters={filters} />;
             case 'numbering-formats':
                 return <NumberingFormatManagement formats={formats} />;
-            case 'company-groups':
-                return <CompanyGroupManagement groups={companyGroups} regions={regions} filters={filters} />;
-            case 'regions':
-                return <RegionManagement regions={regions} filters={filters} />;
-            case 'companies':
-                return <CompanyManagement companies={companies} regions={regions} groups={companyGroups} filters={filters} />;
             case 'members':
                 return <MembersPerDivision />;
             case 'master-data-sync':

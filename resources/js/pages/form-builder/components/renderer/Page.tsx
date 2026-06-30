@@ -12,6 +12,7 @@ interface PageProps {
     };
     className?: string;
     showMargins?: boolean;
+    isBuilder?: boolean;
 }
 
 export const Page: React.FC<PageProps> = ({
@@ -20,14 +21,17 @@ export const Page: React.FC<PageProps> = ({
     margins = { top: 15, bottom: 15, left: 15, right: 15 },
     className,
     showMargins = false,
+    isBuilder = false,
 }) => {
     return (
         <div className="relative mb-20 last:mb-0 print:m-0">
             {/* Floating Page Info */}
             <div className="absolute -top-8 left-0 flex items-center gap-3 print:hidden">
-                <div className="bg-primary/10 text-primary ring-primary/20 flex h-6 items-center justify-center rounded-full px-3 text-[10px] font-semibold tracking-widest uppercase shadow-sm ring-1">
-                    Halaman {pageNumber}
-                </div>
+                {isBuilder && (
+                    <div className="bg-primary/10 text-primary ring-primary/20 flex h-6 items-center justify-center rounded-none px-3 text-[10px] font-semibold tracking-widest uppercase ring-1">
+                        Halaman {pageNumber}
+                    </div>
+                )}
                 <div className="text-muted-foreground/40 text-[9px] font-semibold tracking-tight uppercase">
                     A4 (210mm x 297mm) • Margins: {margins.top}mm {margins.right}mm {margins.bottom}mm {margins.left}mm
                 </div>
@@ -36,8 +40,8 @@ export const Page: React.FC<PageProps> = ({
             {/* The A4 Paper Container */}
             <div
                 className={cn(
-                    'bg-card text-foreground border-border relative mx-auto flex flex-col border shadow-[0_20px_50px_rgba(0,0,0,0.1),0_0_1px_rgba(0,0,0,0.2)] transition-all print:m-0 print:shadow-none print:ring-0',
-                    'h-[297mm] w-[210mm] shrink-0 overflow-hidden', // Fixed A4 Size
+                    'bg-card text-foreground border-border relative mx-auto flex flex-col border shadow-none transition-all print:m-0 print:shadow-none print:ring-0',
+                    isBuilder ? 'my-4 rounded-none' : 'mb-20 rounded-none', 'h-[297mm] w-[210mm] shrink-0 overflow-hidden', // Fixed A4 Size
                     className,
                 )}
                 style={{

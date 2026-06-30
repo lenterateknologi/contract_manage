@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/base/Button';
-import { StatusBadge } from '@/components/ui/data/StatusBadge';
-import { CompactSwitch } from '@/components/ui/forms/CompactSwitch';
-import { FormTextarea } from '@/components/ui/forms/FormTextarea';
-import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
-import { Modal } from '@/components/ui/overlays/Modal';
+import { Button } from '@/components/ui/buttons/Button';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { CompactSwitch } from '@/components/ui/selection/CompactSwitch';
+import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
 import { CheckCircle2, Loader2, UserCheck, Users, X } from 'lucide-react';

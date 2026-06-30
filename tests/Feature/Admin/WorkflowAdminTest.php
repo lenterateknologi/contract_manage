@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ContractType;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
@@ -8,7 +9,7 @@ use App\Models\WorkflowStepAction;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('admin workflows index page returns steps_count and contract_type_name', function () {
-    $admin = User::factory()->create(['role' => 'Admin']);
+    $admin = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Admin'])->id]);
 
     $type = ContractType::create([
         'name' => 'Test Contract Type',
@@ -49,7 +50,7 @@ test('admin workflows index page returns steps_count and contract_type_name', fu
 });
 
 test('admin can duplicate workflow with its steps and actions', function () {
-    $admin = User::factory()->create(['role' => 'Admin']);
+    $admin = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Admin'])->id]);
 
     $type = ContractType::create([
         'name' => 'Original Type',
@@ -119,13 +120,13 @@ test('admin can duplicate workflow with its steps and actions', function () {
 });
 
 test('admin or legal can get available workflows for another user', function () {
-    $admin = User::factory()->create(['role' => 'Admin']);
-    $staff = User::factory()->create(['role' => 'Staff']);
+    $admin = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Admin'])->id]);
+    $staff = User::factory()->create(['role_id' => Role::firstOrCreate(['name' => 'Staff'])->id]);
 
     // Create a workflow available only for Staff role
     $workflow = Workflow::create([
         'name' => 'Staff-Only Workflow',
-        'initiator_type' => 'role',
+        'initiator_type' => 'specific',
         'is_active' => true,
     ]);
     $workflow->initiatorRolesData()->create(['role_name' => 'Staff']);

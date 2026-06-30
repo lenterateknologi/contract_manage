@@ -1,8 +1,8 @@
-import { Button } from '@/components/ui/base/Button';
-import { Input } from '@/components/ui/base/Input';
-import { Label } from '@/components/ui/base/Label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/overlays/Dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/overlays/DropdownMenu';
+import { Button } from '@/components/ui/buttons/Button';
+import { Input } from '@/components/ui/inputs/Input';
+import { Label } from '@/components/ui/forms/Label';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { cn } from '@/lib/utils';
 import { Head, router } from '@inertiajs/react';
 import {

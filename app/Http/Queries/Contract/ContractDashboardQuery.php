@@ -914,7 +914,6 @@ class ContractDashboardQuery
                     'email' => $u->email,
                     'initials' => $u->initials,
                     'role' => $u->role,
-                    'position' => $u->position,
                     'department_name' => $u->department?->name,
                     'department_id' => $u->department_id,
                     'active_contracts_count' => $activeCount,

@@ -1,0 +1,75 @@
+{
+"\nselect * from m_region ": [
+	{
+		"id" : "e2bd998e-b53f-11f0-9808-c7c2175eb96d",
+		"code" : "03",
+		"alias" : "BPN",
+		"id_portal_master" : 14,
+		"name" : "KALIMANTAN TIMUR",
+		"is_active" : true,
+		"created_at" : "2025-10-30T03:24:04.000Z",
+		"created_by" : "00000000-0000-0000-0000-000000000000",
+		"updated_at" : "2025-10-30T03:24:04.000Z",
+		"updated_by" : null
+	},
+	{
+		"id" : "e2c7eb50-b53f-11f0-84c5-733e1305f3db",
+		"code" : "01",
+		"alias" : "PKU",
+		"id_portal_master" : 12,
+		"name" : "RIAU",
+		"is_active" : true,
+		"created_at" : "2025-10-30T03:24:04.000Z",
+		"created_by" : "00000000-0000-0000-0000-000000000000",
+		"updated_at" : "2025-10-30T03:24:04.000Z",
+		"updated_by" : null
+	},
+	{
+		"id" : "e2c87002-b53f-11f0-9765-198b0c1133d5",
+		"code" : "05",
+		"alias" : "JKT",
+		"id_portal_master" : 16,
+		"name" : "JAKARTA",
+		"is_active" : true,
+		"created_at" : "2025-10-30T03:24:04.000Z",
+		"created_by" : "00000000-0000-0000-0000-000000000000",
+		"updated_at" : "2025-10-30T03:24:04.000Z",
+		"updated_by" : null
+	},
+	{
+		"id" : "e2c8fe0a-b53f-11f0-a977-ab3a968493e0",
+		"code" : "02",
+		"alias" : "PTK",
+		"id_portal_master" : 13,
+		"name" : "KALIMANTAN BARAT",
+		"is_active" : true,
+		"created_at" : "2025-10-30T03:24:04.000Z",
+		"created_by" : "00000000-0000-0000-0000-000000000000",
+		"updated_at" : "2025-10-30T03:24:04.000Z",
+		"updated_by" : null
+	},
+	{
+		"id" : "e2c98b2c-b53f-11f0-9077-974ad6dd5164",
+		"code" : "04",
+		"alias" : "NNK",
+		"id_portal_master" : 15,
+		"name" : "KALIMANTAN UTARA",
+		"is_active" : true,
+		"created_at" : "2025-10-30T03:24:04.000Z",
+		"created_by" : "00000000-0000-0000-0000-000000000000",
+		"updated_at" : "2025-10-30T03:24:04.000Z",
+		"updated_by" : null
+	},
+	{
+		"id" : "e2ca3234-b53f-11f0-9133-1534333b51de",
+		"code" : "06",
+		"alias" : "MRK",
+		"id_portal_master" : 17,
+		"name" : "MERAUKE",
+		"is_active" : true,
+		"created_at" : "2025-10-30T03:24:04.000Z",
+		"created_by" : "00000000-0000-0000-0000-000000000000",
+		"updated_at" : "2025-10-30T03:24:04.000Z",
+		"updated_by" : null
+	}
+]}

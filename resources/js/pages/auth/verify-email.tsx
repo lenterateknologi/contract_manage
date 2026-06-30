@@ -3,8 +3,8 @@ import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
-import { Button } from '@/components/ui/base/Button';
-import TextLink from '@/components/ui/base/TextLink';
+import { Button } from '@/components/ui/buttons/Button';
+import TextLink from '@/components/ui/navigation/TextLink';
 import AuthLayout from '@/layouts/auth-layout';
 
 export default function VerifyEmail({ status }: { status?: string }) {

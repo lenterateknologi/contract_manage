@@ -1,0 +1,31 @@
+/**
+ * CMS Contract - Typography Configuration
+ * This file defines all CSS variables and base styles for typography.
+ */
+
+@theme {
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-primary: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-serif: 'Lora', 'Times New Roman', Georgia, serif;
+    --font-mono: var(--font-mono), 'Courier New', monospace;
+}
+
+@layer base {
+    html {
+        font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    }
+
+    input,
+    button,
+    select,
+    textarea {
+        font-family: inherit;
+    }
+}
+
+* {
+    font-family: inherit;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}

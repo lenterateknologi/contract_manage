@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from '@/components/ui/overlays/DropdownMenu';
+} from '@/components/ui/selection/DropdownMenu';
 import { MessageSquare } from 'lucide-react';
 import { memo } from 'react';
 

@@ -1,4 +1,4 @@
-import { SearchInput } from '@/components/ui/forms/SearchInput';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/pages/contracts/utils';
 import { Contract } from '@/pages/contracts/types';

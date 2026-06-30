@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
 import { AlertCircle } from 'lucide-react';
 import React from 'react';

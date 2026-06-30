@@ -1,0 +1,3694 @@
+{
+    "m_contract_types": {
+        "columns": [
+            {
+                "column_name": "parent_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f1_contract_template_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f2_contract_template_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "workflow_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "features",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f1_form_template_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f2_form_template_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f1_input_mechanism",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f2_input_mechanism",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "f1_contract_template_id",
+                "foreign_table_name": "m_contract_templates",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "f1_form_template_id",
+                "foreign_table_name": "m_form_templates",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "f2_contract_template_id",
+                "foreign_table_name": "m_contract_templates",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "f2_form_template_id",
+                "foreign_table_name": "m_form_templates",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_access_modules": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "role_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "module_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "module_group_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "can_read",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "can_create",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "can_update",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "can_delete",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "can_approve",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "can_bulk_approve",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "can_bulk_delete",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "sequence",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "module_group_id",
+                "foreign_table_name": "m_module_groups",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "module_id",
+                "foreign_table_name": "m_modules",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "role_id",
+                "foreign_table_name": "m_roles",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_contract_statuses": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "label",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "color",
+                "data_type": "character varying",
+                "character_maximum_length": 20,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "bg_color",
+                "data_type": "character varying",
+                "character_maximum_length": 20,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "icon",
+                "data_type": "character varying",
+                "character_maximum_length": 50,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "m_departments": {
+        "columns": [
+            {
+                "column_name": "company_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "company_id",
+                "foreign_table_name": "m_companies",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_form_templates": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "contract_type_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "has_letterhead",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "letterhead_json",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "document_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "transaction_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "contract_type_id",
+                "foreign_table_name": "m_contract_types",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_roles": {
+        "columns": [
+            {
+                "column_name": "company_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "company_id",
+                "foreign_table_name": "m_companies",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_modules": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "module_group_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "showed_as_menu",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "identifier",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "icon",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "route",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "module_group_id",
+                "foreign_table_name": "m_module_groups",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_form_fields": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "form_template_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "parent_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "options",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "validation_rules",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "order",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_required",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "use_rich_text",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "label",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "container_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "width",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "placeholder",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "form_template_id",
+                "foreign_table_name": "m_form_templates",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "parent_id",
+                "foreign_table_name": "m_form_fields",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_role_module_groups": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "bigint",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "role_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "module_group_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "sequence",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "module_group_id",
+                "foreign_table_name": "m_module_groups",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "role_id",
+                "foreign_table_name": "m_roles",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_numbering_formats": {
+        "columns": [
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "current_number",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "padding",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "module",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "format_pattern",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "m_contract_templates": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "template_folder_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "file_size",
+                "data_type": "bigint",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "file_path",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "file_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "file_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "template_folder_id",
+                "foreign_table_name": "m_template_folders",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_module_groups": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "icon",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "m_vendors": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_individual",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "npwp",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "nib",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "siup",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "director_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "bank_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "bank_account_no",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "company_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "bank_account_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "website",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "pic_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "pic_position",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "email",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "phone",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "address",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "tax_id",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "category",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "m_workflow_initiator_departments": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "workflow_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "department_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "department_id",
+                "foreign_table_name": "m_departments",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "workflow_id",
+                "foreign_table_name": "m_workflows",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_workflow_step_roles": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "role_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "workflow_step_id",
+                "foreign_table_name": "m_workflow_steps",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_workflow_initiator_roles": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "workflow_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "role_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "workflow_id",
+                "foreign_table_name": "m_workflows",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_users": {
+        "columns": [
+            {
+                "column_name": "manager_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "department_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "company_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "email_verified_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "role_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "email",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "remember_token",
+                "data_type": "character varying",
+                "character_maximum_length": 100,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "password",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "username",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "phone",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "bio",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "department_id",
+                "foreign_table_name": "m_departments",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "role_id",
+                "foreign_table_name": "m_roles",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "company_id",
+                "foreign_table_name": "m_companies",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "manager_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_workflow_initiator_users": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "workflow_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "user_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "workflow_id",
+                "foreign_table_name": "m_workflows",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_workflow_step_departments": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "department_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "department_id",
+                "foreign_table_name": "m_departments",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "foreign_table_name": "m_workflow_steps",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_template_folders": {
+        "columns": [
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "parent_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "parent_id",
+                "foreign_table_name": "m_template_folders",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_workflow_step_users": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "user_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "foreign_table_name": "m_workflow_steps",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_submission_types": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "t_form_submissions": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "contract_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "form_template_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "current_version",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "submitted_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "document_type",
+                "data_type": "character varying",
+                "character_maximum_length": 10,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "contract_id",
+                "foreign_table_name": "t_contracts",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "form_template_id",
+                "foreign_table_name": "m_form_templates",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "submitted_by",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "t_form_submission_h": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "submission_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "version_no",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "form_data",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "change_summary",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "created_by",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "submission_id",
+                "foreign_table_name": "t_form_submissions",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "t_attachments": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "contract_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "uploaded_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "file_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "label",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "category",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "file_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "file_path",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "contract_id",
+                "foreign_table_name": "t_contracts",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "uploaded_by",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "t_contract_versions": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "contract_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "version_no",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "uploaded_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_final",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "file_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "file_path",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "document_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "change_log",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "file_hash",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "contract_id",
+                "foreign_table_name": "t_contracts",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "uploaded_by",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "t_forgot_password": {
+        "columns": [
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "expire_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "redeemed_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "email",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "token",
+                "data_type": "character varying",
+                "character_maximum_length": 64,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "user_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "t_messages": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "contract_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "read_by",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "message",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "attachment_path",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "attachment_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "contract_id",
+                "foreign_table_name": "t_contracts",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "user_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_vendor_documents": {
+        "columns": [
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "vendor_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_verified",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "expires_at",
+                "data_type": "date",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "document_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "document_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "file_url",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "vendor_id",
+                "foreign_table_name": "m_vendors",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_company_groups": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "m_companies": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "company_group_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "region_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "alias",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "address",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "company_group_id",
+                "foreign_table_name": "m_company_groups",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "region_id",
+                "foreign_table_name": "m_regions",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_regions": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "alias",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id_portal_master",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "t_contracts": {
+        "columns": [
+            {
+                "column_name": "contract_type_parent_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "assigned_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "finished_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "closed_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "closed_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "origin_workflow_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "contract_date",
+                "data_type": "date",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "end_date",
+                "data_type": "date",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "contract_type_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "current_version",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "workflow_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "metadata",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "submitted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "initiated_by_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "vendor_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "parent_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "submission_type_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_digital_signature",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "assigned_pic_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "assigned_by_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "received_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "contract_no",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "title",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "transaction_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "status",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "crown_no",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "assigned_pic_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "assigned_by_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "contract_type_id",
+                "foreign_table_name": "m_contract_types",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "created_by",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "initiated_by_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "parent_id",
+                "foreign_table_name": "t_contracts",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "submission_type_id",
+                "foreign_table_name": "m_submission_types",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "vendor_id",
+                "foreign_table_name": "m_vendors",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "workflow_id",
+                "foreign_table_name": "m_workflows",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "foreign_table_name": "m_workflow_steps",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_workflows": {
+        "columns": [
+            {
+                "column_name": "meta",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "legal_roles",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "legal_departments",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "legal_users",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "contract_type_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "department_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_default",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_template",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_tax_involved",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "sla_drafting_hours",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "sla_total_hours",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "sla_cutoff_hour",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "company_group_ids",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "region_ids",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "company_ids",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "approver_roles",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "approver_departments",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "approver_users",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "workflow_category",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "initiator_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "scope",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "department_id",
+                "foreign_table_name": "m_departments",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "contract_type_id",
+                "foreign_table_name": "m_contract_types",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "m_workflow_step_actions": {
+        "columns": [
+            {
+                "column_name": "transition_config",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "next_step_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "next_workflow_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "next_workflow_step_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "required_fields",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "autofilled_fields",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "signing_parties",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "assignee_config",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "action_code",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "alias",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "workflow_step_id",
+                "foreign_table_name": "m_workflow_steps",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "next_step_id",
+                "foreign_table_name": "m_workflow_steps",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "next_workflow_id",
+                "foreign_table_name": "m_workflows",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "next_workflow_step_id",
+                "foreign_table_name": "m_workflow_steps",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "t_contract_meta": {
+        "columns": [
+            {
+                "column_name": "contract_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "kop_lampiran",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f1_tujuan",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f1_sifat",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "p1_entity",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "p1_signer",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "p1_signer_position",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "p1_address",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "p2_entity",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "p2_signer",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "p2_signer_position",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "p2_address",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f2_scope",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f2_price",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f2_payment",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f2_tenure",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "f2_location",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "kop_topik",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "kop_sub_topik",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "contract_id",
+                "foreign_table_name": "t_contracts",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "telescope_entries": {
+        "columns": [
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "uuid",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "batch_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "should_display_on_index",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "sequence",
+                "data_type": "bigint",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "type",
+                "data_type": "character varying",
+                "character_maximum_length": 20,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "family_hash",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "content",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "telescope_entries_tags": {
+        "columns": [
+            {
+                "column_name": "entry_uuid",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "tag",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "entry_uuid",
+                "foreign_table_name": "telescope_entries",
+                "foreign_column_name": "uuid"
+            }
+        ]
+    },
+    "telescope_monitoring": {
+        "columns": [
+            {
+                "column_name": "tag",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            }
+        ],
+        "foreign_keys": []
+    },
+    "m_workflow_steps": {
+        "columns": [
+            {
+                "column_name": "approver_config",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "workflow_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "step",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "company_ids",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "allowed_actions",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_mandatory",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "filter_department",
+                "data_type": "smallint",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "filter_company_group",
+                "data_type": "smallint",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "filter_region",
+                "data_type": "smallint",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "filter_company",
+                "data_type": "smallint",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "hierarchy_level",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "role_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_optional",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "meta",
+                "data_type": "jsonb",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "company_group_ids",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "region_ids",
+                "data_type": "json",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "approver_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "condition_expression",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "step_category",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "phase",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "uploader_type",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "label",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "optional_label",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "role_id",
+                "foreign_table_name": "m_roles",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "workflow_id",
+                "foreign_table_name": "m_workflows",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "t_contract_h": {
+        "columns": [
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "contract_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "actor_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "action",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "description",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "actor_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "contract_id",
+                "foreign_table_name": "t_contracts",
+                "foreign_column_name": "id"
+            }
+        ]
+    },
+    "t_approvals": {
+        "columns": [
+            {
+                "column_name": "sub_step",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "contract_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "user_id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "created_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "updated_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "deleted_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "sort_order",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "id",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "sequence",
+                "data_type": "integer",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "decided_at",
+                "data_type": "timestamp without time zone",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "is_active",
+                "data_type": "boolean",
+                "character_maximum_length": null,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "created_by",
+                "data_type": "uuid",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "approver_name",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "role",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "job_title",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "status",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "NO"
+            },
+            {
+                "column_name": "comment",
+                "data_type": "text",
+                "character_maximum_length": null,
+                "is_nullable": "YES"
+            },
+            {
+                "column_name": "attachment_path",
+                "data_type": "character varying",
+                "character_maximum_length": 255,
+                "is_nullable": "YES"
+            }
+        ],
+        "foreign_keys": [
+            {
+                "column_name": "contract_id",
+                "foreign_table_name": "t_contracts",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "created_by",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "updated_by",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "user_id",
+                "foreign_table_name": "m_users",
+                "foreign_column_name": "id"
+            },
+            {
+                "column_name": "workflow_step_id",
+                "foreign_table_name": "m_workflow_steps",
+                "foreign_column_name": "id"
+            }
+        ]
+    }
+}

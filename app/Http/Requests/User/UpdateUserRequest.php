@@ -32,7 +32,7 @@ class UpdateUserRequest extends FormRequest
             'username' => 'required|string|max:20|unique:m_users,username,'.$userId,
             'role' => 'required|string',
             'position' => 'nullable|string',
-            'phone' => 'nullable|string',
+            'phone_number' => 'nullable|string',
             'department_id' => 'nullable|uuid|exists:m_departments,id',
             'company_id' => 'nullable|uuid|exists:m_companies,id',
             'is_active' => 'boolean',

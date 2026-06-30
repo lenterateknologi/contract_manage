@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/base/Button';
-import { Checkbox } from '@/components/ui/base/Checkbox';
-import { CompactInput } from '@/components/ui/forms/CompactInput';
+import { Button } from '@/components/ui/buttons/Button';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { CompactInput } from '@/components/ui/inputs/CompactInput';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { CalendarDays, FileText, Hash, Info, LayoutGrid, Loader2, Save, Settings2 } from 'lucide-react';

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/base/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/cards/Card';
 import { cn } from '@/lib/utils';
 import { Activity, Award, Building2, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';

@@ -1,6 +1,6 @@
-import { Button } from '@/components/ui/base/Button';
-import { FormTextarea } from '@/components/ui/forms/FormTextarea';
-import { Modal } from '@/components/ui/overlays/Modal';
+import { Button } from '@/components/ui/buttons/Button';
+import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { AlertCircle, Loader2, Paperclip, X, XCircle } from 'lucide-react';

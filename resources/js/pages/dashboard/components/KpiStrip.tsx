@@ -9,22 +9,23 @@ interface KpiCardProps {
     subtext: string;
     icon: React.ReactNode;
     accentClass: string;
+    bgClass: string;
     onClick?: () => void;
 }
 
-function KpiCard({ label, value, subtext, icon, accentClass, onClick }: KpiCardProps) {
+function KpiCard({ label, value, subtext, icon, accentClass, bgClass, onClick }: KpiCardProps) {
     return (
         <div
             onClick={onClick}
             className={cn(
-                'group border-surface-border/60 bg-surface-base/40 relative flex flex-col gap-4 overflow-hidden rounded-2xl border p-5 shadow-sm backdrop-blur-sm transition-all duration-300',
-                onClick && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]',
+                'group bg-white dark:bg-surface-base border border-surface-border/60 relative flex flex-col gap-4 overflow-hidden rounded-lg p-5 transition-all duration-300',
+                onClick && 'cursor-pointer hover:bg-muted/10',
             )}
         >
             <div className="flex items-start justify-between">
                 <div
                     className={cn(
-                        'border-surface-border/10 flex h-10 w-10 items-center justify-center rounded-xl border shadow-xs transition-transform duration-300 group-hover:scale-105',
+                        'border-surface-border/10 flex h-10 w-10 items-center justify-center rounded-lg border shadow-xs transition-transform duration-300 group-hover:scale-105',
                         accentClass,
                     )}
                 >
@@ -54,6 +55,7 @@ export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
                 subtext="Keseluruhan"
                 icon={<FileText className="h-4.5 w-4.5" />}
                 accentClass="bg-primary/10 text-primary"
+                bgClass="bg-primary/5 dark:bg-primary/10"
                 onClick={() => onNavigate('contracts')}
             />
             <KpiCard
@@ -62,6 +64,7 @@ export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
                 subtext="Perlu Tindakan"
                 icon={<Clock className="h-4.5 w-4.5" />}
                 accentClass="bg-warning/10 text-warning"
+                bgClass="bg-warning/5 dark:bg-warning/10"
                 onClick={() => onNavigate('pending')}
             />
             <KpiCard
@@ -70,6 +73,7 @@ export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
                 subtext="Output Bulanan"
                 icon={<ShieldCheck className="h-4.5 w-4.5" />}
                 accentClass="bg-success/10 text-success"
+                bgClass="bg-success/5 dark:bg-success/10"
             />
             <KpiCard
                 label="Butuh Perhatian"
@@ -77,6 +81,7 @@ export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
                 subtext="Revisi & Segera Berakhir"
                 icon={<AlertTriangle className="h-4.5 w-4.5" />}
                 accentClass={m.attentionCount > 0 ? 'bg-danger/10 text-danger' : 'bg-surface-muted/60 text-text-desc'}
+                bgClass={m.attentionCount > 0 ? 'bg-danger/5 dark:bg-danger/10' : 'bg-surface-muted/20'}
             />
         </div>
     );

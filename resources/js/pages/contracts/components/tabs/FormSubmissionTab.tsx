@@ -1,10 +1,10 @@
 import { FormField } from '@/pages/form-builder/components/fields/FormElement';
 import { UnifiedFormViewer } from '@/pages/form-builder/components/renderer/UnifiedFormViewer';
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { SearchInput } from '@/components/ui/forms/SearchInput';
-import { Modal } from '@/components/ui/overlays/Modal';
+import { SearchInput } from '@/components/ui/inputs/SearchInput';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';

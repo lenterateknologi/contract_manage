@@ -10,15 +10,18 @@ interface MetricItemProps {
 }
 
 export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert }: MetricItemProps) {
-    const getBgColor = (textColor: string) => {
-        if (textColor.includes('primary')) return 'bg-primary/10';
-        if (textColor.includes('amber')) return 'bg-amber-500/10';
-        if (textColor.includes('emerald')) return 'bg-emerald-500/10';
-        if (textColor.includes('rose')) return 'bg-rose-500/10';
-        if (textColor.includes('success')) return 'bg-success/10';
-        if (textColor.includes('warning')) return 'bg-warning/10';
-        if (textColor.includes('danger')) return 'bg-danger/10';
-        return 'bg-surface-muted/50';
+    const getCardBgColor = (textColor: string) => {
+        if (textColor.includes('primary')) return 'bg-white border-primary/20 text-primary';
+        if (textColor.includes('amber')) return 'bg-white border-amber-500/20 text-amber-500';
+        if (textColor.includes('emerald')) return 'bg-white border-emerald-500/20 text-emerald-500';
+        if (textColor.includes('rose')) return 'bg-white border-rose-500/20 text-rose-500';
+        if (textColor.includes('indigo')) return 'bg-white border-indigo-500/20 text-indigo-500';
+        if (textColor.includes('cyan')) return 'bg-white border-cyan-500/20 text-cyan-500';
+        if (textColor.includes('purple')) return 'bg-white border-purple-500/20 text-purple-500';
+        if (textColor.includes('success')) return 'bg-white border-success/20 text-success';
+        if (textColor.includes('warning')) return 'bg-white border-warning/20 text-warning';
+        if (textColor.includes('danger')) return 'bg-white border-danger/20 text-danger';
+        return 'bg-white border-surface-border/50 text-text-main';
     };
 
     const getHoverBorderColor = (textColor: string) => {
@@ -58,41 +61,21 @@ export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert }
         <div
             onClick={onClick}
             className={cn(
-                'group dark:bg-surface-base border-surface-border/60 relative flex min-h-[110px] items-center justify-between overflow-hidden rounded-2xl border bg-white p-6 pl-8 shadow-sm transition-all duration-500',
-                onClick ? cn('cursor-pointer hover:-translate-y-0.5 hover:shadow-xl', getHoverBorderColor(color)) : 'cursor-default',
-                isAlert && 'hover:border-rose-500/40',
+                'group relative flex min-h-[110px] items-center justify-between overflow-hidden rounded-lg border p-6 transition-all duration-500',
+                getCardBgColor(color),
+                onClick ? 'cursor-pointer hover:-translate-y-1 hover:shadow-md' : 'cursor-default',
             )}
         >
-            {/* Background decorative glow */}
-            <div
-                className={cn(
-                    'pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-[0.03] dark:group-hover:opacity-[0.05]',
-                    getGradientGlow(color),
-                )}
-            />
+            {/* Large Background Icon */}
+            <div className="pointer-events-none absolute -right-6 -bottom-6 opacity-10 transition-transform duration-500 group-hover:scale-110 group-hover:opacity-20">
+                <Icon size={120} strokeWidth={1.5} className="currentColor" />
+            </div>
 
-            <div className="z-10 space-y-1.5 pr-4">
-                <p className="text-text-soft text-[10px] leading-none font-semibold  uppercase">{label}</p>
+            <div className="z-10 space-y-1.5">
+                <p className="text-text-soft text-[10px] leading-none font-semibold uppercase">{label}</p>
                 <p className="text-text-main text-3xl leading-none font-extrabold tracking-tight">{value}</p>
             </div>
 
-            <div
-                className={cn(
-                    'z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-all duration-500 group-hover:scale-110',
-                    getBgColor(color),
-                    color,
-                )}
-            >
-                <Icon size={20} strokeWidth={2.2} className={cn(isAlert && 'animate-pulse')} />
-            </div>
-
-            {/* Left accent bar */}
-            <div
-                className={cn(
-                    'absolute top-0 bottom-0 left-0 w-1 opacity-60 transition-all duration-500 group-hover:opacity-100',
-                    getBarColor(color),
-                )}
-            />
         </div>
     );
 }

@@ -1,10 +1,10 @@
 import { FormSection, ManagementForm } from '@/pages/admin/components/ManagementForm';
-import { Button } from '@/components/ui/base/Button';
-import { Checkbox } from '@/components/ui/base/Checkbox';
+import { Button } from '@/components/ui/buttons/Button';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
-import { FormInput } from '@/components/ui/forms/FormInput';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
+import { FormInput } from '@/components/ui/inputs/FormInput';
 import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';

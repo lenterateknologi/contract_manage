@@ -1,5 +1,5 @@
-import { Badge } from '@/components/ui/base/Badge';
-import { Button } from '@/components/ui/base/Button';
+import { Badge } from '@/components/ui/feedback/Badge';
+import { Button } from '@/components/ui/buttons/Button';
 import { ContractType } from '@/pages/contracts/types';
 import { Trash2 } from 'lucide-react';
 

@@ -1,9 +1,9 @@
 import { AdvancedStepSettingsModal } from './modals/AdvancedStepSettingsModal';
 import { ConditionExpressionModal } from './modals/ConditionExpressionModal';
-import { Button } from '@/components/ui/base/Button';
-import { Checkbox } from '@/components/ui/base/Checkbox';
+import { Button } from '@/components/ui/buttons/Button';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/forms/Select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -29,7 +29,7 @@ import { ForwardModal } from './modals/ForwardModal';
 import { RejectModal } from './modals/RejectModal';
 import { SignerModal } from './modals/SignerModal';
 
-import { SearchableMultiSelect } from '@/components/ui/forms/SearchableMultiSelect';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { ALL_ROLES, APPROVER_TYPE_STYLES } from '../constants';
 import { useWorkflowStepState } from '../hooks/useWorkflowStepState';
 import { StepActionConfigCard } from './StepActionConfigCard';

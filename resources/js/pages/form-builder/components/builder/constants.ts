@@ -3,7 +3,10 @@ import { Columns, FileText, Heading1, Image as ImageIcon, Layout, List, Scissors
 export const FIELD_TYPES: any[] = [
     {
         category: 'Layout & Branding',
-        color: 'bg-black',
+        color: 'bg-indigo-500',
+        textColor: 'text-indigo-600',
+        borderColor: 'border-indigo-200 hover:border-indigo-400',
+        bgColor: 'bg-indigo-50/50 hover:bg-indigo-50',
         items: [
             {
                 value: 'static_text',
@@ -51,7 +54,10 @@ export const FIELD_TYPES: any[] = [
     },
     {
         category: 'Form inputs',
-        color: 'bg-black',
+        color: 'bg-violet-500',
+        textColor: 'text-violet-600',
+        borderColor: 'border-violet-200 hover:border-violet-400',
+        bgColor: 'bg-violet-50/50 hover:bg-violet-50',
         items: [
             {
                 value: 'labeled_value',
@@ -96,7 +102,10 @@ export const FIELD_TYPES: any[] = [
     },
     {
         category: 'Kop Surat & Header (Presets)',
-        color: 'bg-primary',
+        color: 'bg-blue-500',
+        textColor: 'text-blue-600',
+        borderColor: 'border-blue-200 hover:border-blue-400',
+        bgColor: 'bg-blue-50/50 hover:bg-blue-50',
         items: [
             {
                 value: 'preset_header_Style_01',
@@ -126,7 +135,10 @@ export const FIELD_TYPES: any[] = [
     },
     {
         category: 'Blok Isi Surat (Presets)',
-        color: 'bg-emerald-600',
+        color: 'bg-emerald-500',
+        textColor: 'text-emerald-600',
+        borderColor: 'border-emerald-200 hover:border-emerald-400',
+        bgColor: 'bg-emerald-50/50 hover:bg-emerald-50',
         items: [
             {
                 value: 'preset_content_opening',
@@ -155,3 +167,7 @@ export const FIELD_TYPES: any[] = [
         ],
     },
 ];
+
+export const getFieldCategory = (typeValue: string) => {
+    return FIELD_TYPES.find((cat) => cat.items.some((item: any) => item.value === typeValue));
+};

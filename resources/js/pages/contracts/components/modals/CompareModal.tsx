@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/base/Button';
+import { Button } from '@/components/ui/buttons/Button';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import { ArrowRight, Columns, List, Loader2, X } from 'lucide-react';

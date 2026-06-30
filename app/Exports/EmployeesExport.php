@@ -49,7 +49,6 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
             'Username',
             'Email',
             'No Telepon',
-            'Jabatan',
             'ID Departemen',
             'Nama Departemen',
             'Role',
@@ -68,7 +67,6 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
                 '', // Username
                 '', // Email
                 '', // No Telepon
-                '', // Jabatan
                 '', // ID Departemen
                 '=IF(ISBLANK(G'.$this->rowNumber.'), "", IFERROR(VLOOKUP(G'.$this->rowNumber.', \'Unit Departemen\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
                 '', // Role
@@ -82,7 +80,6 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
             $user->username,
             $user->email,
             $user->phone,
-            $user->position,
             $user->department_id,
             '=IF(ISBLANK(G'.$this->rowNumber.'), "", IFERROR(VLOOKUP(G'.$this->rowNumber.', \'Unit Departemen\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
             $user->role->name ?? $user->getAttribute('role'),

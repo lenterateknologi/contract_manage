@@ -1,9 +1,9 @@
-import { Button } from '@/components/ui/base/Button';
-import { FormInput } from '@/components/ui/forms/FormInput';
-import { FormTextarea } from '@/components/ui/forms/FormTextarea';
-import { PortalSelect } from '@/components/ui/forms/PortalSelect';
-import { TreeSelect } from '@/components/ui/forms/TreeSelect';
-import { Modal } from '@/components/ui/overlays/Modal';
+import { Button } from '@/components/ui/buttons/Button';
+import { FormInput } from '@/components/ui/inputs/FormInput';
+import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
+import { PortalSelect } from '@/components/ui/selection/PortalSelect';
+import { TreeSelect } from '@/components/ui/selection/TreeSelect';
+import { Modal } from '@/components/ui/dialogs/Modal';
 import { contractApi } from '@/pages/contracts/utils';
 import { usePage } from '@inertiajs/react';
 import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck } from 'lucide-react';

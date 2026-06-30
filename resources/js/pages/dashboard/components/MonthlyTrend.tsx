@@ -9,9 +9,12 @@ export function MonthlyTrend({ items }: MonthlyTrendProps) {
     const max = Math.max(...items.map((t) => t.total), 1);
 
     return (
-        <div className="border-surface-border/60 bg-surface-base/40 text-text-main rounded-2xl border p-6 shadow-sm backdrop-blur-sm select-none lg:col-span-5">
-            <SectionTitle>Tren 6 Bulan Terakhir</SectionTitle>
-            {items.length > 0 ? (
+        <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg text-text-main select-none lg:col-span-5">
+            <div className="border-surface-border/60 flex items-center justify-between border-b px-6 py-4">
+                <SectionTitle>Tren 6 Bulan Terakhir</SectionTitle>
+            </div>
+            <div className="p-6">
+                {items.length > 0 ? (
                 <div className="flex h-[120px] items-end gap-2.5 px-2">
                     {items.map((t) => {
                         const h = Math.max((t.total / max) * 100, 4);
@@ -35,6 +38,7 @@ export function MonthlyTrend({ items }: MonthlyTrendProps) {
                     <p className="text-text-desc/40 text-[12px]">Belum ada data tren</p>
                 </div>
             )}
+            </div>
         </div>
     );
 }
