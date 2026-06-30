@@ -9,6 +9,7 @@
 .claude
 .github
 .gemini
+/.clawhub
 /.fleet
 /.idea
 /.nova
@@ -23,6 +24,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+/skills
 auth.json
 Homestead.json
 Homestead.yaml

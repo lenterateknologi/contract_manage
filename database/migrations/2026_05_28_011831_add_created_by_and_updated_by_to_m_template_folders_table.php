@@ -23,7 +23,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('m_template_folders', function (Blueprint $table) {
-            $table->dropColumn(['created_by', 'updated_by']);
+            if (Schema::hasColumn('m_template_folders', 'created_by')) {
+                $table->dropColumn('created_by');
+            }
+            if (Schema::hasColumn('m_template_folders', 'updated_by')) {
+                $table->dropColumn('updated_by');
+            }
         });
     }
 };

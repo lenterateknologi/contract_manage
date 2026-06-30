@@ -35,7 +35,7 @@ test('admin workflows index page returns steps_count and contract_type_name', fu
 
     $response->assertInertia(
         fn (Assert $page) => $page
-            ->component('admin/index')
+            ->component('admin/Index')
             ->has(
                 'workflows.data',
                 1,

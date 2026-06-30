@@ -44,26 +44,9 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 4. HTTP Log History (t_http_log_h)
         // Check if log connection exists in config, if not fallback to default
         $connection = config('database.connections.log') ? 'log' : config('database.default');
 
-        Schema::connection($connection)->dropIfExists('t_http_log_h');
-        Schema::connection($connection)->create('t_http_log_h', function (Blueprint $table) {
-            $table->id(); // Using standard ID for consistency in baseline
-            $table->string('method', 10)->index()->default('GET');
-            $table->text('full_url')->nullable();
-            $table->string('domain')->index()->nullable();
-            $table->text('path')->nullable();
-            $table->text('path_index')->nullable()->index();
-            $table->text('title')->nullable();
-            $table->string('ip')->index()->nullable();
-            $table->json('header')->nullable();
-            $table->json('file')->nullable();
-            $table->json('body')->nullable();
-            $table->string('user_id', 36)->index()->nullable();
-            $table->timestamp('created_at')->index()->useCurrent();
-        });
     }
 
     /**
@@ -72,10 +55,11 @@ return new class extends Migration
     public function down(): void
     {
         $connection = config('database.connections.log') ? 'log' : config('database.default');
-        Schema::connection($connection)->dropIfExists('t_http_log_h');
 
         Schema::dropIfExists('t_workflow_step_users');
+        Schema::dropIfExists('t_contract_form_submission_histories');
         Schema::dropIfExists('t_contract_form_submission_h');
+        Schema::dropIfExists('t_contract_histories');
         Schema::dropIfExists('t_contract_h');
     }
 };
