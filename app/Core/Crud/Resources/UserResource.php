@@ -4,13 +4,18 @@ namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
+use App\Core\Crud\Fields\Section;
 use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
+use App\Exports\UsersExport;
+use App\Imports\UsersImport;
 use App\Models\Company;
+use App\Models\CompanyGroup;
 use App\Models\Department;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 
@@ -18,9 +23,9 @@ class UserResource extends Resource
 {
     public static string $model = User::class;
 
-    public static ?string $exportClass = \App\Exports\UsersExport::class;
+    public static ?string $exportClass = UsersExport::class;
 
-    public static ?string $importClass = \App\Imports\UsersImport::class;
+    public static ?string $importClass = UsersImport::class;
 
     public static array $with = ['roleRelation', 'department', 'company', 'region'];
 
@@ -36,7 +41,7 @@ class UserResource extends Resource
             TextColumn::make('name', 'Nama')->sortable()->searchable(),
             TextColumn::make('username', 'Username')->sortable()->searchable(),
             TextColumn::make('email', 'Email')->sortable()->searchable(),
-            TextColumn::make('roleRelation.name', 'Role')->sortable(),
+            TextColumn::make('role_relation.name', 'Role')->sortable(),
             TextColumn::make('department.name', 'Departemen')->sortable(),
             TextColumn::make('region.name', 'Regional')->sortable(),
             BooleanColumn::make('is_active', 'Status Aktif'),
@@ -46,7 +51,7 @@ class UserResource extends Resource
     public static function form(): array
     {
         return [
-            \App\Core\Crud\Fields\Section::make('Informasi Akun', [
+            Section::make('Informasi Akun', [
                 TextInput::make('name', 'Nama')
                     ->required()
                     ->rules(['string', 'max:255']),
@@ -65,7 +70,7 @@ class UserResource extends Resource
                     ->default(true),
             ])->icon('User'),
 
-            \App\Core\Crud\Fields\Section::make('Struktur Organisasi', [
+            Section::make('Struktur Organisasi', [
                 SelectInput::make('role_id', 'Role Akses')
                     ->required()
                     ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
@@ -74,9 +79,9 @@ class UserResource extends Resource
                 SelectInput::make('company_id', 'Perusahaan PT')
                     ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray()),
                 SelectInput::make('company_group_id', 'Holding / Group')
-                    ->options(fn () => \App\Models\CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
                 SelectInput::make('region_id', 'Regional')
-                    ->options(fn () => \App\Models\Region::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
             ])->icon('Building2'),
         ];
     }
@@ -89,7 +94,7 @@ class UserResource extends Resource
             Filter::make('division_id', 'Departemen')
                 ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Regional')
-                ->options(fn () => \App\Models\Region::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('is_active', 'Status Aktif')
                 ->options([
                     '1' => 'Aktif',

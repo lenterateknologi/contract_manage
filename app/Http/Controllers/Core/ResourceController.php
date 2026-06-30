@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Core;
 
+use App\Core\Crud\Fields\Section;
 use App\Core\Crud\Resources\CompanyGroupResource;
 use App\Core\Crud\Resources\CompanyResource;
 use App\Core\Crud\Resources\ContractStatusResource;
@@ -12,8 +13,11 @@ use App\Core\Crud\Resources\RoleResource;
 use App\Core\Crud\Resources\UserResource;
 use App\Core\Crud\Resources\VendorResource;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Common\ImportFileRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ResourceController extends Controller
 {
@@ -62,8 +66,9 @@ class ResourceController extends Controller
 
             if ($searchableColumns->isNotEmpty()) {
                 $query->where(function ($q) use ($searchableColumns, $search) {
+                    $lowerSearch = strtolower($search);
                     foreach ($searchableColumns as $column) {
-                        $q->orWhere($column, 'like', "%{$search}%");
+                        $q->orWhere(DB::raw("LOWER({$column})"), 'like', "%{$lowerSearch}%");
                     }
                 });
             }
@@ -190,7 +195,7 @@ class ResourceController extends Controller
         return redirect()->route('core.index', $resourceSlug)->with('success', $resourceClass::getTitle().' deleted successfully.');
     }
 
-    public function bulkDestroy(string $resourceSlug, \Illuminate\Http\Request $request)
+    public function bulkDestroy(string $resourceSlug, Request $request)
     {
         $request->validate([
             'ids' => 'required|array',
@@ -216,10 +221,10 @@ class ResourceController extends Controller
         $exportClass = $resourceClass::$exportClass;
         $fileName = str_replace(' ', '_', strtolower($resourceClass::getTitle())).'_'.date('Ymd').'.xlsx';
 
-        return \Maatwebsite\Excel\Facades\Excel::download(new $exportClass, $fileName);
+        return Excel::download(new $exportClass, $fileName);
     }
 
-    public function import(\App\Http\Requests\Common\ImportFileRequest $request, string $resourceSlug)
+    public function import(ImportFileRequest $request, string $resourceSlug)
     {
         $resourceClass = $this->getResourceClass($resourceSlug);
 
@@ -230,7 +235,7 @@ class ResourceController extends Controller
         $importClass = $resourceClass::$importClass;
 
         try {
-            \Maatwebsite\Excel\Facades\Excel::import(new $importClass, $request->file('file'));
+            Excel::import(new $importClass, $request->file('file'));
 
             return back()->with('success', 'Data '.$resourceClass::getTitle().' berhasil diimpor.');
         } catch (\Exception $e) {
@@ -242,7 +247,7 @@ class ResourceController extends Controller
     {
         $fields = [];
         foreach ($schema as $item) {
-            if ($item instanceof \App\Core\Crud\Fields\Section) {
+            if ($item instanceof Section) {
                 $fields = array_merge($fields, $item->getFields());
             } else {
                 $fields[] = $item;
