@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -57,14 +58,28 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('m_users', function (Blueprint $table) {
+        $hasConstraint = function (string $constraintName): bool {
+            return DB::selectOne("
+                SELECT 1 FROM pg_constraint 
+                WHERE conrelid = 'm_users'::regclass 
+                AND conname = ?
+            ", [$constraintName]) !== null;
+        };
+
+        Schema::table('m_users', function (Blueprint $table) use ($hasConstraint) {
             $table->renameColumn('phone_number', 'phone');
             $table->renameColumn('spv_id', 'manager_id');
             $table->string('bio')->nullable();
 
-            $table->dropForeign(['company_group_id']);
-            $table->dropForeign(['division_id']);
-            $table->dropForeign(['region_id']);
+            if ($hasConstraint('m_users_company_group_id_foreign')) {
+                $table->dropForeign(['company_group_id']);
+            }
+            if ($hasConstraint('m_users_division_id_foreign')) {
+                $table->dropForeign(['division_id']);
+            }
+            if ($hasConstraint('m_users_region_id_foreign')) {
+                $table->dropForeign(['region_id']);
+            }
 
             $table->dropColumn([
                 'code', 'company_group_id', 'division_id', 'login_status',
