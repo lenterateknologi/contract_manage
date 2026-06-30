@@ -21,6 +21,7 @@ import {
     RefreshCw,
     ShieldCheck,
     Upload,
+    Users,
 } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 
@@ -39,6 +40,7 @@ interface Counts {
     navigation_mappings: number;
     form_templates: number;
     form_fields: number;
+    users?: number;
 }
 
 interface Props {
@@ -67,6 +69,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         navigation_mappings: 0,
         form_templates: 0,
         form_fields: 0,
+        users: 0,
     };
 
     const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
@@ -112,6 +115,13 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             count: activeCounts.form_templates,
             icon: FileJson,
             desc: 'Template dan field input formulir F1 & F2',
+        },
+        {
+            id: 'users',
+            label: 'Pengguna (Users)',
+            count: activeCounts.users ?? 0,
+            icon: Users,
+            desc: 'Registri data akun pengguna dan helpdesk',
         },
     ];
 

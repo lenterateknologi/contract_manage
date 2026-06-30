@@ -156,6 +156,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return BelongsTo<CompanyGroup, User>
+     */
+    public function companyGroup(): BelongsTo
+    {
+        return $this->belongsTo(CompanyGroup::class, 'company_group_id');
+    }
+
+    /**
      * @return BelongsToMany<WorkflowStep, User>
      */
     public function workflowSteps(): BelongsToMany

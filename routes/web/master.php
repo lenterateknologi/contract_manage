@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\MasterDataAdminController;
 use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
+use App\Http\Controllers\Core\ResourceController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\System\EmailTestController;
 use App\Http\Controllers\Template\TemplateController;
@@ -154,15 +155,14 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
 
     // Dynamic CRUD Core engine (Mini-Filament)
     Route::prefix('core')->group(function () {
-        Route::get('{resource}/export', [\App\Http\Controllers\Core\ResourceController::class, 'export'])->name('core.export');
-        Route::post('{resource}/import', [\App\Http\Controllers\Core\ResourceController::class, 'import'])->name('core.import');
-        Route::post('{resource}/bulk-delete', [\App\Http\Controllers\Core\ResourceController::class, 'bulkDestroy'])->name('core.bulk-delete');
-        Route::get('{resource}', [\App\Http\Controllers\Core\ResourceController::class, 'index'])->name('core.index');
-        Route::get('{resource}/create', [\App\Http\Controllers\Core\ResourceController::class, 'create'])->name('core.create');
-        Route::post('{resource}', [\App\Http\Controllers\Core\ResourceController::class, 'store'])->name('core.store');
-        Route::get('{resource}/{id}/edit', [\App\Http\Controllers\Core\ResourceController::class, 'edit'])->name('core.edit');
-        Route::put('{resource}/{id}', [\App\Http\Controllers\Core\ResourceController::class, 'update'])->name('core.update');
-        Route::delete('{resource}/{id}', [\App\Http\Controllers\Core\ResourceController::class, 'destroy'])->name('core.destroy');
+        Route::get('{resource}/export', [ResourceController::class, 'export'])->name('core.export');
+        Route::post('{resource}/import', [ResourceController::class, 'import'])->name('core.import');
+        Route::post('{resource}/bulk-delete', [ResourceController::class, 'bulkDestroy'])->name('core.bulk-delete');
+        Route::get('{resource}', [ResourceController::class, 'index'])->name('core.index');
+        Route::get('{resource}/create', [ResourceController::class, 'create'])->name('core.create');
+        Route::post('{resource}', [ResourceController::class, 'store'])->name('core.store');
+        Route::get('{resource}/{id}/edit', [ResourceController::class, 'edit'])->name('core.edit');
+        Route::put('{resource}/{id}', [ResourceController::class, 'update'])->name('core.update');
+        Route::delete('{resource}/{id}', [ResourceController::class, 'destroy'])->name('core.destroy');
     });
 });
-
