@@ -16,6 +16,8 @@ class DatabaseSeeder extends Seeder
             System\RoleSeeder::class,
             System\ModuleSeeder::class,
             System\PermissionSeeder::class,
+            Business\OrganizationalSeeder::class,
+            Business\DepartmentSeeder::class,
             Business\UserSeeder::class,
         ]);
     }

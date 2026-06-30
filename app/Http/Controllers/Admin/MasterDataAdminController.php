@@ -1316,6 +1316,7 @@ class MasterDataAdminController extends Controller
                                 'company_group_id' => $u['company_group_id'] ?? null,
                                 'department_id' => $deptId,
                                 'division_id' => $u['division_id'] ?? null,
+                                'region_id' => $u['region_id'] ?? null,
                                 'role_id' => $roleId,
                                 'is_active' => $u['is_active'] ?? true,
                                 'is_employee' => $u['is_employee'] ?? true,

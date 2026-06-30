@@ -2,7 +2,6 @@
 
 namespace Database\Seeders\Business;
 
-use App\Models\Company;
 use App\Models\Department;
 use Illuminate\Database\Seeder;
 
@@ -10,26 +9,39 @@ class DepartmentSeeder extends Seeder
 {
     public function run(): void
     {
-        $jsonPath = base_path('data_json/tipe-kontrak.json');
+        $jsonPath = database_path('from_tiket/department.json');
         if (! file_exists($jsonPath)) {
             return;
         }
 
         $jsonData = json_decode(file_get_contents($jsonPath), true);
 
-        foreach ($jsonData['departments'] ?? [] as $dept) {
-            $companyId = null;
-            if (! empty($dept['company_code'])) {
-                $company = Company::where('code', $dept['company_code'])->first();
-                $companyId = $company ? $company->id : null;
+        // Find the divisions array under whichever key it is placed in the JSON
+        $divisions = null;
+        foreach ($jsonData as $key => $value) {
+            if (is_array($value)) {
+                $divisions = $value;
+                break;
+            }
+        }
+
+        if (empty($divisions)) {
+            return;
+        }
+
+        foreach ($divisions as $div) {
+            if (empty($div['name'])) {
+                continue;
             }
 
-            Department::updateOrCreate(['code' => $dept['code']], [
-                'name' => $dept['name'],
-                'description' => $dept['description'] ?? null,
-                'company_id' => $companyId,
-                'is_active' => $dept['is_active'] ?? true,
-            ]);
+            Department::updateOrCreate(
+                ['id' => $div['id']],
+                [
+                    'code' => $div['code'] ?? substr(strtoupper(trim($div['name'])), 0, 3),
+                    'name' => $div['name'],
+                    'is_active' => $div['is_active'] ?? true,
+                ]
+            );
         }
     }
 }

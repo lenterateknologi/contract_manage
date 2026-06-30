@@ -131,12 +131,9 @@ class User extends Authenticatable
         return $this->belongsTo(Role::class, 'role_id');
     }
 
-    /**
-     * @return BelongsTo<Department, User>
-     */
     public function department(): BelongsTo
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsTo(Department::class, 'division_id');
     }
 
     /**
@@ -161,6 +158,22 @@ class User extends Authenticatable
     public function companyGroup(): BelongsTo
     {
         return $this->belongsTo(CompanyGroup::class, 'company_group_id');
+    }
+
+    /**
+     * @return BelongsTo<Department, User>
+     */
+    public function division(): BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'division_id');
+    }
+
+    /**
+     * @return BelongsTo<Region, User>
+     */
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class, 'region_id');
     }
 
     /**

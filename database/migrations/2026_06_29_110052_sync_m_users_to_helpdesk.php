@@ -24,7 +24,11 @@ return new class extends Migration
             // Add missing columns
             $table->string('code')->nullable();
             $table->uuid('company_group_id')->nullable();
+            $table->foreign('company_group_id')->references('id')->on('m_company_groups')->nullOnDelete();
+
             $table->uuid('division_id')->nullable();
+            $table->foreign('division_id')->references('id')->on('m_departments')->nullOnDelete();
+
             $table->boolean('login_status')->default(false);
             $table->timestamp('last_login')->nullable();
             $table->timestamp('last_connected')->nullable();
@@ -41,6 +45,8 @@ return new class extends Migration
             $table->string('image_src')->nullable();
             $table->uuid('location_id')->nullable();
             $table->uuid('region_id')->nullable();
+            $table->foreign('region_id')->references('id')->on('m_regions')->nullOnDelete();
+
             $table->boolean('is_employee')->default(true);
             $table->integer('id_employee_portal_master')->nullable();
         });
@@ -55,6 +61,10 @@ return new class extends Migration
             $table->renameColumn('phone_number', 'phone');
             $table->renameColumn('spv_id', 'manager_id');
             $table->string('bio')->nullable();
+
+            $table->dropForeign(['company_group_id']);
+            $table->dropForeign(['division_id']);
+            $table->dropForeign(['region_id']);
 
             $table->dropColumn([
                 'code', 'company_group_id', 'division_id', 'login_status',

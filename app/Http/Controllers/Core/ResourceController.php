@@ -127,7 +127,7 @@ class ResourceController extends Controller
 
         // Build validation rules from form schema
         $rules = [];
-        foreach ($resourceClass::form() as $field) {
+        foreach ($this->flattenFields($resourceClass::form()) as $field) {
             $rules[$field->getName()] = $field->getRules();
         }
 
@@ -165,7 +165,7 @@ class ResourceController extends Controller
         $record = $modelClass::findOrFail($id);
 
         $rules = [];
-        foreach ($resourceClass::form() as $field) {
+        foreach ($this->flattenFields($resourceClass::form()) as $field) {
             $rules[$field->getName()] = $field->getRules();
         }
 
@@ -236,5 +236,19 @@ class ResourceController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
+    }
+
+    private function flattenFields(array $schema): array
+    {
+        $fields = [];
+        foreach ($schema as $item) {
+            if ($item instanceof \App\Core\Crud\Fields\Section) {
+                $fields = array_merge($fields, $item->getFields());
+            } else {
+                $fields[] = $item;
+            }
+        }
+
+        return $fields;
     }
 }

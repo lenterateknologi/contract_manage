@@ -22,7 +22,7 @@ class UserResource extends Resource
 
     public static ?string $importClass = \App\Imports\UsersImport::class;
 
-    public static array $with = ['roleRelation', 'department', 'company'];
+    public static array $with = ['roleRelation', 'department', 'company', 'region'];
 
     public static ?string $title = 'Registri Otoritas Pengguna';
 
@@ -38,6 +38,7 @@ class UserResource extends Resource
             TextColumn::make('email', 'Email')->sortable()->searchable(),
             TextColumn::make('roleRelation.name', 'Role')->sortable(),
             TextColumn::make('department.name', 'Departemen')->sortable(),
+            TextColumn::make('region.name', 'Regional')->sortable(),
             BooleanColumn::make('is_active', 'Status Aktif'),
         ];
     }
@@ -45,30 +46,38 @@ class UserResource extends Resource
     public static function form(): array
     {
         return [
-            TextInput::make('name', 'Nama')
-                ->required()
-                ->rules(['string', 'max:255']),
-            TextInput::make('email', 'Email')
-                ->required()
-                ->rules(['email']),
-            TextInput::make('username', 'Username')
-                ->required()
-                ->rules(['string', 'max:20']),
-            TextInput::make('password', 'Password')
-                ->rules(['nullable', 'string', 'min:8']),
-            SelectInput::make('role_id', 'Role')
-                ->required()
-                ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
-            SelectInput::make('department_id', 'Departemen')
-                ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
-            SelectInput::make('company_id', 'Perusahaan')
-                ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray()),
-            TextInput::make('phone_number', 'No. Telepon')
-                ->rules(['nullable', 'string']),
-            TextInput::make('position', 'Jabatan')
-                ->rules(['nullable', 'string']),
-            ToggleInput::make('is_active', 'Status Aktif')
-                ->default(true),
+            \App\Core\Crud\Fields\Section::make('Informasi Akun', [
+                TextInput::make('name', 'Nama')
+                    ->required()
+                    ->rules(['string', 'max:255']),
+                TextInput::make('email', 'Email')
+                    ->required()
+                    ->rules(['email']),
+                TextInput::make('username', 'Username')
+                    ->required()
+                    ->rules(['string', 'max:50']),
+                TextInput::make('password', 'Password')
+                    ->rules(['nullable', 'string', 'min:8'])
+                    ->placeholder('Kosongkan jika tidak ingin mengubah password'),
+                TextInput::make('phone_number', 'No. Telepon')
+                    ->rules(['nullable', 'string']),
+                ToggleInput::make('is_active', 'Status Aktif')
+                    ->default(true),
+            ])->icon('User'),
+
+            \App\Core\Crud\Fields\Section::make('Struktur Organisasi', [
+                SelectInput::make('role_id', 'Role Akses')
+                    ->required()
+                    ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
+                SelectInput::make('division_id', 'Departemen')
+                    ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
+                SelectInput::make('company_id', 'Perusahaan PT')
+                    ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray()),
+                SelectInput::make('company_group_id', 'Holding / Group')
+                    ->options(fn () => \App\Models\CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+                SelectInput::make('region_id', 'Regional')
+                    ->options(fn () => \App\Models\Region::orderBy('name')->pluck('name', 'id')->toArray()),
+            ])->icon('Building2'),
         ];
     }
 
@@ -77,8 +86,10 @@ class UserResource extends Resource
         return [
             Filter::make('role_id', 'Role Akses')
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
-            Filter::make('department_id', 'Departemen')
+            Filter::make('division_id', 'Departemen')
                 ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('region_id', 'Regional')
+                ->options(fn () => \App\Models\Region::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('is_active', 'Status Aktif')
                 ->options([
                     '1' => 'Aktif',

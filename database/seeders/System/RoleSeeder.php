@@ -9,10 +9,15 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $jsonPath = base_path('data_json/master data sidebar.json');
-        if (! file_exists($jsonPath)) {
+        $dir = database_path('data_json');
+        $files = glob($dir . '/master_data_export_*.json');
+        if (empty($files)) {
             return;
         }
+        usort($files, function ($a, $b) {
+            return filemtime($b) <=> filemtime($a);
+        });
+        $jsonPath = $files[0];
 
         $jsonData = json_decode(file_get_contents($jsonPath), true);
 
