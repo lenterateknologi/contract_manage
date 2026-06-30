@@ -9,17 +9,17 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        $roles = [
-            ['name' => 'Super Admin', 'description' => 'Akses penuh ke seluruh sistem.'],
-            ['name' => 'Admin', 'description' => 'Administrator sistem operasional.'],
-            ['name' => 'Manager', 'description' => 'Penyetuju level departemen.'],
-            ['name' => 'Director', 'description' => 'Penyetuju level direksi.'],
-            ['name' => 'Reviewer', 'description' => 'Pemeriksa dokumen (Legal/Tax/Finance).'],
-            ['name' => 'Staff', 'description' => 'Pengguna operasional (Inisiator).'],
-        ];
+        $jsonPath = base_path('data_json/master data sidebar.json');
+        if (! file_exists($jsonPath)) {
+            return;
+        }
 
-        foreach ($roles as $role) {
-            Role::updateOrCreate(['name' => $role['name']], $role);
+        $jsonData = json_decode(file_get_contents($jsonPath), true);
+
+        foreach ($jsonData['roles'] as $role) {
+            Role::updateOrCreate(['name' => $role['name']], [
+                'description' => $role['description'] ?? null,
+            ]);
         }
     }
 }

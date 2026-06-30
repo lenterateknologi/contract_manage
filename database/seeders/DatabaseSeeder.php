@@ -16,19 +16,7 @@ class DatabaseSeeder extends Seeder
             System\RoleSeeder::class,
             System\ModuleSeeder::class,
             System\PermissionSeeder::class,
-            System\ContractStatusSeeder::class,
-            System\SubmissionTypeSeeder::class,
-
-            // --- BUSINESS MASTER DATA ---
-            Business\OrganizationalSeeder::class,
-            Business\DepartmentSeeder::class,
-            Business\ContractTypeSeeder::class,
-            Business\VendorSeeder::class,
             Business\UserSeeder::class,
-            Business\WorkflowSeeder::class,
-
-            // --- TRANSACTIONAL DATA ---
-            Transaction\ContractSeeder::class,
         ]);
     }
 }

@@ -1,2 +1,0 @@
-resources/js/components/ui/data/ExcelActions.tsx:30: * - Import: opens a hidden <input type="file"> and POSTs with Inertia.
-resources/js/components/user/DeleteUser.tsx:77:                            <button type="submit">Hapus Akun</button>
