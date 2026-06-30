@@ -39,7 +39,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, data, 
         accessorKey: col.name,
         sortable: col.sortable,
         cell: (row: any) => {
-            const val = row[col.name];
+            const val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
             if (col.type === 'boolean') {
                 return (
                     <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${val ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
