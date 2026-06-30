@@ -136,30 +136,21 @@ export default function ReportsPage() {
     }
 
     return (
-        <div className="flex h-full flex-1 flex-col overflow-hidden bg-white">
+        <div className="flex h-full flex-1 flex-col overflow-hidden bg-transparent">
             <Head title="Audit & Pelaporan" />
             {/* Unified Industrial Header */}
-            <div className="space-y-5 border-b border-slate-200 bg-slate-50/50 px-5 py-5">
+            <div className="space-y-5 border-b border-surface-border pb-5 mb-5 px-5 pt-5">
                 <div className="flex items-center justify-between">
                     <div className="flex flex-col gap-0.5">
-                        <h1 className="flex items-center gap-2 text-[13px] font-semibold tracking-[0.3em] text-slate-900 uppercase">
-                            <BarChart3 size={16} className="text-slate-900" />
+                        <h1 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-text-main">
+                            <BarChart3 size={16} />
                             Laporan & Statistik
                         </h1>
-                        <p className="pl-6 text-[9px] font-bold text-slate-400 uppercase">Data operasional dan jejak audit sistem</p>
+                        <p className="pl-6 text-[10px] font-bold text-text-soft uppercase tracking-wider">Data operasional dan jejak audit sistem</p>
                     </div>
-
-                    {data?.metrics && (
-                        <div className="flex items-center gap-px overflow-hidden border border-slate-200 bg-slate-200">
-                            <MetricCard label="Total Kontrak" value={data.metrics.totalContracts} />
-                            <MetricCard label="Pending Approval" value={data.metrics.pendingApprovals} color="text-amber-500" />
-                            <MetricCard label="Approved (MoM)" value={data.metrics.approvedThisMonth} color="text-green-600" />
-                            <MetricCard label="Cycle Time (Days)" value={data.metrics.avgCycleTime} unit="d" />
-                        </div>
-                    )}
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                <div className="flex items-center justify-between border-t border-surface-border pt-4">
                     <div className="flex items-center gap-4">
                         <FilterPopover
                             categories={filterCategories}
@@ -183,24 +174,24 @@ export default function ReportsPage() {
                         >
                             <Button
                                 className={cn(
-                                    'h-9 rounded-none border px-5 text-[10px] font-semibold tracking-[0.2em] uppercase transition-all',
+                                    'h-9 rounded-xl border px-4 text-xs font-bold transition-all shadow-xs',
                                     activeFilterCount > 0
-                                        ? 'border-black bg-black text-white hover:bg-slate-800'
-                                        : 'border-slate-200 bg-white text-slate-600 hover:border-black hover:bg-slate-50 hover:text-black',
+                                        ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/95'
+                                        : 'border-surface-border bg-card text-text-main hover:bg-surface-muted',
                                 )}
                             >
-                                <ListFilter size={14} className="mr-2" />
-                                FILTER {activeFilterCount > 0 && `(${activeFilterCount})`}
+                                <ListFilter size={14} className="mr-1.5" />
+                                Filter {activeFilterCount > 0 && `(${activeFilterCount})`}
                             </Button>
                         </FilterPopover>
 
                         {activeFilterCount > 0 && (
                             <button
                                 onClick={resetFilters}
-                                className="flex items-center gap-1.5 text-[9px] font-semibold text-slate-400 uppercase transition-colors hover:text-rose-600"
+                                className="flex items-center gap-1.5 text-xs font-bold text-text-soft hover:text-rose-500 transition-colors"
                             >
                                 <History size={12} />
-                                RESET FILTER
+                                Reset Filter
                             </button>
                         )}
                     </div>
@@ -208,36 +199,34 @@ export default function ReportsPage() {
                     <div className="flex h-9 items-center gap-2">
                         <Button
                             variant="outline"
-                            className="flex h-full items-center gap-2 rounded-none border-slate-200 px-6 text-[10px] font-semibold uppercase transition-all hover:border-black active:bg-slate-50"
+                            className="flex h-full items-center gap-2 rounded-xl border-surface-border bg-card px-4 text-xs font-bold transition-all hover:bg-surface-muted"
                             onClick={exportCsv}
                         >
                             <Download size={14} />
-                            EXPORT CSV
+                            Export CSV
                         </Button>
                     </div>
                 </div>
 
                 {/* Tabs Switcher */}
-                <div className="-mb-5 flex items-center gap-8 border-b border-slate-200">
+                <div className="flex items-center gap-4 border-b border-surface-border pb-px">
                     <button
                         className={cn(
-                            'relative px-2 pb-3 text-[10px] font-semibold tracking-[0.2em] uppercase transition-all',
-                            activeTab === 'contracts' ? 'text-black' : 'text-slate-400 hover:text-slate-600',
+                            'px-4 pb-2.5 text-xs font-bold transition-all relative border-b-2 -mb-[2px]',
+                            activeTab === 'contracts' ? 'border-primary text-primary' : 'border-transparent text-text-soft hover:text-text-main',
                         )}
                         onClick={() => setActiveTab('contracts')}
                     >
                         Database Kontrak
-                        {activeTab === 'contracts' && <div className="absolute right-0 bottom-0 left-0 h-1 bg-black" />}
                     </button>
                     <button
                         className={cn(
-                            'relative px-2 pb-3 text-[10px] font-semibold tracking-[0.2em] uppercase transition-all',
-                            activeTab === 'audit' ? 'text-black' : 'text-slate-400 hover:text-slate-600',
+                            'px-4 pb-2.5 text-xs font-bold transition-all relative border-b-2 -mb-[2px]',
+                            activeTab === 'audit' ? 'border-primary text-primary' : 'border-transparent text-text-soft hover:text-text-main',
                         )}
                         onClick={() => setActiveTab('audit')}
                     >
                         Audit Trail History
-                        {activeTab === 'audit' && <div className="absolute right-0 bottom-0 left-0 h-1 bg-black" />}
                     </button>
                 </div>
             </div>
@@ -266,175 +255,108 @@ export default function ReportsPage() {
 function ContractRegistryTable({ contracts }: { contracts: any[] }) {
     if (contracts.length === 0) return <EmptyState label="kontrak" />;
     return (
-        <table className="w-full border-collapse bg-white text-[12px]">
-            <thead className="sticky top-0 z-10 border-b border-slate-200 bg-white shadow-[0_4px_12px_rgba(0,0,0,0.02)]">
-                <tr>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Parameter</th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Judul Rekap</th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">Tipe</th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
-                        Pemilik
-                    </th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
-                        Registrasi
-                    </th>
-                    <th className="px-5 py-3.5 text-center text-[9px] font-semibold tracking-[0.2em] text-slate-400 uppercase">Status</th>
-                    <th className="px-5 py-3.5 text-right text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">
-                        Aging
-                    </th>
-                    <th className="px-5 py-3.5 text-left text-[9px] font-semibold tracking-[0.2em] whitespace-nowrap text-slate-400 uppercase">Stage</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-                {contracts.map((c) => (
-                    <tr key={c.id} className="group transition-colors hover:bg-slate-50/80">
-                        <td className="px-5 py-3">
-                            <span className="font-mono text-[9px] font-semibold text-slate-400 transition-colors group-hover:text-slate-900">
-                                {c.contract_no}
-                            </span>
-                        </td>
-                        <td className="px-5 py-3">
-                            <span className="block max-w-[180px] truncate text-[10px] leading-tight font-semibold tracking-tight text-slate-800 uppercase">
-                                {c.title}
-                            </span>
-                        </td>
-                        <td className="px-5 py-3 text-[9px] font-bold tracking-tighter whitespace-nowrap text-slate-400 uppercase">
-                            {c.type || 'N/A'}
-                        </td>
-                        <td className="px-5 py-3 text-[9px] font-bold tracking-tight whitespace-nowrap text-slate-500 uppercase">{c.creator}</td>
-                        <td className="px-5 py-3">
-                            <span className="font-mono text-[9px] font-semibold text-slate-400 uppercase">
-                                {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}
-                            </span>
-                        </td>
-                        <td className="px-5 py-3">
-                            <div className="flex items-center justify-center gap-1.5">
-                                <div
-                                    className={cn(
-                                        'h-1 w-1 rounded-full',
-                                        c.status === 'approved'
-                                            ? 'bg-emerald-500'
-                                            : c.status === 'pending'
-                                                ? 'bg-amber-500'
-                                                : c.status === 'rejected'
-                                                    ? 'bg-rose-500'
-                                                    : 'bg-slate-300',
-                                    )}
-                                />
-                                <span
-                                    className={cn(
-                                        'text-[9px] font-semibold uppercase',
-                                        c.status === 'approved'
-                                            ? 'text-emerald-700'
-                                            : c.status === 'pending'
-                                                ? 'text-amber-700'
-                                                : c.status === 'rejected'
-                                                    ? 'text-rose-700'
-                                                    : 'text-slate-500',
-                                    )}
-                                >
-                                    {c.status}
-                                </span>
-                            </div>
-                        </td>
-                        <td className="px-5 py-3 text-right font-mono text-[9px] leading-none font-semibold whitespace-nowrap text-slate-400 uppercase">
-                            {formatRelativeTime(c.created_at)}
-                        </td>
-                        <td className="px-5 py-3">
-                            <div className="flex items-center gap-1.5">
-                                <div className="h-1 w-1 rounded-full bg-slate-300 transition-colors group-hover:bg-black" />
-                                <span className="text-[9px] font-bold tracking-tight whitespace-nowrap text-slate-600 uppercase">
-                                    {c.current_step}
-                                </span>
-                            </div>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+        <div className="border border-surface-border rounded-2xl overflow-hidden bg-card mx-5">
+            <div className="scrollbar-hide overflow-x-auto">
+                <table className="w-full border-collapse text-left text-xs bg-card">
+                    <thead>
+                        <tr className="border-b border-surface-border bg-surface-muted select-none">
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Parameter</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Judul Rekap</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Tipe</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Pemilik</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Registrasi</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider text-center">Status</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider text-right">Aging</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Stage</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-border">
+                        {contracts.map((c) => (
+                            <tr key={c.id} className="hover:bg-surface-muted/50 transition-colors">
+                                <td className="px-4 py-3 font-mono font-semibold text-text-soft">{c.contract_no}</td>
+                                <td className="px-4 py-3 font-bold text-text-main uppercase truncate max-w-[200px]">{c.title}</td>
+                                <td className="px-4 py-3 text-text-soft uppercase font-bold">{c.type || 'N/A'}</td>
+                                <td className="px-4 py-3 text-text-soft uppercase font-semibold">{c.creator}</td>
+                                <td className="px-4 py-3 text-text-soft font-semibold">
+                                    {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </td>
+                                <td className="px-4 py-3 text-center">
+                                    <span className={cn(
+                                        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                                        c.status === 'approved' ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                                        c.status === 'pending' ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                                        c.status === 'rejected' ? "bg-rose-50 text-rose-700 border border-rose-200" :
+                                        "bg-slate-50 text-slate-700 border border-slate-200"
+                                    )}>
+                                        <span className={cn(
+                                            "h-1.5 w-1.5 rounded-full",
+                                            c.status === 'approved' ? "bg-emerald-500" :
+                                            c.status === 'pending' ? "bg-amber-500" :
+                                            c.status === 'rejected' ? "bg-rose-500" :
+                                            "bg-slate-400"
+                                        )} />
+                                        {c.status}
+                                    </span>
+                                </td>
+                                <td className="px-4 py-3 text-right font-mono font-semibold text-text-soft">{formatRelativeTime(c.created_at)}</td>
+                                <td className="px-4 py-3 font-bold text-text-soft uppercase">{c.current_step}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     );
 }
 
 function AuditTrailTable({ histories }: { histories: any[] }) {
     if (histories.length === 0) return <EmptyState label="riwayat audit" />;
     return (
-        <div className="flex-1 overflow-auto bg-slate-50/50 p-6 font-mono text-[11px] selection:bg-emerald-100">
-            <div className="w-full space-y-0.5">
-                <div className="mb-6 flex items-center gap-6 border-b border-slate-200 pb-3 text-[8px] font-semibold tracking-[0.3em] text-slate-400 uppercase">
-                    <div className="w-28 text-left">TIMESTAMP</div>
-                    <div className="w-24 text-left">REF_ID</div>
-                    <div className="w-32 text-left">ACTION_EVENT</div>
-                    <div className="flex-1 text-left">TRANSACTION_LOG_DATA</div>
-                    <div className="w-40 text-right">AUTHOR_ENTITY</div>
-                </div>
+        <div className="border border-surface-border rounded-2xl overflow-hidden bg-card mx-5">
+            <div className="scrollbar-hide overflow-x-auto">
+                <table className="w-full border-collapse text-left text-xs bg-card">
+                    <thead>
+                        <tr className="border-b border-surface-border bg-surface-muted select-none">
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Timestamp</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Ref ID</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Action Event</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Transaction Log Data</th>
+                            <th className="px-4 py-3 text-xs font-bold text-text-soft uppercase tracking-wider">Author Entity</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-border">
+                        {histories.map((h) => {
+                            const actionType = h.action.toLowerCase();
+                            const isAlert = actionType.includes('reject') || actionType.includes('delete') || actionType.includes('cancel');
+                            const isSuccess = actionType.includes('approve') || actionType.includes('create') || actionType.includes('submit');
+                            const isSystem = actionType.includes('system') || actionType.includes('update');
 
-                {histories.map((h, idx) => {
-                    const actionType = h.action.toLowerCase();
-                    const isAlert = actionType.includes('reject') || actionType.includes('delete') || actionType.includes('cancel');
-                    const isSuccess = actionType.includes('approve') || actionType.includes('create') || actionType.includes('submit');
-                    const isSystem = actionType.includes('system') || actionType.includes('update');
-
-                    return (
-                        <div
-                            key={h.id}
-                            className="group -mx-3 flex gap-6 border border-transparent px-3 py-2 transition-all hover:border-slate-200 hover:bg-white hover:shadow-sm"
-                        >
-                            <div className="w-28 shrink-0 text-slate-400 tabular-nums">
-                                <span className="font-medium text-slate-600">
-                                    {new Date(h.created_at).toLocaleTimeString('id-ID', {
-                                        hour12: false,
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        second: '2-digit',
-                                    })}
-                                </span>
-                                <span className="ml-2 text-[7px] text-slate-400 opacity-0 group-hover:opacity-100">
-                                    {new Date(h.created_at).toLocaleDateString()}
-                                </span>
-                            </div>
-
-                            <div className="w-24 shrink-0 font-bold tracking-tighter text-slate-900">
-                                <span className="mr-0.5 text-slate-300">#</span>
-                                {h.contract_no.split('/').pop()}
-                            </div>
-
-                            <div className="w-32 shrink-0">
-                                <span
-                                    className={cn(
-                                        'block border px-2 py-0.5 text-center text-[9px] font-semibold uppercase',
-                                        isAlert
-                                            ? 'border-rose-100 bg-rose-50 text-rose-700'
-                                            : isSuccess
-                                                ? 'border-emerald-100 bg-emerald-50 text-emerald-700'
-                                                : isSystem
-                                                    ? 'border-blue-100 bg-blue-50 text-blue-700'
-                                                    : 'border-slate-200 bg-slate-100 text-slate-600',
-                                    )}
-                                >
-                                    {h.action}
-                                </span>
-                            </div>
-
-                            <div className="flex-1 leading-relaxed text-slate-500">
-                                <span className="mr-2 text-[8px] font-semibold tracking-tighter text-slate-300">LOG::</span>
-                                <span className="font-medium text-slate-700">{h.description}</span>
-                            </div>
-
-                            <div className="flex w-40 shrink-0 items-center justify-end gap-2 text-right text-slate-400">
-                                <div className="h-px w-4 bg-slate-200" />
-                                <span className="font-bold tracking-tighter text-slate-900 uppercase italic">@{h.actor.split(' ')[0]}</span>
-                            </div>
-                        </div>
-                    );
-                })}
-
-                <div className="pt-12 text-center">
-                    <div className="inline-flex items-center gap-4">
-                        <div className="h-px w-10 bg-slate-200" />
-                        <span className="text-[8px] font-semibold tracking-[0.5em] text-slate-300 uppercase">SYSTEM_TRANS_LOG_END</span>
-                        <div className="h-px w-10 bg-slate-200" />
-                    </div>
-                </div>
+                            return (
+                                <tr key={h.id} className="hover:bg-surface-muted/50 transition-colors">
+                                    <td className="px-4 py-3 text-text-soft font-semibold whitespace-nowrap">
+                                        {new Date(h.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} {new Date(h.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                    </td>
+                                    <td className="px-4 py-3 font-mono font-bold text-text-main">
+                                        #{h.contract_no.split('/').pop()}
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        <span className={cn(
+                                            "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                                            isAlert ? "bg-rose-50 text-rose-700 border border-rose-200" :
+                                            isSuccess ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                                            isSystem ? "bg-blue-50 text-blue-700 border border-blue-200" :
+                                            "bg-slate-50 text-slate-700 border border-slate-200"
+                                        )}>
+                                            {h.action}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-text-main font-medium">{h.description}</td>
+                                    <td className="px-4 py-3 text-text-soft font-bold uppercase italic">@{h.actor.split(' ')[0]}</td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
@@ -467,14 +389,3 @@ function formatRelativeTime(dateString: string) {
     return `${Math.floor(diffInDays / 365)} tahun lalu`;
 }
 
-function MetricCard({ label, value, color = 'text-slate-900', unit = '' }: { label: string; value: number; color?: string; unit?: string }) {
-    return (
-        <div className="flex min-w-[110px] flex-col gap-0.5 border-none bg-white px-4 py-2">
-            <span className="text-[7px] leading-none font-semibold text-slate-400 uppercase">{label}</span>
-            <div className="flex items-baseline gap-0.5">
-                <span className={cn('text-[14px] leading-none font-semibold tracking-tighter', color)}>{value}</span>
-                {unit && <span className="text-[8px] font-bold text-slate-400 uppercase">{unit}</span>}
-            </div>
-        </div>
-    );
-}

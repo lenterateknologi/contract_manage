@@ -37,6 +37,8 @@ import {
     Key,
     Layers,
     LayoutGrid,
+    ArrowLeft,
+    Loader2,
     Move,
     Plus,
     RefreshCw,
@@ -120,11 +122,11 @@ const ModuleRow = React.memo(
         return (
             <tr
                 className={cn(
-                    'border-surface-border/40 hover:bg-surface-muted/30 group border-b transition-colors last:border-b-0',
+                    'border-b border-surface-border hover:bg-surface-muted/30 group transition-colors last:border-b-0',
                     'content-visibility-auto contain-intrinsic-size-[auto_48px]',
                 )}
             >
-                <td className="border-surface-border/40 bg-surface-base group-hover:bg-surface-muted/30 sticky left-0 z-10 border-r px-4 py-2.5 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)] transition-colors">
+                <td className="border-r border-surface-border bg-card group-hover:bg-surface-muted/30 sticky left-0 z-10 px-4 py-2.5 transition-colors">
                     <div className="flex items-start gap-2.5">
                         {module.icon && SELECTABLE_ICONS[module.icon] && (
                             <div className="text-muted-foreground/60 group-hover:text-primary mt-0.5 shrink-0">
@@ -148,23 +150,23 @@ const ModuleRow = React.memo(
                     <td
                         key={p}
                         className={cn(
-                            'border-surface-border/40 border-r px-1 py-2.5 text-center transition-colors last:border-r-0',
+                            'border-r border-surface-border px-1 py-2.5 text-center transition-colors last:border-r-0',
                             access[p] ? 'bg-primary/5' : 'bg-transparent',
                         )}
                     >
                         <div className="flex justify-center">
                             <Checkbox
-                                className="border-surface-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded transition-all active:scale-90"
+                                className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded transition-all active:scale-90"
                                 checked={access[p] || false}
                                 onCheckedChange={(checked) => onToggle(module.id, p, !!checked)}
                             />
                         </div>
                     </td>
                 ))}
-                <td className="bg-surface-muted/30 group-hover:bg-surface-muted/50 border-surface-border/40 border-l px-1 py-2.5 text-center transition-all">
+                <td className="bg-surface-muted/30 group-hover:bg-surface-muted/50 border-l border-surface-border px-1 py-2.5 text-center transition-all">
                     <div className="flex justify-center">
                         <Checkbox
-                            className="border-surface-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded transition-all active:scale-90"
+                            className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded transition-all active:scale-90"
                             checked={!!isRowAllChecked}
                             onCheckedChange={(checked) => onSetRow(module.id, !!checked)}
                         />
@@ -223,7 +225,7 @@ const SortableModuleItem = ({
                 <GripVertical size={16} />
             </div>
             {/* Reorder buttons */}
-            <div className="flex flex-col gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="flex flex-col gap-0.5">
                 <button
                     type="button"
                     disabled={index === 0}
@@ -259,7 +261,7 @@ const SortableModuleItem = ({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <button
-                        className="text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 active:scale-90"
+                        className="text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 transition-all active:scale-90"
                         title="Pindahkan Modul"
                     >
                         <Move size={13} />
@@ -275,14 +277,14 @@ const SortableModuleItem = ({
             </DropdownMenu>
             <button
                 onClick={() => onEditModule(module)}
-                className="text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 active:scale-90"
+                className="text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 transition-all active:scale-90"
                 title="Edit Nama/Path Modul"
             >
                 <Edit2 size={13} />
             </button>
             <button
                 onClick={() => onRemove(module.id)}
-                className="text-muted-foreground/40 rounded-lg p-1.5 opacity-0 transition-all group-hover:opacity-100 hover:bg-rose-500/10 hover:text-rose-500 active:scale-90"
+                className="text-muted-foreground/40 rounded-lg p-1.5 transition-all hover:bg-rose-500/10 hover:text-rose-500 active:scale-90"
             >
                 <Trash2 size={14} />
             </button>
@@ -436,7 +438,7 @@ const SortableGroupItem = ({
                         />
                     </div>
                 </div>
-                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => onEditGroup(group)}>
                         <Edit2 size={12} className="text-muted-foreground" />
                     </Button>
@@ -497,23 +499,22 @@ const AvailableListContainer = ({
 }) => {
     const { setNodeRef } = useDroppable({ id: 'available-list' });
     return (
-        <div ref={setNodeRef} className="border-surface-border/60 bg-card flex flex-col overflow-hidden rounded-xl border">
-            <div className="border-border bg-muted/10 flex shrink-0 items-center justify-between border-b px-4 py-3">
+        <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Repository Modul</h3>
                 <div className="flex items-center gap-2">
-                    <h2 className="text-foreground text-sm font-semibold   opacity-70">Repository</h2>
-                </div>
-                <div className="flex items-center gap-2">
+                    <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">{modules.length} Modul</span>
                     <button
+                        type="button"
                         onClick={onAddModule}
                         className="text-primary hover:bg-primary/10 border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-bold transition-all active:scale-95"
                         title="Tambah Modul Baru"
                     >
                         <Plus size={12} />
                     </button>
-                    <span className="bg-primary/5 text-primary rounded-lg px-2 py-0.5 text-sm font-bold shadow-xs">{modules.length} UNITS</span>
                 </div>
             </div>
-            <div className="scrollbar-hide flex-1 space-y-2 p-3">
+            <div ref={setNodeRef} className="h-[calc(100vh-290px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-2.5 p-4 border border-surface-border rounded-2xl bg-surface-muted/5 flex flex-col">
                 <SortableContext id="available-context" items={modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
                     {modules.map((module) => (
                         <AvailableModuleItem
@@ -557,7 +558,7 @@ const AvailableModuleItem = ({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group border-surface-border/60 bg-card hover:border-surface-border flex items-center justify-between rounded-lg border p-4 transition-all',
+                'group border-surface-border/60 bg-card hover:border-surface-border flex items-center justify-between rounded-lg border p-3 transition-all',
                 isDragging && 'border-primary ring-primary/10 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
@@ -589,7 +590,7 @@ const AvailableModuleItem = ({
                     )}
                 </div>
             </div>
-            <div className="ml-2 flex shrink-0 items-center gap-1 opacity-0 transition-all group-hover:opacity-100">
+            <div className="ml-2 flex shrink-0 items-center gap-1">
                 <button
                     onClick={() => onEditModule(module)}
                     className="text-muted-foreground/40 hover:text-primary hover:bg-primary/10 rounded-lg p-1.5 active:scale-90"
@@ -623,6 +624,15 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
     // --- Navigation States & Handlers ---
     const [navItems, setNavItems] = useState<Group[]>(navigation);
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+    // Default to the first group on load
+    useEffect(() => {
+        if (navItems.length > 0 && !selectedGroupId) {
+            setSelectedGroupId(navItems[0].id);
+        }
+    }, [navItems]);
+
     const [availableModules, setAvailableModules] = useState<Module[]>(() => {
         const activeModuleIds = new Set(navigation.flatMap((g) => g.modules.map((m) => m.id)));
         return allModules.filter((m) => !activeModuleIds.has(m.id));
@@ -1181,136 +1191,145 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
     const activeGroup = activeId ? navItems.find((g) => g.id === activeId) : null;
 
     return (
-        <ManagementForm
-            title={activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'}
-            subtitle={`Konfigurasi otoritas dan arsitektur untuk role ${role.name}`}
-            onClose={() => window.history.back()}
-            onSave={activeTab === 'access' ? handleAccessSubmit : handleNavSave}
-            processing={accessForm.processing || isSavingNav}
-            isDirty={accessForm.isDirty || true}
-            isEdit={true}
-            flat={true}
-            headerActions={
-                <div className="flex items-center">
-                    {/* Role Switcher Selector */}
-                    <div className="mr-4 flex items-center">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="bg-muted/50 hover:bg-muted border-border/60 h-9 rounded-lg px-4 text-xs font-bold transition-all"
-                                >
-                                    <ShieldAlert className="text-primary mr-2 h-4 w-4 opacity-70" />
-                                    <span className="text-muted-foreground mr-1.5 font-medium">Role:</span>
-                                    {role.name}
-                                    <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[240px] rounded-xl p-1.5 shadow-xl">
-                                <div className="text-muted-foreground px-3 py-2 text-sm font-bold  ">
-                                    Pilih Role Otoritas
-                                </div>
-                                <div className="max-h-[300px] overflow-y-auto">
-                                    {roles.map((r) => (
-                                        <DropdownMenuItem
-                                            key={r.id}
-                                            className={cn(
-                                                'mb-1 cursor-pointer rounded-lg px-3 py-2.5 text-xs font-bold transition-all last:mb-0',
-                                                r.id === role.id
-                                                    ? 'bg-primary text-primary-foreground focus:bg-primary focus:text-primary-foreground'
-                                                    : 'hover:bg-muted focus:bg-muted',
-                                            )}
-                                            onClick={() => {
-                                                if (r.id !== role.id) {
-                                                    const basePath = activeTab === 'access' ? '/admin/access-mapping' : '/admin/navigation-mapping';
-                                                    router.get(`${basePath}/${r.id}`);
-                                                }
-                                            }}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <ShieldCheck
-                                                    size={14}
-                                                    className={cn(r.id === role.id ? 'text-primary-foreground' : 'text-primary opacity-60')}
-                                                />
-                                                {r.name}
-                                            </div>
-                                        </DropdownMenuItem>
-                                    ))}
-                                </div>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+        <>
+            <Head title={activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'} />
+
+            <div className="flex flex-col gap-6 p-6 w-full font-sans antialiased text-text-main">
+                {/* Header Section */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-surface-border pb-6">
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={() => window.history.back()}
+                            className="p-2 border border-surface-border rounded-xl hover:bg-surface-muted transition-all text-text-soft"
+                        >
+                            <ArrowLeft size={16} />
+                        </button>
+                        <div>
+                            <h1 className="text-lg font-bold text-text-main">
+                                 {activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'}
+                            </h1>
+                            <p className="text-xs text-text-soft">
+                                Konfigurasi otoritas dan arsitektur untuk role <span className="font-bold">{role.name}</span>
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Mapping Type Switcher - Hidden if Independent */}
-                    {!isIndependent && (
-                        <div className="border-border/60 mr-4 flex items-center border-l border-dashed pl-4 transition-all">
-                            <div className="bg-muted flex rounded-lg p-1">
-                                <button
-                                    onClick={() => setActiveTab('access')}
-                                    type="button"
-                                    className={cn(
-                                        'flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-bold transition-all',
-                                        activeTab === 'access'
-                                            ? 'bg-primary text-primary-foreground shadow-sm'
-                                            : 'text-muted-foreground hover:text-foreground',
-                                    )}
-                                >
-                                    <Key size={14} /> Hak Akses
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('navigation')}
-                                    type="button"
-                                    className={cn(
-                                        'flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-bold transition-all',
-                                        activeTab === 'navigation'
-                                            ? 'bg-primary text-primary-foreground shadow-sm'
-                                            : 'text-muted-foreground hover:text-foreground',
-                                    )}
-                                >
-                                    <LayoutGrid size={14} /> Navigasi
-                                </button>
-                            </div>
+                    <div className="flex items-center gap-3">
+                        {/* Role Switcher Selector */}
+                        <div className="flex items-center">
+                            <Select
+                                value={role.id}
+                                onValueChange={(value) => {
+                                    if (value !== role.id) {
+                                        const basePath = activeTab === 'access' ? '/admin/access-mapping' : '/admin/navigation-mapping';
+                                        router.get(`${basePath}/${value}`);
+                                    }
+                                }}
+                            >
+                                <SelectTrigger className="bg-transparent border-border/60 h-9 w-[200px] rounded-lg px-3 text-xs font-bold transition-all">
+                                    <div className="flex items-center gap-1.5">
+                                        <ShieldAlert className="text-primary h-3.5 w-3.5 opacity-70" />
+                                        <span className="text-muted-foreground font-medium">Role:</span>
+                                        <SelectValue placeholder="Pilih Role" />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent className="w-[200px] rounded-xl p-1 shadow-md">
+                                    {roles.map((r) => (
+                                        <SelectItem
+                                            key={r.id}
+                                            value={r.id}
+                                            className="cursor-pointer rounded-lg pl-3 pr-2 py-1.5 text-xs font-bold [&>span:first-child]:hidden data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground focus:bg-muted focus:text-foreground data-[state=checked]:focus:bg-primary data-[state=checked]:focus:text-primary-foreground"
+                                        >
+                                            {r.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                    )}
 
-                    {/* Utility Buttons Container (Conditional for Access Tab) */}
-                    {activeTab === 'access' && (
-                        <div className="border-border/60 mr-4 flex items-center border-l border-dashed pl-4 transition-all">
-                            <div className="bg-muted flex rounded-lg p-1">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-card h-8 rounded-lg text-xs font-bold transition-all"
-                                    onClick={() => setAll(true)}
-                                >
-                                    <CheckSquare className="mr-1.5 h-4 w-4" /> Pilih Semua
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="hover:bg-card h-8 rounded-lg text-xs font-bold transition-all"
-                                    onClick={() => setAll(false)}
-                                >
-                                    <Square className="mr-1.5 h-4 w-4" /> Bersihkan
-                                </Button>
+                        {/* Mapping Type Switcher - Hidden if Independent */}
+                        {!isIndependent && (
+                            <div className="border-border/60 flex items-center border-l border-dashed pl-4 transition-all">
+                                <div className="bg-muted flex rounded-lg p-1">
+                                    <button
+                                        onClick={() => setActiveTab('access')}
+                                        type="button"
+                                        className={cn(
+                                            'flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-bold transition-all',
+                                            activeTab === 'access'
+                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground',
+                                        )}
+                                    >
+                                        <Key size={14} /> Hak Akses
+                                    </button>
+                                    <button
+                                        onClick={() => setActiveTab('navigation')}
+                                        type="button"
+                                        className={cn(
+                                            'flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-bold transition-all',
+                                            activeTab === 'navigation'
+                                                ? 'bg-primary text-primary-foreground shadow-sm'
+                                                : 'text-muted-foreground hover:text-foreground',
+                                        )}
+                                    >
+                                        <LayoutGrid size={14} /> Navigasi
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+
+                        {/* Utility Buttons Container (Conditional for Access Tab) */}
+                        {activeTab === 'access' && (
+                            <div className="border-border/60 flex items-center border-l border-dashed pl-4 transition-all">
+                                <div className="bg-muted flex rounded-lg p-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="hover:bg-card h-8 rounded-lg text-xs font-bold transition-all"
+                                        onClick={() => setAll(true)}
+                                    >
+                                        <CheckSquare className="mr-1.5 h-4 w-4" /> Pilih Semua
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="hover:bg-card h-8 rounded-lg text-xs font-bold transition-all"
+                                        onClick={() => setAll(false)}
+                                    >
+                                        <Square className="mr-1.5 h-4 w-4" /> Bersihkan
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        <Button
+                            variant="primary"
+                            onClick={activeTab === 'access' ? handleAccessSubmit : handleNavSave}
+                            disabled={accessForm.processing || isSavingNav}
+                            className="h-9 rounded-xl px-5 text-sm font-semibold shadow-sm ml-2"
+                        >
+                            {accessForm.processing || isSavingNav ? (
+                                <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                                <div className="flex items-center gap-1.5">
+                                    <Save size={14} />
+                                    <span>Simpan</span>
+                                </div>
+                            )}
+                        </Button>
+                    </div>
                 </div>
-            }
-        >
             <Head title={`Config: ${role.name}`} />
 
             {activeTab === 'access' ? (
-                <div className="grid grid-cols-1 gap-8">
-                    <FormSection title="Matriks Hak Akses" subtitle="Tentukan izin spesifik untuk setiap modul operasional">
-                        <div className="bg-surface-base/40 border-surface-border/60 mx-1 overflow-hidden rounded-xl border backdrop-blur-sm">
+                <div className="flex flex-col gap-6">
+                    <div className="border border-surface-border rounded-2xl bg-card overflow-hidden">
                             <div className="scrollbar-hide overflow-x-auto">
                                 <table className="w-full min-w-[800px] border-collapse text-left">
                                     <thead>
-                                        <tr className="border-surface-border/60 bg-surface-muted/40 border-b backdrop-blur-md select-none">
-                                            <th className="border-surface-border/60 bg-surface-muted/50 text-text-desc sticky left-0 z-30 min-w-[220px] border-r px-4 py-3.5 text-left text-sm font-medium   shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
+                                        <tr className="border-b border-surface-border bg-surface-muted select-none">
+                                            <th className="border-r border-surface-border bg-surface-muted text-text-desc sticky left-0 z-30 min-w-[220px] px-4 py-3.5 text-left text-sm font-medium">
                                                 Scope Modul
                                             </th>
                                             {PERMISSIONS.map((p) => {
@@ -1318,12 +1337,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                 return (
                                                     <th
                                                         key={p}
-                                                        className="border-surface-border/60 text-text-desc min-w-[100px] border-r px-1 py-3.5 text-center text-sm font-medium   last:border-r-0"
+                                                        className="border-r border-surface-border text-text-desc min-w-[100px] px-1 py-3.5 text-center text-sm font-medium last:border-r-0"
                                                     >
                                                         <div className="flex flex-col items-center gap-1.5">
                                                             <span>{permissionLabels[p]}</span>
                                                             <Checkbox
-                                                                className="border-surface-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded-md transition-all active:scale-90"
+                                                                className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded-md transition-all active:scale-90"
                                                                 checked={isAllChecked}
                                                                 onCheckedChange={(checked) => setColumn(p, !!checked)}
                                                             />
@@ -1331,12 +1350,12 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     </th>
                                                 );
                                             })}
-                                            <th className="border-surface-border/60 bg-surface-muted/30 text-text-desc min-w-[60px] border-l px-1 py-3.5 text-center text-sm font-medium  ">
+                                            <th className="border-l border-surface-border bg-surface-muted text-text-desc min-w-[60px] px-1 py-3.5 text-center text-sm font-medium">
                                                 Full
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-surface-border/40 divide-y">
+                                    <tbody className="divide-y divide-surface-border">
                                         {Object.entries(groupedModules).map(([groupId, group]) => {
                                             const groupModuleIds = group.modules.map((m) => m.id);
                                             const groupAccesses = accessForm.data.accesses.filter((a) => groupModuleIds.includes(a.module_id));
@@ -1353,8 +1372,8 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
                                             return (
                                                 <React.Fragment key={groupId}>
-                                                    <tr className="border-surface-border/60 bg-surface-muted/30 hover:bg-surface-muted/50 border-y transition-colors">
-                                                        <td className="bg-surface-muted border-surface-border/60 sticky left-0 z-10 border-r px-4 py-2.5 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.05)]">
+                                                    <tr className="border-y border-surface-border bg-surface-muted transition-colors">
+                                                        <td className="bg-surface-muted border-r border-surface-border sticky left-0 z-10 px-4 py-2.5">
                                                             <div className="flex items-center gap-2">
                                                                 <div className="bg-primary/5 text-primary ring-primary/10 rounded-lg p-1 ring-1">
                                                                     <LayoutGrid className="h-3 w-3" />
@@ -1369,11 +1388,11 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                             return (
                                                                 <td
                                                                     key={p}
-                                                                    className="border-surface-border/60 border-r px-1 py-2.5 text-center transition-colors"
+                                                                    className="border-r border-surface-border px-1 py-2.5 text-center transition-colors"
                                                                 >
                                                                     <div className="flex justify-center">
                                                                         <Checkbox
-                                                                            className="border-surface-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded-md border transition-all active:scale-90"
+                                                                            className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded-md border transition-all active:scale-90"
                                                                             checked={isGroupColumnChecked}
                                                                             onCheckedChange={(checked) => setGroupColumn(groupId, p, !!checked)}
                                                                         />
@@ -1381,10 +1400,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                                 </td>
                                                             );
                                                         })}
-                                                        <td className="bg-surface-muted/30 border-surface-border/60 border-l px-1 py-2.5 text-center">
+                                                        <td className="bg-surface-muted/30 border-l border-surface-border px-1 py-2.5 text-center">
                                                             <div className="flex justify-center">
                                                                 <Checkbox
-                                                                    className="border-surface-border/60 data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded-md border transition-all active:scale-90"
+                                                                    className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded-md border transition-all active:scale-90"
                                                                     checked={isGroupFullControlChecked}
                                                                     onCheckedChange={(checked) => {
                                                                         accessForm.setData(
@@ -1425,27 +1444,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 </table>
                             </div>
                         </div>
-                    </FormSection>
-
-                    <div className="group relative max-w-4xl overflow-hidden rounded-xl border border-amber-200/50 bg-amber-50/10 p-5 dark:bg-amber-950/5">
-                        <div className="pointer-events-none absolute -top-4 -right-4 p-6 opacity-[0.03] transition-opacity duration-500 group-hover:opacity-[0.07]">
-                            <ShieldAlert size={200} strokeWidth={1} />
-                        </div>
-                        <div className="relative z-10 flex items-start gap-6">
-                            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 shadow-inner ring-1 ring-amber-200 dark:bg-amber-500/10 dark:ring-amber-500/20">
-                                <ShieldAlert className="h-7 w-7 animate-pulse" />
-                            </div>
-                            <div className="space-y-3">
-                                <h4 className="text-foreground text-base font-semibold ">Protokol Keamanan Perubahan</h4>
-                                <p className="text-muted-foreground/80 text-xs leading-relaxed font-bold  ">
-                                    Setiap modifikasi hak akses akan langsung mengikat seluruh personil dengan role{' '}
-                                    <span className="text-primary decoration-primary/30 font-semibold underline underline-offset-4">{role.name}</span>.
-                                    Pastikan tingkat otorisasi sudah sesuai dengan batas wewenang struktural sebelum melakukan finalisasi penyimpanan.
-                                </p>
-                            </div>
-                        </div>
                     </div>
-                </div>
             ) : (
                 <DndContext
                     sensors={sensors}
@@ -1455,76 +1454,161 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     onDragEnd={handleDragEnd}
                 >
                     <div className="flex flex-col gap-6">
-                        <div className="flex items-center justify-between">
-                            <FormSection title="Arsitektur Navigasi" subtitle="Atur pengelompokan dan urutan menu yang tampil di sidebar" />
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        const event = new CustomEvent('toggle-all-groups', { detail: { expanded: true } });
-                                        window.dispatchEvent(event);
-                                    }}
-                                    className="h-9 rounded-xl font-bold"
-                                >
-                                    Expand All
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        const event = new CustomEvent('toggle-all-groups', { detail: { expanded: false } });
-                                        window.dispatchEvent(event);
-                                    }}
-                                    className="h-9 rounded-xl font-bold"
-                                >
-                                    Minimize All
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="border-primary/30 text-primary hover:bg-primary/5 h-9 rounded-xl font-bold transition-all"
-                                    onClick={() => openGroupModal()}
-                                >
-                                    <Plus className="mr-1.5 h-4 w-4" /> TAMBAH GRUP MENU
-                                </Button>
-                            </div>
-                        </div>
-
                         <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-                            {/* Grid Container for Groups (Replaced Masonry to prevent DND infinite loops) */}
-                            <div className="col-span-12 lg:col-span-8">
-                                <div className="grid grid-cols-1 gap-6 items-start">
-                                    <SortableContext id="groups-context" items={navItems.map((g) => g.id)} strategy={verticalListSortingStrategy}>
-                                        {navItems.map((group, gIdx) => (
-                                            <div key={group.id} className="break-inside-avoid">
-                                                <SortableGroupItem
-                                                    group={group}
-                                                    onRemoveModule={handleRemoveModule}
-                                                    onEditGroup={openGroupModal}
-                                                    onDeleteGroup={handleDeleteGroup}
-                                                    index={gIdx}
-                                                    total={navItems.length}
-                                                    onMoveGroupUp={() => handleMoveGroup(gIdx, 'up')}
-                                                    onMoveGroupDown={() => handleMoveGroup(gIdx, 'down')}
-                                                    onMoveGroupTo={(targetIdx) => handleMoveGroupTo(gIdx, targetIdx)}
-                                                    onMoveModule={handleMoveModuleIndex}
-                                                    onMoveModuleToGroup={handleMoveModuleToGroup}
-                                                    onEditModule={openModuleModal}
-                                                    isGlobalDraggingGroup={activeType === 'group'}
-                                                    groups={navItems}
-                                                />
+                            {/* COLUMN 1: Module Groups (col-span-3) */}
+                            <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
+                                <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Grup Menu</h3>
+                                    <div className="flex items-center gap-2">
+                                        <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">{navItems.length} Grup</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => openGroupModal()}
+                                            className="text-primary hover:bg-primary/10 border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-bold transition-all active:scale-95"
+                                            title="Tambah Grup Menu"
+                                        >
+                                            <Plus size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="h-[calc(100vh-290px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-2.5 p-4 border border-surface-border rounded-2xl bg-surface-muted/5 flex flex-col">
+                                    {navItems.map((group, index) => (
+                                        <div
+                                            key={group.id}
+                                            onClick={() => setSelectedGroupId(group.id)}
+                                            className={cn(
+                                                "p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between group min-h-[58px]",
+                                                selectedGroupId === group.id
+                                                    ? "border-primary bg-primary/5 text-primary shadow-xs"
+                                                    : "border-surface-border hover:bg-surface-muted bg-card text-text-main"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                <span className="font-bold text-xs shrink-0 opacity-55">{index + 1}</span>
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="text-xs font-bold truncate">{group.name}</span>
+                                                    <span className={cn(
+                                                        "text-[10px] font-semibold mt-0.5",
+                                                        selectedGroupId === group.id ? "text-primary/75" : "text-text-soft"
+                                                    )}>
+                                                        {group.modules.length} Modul Terdaftar
+                                                    </span>
+                                                </div>
                                             </div>
-                                        ))}
-                                    </SortableContext>
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className="bg-foreground/5 text-text-soft text-[9px] font-bold px-1.5 py-0.5 rounded-md group-hover:bg-primary/10">
+                                                    {group.modules.length}
+                                                </span>
+                                                {/* Reorder actions and inline crud */}
+                                                <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                                                    <button
+                                                        type="button"
+                                                        disabled={index === 0}
+                                                        onClick={() => handleMoveGroup(index, 'up')}
+                                                        className="text-text-soft hover:text-primary disabled:opacity-10"
+                                                        title="Pindahkan ke atas"
+                                                    >
+                                                        <ArrowUp size={12} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={index === navItems.length - 1}
+                                                        onClick={() => handleMoveGroup(index, 'down')}
+                                                        className="text-text-soft hover:text-primary disabled:opacity-10"
+                                                        title="Pindahkan ke bawah"
+                                                    >
+                                                        <ArrowDown size={12} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openGroupModal(group)}
+                                                        className="text-text-soft hover:text-primary"
+                                                        title="Ubah Grup"
+                                                    >
+                                                        <Edit2 size={12} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteGroup(group.id)}
+                                                        className="text-rose-500 hover:text-rose-600"
+                                                        title="Hapus Grup"
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {navItems.length === 0 && (
+                                        <div className="border border-dashed border-surface-border rounded-xl p-4 text-center text-text-soft text-xs">
+                                            Belum ada grup menu
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Repository (Independent Height) */}
+                            {/* COLUMN 2: List Module in Selected Group (col-span-5) */}
+                            <div className="col-span-12 lg:col-span-5 flex flex-col gap-3">
+                                {(() => {
+                                    const selectedGroup = navItems.find((g) => g.id === selectedGroupId) || navItems[0];
+                                    if (!selectedGroup) {
+                                        return (
+                                            <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-soft text-xs">
+                                                Silakan pilih atau buat grup menu terlebih dahulu.
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <>
+                                            <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
+                                                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main truncate max-w-[280px]">
+                                                    Modul di Formulir
+                                                </h3>
+                                                <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                                    {selectedGroup.modules.length} Modul
+                                                </span>
+                                            </div>
+                                            <div className="h-[calc(100vh-290px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-2.5 p-4 border border-surface-border rounded-2xl bg-surface-muted/5 flex flex-col">
+                                                <SortableContext id={'context-' + selectedGroup.id} items={selectedGroup.modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+                                                    {selectedGroup.modules.map((module, mIdx) => (
+                                                        <SortableModuleItem
+                                                            key={module.id}
+                                                            module={module}
+                                                            onRemove={handleRemoveModule}
+                                                            index={mIdx}
+                                                            total={selectedGroup.modules.length}
+                                                            onMoveUp={() => handleMoveModuleIndex(selectedGroup.id, mIdx, 'up')}
+                                                            onMoveDown={() => handleMoveModuleIndex(selectedGroup.id, mIdx, 'down')}
+                                                            onEditModule={openModuleModal}
+                                                            onMoveToGroup={handleMoveModuleToGroup}
+                                                            groups={navItems}
+                                                        />
+                                                    ))}
+                                                </SortableContext>
+                                                {selectedGroup.modules.length === 0 && (
+                                                    <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-soft text-xs">
+                                                        Belum ada modul di grup ini.
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </>
+                                    );
+                                })()}
+                            </div>
+
+                            {/* COLUMN 3: Available Modules (col-span-4) */}
                             <div className="col-span-12 lg:sticky lg:top-6 lg:col-span-4">
                                 <AvailableListContainer
                                     modules={availableModules}
-                                    onQuickAdd={handleQuickAdd}
+                                    onQuickAdd={(m) => {
+                                        const currentGroup = selectedGroupId || navItems[0]?.id;
+                                        if (!currentGroup) {
+                                            showToast('Buat grup navigasi terlebih dahulu', 'danger');
+                                            return;
+                                        }
+                                        setNavItems((prev) => prev.map((g) => (g.id === currentGroup ? { ...g, modules: [...g.modules, m] } : g)));
+                                        setAvailableModules((prev) => prev.filter((item) => item.id !== m.id));
+                                    }}
                                     onEditModule={openModuleModal}
                                     onAddModule={() => openModuleModal(null)}
                                     onDeleteModule={handleDeleteModule}
@@ -1754,6 +1838,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             `,
                 }}
             />
-        </ManagementForm>
+            </div>
+        </>
     );
 }

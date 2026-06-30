@@ -39,14 +39,17 @@ class ContractStatusResource extends Resource
                 ->required()
                 ->rules(['string', 'max:255']),
             TextInput::make('color', 'Warna Teks')
+                ->type('color')
                 ->required()
                 ->rules(['string', 'max:20'])
                 ->default('#ffffff'),
             TextInput::make('bg_color', 'Warna Background')
+                ->type('color')
                 ->required()
                 ->rules(['string', 'max:20'])
                 ->default('#4f46e5'),
             TextInput::make('icon', 'Ikon')
+                ->type('icon')
                 ->rules(['nullable', 'string', 'max:50']),
             TextInput::make('description', 'Deskripsi')
                 ->rules(['nullable', 'string']),

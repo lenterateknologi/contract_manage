@@ -6,7 +6,6 @@ use App\Models\AccessModule;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\Module;
-use App\Models\ModuleGroup;
 use App\Models\Role;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
@@ -96,7 +95,7 @@ class HandleInertiaRequests extends Middleware
             return [];
         }
 
-        return AccessModule::where('role_id', $role->id)
+        $permissions = AccessModule::where('role_id', $role->id)
             ->join('m_modules', 'm_access_modules.module_id', '=', 'm_modules.id')
             ->select('m_modules.identifier as code', 'can_read', 'can_create', 'can_update', 'can_delete', 'can_approve', 'can_bulk_approve', 'can_bulk_delete')
             ->get()
@@ -111,6 +110,24 @@ class HandleInertiaRequests extends Middleware
                 'bulk_delete' => (bool) ($item->can_bulk_delete ?? false),
             ])
             ->all();
+
+        // Inject full permissions for system menus if the user is an admin
+        if ($request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin) {
+            $systemCodes = ['ADMIN_USERS', 'ADMIN_ROLES', 'ADMIN_NAV_MAPPING', 'ADMIN_ACCESS_MAPPING', 'ADMIN_MEMBERS', 'master_data_sync'];
+            foreach ($systemCodes as $code) {
+                $permissions[$code] = [
+                    'read' => true,
+                    'create' => true,
+                    'update' => true,
+                    'delete' => true,
+                    'approve' => true,
+                    'bulk_approve' => true,
+                    'bulk_delete' => true,
+                ];
+            }
+        }
+
+        return $permissions;
     }
 
     protected function getSidebarNavGroups(Request $request): array
@@ -182,17 +199,18 @@ class HandleInertiaRequests extends Middleware
             return $orderA <=> $orderB;
         });
 
-        if ($request->user() && ($request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin)) {
-            $hasPengaturanSistem = false;
+        $isAdmin = $request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin;
+        if ($isAdmin) {
+            $foundSystemGroup = false;
             foreach ($groups as &$group) {
                 if (trim($group['title']) === 'Pengaturan Sistem') {
                     $group['items'][] = [
                         'title' => 'Ekspor Impor Master',
                         'url' => '/admin/master-data-sync',
                         'icon' => 'RefreshCw',
-                        'sequence' => 3,
+                        'sequence' => 99,
                     ];
-                    // Sort items by sequence again
+                    // Sort items of this group after appending
                     usort($group['items'], function ($a, $b) {
                         $orderA = $a['sequence'] ?? 9999;
                         $orderB = $b['sequence'] ?? 9999;
@@ -202,37 +220,25 @@ class HandleInertiaRequests extends Middleware
 
                         return $orderA <=> $orderB;
                     });
-                    $hasPengaturanSistem = true;
-
+                    $foundSystemGroup = true;
                     break;
                 }
             }
             unset($group);
 
-            if (! $hasPengaturanSistem) {
-                $groupModel = ModuleGroup::firstWhere('name', 'Pengaturan Sistem');
+            if (! $foundSystemGroup) {
                 $groups[] = [
                     'title' => 'Pengaturan Sistem',
-                    'sequence' => $groupModel?->sequence ?? 5,
+                    'sequence' => 99,
                     'items' => [
                         [
                             'title' => 'Ekspor Impor Master',
                             'url' => '/admin/master-data-sync',
                             'icon' => 'RefreshCw',
-                            'sequence' => 3,
+                            'sequence' => 99,
                         ],
                     ],
                 ];
-                // Sort the groups
-                usort($groups, function ($a, $b) {
-                    $orderA = $a['sequence'] ?? 9999;
-                    $orderB = $b['sequence'] ?? 9999;
-                    if ($orderA === $orderB) {
-                        return strcmp($a['title'], $b['title']);
-                    }
-
-                    return $orderA <=> $orderB;
-                });
             }
         }
 

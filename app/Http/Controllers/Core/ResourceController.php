@@ -53,6 +53,10 @@ class ResourceController extends Controller
         // Start query
         $query = $modelClass::with($resourceClass::$with ?? []);
 
+        if ($resourceSlug === 'contract-types' && ! $request->filled('search')) {
+            $query->whereNull('parent_id')->with('children');
+        }
+
         // Implement simple search if exists
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -92,7 +96,9 @@ class ResourceController extends Controller
             $query->orderBy($sortBy, $sortDir);
         }
 
-        $data = $query->paginate(10)->withQueryString();
+        $defaultLimit = $resourceSlug === 'contract-types' ? 100 : 10;
+        $perPage = $request->integer('per_page', $defaultLimit);
+        $data = $query->paginate($perPage)->withQueryString();
 
         return Inertia::render('Core/ResourceIndex', [
             'resourceSlug' => $resourceSlug,
@@ -101,7 +107,7 @@ class ResourceController extends Controller
             'formSchema' => $resourceClass::form(),
             'data' => $data,
             'filters' => $filterConfig,
-            'activeFilters' => $request->only(array_merge(['search', 'sort_by', 'sort_dir'], collect($resourceClass::filters())->map(fn ($f) => $f->getName())->toArray())),
+            'activeFilters' => $request->only(array_merge(['search', 'sort_by', 'sort_dir', 'per_page'], collect($resourceClass::filters())->map(fn ($f) => $f->getName())->toArray())),
             'hasExport' => ! empty($resourceClass::$exportClass),
             'hasImport' => ! empty($resourceClass::$importClass),
         ]);

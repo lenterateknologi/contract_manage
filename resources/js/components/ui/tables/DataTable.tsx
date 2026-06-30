@@ -245,7 +245,7 @@ export function DataTable<T extends Record<string, any>>({
                 "overflow-hidden bg-surface-base/40 backdrop-blur-sm",
 
             )}>
-                <div className="overflow-x-auto custom-scrollbar ml-8 mr-8">
+                <div className="overflow-x-auto custom-scrollbar ml-8 mr-8 min-h-[calc(100vh-280px)]">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr className="border-b border-surface-border/60 bg-surface-muted/40 backdrop-blur-md select-none">

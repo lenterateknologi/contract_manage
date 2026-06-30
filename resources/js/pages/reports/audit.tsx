@@ -1,10 +1,11 @@
+import { DataTable } from '@/components/ui/tables/DataTable';
 import { Button } from '@/components/ui/buttons/Button';
-import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
+import { cn } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
-import { AlertCircle, ArrowRight, CheckCircle, Clock, Download, FileText, Filter, ShieldCheck, Terminal, User } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Download } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 interface AuditLog {
     id: string;
@@ -23,7 +24,6 @@ interface AuditData {
 export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem[] }) {
     const [data, setData] = useState<AuditData | null>(null);
     const [loading, setLoading] = useState(true);
-    // Filter open state is handled internally by FilterPopover
     const [filters, setFilters] = useState({
         date_from: '',
         date_to: '',
@@ -61,10 +61,15 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
     }, []);
 
     const handleExport = () => {
-        window.location.href = '/admin/reports/api/audit/export';
+        const params = new URLSearchParams();
+        if (filters.date_from) params.append('date_from', filters.date_from);
+        if (filters.date_to) params.append('date_to', filters.date_to);
+        filters.creator_ids.forEach((id: string) => params.append('creator_ids[]', id));
+
+        window.location.href = `/admin/reports/api/audit/export?${params.toString()}`;
     };
 
-    const filterCategories: FilterCategory[] = useMemo(
+    const filterCategories = useMemo(
         () => [
             { label: 'Rentang Waktu', key: 'date', type: 'date-range' },
             {
@@ -77,228 +82,93 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         [data],
     );
 
+    const columns = [
+        {
+            header: 'Timestamp',
+            accessorKey: 'created_at',
+            cell: (row: any) => (
+                <span className="text-text-soft font-semibold whitespace-nowrap">
+                    {new Date(row.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} {new Date(row.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+            )
+        },
+        {
+            header: 'Ref ID',
+            accessorKey: 'contract_no',
+            cell: (row: any) => <span className="font-mono font-bold text-text-main">#{row.contract_no.split('/').pop()}</span>
+        },
+        {
+            header: 'Action Event',
+            accessorKey: 'action',
+            cell: (row: any) => {
+                const actionType = row.action.toLowerCase();
+                const isAlert = actionType.includes('reject') || actionType.includes('delete') || actionType.includes('cancel');
+                const isSuccess = actionType.includes('approve') || actionType.includes('create') || actionType.includes('submit');
+                const isSystem = actionType.includes('system') || actionType.includes('update');
+
+                return (
+                    <span className={cn(
+                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                        isAlert ? "bg-rose-50 text-rose-700 border border-rose-200" :
+                        isSuccess ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                        isSystem ? "bg-blue-50 text-blue-700 border border-blue-200" :
+                        "bg-slate-50 text-slate-700 border border-slate-200"
+                    )}>
+                        {row.action}
+                    </span>
+                );
+            }
+        },
+        {
+            header: 'Transaction Log Data',
+            accessorKey: 'description',
+            cell: (row: any) => <span className="text-text-main font-medium">{row.description}</span>
+        },
+        {
+            header: 'Author Entity',
+            accessorKey: 'actor',
+            cell: (row: any) => <span className="text-text-soft font-bold uppercase italic">@{row.actor.split(' ')[0]}</span>
+        }
+    ];
+
     return (
         <>
             <Head title="Jejak Audit Sistem" />
-
-            <div className="bg-background flex flex-1 flex-col space-y-6 p-6">
-                {/* Header Section */}
-                <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                    <div className="space-y-1">
-                        <h1 className="text-foreground font-montserrat flex items-center gap-3 text-2xl font-bold tracking-tight">
-                            <ShieldCheck className="h-7 w-7 text-emerald-600" />
-                            Jejak Audit Sistem
-                        </h1>
-                        <p className="text-muted-foreground text-sm font-medium">
-                            Rekam jejak seluruh aktivitas dan perubahan data dalam sistem kontrak.
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <FilterPopover
-                            categories={filterCategories}
-                            activeFilters={filters}
-                            onFilterChange={(key, val) => {
-                                const nextFilters = { ...filters, [key]: val };
-                                setFilters(nextFilters);
-                                fetchData(nextFilters);
-                            }}
-                            onReset={() => {
-                                const clear = { date_from: '', date_to: '', creator_ids: [], audit_page: 1 };
-                                setFilters(clear);
-                                fetchData(clear);
-                            }}
+            <div className="bg-background flex flex-1 flex-col">
+                <DataTable
+                    title="Jejak Audit Sistem"
+                    columns={columns}
+                    data={data?.histories || []}
+                    loading={loading}
+                    borderless={true}
+                    pagination={{
+                        currentPage: pagination.current_page,
+                        lastPage: pagination.last_page,
+                        total: pagination.total,
+                        onPageChange: (page) => {
+                            const nextFilters = { ...filters, audit_page: page };
+                            setFilters(nextFilters);
+                            fetchData(nextFilters);
+                        }
+                    }}
+                    filters={filterCategories}
+                    activeFilters={filters}
+                    onFilterChange={(newFilters) => {
+                        const nextFilters = { ...filters, ...newFilters, audit_page: 1 };
+                        setFilters(nextFilters);
+                        fetchData(nextFilters);
+                    }}
+                    headerActions={
+                        <Button
+                            variant="white"
+                            onClick={handleExport}
+                            className="text-xs py-1.5 px-3 h-8 hover:bg-surface-muted text-text-main rounded-xl flex items-center gap-1.5 font-bold uppercase tracking-wider bg-white border border-surface-border shadow-xs"
                         >
-                            <Button variant="outline" className="bg-card border-border text-foreground hover:bg-muted font-bold shadow-sm">
-                                <Filter className="mr-2 h-4 w-4" />
-                                Filter Log
-                            </Button>
-                        </FilterPopover>
-                        <Button onClick={handleExport} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-sm">
-                            <Download className="mr-2 h-4 w-4" />
-                            Ekspor Audit Trail
+                            <Download size={13} /> Export Excel / CSV
                         </Button>
-                    </div>
-                </div>
-
-                {/* Audit Console */}
-                <div className="bg-card border-border flex flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm">
-                    <div className="border-border bg-muted/30 flex items-center justify-between border-b p-4">
-                        <div className="flex items-center gap-2">
-                            <Terminal className="text-muted-foreground h-4 w-4" />
-                            <span className="text-muted-foreground text-xs font-bold  uppercase">Activity_Logs_Terminal</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
-                            <span className="text-muted-foreground text-xs font-semibold tracking-tight uppercase">Live Monitor Active</span>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 overflow-auto p-0">
-                        <table className="w-full border-collapse text-left">
-                            <thead className="bg-card border-border sticky top-0 z-10 border-b">
-                                <tr>
-                                    <th className="text-muted-foreground w-48 px-6 py-4 text-xs font-bold  uppercase">
-                                        Waktu & Tanggal
-                                    </th>
-                                    <th className="text-muted-foreground w-32 px-6 py-4 text-center text-xs font-bold  uppercase">
-                                        Aksi
-                                    </th>
-                                    <th className="text-muted-foreground px-6 py-4 text-xs font-bold  uppercase">Detail Aktivitas</th>
-                                    <th className="text-muted-foreground w-48 px-6 py-4 text-right text-xs font-bold  uppercase">
-                                        Pelaku
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-border divide-y">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={4} className="py-20 text-center">
-                                            <div className="flex flex-col items-center gap-3">
-                                                <i className="fa-solid fa-spinner fa-spin text-primary text-2xl" />
-                                                <p className="text-muted-foreground text-sm font-semibold  uppercase">
-                                                    Memuat database log...
-                                                </p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : data?.histories.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="text-muted-foreground py-20 text-center">
-                                            Tidak ada data log yang ditemukan.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    data?.histories.map((log) => (
-                                        <tr key={log.id} className="group hover:bg-muted/20 transition-all">
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col">
-                                                    <span className="text-foreground font-mono text-sm font-bold">
-                                                        {new Date(log.created_at).toLocaleTimeString('id-ID', { hour12: false })}
-                                                    </span>
-                                                    <span className="text-muted-foreground text-xs font-semibold  uppercase">
-                                                        {new Date(log.created_at).toLocaleDateString('id-ID', {
-                                                            day: '2-digit',
-                                                            month: 'short',
-                                                            year: 'numeric',
-                                                        })}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex justify-center">
-                                                    <ActionBadge action={log.action} />
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-col gap-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <FileText className="text-primary/70 h-4 w-4" />
-                                                        <span className="text-primary text-xs font-bold tracking-wide uppercase">
-                                                            {log.contract_no}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-foreground/80 text-sm leading-relaxed font-medium">{log.description}</p>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-3 transition-transform group-hover:translate-x-[-4px]">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-primary text-xs font-bold tracking-tight uppercase">
-                                                            @{log.actor.split(' ')[0]}
-                                                        </span>
-                                                        <span className="text-muted-foreground text-xs font-medium">{log.actor}</span>
-                                                    </div>
-                                                    <div className="bg-muted border-border flex h-8 w-8 items-center justify-center rounded-full border">
-                                                        <User className="text-muted-foreground h-4 w-4" />
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div className="border-border bg-muted/30 flex items-center justify-between border-t p-4">
-                        <p className="text-muted-foreground text-xs font-semibold  uppercase">
-                            Showing {data?.histories.length || 0} of {pagination.total} transaction records
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page <= 1}
-                                onClick={() => {
-                                    const nextFilters = { ...filters, audit_page: pagination.current_page - 1 };
-                                    setFilters(nextFilters);
-                                    fetchData(nextFilters);
-                                }}
-                                className="h-8 text-[10px] font-bold uppercase"
-                            >
-                                Prev
-                            </Button>
-                            <span className="text-muted-foreground mx-2 text-[10px] font-bold">
-                                {pagination.current_page} / {pagination.last_page}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={pagination.current_page >= pagination.last_page}
-                                onClick={() => {
-                                    const nextFilters = { ...filters, audit_page: pagination.current_page + 1 };
-                                    setFilters(nextFilters);
-                                    fetchData(nextFilters);
-                                }}
-                                className="h-8 text-[10px] font-bold uppercase"
-                            >
-                                Next
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+                    }
+                />
             </div>
-
-            {/* FilterPopover trigger wraps the button above */}
         </>
-    );
-}
-
-function ActionBadge({ action }: { action: string }) {
-    const act = action.toLowerCase();
-
-    if (act.includes('approve') || act.includes('success')) {
-        return (
-            <span className="flex w-fit items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold  text-emerald-700 uppercase dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
-                <CheckCircle className="h-3.5 w-3.5" />
-                {action}
-            </span>
-        );
-    }
-
-    if (act.includes('reject') || act.includes('delete') || act.includes('cancel')) {
-        return (
-            <span className="flex w-fit items-center gap-1.5 rounded-full border border-rose-100 bg-rose-50 px-3 py-1 text-xs font-semibold  text-rose-700 uppercase dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-400">
-                <AlertCircle className="h-3.5 w-3.5" />
-                {action}
-            </span>
-        );
-    }
-
-    if (act.includes('create') || act.includes('submit')) {
-        return (
-            <span className="border-primary/10 bg-primary/5 text-primary flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold  uppercase">
-                <ArrowRight className="h-3.5 w-3.5" />
-                {action}
-            </span>
-        );
-    }
-
-    return (
-        <span className="bg-muted text-muted-foreground border-border flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold  uppercase">
-            <Clock className="h-3.5 w-3.5" />
-            {action}
-        </span>
     );
 }

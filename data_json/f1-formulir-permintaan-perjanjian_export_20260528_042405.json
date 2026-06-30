@@ -1,0 +1,758 @@
+{
+    "version": "1.0",
+    "name": "F1 - FORMULIR PERMINTAAN PERJANJIAN",
+    "description": "F1 Professional template with standardized meta_ naming and high-fidelity document styling.",
+    "document_type": "f1",
+    "contract_type_id": null,
+    "has_letterhead": true,
+    "letterhead_json": {
+        "margins": {
+            "top": 15,
+            "bottom": 15,
+            "left": 15,
+            "right": 15
+        }
+    },
+    "fields": [
+        {
+            "id": "019e6cd0-4ac0-70bb-a16a-2c2f9f4d3abf",
+            "parent_id": null,
+            "label": "",
+            "name": "f1_header_grid",
+            "type": "grid_x",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "grid_cols": 2,
+                "col_sizes": [
+                    "180px",
+                    "auto"
+                ],
+                "margin_bottom": 10,
+                "font_family": "'Montserrat', sans-serif",
+                "font_size": 11,
+                "font_weight": "bold"
+            },
+            "order": 0,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac1-7114-81df-4cfccbbfb26a",
+            "parent_id": "019e6cd0-4ac0-70bb-a16a-2c2f9f4d3abf",
+            "label": "",
+            "name": "meta_logo",
+            "type": "image",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "logo_url": "\/storage\/fr_logo.png",
+                "logo_size": 200,
+                "alignment": "left",
+                "padding_top": 5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_size": 11,
+                "font_weight": "bold"
+            },
+            "order": 1,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac2-70f0-b7bc-0a7d6e6b21f2",
+            "parent_id": "019e6cd0-4ac0-70bb-a16a-2c2f9f4d3abf",
+            "label": "",
+            "name": "f1_meta_box",
+            "type": "group",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "border_style": "solid",
+                "border_width": 1,
+                "border_color": "#000",
+                "font_family": "'Montserrat', sans-serif",
+                "font_size": 11,
+                "font_weight": "bold"
+            },
+            "order": 2,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac3-70ce-9648-5920cc0ea753",
+            "parent_id": "019e6cd0-4ac2-70f0-b7bc-0a7d6e6b21f2",
+            "label": "NOMOR",
+            "name": "meta_nomor",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "label_width": "100px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_weight_label": "bold",
+                "font_size": 10,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 3,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac4-7328-a776-c6b5a35fabcb",
+            "parent_id": "019e6cd0-4ac2-70f0-b7bc-0a7d6e6b21f2",
+            "label": "TOPIK",
+            "name": "meta_topik",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "label_width": "100px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_weight_label": "bold",
+                "font_size": 10,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 4,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac5-7275-8b17-a26b486b9cc8",
+            "parent_id": "019e6cd0-4ac2-70f0-b7bc-0a7d6e6b21f2",
+            "label": "SUB TOPIK",
+            "name": "meta_sub_topik",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "label_width": "100px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_weight_label": "bold",
+                "font_size": 10,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 5,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac6-7136-9af0-5656a5204932",
+            "parent_id": "019e6cd0-4ac2-70f0-b7bc-0a7d6e6b21f2",
+            "label": "LAMPIRAN",
+            "name": "meta_lampiran",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "label_width": "100px",
+                "show_colon": true,
+                "value_type": "textarea",
+                "field_style": "dashed_bottom",
+                "font_weight_label": "bold",
+                "font_size": 10,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 6,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac7-72d4-9944-0ad2f0640a6d",
+            "parent_id": null,
+            "label": "FORMULIR PERMINTAAN PEMBUATAN PERJANJIAN",
+            "name": "f1_main_title",
+            "type": "static_text",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "font_size": 14,
+                "font_weight": "bold",
+                "alignment": "center",
+                "padding_y": 10,
+                "margin_bottom": 10,
+                "font_family": "'Montserrat', sans-serif"
+            },
+            "order": 7,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac8-73a5-b21e-4f99875cfcdd",
+            "parent_id": null,
+            "label": "I. INFORMASI DASAR PERJANJIAN",
+            "name": "f1_sec_1_title",
+            "type": "static_text",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "font_size": 12,
+                "font_weight": "bold",
+                "alignment": "left",
+                "padding_y": 10,
+                "margin_bottom": 0,
+                "font_family": "'Montserrat', sans-serif"
+            },
+            "order": 8,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac8-73a5-b21e-4f9987e24910",
+            "parent_id": null,
+            "label": "Tgl Dibuat",
+            "name": "meta_tgl_dibuat",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "date",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 9,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ac9-7079-805f-3cd6f9b3cec0",
+            "parent_id": null,
+            "label": "Judul Kontrak",
+            "name": "meta_judul_kontrak",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 10,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4aca-73a3-844e-dd5e73acca03",
+            "parent_id": null,
+            "label": "Tipe Perjanjian",
+            "name": "meta_tipe_perjanjian",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 11,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4acb-71b6-aef3-4458fd8dfd3e",
+            "parent_id": null,
+            "label": "II. IDENTITAS PIHAK PERTAMA",
+            "name": "f1_sec_2_title",
+            "type": "static_text",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "font_size": 12,
+                "font_weight": "bold",
+                "alignment": "left",
+                "padding_y": 10,
+                "margin_top": 5,
+                "font_family": "'Montserrat', sans-serif"
+            },
+            "order": 12,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4acb-71b6-aef3-4458fe69a728",
+            "parent_id": null,
+            "label": "NAMA ENTITAS \/ PERUSAHAAN",
+            "name": "meta_p1_entity",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 13,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4acc-70b3-ba20-9f181aa7b6ad",
+            "parent_id": null,
+            "label": "NAMA PENANDATANGAN KONTRAK",
+            "name": "meta_p1_signer",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 14,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4acd-71bf-9b66-bd81e5c1a752",
+            "parent_id": null,
+            "label": "JABATAN PENANDATANGAN KONTRAK",
+            "name": "meta_p1_signer_position",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 15,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ace-7214-82cc-18d4319d59e4",
+            "parent_id": null,
+            "label": "ALAMAT LENGKAP",
+            "name": "meta_p1_alamat",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textarea",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 16,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4acf-7009-9022-119eb2f8a816",
+            "parent_id": null,
+            "label": "III. IDENTITAS PIHAK KEDUA",
+            "name": "f1_sec_3_title",
+            "type": "static_text",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "font_size": 12,
+                "font_weight": "bold",
+                "alignment": "left",
+                "padding_y": 10,
+                "margin_top": 5,
+                "font_family": "'Montserrat', sans-serif"
+            },
+            "order": 17,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad0-7112-8671-49ef53de6828",
+            "parent_id": null,
+            "label": "NAMA ENTITAS \/ PERUSAHAAN",
+            "name": "meta_p2_entity",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 18,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad1-730b-a9c7-dd34d7a21cc1",
+            "parent_id": null,
+            "label": "NAMA PENANDATANGAN KONTRAK",
+            "name": "meta_p2_signer",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 19,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad2-7318-b3d3-da3402e96b53",
+            "parent_id": null,
+            "label": "JABATAN PENANDATANGAN KONTRAK",
+            "name": "meta_p2_signer_position",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 20,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad3-72c0-b08c-ea195bae89f7",
+            "parent_id": null,
+            "label": "ALAMAT LENGKAP",
+            "name": "meta_p2_alamat",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textarea",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 21,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad4-7104-b4e2-ad12d12e565d",
+            "parent_id": null,
+            "label": "IV. DETAIL KOMERSIAL & OPERASIONAL",
+            "name": "f1_sec_4_title",
+            "type": "static_text",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "font_size": 12,
+                "font_weight": "bold",
+                "alignment": "left",
+                "padding_y": 10,
+                "margin_top": 5,
+                "font_family": "'Montserrat', sans-serif"
+            },
+            "order": 22,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad5-71c1-a1fe-3454b75152b9",
+            "parent_id": null,
+            "label": "MASA BERLAKU \/ JANGKA WAKTU",
+            "name": "meta_masa_berlaku",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 23,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad5-71c1-a1fe-3454b7dae917",
+            "parent_id": null,
+            "label": "LOKASI \/ AREA PEKERJAAN",
+            "name": "meta_lokasi",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 24,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad6-72dd-8374-c7178440fea5",
+            "parent_id": null,
+            "label": "DIMENSI \/ LUAS (M2)",
+            "name": "meta_dimensi",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 25,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad7-7282-b814-8268709106a4",
+            "parent_id": null,
+            "label": "NILAI TRANSAKSI \/ IMBALAN JASA",
+            "name": "meta_nilai_transaksi",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 26,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad7-7282-b814-826870b24d38",
+            "parent_id": null,
+            "label": "MEKANISME & SYARAT PEMBAYARAN",
+            "name": "meta_mekanisme_pembayaran",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textfield",
+                "label_width": "220px",
+                "show_colon": true,
+                "field_style": "dashed_bottom",
+                "font_size": 11.5,
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 27,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad8-724f-a93e-67c1cfddf6c7",
+            "parent_id": null,
+            "label": "PEMBEBANAN PPN",
+            "name": "meta_ppn",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "select",
+                "label_width": "220px",
+                "show_colon": true,
+                "font_size": 11,
+                "font_weight_label": "bold",
+                "items": [
+                    {
+                        "label": "Ditanggung Pihak I",
+                        "value": "Pihak I"
+                    },
+                    {
+                        "label": "Ditanggung Pihak II",
+                        "value": "Pihak II"
+                    },
+                    {
+                        "label": "Bebas \/ Tidak Terutang",
+                        "value": "N\/A"
+                    }
+                ],
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 28,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad9-7369-9d76-2f5adb83bc7d",
+            "parent_id": null,
+            "label": "PEMBEBANAN PPH",
+            "name": "meta_pph",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "select",
+                "label_width": "220px",
+                "show_colon": true,
+                "font_size": 11,
+                "font_weight_label": "bold",
+                "items": [
+                    {
+                        "label": "Dipotong Pihak I",
+                        "value": "Pihak I"
+                    },
+                    {
+                        "label": "Dipotong Pihak II",
+                        "value": "Pihak II"
+                    },
+                    {
+                        "label": "N\/A",
+                        "value": "N\/A"
+                    }
+                ],
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 29,
+            "validation_rules": null
+        },
+        {
+            "id": "019e6cd0-4ad9-7369-9d76-2f5adbe43b9f",
+            "parent_id": null,
+            "label": "RINGKASAN KLAUSUL PENTING",
+            "name": "meta_ringkasan_klausul",
+            "type": "labeled_value",
+            "container_type": null,
+            "placeholder": null,
+            "is_required": false,
+            "use_rich_text": false,
+            "width": "100",
+            "options": {
+                "value_type": "textarea",
+                "label_width": "220px",
+                "show_colon": true,
+                "min_height": 100,
+                "font_size": 11,
+                "font_weight_label": "bold",
+                "field_style": "dashed_bottom",
+                "font_family": "'Montserrat', sans-serif",
+                "font_weight": "bold"
+            },
+            "order": 30,
+            "validation_rules": null
+        }
+    ]
+}
