@@ -25,7 +25,7 @@ class UserQuery
                 });
             })
             ->when($request->role, function ($q, $role) {
-                $q->whereIn('role', (array) $role);
+                $q->whereHas('roleRelation', fn ($qr) => $qr->whereIn('name', (array) $role));
             })
             ->when($request->department_id, function ($q, $deptId) {
                 $q->whereIn('department_id', (array) $deptId);

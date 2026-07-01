@@ -92,7 +92,7 @@ export function ContractInfoForm({
                 {isDraft ? (
                     <SearchableSelect
                         value={typeId}
-                        onChange={setTypeId}
+                        onValueChange={setTypeId}
                         options={Array.isArray(types) ? types.map(t => ({ value: String(t.id), label: t.name })) : []}
                         placeholder="Pilih Tipe"
                     />
@@ -109,7 +109,7 @@ export function ContractInfoForm({
                 {isDraft ? (
                     <SearchableSelect
                         value={submissionTypeId}
-                        onChange={setSubmissionTypeId}
+                        onValueChange={setSubmissionTypeId}
                         options={Array.isArray(submissionTypes) ? submissionTypes.map(st => ({ value: String(st.id), label: st.name })) : []}
                         placeholder="Pilih Tipe"
                     />
@@ -126,7 +126,7 @@ export function ContractInfoForm({
                 {isDraft ? (
                     <SearchableSelect
                         value={vendorId}
-                        onChange={setVendorId}
+                        onValueChange={setVendorId}
                         options={Array.isArray(vendors) ? vendors.map(v => ({ value: String(v.id), label: v.name })) : []}
                         placeholder="Pilih Vendor"
                     />

@@ -72,13 +72,24 @@ class WorkflowQueryService
             $q->where('initiator_type', 'all');
 
             if ($user) {
-                // Include workflows restricted by initiator_type = 'specific' AND matched by user/role/dept
+                // Include workflows restricted by initiator_type != 'all' AND matched by user/role/dept
                 $q->orWhere(function ($sq) use ($user) {
-                    $sq->where('initiator_type', 'specific')
+                    $sq->where('initiator_type', '!=', 'all')
                         ->where(function ($ssq) use ($user) {
-                            $ssq->whereHas('initiatorRolesData', fn ($s) => $s->where('role_name', $user->role))
-                                ->orWhereHas('initiatorDepartmentsData', fn ($s) => $s->where('department_id', $user->department_id))
-                                ->orWhereHas('initiatorUsersData', fn ($s) => $s->where('user_id', $user->id));
+                            $ssq->where(function ($roleQuery) use ($user) {
+                                $roleQuery->whereHas('initiatorRolesData', fn ($s) => $s->where('role_name', $user->role))
+                                    ->orWhereDoesntHave('initiatorRolesData');
+                            });
+
+                            $ssq->where(function ($deptQuery) use ($user) {
+                                $deptQuery->whereHas('initiatorDepartmentsData', fn ($s) => $s->where('department_id', $user->department_id))
+                                    ->orWhereDoesntHave('initiatorDepartmentsData');
+                            });
+
+                            $ssq->where(function ($userQuery) use ($user) {
+                                $userQuery->whereHas('initiatorUsersData', fn ($s) => $s->where('user_id', $user->id))
+                                    ->orWhereDoesntHave('initiatorUsersData');
+                            });
                         });
                 });
             }
@@ -122,7 +133,7 @@ class WorkflowQueryService
 
         $targetRoleLower = strtolower($hierarchy[$targetIndex]);
 
-        $query = User::where(DB::raw('LOWER(role)'), $targetRoleLower)
+        $query = User::whereHas('roleRelation', fn ($q) => $q->where(DB::raw('LOWER(name)'), $targetRoleLower))
             ->where('is_active', true);
 
         if ($step) {
@@ -133,7 +144,7 @@ class WorkflowQueryService
             $workflow = $step->workflow;
             if ($workflow) {
                 if (! empty($workflow->approver_roles)) {
-                    $query->whereIn(DB::raw('LOWER(role)'), array_map('strtolower', (array) $workflow->approver_roles));
+                    $query->whereHas('roleRelation', fn ($q) => $q->whereIn(DB::raw('LOWER(name)'), array_map('strtolower', (array) $workflow->approver_roles)));
                 }
                 if (! empty($workflow->approver_departments)) {
                     $query->whereIn('department_id', (array) $workflow->approver_departments);
@@ -148,7 +159,7 @@ class WorkflowQueryService
 
         // Fallback: If no one in specific department/filters, search more broadly but keep the role
         if ($approvers->isEmpty() && $targetIndex > 0) {
-            $fallbackQuery = User::where(DB::raw('LOWER(role)'), $targetRoleLower)
+            $fallbackQuery = User::whereHas('roleRelation', fn ($q) => $q->where(DB::raw('LOWER(name)'), $targetRoleLower))
                 ->where('is_active', true);
 
             if ($step && $step->filter_company && $initiator->company_id) {
@@ -194,7 +205,7 @@ class WorkflowQueryService
 
         $allowedRoles = $step->role;
         if (! empty($allowedRoles)) {
-            $query->whereIn(DB::raw('LOWER(role)'), array_map('strtolower', (array) $allowedRoles));
+            $query->whereHas('roleRelation', fn ($q) => $q->whereIn(DB::raw('LOWER(name)'), array_map('strtolower', (array) $allowedRoles)));
         }
     }
 

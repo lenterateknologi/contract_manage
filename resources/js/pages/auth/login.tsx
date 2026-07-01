@@ -60,14 +60,14 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                 <div className="grid gap-5">
                     <FormInput
                         id="email"
-                        label="Alamat Email"
-                        type="email"
+                        label="Email atau Username"
+                        type="text"
                         required
                         autoFocus
-                        autoComplete="email"
+                        autoComplete="username"
                         value={data.email}
                         onChange={(e) => setData('email', e.target.value)}
-                        placeholder="Alamat email Anda"
+                        placeholder="Email atau username Anda"
                         error={errors.email}
                         className="rounded-xl"
                     />

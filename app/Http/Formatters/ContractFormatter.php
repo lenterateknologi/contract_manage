@@ -360,7 +360,7 @@ class ContractFormatter
                 } elseif ($step->approver_type === 'role') {
                     $roles = (array) $step->role;
                     $targetDeptIds = (array) ($step->department_ids ?? []);
-                    $query = User::whereIn('role', $roles);
+                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $roles));
 
                     if ($step->filter_department) {
                         $query->where('department_id', $c->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');

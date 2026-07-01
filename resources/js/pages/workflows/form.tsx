@@ -56,7 +56,25 @@ export default function WorkflowEditor({
         legal_roles: workflow?.legal_roles || [],
         legal_departments: workflow?.legal_departments || [],
         legal_users: workflow?.legal_users || [],
-        steps: workflow?.steps || [],
+        steps: (workflow?.steps || []).map((s: any) => {
+            const hasRoles = s.role && s.role.length > 0;
+            const hasDepts = s.department_ids && s.department_ids.length > 0;
+            const hasUsers = s.user_ids && s.user_ids.length > 0;
+            const config = s.approver_config || {};
+
+            return {
+                ...s,
+                approver_config: {
+                    custom: config.custom || (['initiator', 'assigned_pic', 'creator', 'atasan'].includes(s.approver_type) ? [s.approver_type] : []),
+                    roles: config.roles && config.roles.length > 0 ? config.roles : (s.approver_type === 'role' && hasRoles ? s.role : []),
+                    departments: config.departments && config.departments.length > 0 ? config.departments : (s.approver_type === 'role' && hasDepts ? s.department_ids : []),
+                    users: config.users && config.users.length > 0 ? config.users : (s.approver_type === 'user' && hasUsers ? s.user_ids : []),
+                    is_default: config.is_default !== undefined ? config.is_default : (s.approver_type === 'initiator'),
+                    is_initiator_role: config.is_initiator_role !== undefined ? config.is_initiator_role : (s.approver_type === 'role' && !hasRoles),
+                    is_initiator_department: config.is_initiator_department !== undefined ? config.is_initiator_department : (s.approver_type === 'role' && !hasDepts),
+                }
+            };
+        }) || [],
         department_id: workflow?.department_id || null,
         company_group_ids: workflow?.company_group_ids || [],
         region_ids: workflow?.region_ids || [],
@@ -154,7 +172,7 @@ export default function WorkflowEditor({
         <>
             <Head title={workflow ? 'Edit Workflow' : 'Registrasi Workflow Baru'} />
 
-            <div className="flex h-full flex-col bg-white dark:bg-black">
+            <div className="flex h-[calc(100vh-4rem)] flex-col bg-white dark:bg-black">
                 <ManagementForm
                     title={workflow ? 'Parameter Alur' : 'Registrasi Alur'}
                     subtitle={workflow ? `Konfigurasi tahapan untuk ${form.data.name}` : 'Mendefinisikan alur approval baru'}

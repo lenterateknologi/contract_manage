@@ -157,7 +157,7 @@ class ContractWorkflowService
                 $pic = User::find($contract->assigned_pic_id);
                 $approvers = $pic ? collect([$pic]) : collect();
             } else {
-                $query = User::whereIn('role', ['Staff Legal', 'Admin']);
+                $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', ['Staff Legal', 'Admin']));
                 $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : [];
                 if (! empty($targetDeptIds)) {
                     $query->whereIn('department_id', $targetDeptIds);
@@ -216,11 +216,11 @@ class ContractWorkflowService
                 }
 
                 if (! empty($targetRoles) && ! empty($targetDepts)) {
-                    $query = User::whereIn('role', $targetRoles)->whereIn('department_id', $targetDepts);
+                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $targetRoles))->whereIn('department_id', $targetDepts);
                     $query = $this->applyStepFilters($query, $step, $contract);
                     $approvers = $approvers->merge($query->get());
                 } elseif (! empty($targetRoles)) {
-                    $query = User::whereIn('role', $targetRoles);
+                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $targetRoles));
                     $query = $this->applyStepFilters($query, $step, $contract);
                     $approvers = $approvers->merge($query->get());
                 } elseif (! empty($targetDepts)) {
@@ -273,7 +273,7 @@ class ContractWorkflowService
                     if ($approvers->isEmpty()) {
                         $query = User::query();
                         if (! empty($roles)) {
-                            $query->whereIn('role', $roles);
+                            $query->whereHas('roleRelation', fn ($q) => $q->whereIn('name', $roles));
                         }
                         $targetDeptIds = $step->department_ids ?? [];
 

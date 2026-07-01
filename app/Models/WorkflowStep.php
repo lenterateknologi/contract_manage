@@ -154,6 +154,25 @@ class WorkflowStep extends Model
         return $this->hasMany(Approval::class);
     }
 
+    public function getApproverConfigAttribute($value)
+    {
+        $config = $value ? (is_string($value) ? json_decode($value, true) : $value) : [];
+
+        $roleNames = $this->relationLoaded('approverRoles') ? $this->approverRoles->pluck('role_name')->toArray() : $this->approverRoles()->pluck('role_name')->toArray();
+        $userIds = $this->relationLoaded('approverUsers') ? $this->approverUsers->pluck('user_id')->toArray() : $this->approverUsers()->pluck('user_id')->toArray();
+        $departmentIds = $this->relationLoaded('approverDepartments') ? $this->approverDepartments->pluck('department_id')->toArray() : $this->approverDepartments()->pluck('department_id')->toArray();
+
+        return array_merge([
+            'custom' => in_array($this->approver_type, ['initiator', 'assigned_pic', 'creator', 'atasan']) ? [$this->approver_type] : [],
+            'roles' => $this->approver_type === 'role' ? $roleNames : [],
+            'departments' => $this->approver_type === 'role' ? $departmentIds : [],
+            'users' => $this->approver_type === 'user' ? $userIds : [],
+            'is_default' => $this->approver_type === 'initiator',
+            'is_initiator_role' => $this->approver_type === 'role' && empty($roleNames),
+            'is_initiator_department' => $this->approver_type === 'role' && empty($departmentIds),
+        ], $config);
+    }
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'm_workflow_step_users', 'workflow_step_id', 'user_id');
