@@ -41,6 +41,11 @@ class ContractPolicy
             return true;
         }
 
+        // 5. Active/potential actor for the current workflow step
+        if ($this->isActor($user, $contract)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -128,8 +133,8 @@ class ContractPolicy
         // (Useful for "Open" steps where anyone in a department can act)
         $currentStep = $contract->workflowStep;
         if ($currentStep) {
-            $stepRoles = (array) $currentStep->role;
-            $roleMatches = empty($stepRoles) || in_array($user->role, $stepRoles);
+            $stepRoles = array_map('strtolower', array_filter((array) $currentStep->role));
+            $roleMatches = empty($stepRoles) || in_array(strtolower((string) $user->role), $stepRoles);
 
             $stepDeptIds = (array) ($currentStep->department_ids ?? []);
             $userDeptId = $user->department_id;

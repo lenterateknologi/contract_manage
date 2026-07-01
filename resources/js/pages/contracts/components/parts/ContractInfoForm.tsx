@@ -60,7 +60,7 @@ export function ContractInfoForm({
                     <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Kontrak (F2)</div>
                     <MetaBadge name="crown_no" />
                 </div>
-                {isDraft ? (
+                {selected.workflow_step?.meta?.allow_f2_edit === true ? (
                     <Input
                         value={crownNo}
                         onChange={(e) => setCrownNo(e.target.value)}
