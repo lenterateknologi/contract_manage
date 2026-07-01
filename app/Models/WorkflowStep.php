@@ -80,9 +80,9 @@ class WorkflowStep extends Model
         ];
     }
 
-    protected $with = ['approverRoles', 'approverDepartments.department', 'approverUsers', 'users'];
+    protected $with = ['approverRoles', 'approverDepartments.department', 'approverDivisions.division', 'approverUsers', 'users'];
 
-    protected $appends = ['role', 'department_ids', 'department_names', 'user_ids', 'name'];
+    protected $appends = ['role', 'department_ids', 'department_names', 'division_ids', 'division_names', 'user_ids', 'name'];
 
     public function getNameAttribute()
     {
@@ -114,6 +114,14 @@ class WorkflowStep extends Model
     }
 
     /**
+     * @return HasMany<WorkflowStepDivision, WorkflowStep>
+     */
+    public function approverDivisions(): HasMany
+    {
+        return $this->hasMany(WorkflowStepDivision::class, 'workflow_step_id');
+    }
+
+    /**
      * @return HasMany<WorkflowStepUser, WorkflowStep>
      */
     public function approverUsers(): HasMany
@@ -128,14 +136,25 @@ class WorkflowStep extends Model
 
     public function getDepartmentIdsAttribute()
     {
-        return $this->approverDepartments->pluck('department_id')->toArray();
+        return $this->approverDivisions->pluck('division_id')->toArray();
     }
 
     public function getDepartmentNamesAttribute()
     {
-        // Load the departments relation if not loaded
-        return $this->approverDepartments->map(function ($sd) {
-            return $sd->department?->name ?? 'All Departments';
+        return $this->approverDivisions->map(function ($sd) {
+            return $sd->division?->name ?? 'All Divisions';
+        })->unique()->toArray();
+    }
+
+    public function getDivisionIdsAttribute()
+    {
+        return $this->approverDivisions->pluck('division_id')->toArray();
+    }
+
+    public function getDivisionNamesAttribute()
+    {
+        return $this->approverDivisions->map(function ($sd) {
+            return $sd->division?->name ?? 'All Divisions';
         })->unique()->toArray();
     }
 

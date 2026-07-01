@@ -11,7 +11,7 @@ class ModuleSeeder extends Seeder
     public function run(): void
     {
         $dir = database_path('data_json');
-        $files = glob($dir . '/master_data_export_*.json');
+        $files = glob($dir.'/master_data_export_*.json');
         if (empty($files)) {
             return;
         }
@@ -23,8 +23,9 @@ class ModuleSeeder extends Seeder
         $jsonData = json_decode(file_get_contents($jsonPath), true);
 
         foreach ($jsonData['module_groups'] as $groupData) {
-            ModuleGroup::updateOrCreate(['name' => $groupData['name']], [
+            ModuleGroup::withTrashed()->updateOrCreate(['name' => $groupData['name']], [
                 'icon' => $groupData['icon'] ?? null,
+                'deleted_at' => null,
             ]);
         }
 

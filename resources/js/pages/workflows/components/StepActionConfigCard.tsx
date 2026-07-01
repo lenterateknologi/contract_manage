@@ -13,6 +13,7 @@ interface StepActionConfigCardProps {
     allWorkflowSteps: any[];
     roles: any[];
     departments: any[];
+    divisions?: any[];
     users: any[];
     updateAction: (actIdx: number, data: any) => void;
     removeAction: (actIdx: number) => void;
@@ -27,6 +28,7 @@ export function StepActionConfigCard({
     allWorkflowSteps,
     roles,
     departments,
+    divisions = [],
     users,
     updateAction,
     removeAction,
@@ -393,12 +395,12 @@ export function StepActionConfigCard({
                                 />
                             </div>
 
-                            {/* 4. Departemen Pool */}
+                            {/* 4. Departemen / Divisi Pool */}
                             <div className="space-y-1.5">
                                 <div className="flex items-center justify-between px-0.5">
                                     <div className="flex items-center gap-1.5">
                                         <Briefcase size={11} className="text-slate-400" />
-                                        <span className="text-xs font-semibold text-slate-500 uppercase">Departemen Pool</span>
+                                        <span className="text-xs font-semibold text-slate-500 uppercase">Departemen / Divisi Pool</span>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <Checkbox
@@ -416,8 +418,8 @@ export function StepActionConfigCard({
                                     onValuesChange={(vals) =>
                                         updateAction(actIdx, { signing_parties: { ...act.signing_parties, departments: vals } })
                                     }
-                                    options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                    placeholder={act.signing_parties?.is_initiator_department ? "DITENTUKAN DARI DEPT INISIATOR" : "Pilih Unit..."}
+                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                    placeholder={act.signing_parties?.is_initiator_department ? "DITENTUKAN DARI DEPT / DIV INISIATOR" : "Pilih Unit / Departemen / Divisi..."}
                                     disabled={act.signing_parties?.is_initiator_department === true}
                                 />
                             </div>
@@ -564,12 +566,12 @@ export function StepActionConfigCard({
                                 />
                             </div>
 
-                            {/* 4. Departemen Pool */}
+                            {/* 4. Departemen / Divisi Pool */}
                             <div className="space-y-1.5">
                                 <div className="flex items-center justify-between px-0.5">
                                     <div className="flex items-center gap-1.5">
                                         <Briefcase size={11} className="text-slate-400" />
-                                        <span className="text-xs font-semibold text-slate-500 uppercase">Departemen Pool</span>
+                                        <span className="text-xs font-semibold text-slate-500 uppercase">Departemen / Divisi Pool</span>
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <Checkbox
@@ -587,8 +589,8 @@ export function StepActionConfigCard({
                                     onValuesChange={(vals) =>
                                         updateAction(actIdx, { assignee_config: { ...act.assignee_config, departments: vals } })
                                     }
-                                    options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                    placeholder={act.assignee_config?.is_initiator_department ? "DITENTUKAN DARI DEPT INISIATOR" : "Pilih Unit..."}
+                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                    placeholder={act.assignee_config?.is_initiator_department ? "DITENTUKAN DARI DEPT / DIV INISIATOR" : "Pilih Unit / Departemen / Divisi..."}
                                     disabled={act.assignee_config?.is_initiator_department === true}
                                 />
                             </div>

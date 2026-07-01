@@ -160,7 +160,7 @@ class ContractWorkflowService
                 $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', ['Staff Legal', 'Admin']));
                 $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : [];
                 if (! empty($targetDeptIds)) {
-                    $query->whereIn('department_id', $targetDeptIds);
+                    $query->whereIn('division_id', $targetDeptIds);
                 }
                 $approvers = $query->get();
             }
@@ -205,18 +205,24 @@ class ContractWorkflowService
                 }
 
                 // 2 & 3. Resolve Roles and Departments (Intersection if both present)
-                $targetRoles = ! empty($config['roles']) ? $config['roles'] : [];
-                if (! empty($config['is_initiator_role']) && $contract->initiator && $contract->initiator->role) {
-                    $targetRoles[] = $contract->initiator->role;
-                }
+                $targetRoles = [];
+                $targetDepts = [];
 
-                $targetDepts = ! empty($config['departments']) ? $config['departments'] : [];
-                if (! empty($config['is_initiator_department']) && $contract->initiator && $contract->initiator->department_id) {
-                    $targetDepts[] = $contract->initiator->department_id;
+                if (data_get($config, 'use_combination', true) !== false) {
+                    $targetRoles = ! empty($config['roles']) ? $config['roles'] : [];
+                    if (! empty($config['is_initiator_role']) && $contract->initiator && $contract->initiator->role) {
+                        $targetRoles[] = $contract->initiator->role;
+                    }
+
+                    $targetDepts = ! empty($config['departments']) ? $config['departments'] : [];
+                    if (! empty($config['is_initiator_department']) && $contract->initiator && $contract->initiator->division_id) {
+                        $targetDepts[] = $contract->initiator->division_id;
+                    }
                 }
 
                 if (! empty($targetRoles) && ! empty($targetDepts)) {
-                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $targetRoles))->whereIn('department_id', $targetDepts);
+                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $targetRoles))
+                        ->whereIn('division_id', $targetDepts);
                     $query = $this->applyStepFilters($query, $step, $contract);
                     $approvers = $approvers->merge($query->get());
                 } elseif (! empty($targetRoles)) {
@@ -224,7 +230,7 @@ class ContractWorkflowService
                     $query = $this->applyStepFilters($query, $step, $contract);
                     $approvers = $approvers->merge($query->get());
                 } elseif (! empty($targetDepts)) {
-                    $query = User::whereIn('department_id', $targetDepts);
+                    $query = User::whereIn('division_id', $targetDepts);
                     $query = $this->applyStepFilters($query, $step, $contract);
                     $approvers = $approvers->merge($query->get());
                 }
@@ -271,16 +277,21 @@ class ContractWorkflowService
                     }
 
                     if ($approvers->isEmpty()) {
+                        $useCombo = data_get($config, 'use_combination', true) !== false;
                         $query = User::query();
-                        if (! empty($roles)) {
+
+                        if ($useCombo && ! empty($roles)) {
                             $query->whereHas('roleRelation', fn ($q) => $q->whereIn('name', $roles));
                         }
-                        $targetDeptIds = $step->department_ids ?? [];
+                        $targetDeptIds = $useCombo ? ($step->department_ids ?? []) : [];
 
-                        if ($step->filter_department) {
-                            $query->where('department_id', $contract->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
+                        $isInitDept = $useCombo && ($step->filter_department || (! empty($config) && ! empty($config['is_initiator_department'])));
+
+                        if ($isInitDept) {
+                            $initDeptId = $contract->initiator->division_id ?? '00000000-0000-0000-0000-000000000000';
+                            $query->where('division_id', $initDeptId);
                         } elseif (! empty($targetDeptIds)) {
-                            $query->whereIn('department_id', $targetDeptIds);
+                            $query->whereIn('division_id', $targetDeptIds);
                         }
 
                         $initiatorCompany = $contract->initiator->company;
@@ -856,7 +867,8 @@ class ContractWorkflowService
     private function applyStepFilters(Builder $query, WorkflowStep $step, Contract $contract): Builder
     {
         if ($step->filter_department) {
-            $query->where('department_id', $contract->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
+            $initDeptId = $contract->initiator->division_id ?? '00000000-0000-0000-0000-000000000000';
+            $query->where('division_id', $initDeptId);
         }
 
         $initiatorCompany = $contract->initiator?->company;

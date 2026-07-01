@@ -69,7 +69,7 @@ class ContractApprovalController extends Controller
         $userRole = Auth::user()->role ?? Auth::user()->roleRelation?->name;
         if ($request->assigned_pic_id && $userRole === 'Manager') {
             $assignedUser = User::find($request->assigned_pic_id);
-            if ($assignedUser && $assignedUser->department_id !== Auth::user()->department_id) {
+            if ($assignedUser && $assignedUser->division_id !== Auth::user()->division_id) {
                 return response()->json(['message' => 'Anda hanya dapat menugaskan kontrak kepada staf di departemen Anda sendiri.'], 422);
             }
         }

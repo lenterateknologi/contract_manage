@@ -48,6 +48,7 @@ export default function SortableStepItem({
     setIsExpanded,
     roles,
     departments,
+    divisions = [],
     users,
     allWorkflows = [],
     allWorkflowSteps = [],
@@ -64,6 +65,7 @@ export default function SortableStepItem({
     setIsExpanded: (expanded: boolean) => void;
     roles: any[];
     departments: any[];
+    divisions?: any[];
     users: any[];
     allWorkflows?: any[];
     allWorkflowSteps?: any[];
@@ -103,7 +105,7 @@ export default function SortableStepItem({
     const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
     const [conditionModalOpen, setConditionModalOpen] = useState(false);
 
-    const updateConfig = (key: 'custom' | 'roles' | 'departments' | 'users' | 'is_default' | 'is_initiator_role' | 'is_initiator_department', value: any) => {
+    const updateConfig = (key: 'custom' | 'roles' | 'departments' | 'users' | 'is_default' | 'is_initiator_role' | 'is_initiator_department' | 'use_combination', value: any) => {
         const nextConfig = {
             custom: [],
             roles: [],
@@ -112,6 +114,7 @@ export default function SortableStepItem({
             is_default: false,
             is_initiator_role: false,
             is_initiator_department: false,
+            use_combination: true,
             ...(step.approver_config || {}),
             [key]: value
         };
@@ -134,7 +137,8 @@ export default function SortableStepItem({
             approver_type: nextConfig.custom.length > 0 ? nextConfig.custom[0] : (nextConfig.users.length > 0 ? 'user' : (nextConfig.roles.length > 0 ? 'role' : 'role')),
             role: nextConfig.roles,
             department_ids: nextConfig.departments,
-            user_ids: nextConfig.users
+            user_ids: nextConfig.users,
+            filter_department: nextConfig.is_initiator_department
         });
     };
 
@@ -190,11 +194,12 @@ export default function SortableStepItem({
                 }
                 // 3. Departments
                 if (cfg.is_initiator_department) {
-                    options.push({ value: 'initiator_department', label: 'DEPARTEMEN SESUAI INISIATOR' });
+                    options.push({ value: 'initiator_department', label: 'DEPT / DIV SESUAI INISIATOR' });
                 } else if (cfg.departments && cfg.departments.length > 0) {
                     cfg.departments.forEach((deptId: string) => {
-                        const dept = departments.find((d: any) => String(d.id) === String(deptId));
-                        options.push({ value: `dept_${deptId}`, label: `DEPARTEMEN: ${dept ? dept.name.toUpperCase() : deptId}` });
+                        const pool = divisions.length > 0 ? divisions : departments;
+                        const dept = pool.find((d: any) => String(d.id) === String(deptId));
+                        options.push({ value: `dept_${deptId}`, label: `DEPT / DIV: ${dept ? dept.name.toUpperCase() : deptId}` });
                     });
                 }
                 // 4. Users
@@ -209,7 +214,7 @@ export default function SortableStepItem({
             }
         }
         return options.length ? options : undefined;
-    }, [actions, users, departments]);
+    }, [actions, users, departments, divisions]);
 
     const signerOptions = useMemo(() => {
         return users;
@@ -233,10 +238,11 @@ export default function SortableStepItem({
             parts.push(`ROLE: ${cfg.roles.join(', ')}`);
         }
         if (cfg.is_initiator_department) {
-            parts.push('DEPT INISIATOR');
+            parts.push('DEPT / DIV INISIATOR');
         } else if (cfg.departments && cfg.departments.length > 0) {
-            const deptNames = cfg.departments.map((id: string) => departments.find((d) => String(d.id) === id)?.name || id);
-            parts.push(`DEPT: ${deptNames.join(', ')}`);
+            const pool = divisions.length > 0 ? divisions : departments;
+            const deptNames = cfg.departments.map((id: string) => pool.find((d) => String(d.id) === id)?.name || id);
+            parts.push(`DEPT/DIV: ${deptNames.join(', ')}`);
         }
         if (cfg.users && cfg.users.length > 0) {
             const userNames = cfg.users.map((id: any) => (users || []).find((u) => String(u.id) === String(id))?.name || id);
@@ -262,7 +268,8 @@ export default function SortableStepItem({
                         partsList.push(rolesList.join(', '));
                     }
                     if (deptsList.length > 0) {
-                        const deptNames = deptsList.map((id: string) => departments.find((d) => String(d.id) === id)?.name || id);
+                        const pool = divisions.length > 0 ? divisions : departments;
+                        const deptNames = deptsList.map((id: string) => pool.find((d) => String(d.id) === id)?.name || id);
                         partsList.push(`[${deptNames.join(', ')}]`);
                     }
                     return `ROLE: ${partsList.join(' ')}`;
@@ -276,12 +283,12 @@ export default function SortableStepItem({
                     return `USER: ${userNames.join(', ')}`;
                 }
                 default:
-                    return 'BELUM DIATUR';
+                    return '—';
             }
         }
 
-        return parts.join(' + ');
-    }, [step.approver_config, step.approver_type, step.role, step.department_ids, step.user_ids, departments, users]);
+        return parts.join(' | ');
+    }, [step.approver_config, step.approver_type, step.role, step.department_ids, step.user_ids, departments, divisions, users]);
 
     const selectedStatus = useMemo(() => {
         return (contractStatuses || []).find((s: any) => s.code === step.meta?.target_status);
@@ -614,12 +621,12 @@ export default function SortableStepItem({
                                     </h4>
                                 </div>
 
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                    {/* 1. Custom Targets */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 px-1">
-                                            <Settings2 size={12} className="text-slate-400" />
-                                            <span className="text-xs font-semibold text-slate-500 uppercase">Aktor Kustom</span>
+                                <div className="space-y-4">
+                                    {/* 1. Kelompok Aktor */}
+                                    <div className="rounded-xl border border-slate-200/60 bg-slate-50/30 p-4 dark:border-slate-800 dark:bg-slate-900/20">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Settings2 size={13} className="text-slate-400" />
+                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">1. Aktor Kustom</span>
                                         </div>
                                         <SearchableMultiSelect
                                             values={step.approver_config?.custom || []}
@@ -633,61 +640,76 @@ export default function SortableStepItem({
                                         />
                                     </div>
 
-                                    {/* 2. Role Pool */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between px-1">
+                                    {/* 2. Kelompok Divisi & Role */}
+                                    <div className="rounded-xl border border-slate-200/60 bg-slate-50/30 p-4 dark:border-slate-800 dark:bg-slate-900/20">
+                                        <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
                                             <div className="flex items-center gap-2">
-                                                <Shield size={12} className="text-slate-400" />
-                                                <span className="text-xs font-semibold text-slate-500 uppercase">Berdasarkan Role</span>
+                                                <Shield size={13} className="text-slate-400" />
+                                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">2. Kombinasi Divisi & Role</span>
                                             </div>
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1.5 bg-indigo-50/50 dark:bg-indigo-950/20 px-2 py-0.5 rounded-md border border-indigo-100/50 dark:border-indigo-900/30">
                                                 <Checkbox
-                                                    id={`step-init-role-${idx}`}
-                                                    checked={step.approver_config?.is_initiator_role === true}
-                                                    onCheckedChange={(checked) => updateConfig('is_initiator_role', checked === true)}
+                                                    id={`step-use-combo-${idx}`}
+                                                    checked={step.approver_config?.use_combination !== false}
+                                                    onCheckedChange={(checked) => updateConfig('use_combination', checked === true)}
                                                 />
-                                                <label htmlFor={`step-init-role-${idx}`} className="text-xs font-medium text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                                <label htmlFor={`step-use-combo-${idx}`} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer uppercase tracking-wider">Aktifkan</label>
                                             </div>
                                         </div>
-                                        <SearchableMultiSelect
-                                            values={step.approver_config?.roles || []}
-                                            onValuesChange={(vals: string[]) => updateConfig('roles', vals)}
-                                            options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                            placeholder={step.approver_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
-                                            disabled={step.approver_config?.is_initiator_role === true}
-                                        />
-                                    </div>
-
-                                    {/* 3. Departemen Pool */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between px-1">
-                                            <div className="flex items-center gap-2">
-                                                <Briefcase size={12} className="text-slate-400" />
-                                                <span className="text-xs font-semibold text-slate-500 uppercase">Departemen Pool</span>
+                                        <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 transition-opacity duration-200 ${step.approver_config?.use_combination === false ? 'opacity-40 pointer-events-none' : ''}`}>
+                                            {/* Role Pool */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between px-0.5">
+                                                    <span className="text-xs font-semibold text-slate-400 uppercase">Berdasarkan Role</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Checkbox
+                                                            id={`step-init-role-${idx}`}
+                                                            checked={step.approver_config?.is_initiator_role === true}
+                                                            onCheckedChange={(checked) => updateConfig('is_initiator_role', checked === true)}
+                                                            disabled={step.approver_config?.use_combination === false}
+                                                        />
+                                                        <label htmlFor={`step-init-role-${idx}`} className="text-[10px] font-medium text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                                    </div>
+                                                </div>
+                                                <SearchableMultiSelect
+                                                    values={step.approver_config?.roles || []}
+                                                    onValuesChange={(vals: string[]) => updateConfig('roles', vals)}
+                                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                                    placeholder={step.approver_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
+                                                    disabled={step.approver_config?.is_initiator_role === true || step.approver_config?.use_combination === false}
+                                                 />
                                             </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <Checkbox
-                                                    id={`step-init-dept-${idx}`}
-                                                    checked={step.approver_config?.is_initiator_department === true}
-                                                    onCheckedChange={(checked) => updateConfig('is_initiator_department', checked === true)}
+
+                                            {/* Divisi Pool */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between px-0.5">
+                                                    <span className="text-xs font-semibold text-slate-400 uppercase">Divisi Pool</span>
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Checkbox
+                                                            id={`step-init-dept-${idx}`}
+                                                            checked={step.approver_config?.is_initiator_department === true}
+                                                            onCheckedChange={(checked) => updateConfig('is_initiator_department', checked === true)}
+                                                            disabled={step.approver_config?.use_combination === false}
+                                                        />
+                                                        <label htmlFor={`step-init-dept-${idx}`} className="text-[10px] font-medium text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
+                                                    </div>
+                                                </div>
+                                                <SearchableMultiSelect
+                                                    values={step.approver_config?.departments || []}
+                                                    onValuesChange={(vals: string[]) => updateConfig('departments', vals)}
+                                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                    placeholder={step.approver_config?.is_initiator_department ? "DITENTUKAN DARI DIVISI INISIATOR" : "Pilih Divisi..."}
+                                                    disabled={step.approver_config?.is_initiator_department === true || step.approver_config?.use_combination === false}
                                                 />
-                                                <label htmlFor={`step-init-dept-${idx}`} className="text-xs font-medium text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
                                             </div>
                                         </div>
-                                        <SearchableMultiSelect
-                                            values={step.approver_config?.departments || []}
-                                            onValuesChange={(vals: string[]) => updateConfig('departments', vals)}
-                                            options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                            placeholder={step.approver_config?.is_initiator_department ? "DITENTUKAN DARI DEPT INISIATOR" : "Pilih Unit..."}
-                                            disabled={step.approver_config?.is_initiator_department === true}
-                                        />
                                     </div>
 
-                                    {/* 4. User Spesifik */}
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 px-1">
-                                            <UsersIcon size={12} className="text-slate-400" />
-                                            <span className="text-xs font-semibold text-slate-500 uppercase">User Spesifik</span>
+                                    {/* 3. Kelompok User Langsung */}
+                                    <div className="rounded-xl border border-slate-200/60 bg-slate-50/30 p-4 dark:border-slate-800 dark:bg-slate-900/20">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <UsersIcon size={13} className="text-slate-400" />
+                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">3. User Langsung</span>
                                         </div>
                                         <SearchableMultiSelect
                                             values={step.approver_config?.users || []}
@@ -738,6 +760,7 @@ export default function SortableStepItem({
                                                     allWorkflowSteps={allWorkflowSteps}
                                                     roles={roles}
                                                     departments={departments}
+                                                    divisions={divisions}
                                                     users={users}
                                                     updateAction={updateAction}
                                                     removeAction={removeAction}

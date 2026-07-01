@@ -4,6 +4,7 @@ namespace App\Http\Actions\Workflow;
 
 use App\Enums\WorkflowAction;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
@@ -96,6 +97,11 @@ trait HasWorkflowHelpers
     {
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
             return $identifier;
+        }
+
+        $divisionId = Division::where('code', $identifier)->value('id');
+        if ($divisionId) {
+            return $divisionId;
         }
 
         return Department::where('code', $identifier)->value('id');

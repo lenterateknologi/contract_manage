@@ -6,6 +6,7 @@ use App\Http\Formatters\ContractFormatter;
 use App\Models\Approval;
 use App\Models\Contract;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
@@ -46,6 +47,8 @@ trait EvaluatesWorkflowSteps
             return false;
         }
 
+        // Auto-skip direct supervisor review and department manager review are disabled as per user request.
+        /*
         // Skip direct supervisor review if initiator is a supervisor or manager
         if ($step->approver_type === 'atasan') {
             $initiator = $contract->initiator;
@@ -77,11 +80,12 @@ trait EvaluatesWorkflowSteps
             ];
             if (in_array($initiatorRole, $exemptRoles)) {
                 $targetDeptIds = $step->department_ids;
-                if (empty($targetDeptIds) || in_array($initiator->department_id, $targetDeptIds)) {
+                if (empty($targetDeptIds) || in_array($initiator->division_id, $targetDeptIds)) {
                     return false;
                 }
             }
         }
+        */
 
         $condition = $step->condition_expression ?? '';
         $meta = $step->meta ?? [];
@@ -223,7 +227,7 @@ trait EvaluatesWorkflowSteps
                 }
                 $creatorDeptCode = $creator->department?->code;
             }
-            $isLegal = $creator && ($creatorDeptCode === Department::CODE_LEGAL || $creator->role === Role::ADMIN);
+            $isLegal = $creator && ($creatorDeptCode === Division::CODE_LEGAL || $creator->role === Role::ADMIN);
             $isHelper = $contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by;
 
             if ($isLegal && $isHelper) {
@@ -240,7 +244,7 @@ trait EvaluatesWorkflowSteps
                 $initiator->load('department');
             }
 
-            return $initiator->department?->code !== Department::CODE_LEGAL;
+            return $initiator->department?->code !== Division::CODE_LEGAL;
         }
 
         // Condition: Skip Management if Initiator is already Management/Direksi

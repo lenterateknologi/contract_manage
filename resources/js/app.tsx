@@ -16,13 +16,11 @@ import AppLayout from './layouts/app-layout';
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) => {
-        const page = resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')) as any;
-        page.then((module: any) => {
-            if (module.default.layout === undefined && !name.startsWith('auth/') && name !== 'welcome') {
-                module.default.layout = (page: React.ReactNode) => <AppLayout children={page} />;
-            }
-        });
+    resolve: async (name) => {
+        const page = (await resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx'))) as any;
+        if (page.default.layout === undefined && !name.startsWith('auth/') && name !== 'welcome') {
+            page.default.layout = (page: React.ReactNode) => <AppLayout children={page} />;
+        }
         return page;
     },
     setup({ el, App, props }) {

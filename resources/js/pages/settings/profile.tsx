@@ -68,6 +68,8 @@ interface UserProfile extends BaseUserProfile {
     bio?: string;
     created_at?: string;
     is_admin?: boolean;
+    division_id?: string;
+    department_id?: string;
     stats?: {
         total_created: number;
         pending_approvals: number;
@@ -291,6 +293,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
                                     <div className="grid grid-cols-2 gap-5 md:grid-cols-3">
                                         <StaticItem icon={Briefcase} label="Jabatan" value={user.position || '—'} />
                                         <StaticItem icon={Building2} label="Departemen" value={department || '—'} />
+                                        <StaticItem icon={Fingerprint} label="ID Departemen" value={user.division_id || user.department_id || '—'} />
                                         <StaticItem icon={Globe} label="Entitas Bisnis" value={user.company || '—'} />
                                         <StaticItem icon={Compass} label="Wilayah" value={user.region || '—'} />
                                         <StaticItem icon={Layers} label="Grup" value={user.group || '—'} />

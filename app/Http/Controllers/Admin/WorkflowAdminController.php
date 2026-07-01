@@ -19,6 +19,7 @@ use App\Models\CompanyGroup;
 use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\FormTemplate;
 use App\Models\Region;
 use App\Models\Role;
@@ -45,6 +46,7 @@ class WorkflowAdminController extends Controller
             'workflows' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
             'contractTypes' => ContractType::all(),
             'departments' => Department::all(),
+            'divisions' => Division::all(),
             'roles' => Role::all(),
             'users' => User::all(),
             'companyGroups' => CompanyGroup::all(),
@@ -65,6 +67,7 @@ class WorkflowAdminController extends Controller
             'workflow' => null,
             'contractTypes' => ContractType::all(),
             'departments' => Department::all(),
+            'divisions' => Division::all(),
             'roles' => Role::all(),
             'users' => User::all(),
             'companyGroups' => CompanyGroup::all(),
@@ -122,6 +125,7 @@ class WorkflowAdminController extends Controller
             'workflow' => $workflowData,
             'contractTypes' => ContractType::all(),
             'departments' => Department::all(),
+            'divisions' => Division::all(),
             'roles' => Role::all(),
             'users' => User::all(),
             'companyGroups' => CompanyGroup::all(),

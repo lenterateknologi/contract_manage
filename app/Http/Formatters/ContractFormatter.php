@@ -284,7 +284,7 @@ class ContractFormatter
             'initials' => array_key_exists('initials', $attributes) ? $user->initials : ($user->getAttribute('initials') ?? ''),
             'role' => array_key_exists('role', $attributes) ? $user->role : null,
             'role_id' => array_key_exists('role_id', $attributes) ? $user->role_id : null,
-            'department_id' => array_key_exists('department_id', $attributes) ? $user->department_id : null,
+            'department_id' => $user->division_id ?? (array_key_exists('department_id', $attributes) ? $user->department_id : null),
             'department_name' => $user->relationLoaded('department') ? $user->department?->name : null,
             'email' => $user->email,
         ];
@@ -362,10 +362,13 @@ class ContractFormatter
                     $targetDeptIds = (array) ($step->department_ids ?? []);
                     $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $roles));
 
-                    if ($step->filter_department) {
-                        $query->where('department_id', $c->initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
+                    $config = $step->approver_config;
+                    $isInitDept = $step->filter_department || (! empty($config) && ! empty($config['is_initiator_department']));
+
+                    if ($isInitDept) {
+                        $query->where('division_id', $c->initiator->division_id ?? '00000000-0000-0000-0000-000000000000');
                     } elseif (! empty($targetDeptIds)) {
-                        $query->whereIn('department_id', $targetDeptIds);
+                        $query->whereIn('division_id', $targetDeptIds);
                     }
 
                     $initiatorCompany = $c->initiator?->company;
@@ -390,6 +393,10 @@ class ContractFormatter
                     $approvers = $query->get();
                     $targetApprovers = $approvers->pluck('name')->implode(', ');
                     $targetEmails = $approvers->pluck('email')->implode(', ');
+                }
+
+                if (empty($targetApprovers)) {
+                    $targetApprovers = 'Belum di-set';
                 }
             } else {
                 // List mode minimal resolution

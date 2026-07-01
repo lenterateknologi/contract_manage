@@ -16,6 +16,6 @@ class WorkflowInitiatorDepartment extends Model
 
     public function department(): BelongsTo
     {
-        return $this->belongsTo(Department::class, 'department_id');
+        return $this->belongsTo(Division::class, 'department_id');
     }
 }

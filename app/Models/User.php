@@ -133,7 +133,7 @@ class User extends Authenticatable
 
     public function department(): BelongsTo
     {
-        return $this->belongsTo(Department::class, 'division_id');
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     /**
@@ -161,11 +161,11 @@ class User extends Authenticatable
     }
 
     /**
-     * @return BelongsTo<Department, User>
+     * @return BelongsTo<Division, User>
      */
     public function division(): BelongsTo
     {
-        return $this->belongsTo(Department::class, 'division_id');
+        return $this->belongsTo(Division::class, 'division_id');
     }
 
     /**

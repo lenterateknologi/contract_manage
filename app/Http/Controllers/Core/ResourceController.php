@@ -8,6 +8,7 @@ use App\Core\Crud\Resources\CompanyResource;
 use App\Core\Crud\Resources\ContractStatusResource;
 use App\Core\Crud\Resources\ContractTypeResource;
 use App\Core\Crud\Resources\DepartmentResource;
+use App\Core\Crud\Resources\DivisionResource;
 use App\Core\Crud\Resources\RegionResource;
 use App\Core\Crud\Resources\RoleResource;
 use App\Core\Crud\Resources\UserResource;
@@ -35,6 +36,7 @@ class ResourceController extends Controller
         'contract-types' => ContractTypeResource::class,
         'companies' => CompanyResource::class,
         'vendors' => VendorResource::class,
+        'divisions' => DivisionResource::class,
     ];
 
     /**

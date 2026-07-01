@@ -15,6 +15,7 @@ use App\Imports\UsersImport;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
@@ -27,7 +28,7 @@ class UserResource extends Resource
 
     public static ?string $importClass = UsersImport::class;
 
-    public static array $with = ['roleRelation', 'department', 'company', 'region'];
+    public static array $with = ['roleRelation', 'department', 'division', 'company', 'region'];
 
     public static ?string $title = 'Registri Otoritas Pengguna';
 
@@ -42,6 +43,7 @@ class UserResource extends Resource
             TextColumn::make('username', 'Username')->sortable()->searchable(),
             TextColumn::make('email', 'Email')->sortable()->searchable(),
             TextColumn::make('role_relation.name', 'Role')->sortable(),
+            TextColumn::make('division.name', 'Divisi')->sortable(),
             TextColumn::make('department.name', 'Departemen')->sortable(),
             TextColumn::make('region.name', 'Regional')->sortable(),
             BooleanColumn::make('is_active', 'Status Aktif'),
@@ -74,7 +76,9 @@ class UserResource extends Resource
                 SelectInput::make('role_id', 'Role Akses')
                     ->required()
                     ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
-                SelectInput::make('division_id', 'Departemen')
+                SelectInput::make('division_id', 'Divisi')
+                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray()),
+                SelectInput::make('department_id', 'Departemen')
                     ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
                 SelectInput::make('company_id', 'Perusahaan PT')
                     ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray()),
@@ -91,7 +95,9 @@ class UserResource extends Resource
         return [
             Filter::make('role_id', 'Role Akses')
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
-            Filter::make('division_id', 'Departemen')
+            Filter::make('division_id', 'Divisi')
+                ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('department_id', 'Departemen')
                 ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Regional')
                 ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),

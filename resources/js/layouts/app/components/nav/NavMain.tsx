@@ -9,13 +9,43 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/navigation/Sidebar';
 import { cn } from '@/lib/utils';
-import { type NavItem } from '@/types';
+import { type NavGroup, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 
 export const NavMain = memo(function NavMain({ title, items = [], search = '' }: Readonly<{ title?: string; items: NavItem[]; search?: string }>) {
-    const page = usePage();
+    const page = usePage<SharedData>();
+    const { sidebarNavGroups } = page.props;
+    const path = page.url.split('?')[0];
+
+    const allUrls = useMemo(() => {
+        return ((sidebarNavGroups as NavGroup[]) ?? [])
+            .flatMap((g) => g.items)
+            .map((item) => item.url.split('?')[0]);
+    }, [sidebarNavGroups]);
+
+    const checkActive = (itemUrl: string) => {
+        const itemPath = itemUrl.split('?')[0];
+        if (path === itemPath) {
+            return true;
+        }
+        if (itemPath === '/') {
+            return path === '/';
+        }
+        if (!path.startsWith(itemPath + '/')) {
+            return false;
+        }
+
+        // Check if there is another URL in the sidebar that has a longer prefix match
+        const hasBetterMatch = allUrls.some((url) => {
+            if (url === itemPath) {
+                return false;
+            }
+            return path.startsWith(url) && url.length > itemPath.length;
+        });
+        return !hasBetterMatch;
+    };
 
     return (
         <Collapsible defaultOpen className="group/collapsible">
@@ -34,7 +64,7 @@ export const NavMain = memo(function NavMain({ title, items = [], search = '' }:
                     <SidebarGroupContent>
                         <SidebarMenu className="gap-0.5 px-1.5">
                             {items.map((item) => {
-                                const isActive = page.url.split('?')[0] === item.url.split('?')[0];
+                                const isActive = checkActive(item.url);
                                 return (
                                     <SidebarMenuItem key={item.title}>
                                         <SidebarMenuButton

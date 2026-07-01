@@ -35,6 +35,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class MasterDataAdminController extends Controller
@@ -429,907 +430,914 @@ class MasterDataAdminController extends Controller
      */
     private function executeImport(array $data): array
     {
-            $counts = [
-                'company_groups' => 0,
-                'regions' => 0,
-                'companies' => 0,
-                'departments' => 0,
-                'contract_statuses' => 0,
-                'contract_types' => 0,
-                'workflows' => 0,
-                'workflow_steps' => 0,
-                'workflow_step_departments' => 0,
-                'workflow_step_roles' => 0,
-                'workflow_step_users' => 0,
-                'workflow_initiator_departments' => 0,
-                'workflow_initiator_roles' => 0,
-                'workflow_initiator_users' => 0,
-                'workflow_step_actions' => 0,
-                'roles' => 0,
-                'access_mappings' => 0,
-                'role_navigation_mappings' => 0,
-                'form_templates' => 0,
-                'form_fields' => 0,
-                'users' => 0,
-            ];
+        $counts = [
+            'company_groups' => 0,
+            'regions' => 0,
+            'companies' => 0,
+            'departments' => 0,
+            'contract_statuses' => 0,
+            'contract_types' => 0,
+            'workflows' => 0,
+            'workflow_steps' => 0,
+            'workflow_step_departments' => 0,
+            'workflow_step_roles' => 0,
+            'workflow_step_users' => 0,
+            'workflow_initiator_departments' => 0,
+            'workflow_initiator_roles' => 0,
+            'workflow_initiator_users' => 0,
+            'workflow_step_actions' => 0,
+            'roles' => 0,
+            'access_mappings' => 0,
+            'role_navigation_mappings' => 0,
+            'form_templates' => 0,
+            'form_fields' => 0,
+            'users' => 0,
+        ];
 
-            Model::unguard();
-            $admin = Auth::id();
+        Model::unguard();
+        $admin = Auth::id();
 
-            // 0. Roles
-            if (! empty($data['roles']) && is_array($data['roles'])) {
-                foreach ($data['roles'] as $r) {
-                    try {
-                        if (empty($r['name'])) {
-                            continue;
-                        }
-                        Role::updateOrCreate(
-                            ! empty($r['id']) ? ['id' => $r['id']] : ['name' => $r['name']],
-                            [
-                                'name' => $r['name'],
-                                'description' => $r['description'] ?? null,
-                            ],
-                        );
-                        $counts['roles']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Role '.($r['name'] ?? '').': '.$e->getMessage());
+        // 0. Roles
+        if (! empty($data['roles']) && is_array($data['roles'])) {
+            foreach ($data['roles'] as $r) {
+                try {
+                    if (empty($r['name'])) {
+                        continue;
                     }
+                    Role::updateOrCreate(
+                        ! empty($r['id']) ? ['id' => $r['id']] : ['name' => $r['name']],
+                        [
+                            'name' => $r['name'],
+                            'description' => $r['description'] ?? null,
+                        ],
+                    );
+                    $counts['roles']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor Role '.($r['name'] ?? '').': '.$e->getMessage());
                 }
             }
+        }
 
-            $roleMap = Role::pluck('id', 'name')->all();
-            $roleIdMap = [];
-            if (! empty($data['roles']) && is_array($data['roles'])) {
-                foreach ($data['roles'] as $r) {
-                    if (! empty($r['id']) && ! empty($r['name'])) {
-                        $roleIdMap[$r['id']] = $roleMap[$r['name']] ?? null;
-                    }
+        $roleMap = Role::pluck('id', 'name')->all();
+        $roleIdMap = [];
+        if (! empty($data['roles']) && is_array($data['roles'])) {
+            foreach ($data['roles'] as $r) {
+                if (! empty($r['id']) && ! empty($r['name'])) {
+                    $roleIdMap[$r['id']] = $roleMap[$r['name']] ?? null;
                 }
             }
+        }
 
-            $moduleMap = Module::pluck('id', 'identifier')->all();
-            $moduleGroupMap = ModuleGroup::pluck('id', 'name')->all();
+        $moduleMap = Module::pluck('id', 'identifier')->all();
+        $moduleGroupMap = ModuleGroup::pluck('id', 'name')->all();
 
-            // Import Module Groups if present in navigation_mappings
-            if (! empty($data['module_groups']) && is_array($data['module_groups'])) {
-                foreach ($data['module_groups'] as $mg) {
-                    try {
-                        if (empty($mg['name'])) {
-                            continue;
-                        }
-                        ModuleGroup::updateOrCreate(
-                            ! empty($mg['id']) ? ['id' => $mg['id']] : ['name' => $mg['name']],
-                            [
-                                'name' => $mg['name'],
-                                'icon' => $mg['icon'] ?? 'LayoutGrid',
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor ModuleGroup '.($mg['name'] ?? '').': '.$e->getMessage());
+        // Import Module Groups if present in navigation_mappings
+        if (! empty($data['module_groups']) && is_array($data['module_groups'])) {
+            foreach ($data['module_groups'] as $mg) {
+                try {
+                    if (empty($mg['name'])) {
+                        continue;
                     }
-                }
-                $moduleGroupMap = ModuleGroup::pluck('id', 'name')->all();
-            }
-
-            // Import Modules if present in navigation_mappings
-            if (! empty($data['modules']) && is_array($data['modules'])) {
-                foreach ($data['modules'] as $m) {
-                    try {
-                        if (empty($m['identifier'])) {
-                            continue;
-                        }
-                        $groupId = ! empty($m['module_group_name']) ? ($moduleGroupMap[$m['module_group_name']] ?? null) : null;
-                        Module::updateOrCreate(
-                            ! empty($m['id']) ? ['id' => $m['id']] : ['identifier' => $m['identifier']],
-                            [
-                                'identifier' => $m['identifier'],
-                                'name' => $m['name'],
-                                'route' => $m['route'] ?? null,
-                                'icon' => $m['icon'] ?? null,
-                                'description' => $m['description'] ?? null,
-                                'module_group_id' => $groupId,
-                                'showed_as_menu' => $m['showed_as_menu'] ?? true,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Module '.($m['name'] ?? '').': '.$e->getMessage());
-                    }
-                }
-                $moduleMap = Module::pluck('id', 'identifier')->all();
-            }
-
-            // 1. Company Groups
-            if (! empty($data['company_groups']) && is_array($data['company_groups'])) {
-                foreach ($data['company_groups'] as $g) {
-                    try {
-                        if (empty($g['code'])) {
-                            continue;
-                        }
-                        CompanyGroup::updateOrCreate(
-                            ! empty($g['id']) ? ['id' => $g['id']] : ['code' => $g['code']],
-                            [
-                                'code' => $g['code'],
-                                'name' => $g['name'] ?? $g['code'],
-                                'description' => $g['description'] ?? null,
-                                'is_active' => $g['is_active'] ?? true,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                        $counts['company_groups']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor CompanyGroup '.($g['code'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            $groupMap = CompanyGroup::pluck('id', 'code')->all();
-            $companyGroupIdMap = [];
-            if (! empty($data['company_groups']) && is_array($data['company_groups'])) {
-                foreach ($data['company_groups'] as $g) {
-                    if (! empty($g['id']) && ! empty($g['code'])) {
-                        $companyGroupIdMap[$g['id']] = $groupMap[$g['code']] ?? null;
-                    }
-                }
-            }
-
-            // 2. Regions
-            if (! empty($data['regions']) && is_array($data['regions'])) {
-                foreach ($data['regions'] as $r) {
-                    try {
-                        if (empty($r['code'])) {
-                            continue;
-                        }
-                        Region::updateOrCreate(
-                            ! empty($r['id']) ? ['id' => $r['id']] : ['code' => $r['code']],
-                            [
-                                'code' => $r['code'],
-                                'name' => $r['name'] ?? $r['code'],
-                                'alias' => $r['alias'] ?? null,
-                                'description' => $r['description'] ?? null,
-                                'is_active' => $r['is_active'] ?? true,
-                                'id_portal_master' => $r['id_portal_master'] ?? null,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                        $counts['regions']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Region '.($r['code'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            $regionMap = Region::pluck('id', 'code')->all();
-            $regionIdMap = [];
-            if (! empty($data['regions']) && is_array($data['regions'])) {
-                foreach ($data['regions'] as $r) {
-                    if (! empty($r['id']) && ! empty($r['code'])) {
-                        $regionIdMap[$r['id']] = $regionMap[$r['code']] ?? null;
-                    }
-                }
-            }
-
-            // 3. Companies
-            if (! empty($data['companies']) && is_array($data['companies'])) {
-                foreach ($data['companies'] as $c) {
-                    try {
-                        if (empty($c['code'])) {
-                            continue;
-                        }
-                        $groupId = ! empty($c['company_group_code']) ? ($groupMap[$c['company_group_code']] ?? null) : null;
-                        $regionId = ! empty($c['region_code']) ? ($regionMap[$c['region_code']] ?? null) : null;
-
-                        Company::updateOrCreate(
-                            ! empty($c['id']) ? ['id' => $c['id']] : ['code' => $c['code']],
-                            [
-                                'code' => $c['code'],
-                                'name' => $c['name'] ?? $c['code'],
-                                'alias' => $c['alias'] ?? null,
-                                'address' => $c['address'] ?? null,
-                                'company_group_id' => $groupId,
-                                'region_id' => $regionId,
-                                'is_active' => $c['is_active'] ?? true,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                        $counts['companies']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Company '.($c['code'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            $companyMap = Company::pluck('id', 'code')->all();
-            $companyIdMap = [];
-            if (! empty($data['companies']) && is_array($data['companies'])) {
-                foreach ($data['companies'] as $c) {
-                    if (! empty($c['id']) && ! empty($c['code'])) {
-                        $companyIdMap[$c['id']] = $companyMap[$c['code']] ?? null;
-                    }
-                }
-            }
-
-            // 4. Departments
-            if (! empty($data['departments']) && is_array($data['departments'])) {
-                foreach ($data['departments'] as $d) {
-                    try {
-                        if (empty($d['code'])) {
-                            continue;
-                        }
-                        $companyId = ! empty($d['company_code']) ? ($companyMap[$d['company_code']] ?? null) : null;
-
-                        Department::updateOrCreate(
-                            ! empty($d['id']) ? ['id' => $d['id']] : ['code' => $d['code']],
-                            [
-                                'code' => $d['code'],
-                                'name' => $d['name'] ?? $d['code'],
-                                'description' => $d['description'] ?? null,
-                                'company_id' => $companyId,
-                                'is_active' => $d['is_active'] ?? true,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                        $counts['departments']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Department '.($d['code'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            $deptMap = Department::pluck('id', 'code')->all();
-            $departmentIdMap = [];
-            if (! empty($data['departments']) && is_array($data['departments'])) {
-                foreach ($data['departments'] as $d) {
-                    if (! empty($d['id']) && ! empty($d['code'])) {
-                        $departmentIdMap[$d['id']] = $deptMap[$d['code']] ?? null;
-                    }
-                }
-            }
-
-            // 5. Contract Statuses
-            if (! empty($data['contract_statuses']) && is_array($data['contract_statuses'])) {
-                foreach ($data['contract_statuses'] as $s) {
-                    try {
-                        if (empty($s['code'])) {
-                            continue;
-                        }
-                        ContractStatus::updateOrCreate(
-                            ! empty($s['id']) ? ['id' => $s['id']] : ['code' => $s['code']],
-                            [
-                                'code' => $s['code'],
-                                'label' => $s['label'] ?? $s['code'],
-                                'color' => $s['color'] ?? null,
-                                'bg_color' => $s['bg_color'] ?? null,
-                                'icon' => $s['icon'] ?? null,
-                                'description' => $s['description'] ?? null,
-                                'is_active' => $s['is_active'] ?? true,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                        $counts['contract_statuses']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor ContractStatus '.($s['code'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            $statusMap = ContractStatus::pluck('id', 'code')->all();
-            $contractStatusIdMap = [];
-            if (! empty($data['contract_statuses']) && is_array($data['contract_statuses'])) {
-                foreach ($data['contract_statuses'] as $s) {
-                    if (! empty($s['id']) && ! empty($s['code'])) {
-                        $contractStatusIdMap[$s['id']] = $statusMap[$s['code']] ?? null;
-                    }
-                }
-            }
-
-            // 6. Workflows
-            $workflowIdMap = [];
-            if (! empty($data['workflows']) && is_array($data['workflows'])) {
-                foreach ($data['workflows'] as $w) {
-                    try {
-                        if (empty($w['id'])) {
-                            continue;
-                        }
-
-                        // Translate department_id
-                        $w['department_id'] = ! empty($w['department_id']) ? ($departmentIdMap[$w['department_id']] ?? $w['department_id']) : null;
-
-                        // Translate company_group_ids
-                        if (! empty($w['company_group_ids'])) {
-                            $oldIds = is_array($w['company_group_ids']) ? $w['company_group_ids'] : json_decode($w['company_group_ids'], true);
-                            if (is_array($oldIds)) {
-                                $newIds = array_map(fn ($id) => $companyGroupIdMap[$id] ?? $id, $oldIds);
-                                $w['company_group_ids'] = json_encode($newIds);
-                            }
-                        }
-
-                        // Translate region_ids
-                        if (! empty($w['region_ids'])) {
-                            $oldIds = is_array($w['region_ids']) ? $w['region_ids'] : json_decode($w['region_ids'], true);
-                            if (is_array($oldIds)) {
-                                $newIds = array_map(fn ($id) => $regionIdMap[$id] ?? $id, $oldIds);
-                                $w['region_ids'] = json_encode($newIds);
-                            }
-                        }
-
-                        // Translate company_ids
-                        if (! empty($w['company_ids'])) {
-                            $oldIds = is_array($w['company_ids']) ? $w['company_ids'] : json_decode($w['company_ids'], true);
-                            if (is_array($oldIds)) {
-                                $newIds = array_map(fn ($id) => $companyIdMap[$id] ?? $id, $oldIds);
-                                $w['company_ids'] = json_encode($newIds);
-                            }
-                        }
-
-                        // Map old contract_type string to contract_type_id UUID
-                        if (array_key_exists('contract_type', $w)) {
-                            $contractTypeVal = $w['contract_type'];
-                            unset($w['contract_type']);
-                            if ($contractTypeVal) {
-                                $w['contract_type_id'] = ContractType::where('code', $contractTypeVal)
-                                    ->orWhere('name', $contractTypeVal)
-                                    ->value('id');
-                            } else {
-                                $w['contract_type_id'] = null;
-                            }
-                        }
-
-                        $dbW = Workflow::updateOrCreate(
-                            ['id' => $w['id']],
-                            [
-                                'name' => $w['name'],
-                                'description' => $w['description'] ?? null,
-                                'is_default' => $w['is_default'] ?? false,
-                                'is_template' => $w['is_template'] ?? false,
-                                'is_tax_involved' => $w['is_tax_involved'] ?? false,
-                                'initiator_type' => $w['initiator_type'] ?? 'all',
-                                'sla_drafting_hours' => $w['sla_drafting_hours'] ?? 72,
-                                'sla_total_hours' => $w['sla_total_hours'] ?? 240,
-                                'sla_cutoff_hour' => $w['sla_cutoff_hour'] ?? 16,
-                                'scope' => $w['scope'] ?? 'HO',
-                                'workflow_category' => $w['workflow_category'] ?? 'unified',
-                                'company_group_ids' => $w['company_group_ids'] ?? null,
-                                'region_ids' => $w['region_ids'] ?? null,
-                                'company_ids' => $w['company_ids'] ?? null,
-                                'department_id' => $w['department_id'] ?? null,
-                                'contract_type_id' => $w['contract_type_id'] ?? null,
-                                'is_active' => $w['is_active'] ?? true,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                        $workflowIdMap[$w['id']] = $dbW->id;
-                        $counts['workflows']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor Workflow '.($w['name'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 7. Workflow Initiator Departments
-            if (! empty($data['workflow_initiator_departments']) && is_array($data['workflow_initiator_departments'])) {
-                foreach ($data['workflow_initiator_departments'] as $d) {
-                    try {
-                        if (empty($d['id'])) {
-                            continue;
-                        }
-                        $deptId = $departmentIdMap[$d['department_id']] ?? $d['department_id'];
-                        $wfId = $workflowIdMap[$d['workflow_id']] ?? $d['workflow_id'];
-
-                        $model = WorkflowInitiatorDepartment::firstOrNew(['id' => $d['id']]);
-                        $model->forceFill([
-                            'workflow_id' => $wfId,
-                            'department_id' => $deptId,
-                        ])->save();
-                        $counts['workflow_initiator_departments']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowInitiatorDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 8. Workflow Initiator Roles
-            if (! empty($data['workflow_initiator_roles']) && is_array($data['workflow_initiator_roles'])) {
-                foreach ($data['workflow_initiator_roles'] as $r) {
-                    try {
-                        if (empty($r['id'])) {
-                            continue;
-                        }
-                        $wfId = $workflowIdMap[$r['workflow_id']] ?? $r['workflow_id'];
-
-                        $model = WorkflowInitiatorRole::firstOrNew(['id' => $r['id']]);
-                        $model->forceFill([
-                            'workflow_id' => $wfId,
-                            'role_name' => $r['role_name'] ?? null,
-                        ])->save();
-                        $counts['workflow_initiator_roles']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowInitiatorRole ID '.($r['id'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 9. Workflow Initiator Users
-            $userEmailMap = User::pluck('id', 'email')->all();
-            if (! empty($data['workflow_initiator_users']) && is_array($data['workflow_initiator_users'])) {
-                foreach ($data['workflow_initiator_users'] as $u) {
-                    try {
-                        if (empty($u['id'])) {
-                            continue;
-                        }
-                        $wfId = $workflowIdMap[$u['workflow_id']] ?? $u['workflow_id'];
-                        $newUserId = ! empty($u['user_email']) ? ($userEmailMap[$u['user_email']] ?? $u['user_id']) : $u['user_id'];
-
-                        $model = WorkflowInitiatorUser::firstOrNew(['id' => $u['id']]);
-                        $model->forceFill([
-                            'workflow_id' => $wfId,
-                            'user_id' => $newUserId,
-                        ])->save();
-                        $counts['workflow_initiator_users']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowInitiatorUser ID '.($u['id'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 10. Workflow Steps
-            $workflowStepIdMap = [];
-            if (! empty($data['workflow_steps']) && is_array($data['workflow_steps'])) {
-                foreach ($data['workflow_steps'] as $s) {
-                    try {
-                        if (empty($s['id'])) {
-                            continue;
-                        }
-
-                        $workflowId = $workflowIdMap[$s['workflow_id']] ?? $s['workflow_id'];
-                        $roleId = ! empty($s['role_id']) ? ($roleIdMap[$s['role_id']] ?? $s['role_id']) : null;
-
-                        if (! empty($s['company_group_ids'])) {
-                            $oldIds = is_array($s['company_group_ids']) ? $s['company_group_ids'] : json_decode($s['company_group_ids'], true);
-                            if (is_array($oldIds)) {
-                                $newIds = array_map(fn ($id) => $companyGroupIdMap[$id] ?? $id, $oldIds);
-                                $s['company_group_ids'] = json_encode($newIds);
-                            }
-                        }
-                        if (! empty($s['region_ids'])) {
-                            $oldIds = is_array($s['region_ids']) ? $s['region_ids'] : json_decode($s['region_ids'], true);
-                            if (is_array($oldIds)) {
-                                $newIds = array_map(fn ($id) => $regionIdMap[$id] ?? $id, $oldIds);
-                                $s['region_ids'] = json_encode($newIds);
-                            }
-                        }
-                        if (! empty($s['company_ids'])) {
-                            $oldIds = is_array($s['company_ids']) ? $s['company_ids'] : json_decode($s['company_ids'], true);
-                            if (is_array($oldIds)) {
-                                $newIds = array_map(fn ($id) => $companyIdMap[$id] ?? $id, $oldIds);
-                                $s['company_ids'] = json_encode($newIds);
-                            }
-                        }
-
-                        $dbStep = WorkflowStep::updateOrCreate(
-                            ! empty($s['id']) ? ['id' => $s['id']] : [
-                                'workflow_id' => $workflowId,
-                                'step' => $s['step'],
-                            ],
-                            [
-                                'id' => $s['id'],
-                                'workflow_id' => $workflowId,
-                                'step' => $s['step'],
-                                'step_category' => $s['step_category'] ?? null,
-                                'approver_type' => $s['approver_type'] ?? 'role',
-                                'is_optional' => $s['is_optional'] ?? false,
-                                'optional_label' => $s['optional_label'] ?? null,
-                                'condition_expression' => $s['condition_expression'] ?? null,
-                                'description' => $s['description'] ?? null,
-                                'phase' => $s['phase'] ?? 'f1_request',
-                                'uploader_type' => $s['uploader_type'] ?? null,
-                                'hierarchy_level' => $s['hierarchy_level'] ?? null,
-                                'role_id' => $roleId,
-                                'company_group_ids' => $s['company_group_ids'] ?? null,
-                                'region_ids' => $s['region_ids'] ?? null,
-                                'company_ids' => $s['company_ids'] ?? null,
-                                'label' => $s['label'] ?? null,
-                                'allowed_actions' => $s['allowed_actions'] ?? null,
-                                'is_mandatory' => $s['is_mandatory'] ?? true,
-                                'is_active' => $s['is_active'] ?? true,
-                                'meta' => $s['meta'] ?? null,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
-                            ],
-                        );
-                        $workflowStepIdMap[$s['id']] = $dbStep->id;
-                        $counts['workflow_steps']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStep ID '.($s['id'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 11. Workflow Step Departments
-            if (! empty($data['workflow_step_departments']) && is_array($data['workflow_step_departments'])) {
-                foreach ($data['workflow_step_departments'] as $d) {
-                    try {
-                        if (empty($d['id'])) {
-                            continue;
-                        }
-                        $deptId = $departmentIdMap[$d['department_id']] ?? $d['department_id'];
-                        $stepId = $workflowStepIdMap[$d['workflow_step_id']] ?? $d['workflow_step_id'];
-
-                        $model = WorkflowStepDepartment::firstOrNew(['id' => $d['id']]);
-                        $model->forceFill([
-                            'workflow_step_id' => $stepId,
-                            'department_id' => $deptId,
-                        ])->save();
-                        $counts['workflow_step_departments']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStepDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 12. Workflow Step Roles
-            if (! empty($data['workflow_step_roles']) && is_array($data['workflow_step_roles'])) {
-                foreach ($data['workflow_step_roles'] as $r) {
-                    try {
-                        if (empty($r['id'])) {
-                            continue;
-                        }
-                        $stepId = $workflowStepIdMap[$r['workflow_step_id']] ?? $r['workflow_step_id'];
-
-                        $model = WorkflowStepRole::firstOrNew(['id' => $r['id']]);
-                        $model->forceFill([
-                            'workflow_step_id' => $stepId,
-                            'role_name' => $r['role_name'] ?? null,
-                        ])->save();
-                        $counts['workflow_step_roles']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStepRole ID '.($r['id'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 13. Workflow Step Users
-            if (! empty($data['workflow_step_users']) && is_array($data['workflow_step_users'])) {
-                foreach ($data['workflow_step_users'] as $u) {
-                    try {
-                        if (empty($u['id'])) {
-                            continue;
-                        }
-                        $stepId = $workflowStepIdMap[$u['workflow_step_id']] ?? $u['workflow_step_id'];
-                        $newUserId = ! empty($u['user_email']) ? ($userEmailMap[$u['user_email']] ?? $u['user_id']) : $u['user_id'];
-
-                        $model = WorkflowStepUser::firstOrNew(['id' => $u['id']]);
-                        $model->forceFill([
-                            'workflow_step_id' => $stepId,
-                            'user_id' => $newUserId,
-                        ])->save();
-                        $counts['workflow_step_users']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStepUser ID '.($u['id'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 14. Workflow Step Actions
-            if (! empty($data['workflow_step_actions']) && is_array($data['workflow_step_actions'])) {
-                foreach ($data['workflow_step_actions'] as $a) {
-                    try {
-                        if (empty($a['id'])) {
-                            continue;
-                        }
-
-                        $stepId = $workflowStepIdMap[$a['workflow_step_id']] ?? $a['workflow_step_id'];
-
-                        $nextStepId = ! empty($a['next_step_id']) ? ($workflowStepIdMap[$a['next_step_id']] ?? $a['next_step_id']) : null;
-                        $nextWorkflowId = ! empty($a['next_workflow_id']) ? ($workflowIdMap[$a['next_workflow_id']] ?? $a['next_workflow_id']) : null;
-                        $nextWorkflowStepId = ! empty($a['next_workflow_step_id']) ? ($workflowStepIdMap[$a['next_workflow_step_id']] ?? $a['next_workflow_step_id']) : null;
-
-                        $model = WorkflowStepAction::firstOrNew(['id' => $a['id']]);
-                        $model->forceFill([
-                            'workflow_step_id' => $stepId,
-                            'action_code' => $a['action_code'] ?? ($a['master_action_code'] ?? null),
-                            'next_step_id' => $nextStepId,
-                            'next_workflow_id' => $nextWorkflowId,
-                            'next_workflow_step_id' => $nextWorkflowStepId,
-                            'required_fields' => $a['required_fields'] ?? null,
-                            'autofilled_fields' => $a['autofilled_fields'] ?? null,
-                            'signing_parties' => $a['signing_parties'] ?? null,
-                            'assignee_config' => $a['assignee_config'] ?? null,
-                            'alias' => $a['alias'] ?? null,
-                            'description' => $a['description'] ?? null,
-                            'is_active' => $a['is_active'] ?? true,
+                    $existingGroup = ModuleGroup::withTrashed()->where('name', $mg['name'])->first();
+                    if ($existingGroup) {
+                        $existingGroup->update([
+                            'icon' => $mg['icon'] ?? 'LayoutGrid',
+                            'updated_by' => $admin,
+                            'deleted_at' => null,
+                        ]);
+                    } else {
+                        ModuleGroup::create([
+                            'id' => $mg['id'] ?? (string) Str::uuid(),
+                            'name' => $mg['name'],
+                            'icon' => $mg['icon'] ?? 'LayoutGrid',
                             'created_by' => $admin,
                             'updated_by' => $admin,
-                        ])->save();
-                        $counts['workflow_step_actions']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor WorkflowStepAction ID '.($a['id'] ?? '').': '.$e->getMessage());
+                        ]);
                     }
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor ModuleGroup '.($mg['name'] ?? '').': '.$e->getMessage());
+                }
+            }
+            $moduleGroupMap = ModuleGroup::pluck('id', 'name')->all();
+        }
+
+        // Import Modules if present in navigation_mappings
+        if (! empty($data['modules']) && is_array($data['modules'])) {
+            foreach ($data['modules'] as $m) {
+                try {
+                    if (empty($m['identifier'])) {
+                        continue;
+                    }
+                    $groupId = ! empty($m['module_group_name']) ? ($moduleGroupMap[$m['module_group_name']] ?? null) : null;
+                    Module::updateOrCreate(
+                        ! empty($m['id']) ? ['id' => $m['id']] : ['identifier' => $m['identifier']],
+                        [
+                            'identifier' => $m['identifier'],
+                            'name' => $m['name'],
+                            'route' => $m['route'] ?? null,
+                            'icon' => $m['icon'] ?? null,
+                            'description' => $m['description'] ?? null,
+                            'module_group_id' => $groupId,
+                            'showed_as_menu' => $m['showed_as_menu'] ?? true,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor Module '.($m['name'] ?? '').': '.$e->getMessage());
+                }
+            }
+            $moduleMap = Module::pluck('id', 'identifier')->all();
+        }
+
+        // 1. Company Groups
+        if (! empty($data['company_groups']) && is_array($data['company_groups'])) {
+            foreach ($data['company_groups'] as $g) {
+                try {
+                    if (empty($g['code'])) {
+                        continue;
+                    }
+                    CompanyGroup::updateOrCreate(
+                        ! empty($g['id']) ? ['id' => $g['id']] : ['code' => $g['code']],
+                        [
+                            'code' => $g['code'],
+                            'name' => $g['name'] ?? $g['code'],
+                            'description' => $g['description'] ?? null,
+                            'is_active' => $g['is_active'] ?? true,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $counts['company_groups']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor CompanyGroup '.($g['code'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        $groupMap = CompanyGroup::pluck('id', 'code')->all();
+        $companyGroupIdMap = [];
+        if (! empty($data['company_groups']) && is_array($data['company_groups'])) {
+            foreach ($data['company_groups'] as $g) {
+                if (! empty($g['id']) && ! empty($g['code'])) {
+                    $companyGroupIdMap[$g['id']] = $groupMap[$g['code']] ?? null;
+                }
+            }
+        }
+
+        // 2. Regions
+        if (! empty($data['regions']) && is_array($data['regions'])) {
+            foreach ($data['regions'] as $r) {
+                try {
+                    if (empty($r['code'])) {
+                        continue;
+                    }
+                    Region::updateOrCreate(
+                        ! empty($r['id']) ? ['id' => $r['id']] : ['code' => $r['code']],
+                        [
+                            'code' => $r['code'],
+                            'name' => $r['name'] ?? $r['code'],
+                            'alias' => $r['alias'] ?? null,
+                            'description' => $r['description'] ?? null,
+                            'is_active' => $r['is_active'] ?? true,
+                            'id_portal_master' => $r['id_portal_master'] ?? null,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $counts['regions']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor Region '.($r['code'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        $regionMap = Region::pluck('id', 'code')->all();
+        $regionIdMap = [];
+        if (! empty($data['regions']) && is_array($data['regions'])) {
+            foreach ($data['regions'] as $r) {
+                if (! empty($r['id']) && ! empty($r['code'])) {
+                    $regionIdMap[$r['id']] = $regionMap[$r['code']] ?? null;
+                }
+            }
+        }
+
+        // 3. Companies
+        if (! empty($data['companies']) && is_array($data['companies'])) {
+            foreach ($data['companies'] as $c) {
+                try {
+                    if (empty($c['code'])) {
+                        continue;
+                    }
+                    $groupId = ! empty($c['company_group_code']) ? ($groupMap[$c['company_group_code']] ?? null) : null;
+                    $regionId = ! empty($c['region_code']) ? ($regionMap[$c['region_code']] ?? null) : null;
+
+                    Company::updateOrCreate(
+                        ! empty($c['id']) ? ['id' => $c['id']] : ['code' => $c['code']],
+                        [
+                            'code' => $c['code'],
+                            'name' => $c['name'] ?? $c['code'],
+                            'alias' => $c['alias'] ?? null,
+                            'address' => $c['address'] ?? null,
+                            'company_group_id' => $groupId,
+                            'region_id' => $regionId,
+                            'is_active' => $c['is_active'] ?? true,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $counts['companies']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor Company '.($c['code'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        $companyMap = Company::pluck('id', 'code')->all();
+        $companyIdMap = [];
+        if (! empty($data['companies']) && is_array($data['companies'])) {
+            foreach ($data['companies'] as $c) {
+                if (! empty($c['id']) && ! empty($c['code'])) {
+                    $companyIdMap[$c['id']] = $companyMap[$c['code']] ?? null;
+                }
+            }
+        }
+
+        // 4. Departments
+        if (! empty($data['departments']) && is_array($data['departments'])) {
+            foreach ($data['departments'] as $d) {
+                try {
+                    if (empty($d['code'])) {
+                        continue;
+                    }
+                    $companyId = ! empty($d['company_code']) ? ($companyMap[$d['company_code']] ?? null) : null;
+
+                    Department::updateOrCreate(
+                        ! empty($d['id']) ? ['id' => $d['id']] : ['code' => $d['code']],
+                        [
+                            'code' => $d['code'],
+                            'name' => $d['name'] ?? $d['code'],
+                            'description' => $d['description'] ?? null,
+                            'company_id' => $companyId,
+                            'is_active' => $d['is_active'] ?? true,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $counts['departments']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor Department '.($d['code'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        $deptMap = Department::pluck('id', 'code')->all();
+        $departmentIdMap = [];
+        if (! empty($data['departments']) && is_array($data['departments'])) {
+            foreach ($data['departments'] as $d) {
+                if (! empty($d['id']) && ! empty($d['code'])) {
+                    $departmentIdMap[$d['id']] = $deptMap[$d['code']] ?? null;
+                }
+            }
+        }
+
+        // 5. Contract Statuses
+        if (! empty($data['contract_statuses']) && is_array($data['contract_statuses'])) {
+            foreach ($data['contract_statuses'] as $s) {
+                try {
+                    if (empty($s['code'])) {
+                        continue;
+                    }
+                    ContractStatus::updateOrCreate(
+                        ! empty($s['id']) ? ['id' => $s['id']] : ['code' => $s['code']],
+                        [
+                            'code' => $s['code'],
+                            'label' => $s['label'] ?? $s['code'],
+                            'color' => $s['color'] ?? null,
+                            'bg_color' => $s['bg_color'] ?? null,
+                            'icon' => $s['icon'] ?? null,
+                            'description' => $s['description'] ?? null,
+                            'is_active' => $s['is_active'] ?? true,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $counts['contract_statuses']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor ContractStatus '.($s['code'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        $statusMap = ContractStatus::pluck('id', 'code')->all();
+        $contractStatusIdMap = [];
+        if (! empty($data['contract_statuses']) && is_array($data['contract_statuses'])) {
+            foreach ($data['contract_statuses'] as $s) {
+                if (! empty($s['id']) && ! empty($s['code'])) {
+                    $contractStatusIdMap[$s['id']] = $statusMap[$s['code']] ?? null;
+                }
+            }
+        }
+
+        // 6. Workflows
+        $workflowIdMap = [];
+        if (! empty($data['workflows']) && is_array($data['workflows'])) {
+            foreach ($data['workflows'] as $w) {
+                try {
+                    if (empty($w['id'])) {
+                        continue;
+                    }
+
+                    // Translate department_id
+                    $w['department_id'] = ! empty($w['department_id']) ? ($departmentIdMap[$w['department_id']] ?? $w['department_id']) : null;
+
+                    // Translate company_group_ids
+                    if (! empty($w['company_group_ids'])) {
+                        $oldIds = is_array($w['company_group_ids']) ? $w['company_group_ids'] : json_decode($w['company_group_ids'], true);
+                        if (is_array($oldIds)) {
+                            $newIds = array_map(fn ($id) => $companyGroupIdMap[$id] ?? $id, $oldIds);
+                            $w['company_group_ids'] = json_encode($newIds);
+                        }
+                    }
+
+                    // Translate region_ids
+                    if (! empty($w['region_ids'])) {
+                        $oldIds = is_array($w['region_ids']) ? $w['region_ids'] : json_decode($w['region_ids'], true);
+                        if (is_array($oldIds)) {
+                            $newIds = array_map(fn ($id) => $regionIdMap[$id] ?? $id, $oldIds);
+                            $w['region_ids'] = json_encode($newIds);
+                        }
+                    }
+
+                    // Translate company_ids
+                    if (! empty($w['company_ids'])) {
+                        $oldIds = is_array($w['company_ids']) ? $w['company_ids'] : json_decode($w['company_ids'], true);
+                        if (is_array($oldIds)) {
+                            $newIds = array_map(fn ($id) => $companyIdMap[$id] ?? $id, $oldIds);
+                            $w['company_ids'] = json_encode($newIds);
+                        }
+                    }
+
+                    // Map old contract_type string to contract_type_id UUID
+                    if (array_key_exists('contract_type', $w)) {
+                        $contractTypeVal = $w['contract_type'];
+                        unset($w['contract_type']);
+                        if ($contractTypeVal) {
+                            $w['contract_type_id'] = ContractType::where('code', $contractTypeVal)
+                                ->orWhere('name', $contractTypeVal)
+                                ->value('id');
+                        } else {
+                            $w['contract_type_id'] = null;
+                        }
+                    }
+
+                    $dbW = Workflow::updateOrCreate(
+                        ['id' => $w['id']],
+                        [
+                            'name' => $w['name'],
+                            'description' => $w['description'] ?? null,
+                            'is_default' => $w['is_default'] ?? false,
+                            'is_template' => $w['is_template'] ?? false,
+                            'is_tax_involved' => $w['is_tax_involved'] ?? false,
+                            'initiator_type' => $w['initiator_type'] ?? 'all',
+                            'sla_drafting_hours' => $w['sla_drafting_hours'] ?? 72,
+                            'sla_total_hours' => $w['sla_total_hours'] ?? 240,
+                            'sla_cutoff_hour' => $w['sla_cutoff_hour'] ?? 16,
+                            'scope' => $w['scope'] ?? 'HO',
+                            'workflow_category' => $w['workflow_category'] ?? 'unified',
+                            'company_group_ids' => $w['company_group_ids'] ?? null,
+                            'region_ids' => $w['region_ids'] ?? null,
+                            'company_ids' => $w['company_ids'] ?? null,
+                            'department_id' => $w['department_id'] ?? null,
+                            'contract_type_id' => $w['contract_type_id'] ?? null,
+                            'is_active' => $w['is_active'] ?? true,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $workflowIdMap[$w['id']] = $dbW->id;
+                    $counts['workflows']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor Workflow '.($w['name'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 7. Workflow Initiator Departments
+        if (! empty($data['workflow_initiator_departments']) && is_array($data['workflow_initiator_departments'])) {
+            foreach ($data['workflow_initiator_departments'] as $d) {
+                try {
+                    if (empty($d['id'])) {
+                        continue;
+                    }
+                    $deptId = $departmentIdMap[$d['department_id']] ?? $d['department_id'];
+                    $wfId = $workflowIdMap[$d['workflow_id']] ?? $d['workflow_id'];
+
+                    $model = WorkflowInitiatorDepartment::firstOrNew(['id' => $d['id']]);
+                    $model->forceFill([
+                        'workflow_id' => $wfId,
+                        'department_id' => $deptId,
+                    ])->save();
+                    $counts['workflow_initiator_departments']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowInitiatorDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 8. Workflow Initiator Roles
+        if (! empty($data['workflow_initiator_roles']) && is_array($data['workflow_initiator_roles'])) {
+            foreach ($data['workflow_initiator_roles'] as $r) {
+                try {
+                    if (empty($r['id'])) {
+                        continue;
+                    }
+                    $wfId = $workflowIdMap[$r['workflow_id']] ?? $r['workflow_id'];
+
+                    $model = WorkflowInitiatorRole::firstOrNew(['id' => $r['id']]);
+                    $model->forceFill([
+                        'workflow_id' => $wfId,
+                        'role_name' => $r['role_name'] ?? null,
+                    ])->save();
+                    $counts['workflow_initiator_roles']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowInitiatorRole ID '.($r['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 9. Workflow Initiator Users
+        $userEmailMap = User::pluck('id', 'email')->all();
+        if (! empty($data['workflow_initiator_users']) && is_array($data['workflow_initiator_users'])) {
+            foreach ($data['workflow_initiator_users'] as $u) {
+                try {
+                    if (empty($u['id'])) {
+                        continue;
+                    }
+                    $wfId = $workflowIdMap[$u['workflow_id']] ?? $u['workflow_id'];
+                    $newUserId = ! empty($u['user_email']) ? ($userEmailMap[$u['user_email']] ?? $u['user_id']) : $u['user_id'];
+
+                    $model = WorkflowInitiatorUser::firstOrNew(['id' => $u['id']]);
+                    $model->forceFill([
+                        'workflow_id' => $wfId,
+                        'user_id' => $newUserId,
+                    ])->save();
+                    $counts['workflow_initiator_users']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowInitiatorUser ID '.($u['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 10. Workflow Steps
+        $workflowStepIdMap = [];
+        if (! empty($data['workflow_steps']) && is_array($data['workflow_steps'])) {
+            foreach ($data['workflow_steps'] as $s) {
+                try {
+                    if (empty($s['id'])) {
+                        continue;
+                    }
+
+                    $workflowId = $workflowIdMap[$s['workflow_id']] ?? $s['workflow_id'];
+                    $roleId = ! empty($s['role_id']) ? ($roleIdMap[$s['role_id']] ?? $s['role_id']) : null;
+
+                    if (! empty($s['company_group_ids'])) {
+                        $oldIds = is_array($s['company_group_ids']) ? $s['company_group_ids'] : json_decode($s['company_group_ids'], true);
+                        if (is_array($oldIds)) {
+                            $newIds = array_map(fn ($id) => $companyGroupIdMap[$id] ?? $id, $oldIds);
+                            $s['company_group_ids'] = json_encode($newIds);
+                        }
+                    }
+                    if (! empty($s['region_ids'])) {
+                        $oldIds = is_array($s['region_ids']) ? $s['region_ids'] : json_decode($s['region_ids'], true);
+                        if (is_array($oldIds)) {
+                            $newIds = array_map(fn ($id) => $regionIdMap[$id] ?? $id, $oldIds);
+                            $s['region_ids'] = json_encode($newIds);
+                        }
+                    }
+                    if (! empty($s['company_ids'])) {
+                        $oldIds = is_array($s['company_ids']) ? $s['company_ids'] : json_decode($s['company_ids'], true);
+                        if (is_array($oldIds)) {
+                            $newIds = array_map(fn ($id) => $companyIdMap[$id] ?? $id, $oldIds);
+                            $s['company_ids'] = json_encode($newIds);
+                        }
+                    }
+
+                    $dbStep = WorkflowStep::updateOrCreate(
+                        ! empty($s['id']) ? ['id' => $s['id']] : [
+                            'workflow_id' => $workflowId,
+                            'step' => $s['step'],
+                        ],
+                        [
+                            'id' => $s['id'],
+                            'workflow_id' => $workflowId,
+                            'step' => $s['step'],
+                            'step_category' => $s['step_category'] ?? null,
+                            'approver_type' => $s['approver_type'] ?? 'role',
+                            'is_optional' => $s['is_optional'] ?? false,
+                            'optional_label' => $s['optional_label'] ?? null,
+                            'condition_expression' => $s['condition_expression'] ?? null,
+                            'description' => $s['description'] ?? null,
+                            'phase' => $s['phase'] ?? 'f1_request',
+                            'uploader_type' => $s['uploader_type'] ?? null,
+                            'hierarchy_level' => $s['hierarchy_level'] ?? null,
+                            'role_id' => $roleId,
+                            'company_group_ids' => $s['company_group_ids'] ?? null,
+                            'region_ids' => $s['region_ids'] ?? null,
+                            'company_ids' => $s['company_ids'] ?? null,
+                            'label' => $s['label'] ?? null,
+                            'allowed_actions' => $s['allowed_actions'] ?? null,
+                            'is_mandatory' => $s['is_mandatory'] ?? true,
+                            'is_active' => $s['is_active'] ?? true,
+                            'meta' => $s['meta'] ?? null,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $workflowStepIdMap[$s['id']] = $dbStep->id;
+                    $counts['workflow_steps']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowStep ID '.($s['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 11. Workflow Step Departments
+        if (! empty($data['workflow_step_departments']) && is_array($data['workflow_step_departments'])) {
+            foreach ($data['workflow_step_departments'] as $d) {
+                try {
+                    if (empty($d['id'])) {
+                        continue;
+                    }
+                    $deptId = $departmentIdMap[$d['department_id']] ?? $d['department_id'];
+                    $stepId = $workflowStepIdMap[$d['workflow_step_id']] ?? $d['workflow_step_id'];
+
+                    $model = WorkflowStepDepartment::firstOrNew(['id' => $d['id']]);
+                    $model->forceFill([
+                        'workflow_step_id' => $stepId,
+                        'department_id' => $deptId,
+                    ])->save();
+                    $counts['workflow_step_departments']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowStepDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 12. Workflow Step Roles
+        if (! empty($data['workflow_step_roles']) && is_array($data['workflow_step_roles'])) {
+            foreach ($data['workflow_step_roles'] as $r) {
+                try {
+                    if (empty($r['id'])) {
+                        continue;
+                    }
+                    $stepId = $workflowStepIdMap[$r['workflow_step_id']] ?? $r['workflow_step_id'];
+
+                    $model = WorkflowStepRole::firstOrNew(['id' => $r['id']]);
+                    $model->forceFill([
+                        'workflow_step_id' => $stepId,
+                        'role_name' => $r['role_name'] ?? null,
+                    ])->save();
+                    $counts['workflow_step_roles']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowStepRole ID '.($r['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 13. Workflow Step Users
+        if (! empty($data['workflow_step_users']) && is_array($data['workflow_step_users'])) {
+            foreach ($data['workflow_step_users'] as $u) {
+                try {
+                    if (empty($u['id'])) {
+                        continue;
+                    }
+                    $stepId = $workflowStepIdMap[$u['workflow_step_id']] ?? $u['workflow_step_id'];
+                    $newUserId = ! empty($u['user_email']) ? ($userEmailMap[$u['user_email']] ?? $u['user_id']) : $u['user_id'];
+
+                    $model = WorkflowStepUser::firstOrNew(['id' => $u['id']]);
+                    $model->forceFill([
+                        'workflow_step_id' => $stepId,
+                        'user_id' => $newUserId,
+                    ])->save();
+                    $counts['workflow_step_users']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowStepUser ID '.($u['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 14. Workflow Step Actions
+        if (! empty($data['workflow_step_actions']) && is_array($data['workflow_step_actions'])) {
+            foreach ($data['workflow_step_actions'] as $a) {
+                try {
+                    if (empty($a['id'])) {
+                        continue;
+                    }
+
+                    $stepId = $workflowStepIdMap[$a['workflow_step_id']] ?? $a['workflow_step_id'];
+
+                    $nextStepId = ! empty($a['next_step_id']) ? ($workflowStepIdMap[$a['next_step_id']] ?? $a['next_step_id']) : null;
+                    $nextWorkflowId = ! empty($a['next_workflow_id']) ? ($workflowIdMap[$a['next_workflow_id']] ?? $a['next_workflow_id']) : null;
+                    $nextWorkflowStepId = ! empty($a['next_workflow_step_id']) ? ($workflowStepIdMap[$a['next_workflow_step_id']] ?? $a['next_workflow_step_id']) : null;
+
+                    $model = WorkflowStepAction::firstOrNew(['id' => $a['id']]);
+                    $model->forceFill([
+                        'workflow_step_id' => $stepId,
+                        'action_code' => $a['action_code'] ?? ($a['master_action_code'] ?? null),
+                        'next_step_id' => $nextStepId,
+                        'next_workflow_id' => $nextWorkflowId,
+                        'next_workflow_step_id' => $nextWorkflowStepId,
+                        'required_fields' => $a['required_fields'] ?? null,
+                        'autofilled_fields' => $a['autofilled_fields'] ?? null,
+                        'signing_parties' => $a['signing_parties'] ?? null,
+                        'assignee_config' => $a['assignee_config'] ?? null,
+                        'alias' => $a['alias'] ?? null,
+                        'description' => $a['description'] ?? null,
+                        'is_active' => $a['is_active'] ?? true,
+                        'created_by' => $admin,
+                        'updated_by' => $admin,
+                    ])->save();
+                    $counts['workflow_step_actions']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowStepAction ID '.($a['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 14.5 Form Templates & Fields
+        if (! empty($data['form_templates']) && is_array($data['form_templates'])) {
+            $typeMap = ContractType::pluck('id', 'code')->all();
+            foreach ($data['form_templates'] as $ft) {
+                try {
+                    if (empty($ft['id'])) {
+                        continue;
+                    }
+                    $typeId = ! empty($ft['contract_type_code']) ? ($typeMap[$ft['contract_type_code']] ?? null) : null;
+
+                    FormTemplate::updateOrCreate(
+                        ['id' => $ft['id']],
+                        [
+                            'name' => $ft['name'],
+                            'description' => $ft['description'] ?? null,
+                            'contract_type_id' => $typeId,
+                            'document_type' => $ft['document_type'] ?? 'f1',
+                            'has_letterhead' => $ft['has_letterhead'] ?? false,
+                            'letterhead_json' => $ft['letterhead_json'] ?? null,
+                            'is_active' => $ft['is_active'] ?? true,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $counts['form_templates']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor FormTemplate ID '.($ft['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        if (! empty($data['form_fields']) && is_array($data['form_fields'])) {
+            foreach ($data['form_fields'] as $ff) {
+                try {
+                    if (empty($ff['id'])) {
+                        continue;
+                    }
+                    FormField::updateOrCreate(
+                        ['id' => $ff['id']],
+                        [
+                            'form_template_id' => $ff['form_template_id'],
+                            'parent_id' => $ff['parent_id'] ?? null,
+                            'label' => $ff['label'] ?? '',
+                            'name' => $ff['name'],
+                            'type' => $ff['type'],
+                            'container_type' => $ff['container_type'] ?? null,
+                            'placeholder' => $ff['placeholder'] ?? null,
+                            'is_required' => $ff['is_required'] ?? false,
+                            'use_rich_text' => $ff['use_rich_text'] ?? false,
+                            'width' => $ff['width'] ?? '100',
+                            'options' => $ff['options'] ?? null,
+                            'order' => $ff['order'] ?? 0,
+                            'validation_rules' => $ff['validation_rules'] ?? null,
+                        ],
+                    );
+                    $counts['form_fields']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor FormField ID '.($ff['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 15. Contract Types
+        if (! empty($data['contract_types']) && is_array($data['contract_types'])) {
+            $workflowMap = Workflow::pluck('id', 'name')->all();
+            foreach ($data['contract_types'] as $t) {
+                try {
+                    if (empty($t['code'])) {
+                        continue;
+                    }
+                    $workflowId = ! empty($t['workflow_name']) ? ($workflowMap[$t['workflow_name']] ?? null) : null;
+
+                    ContractType::updateOrCreate(
+                        ! empty($t['id']) ? ['id' => $t['id']] : ['code' => $t['code']],
+                        [
+                            'code' => $t['code'],
+                            'name' => $t['name'] ?? $t['code'],
+                            'workflow_id' => $workflowId,
+                            'features' => $t['features'] ?? null,
+                            'description' => $t['description'] ?? null,
+                            'f1_input_mechanism' => $t['f1_input_mechanism'] ?? 'form',
+                            'f1_form_template_id' => $t['f1_form_template_id'] ?? null,
+                            'f1_contract_template_id' => $t['f1_contract_template_id'] ?? null,
+                            'f2_input_mechanism' => $t['f2_input_mechanism'] ?? 'form',
+                            'f2_form_template_id' => $t['f2_form_template_id'] ?? null,
+                            'f2_contract_template_id' => $t['f2_contract_template_id'] ?? null,
+                        ],
+                    );
+                    $counts['contract_types']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor ContractType '.($t['code'] ?? '').': '.$e->getMessage());
                 }
             }
 
-            // 14.5 Form Templates & Fields
-            if (! empty($data['form_templates']) && is_array($data['form_templates'])) {
-                $typeMap = ContractType::pluck('id', 'code')->all();
-                foreach ($data['form_templates'] as $ft) {
-                    try {
-                        if (empty($ft['id'])) {
-                            continue;
-                        }
-                        $typeId = ! empty($ft['contract_type_code']) ? ($typeMap[$ft['contract_type_code']] ?? null) : null;
+            $typeMap = ContractType::pluck('id', 'code')->all();
+            foreach ($data['contract_types'] as $t) {
+                try {
+                    if (empty($t['code']) || empty($t['parent_code'])) {
+                        continue;
+                    }
+                    $parentId = $typeMap[$t['parent_code']] ?? null;
+                    if ($parentId) {
+                        ContractType::where('code', $t['code'])->update(['parent_id' => $parentId]);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengupdate parent ContractType '.($t['code'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
 
-                        FormTemplate::updateOrCreate(
-                            ['id' => $ft['id']],
+        // 16. Access Mappings
+        if (! empty($data['access_mappings']) && is_array($data['access_mappings'])) {
+            foreach ($data['access_mappings'] as $am) {
+                try {
+                    $roleId = $roleMap[$am['role_name']] ?? null;
+                    $moduleId = $moduleMap[$am['module_identifier']] ?? null;
+
+                    $groupId = null;
+                    if (! empty($am['module_group_name'])) {
+                        $groupId = $moduleGroupMap[$am['module_group_name']] ?? null;
+                    } elseif (! empty($am['module_group_id'])) {
+                        $groupId = $am['module_group_id'];
+                    }
+
+                    if ($roleId && $moduleId) {
+                        AccessModule::updateOrCreate(
+                            ! empty($am['id']) ? ['id' => $am['id']] : ['role_id' => $roleId, 'module_id' => $moduleId],
                             [
-                                'name' => $ft['name'],
-                                'description' => $ft['description'] ?? null,
-                                'contract_type_id' => $typeId,
-                                'document_type' => $ft['document_type'] ?? 'f1',
-                                'has_letterhead' => $ft['has_letterhead'] ?? false,
-                                'letterhead_json' => $ft['letterhead_json'] ?? null,
-                                'is_active' => $ft['is_active'] ?? true,
-                                'created_by' => $admin,
-                                'updated_by' => $admin,
+                                'role_id' => $roleId,
+                                'module_id' => $moduleId,
+                                'can_read' => $am['can_read'] ?? false,
+                                'can_create' => $am['can_create'] ?? false,
+                                'can_update' => $am['can_update'] ?? false,
+                                'can_delete' => $am['can_delete'] ?? false,
+                                'can_approve' => $am['can_approve'] ?? false,
+                                'can_bulk_approve' => $am['can_bulk_approve'] ?? false,
+                                'can_bulk_delete' => $am['can_bulk_delete'] ?? false,
+                                'module_group_id' => $groupId,
+                                'sequence' => $am['sequence'] ?? null,
                             ],
                         );
-                        $counts['form_templates']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor FormTemplate ID '.($ft['id'] ?? '').': '.$e->getMessage());
+                        $counts['access_mappings']++;
                     }
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor AccessModule: '.$e->getMessage());
                 }
             }
+        }
 
-            if (! empty($data['form_fields']) && is_array($data['form_fields'])) {
-                foreach ($data['form_fields'] as $ff) {
-                    try {
-                        if (empty($ff['id'])) {
-                            continue;
-                        }
-                        FormField::updateOrCreate(
-                            ['id' => $ff['id']],
+        // 17. Role Navigation Mappings
+        if (! empty($data['role_navigation_mappings']) && is_array($data['role_navigation_mappings'])) {
+            foreach ($data['role_navigation_mappings'] as $rmg) {
+                try {
+                    $roleId = $roleMap[$rmg['role_name']] ?? null;
+                    $groupId = $moduleGroupMap[$rmg['module_group_name']] ?? null;
+
+                    if ($roleId && $groupId) {
+                        RoleModuleGroup::updateOrCreate(
+                            ! empty($rmg['id']) ? ['id' => $rmg['id']] : [
+                                'role_id' => $roleId,
+                                'module_group_id' => $groupId,
+                            ],
                             [
-                                'form_template_id' => $ff['form_template_id'],
-                                'parent_id' => $ff['parent_id'] ?? null,
-                                'label' => $ff['label'] ?? '',
-                                'name' => $ff['name'],
-                                'type' => $ff['type'],
-                                'container_type' => $ff['container_type'] ?? null,
-                                'placeholder' => $ff['placeholder'] ?? null,
-                                'is_required' => $ff['is_required'] ?? false,
-                                'use_rich_text' => $ff['use_rich_text'] ?? false,
-                                'width' => $ff['width'] ?? '100',
-                                'options' => $ff['options'] ?? null,
-                                'order' => $ff['order'] ?? 0,
-                                'validation_rules' => $ff['validation_rules'] ?? null,
+                                'role_id' => $roleId,
+                                'module_group_id' => $groupId,
+                                'sequence' => $rmg['sequence'] ?? null,
                             ],
                         );
-                        $counts['form_fields']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor FormField ID '.($ff['id'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
 
-            // 15. Contract Types
-            if (! empty($data['contract_types']) && is_array($data['contract_types'])) {
-                $workflowMap = Workflow::pluck('id', 'name')->all();
-                foreach ($data['contract_types'] as $t) {
-                    try {
-                        if (empty($t['code'])) {
-                            continue;
-                        }
-                        $workflowId = ! empty($t['workflow_name']) ? ($workflowMap[$t['workflow_name']] ?? null) : null;
-
-                        ContractType::updateOrCreate(
-                            ! empty($t['id']) ? ['id' => $t['id']] : ['code' => $t['code']],
-                            [
-                                'code' => $t['code'],
-                                'name' => $t['name'] ?? $t['code'],
-                                'workflow_id' => $workflowId,
-                                'features' => $t['features'] ?? null,
-                                'description' => $t['description'] ?? null,
-                                'f1_input_mechanism' => $t['f1_input_mechanism'] ?? 'form',
-                                'f1_form_template_id' => $t['f1_form_template_id'] ?? null,
-                                'f1_contract_template_id' => $t['f1_contract_template_id'] ?? null,
-                                'f2_input_mechanism' => $t['f2_input_mechanism'] ?? 'form',
-                                'f2_form_template_id' => $t['f2_form_template_id'] ?? null,
-                                'f2_contract_template_id' => $t['f2_contract_template_id'] ?? null,
-                            ],
-                        );
-                        $counts['contract_types']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor ContractType '.($t['code'] ?? '').': '.$e->getMessage());
-                    }
-                }
-
-                $typeMap = ContractType::pluck('id', 'code')->all();
-                foreach ($data['contract_types'] as $t) {
-                    try {
-                        if (empty($t['code']) || empty($t['parent_code'])) {
-                            continue;
-                        }
-                        $parentId = $typeMap[$t['parent_code']] ?? null;
-                        if ($parentId) {
-                            ContractType::where('code', $t['code'])->update(['parent_id' => $parentId]);
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengupdate parent ContractType '.($t['code'] ?? '').': '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 16. Access Mappings
-            if (! empty($data['access_mappings']) && is_array($data['access_mappings'])) {
-                foreach ($data['access_mappings'] as $am) {
-                    try {
-                        $roleId = $roleMap[$am['role_name']] ?? null;
-                        $moduleId = $moduleMap[$am['module_identifier']] ?? null;
-
-                        $groupId = null;
-                        if (! empty($am['module_group_name'])) {
-                            $groupId = $moduleGroupMap[$am['module_group_name']] ?? null;
-                        } elseif (! empty($am['module_group_id'])) {
-                            $groupId = $am['module_group_id'];
-                        }
-
-                        if ($roleId && $moduleId) {
-                            AccessModule::updateOrCreate(
-                                ! empty($am['id']) ? ['id' => $am['id']] : ['role_id' => $roleId, 'module_id' => $moduleId],
-                                [
-                                    'role_id' => $roleId,
-                                    'module_id' => $moduleId,
-                                    'can_read' => $am['can_read'] ?? false,
-                                    'can_create' => $am['can_create'] ?? false,
-                                    'can_update' => $am['can_update'] ?? false,
-                                    'can_delete' => $am['can_delete'] ?? false,
-                                    'can_approve' => $am['can_approve'] ?? false,
-                                    'can_bulk_approve' => $am['can_bulk_approve'] ?? false,
-                                    'can_bulk_delete' => $am['can_bulk_delete'] ?? false,
-                                    'module_group_id' => $groupId,
-                                    'sequence' => $am['sequence'] ?? null,
-                                ],
-                            );
-                            $counts['access_mappings']++;
-                        }
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor AccessModule: '.$e->getMessage());
-                    }
-                }
-            }
-
-            // 17. Role Navigation Mappings
-            if (! empty($data['role_navigation_mappings']) && is_array($data['role_navigation_mappings'])) {
-                foreach ($data['role_navigation_mappings'] as $rmg) {
-                    try {
-                        $roleId = $roleMap[$rmg['role_name']] ?? null;
-                        $groupId = $moduleGroupMap[$rmg['module_group_name']] ?? null;
-
-                        if ($roleId && $groupId) {
-                            RoleModuleGroup::updateOrCreate(
-                                ! empty($rmg['id']) ? ['id' => $rmg['id']] : [
-                                    'role_id' => $roleId,
-                                    'module_group_id' => $groupId,
-                                ],
-                                [
-                                    'role_id' => $roleId,
-                                    'module_group_id' => $groupId,
-                                    'sequence' => $rmg['sequence'] ?? null,
-                                ],
-                            );
-
-                            if (! empty($rmg['modules']) && is_array($rmg['modules'])) {
-                                foreach ($rmg['modules'] as $m) {
-                                    $moduleId = $moduleMap[$m['module_identifier']] ?? null;
-                                    if ($moduleId) {
-                                        AccessModule::updateOrCreate(
-                                            [
-                                                'role_id' => $roleId,
-                                                'module_id' => $moduleId,
-                                            ],
-                                            [
-                                                'can_read' => true,
-                                                'module_group_id' => $groupId,
-                                                'sequence' => $m['sequence'] ?? null,
-                                            ],
-                                        );
-                                    }
+                        if (! empty($rmg['modules']) && is_array($rmg['modules'])) {
+                            foreach ($rmg['modules'] as $m) {
+                                $moduleId = $moduleMap[$m['module_identifier']] ?? null;
+                                if ($moduleId) {
+                                    AccessModule::updateOrCreate(
+                                        [
+                                            'role_id' => $roleId,
+                                            'module_id' => $moduleId,
+                                        ],
+                                        [
+                                            'can_read' => true,
+                                            'module_group_id' => $groupId,
+                                            'sequence' => $m['sequence'] ?? null,
+                                        ],
+                                    );
                                 }
                             }
-
-                            $counts['role_navigation_mappings']++;
                         }
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor RoleModuleGroup: '.$e->getMessage());
+
+                        $counts['role_navigation_mappings']++;
                     }
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor RoleModuleGroup: '.$e->getMessage());
                 }
             }
+        }
 
-            // 12. Users (Import from either standard json or user helpdesk.json)
-            $usersData = null;
-            if (! empty($data['users']) && is_array($data['users'])) {
-                $usersData = $data['users'];
-            } else {
-                foreach ($data as $key => $val) {
-                    if (str_contains($key, 'select * from users') && is_array($val)) {
-                        $usersData = $val;
-                        break;
-                    }
+        // 12. Users (Import from either standard json or user helpdesk.json)
+        $usersData = null;
+        if (! empty($data['users']) && is_array($data['users'])) {
+            $usersData = $data['users'];
+        } else {
+            foreach ($data as $key => $val) {
+                if (str_contains($key, 'select * from users') && is_array($val)) {
+                    $usersData = $val;
+                    break;
                 }
             }
+        }
 
-            if (! empty($usersData) && is_array($usersData)) {
-                $validDepartments = array_flip(DB::table('m_departments')->pluck('id')->toArray());
-                $validRoles = array_flip(DB::table('m_roles')->pluck('id')->toArray());
-                $defaultRole = Role::whereRaw('lower(name) = ?', ['staff'])->first();
+        if (! empty($usersData) && is_array($usersData)) {
+            $validDepartments = array_flip(DB::table('m_departments')->pluck('id')->toArray());
+            $validRoles = array_flip(DB::table('m_roles')->pluck('id')->toArray());
+            $defaultRole = Role::whereRaw('lower(name) = ?', ['staff'])->first();
 
-                foreach ($usersData as $u) {
-                    try {
-                        if (empty($u['name']) && empty($u['username']) && empty($u['email'])) {
-                            continue;
-                        }
-
-                        // Skip system admin to prevent lockout/overwrite
-                        if (($u['email'] ?? '') === 'admin@example.com' || ($u['username'] ?? '') === 'admin') {
-                            continue;
-                        }
-
-                        $email = filter_var($u['email'] ?? '', FILTER_VALIDATE_EMAIL) ? $u['email'] : '-';
-                        $password = $u['password'] ?? bcrypt('Karyawan123!');
-
-                        $roleId = null;
-                        if (! empty($u['role_name'])) {
-                            $roleId = Role::whereRaw('lower(name) = ?', [strtolower($u['role_name'])])->value('id');
-                        } elseif (! empty($u['role_id'])) {
-                            $roleId = isset($validRoles[$u['role_id']]) ? $u['role_id'] : null;
-                        }
-
-                        if (! $roleId && $defaultRole) {
-                            $roleId = $defaultRole->id;
-                        }
-
-                        $deptId = null;
-                        if (! empty($u['department_name'])) {
-                            $deptId = Department::whereRaw('lower(name) = ?', [strtolower($u['department_name'])])->value('id');
-                        } elseif (! empty($u['department_id'])) {
-                            $deptId = isset($validDepartments[$u['department_id']]) ? $u['department_id'] : null;
-                        }
-
-                        User::updateOrCreate(
-                            ! empty($u['id']) ? ['id' => $u['id']] : ['username' => $u['username']],
-                            [
-                                'username' => $u['username'] ?? null,
-                                'code' => $u['code'] ?? null,
-                                'name' => $u['name'] ?? null,
-                                'email' => $email,
-                                'password' => $password,
-                                'phone_number' => $u['phone_number'] ?? null,
-                                'company_id' => $u['company_id'] ?? null,
-                                'company_group_id' => $u['company_group_id'] ?? null,
-                                'department_id' => $deptId,
-                                'division_id' => $u['division_id'] ?? null,
-                                'region_id' => $u['region_id'] ?? null,
-                                'role_id' => $roleId,
-                                'is_active' => $u['is_active'] ?? true,
-                                'is_employee' => $u['is_employee'] ?? true,
-                            ]
-                        );
-                        $counts['users']++;
-                    } catch (\Exception $e) {
-                        Log::warning('Gagal mengimpor User '.($u['name'] ?? '').': '.$e->getMessage());
+            foreach ($usersData as $u) {
+                try {
+                    if (empty($u['name']) && empty($u['username']) && empty($u['email'])) {
+                        continue;
                     }
+
+                    // Skip system admin to prevent lockout/overwrite
+                    if (($u['email'] ?? '') === 'admin@example.com' || ($u['username'] ?? '') === 'admin') {
+                        continue;
+                    }
+
+                    $email = filter_var($u['email'] ?? '', FILTER_VALIDATE_EMAIL) ? $u['email'] : '-';
+                    $password = $u['password'] ?? bcrypt('Karyawan123!');
+
+                    $roleId = null;
+                    if (! empty($u['role_name'])) {
+                        $roleId = Role::whereRaw('lower(name) = ?', [strtolower($u['role_name'])])->value('id');
+                    } elseif (! empty($u['role_id'])) {
+                        $roleId = isset($validRoles[$u['role_id']]) ? $u['role_id'] : null;
+                    }
+
+                    if (! $roleId && $defaultRole) {
+                        $roleId = $defaultRole->id;
+                    }
+
+                    $deptId = null;
+                    if (! empty($u['department_name'])) {
+                        $deptId = Department::whereRaw('lower(name) = ?', [strtolower($u['department_name'])])->value('id');
+                    } elseif (! empty($u['department_id'])) {
+                        $deptId = isset($validDepartments[$u['department_id']]) ? $u['department_id'] : null;
+                    }
+
+                    User::updateOrCreate(
+                        ! empty($u['id']) ? ['id' => $u['id']] : ['username' => $u['username']],
+                        [
+                            'username' => $u['username'] ?? null,
+                            'code' => $u['code'] ?? null,
+                            'name' => $u['name'] ?? null,
+                            'email' => $email,
+                            'password' => $password,
+                            'phone_number' => $u['phone_number'] ?? null,
+                            'company_id' => $u['company_id'] ?? null,
+                            'company_group_id' => $u['company_group_id'] ?? null,
+                            'department_id' => $deptId,
+                            'division_id' => $u['division_id'] ?? null,
+                            'region_id' => $u['region_id'] ?? null,
+                            'role_id' => $roleId,
+                            'is_active' => $u['is_active'] ?? true,
+                            'is_employee' => $u['is_employee'] ?? true,
+                        ]
+                    );
+                    $counts['users']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor User '.($u['name'] ?? '').': '.$e->getMessage());
                 }
             }
+        }
 
-            return $counts;
+        return $counts;
     }
 
     /**

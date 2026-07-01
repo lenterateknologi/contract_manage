@@ -2,7 +2,6 @@
 
 namespace App\Http\Queries\Contract;
 
-use App\Enums\ContractStatusEnum;
 use App\Models\Contract;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -73,7 +72,7 @@ class ContractListQuery
 
         $this->applyViewFilter($query, $view);
         $this->applySearchFilter($query, $request);
-        $this->applyStatusFilter($query, $request);
+        $this->applyStatusFilter($query, $request, $view);
         $this->applyTypeFilter($query, $request);
         $this->applyDepartmentFilter($query, $request);
         $this->applyDateRangeFilter($query, $request);
@@ -93,32 +92,36 @@ class ContractListQuery
                 break;
 
             case 'pending':
-                $query->whereHas('approvals', function (Builder $q): void {
-                    $q->where('user_id', Auth::id())
-                        ->where('status', 'pending')
-                        ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
-                });
+                $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
+                    ->whereHas('approvals', function (Builder $q): void {
+                        $q->where('user_id', Auth::id())
+                            ->where('status', 'pending')
+                            ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
+                    });
                 break;
 
             case 'expiry':
-                $query->whereNotNull('end_date');
+                $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
+                    ->whereNotNull('end_date');
                 break;
 
             case 'f1':
-                $query->whereHas('versions', fn (Builder $q) => $q->where('document_type', 'f1'));
+                $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
+                    ->whereHas('versions', fn (Builder $q) => $q->where('document_type', 'f1'));
                 break;
 
             case 'f2':
-                $query->whereHas('versions', fn (Builder $q) => $q->where('document_type', 'f2'));
+                $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
+                    ->whereHas('versions', fn (Builder $q) => $q->where('document_type', 'f2'));
                 break;
 
             case 'all':
-                // No status filter
+                $query->whereRaw('UPPER(status) != ?', ['DRAFT']);
                 break;
 
             case 'contracts':
             default:
-                $query->where('status', '!=', ContractStatusEnum::Draft->value);
+                $query->whereRaw('UPPER(status) != ?', ['DRAFT']);
                 break;
         }
     }
@@ -144,16 +147,28 @@ class ContractListQuery
     /**
      * Apply status filter (single value or array).
      */
-    private function applyStatusFilter(Builder $query, Request $request): void
+    private function applyStatusFilter(Builder $query, Request $request, string $view): void
     {
         if (! $request->filled('status') || $request->status === 'all') {
             return;
         }
 
         if (is_array($request->status)) {
-            $query->whereIn('status', $request->status);
+            $statuses = $request->status;
+            if ($view !== 'mine') {
+                $statuses = array_filter($statuses, fn ($s) => strtoupper($s) !== 'DRAFT');
+            }
+            if (empty($statuses)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereIn(\DB::raw('UPPER(status)'), array_map('strtoupper', array_values($statuses)));
+            }
         } else {
-            $query->where('status', $request->status);
+            if ($view !== 'mine' && strtoupper($request->status) === 'DRAFT') {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereRaw('UPPER(status) = ?', [strtoupper($request->status)]);
+            }
         }
     }
 

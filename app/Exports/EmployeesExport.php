@@ -23,11 +23,9 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
     public function collection()
     {
         // Query users, excluding Admin & Super Admin roles, with eager loaded relations
-        $users = User::with(['role', 'department'])
-            ->where(function ($q) {
-                $q->whereNull('role')
-                    ->orWhereRaw('lower(role) not in (?, ?, ?)', ['admin', 'super admin', 'superadmin']);
-            })->orderBy('name')->get();
+        $users = User::with(['roleRelation', 'department'])
+            ->orderBy('name')
+            ->get();
 
         // Convert to collection
         /** @var Collection<int, User|null> $collection */
@@ -79,8 +77,8 @@ class EmployeesExport implements FromCollection, ShouldAutoSize, WithEvents, Wit
             $user->name,
             $user->username,
             $user->email,
-            $user->phone,
-            $user->department_id,
+            $user->phone_number,
+            $user->division_id,
             '=IF(ISBLANK(G'.$this->rowNumber.'), "", IFERROR(VLOOKUP(G'.$this->rowNumber.', \'Unit Departemen\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
             $user->role->name ?? $user->getAttribute('role'),
             $user->is_active ? 'Aktif' : 'Nonaktif',

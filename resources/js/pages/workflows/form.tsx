@@ -24,6 +24,7 @@ export default function WorkflowEditor({
     workflow,
     contractTypes,
     departments,
+    divisions = [],
     roles,
     users,
     contractStatuses,
@@ -525,17 +526,17 @@ export default function WorkflowEditor({
                                                     />
                                                 </div>
 
-                                                {/* Selector 2: Unit / Department */}
+                                                {/* Selector 2: Unit / Department / Divisi */}
                                                 <div className="space-y-1.5">
 
                                                     <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                        <UsersIcon size={10} /> Unit / Department
+                                                        <UsersIcon size={10} /> Unit / Department / Divisi
                                                     </label>
                                                     <SearchableMultiSelect
                                                         values={form.data.initiator_departments?.map(String) || []}
                                                         onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
-                                                        options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                        placeholder="Semua Unit..."
+                                                        options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                        placeholder="Semua Unit / Departemen / Divisi..."
                                                         triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
                                                     />
                                                 </div>
@@ -614,6 +615,7 @@ export default function WorkflowEditor({
                                                                 key={step.id}
                                                                 roles={roles}
                                                                 departments={departments}
+                                                                divisions={divisions}
                                                                 users={users}
                                                                 step={step}
                                                                 idx={idx}

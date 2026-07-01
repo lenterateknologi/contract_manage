@@ -32,7 +32,7 @@ class ContractOptionsQuery
         return [
             'departments' => fn () => Department::query()
                 ->when($isManager, fn ($q) => $q->where('company_id', $user->company_id))
-                ->when(! $hasFullAccess && ! $isManager, fn ($q) => $q->where('id', $user->department_id))
+                ->when(! $hasFullAccess && ! $isManager, fn ($q) => $q->where('id', $user->division_id))
                 ->orderBy('name')
                 ->get(),
 
@@ -53,7 +53,7 @@ class ContractOptionsQuery
                 ->get(),
 
             'users' => fn () => User::with('department')
-                ->when($isManager, fn ($q) => $q->where('department_id', $user->department_id))
+                ->when($isManager, fn ($q) => $q->where('division_id', $user->division_id))
                 ->orderBy('name')
                 ->get()
                 ->map(fn ($u) => ContractFormatter::formatUser($u))

@@ -40,7 +40,7 @@ class ProfileController extends Controller
             ]);
 
         // Fetch colleagues (collaborators) from the same department
-        $collaborators = User::where('department_id', $user->department_id)
+        $collaborators = User::where('division_id', $user->division_id)
             ->where('id', '!=', $user->id)
             ->take(8)
             ->get()
@@ -68,6 +68,8 @@ class ProfileController extends Controller
                 'bio' => $user->bio,
                 'role' => $user->role,
                 'initials' => $user->initials,
+                'division_id' => $user->division_id,
+                'department_id' => $user->division_id,
                 'created_at' => $user->created_at->isoFormat('D MMMM YYYY'),
             ],
         ]);

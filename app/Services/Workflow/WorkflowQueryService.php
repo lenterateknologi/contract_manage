@@ -82,7 +82,7 @@ class WorkflowQueryService
                             });
 
                             $ssq->where(function ($deptQuery) use ($user) {
-                                $deptQuery->whereHas('initiatorDepartmentsData', fn ($s) => $s->where('department_id', $user->department_id))
+                                $deptQuery->whereHas('initiatorDepartmentsData', fn ($s) => $s->where('department_id', $user->division_id))
                                     ->orWhereDoesntHave('initiatorDepartmentsData');
                             });
 
@@ -147,7 +147,7 @@ class WorkflowQueryService
                     $query->whereHas('roleRelation', fn ($q) => $q->whereIn(DB::raw('LOWER(name)'), array_map('strtolower', (array) $workflow->approver_roles)));
                 }
                 if (! empty($workflow->approver_departments)) {
-                    $query->whereIn('department_id', (array) $workflow->approver_departments);
+                    $query->whereIn('division_id', (array) $workflow->approver_departments);
                 }
                 if (! empty($workflow->approver_users)) {
                     $query->whereIn('id', (array) $workflow->approver_users);
@@ -177,8 +177,11 @@ class WorkflowQueryService
      */
     public function applyStepFilters(Builder $query, WorkflowStep $step, User $initiator): void
     {
-        if ($step->filter_department) {
-            $query->where('department_id', $initiator->department_id ?? '00000000-0000-0000-0000-000000000000');
+        $config = $step->approver_config;
+        $isInitDept = $step->filter_department || (! empty($config) && ! empty($config['is_initiator_department']));
+
+        if ($isInitDept) {
+            $query->where('division_id', $initiator->division_id ?? '00000000-0000-0000-0000-000000000000');
         }
 
         if ($step->filter_company) {

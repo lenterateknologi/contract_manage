@@ -28,7 +28,7 @@ class UserQuery
                 $q->whereHas('roleRelation', fn ($qr) => $qr->whereIn('name', (array) $role));
             })
             ->when($request->department_id, function ($q, $deptId) {
-                $q->whereIn('department_id', (array) $deptId);
+                $q->whereIn('division_id', (array) $deptId);
             })
             ->when($request->company_id, function ($q, $companyId) {
                 $q->whereIn('company_id', (array) $companyId);
@@ -41,7 +41,7 @@ class UserQuery
     public function options(): Builder
     {
         return User::query()
-            ->select(['id', 'name', 'company_id', 'department_id', 'role_id'])
+            ->select(['id', 'name', 'company_id', 'division_id', 'role_id'])
             ->orderBy('name');
     }
 }

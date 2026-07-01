@@ -3,6 +3,7 @@
 namespace Database\Seeders\Business;
 
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -80,6 +81,20 @@ class UserSeeder extends Seeder
                     $deptId = isset($validDepartments[$u['department_id']]) ? $u['department_id'] : null;
                 }
 
+                $divisionId = null;
+                if (! empty($u['division_name'])) {
+                    $divisionId = Division::whereRaw('lower(name) = ?', [strtolower($u['division_name'])])->value('id');
+                } elseif (! empty($u['division_id'])) {
+                    $divisionId = DB::table('m_division')->where('id', $u['division_id'])->exists() ? $u['division_id'] : null;
+                }
+
+                // Fallback: if division_id is empty, check if deptId exists in m_division
+                if (! $divisionId && $deptId) {
+                    if (DB::table('m_division')->where('id', $deptId)->exists()) {
+                        $divisionId = $deptId;
+                    }
+                }
+
                 User::updateOrCreate(
                     ! empty($u['id']) ? ['id' => $u['id']] : ['username' => $u['username']],
                     [
@@ -91,8 +106,8 @@ class UserSeeder extends Seeder
                         'phone_number' => $u['phone_number'] ?? null,
                         'company_id' => $u['company_id'] ?? null,
                         'company_group_id' => $u['company_group_id'] ?? null,
-                        'department_id' => $deptId,
-                        'division_id' => $u['division_id'] ?? null,
+                        'department_id' => $deptId ?? $divisionId,
+                        'division_id' => $divisionId ?? $deptId,
                         'region_id' => $u['region_id'] ?? null,
                         'role_id' => $roleId,
                         'is_active' => $u['is_active'] ?? true,
