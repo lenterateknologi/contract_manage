@@ -1,0 +1,2004 @@
+
+{
+    "company_groups": [
+        {
+            "id": "e8cda9ce-b53d-11f0-a74e-674909fa9776",
+            "code": "AVI",
+            "name": "AVIATION",
+            "description": null,
+            "is_active": false
+        },
+        {
+            "id": "e8edb6ce-b53d-11f0-adf6-8bee4e4c2079",
+            "code": "MINE",
+            "name": "MINING",
+            "description": null,
+            "is_active": false
+        },
+        {
+            "id": "e8f003b6-b53d-11f0-a05f-9b61ca768a7c",
+            "code": "WPS",
+            "name": "WAHANA PRIMA SEJATI",
+            "description": null,
+            "is_active": false
+        },
+        {
+            "id": "e8f07634-b53d-11f0-af7c-61949ad5b190",
+            "code": "ALJ",
+            "name": "ARUNG LAUTAN JAYA",
+            "description": null,
+            "is_active": false
+        },
+        {
+            "id": "fe83931f-1038-4a0b-84ba-22653bef0cd3",
+            "code": "EXT",
+            "name": "EXTERNAL",
+            "description": "Grup perusahaan EXTERNAL.",
+            "is_active": true
+        },
+        {
+            "id": "e8f1b846-b53d-11f0-98d0-7d5623735ce6",
+            "code": "FNB",
+            "name": "FAJAR NIAGA BERJAYA",
+            "description": "Grup perusahaan FAJAR NIAGA BERJAYA.",
+            "is_active": true
+        },
+        {
+            "id": "e8ef98a4-b53d-11f0-bff2-0567557ca025",
+            "code": "FPS",
+            "name": "FANGIONO PERKASA SEJATI",
+            "description": "Grup perusahaan FANGIONO PERKASA SEJATI.",
+            "is_active": true
+        },
+        {
+            "id": "e8eee5bc-b53d-11f0-8005-9bede578d807",
+            "code": "FAP",
+            "name": "FAP AGRI",
+            "description": "Grup perusahaan FAP AGRI.",
+            "is_active": true
+        },
+        {
+            "id": "e8ee8ad6-b53d-11f0-b44b-11514e357afc",
+            "code": "FRG",
+            "name": "FIRST RESOURCES GROUP",
+            "description": "Grup perusahaan FIRST RESOURCES GROUP.",
+            "is_active": true
+        },
+        {
+            "id": "e8f267f0-b53d-11f0-b5c9-f5c30a7e610d",
+            "code": "HAM",
+            "name": "HARMONI AGRI MANDIRI",
+            "description": "Grup perusahaan HARMONI AGRI MANDIRI.",
+            "is_active": true
+        },
+        {
+            "id": "e8ef3d46-b53d-11f0-b8c4-df5a55fddf3c",
+            "code": "KAS",
+            "name": "KALIMANTAN AGRO SEJAHTERA",
+            "description": "Grup perusahaan KALIMANTAN AGRO SEJAHTERA.",
+            "is_active": true
+        },
+        {
+            "id": "e8f0de8a-b53d-11f0-8966-97bc8bf5f2f5",
+            "code": "LKT",
+            "name": "LENTERA KREASI TEKNOLOGI",
+            "description": "Grup perusahaan LENTERA KREASI TEKNOLOGI.",
+            "is_active": true
+        },
+        {
+            "id": "e8ee2690-b53d-11f0-8ed6-adc4477e6020",
+            "code": "NON",
+            "name": "NON GROUP",
+            "description": "Grup perusahaan NON GROUP.",
+            "is_active": true
+        },
+        {
+            "id": "e8f20f62-b53d-11f0-91ba-8f83e56d58c5",
+            "code": "NTG",
+            "name": "NUSANTARA TIMUR GROUP",
+            "description": "Grup perusahaan NUSANTARA TIMUR GROUP.",
+            "is_active": true
+        },
+        {
+            "id": "e8f15360-b53d-11f0-81f0-47ca3322bb07",
+            "code": "PALMA",
+            "name": "PALM ASIA AGRI",
+            "description": "Grup perusahaan PALM ASIA AGRI.",
+            "is_active": true
+        }
+    ],
+    "regions": [
+        {
+            "id": "e2bd998e-b53f-11f0-9808-c7c2175eb96d",
+            "code": "03",
+            "name": "KALIMANTAN TIMUR",
+            "alias": "BPN",
+            "description": null,
+            "is_active": true,
+            "id_portal_master": null
+        },
+        {
+            "id": "e2c7eb50-b53f-11f0-84c5-733e1305f3db",
+            "code": "01",
+            "name": "RIAU",
+            "alias": "PKU",
+            "description": null,
+            "is_active": true,
+            "id_portal_master": null
+        },
+        {
+            "id": "e2c87002-b53f-11f0-9765-198b0c1133d5",
+            "code": "05",
+            "name": "JAKARTA",
+            "alias": "JKT",
+            "description": null,
+            "is_active": true,
+            "id_portal_master": null
+        },
+        {
+            "id": "e2c8fe0a-b53f-11f0-a977-ab3a968493e0",
+            "code": "02",
+            "name": "KALIMANTAN BARAT",
+            "alias": "PTK",
+            "description": null,
+            "is_active": true,
+            "id_portal_master": null
+        },
+        {
+            "id": "e2c98b2c-b53f-11f0-9077-974ad6dd5164",
+            "code": "04",
+            "name": "KALIMANTAN UTARA",
+            "alias": "NNK",
+            "description": null,
+            "is_active": true,
+            "id_portal_master": null
+        },
+        {
+            "id": "e2ca3234-b53f-11f0-9133-1534333b51de",
+            "code": "06",
+            "name": "MERAUKE",
+            "alias": "MRK",
+            "description": null,
+            "is_active": true,
+            "id_portal_master": null
+        },
+        {
+            "id": "019f209c-c32f-71f0-9ca0-1ace5e490c32",
+            "code": "REG-03",
+            "name": "KALIMANTAN TIMUR",
+            "alias": "BPN",
+            "description": "Wilayah KALIMANTAN TIMUR.",
+            "is_active": true,
+            "id_portal_master": "14"
+        },
+        {
+            "id": "019f209c-c331-72c2-ae03-481b1e08dcd8",
+            "code": "REG-05",
+            "name": "JAKARTA",
+            "alias": "JKT",
+            "description": "Wilayah JAKARTA.",
+            "is_active": true,
+            "id_portal_master": "16"
+        },
+        {
+            "id": "019f209c-c335-715f-94e6-60c7798c23c2",
+            "code": "REG-06",
+            "name": "MERAUKE",
+            "alias": "MRK",
+            "description": "Wilayah MERAUKE.",
+            "is_active": true,
+            "id_portal_master": "17"
+        },
+        {
+            "id": "019f209c-c336-732f-8250-a3e81d9a0f8d",
+            "code": "REG-04",
+            "name": "KALIMANTAN UTARA",
+            "alias": "NNK",
+            "description": "Wilayah KALIMANTAN UTARA.",
+            "is_active": true,
+            "id_portal_master": "15"
+        },
+        {
+            "id": "019f209c-c337-7364-b66f-8a83a44142b7",
+            "code": "REG-01",
+            "name": "RIAU",
+            "alias": "PKU",
+            "description": "Wilayah RIAU.",
+            "is_active": true,
+            "id_portal_master": "12"
+        },
+        {
+            "id": "019f209c-c33a-71af-a143-ced12c59f467",
+            "code": "REG-02",
+            "name": "KALIMANTAN BARAT",
+            "alias": "PTK",
+            "description": "Wilayah KALIMANTAN BARAT.",
+            "is_active": true,
+            "id_portal_master": "13"
+        }
+    ],
+    "companies": [
+        {
+            "id": "9e962214-b560-11f0-8298-510784338617",
+            "code": "R13",
+            "name": "PT. SURYA INTISARI RAYA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec006b0-b560-11f0-8531-03de11d9f683",
+            "code": "R07",
+            "name": "PT. PANCASURYA AGRINDO",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec106e6-b560-11f0-a730-698b101c7d4f",
+            "code": "R06",
+            "name": "PT. MURINIWOOD INDAH INDUSTRY",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec214aa-b560-11f0-95cb-bf99390c70ef",
+            "code": "R01",
+            "name": "PT. ARINDO TRISEJAHTERA",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec31648-b560-11f0-a8b3-15626d1b3405",
+            "code": "R02",
+            "name": "PT. BUMI SAWIT PERKASA",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec4170a-b560-11f0-b47b-8b0e65c098b1",
+            "code": "R08",
+            "name": "PT. PANCASURYA GARDEN",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec525dc-b560-11f0-880c-7b1e56edd1fa",
+            "code": "R14",
+            "name": "PT. SETIA AGRINDO MANDIRI",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec62a86-b560-11f0-be2f-17bb5ba4630e",
+            "code": "R16",
+            "name": "PT. INDOGREEN JAYA ABADI",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec73552-b560-11f0-a78f-8d47b6ecf27a",
+            "code": "R12",
+            "name": "PT. SURYA DUMAI AGRINDO",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec836b4-b560-11f0-9d98-e5702d6d752d",
+            "code": "R18",
+            "name": "PT. ADHITYA SERAYAKORITA",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ec92bdc-b560-11f0-8641-17703092734f",
+            "code": "R17",
+            "name": "PT. GERBANG SAWIT INDAH",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395\t",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9eca435a-b560-11f0-9bf3-d96fc68c9d14",
+            "code": "M02",
+            "name": "PT. MORINDO BANGUN SEJAHTERA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\t",
+            "company_group_code": "MINE",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ecb321a-b560-11f0-a76b-051ae15f1e36",
+            "code": "B01",
+            "name": "PT. BORNEO KETAPANG PERMAI",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9ecc4c9a-b560-11f0-8849-c7bc8217f822",
+            "code": "T02",
+            "name": "PT. BHUMI SIMANGGARIS INDAH",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK",
+            "company_group_code": "FAP",
+            "region_code": "04",
+            "is_active": true
+        },
+        {
+            "id": "9ecd6184-b560-11f0-af06-e1fa3e3883b5",
+            "code": "J03",
+            "name": "PT. CAKRAWALA AKSESINDO MANDIRI",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24\t",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ece7bbe-b560-11f0-af39-8f1b085c45d9",
+            "code": "B04",
+            "name": "PT. MITRA KARYA SENTOSA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9ecf6ac4-b560-11f0-bad5-2b0802b24d55",
+            "code": "R09",
+            "name": "PT. PERDANA INTISAWIT PERKASA",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ed05d76-b560-11f0-907c-31a39f5b1a87",
+            "code": "B05",
+            "name": "PT. PULAU TIGA LESTARI JAYA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9ed18412-b560-11f0-b97d-493afbd9e374",
+            "code": "R11",
+            "name": "PT. SUBUR ARUM MAKMUR",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395\t",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ed2a39c-b560-11f0-8d05-abee66296d7c",
+            "code": "B07",
+            "name": "PT. SWADAYA MUKTI PRAKARSA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9ed3b3ea-b560-11f0-a4e0-176b43b44de9",
+            "code": "R20",
+            "name": "PT. CITRA PALMA KENCANA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ed4b93e-b560-11f0-a80d-ffd563ef8008",
+            "code": "R15",
+            "name": "PT. SETIA AGRINDO LESTARI",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ed5e084-b560-11f0-8640-cfeab123a725",
+            "code": "B08",
+            "name": "PT. PALMDALE AGROASIA LESTARI MAKMUR",
+            "alias": null,
+            "address": "JL. TOL KAPUAS II NO. 2 RT.004 RW.001",
+            "company_group_code": "KAS",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9ed70536-b560-11f0-b370-379ce5ca4492",
+            "code": "R05",
+            "name": "PT. MERIDAN SEJATISURYA PLANTATION",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ed814d0-b560-11f0-8be4-8f095c9ec880",
+            "code": "B02",
+            "name": "PT. LIMPAH SEJAHTERA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9ed924c4-b560-11f0-a6ca-53e02a56e21d",
+            "code": "B03",
+            "name": "PT. UMEKAH SARIPRATAMA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9eda2f68-b560-11f0-940f-a92c3815a63a",
+            "code": "R19",
+            "name": "PT. RIAU AGUNG KARYA ABADI",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FAP",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9edb3818-b560-11f0-ab54-e3cfc5ba783d",
+            "code": "T06",
+            "name": "PT. BORNEO BHAKTI SEJAHTERA",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK",
+            "company_group_code": "FAP",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9edc4eba-b560-11f0-81d5-373f5ef9a21b",
+            "code": "T18",
+            "name": "PT. KETAPANG HIJAU LESTARI",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK",
+            "company_group_code": "FAP",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9edd74f2-b560-11f0-a549-259f89e4ae79",
+            "code": "T21",
+            "name": "PT. SETIA AGRO UTAMA",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK",
+            "company_group_code": "FAP",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ede7c4e-b560-11f0-96ac-5ba1dd7a153a",
+            "code": "T07",
+            "name": "PT. MARSAM CITRA ADIPERKASA",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK",
+            "company_group_code": "FAP",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9edf6ece-b560-11f0-8b78-bb91ad00df5a",
+            "code": "T23",
+            "name": "PT. SETIA AGRO ABADI",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24\t",
+            "company_group_code": "KAS",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ee091b4-b560-11f0-8e93-e587af827267",
+            "code": "R04",
+            "name": "PT. MATTHEW AIR NUSANTARA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ee377e4-b560-11f0-b678-111fcde9fd76",
+            "code": "S02",
+            "name": "FIRST RESOURCES TRADING PTE LTD",
+            "alias": null,
+            "address": "8 TEMASEK BOULEVARD #36-02 SUNTEC TOWER THREE SINGAPORE",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ee47522-b560-11f0-a65e-4b6c60f22d7d",
+            "code": "J04",
+            "name": "PT. PLAMO KARYA",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24\t",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ee59baa-b560-11f0-a4b8-63212f1ebc9f",
+            "code": "J05",
+            "name": "PT. SURYA DUMAI INVESTAMA",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24\t",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ee69636-b560-11f0-8977-4193377acd7c",
+            "code": "T15",
+            "name": "PT. BORNEO DAMAI LESTARI",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ee7ef90-b560-11f0-9c04-43c0078c8c0b",
+            "code": "T03",
+            "name": "PT. BULUNGAN HIJAU PERKASA",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK",
+            "company_group_code": "FAP",
+            "region_code": "04",
+            "is_active": true
+        },
+        {
+            "id": "9ee90c7c-b560-11f0-86ce-cb41f4235c10",
+            "code": "T09",
+            "name": "PT. CITRA AGRO KENCANA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9eea276a-b560-11f0-96ce-23cbebd15ae7",
+            "code": "T10",
+            "name": "PT. KETAPANG AGRO LESTARI",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9eeb4ff0-b560-11f0-b0ab-15661138df63",
+            "code": "T01",
+            "name": "PT. KARANGJUANG HIJAULESTARI",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK",
+            "company_group_code": "FAP",
+            "region_code": "04",
+            "is_active": true
+        },
+        {
+            "id": "9eec5c9c-b560-11f0-ab3d-6d6639528ef4",
+            "code": "T04",
+            "name": "PT. TIRTA MADU SAWIT JAYA",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK ",
+            "company_group_code": "FAP",
+            "region_code": "04",
+            "is_active": true
+        },
+        {
+            "id": "9eed8eb4-b560-11f0-979d-f33b4d1726f7",
+            "code": "T22",
+            "name": "PT. BORNEO CITRA PERSADA ABADI",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24",
+            "company_group_code": "KAS",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9eeeadc6-b560-11f0-861e-3fe82167720b",
+            "code": "T26",
+            "name": "PT. BORNEO CITRA PERSADA JAYA",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24",
+            "company_group_code": "KAS",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9eefc8c8-b560-11f0-b143-b58100c62fee",
+            "code": "T27",
+            "name": "PT. BORNEO CITRA PERSADA MANDIRI",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24",
+            "company_group_code": "KAS",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ef0d970-b560-11f0-b6c2-a1c5e115cba8",
+            "code": "R03",
+            "name": "PT. CILIANDRA PERKASA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ef2039a-b560-11f0-afe4-7ffd5e53efb1",
+            "code": "T14",
+            "name": "PT. MAHA KARYA BERSAMA",
+            "alias": null,
+            "address": "JL. SENDAWAR RAYA KOMPLEKS BUSINESS CENTRE B NO. 01-02",
+            "company_group_code": "FRG",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ef31956-b560-11f0-a056-b1d39cd050bb",
+            "code": "T12",
+            "name": "PT. BORNEO SURYA MINING JAYA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ef42f8a-b560-11f0-9f03-b7e438f99833",
+            "code": "R21",
+            "name": "PT. KARYA TAMA BAKTI MULIA",
+            "alias": null,
+            "address": "JL. JEND SUDIRMAN GEDUNG SURYA DUMAI NO. 395 TR. 001 RW. 001",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ef5469a-b560-11f0-9d48-6199c5680841",
+            "code": "T17",
+            "name": "PT. BORNEO DAMAI LESTARI RAYA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "PALMA",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ef64f54-b560-11f0-9caf-0592a442549e",
+            "code": "T11",
+            "name": "PT. BORNEOPERSADA ENERGY JAYA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ef77744-b560-11f0-ba7e-cdc6b59abc62",
+            "code": "T24",
+            "name": "PT. KALIMANTAN AGRO MAKMUR",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24",
+            "company_group_code": "KAS",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9ef8899a-b560-11f0-84c6-3d30947fe26d",
+            "code": "A24",
+            "name": "PT. SETIA AGRINDO JAYA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9ef98bce-b560-11f0-b2cc-d32b3d3db531",
+            "code": "J01",
+            "name": "PT. ECK SIPIL DAN MEKANIKAL",
+            "alias": null,
+            "address": "GARDEN SHOPPING ARCADE BLOK BEAUFORT NOMOR B\/09\/BL, JL. LETJEN S. PARMAN KAV 28",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9efa9fe6-b560-11f0-b879-f974d2c296e4",
+            "code": "T05",
+            "name": "PT. FAP AGRI TBK.",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST, TOWER LIBERTY, LANTAI 16 A-H JL. PANTAI INDAH KAPUK",
+            "company_group_code": "FAP",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9efbada0-b560-11f0-b8a2-8fa17d54c495",
+            "code": "M01",
+            "name": "PT. PERSADATAMA INTI JAYA MANDIRI",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\t",
+            "company_group_code": "MINE",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9efcbb14-b560-11f0-b8f3-6faf29aa8385",
+            "code": "P01",
+            "name": "PT. GLOBAL PAPUA ABADI",
+            "alias": null,
+            "address": "WISMA 77 LT.7, JL.LETJEN.S.PARMAN KAV.77",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9efdbc30-b560-11f0-8444-2fd680ce6ae8",
+            "code": "S01",
+            "name": "FIRST RESOURCES LIMITED",
+            "alias": null,
+            "address": "8 TEMASEK BOULEVARD  #36-02 SUNTEC TOWER THREE SINGAPORE ",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9efece36-b560-11f0-8276-9b3810177900",
+            "code": "J06",
+            "name": "PT. BUMI BANDARA INDAH",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24\t",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9effec4e-b560-11f0-b949-033f059779e8",
+            "code": "J09",
+            "name": "PT. WAHANA SUBUR PERSADA",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24\t",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f00f094-b560-11f0-8a29-6192592fd2ef",
+            "code": "R10",
+            "name": "PT. PRIA TAMA RIAU",
+            "alias": null,
+            "address": "JL. JENDERAL SUDIRMAN NO.395",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f020790-b560-11f0-a59f-cbeb26b91f89",
+            "code": "J13",
+            "name": "PT. KARYA AGUNG DHARMA BANGUN",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f030eb0-b560-11f0-9b7a-d5a4caf62624",
+            "code": "A15",
+            "name": "PT. PANCASURYA BINASEJAHTERA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f04523e-b560-11f0-9edd-d9a1a393bc91",
+            "code": "J12",
+            "name": "PT. SEJAHTERA UTAMA KONSTRUKSI",
+            "alias": null,
+            "address": "WISMA BARITO PACIFIC 1A, JL. LETJEN S. PARMAN KAV. 62-63",
+            "company_group_code": "NON",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f055eea-b560-11f0-93cb-39579ca1f0db",
+            "code": "T08",
+            "name": "PT. KALIMANTAN GREEN PERSADA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9f0679c4-b560-11f0-8d86-93d3bdbece14",
+            "code": "T25",
+            "name": "PT. CITRA PALMA PERTIWI",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24",
+            "company_group_code": "KAS",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9f0787c4-b560-11f0-914f-fd7a9dfc3c17",
+            "code": "A23",
+            "name": "PT. INDO MANIS LESTARI",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN 29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f088e62-b560-11f0-bf5b-3f9f416d26e3",
+            "code": "B06",
+            "name": "PT. FALCON AGRI PERSADA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9f09ad1a-b560-11f0-a898-fbdc9c8a14d2",
+            "code": "C30",
+            "name": "PT. AGRO MANUNGGAL SELARAS",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LEVEL 42G-42H JL. LETJEND S. PARMAN KAV. 22-24",
+            "company_group_code": "KAS",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9f0ab408-b560-11f0-bbb7-13feb1e828db",
+            "code": "J14",
+            "name": "PT. PANCA UTAMA KARYA KONTRUKSI",
+            "alias": null,
+            "address": "GRAND SLIPI TOWER LT. 42 G-H JL. LETJEN. S. PARMAN KAV. 22-24 KEL. PALMERAH, KEC. PALMERAH",
+            "company_group_code": "NON",
+            "region_code": "05",
+            "is_active": false
+        },
+        {
+            "id": "9f0bc9ba-b560-11f0-b0b1-55dbc78d00f7",
+            "code": "J02",
+            "name": "PT. ARUNG LAUTAN JAYA",
+            "alias": null,
+            "address": "GEDUNG GRAND SLIPI TOWER LANTAI 42 JL LETJEND PALMERAH PAL MERAH",
+            "company_group_code": "ALJ",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f0cd256-b560-11f0-af7f-01a9314b398d",
+            "code": "T28",
+            "name": "PT. WAHANA PRIMA SEJATI",
+            "alias": null,
+            "address": "RUKO EXCLUSIVE BLOK F NOMOR 3 JL. MARINA RAYA",
+            "company_group_code": "WPS",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9f0df762-b560-11f0-8031-25344ca976cb",
+            "code": "T13",
+            "name": "PT. BORNEO PERSADA PRIMA JAYA",
+            "alias": null,
+            "address": "APL TOWER 28TH FLOOR SUITE 1-2 DAN  29TH SUITE 1-5 PODOMORO CITY JL LETJEN S.PARMAN KAV 28\r\n",
+            "company_group_code": "FRG",
+            "region_code": "03",
+            "is_active": true
+        },
+        {
+            "id": "9f0f008a-b560-11f0-979b-25ef0e1f6d28",
+            "code": "T16",
+            "name": "PT. FANGIONO PERKASA SEJATI",
+            "alias": null,
+            "address": "APL TOWER 29TH FLOOR SUITE 1-5, JL. S PARMAN KAV. 28, TANJUNG DUREN SELATAN, GROGOL PETAMBURAN, KOTA ADM. JAKARTA BARAT, DKI JAKARTA, 11470",
+            "company_group_code": "FPS",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f0ffb66-b560-11f0-b3d9-33a6a2d41ff8",
+            "code": "J20",
+            "name": "PT. BINA MARITIM SEJATI",
+            "alias": null,
+            "address": "GEDUNG GRAND SLIPI TOWER LT 42 UNIT G-H JL. LETJEN S PARMAN KAV 22-24 RT. 001 RW.004",
+            "company_group_code": "ALJ",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f11036c-b560-11f0-8072-3f7a8eb55edd",
+            "code": "NT14",
+            "name": "PT. ARU HUTAN EKOSISTEM",
+            "alias": null,
+            "address": "GEDUNG SAHID SUDIRMAN CENTER LANTAI 22 JL. JEN\r\nKARET TENGSIN, TANAH ABANG\r\nKOTA ADM. JAKARTA PUSAT DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f12008c-b560-11f0-80d0-9156a19a8357",
+            "code": "NT15",
+            "name": "PT. MEGAKARYA JAYA RAYA",
+            "alias": null,
+            "address": "WISMA 46 KOTA BNI JALAN JENDRAL SUDIRMAN KAV.I, KEL. KARET TENGSIN, KEC. TANAH ABANG, KOTA ADM. JAKARTA PUSAT, PROP. DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f131454-b560-11f0-8559-c563f40d09d6",
+            "code": "NT01",
+            "name": "PT. PERTIWI AGRO MANDIRI",
+            "alias": null,
+            "address": "CENTENNIAL TOWER LANTAI 29 UNIT D DAN E JL. JEND. GATOT SUBROTO NOMOR 27, DESA\/KELURAHAN KARET SEMANGGI, KEC.SETIABUDI, KOTA ADM.JAKARTA SELATAN, PROVINSI DKI JAKARTA 12930",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f145238-b560-11f0-9af3-afaf7519ec0e",
+            "code": "NT06",
+            "name": "PT. AGRO SEJAHTERA UTAMA",
+            "alias": null,
+            "address": "SUDIRMAN 7.8 LANTAI 16 UNIT 1-2 JL. JENDERAL KARET TENGSIN, TANAH ABANG KOTA ADM. JAKARTA PUSAT DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f157988-b560-11f0-943f-1f3ddb9f4f9f",
+            "code": "NT07",
+            "name": "PT. DIGOEL MANDIRI UTAMA",
+            "alias": null,
+            "address": "MENARA KUNINGAN LANTAI 30 UNIT B-C, JALANA H.R RASUNA SAID KARET KUNINGAN, SETIABUDI KOTA ADM. JAKARTA SELATAN DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f16842c-b560-11f0-8b6d-3f9d2c30ecd5",
+            "code": "F16",
+            "name": "PT. FAJAR NIAGA BERJAYA",
+            "alias": null,
+            "address": "GEDUNG GOLD COAST OFFICE, TOWER LIBERTY LT 16, UNIT A-H\r\nJL. PANTAI INDAH KAPUK, KOTA ADM. JAKARTA UTARA, PROVINSI DKI\r\nJAKARTA",
+            "company_group_code": "FNB",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f177bfc-b560-11f0-a511-09053168c2db",
+            "code": "L18",
+            "name": "PT. LENTERA KREASI TEKNOLOGI",
+            "alias": null,
+            "address": "ATRIA SUDIRMAN LANTAI 23 JALAN JENDERAL SUDIMAN KAV. 33A",
+            "company_group_code": "LKT",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f189d5c-b560-11f0-a1b3-037b7d998bbf",
+            "code": "NT08",
+            "name": "PT. SEMESTA ANDALAN SEJATI",
+            "alias": null,
+            "address": "GEDUNG GRAND SLIPI TOWER LT42 UNIT G-H JL. LETJEND S PARMAN PALMERAH, PAL MERAH KOTA ADM. JAKARTA BARAT DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f19a9b8-b560-11f0-8b16-5d72fcc894b6",
+            "code": "NT05",
+            "name": "PT. AGRO ANDALAN MANDIRI",
+            "alias": null,
+            "address": "SUDIRMAN 7.8, LANTAI 16 UNIT 1-2, JL. JENDRAL SUDIRMAN KARET TENGSIN, TANAH ABANG KOTA ADM. JAKARTA PUSAT DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f1aa976-b560-11f0-a7a2-87b900bfdf2f",
+            "code": "NT03",
+            "name": "PT. AGRO SUBUR SEJATI",
+            "alias": null,
+            "address": "GEDUNG OFFICE 8, LEVEL 18-A, JALAN SENOPATI NO. 8B, KAWASAN SCBD, DESA\/KELURAHAN SENAYAN, KEC. KEBAYORAN BARU, KOTA ADM. JAKARTA SELATAN, PROVINSI DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f1bc8ba-b560-11f0-81f6-05ee646d162c",
+            "code": "NT02",
+            "name": "PT. MURNI PANGAN MANDIRI",
+            "alias": null,
+            "address": "GRAHA SURVEYOR LANTAI 15 JL. JEND. GATOT SUBROTO KAVLING 56, DESA\/KELURAHAN KUNINGAN TIMUR, KEC. SETIABUDI, KOTA ADM. JAKARTA SELATAN, PROVINSI DKI JAKARTA. 12950",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f1cd3a4-b560-11f0-979c-b36517a3f730",
+            "code": "NT16",
+            "name": "PT. KARTIKA CIPTA PRATAMA",
+            "alias": null,
+            "address": "GEDUNG WISMA 46 - KOTA BNI LT.24 RUANG.02 JL. JEND. SUDIRMAN KAV.01 KARET TENGSIN TANAH ABANG JAKARTA PUSAT DKIJAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f1dd506-b560-11f0-887c-c102d82a902f",
+            "code": "NT04",
+            "name": "PT. NUSANTARA TIMUR MAKMUR",
+            "alias": null,
+            "address": "SUDIRMAN 7.8, LANTAI 16 UNIT 1-2, JALAN JENDRAL SUDIRMAN KAV 7-8, DESA\/KELURAHAN KARET TENGSIN, KEC. TANAH ABANG, KOTA ADM. JAKARTA PUSAT, PROVINSI DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f1ed83e-b560-11f0-ae94-631488e26b22",
+            "code": "NT09",
+            "name": "PT. DIGOEL PANGAN MANDIRI",
+            "alias": null,
+            "address": "SUDIRMAN 7.8, LANTAI  16 UNIT 1-2 , JALAN JENDERAL SUDIRMAN KAV. 7-8 , DESA\/KELURAHAN KARET TENGSIN , KEC. TANAH ABANG, KOTA ADM. JAKARTA PUSAT, PROVINSI DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f202fc2-b560-11f0-9967-65926ee841b0",
+            "code": "NT10",
+            "name": "PT. PAPUA BERKAT PANGAN ",
+            "alias": null,
+            "address": "ATRIA SUDIRMAN LANTAI 23, JALAN JENDERAL SUDIRMAN KAV. 33A,\r\nDESA\/KELURAHAN KARET TENGSIN, KEC. TANAH ABANG, KOTA ADM. JAKARTA\r\nPUSAT PROVINSI DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f213886-b560-11f0-b9b8-fd34e42b9ab7",
+            "code": "NT12",
+            "name": "PT. ARU GREEN LESTARI",
+            "alias": null,
+            "address": "SUDIRMAN 7.8 LANTAI 16 UNIT 1-2, JALAN JENDERAL SUDIRMAN KAV.7-8, DESA\/KELURAHAN KARET TENGSIN, KEC. TANAH ABANG, KOTA ADM. JAKARTA PUSAT, PROVINSI DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f223696-b560-11f0-ad1c-83214ee9f5e5",
+            "code": "NT13",
+            "name": "PT. ARU EKOSISTEM LESTARI",
+            "alias": null,
+            "address": "SUDIRMAN 7.8 LANTAI 16 UNIT 1-2, JALAN JENDRAL SUDIRMAN KAV. 7-8, DESA\/KELURAHAN KARET TENGSIN, KEC. TANAH ABANG, KOTA ADM. JAKARTA PUSAT, PROVINSI DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f234c02-b560-11f0-80e8-fd4ed27aa3a0",
+            "code": "NT11",
+            "name": "PT. PAPUA MANDIRI AGRO UTAMA",
+            "alias": null,
+            "address": "SUDIRMAN 7.8, LANTAI 16 UNIT 1-2, JALAN JENDERAL SUDIRMAN KAV.7-8, DESA\/KELURAHAN KARET TENGSIN, KEC. TANAH ABANG, KOTA ADM. JAKARTA PUSAT, PROVINSI DKI JAKARTA",
+            "company_group_code": "NTG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f24474c-b560-11f0-be78-7d8072115836",
+            "code": "PALMA",
+            "name": "PT. PALMASIA AGRI MANDIRI",
+            "alias": null,
+            "address": "GEDUNG SUDIRMAN 7.8 LANTAI 16 UNIT 1-2 KARET TENGSIN, TANAH ABANG KOTA ADM. JAKARTA PUSAT DKI JAKARTA",
+            "company_group_code": "PALMA",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f2562c6-b560-11f0-bce1-77e4aa8c8b25",
+            "code": "J11",
+            "name": "PT. JELAJAH LAUTAN NUSANTARA",
+            "alias": null,
+            "address": "GEDUNG GRAND SLIPI TOWER LT 5 UNIT F JL LETJEN S PARMAN KAV 22-24 RT. 001 RW. 004",
+            "company_group_code": "ALJ",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f2660d6-b560-11f0-8611-fd3326314bdd",
+            "code": "B09",
+            "name": "PT. KAYUNG AGRO LESTARI",
+            "alias": null,
+            "address": "SINARMAS LAND PLAZA LANTAI 7 JL. PANGERAN DIPONEGORO NO. 18",
+            "company_group_code": "FRG",
+            "region_code": "02",
+            "is_active": true
+        },
+        {
+            "id": "9f2787a4-b560-11f0-ac22-c93657eb495e",
+            "code": "E02",
+            "name": "PT. AUSTINDO NUSANTARA JAYA AGRI",
+            "alias": null,
+            "address": "SINARMAS LAND PLAZA LANTAI 7, JALAN PANGERAN DIPONEGORO NO. 18",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f288492-b560-11f0-9433-0d28aa831de1",
+            "code": "004",
+            "name": "PT. LESTARI SAGU PAPUA",
+            "alias": null,
+            "address": "MENARA SMBC LANTAI 40 JALAN DR. IDE ANAK AGUNG GDE AGUNG KAV. 5.5 - 5.6 KAWASAN MEGA KUNINGAN",
+            "company_group_code": "FRG",
+            "region_code": "06",
+            "is_active": true
+        },
+        {
+            "id": "9f29a9da-b560-11f0-9f9b-a55fbf7e7e3b",
+            "code": "002",
+            "name": "PT. AUSTINDO NUSANTARA JAYA BOGA",
+            "alias": null,
+            "address": "MENARA SMBC LANTAI 40 JALAN DR. IDE ANAK AGUNG GDE AGUNG KAV. 5.5 - 5.6 KAWASAN MEGA KUNINGAN",
+            "company_group_code": "FRG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f2ac9a0-b560-11f0-846e-efd9a204fdfb",
+            "code": "D21",
+            "name": "PT. PERMATA PUTERA MANDIRI",
+            "alias": null,
+            "address": "MENARA SMBC LANTAI 40 JALAN DR. IDE ANAK AGUNG GDE AGUNG KAV. 5.5 - 5.6 KAWASAN MEGA KUNINGAN",
+            "company_group_code": "HAM",
+            "region_code": "06",
+            "is_active": true
+        },
+        {
+            "id": "9f2bcd00-b560-11f0-af81-977f49ff31c6",
+            "code": "F02",
+            "name": "PT. AUSTINDO AUFWIND NEW ENERGY",
+            "alias": null,
+            "address": "MENARA SMBC LANTAI 40 JALAN DR. IDE ANAK AGUNG GDE AGUNG KAV. 5.5 - 5.6 KAWASAN MEGA KUNINGAN",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f2cd664-b560-11f0-b6a5-d7bba90a534c",
+            "code": "D22",
+            "name": "PT. PUTERA MANUNGGAL PERKASA",
+            "alias": null,
+            "address": "MENARA SMBC LANTAI 40 JALAN DR. IDE ANAK AGUNG GDE AGUNG KAV. 5.5 - 5.6 KAWASAN MEGA KUNINGAN",
+            "company_group_code": "HAM",
+            "region_code": "06",
+            "is_active": true
+        },
+        {
+            "id": "9f2dc8a8-b560-11f0-8e6d-fbf4864b5e04",
+            "code": "F01",
+            "name": "PT. SAHABAT MEWAH DAN MAKMUR",
+            "alias": null,
+            "address": "MENARA SMBC LANTAI 40 JALAN DR. IDE ANAK AGUNG GDE AGUNG KAV. 5.5 - 5.6 KAWASAN MEGA KUNINGAN",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f2ec26c-b560-11f0-839f-0f29594e3102",
+            "code": "E03",
+            "name": "PT. AUSTINDO NUSANTARA JAYA AGRI SIAIS",
+            "alias": null,
+            "address": "SINAR MAS LAND PLAZA LANTAI 7, JL. PANGERAN DIPONEGORO NO. 18",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f2fc8b0-b560-11f0-acc9-3385ca46e638",
+            "code": "D20",
+            "name": "PT. HARMONI AGRI MANDIRI",
+            "alias": null,
+            "address": "MENARA CITICON LT. 19 UNIT A, JL. LETJEN S. PARMAN KAV. 72 RT. 000 RW. 000, SLIPI, PAL MERAH, KOTA ADM. JAKARTA BARAT, DKI JAKARTA",
+            "company_group_code": "HAM",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f30c68e-b560-11f0-8375-5dc53f564e4e",
+            "code": "F03",
+            "name": "PT. GALEMPA SEJAHTERA BERSAMA",
+            "alias": null,
+            "address": "SINARMAS LAND PLAZA LANTAI 7, JL. PANGERAN DIPONEGORO NO. 18",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f31e2d0-b560-11f0-b9ff-a96a9d7fac2e",
+            "code": "A28",
+            "name": "PT. MASUBA CITRA MANDIRI",
+            "alias": null,
+            "address": "JL. MELAWAI RAYA NO. 10 RT.003 RW. 001",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "9f32e536-b560-11f0-a765-c5b770935458",
+            "code": "000",
+            "name": "PT. GADING MAS INDONESIA TEGUH",
+            "alias": null,
+            "address": "JL.GAJAH MADA NO.254,RT.02\/RW.04, LK. KALIWATES KRAJAN",
+            "company_group_code": "FRG",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "9f33dce8-b560-11f0-a7c3-03e0d93da1e4",
+            "code": "001",
+            "name": "PT. ANJ AGRI PAPUA",
+            "alias": null,
+            "address": "MENARA SMBC LANTAI 40 JALAN DR. IDE ANAK AGUNG GDE AGUNG KAV. 5.5 - 5.6 KAWASAN MEGA KUNINGAN",
+            "company_group_code": "FRG",
+            "region_code": "06",
+            "is_active": true
+        },
+        {
+            "id": "9f34e2c8-b560-11f0-83af-d5880e17833d",
+            "code": "E01",
+            "name": "PT. AUSTINDO NUSANTARA JAYA TBK",
+            "alias": null,
+            "address": "MENARA SMBC LANTAI 40, JL. DR IDE ANAK AGUNG GDE AGUNG, KAVLING 5.5 - 5.6, KAWASAN MEGA KUNINGAN",
+            "company_group_code": "FRG",
+            "region_code": "01",
+            "is_active": true
+        },
+        {
+            "id": "fe83931f-1038-4a0b-84ba-22653bef0cd3",
+            "code": "EXT",
+            "name": "EXTERNAL",
+            "alias": null,
+            "address": null,
+            "company_group_code": "EXT",
+            "region_code": "05",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c33d-7068-8d2f-2ac58d72f24f",
+            "code": "BPN-1",
+            "name": "PT. BPN JAYA ABADI",
+            "alias": "BPN 1",
+            "address": "Alamat dummy di KALIMANTAN TIMUR",
+            "company_group_code": "LKT",
+            "region_code": "REG-03",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c341-704c-8c15-cc74108f3de4",
+            "code": "BPN-2",
+            "name": "PT. BPN SUMBER MAKMUR",
+            "alias": "BPN 2",
+            "address": "Alamat dummy di KALIMANTAN TIMUR",
+            "company_group_code": "LKT",
+            "region_code": "REG-03",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c346-7210-9883-d98645ac583f",
+            "code": "BPN-3",
+            "name": "PT. BPN LESTARI",
+            "alias": "BPN 3",
+            "address": "Alamat dummy di KALIMANTAN TIMUR",
+            "company_group_code": "LKT",
+            "region_code": "REG-03",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c348-73e0-9f97-33e34f4e24a9",
+            "code": "JKT-1",
+            "name": "PT. JKT JAYA ABADI",
+            "alias": "JKT 1",
+            "address": "Alamat dummy di JAKARTA",
+            "company_group_code": "LKT",
+            "region_code": "REG-05",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c349-7149-be8e-e96ff48a05ff",
+            "code": "JKT-2",
+            "name": "PT. JKT SUMBER MAKMUR",
+            "alias": "JKT 2",
+            "address": "Alamat dummy di JAKARTA",
+            "company_group_code": "LKT",
+            "region_code": "REG-05",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c34b-7180-8539-4622c1f2d541",
+            "code": "JKT-3",
+            "name": "PT. JKT LESTARI",
+            "alias": "JKT 3",
+            "address": "Alamat dummy di JAKARTA",
+            "company_group_code": "LKT",
+            "region_code": "REG-05",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c34d-728f-b114-b4c8269a9c8a",
+            "code": "MRK-1",
+            "name": "PT. MRK JAYA ABADI",
+            "alias": "MRK 1",
+            "address": "Alamat dummy di MERAUKE",
+            "company_group_code": "LKT",
+            "region_code": "REG-06",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c34e-72ae-91ae-26c32a14c954",
+            "code": "MRK-2",
+            "name": "PT. MRK SUMBER MAKMUR",
+            "alias": "MRK 2",
+            "address": "Alamat dummy di MERAUKE",
+            "company_group_code": "LKT",
+            "region_code": "REG-06",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c34f-72ad-81b7-fd3b9b9eb147",
+            "code": "MRK-3",
+            "name": "PT. MRK LESTARI",
+            "alias": "MRK 3",
+            "address": "Alamat dummy di MERAUKE",
+            "company_group_code": "LKT",
+            "region_code": "REG-06",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c351-7301-a776-38ff43c4054e",
+            "code": "NNK-1",
+            "name": "PT. NNK JAYA ABADI",
+            "alias": "NNK 1",
+            "address": "Alamat dummy di KALIMANTAN UTARA",
+            "company_group_code": "LKT",
+            "region_code": "REG-04",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c352-7201-87b6-d5e3619462ec",
+            "code": "NNK-2",
+            "name": "PT. NNK SUMBER MAKMUR",
+            "alias": "NNK 2",
+            "address": "Alamat dummy di KALIMANTAN UTARA",
+            "company_group_code": "LKT",
+            "region_code": "REG-04",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c356-73c7-a8f6-549a378b1e03",
+            "code": "NNK-3",
+            "name": "PT. NNK LESTARI",
+            "alias": "NNK 3",
+            "address": "Alamat dummy di KALIMANTAN UTARA",
+            "company_group_code": "LKT",
+            "region_code": "REG-04",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c357-722b-bf6a-6ff536c85838",
+            "code": "PKU-1",
+            "name": "PT. PKU JAYA ABADI",
+            "alias": "PKU 1",
+            "address": "Alamat dummy di RIAU",
+            "company_group_code": "LKT",
+            "region_code": "REG-01",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c359-7394-a933-640fe4c89133",
+            "code": "PKU-2",
+            "name": "PT. PKU SUMBER MAKMUR",
+            "alias": "PKU 2",
+            "address": "Alamat dummy di RIAU",
+            "company_group_code": "LKT",
+            "region_code": "REG-01",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c35b-73d0-9ccc-8dd3bf32ba32",
+            "code": "PKU-3",
+            "name": "PT. PKU LESTARI",
+            "alias": "PKU 3",
+            "address": "Alamat dummy di RIAU",
+            "company_group_code": "LKT",
+            "region_code": "REG-01",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c35c-72a1-9c2d-9115343348c8",
+            "code": "PTK-1",
+            "name": "PT. PTK JAYA ABADI",
+            "alias": "PTK 1",
+            "address": "Alamat dummy di KALIMANTAN BARAT",
+            "company_group_code": "LKT",
+            "region_code": "REG-02",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c35e-7131-935d-fec6dd21b2e7",
+            "code": "PTK-2",
+            "name": "PT. PTK SUMBER MAKMUR",
+            "alias": "PTK 2",
+            "address": "Alamat dummy di KALIMANTAN BARAT",
+            "company_group_code": "LKT",
+            "region_code": "REG-02",
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c35f-72ca-9af9-e9cc6f611a3e",
+            "code": "PTK-3",
+            "name": "PT. PTK LESTARI",
+            "alias": "PTK 3",
+            "address": "Alamat dummy di KALIMANTAN BARAT",
+            "company_group_code": "LKT",
+            "region_code": "REG-02",
+            "is_active": true
+        }
+    ],
+    "departments": [
+        {
+            "id": "f8e965d2-c66d-11f0-8472-598095a9f5b1",
+            "code": "dws",
+            "name": "downstream",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "8bdacd62-cbfb-11f0-91e5-b5cb5c56ed2f",
+            "code": "hrd",
+            "name": "Human Resources",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "dbb74262-0561-11f1-89b3-08002791ab91",
+            "code": "akt",
+            "name": "Accounting, Finance & Tax",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "8c4b398a-0562-11f1-91d7-08002791ab91",
+            "code": "mkt",
+            "name": "Marketing",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "b119f4a4-0562-11f1-a33f-08002791ab91",
+            "code": "ict",
+            "name": "ICT",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "d3fde3f4-0562-11f1-ace3-08002791ab91",
+            "code": "gaf",
+            "name": "General Affair",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "1daf242c-0563-11f1-9a89-08002791ab91",
+            "code": "pcr",
+            "name": "Procurement",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "4882b5c4-0563-11f1-900a-08002791ab91",
+            "code": "cwp",
+            "name": "Central Workshop",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "f43cabe0-0563-11f1-b7eb-08002791ab91",
+            "code": "cve",
+            "name": "Civil Engineering",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "0b0fbe8e-0564-11f1-8111-08002791ab91",
+            "code": "lga",
+            "name": "Legal",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "536104ae-0564-11f1-a781-08002791ab91",
+            "code": "mil",
+            "name": "Mil Produksi",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "769d20ec-0564-11f1-8c7f-08002791ab91",
+            "code": "qca",
+            "name": "Quality Assurance",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "bee37ebe-0564-11f1-b41f-08002791ab91",
+            "code": "scu",
+            "name": "Security",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "34a83fe2-065d-11f1-926c-08002791ab91",
+            "code": "spl",
+            "name": "Supply Chain",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "b2c7d608-065d-11f1-ac3a-08002791ab91",
+            "code": "csr",
+            "name": "Corporate Social Responsibility",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "b80dda7c-065d-11f1-8659-08002791ab91",
+            "code": "ehs",
+            "name": "EHS",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "e9d9af04-065d-11f1-b21b-08002791ab91",
+            "code": "iau",
+            "name": "Internal Auditor",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "8e334056-065e-11f1-927f-08002791ab91",
+            "code": "cor",
+            "name": "Corporate Communication",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "977a2fc6-065e-11f1-9f3b-08002791ab91",
+            "code": "str",
+            "name": "Secretary",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "3c21482e-06ec-11f1-ac26-08002791ab91",
+            "code": "gvr",
+            "name": "Govt. Relation",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "c724ed08-06ed-11f1-b27c-08002791ab91",
+            "code": "bpr",
+            "name": "Business Process",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "5cf0eb74-06ef-11f1-b0b4-08002791ab91",
+            "code": "sts",
+            "name": "Sustainability",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "d58e6d54-06ef-11f1-a43b-08002791ab91",
+            "code": "rnd",
+            "name": "Research and Development",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "bc48a00c-06f0-11f1-8ee1-08002791ab91",
+            "code": "kop",
+            "name": "Koperasi",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "a34d3090-c66d-11f0-9ecd-dd44852b76cd",
+            "code": "agt",
+            "name": "Operasional Traksi",
+            "description": null,
+            "company_code": null,
+            "is_active": false
+        },
+        {
+            "id": "7b43e0f8-c66d-11f0-930c-1926e4bba9ed",
+            "code": "agk",
+            "name": "Agronomi",
+            "description": null,
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c362-7282-920b-a8ba8d76458c",
+            "code": "LGL",
+            "name": "Legal & Compliance",
+            "description": "Departemen Hukum dan Kepatuhan",
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c367-7101-9788-bc516284a62e",
+            "code": "TAX",
+            "name": "Tax",
+            "description": "Departemen Perpajakan",
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c368-713d-b177-c26d191e68ff",
+            "code": "FIN",
+            "name": "Finance & Accounting",
+            "description": "Departemen Keuangan dan Akuntansi",
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c369-71df-8cbe-cdfe1ba0cf0d",
+            "code": "HRD",
+            "name": "Human Resources",
+            "description": "Departemen Sumber Daya Manusia",
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c36b-71f6-9142-d134528545e6",
+            "code": "ITC",
+            "name": "Information Technology",
+            "description": "Departemen Teknologi Informasi",
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c36d-734f-a8b1-90d3a01225b0",
+            "code": "PRC",
+            "name": "Procurement",
+            "description": "Departemen Pengadaan",
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c36f-7130-aee3-b21d1ec01b24",
+            "code": "MKT",
+            "name": "Sales & Marketing",
+            "description": "Departemen Penjualan dan Pemasaran",
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c370-713b-b561-bd3b3e9b9480",
+            "code": "OPS",
+            "name": "Operations",
+            "description": "Departemen Operasional",
+            "company_code": null,
+            "is_active": true
+        },
+        {
+            "id": "019f209c-c372-70c5-a3a3-74433e2fdef4",
+            "code": "MGT",
+            "name": "Management \/ Direksi",
+            "description": "Jajaran Manajemen dan Direksi",
+            "company_code": null,
+            "is_active": true
+        }
+    ],
+    "divisions": [
+        {
+            "id": "f8e965d2-c66d-11f0-8472-598095a9f5b1",
+            "code": "dws",
+            "name": "downstream",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "8bdacd62-cbfb-11f0-91e5-b5cb5c56ed2f",
+            "code": "hrd",
+            "name": "Human Resources",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "dbb74262-0561-11f1-89b3-08002791ab91",
+            "code": "akt",
+            "name": "Accounting, Finance & Tax",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "8c4b398a-0562-11f1-91d7-08002791ab91",
+            "code": "mkt",
+            "name": "Marketing",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "b119f4a4-0562-11f1-a33f-08002791ab91",
+            "code": "ict",
+            "name": "ICT",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "d3fde3f4-0562-11f1-ace3-08002791ab91",
+            "code": "gaf",
+            "name": "General Affair",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "1daf242c-0563-11f1-9a89-08002791ab91",
+            "code": "pcr",
+            "name": "Procurement",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "4882b5c4-0563-11f1-900a-08002791ab91",
+            "code": "cwp",
+            "name": "Central Workshop",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "f43cabe0-0563-11f1-b7eb-08002791ab91",
+            "code": "cve",
+            "name": "Civil Engineering",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "0b0fbe8e-0564-11f1-8111-08002791ab91",
+            "code": "lga",
+            "name": "Legal",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "536104ae-0564-11f1-a781-08002791ab91",
+            "code": "mil",
+            "name": "Mil Produksi",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "769d20ec-0564-11f1-8c7f-08002791ab91",
+            "code": "qca",
+            "name": "Quality Assurance",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "bee37ebe-0564-11f1-b41f-08002791ab91",
+            "code": "scu",
+            "name": "Security",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "34a83fe2-065d-11f1-926c-08002791ab91",
+            "code": "spl",
+            "name": "Supply Chain",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "b2c7d608-065d-11f1-ac3a-08002791ab91",
+            "code": "csr",
+            "name": "Corporate Social Responsibility",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "b80dda7c-065d-11f1-8659-08002791ab91",
+            "code": "ehs",
+            "name": "EHS",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "e9d9af04-065d-11f1-b21b-08002791ab91",
+            "code": "iau",
+            "name": "Internal Auditor",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "8e334056-065e-11f1-927f-08002791ab91",
+            "code": "cor",
+            "name": "Corporate Communication",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "977a2fc6-065e-11f1-9f3b-08002791ab91",
+            "code": "str",
+            "name": "Secretary",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "3c21482e-06ec-11f1-ac26-08002791ab91",
+            "code": "gvr",
+            "name": "Govt. Relation",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "c724ed08-06ed-11f1-b27c-08002791ab91",
+            "code": "bpr",
+            "name": "Business Process",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "5cf0eb74-06ef-11f1-b0b4-08002791ab91",
+            "code": "sts",
+            "name": "Sustainability",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "d58e6d54-06ef-11f1-a43b-08002791ab91",
+            "code": "rnd",
+            "name": "Research and Development",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "bc48a00c-06f0-11f1-8ee1-08002791ab91",
+            "code": "kop",
+            "name": "Koperasi",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        },
+        {
+            "id": "a34d3090-c66d-11f0-9ecd-dd44852b76cd",
+            "code": "agt",
+            "name": "Operasional Traksi",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": false
+        },
+        {
+            "id": "7b43e0f8-c66d-11f0-930c-1926e4bba9ed",
+            "code": "agk",
+            "name": "Agronomi",
+            "department_code": null,
+            "id_portal_master": null,
+            "is_active": true
+        }
+    ]
+}

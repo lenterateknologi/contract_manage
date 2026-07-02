@@ -15,6 +15,7 @@ interface ManagementFormProps {
     headerActions?: React.ReactNode;
     onCollapseAll?: () => void;
     flat?: boolean;
+    tabs?: React.ReactNode;
 }
 
 export function ManagementForm({
@@ -29,6 +30,7 @@ export function ManagementForm({
     headerActions,
     onCollapseAll,
     flat = false,
+    tabs,
 }: ManagementFormProps) {
     return (
         <div
@@ -39,7 +41,7 @@ export function ManagementForm({
             style={{ maxHeight: flat ? '100%' : 'calc(100svh - 2.5rem)' }}
         >
             {/* COMPACT STICKY HEADER */}
-            <div className="border-surface-border bg-surface-muted/95 sticky top-0 z-50 flex shrink-0 items-center justify-between border-b px-6 py-4 backdrop-blur">
+            <div className="border-surface-border bg-surface-muted/95 sticky top-0 z-50 flex shrink-0 items-center justify-between border-b px-6 py-2 backdrop-blur">
                 <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" className="hover:bg-surface-muted h-8 w-8 shrink-0 rounded-xl" onClick={onClose}>
                         <ArrowLeft size={16} />
@@ -47,12 +49,18 @@ export function ManagementForm({
 
                     <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-text-main text-lg font-semibold">{title}</h1>
+                            <h1 className="text-text-main text-base font-semibold">{title}</h1>
                             {isEdit && <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />}
                         </div>
-                        {subtitle && <p className="text-text-desc text-sm font-bold  ">{subtitle}</p>}
+                        {subtitle && <p className="text-text-desc text-xs font-medium">{subtitle}</p>}
                     </div>
                 </div>
+
+                {tabs && (
+                    <div className="flex items-center justify-center flex-1 mx-4">
+                        {tabs}
+                    </div>
+                )}
 
                 <div className="flex items-center gap-3">
                     {onCollapseAll && (
@@ -86,7 +94,7 @@ export function ManagementForm({
             </div>
 
             {/* COMPACT FORM BODY */}
-            <div className="bg-surface-base flex-1 overflow-y-auto md:p-8">
+            <div className="bg-surface-base flex-1 overflow-y-auto p-3 md:p-4">
                 <div className="mx-auto w-full max-w-full">{children}</div>
             </div>
         </div>

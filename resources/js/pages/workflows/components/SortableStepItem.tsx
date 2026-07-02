@@ -34,6 +34,7 @@ import { ALL_ROLES, APPROVER_TYPE_STYLES } from '../constants';
 import { useWorkflowStepState } from '../hooks/useWorkflowStepState';
 import { StepActionConfigCard } from './StepActionConfigCard';
 import { StepSimulatorButtons } from './StepSimulatorButtons';
+import { FormInput } from '@/components/ui/inputs/FormInput';
 
 export default function SortableStepItem({
     step,
@@ -80,8 +81,33 @@ export default function SortableStepItem({
 
     const { showToast } = useToast();
 
-    const { activeModal, setActiveModal, parsedCondition, handleConditionChange, actions, addAction, updateAction, removeAction } =
+    const { activeModal, setActiveModal, parsedCondition, handleConditionChange, actions, addAction, updateAction, removeAction, cloneAction } =
         useWorkflowStepState({ step, idx, updateLocalStep });
+
+    const isConditionEnabled = step.condition_expression !== null;
+    const handleToggleCondition = () => {
+        if (isConditionEnabled) {
+            updateLocalStep(idx, {
+                condition_expression: null,
+                meta: {
+                    ...(step.meta || {}),
+                    condition_key: null,
+                    condition_operator: null,
+                    condition_value: null,
+                },
+            });
+        } else {
+            updateLocalStep(idx, {
+                condition_expression: 'METADATA_KEY',
+                meta: {
+                    ...(step.meta || {}),
+                    condition_key: 'METADATA_KEY',
+                    condition_operator: 'truthy',
+                    condition_value: '',
+                },
+            });
+        }
+    };
 
     // Filtered users for select dropdowns
     const userOptions = useMemo(() => {
@@ -104,6 +130,7 @@ export default function SortableStepItem({
     }, [users]);
     const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
     const [conditionModalOpen, setConditionModalOpen] = useState(false);
+    const [stepTab, setStepTab] = useState<'config' | 'actors' | 'actions'>('config');
 
     const updateConfig = (key: 'custom' | 'roles' | 'departments' | 'users' | 'is_default' | 'is_initiator_role' | 'is_initiator_department' | 'use_combination', value: any) => {
         const nextConfig = {
@@ -151,7 +178,7 @@ export default function SortableStepItem({
 
         if (assignAction?.assignee_config) {
             const cfg = assignAction.assignee_config;
-            
+
             // Legacy single type handling
             if (cfg.type) {
                 if (cfg.type === 'initiator') {
@@ -299,20 +326,19 @@ export default function SortableStepItem({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group/step flex flex-col gap-0 transition-all duration-300',
+                'group/step flex flex-col gap-0 transition-all duration-300 bg-white dark:bg-slate-900/40 border rounded-lg p-4',
+                isExpanded
+                    ? 'border-slate-300 dark:border-slate-700 shadow-sm'
+                    : 'border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900/60',
                 isExpanded ? 'overflow-visible' : 'overflow-hidden',
-                isDragging && 'z-50 scale-[1.01]',
+                isDragging && 'z-50 scale-[1.01] border-primary/20 shadow-md',
             )}
         >
             <div
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
-                    'group/header dark:bg-card relative flex cursor-pointer gap-3 rounded-2xl border p-3 transition-all duration-500',
-                    isExpanded
-                        ? 'rounded-b-none border-b-0 bg-white shadow-xl dark:bg-white/[0.02]'
-                        : 'bg-white/50 shadow-sm hover:bg-white dark:bg-black/20 dark:hover:bg-white/[0.05]',
-                    !step.approver_type && 'border-dashed border-rose-200 bg-rose-50/20',
-                    step.approver_type ? 'border-primary/10' : 'border-primary/20',
+                    'group/header relative flex cursor-pointer gap-3 transition-all duration-300',
+                    !step.approver_type && 'bg-rose-50/20 dark:bg-rose-950/10 p-2 rounded border border-dashed border-rose-200 dark:border-rose-900/50',
                 )}
             >
                 <div className="flex shrink-0 flex-col items-center">
@@ -461,316 +487,408 @@ export default function SortableStepItem({
 
             {/* --- Premium Expansion Block --- */}
             {isExpanded && (
-                <div className="border-primary/10 animate-in fade-in slide-in-from-top-6 relative overflow-visible rounded-b-3xl border-x border-b bg-white shadow-xl duration-500 dark:bg-black/40">
-                    <div className="relative z-10 p-4">
-                        <div className="grid grid-cols-12 gap-6">
-                            {/* --- Column 1: Step Settings (Basic Settings & Conditions) --- */}
-                            <div className="col-span-12 lg:col-span-5 space-y-6">
-                                <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                                    <Settings2 size={14} className="text-slate-400" />
-                                    <h4 className="text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
-                                        Konfigurasi Langkah
-                                    </h4>
-                                </div>
+                <div className="animate-in fade-in slide-in-from-top-3 relative overflow-visible duration-300 mt-2">
+                    {/* Inner Step Tab Switcher */}
+                    <div className="flex border-b border-slate-200 dark:border-slate-800 mb-4 gap-4 px-2">
+                        <button
+                            type="button"
+                            onClick={() => setStepTab('config')}
+                            className={cn(
+                                'border-b-2 pb-2 text-sm font-semibold transition-all',
+                                stepTab === 'config'
+                                    ? 'border-primary text-primary dark:text-white'
+                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                            )}
+                        >
+                            Konfigurasi Langkah
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setStepTab('actors')}
+                            className={cn(
+                                'border-b-2 pb-2 text-sm font-semibold transition-all',
+                                stepTab === 'actors'
+                                    ? 'border-primary text-primary dark:text-white'
+                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                            )}
+                        >
+                            Aktor & Otoritas
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setStepTab('actions')}
+                            className={cn(
+                                'flex items-center gap-1.5 border-b-2 pb-2 text-sm font-semibold transition-all',
+                                stepTab === 'actions'
+                                    ? 'border-primary text-primary dark:text-white'
+                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                            )}
+                        >
+                            Konfigurasi Aksi
+                            <span className={cn(
+                                'rounded-full px-1.5 py-0.2 text-[9px] font-bold',
+                                stepTab === 'actions'
+                                    ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                            )}>
+                                {actions.length}
+                            </span>
+                        </button>
+                    </div>
 
-                                <div className="space-y-4">
-                                    {/* Deskripsi */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-semibold text-slate-500 uppercase">Deskripsi Tahap</label>
-                                        <input
-                                            value={step.description || step.label || ''}
-                                            onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
-                                            placeholder="Contoh: Review Legal Staff"
-                                            className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-xs font-medium transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
-                                        />
-                                        <p className="text-xs text-slate-500">Nama atau penjelasan tahap ini.</p>
+                    <div className="relative z-10 py-3">
+                        {stepTab === 'config' && (
+                            <div className="space-y-6 animate-in fade-in duration-200 w-full">
+                                {/* --- Column 1: Step Settings (Basic Settings & Conditions) --- */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                                        <Settings2 size={14} className="text-slate-400" />
+                                        <h4 className="text-xs font-bold tracking-wide text-slate-700 dark:text-slate-300">
+                                            Detail Langkah & Kondisi
+                                        </h4>
                                     </div>
 
-                                    {/* Target Status & Advanced Settings Group (2 Columns) */}
-                                    <div className="rounded-2xl border border-slate-100 bg-slate-50/30 p-4 dark:border-slate-800/50 dark:bg-card/20 space-y-3">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                                            {/* Column 1: Target Status */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-500 uppercase">Status Kontrak Target</label>
-                                                <Select
-                                                    value={step.meta?.target_status || 'default'}
-                                                    onValueChange={(v) => {
-                                                        updateLocalStep(idx, {
-                                                            meta: {
-                                                                ...(step.meta || {}),
-                                                                target_status: v === 'default' ? null : v,
-                                                            },
-                                                        });
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-xs font-medium transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
-                                                        <div className="flex items-center gap-2">
-                                                            {selectedStatus && (
+                                    <div className="grid grid-cols-12 gap-4 items-end">
+                                        {/* Deskripsi */}
+                                        <div className="col-span-12 md:col-span-4">
+                                            <FormInput
+                                                label="Deskripsi Tahap"
+                                                labelClassName="text-xs font-bold text-slate-700 dark:text-slate-300"
+                                                value={step.description || step.label || ''}
+                                                onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
+                                                placeholder="Contoh: Review Legal Staff"
+                                                variant="outline"
+                                                className="h-10 rounded-lg border-slate-200 bg-white text-sm font-medium transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                            />
+                                        </div>
+
+                                        {/* Target Status */}
+                                        <div className="col-span-12 sm:col-span-6 md:col-span-4 space-y-1.5">
+                                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Status Kontrak Target</label>
+                                            <Select
+                                                value={step.meta?.target_status || 'default'}
+                                                onValueChange={(v) => {
+                                                    updateLocalStep(idx, {
+                                                        meta: {
+                                                            ...(step.meta || {}),
+                                                            target_status: v === 'default' ? null : v,
+                                                        },
+                                                    });
+                                                }}
+                                            >
+                                                <SelectTrigger className="h-10 rounded-lg border-slate-200 bg-white text-sm font-medium transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
+                                                    <SelectValue placeholder="Pilih Status" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-xl">
+                                                    <SelectItem value="default" className="py-2 text-sm font-medium text-slate-500 uppercase">
+                                                        DEFAULT (OTOMATIS)
+                                                    </SelectItem>
+                                                    {contractStatuses.map((status: any) => (
+                                                        <SelectItem
+                                                            key={status.id}
+                                                            value={status.code}
+                                                            className="py-2 text-sm font-medium uppercase"
+                                                        >
+                                                            <div className="flex items-center gap-2">
                                                                 <div
                                                                     className="h-2 w-2 rounded-full"
-                                                                    style={{ backgroundColor: selectedStatus.color || '#cbd5e1' }}
+                                                                    style={{ backgroundColor: status.color || '#cbd5e1' }}
                                                                 />
-                                                            )}
-                                                            <SelectValue placeholder="Pilih Status" />
-                                                        </div>
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-xl">
-                                                        <SelectItem value="default" className="py-2 text-xs font-medium text-slate-500 uppercase">
-                                                            DEFAULT (OTOMATIS)
+                                                                <span>
+                                                                    {(status.label || status.name || status.code || '').toUpperCase()} (
+                                                                    {status.code?.toUpperCase()})
+                                                                </span>
+                                                            </div>
                                                         </SelectItem>
-                                                        {contractStatuses.map((status: any) => (
-                                                            <SelectItem
-                                                                key={status.id}
-                                                                value={status.code}
-                                                                className="py-2 text-xs font-medium uppercase"
-                                                            >
-                                                                    <div className="flex items-center gap-2">
-                                                                    <div
-                                                                        className="h-2 w-2 rounded-full"
-                                                                        style={{ backgroundColor: status.color || '#cbd5e1' }}
-                                                                    />
-                                                                    <span>
-                                                                        {(status.label || status.name || status.code || '').toUpperCase()} (
-                                                                        {status.code?.toUpperCase()})
-                                                                    </span>
-                                                                </div>
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            {/* Column 2: Advanced Settings Button */}
-                                            <div className="space-y-1.5">
-                                                <label className="text-xs font-semibold text-slate-500 uppercase">Pengaturan Lanjutan</label>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="w-full justify-start h-9 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900"
-                                                    onClick={() => setAdvancedSettingsOpen(true)}
-                                                >
-                                                    <Settings2 className="mr-2 h-4 w-4" />
-                                                    Pengaturan Lanjutan Tahap
-                                                </Button>
-                                                <AdvancedStepSettingsModal
-                                                    open={advancedSettingsOpen}
-                                                    onOpenChange={setAdvancedSettingsOpen}
-                                                    step={step}
-                                                    onUpdateStep={(updates) => updateLocalStep(idx, updates)}
-                                                />
-                                            </div>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
-                                        <p className="text-xs text-slate-500">Status otomatis jika langkah ini aktif.</p>
+
+                                        {/* Advanced Settings Button */}
+                                        <div className="col-span-12 sm:col-span-6 md:col-span-4 space-y-1.5">
+                                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Pengaturan Lanjutan</label>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="w-full justify-start h-10 rounded-lg text-sm font-semibold bg-white dark:bg-slate-900"
+                                                onClick={() => setAdvancedSettingsOpen(true)}
+                                            >
+                                                <Settings2 className="mr-2 h-4 w-4" />
+                                                Pengaturan Lanjutan Tahap
+                                            </Button>
+                                            <AdvancedStepSettingsModal
+                                                open={advancedSettingsOpen}
+                                                onOpenChange={setAdvancedSettingsOpen}
+                                                step={step}
+                                                onUpdateStep={(updates) => updateLocalStep(idx, updates)}
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* Condition Expression */}
-                                    <div className="space-y-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                                    <div className="space-y-4 border-t border-slate-100 pt-4 dark:border-slate-800">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <GitBranch size={13} className="text-slate-400" />
-                                                <h4 className="text-xs font-semibold text-slate-500 uppercase">Ekspresi Kondisi (Metadata)</h4>
+                                                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Ekspresi Kondisi (Metadata)</h4>
                                             </div>
-                                            <span className={cn(
-                                                "px-2.5 py-0.5 rounded-full text-[10px] font-medium uppercase",
-                                                step.condition_expression !== null 
-                                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                                                    : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
-                                            )}>
-                                                {step.condition_expression !== null ? 'AKTIF' : 'NON-AKTIF'}
-                                            </span>
+                                            <button
+                                                type="button"
+                                                onClick={handleToggleCondition}
+                                                className={cn(
+                                                    'flex h-6 cursor-pointer items-center gap-2 rounded-full px-3 text-[10px] font-bold uppercase transition-all',
+                                                    isConditionEnabled
+                                                        ? 'bg-primary text-white shadow-xs'
+                                                        : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500',
+                                                )}
+                                            >
+                                                {isConditionEnabled ? 'AKTIF' : 'NON-AKTIF'}
+                                            </button>
                                         </div>
 
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            type="button"
-                                            className="w-fit"
-                                            onClick={() => setConditionModalOpen(true)}
-                                        >
-                                            <GitBranch className="mr-2 h-4 w-4" />
-                                            {step.condition_expression !== null ? 'Ubah Kondisi' : 'Atur Kondisi'}
-                                        </Button>
-                                        
-                                        {step.condition_expression !== null && (
-                                            <p className="mt-2 text-xs text-slate-500">
-                                                Ekspresi Aktif:{' '}
-                                                <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300 break-all">
-                                                    {step.condition_expression}
-                                                </code>
-                                            </p>
+                                        {isConditionEnabled ? (
+                                            <div className="space-y-4 animate-in fade-in-50 duration-200 pt-2">
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                                                    {/* Key Input */}
+                                                    <FormInput
+                                                        label={
+                                                            <span className="flex items-center gap-1">
+                                                                <Key className="h-3 w-3" />
+                                                                <span>Metadata Key</span>
+                                                            </span>
+                                                        }
+                                                        labelClassName="text-xs font-bold text-slate-700 dark:text-slate-300"
+                                                        value={parsedCondition.key}
+                                                        onChange={(e) => handleConditionChange({ key: e.target.value })}
+                                                        placeholder="Contoh: contract.has_tax"
+                                                        variant="outline"
+                                                        className="h-10 rounded-lg border-slate-200 bg-white text-sm font-medium transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                                    />
+
+                                                    {/* Operator Input */}
+                                                    <div className="space-y-1.5">
+                                                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Operator</label>
+                                                        <Select
+                                                            value={parsedCondition.operator}
+                                                            onValueChange={(v) => handleConditionChange({ operator: v })}
+                                                        >
+                                                            <SelectTrigger className="h-10 rounded-lg border-slate-200 bg-white text-sm font-medium transition-all focus:border-slate-900 dark:border-slate-800 dark:bg-black/50">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent className="rounded-xl">
+                                                                <SelectItem value="truthy" className="py-2 text-sm font-medium uppercase">
+                                                                    TRUTHY
+                                                                </SelectItem>
+                                                                <SelectItem value="==" className="py-2 text-sm font-medium uppercase">
+                                                                    == (SAMA)
+                                                                </SelectItem>
+                                                                <SelectItem value="!=" className="py-2 text-sm font-medium uppercase">
+                                                                    != (BEDA)
+                                                                </SelectItem>
+                                                                <SelectItem value=">" className="py-2 text-sm font-medium uppercase">
+                                                                    &gt; (LEBIH)
+                                                                </SelectItem>
+                                                                <SelectItem value="<" className="py-2 text-sm font-medium uppercase">
+                                                                    &lt; (KURANG)
+                                                                </SelectItem>
+                                                                <SelectItem value="contains" className="py-2 text-sm font-medium uppercase">
+                                                                    CONTAINS
+                                                                </SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+
+                                                    {/* Expected Value Input */}
+                                                    {parsedCondition.operator !== 'truthy' ? (
+                                                        <FormInput
+                                                            label="Expected Value"
+                                                            labelClassName="text-xs font-bold text-slate-700 dark:text-slate-300"
+                                                            value={parsedCondition.value}
+                                                            onChange={(e) => handleConditionChange({ value: e.target.value })}
+                                                            placeholder="Nilai yang diharapkan"
+                                                            variant="outline"
+                                                            className="h-10 rounded-lg border-slate-200 bg-white text-sm font-medium transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                                        />
+                                                    ) : (
+                                                        <div className="space-y-1.5 opacity-40 pointer-events-none">
+                                                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Expected Value</label>
+                                                            <div className="h-10 rounded-lg border border-slate-100 bg-slate-50/50 dark:border-slate-800/50 dark:bg-slate-900 px-3 flex items-center text-sm font-medium text-slate-400">
+                                                                Tidak diperlukan untuk Truthy
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex h-12 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/30 dark:border-slate-800/50 dark:bg-black/10">
+                                                <p className="text-sm font-medium text-slate-400 dark:text-slate-500">
+                                                    Selalu Diproses (Tanpa Kondisi)
+                                                </p>
+                                            </div>
                                         )}
-                                        <ConditionExpressionModal
-                                            open={conditionModalOpen}
-                                            onOpenChange={setConditionModalOpen}
-                                            step={step}
-                                            idx={idx}
-                                            updateLocalStep={updateLocalStep}
-                                            parsedCondition={parsedCondition}
-                                            handleConditionChange={handleConditionChange}
-                                        />
                                     </div>
                                 </div>
                             </div>
+                        )}
 
-                            {/* --- Column 2: Actors / People Settings --- */}
-                            <div className="col-span-12 lg:col-span-7 space-y-6 lg:border-l lg:border-slate-100 dark:lg:border-slate-800 lg:pl-6 pt-6 lg:pt-0 border-t lg:border-t-0 border-slate-100 dark:border-slate-800">
-                                <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                                    <UsersIcon size={14} className="text-slate-400" />
-                                    <h4 className="text-xs font-semibold tracking-wider text-slate-400 dark:text-slate-500 uppercase">
-                                        Pool Otoritas Langkah (Multi-Source)
-                                    </h4>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {/* 1. Kelompok Aktor */}
-                                    <div className="rounded-xl border border-slate-200/60 bg-slate-50/30 p-4 dark:border-slate-800 dark:bg-slate-900/20">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <Settings2 size={13} className="text-slate-400" />
-                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">1. Aktor Kustom</span>
-                                        </div>
-                                        <SearchableMultiSelect
-                                            values={step.approver_config?.custom || []}
-                                            onValuesChange={(vals: string[]) => updateConfig('custom', vals)}
-                                            options={[
-                                                { value: 'initiator', label: 'INISIATOR' },
-                                                { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
-                                                { value: 'creator', label: 'PEMBUAT' }
-                                            ]}
-                                            placeholder="Pilih Aktor..."
-                                        />
+                        {stepTab === 'actors' && (
+                            <div className="space-y-6 animate-in fade-in duration-200 w-full">
+                                {/* --- Column 2: Actors / People Settings --- */}
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                                        <UsersIcon size={14} className="text-slate-400" />
+                                        <h4 className="text-xs font-bold tracking-wide text-slate-700 dark:text-slate-300">
+                                            Pool Otoritas Langkah (Multi-Source)
+                                        </h4>
                                     </div>
 
-                                    {/* 2. Kelompok Divisi & Role */}
-                                    <div className="rounded-xl border border-slate-200/60 bg-slate-50/30 p-4 dark:border-slate-800 dark:bg-slate-900/20">
-                                        <div className="flex items-center justify-between mb-3 border-b border-slate-100 dark:border-slate-800 pb-2">
-                                            <div className="flex items-center gap-2">
-                                                <Shield size={13} className="text-slate-400" />
-                                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">2. Kombinasi Divisi & Role</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 bg-indigo-50/50 dark:bg-indigo-950/20 px-2 py-0.5 rounded-md border border-indigo-100/50 dark:border-indigo-900/30">
-                                                <Checkbox
-                                                    id={`step-use-combo-${idx}`}
-                                                    checked={step.approver_config?.use_combination !== false}
-                                                    onCheckedChange={(checked) => updateConfig('use_combination', checked === true)}
-                                                />
-                                                <label htmlFor={`step-use-combo-${idx}`} className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer uppercase tracking-wider">Aktifkan</label>
-                                            </div>
-                                        </div>
-                                        <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 transition-opacity duration-200 ${step.approver_config?.use_combination === false ? 'opacity-40 pointer-events-none' : ''}`}>
-                                            {/* Role Pool */}
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between px-0.5">
-                                                    <span className="text-xs font-semibold text-slate-400 uppercase">Berdasarkan Role</span>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Checkbox
-                                                            id={`step-init-role-${idx}`}
-                                                            checked={step.approver_config?.is_initiator_role === true}
-                                                            onCheckedChange={(checked) => updateConfig('is_initiator_role', checked === true)}
-                                                            disabled={step.approver_config?.use_combination === false}
-                                                        />
-                                                        <label htmlFor={`step-init-role-${idx}`} className="text-[10px] font-medium text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
-                                                    </div>
+                                    <div className="space-y-6">
+                                        {/* Grid Row 1: Custom Actors & Direct Users side-by-side */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* 1. Kelompok Aktor */}
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <Settings2 size={13} className="text-slate-400" />
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wide">Aktor Kustom</span>
                                                 </div>
                                                 <SearchableMultiSelect
-                                                    values={step.approver_config?.roles || []}
-                                                    onValuesChange={(vals: string[]) => updateConfig('roles', vals)}
-                                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                                    placeholder={step.approver_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
-                                                    disabled={step.approver_config?.is_initiator_role === true || step.approver_config?.use_combination === false}
-                                                 />
+                                                    values={step.approver_config?.custom || []}
+                                                    onValuesChange={(vals: string[]) => updateConfig('custom', vals)}
+                                                    options={[
+                                                        { value: 'initiator', label: 'INISIATOR' },
+                                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
+                                                        { value: 'creator', label: 'PEMBUAT' }
+                                                    ]}
+                                                />
                                             </div>
 
-                                            {/* Divisi Pool */}
-                                            <div className="space-y-2">
-                                                <div className="flex items-center justify-between px-0.5">
-                                                    <span className="text-xs font-semibold text-slate-400 uppercase">Divisi Pool</span>
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Checkbox
-                                                            id={`step-init-dept-${idx}`}
-                                                            checked={step.approver_config?.is_initiator_department === true}
-                                                            onCheckedChange={(checked) => updateConfig('is_initiator_department', checked === true)}
-                                                            disabled={step.approver_config?.use_combination === false}
-                                                        />
-                                                        <label htmlFor={`step-init-dept-${idx}`} className="text-[10px] font-medium text-slate-400 cursor-pointer uppercase">Sesuai Inisiator</label>
-                                                    </div>
+                                            {/* 3. Kelompok User Langsung */}
+                                            <div className="space-y-1.5">
+                                                <div className="flex items-center gap-2">
+                                                    <UsersIcon size={13} className="text-slate-400" />
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wide">User Langsung</span>
                                                 </div>
                                                 <SearchableMultiSelect
-                                                    values={step.approver_config?.departments || []}
-                                                    onValuesChange={(vals: string[]) => updateConfig('departments', vals)}
-                                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                    placeholder={step.approver_config?.is_initiator_department ? "DITENTUKAN DARI DIVISI INISIATOR" : "Pilih Divisi..."}
-                                                    disabled={step.approver_config?.is_initiator_department === true || step.approver_config?.use_combination === false}
+                                                    values={step.approver_config?.users || []}
+                                                    onValuesChange={(vals: string[]) => updateConfig('users', vals)}
+                                                    options={userOptions}
                                                 />
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* 3. Kelompok User Langsung */}
-                                    <div className="rounded-xl border border-slate-200/60 bg-slate-50/30 p-4 dark:border-slate-800 dark:bg-slate-900/20">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <UsersIcon size={13} className="text-slate-400" />
-                                            <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">3. User Langsung</span>
-                                        </div>
-                                        <SearchableMultiSelect
-                                            values={step.approver_config?.users || []}
-                                            onValuesChange={(vals: string[]) => updateConfig('users', vals)}
-                                            options={userOptions}
-                                            placeholder="Pilih User..."
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* --- Section 3: Konfigurasi Aksi --- */}
-                    <div className="border-t border-slate-100 bg-slate-50/20 px-8 py-6 dark:border-slate-800 dark:bg-black/10">
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs font-semibold tracking-wider text-slate-400 uppercase">Konfigurasi Aksi</span>
-                                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500 dark:bg-slate-800">
-                                        {actions.length} Aksi
-                                    </span>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={addAction}
-                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-medium text-slate-700 uppercase shadow-sm hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
-                                >
-                                    + Tambah Aksi
-                                </button>
-                            </div>
-
-                            {actions.length === 0 ? (
-                                <div className="rounded-xl border border-dashed border-slate-200 py-6 text-center text-xs text-slate-500 uppercase italic dark:border-slate-800">
-                                    Belum ada aksi yang dikonfigurasi. Klik tombol di atas untuk menambah.
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
-                                    {actions.map((act: any, actIdx: number) => {
-                                        return (
-                                            <div key={act.id || actIdx} className="animate-in fade-in relative duration-300">
-                                                <StepActionConfigCard
-                                                    act={act}
-                                                    actIdx={actIdx}
-                                                    idx={idx}
-                                                    step={step}
-                                                    allWorkflows={allWorkflows}
-                                                    allWorkflowSteps={allWorkflowSteps}
-                                                    roles={roles}
-                                                    departments={departments}
-                                                    divisions={divisions}
-                                                    users={users}
-                                                    updateAction={updateAction}
-                                                    removeAction={removeAction}
-                                                />
+                                        {/* 2. Kelompok Divisi & Role */}
+                                        <div className="space-y-3 pt-2">
+                                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Shield size={13} className="text-slate-400" />
+                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wide">Kombinasi Divisi & Role</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800">
+                                                    <Checkbox
+                                                        id={`step-use-combo-${idx}`}
+                                                        checked={step.approver_config?.use_combination !== false}
+                                                        onCheckedChange={(checked) => updateConfig('use_combination', checked === true)}
+                                                    />
+                                                    <label htmlFor={`step-use-combo-${idx}`} className="text-[10px] font-bold text-slate-700 dark:text-slate-300 cursor-pointer tracking-wider">Aktifkan</label>
+                                                </div>
                                             </div>
-                                        );
-                                    })}
+                                            <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 transition-opacity duration-200 ${step.approver_config?.use_combination === false ? 'opacity-40 pointer-events-none' : ''}`}>
+                                                {/* Role Pool */}
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between px-0.5">
+                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Berdasarkan Role</span>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Checkbox
+                                                                id={`step-init-role-${idx}`}
+                                                                checked={step.approver_config?.is_initiator_role === true}
+                                                                onCheckedChange={(checked) => updateConfig('is_initiator_role', checked === true)}
+                                                                disabled={step.approver_config?.use_combination === false}
+                                                            />
+                                                            <label htmlFor={`step-init-role-${idx}`} className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">Sesuai Inisiator</label>
+                                                        </div>
+                                                    </div>
+                                                    <SearchableMultiSelect
+                                                        values={step.approver_config?.roles || []}
+                                                        onValuesChange={(vals: string[]) => updateConfig('roles', vals)}
+                                                        options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                                        placeholder={step.approver_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
+                                                        disabled={step.approver_config?.is_initiator_role === true || step.approver_config?.use_combination === false}
+                                                    />
+                                                </div>
+
+                                                {/* Divisi Pool */}
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between px-0.5">
+                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Divisi Pool</span>
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Checkbox
+                                                                id={`step-init-dept-${idx}`}
+                                                                checked={step.approver_config?.is_initiator_department === true}
+                                                                onCheckedChange={(checked) => updateConfig('is_initiator_department', checked === true)}
+                                                                disabled={step.approver_config?.use_combination === false}
+                                                            />
+                                                            <label htmlFor={`step-init-dept-${idx}`} className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">Sesuai Inisiator</label>
+                                                        </div>
+                                                    </div>
+                                                    <SearchableMultiSelect
+                                                        values={step.approver_config?.departments || []}
+                                                        onValuesChange={(vals: string[]) => updateConfig('departments', vals)}
+                                                        options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                        placeholder={step.approver_config?.is_initiator_department ? "DITENTUKAN DARI DIVISI INISIATOR" : "Pilih Divisi..."}
+                                                        disabled={step.approver_config?.is_initiator_department === true || step.approver_config?.use_combination === false}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
+
+                        {stepTab === 'actions' && (
+                            <div className="space-y-4 animate-in fade-in duration-200">
+                                <div className="flex items-center justify-end">
+                                    <button
+                                        type="button"
+                                        onClick={addAction}
+                                        className="inline-flex items-center gap-1.5 h-10 px-4 rounded-lg bg-primary text-white shadow-sm hover:bg-primary/90 transition-all text-sm font-bold cursor-pointer"
+                                    >
+                                        + Tambah Aksi
+                                    </button>
+                                </div>
+
+                                {actions.length === 0 ? (
+                                    <div className="rounded-xl border border-dashed border-slate-200 py-6 text-center text-xs text-slate-500 uppercase italic dark:border-slate-800">
+                                        Belum ada aksi yang dikonfigurasi. Klik tombol di atas untuk menambah.
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
+                                        {actions.map((act: any, actIdx: number) => {
+                                            return (
+                                                <div key={act.id || actIdx} className="animate-in fade-in relative duration-300">
+                                                    <StepActionConfigCard
+                                                        act={act}
+                                                        actIdx={actIdx}
+                                                        idx={idx}
+                                                        step={step}
+                                                        allWorkflows={allWorkflows}
+                                                        allWorkflowSteps={allWorkflowSteps}
+                                                        roles={roles}
+                                                        departments={departments}
+                                                        divisions={divisions}
+                                                        users={users}
+                                                        updateAction={updateAction}
+                                                        removeAction={removeAction}
+                                                        cloneAction={cloneAction}
+                                                    />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -803,7 +921,7 @@ export default function SortableStepItem({
                 userOptions={signerOptions || []}
             />
             <ForwardModal isOpen={activeModal === 'forward'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
-            
+
             <ConditionExpressionModal
                 open={conditionModalOpen}
                 onOpenChange={setConditionModalOpen}

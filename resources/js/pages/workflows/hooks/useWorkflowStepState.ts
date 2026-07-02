@@ -86,6 +86,7 @@ export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any
                 id: `new-action-${Date.now()}`,
                 master_action_id: '',
                 master_action_name: '',
+                is_active: true,
                 next_step_id: null,
                 next_workflow_id: null,
                 next_workflow_step_id: null,
@@ -118,6 +119,19 @@ export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any
         });
     };
 
+    const cloneAction = (actionIdx: number) => {
+        const actionToClone = actions[actionIdx];
+        if (!actionToClone) return;
+        const cloned = JSON.parse(JSON.stringify(actionToClone));
+        cloned.id = `new-action-${Date.now()}`;
+        const next = [...actions];
+        next.splice(actionIdx + 1, 0, cloned);
+        updateLocalStep(idx, {
+            actions: next,
+            allowed_actions: next.map((a: any) => a.master_action?.code || a.master_action_name?.toLowerCase()).filter(Boolean),
+        });
+    };
+
     return {
         activeModal,
         setActiveModal,
@@ -127,5 +141,6 @@ export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any
         addAction,
         updateAction,
         removeAction,
+        cloneAction,
     };
 }

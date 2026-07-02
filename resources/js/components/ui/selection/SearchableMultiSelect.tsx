@@ -94,7 +94,7 @@ export function SearchableMultiSelect({
                     }
                 }}
                 className={cn(
-                    'flex min-h-[44px] w-full items-center justify-between rounded-lg border border-border bg-surface-base px-4 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
+                    'flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
                     !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
                     open && 'border-black dark:border-slate-100',
                     disabled && 'bg-slate-50 border-slate-100 dark:bg-slate-950 dark:border-slate-900 dark:text-slate-500',
@@ -103,7 +103,7 @@ export function SearchableMultiSelect({
             >
                 <div className="flex flex-wrap gap-1.5 pr-2">
                     {values.length === 0 ? (
-                        <span className="text-slate-800 dark:text-slate-200 py-0.5">{placeholder}</span>
+                        <span className="text-slate-400 dark:text-slate-500 py-0.5 text-sm font-medium">{placeholder}</span>
                     ) : (
                         values.map((val, idx) => {
                             const option = options.find(o => o.value === val);
@@ -131,7 +131,7 @@ export function SearchableMultiSelect({
             </div>
 
             {open && (
-                <div className="absolute left-0 right-0 top-full z-[9999] mt-1 border border-slate-200 bg-white shadow-xl rounded-xl overflow-hidden dark:border-slate-800 dark:bg-slate-950">
+                <div className="absolute left-0 right-0 top-full z-[9999] mt-1 border border-slate-200 bg-white shadow-xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950">
                     {/* Search input */}
                     <div className="relative border-b border-slate-100 dark:border-slate-800">
                         <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -140,7 +140,7 @@ export function SearchableMultiSelect({
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder={searchPlaceholder}
-                            className="h-9 w-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pl-8 pr-3 text-[10px] font-bold uppercase tracking-tight outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                            className="h-10 w-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pl-8 pr-3 text-sm font-medium uppercase tracking-tight outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
                         />
                     </div>
 

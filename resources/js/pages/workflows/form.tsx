@@ -37,7 +37,7 @@ export default function WorkflowEditor({
     const { showToast } = useToast();
     const [isOrgExpanded, setIsOrgExpanded] = useState(false);
 
-    const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
+    const [expandedStepIds, setExpandedStepIds] = useState<Record<string, boolean>>({});
     const [mainTab, setMainTab] = useState<'settings' | 'steps'>('settings');
 
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
@@ -184,45 +184,81 @@ export default function WorkflowEditor({
                     isEdit={!!workflow}
                     onCollapseAll={() => setExpandedStepId(null)}
                     flat={true}
+                    tabs={
+                        <div className="flex bg-slate-100/80 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
+                            <button
+                                type="button"
+                                onClick={() => setMainTab('settings')}
+                                className={cn(
+                                    'px-4 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                                    mainTab === 'settings'
+                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+                                )}
+                            >
+                                Pengaturan Workflow
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMainTab('steps')}
+                                className={cn(
+                                    'flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                                    mainTab === 'steps'
+                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+                                )}
+                            >
+                                Tahapan Workflow
+                                <span className={cn(
+                                    'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                                    mainTab === 'steps'
+                                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                )}>
+                                    {form.data.steps.length}
+                                </span>
+                            </button>
+                        </div>
+                    }
                     headerActions={
-                        <Button
-                            type="button"
-                            onClick={addLocalStep}
-                            variant="ghost"
-                            className="border-primary/20 hover:bg-primary/5 h-9 rounded-xl border px-4 text-xs font-bold transition-all active:scale-95"
-                        >
-                            <PlusCircle size={14} className="mr-1.5" /> Tambah Tahap
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {mainTab === 'steps' && form.data.steps.length > 0 && (
+                                <>
+                                    <Button
+                                        type="button"
+                                        onClick={() => {
+                                            const allExpanded = form.data.steps.reduce((acc: any, s: any) => {
+                                                acc[s.id] = true;
+                                                return acc;
+                                            }, {});
+                                            setExpandedStepIds(allExpanded);
+                                        }}
+                                        variant="ghost"
+                                        className="h-9 rounded-lg border border-slate-200 dark:border-slate-800 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+                                    >
+                                        Expand Semua
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        onClick={() => setExpandedStepIds({})}
+                                        variant="ghost"
+                                        className="h-9 rounded-lg border border-slate-200 dark:border-slate-800 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+                                    >
+                                        Collapse Semua
+                                    </Button>
+                                </>
+                            )}
+                            <Button
+                                type="button"
+                                onClick={addLocalStep}
+                                variant="ghost"
+                                className="border-primary/20 hover:bg-primary/5 h-9 rounded-lg border px-4 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                            >
+                                <PlusCircle size={14} className="mr-1.5" /> Tambah Tahap
+                            </Button>
+                        </div>
                     }
                 >
-                    {/* Main Tabs */}
-                    <div className="mb-6 flex border-b border-slate-200 dark:border-slate-800">
-                        <button
-                            type="button"
-                            onClick={() => setMainTab('settings')}
-                            className={cn(
-                                'border-b-2 px-6 py-3 text-sm font-medium transition-all',
-                                mainTab === 'settings'
-                                    ? 'border-primary text-primary dark:text-white'
-                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
-                            )}
-                        >
-                            Pengaturan Workflow
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setMainTab('steps')}
-                            className={cn(
-                                'flex items-center gap-2 border-b-2 px-6 py-3 text-sm font-medium transition-all',
-                                mainTab === 'steps'
-                                    ? 'border-primary text-primary dark:text-white'
-                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
-                            )}
-                        >
-                            Tahapan Workflow
-                            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold dark:bg-slate-800">{form.data.steps.length}</span>
-                        </button>
-                    </div>
 
                     <div className="space-y-8">
                         {mainTab === 'settings' && (
@@ -567,114 +603,91 @@ export default function WorkflowEditor({
                         {mainTab === 'steps' && (
                             <>
                                 {/* --- Workflow Steps & Visualization Section --- */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-primary/10 text-primary flex h-8 w-8 items-center justify-center rounded-xl">
-                                                <GitBranch size={16} />
+                                <div className="space-y-4">
+                                    {form.data.steps.length === 0 ? (
+                                        <div className="border-primary/5 bg-primary/[0.01] flex flex-col items-center justify-center rounded-3xl border-2 border-dashed py-24 text-center dark:border-white/5 dark:bg-white/[0.01]">
+                                            <div className="bg-primary/5 mb-4 rounded-2xl p-4">
+                                                <PlusCircle size={32} className="text-primary/20" />
                                             </div>
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
-                                                    Tahapan Alur Kerja
-                                                </h4>
-                                                <p className="text-xs font-normal text-slate-500 dark:text-slate-400">
-                                                    Konfigurasi Urutan Approval & Penugasan
-                                                </p>
-                                            </div>
+                                            <span className="text-xs font-medium uppercase tracking-widest text-slate-400/80">
+                                                Belum Ada Tahapan Terdefinisi
+                                            </span>
+                                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-normal">
+                                                Klik tombol "Tambah Tahap" di header untuk memulai
+                                            </p>
                                         </div>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        {form.data.steps.length === 0 ? (
-                                            <div className="border-primary/5 bg-primary/[0.01] flex flex-col items-center justify-center rounded-3xl border-2 border-dashed py-24 text-center dark:border-white/5 dark:bg-white/[0.01]">
-                                                <div className="bg-primary/5 mb-4 rounded-2xl p-4">
-                                                    <PlusCircle size={32} className="text-primary/20" />
-                                                </div>
-                                                <span className="text-xs font-medium uppercase tracking-widest text-slate-400/80">
-                                                    Belum Ada Tahapan Terdefinisi
-                                                </span>
-                                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 font-normal">
-                                                    Klik tombol "Tambah Tahap" di header untuk memulai
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <DndContext
-                                                sensors={sensors}
-                                                collisionDetection={closestCenter}
-                                                onDragEnd={handleDragEnd}
-                                                modifiers={[restrictToVerticalAxis]}
+                                    ) : (
+                                        <DndContext
+                                            sensors={sensors}
+                                            collisionDetection={closestCenter}
+                                            onDragEnd={handleDragEnd}
+                                            modifiers={[restrictToVerticalAxis]}
+                                        >
+                                            <SortableContext
+                                                items={form.data.steps.map((s: any) => s.id)}
+                                                strategy={verticalListSortingStrategy}
                                             >
-                                                <SortableContext
-                                                    items={form.data.steps.map((s: any) => s.id)}
-                                                    strategy={verticalListSortingStrategy}
-                                                >
-                                                    <div className="relative grid gap-4">
-                                                        <div className="absolute top-12 bottom-12 left-[19.5px] z-0 w-px bg-slate-100 dark:bg-slate-800" />
-                                                        {form.data.steps.map((step: any, idx: number) => (
-                                                            <SortableStepItem
-                                                                key={step.id}
-                                                                roles={roles}
-                                                                departments={departments}
-                                                                divisions={divisions}
-                                                                users={users}
-                                                                step={step}
-                                                                idx={idx}
-                                                                totalSteps={form.data.steps.length}
-                                                                contractStatuses={contractStatuses}
-                                                                allWorkflows={allWorkflows.filter(
-                                                                    (w: any) =>
-                                                                        !form.data.contract_type_id ||
-                                                                        w.contract_type_id === form.data.contract_type_id ||
-                                                                        !w.contract_type_id,
-                                                                )}
-                                                                allWorkflowSteps={form.data.steps}
-                                                                duplicateLocalStep={(i: number) => {
-                                                                    const newStep = { ...form.data.steps[i], id: `new-${Date.now()}` };
-                                                                    const s = [...form.data.steps];
-                                                                    s.splice(i + 1, 0, newStep);
-                                                                    const normalized = s.map((item: any, index: number) => ({
-                                                                        ...item,
-                                                                        step: index + 1,
-                                                                    }));
-                                                                    form.setData('steps', normalized);
-                                                                }}
-                                                                moveLocalStep={(i: number, direction: 'up' | 'down') => {
-                                                                    let s = [...form.data.steps];
-                                                                    if (direction === 'up' && i > 0) {
-                                                                        s = arrayMove(s, i, i - 1);
-                                                                    } else if (direction === 'down' && i < s.length - 1) {
-                                                                        s = arrayMove(s, i, i + 1);
-                                                                    }
-                                                                    const normalized = s.map((item: any, index: number) => ({
-                                                                        ...item,
-                                                                        step: index + 1,
-                                                                    }));
-                                                                    form.setData('steps', normalized);
-                                                                }}
-                                                                updateLocalStep={(i, data) => {
-                                                                    const s = [...form.data.steps];
-                                                                    s[i] = { ...s[i], ...data };
-                                                                    form.setData('steps', s);
-                                                                }}
-                                                                removeLocalStep={(i: number) => {
-                                                                    const filtered = form.data.steps.filter(
-                                                                        (_: any, index: number) => index !== i,
-                                                                    );
-                                                                    const normalized = filtered.map((item: any, index: number) => ({
-                                                                        ...item,
-                                                                        step: index + 1,
-                                                                    }));
-                                                                    form.setData('steps', normalized);
-                                                                }}
-                                                                isExpanded={expandedStepId === step.id}
-                                                                setIsExpanded={(expanded) => setExpandedStepId(expanded ? step.id : null)}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </SortableContext>
-                                            </DndContext>
-                                        )}
-                                    </div>
+                                                <div className="relative grid gap-4">
+                                                    <div className="absolute top-12 bottom-12 left-[19.5px] z-0 w-px bg-slate-100 dark:bg-slate-800" />
+                                                    {form.data.steps.map((step: any, idx: number) => (
+                                                        <SortableStepItem
+                                                            key={step.id}
+                                                            roles={roles}
+                                                            departments={departments}
+                                                            divisions={divisions}
+                                                            users={users}
+                                                            step={step}
+                                                            idx={idx}
+                                                            totalSteps={form.data.steps.length}
+                                                            contractStatuses={contractStatuses}
+                                                            allWorkflows={allWorkflows.filter(
+                                                                (w: any) =>
+                                                                    !form.data.contract_type_id ||
+                                                                    w.contract_type_id === form.data.contract_type_id ||
+                                                                    !w.contract_type_id,
+                                                            )}
+                                                            allWorkflowSteps={form.data.steps}
+                                                            duplicateLocalStep={(i: number) => {
+                                                                const s = [...form.data.steps];
+                                                                const duplicated = {
+                                                                    ...s[i],
+                                                                    id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                                                };
+                                                                s.splice(i + 1, 0, duplicated);
+                                                                const normalized = s.map((item: any, index: number) => ({
+                                                                    ...item,
+                                                                    step: index + 1,
+                                                                }));
+                                                                form.setData('steps', normalized);
+                                                            }}
+                                                            updateLocalStep={(i, data) => {
+                                                                const s = [...form.data.steps];
+                                                                s[i] = { ...s[i], ...data };
+                                                                form.setData('steps', s);
+                                                            }}
+                                                            removeLocalStep={(i: number) => {
+                                                                const filtered = form.data.steps.filter(
+                                                                    (_: any, index: number) => index !== i,
+                                                                );
+                                                                const normalized = filtered.map((item: any, index: number) => ({
+                                                                    ...item,
+                                                                    step: index + 1,
+                                                                }));
+                                                                form.setData('steps', normalized);
+                                                            }}
+                                                            isExpanded={!!expandedStepIds[step.id]}
+                                                            setIsExpanded={(expanded) =>
+                                                                setExpandedStepIds((prev) => ({
+                                                                    ...prev,
+                                                                    [step.id]: expanded,
+                                                                }))
+                                                            }
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
+                                    )}
                                 </div>
                                 {form.data.steps.length > 0 && (
                                     <div className="flex items-center gap-4 py-8">
