@@ -30,8 +30,8 @@ import { RejectModal } from './modals/RejectModal';
 import { SignerModal } from './modals/SignerModal';
 import AuthoritySelector from './AuthoritySelector';
 
-import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { ALL_ROLES, APPROVER_TYPE_STYLES } from '../constants';
+
 import { useWorkflowStepState } from '../hooks/useWorkflowStepState';
 import { StepActionConfigCard } from './StepActionConfigCard';
 import { StepSimulatorButtons } from './StepSimulatorButtons';
@@ -161,9 +161,22 @@ export default function SortableStepItem({
         if (nextConfig.is_initiator_department) {
             nextConfig.departments = [];
         }
+
+        // Determine approver_type
+        let appType = 'role';
+        if (nextConfig.custom && nextConfig.custom.length > 0) {
+            appType = nextConfig.custom[0];
+        } else if (nextConfig.users && nextConfig.users.length > 0) {
+            appType = 'user';
+        } else if (nextConfig.is_initiator_role || (nextConfig.roles && nextConfig.roles.length > 0)) {
+            appType = 'role';
+        } else if (nextConfig.is_initiator_department || (nextConfig.departments && nextConfig.departments.length > 0)) {
+            appType = 'role';
+        }
+
         updateLocalStep(idx, {
             approver_config: nextConfig,
-            approver_type: nextConfig.custom.length > 0 ? nextConfig.custom[0] : (nextConfig.users.length > 0 ? 'user' : (nextConfig.roles.length > 0 ? 'role' : 'role')),
+            approver_type: appType,
             role: nextConfig.roles,
             department_ids: nextConfig.departments,
             user_ids: nextConfig.users,
@@ -749,35 +762,34 @@ export default function SortableStepItem({
                                         {/* Grid Row 1: Custom Actors & Direct Users side-by-side */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             {/* 1. Kelompok Aktor */}
-                                            <div className="space-y-1.5">
-                                                <div className="flex items-center gap-2">
-                                                    <Settings2 size={13} className="text-slate-400" />
-                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wide">Aktor Kustom</span>
-                                                </div>
-                                                <SearchableMultiSelect
-                                                    values={step.approver_config?.custom || []}
-                                                    onValuesChange={(vals: string[]) => updateConfig('custom', vals)}
-                                                    options={[
-                                                        { value: 'initiator', label: 'INISIATOR' },
-                                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
-                                                        { value: 'creator', label: 'PEMBUAT' }
-                                                    ]}
-                                                />
-                                            </div>
+                                            <AuthoritySelector
+                                                label="Aktor Kustom"
+                                                idPrefix={`step-actor-custom-${idx}`}
+                                                isInitiator={false}
+                                                showCheckbox={false}
+                                                values={step.approver_config?.custom || []}
+                                                onValuesChange={(vals) => updateConfig('custom', vals)}
+                                                options={[
+                                                    { value: 'initiator', label: 'INISIATOR' },
+                                                    { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
+                                                    { value: 'creator', label: 'PEMBUAT' }
+                                                ]}
+                                                placeholder="Pilih Aktor..."
+                                            />
 
                                             {/* 3. Kelompok User Langsung */}
-                                            <div className="space-y-1.5">
-                                                <div className="flex items-center gap-2">
-                                                    <UsersIcon size={13} className="text-slate-400" />
-                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wide">User Langsung</span>
-                                                </div>
-                                                <SearchableMultiSelect
-                                                    values={step.approver_config?.users || []}
-                                                    onValuesChange={(vals: string[]) => updateConfig('users', vals)}
-                                                    options={userOptions}
-                                                />
-                                            </div>
+                                            <AuthoritySelector
+                                                label="User Langsung"
+                                                idPrefix={`step-user-direct-${idx}`}
+                                                isInitiator={false}
+                                                showCheckbox={false}
+                                                values={step.approver_config?.users || []}
+                                                onValuesChange={(vals) => updateConfig('users', vals)}
+                                                options={userOptions}
+                                                placeholder="Pilih User..."
+                                            />
                                         </div>
+
 
                                         {/* 2. Kelompok Divisi & Role */}
                                         <div className="space-y-3 pt-2">

@@ -17,6 +17,7 @@ class WorkflowOrgScope extends Model
         'region_id',
         'company_id',
         'is_initiator',
+        'scope_type',
     ];
 
     protected function casts(): array

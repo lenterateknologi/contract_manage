@@ -30,9 +30,25 @@ export default function AuthoritySelector({
 }: AuthoritySelectorProps) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
+    // Use internal state so UI always reflects the latest toggle immediately
+    const [internalIsInitiator, setInternalIsInitiator] = useState(!!isInitiator);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    console.log(`AuthoritySelector [${label}]: isInitiator =`, isInitiator, 'values =', values);
+    // Sync if prop changes externally (e.g. form reset or page load)
+    useEffect(() => {
+        setInternalIsInitiator(!!isInitiator);
+    }, [isInitiator]);
+
+    const handleInitiatorToggle = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        // Only block if the whole component is externally disabled, not because isInitiator is on
+        if (disabled || !onIsInitiatorChange) return;
+        const next = !internalIsInitiator;
+        setInternalIsInitiator(next);
+        onIsInitiatorChange(next);
+        // NOTE: do NOT call onValuesChange here — parent's onIsInitiatorChange already handles it
+    };
+
 
     const toggleOption = (val: string) => {
         if (values.includes(val)) {
@@ -66,7 +82,8 @@ export default function AuthoritySelector({
         return () => document.removeEventListener('mousedown', handler);
     }, [open]);
 
-    const isDisabled = disabled || (showCheckbox && isInitiator);
+    // List is disabled when isInitiator is on; checkbox itself only obeys external disabled
+    const isListDisabled = disabled || (showCheckbox && internalIsInitiator);
 
     return (
         <div ref={containerRef} className="space-y-1.5 w-full">
@@ -75,41 +92,35 @@ export default function AuthoritySelector({
                     {label}
                 </span>
                 {showCheckbox && onIsInitiatorChange && (
-                    <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
-                        <input
-                            type="checkbox"
-                            id={`${idPrefix}-is-initiator`}
-                            checked={!!isInitiator}
-                            onChange={(e) => {
-                                const checked = e.target.checked;
-                                console.log(`Checkbox clicked [${label}]: target.checked =`, checked);
-                                onIsInitiatorChange(checked);
-                                if (checked) onValuesChange([]);
-                            }}
-                            disabled={disabled}
-                            className="h-3.5 w-3.5 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer accent-slate-950 dark:accent-slate-50"
-                        />
-                        <span
-                            onClick={() => {
-                                console.log(`Text clicked [${label}]: next =`, !isInitiator);
-                                if (!disabled) {
-                                    const next = !isInitiator;
-                                    onIsInitiatorChange(next);
-                                    if (next) onValuesChange([]);
-                                }
-                            }}
-                            className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 cursor-pointer select-none animate-none"
+                    <div
+                        className="flex items-center gap-1.5 cursor-pointer select-none"
+                        onClick={handleInitiatorToggle}
+                        title={internalIsInitiator ? 'Klik untuk pilih manual' : 'Klik untuk sesuai inisiator'}
+                    >
+                        <div
+                            className={cn(
+                                'h-3.5 w-3.5 rounded border flex items-center justify-center shrink-0 transition-colors',
+                                internalIsInitiator
+                                    ? 'bg-slate-900 border-slate-900 dark:bg-slate-100 dark:border-slate-100'
+                                    : 'bg-white border-slate-300 dark:bg-slate-900 dark:border-slate-600',
+                                disabled && 'opacity-50 cursor-not-allowed',
+                            )}
                         >
+                            {internalIsInitiator && (
+                                <Check size={9} className="text-white dark:text-slate-900 stroke-[3]" />
+                            )}
+                        </div>
+                        <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">
                             Sesuai Inisiator
                         </span>
                     </div>
                 )}
             </div>
 
-            <div className={cn("relative w-full", isDisabled && "opacity-60 cursor-not-allowed", open && "z-50")}>
+            <div className={cn("relative w-full", isListDisabled && "opacity-60 cursor-not-allowed", open && "z-50")}>
                 <div
                     onClick={(e) => {
-                        if (isDisabled) e.preventDefault();
+                        if (isListDisabled) e.preventDefault();
                         else {
                             setOpen(!open);
                             setSearch('');
@@ -117,13 +128,13 @@ export default function AuthoritySelector({
                     }}
                     className={cn(
                         'flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-left text-xs font-semibold text-foreground transition-all outline-none',
-                        !isDisabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
+                        !isListDisabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
                         open && 'border-black dark:border-slate-100',
-                        isDisabled && 'bg-slate-50 border-slate-100 dark:bg-slate-950 dark:border-slate-900 dark:text-slate-500',
+                        isListDisabled && 'bg-slate-50 border-slate-100 dark:bg-slate-950 dark:border-slate-900 dark:text-slate-500',
                     )}
                 >
                     <div className="flex flex-wrap gap-1.5 pr-2">
-                        {isInitiator ? (
+                        {internalIsInitiator ? (
                             <span className="text-slate-400 dark:text-slate-500 py-0.5 text-xs font-medium">Diisi otomatis dari initiator</span>
                         ) : values.length === 0 ? (
                             <span className="text-slate-400 dark:text-slate-500 py-0.5 text-xs font-medium">{placeholder}</span>
@@ -151,7 +162,10 @@ export default function AuthoritySelector({
 
                 {open && (
                     <div className="absolute left-0 right-0 top-full z-[9999] mt-1 border border-slate-200 bg-white shadow-xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950">
-                        <div className="relative border-b border-slate-100 dark:border-slate-800">
+                        <div 
+                            className="relative border-b border-slate-100 dark:border-slate-800"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 autoFocus
@@ -174,6 +188,7 @@ export default function AuthoritySelector({
                                         role="button"
                                         onClick={(e) => {
                                             e.preventDefault();
+                                            e.stopPropagation();
                                             toggleOption(opt.value);
                                         }}
                                         className={cn(

@@ -92,42 +92,60 @@ class WorkflowAdminController extends Controller
 
         // Map org scopes to {value, is_initiator} objects for the frontend
         $workflowData['company_group_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->company_group_id || $s->is_initiator)
+            ->filter(fn ($s) => $s->company_group_id || ($s->is_initiator && in_array($s->scope_type, ['company_group', null])))
             ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_group_id, 'is_initiator' => (bool) $s->is_initiator])
             ->values()->toArray();
 
         $workflowData['region_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->region_id || $s->is_initiator)
+            ->filter(fn ($s) => $s->region_id || ($s->is_initiator && in_array($s->scope_type, ['region', null])))
             ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->region_id, 'is_initiator' => (bool) $s->is_initiator])
             ->values()->toArray();
 
         $workflowData['company_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->company_id || $s->is_initiator)
+            ->filter(fn ($s) => $s->company_id || ($s->is_initiator && in_array($s->scope_type, ['company', null])))
             ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_id, 'is_initiator' => (bool) $s->is_initiator])
             ->values()->toArray();
 
         // Map initiator authorities to {value, is_initiator} objects for the frontend
         $workflowData['initiator_roles'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->role_id || $a->is_initiator)
+            ->filter(fn ($a) => $a->role_id || ($a->is_initiator && in_array($a->authority_type, ['role', null])))
             ->map(fn ($a) => ['value' => $a->is_initiator ? '__initiator__' : ($a->role?->name ?? $a->role_id), 'is_initiator' => (bool) $a->is_initiator])
             ->values()->toArray();
 
         $workflowData['initiator_departments'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->department_id || $a->is_initiator)
+            ->filter(fn ($a) => $a->department_id || ($a->is_initiator && in_array($a->authority_type, ['department', null])))
             ->map(fn ($a) => ['value' => $a->is_initiator ? '__initiator__' : (string) $a->department_id, 'is_initiator' => (bool) $a->is_initiator])
             ->values()->toArray();
 
         $workflowData['initiator_users'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->user_id || $a->is_initiator)
+            ->filter(fn ($a) => $a->user_id || ($a->is_initiator && in_array($a->authority_type, ['user', null])))
             ->map(fn ($a) => ['value' => $a->is_initiator ? '__initiator__' : (string) $a->user_id, 'is_initiator' => (bool) $a->is_initiator])
             ->values()->toArray();
 
         $workflowData['steps'] = $workflow->steps->map(function ($s) {
             $sd = $s->toArray();
-            $sd['role'] = $s->approverAuthorities->pluck('role.name')->filter()->values()->toArray();
-            $sd['user_ids'] = $s->approverAuthorities->pluck('user_id')->filter()->values()->toArray();
-            $sd['department_ids'] = $s->approverAuthorities->pluck('department_id')->filter()->values()->toArray();
-            $sd['division_ids'] = $s->approverAuthorities->pluck('division_id')->filter()->values()->toArray();
+            $sd['role'] = $s->approverAuthorities->filter(fn ($a) => ! $a->is_initiator)->pluck('role.name')->filter()->values()->toArray();
+            $sd['user_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->is_initiator)->pluck('user_id')->filter()->values()->toArray();
+            $sd['department_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->is_initiator)->pluck('department_id')->filter()->values()->toArray();
+            $sd['division_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->is_initiator)->pluck('division_id')->filter()->values()->toArray();
+
+            // Reconstruct approver_config if present, or initialize empty
+            $config = $s->approver_config ?? [];
+            if (! is_array($config)) {
+                $config = [];
+            }
+
+            // Determine initiator status from DB step authorities
+            $config['is_initiator_role'] = $s->approverAuthorities->contains(fn ($a) => $a->is_initiator && in_array($a->authority_type, ['role', null]));
+            $config['is_initiator_department'] = $s->approverAuthorities->contains(fn ($a) => $a->is_initiator && in_array($a->authority_type, ['department', null]));
+
+            // Ensure items inside config are consistent with the arrays
+            $config['roles'] = $config['roles'] ?? $sd['role'];
+            $config['departments'] = $config['departments'] ?? $sd['department_ids'];
+            $config['users'] = $config['users'] ?? $sd['user_ids'];
+
+            $sd['approver_config'] = $config;
+
             $sd['actions'] = $s->actions->map(function ($action) {
                 return [
                     'id' => $action->id,

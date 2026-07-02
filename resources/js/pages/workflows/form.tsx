@@ -15,6 +15,7 @@ import React, { useEffect, useState } from 'react';
 import OrgScopeSelector from './components/OrgScopeSelector';
 import AuthoritySelector from './components/AuthoritySelector';
 import SortableStepItem from './components/SortableStepItem';
+import { MASTER_ACTIONS } from './constants';
 
 // --- Sortable Step Item (Compact) ---
 
@@ -110,13 +111,13 @@ export default function WorkflowEditor({
             return {
                 ...s,
                 approver_config: {
-                    custom: config.custom || (['initiator', 'assigned_pic', 'creator', 'atasan'].includes(s.approver_type) ? [s.approver_type] : []),
+                    custom: config.custom || [],
                     roles: config.roles && config.roles.length > 0 ? config.roles : (s.approver_type === 'role' && hasRoles ? s.role : []),
                     departments: config.departments && config.departments.length > 0 ? config.departments : (s.approver_type === 'role' && hasDepts ? s.department_ids : []),
                     users: config.users && config.users.length > 0 ? config.users : (s.approver_type === 'user' && hasUsers ? s.user_ids : []),
-                    is_default: config.is_default !== undefined ? config.is_default : (s.approver_type === 'initiator'),
-                    is_initiator_role: config.is_initiator_role !== undefined ? config.is_initiator_role : (s.approver_type === 'role' && !hasRoles),
-                    is_initiator_department: config.is_initiator_department !== undefined ? config.is_initiator_department : (s.approver_type === 'role' && !hasDepts),
+                    is_default: config.is_default !== undefined ? config.is_default : false,
+                    is_initiator_role: config.is_initiator_role !== undefined ? config.is_initiator_role : false,
+                    is_initiator_department: config.is_initiator_department !== undefined ? config.is_initiator_department : false,
                 }
             };
         }) || [],
@@ -176,6 +177,16 @@ export default function WorkflowEditor({
                 id: `new-${Date.now()}`,
                 label: '',
                 approver_type: 'role',
+                approver_config: {
+                    custom: [],
+                    roles: [],
+                    departments: [],
+                    users: [],
+                    is_default: false,
+                    is_initiator_role: false,
+                    is_initiator_department: false,
+                    use_combination: true,
+                },
                 step_category: null,
                 actions: [
                     {
@@ -712,6 +723,13 @@ export default function WorkflowEditor({
                                                             users={users}
                                                             step={step}
                                                             idx={idx}
+                                                            isExpanded={!!expandedStepIds[step.id]}
+                                                            setIsExpanded={(val) =>
+                                                                setExpandedStepIds((prev: any) => ({
+                                                                    ...prev,
+                                                                    [step.id]: val,
+                                                                }))
+                                                            }
                                                             totalSteps={form.data.steps.length}
                                                             contractStatuses={contractStatuses}
                                                             allWorkflows={allWorkflows.filter(
@@ -764,13 +782,6 @@ export default function WorkflowEditor({
                                                                 }));
                                                                 form.setData('steps', normalized);
                                                             }}
-                                                            isExpanded={!!expandedStepIds[step.id]}
-                                                            setIsExpanded={(expanded) =>
-                                                                setExpandedStepIds((prev: Record<string, boolean>) => ({
-                                                                    ...prev,
-                                                                    [step.id]: expanded,
-                                                                }))
-                                                            }
                                                         />
                                                     ))}
                                                 </div>

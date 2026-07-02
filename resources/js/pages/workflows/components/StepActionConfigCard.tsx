@@ -1,9 +1,11 @@
-import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { Briefcase, Copy, FileSignature, Settings2, Shield, Trash2, Users as UsersIcon } from 'lucide-react';
+
 import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, getActionTheme } from '../constants';
 import { cn } from '@/lib/utils';
+import AuthoritySelector from './AuthoritySelector';
+
 
 interface StepActionConfigCardProps {
     act: any;
@@ -493,62 +495,36 @@ export function StepActionConfigCard({
                             </div>
 
                             {/* 3. Role Pool */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between px-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <Shield size={11} className="text-slate-400" />
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Berdasarkan Role</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Checkbox
-                                            id={`act-sign-role-${actIdx}`}
-                                            checked={act.signing_parties?.is_initiator_role === true}
-                                            onCheckedChange={(checked) =>
-                                                updateAction(actIdx, { signing_parties: { ...act.signing_parties, is_initiator_role: checked === true } })
-                                            }
-                                        />
-                                        <label htmlFor={`act-sign-role-${actIdx}`} className="text-sm font-medium text-slate-400 cursor-pointer ">Sesuai Inisiator</label>
-                                    </div>
-                                </div>
-                                <SearchableMultiSelect
-                                    values={act.signing_parties?.roles || []}
-                                    onValuesChange={(vals) =>
-                                        updateAction(actIdx, { signing_parties: { ...act.signing_parties, roles: vals } })
-                                    }
-                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                    placeholder={act.signing_parties?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
-                                    disabled={act.signing_parties?.is_initiator_role === true}
-                                />
-                            </div>
+                            <AuthoritySelector
+                                label="Berdasarkan Role"
+                                idPrefix={`act-sign-role-${actIdx}`}
+                                isInitiator={act.signing_parties?.is_initiator_role === true}
+                                onIsInitiatorChange={(checked) =>
+                                    updateAction(actIdx, { signing_parties: { ...act.signing_parties, is_initiator_role: checked, roles: checked ? [] : (act.signing_parties?.roles || []) } })
+                                }
+                                values={act.signing_parties?.roles || []}
+                                onValuesChange={(vals) =>
+                                    updateAction(actIdx, { signing_parties: { ...act.signing_parties, roles: vals } })
+                                }
+                                options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                placeholder="Pilih Role..."
+                            />
 
                             {/* 4. Departemen / Divisi Pool */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between px-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <Briefcase size={11} className="text-slate-400" />
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Departemen / Divisi Pool</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Checkbox
-                                            id={`act-sign-dept-${actIdx}`}
-                                            checked={act.signing_parties?.is_initiator_department === true}
-                                            onCheckedChange={(checked) =>
-                                                updateAction(actIdx, { signing_parties: { ...act.signing_parties, is_initiator_department: checked === true } })
-                                            }
-                                        />
-                                        <label htmlFor={`act-sign-dept-${actIdx}`} className="text-sm font-medium text-slate-400 cursor-pointer ">Sesuai Inisiator</label>
-                                    </div>
-                                </div>
-                                <SearchableMultiSelect
-                                    values={act.signing_parties?.departments || []}
-                                    onValuesChange={(vals) =>
-                                        updateAction(actIdx, { signing_parties: { ...act.signing_parties, departments: vals } })
-                                    }
-                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                    placeholder={act.signing_parties?.is_initiator_department ? "DITENTUKAN DARI DEPT / DIV INISIATOR" : "Pilih Unit / Departemen / Divisi..."}
-                                    disabled={act.signing_parties?.is_initiator_department === true}
-                                />
-                            </div>
+                            <AuthoritySelector
+                                label="Departemen / Divisi Pool"
+                                idPrefix={`act-sign-dept-${actIdx}`}
+                                isInitiator={act.signing_parties?.is_initiator_department === true}
+                                onIsInitiatorChange={(checked) =>
+                                    updateAction(actIdx, { signing_parties: { ...act.signing_parties, is_initiator_department: checked, departments: checked ? [] : (act.signing_parties?.departments || []) } })
+                                }
+                                values={act.signing_parties?.departments || []}
+                                onValuesChange={(vals) =>
+                                    updateAction(actIdx, { signing_parties: { ...act.signing_parties, departments: vals } })
+                                }
+                                options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                placeholder="Pilih Unit / Departemen / Divisi..."
+                            />
                         </div>
                     </div>
                 )}
@@ -664,62 +640,36 @@ export function StepActionConfigCard({
                             </div>
 
                             {/* 3. Role Pool */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between px-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <Shield size={11} className="text-slate-400" />
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Berdasarkan Role</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Checkbox
-                                            id={`act-init-role-${actIdx}`}
-                                            checked={act.assignee_config?.is_initiator_role === true}
-                                            onCheckedChange={(checked) =>
-                                                updateAction(actIdx, { assignee_config: { ...act.assignee_config, is_initiator_role: checked === true } })
-                                            }
-                                        />
-                                        <label htmlFor={`act-init-role-${actIdx}`} className="text-sm font-medium text-slate-400 cursor-pointer ">Sesuai Inisiator</label>
-                                    </div>
-                                </div>
-                                <SearchableMultiSelect
-                                    values={act.assignee_config?.roles || []}
-                                    onValuesChange={(vals) =>
-                                        updateAction(actIdx, { assignee_config: { ...act.assignee_config, roles: vals } })
-                                    }
-                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                    placeholder={act.assignee_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
-                                    disabled={act.assignee_config?.is_initiator_role === true}
-                                />
-                            </div>
+                            <AuthoritySelector
+                                label="Berdasarkan Role"
+                                idPrefix={`act-init-role-${actIdx}`}
+                                isInitiator={act.assignee_config?.is_initiator_role === true}
+                                onIsInitiatorChange={(checked) =>
+                                    updateAction(actIdx, { assignee_config: { ...act.assignee_config, is_initiator_role: checked, roles: checked ? [] : (act.assignee_config?.roles || []) } })
+                                }
+                                values={act.assignee_config?.roles || []}
+                                onValuesChange={(vals) =>
+                                    updateAction(actIdx, { assignee_config: { ...act.assignee_config, roles: vals } })
+                                }
+                                options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                placeholder="Pilih Role..."
+                            />
 
                             {/* 4. Departemen / Divisi Pool */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between px-0.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <Briefcase size={11} className="text-slate-400" />
-                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Departemen / Divisi Pool</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        <Checkbox
-                                            id={`act-init-dept-${actIdx}`}
-                                            checked={act.assignee_config?.is_initiator_department === true}
-                                            onCheckedChange={(checked) =>
-                                                updateAction(actIdx, { assignee_config: { ...act.assignee_config, is_initiator_department: checked === true } })
-                                            }
-                                        />
-                                        <label htmlFor={`act-init-dept-${actIdx}`} className="text-sm font-medium text-slate-400 cursor-pointer ">Sesuai Inisiator</label>
-                                    </div>
-                                </div>
-                                <SearchableMultiSelect
-                                    values={act.assignee_config?.departments || []}
-                                    onValuesChange={(vals) =>
-                                        updateAction(actIdx, { assignee_config: { ...act.assignee_config, departments: vals } })
-                                    }
-                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                    placeholder={act.assignee_config?.is_initiator_department ? "DITENTUKAN DARI DEPT / DIV INISIATOR" : "Pilih Unit / Departemen / Divisi..."}
-                                    disabled={act.assignee_config?.is_initiator_department === true}
-                                />
-                            </div>
+                            <AuthoritySelector
+                                label="Departemen / Divisi Pool"
+                                idPrefix={`act-init-dept-${actIdx}`}
+                                isInitiator={act.assignee_config?.is_initiator_department === true}
+                                onIsInitiatorChange={(checked) =>
+                                    updateAction(actIdx, { assignee_config: { ...act.assignee_config, is_initiator_department: checked, departments: checked ? [] : (act.assignee_config?.departments || []) } })
+                                }
+                                values={act.assignee_config?.departments || []}
+                                onValuesChange={(vals) =>
+                                    updateAction(actIdx, { assignee_config: { ...act.assignee_config, departments: vals } })
+                                }
+                                options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                placeholder="Pilih Unit / Departemen / Divisi..."
+                            />
                         </div>
 
                         <p className="text-xs text-indigo-500/70 italic">

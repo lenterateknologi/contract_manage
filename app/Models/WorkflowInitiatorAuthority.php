@@ -19,6 +19,7 @@ class WorkflowInitiatorAuthority extends Model
         'division_id',
         'user_id',
         'is_initiator',
+        'authority_type',
     ];
 
     protected function casts(): array
