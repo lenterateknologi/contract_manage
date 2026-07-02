@@ -18,7 +18,15 @@ class WorkflowInitiatorAuthority extends Model
         'department_id',
         'division_id',
         'user_id',
+        'is_initiator',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_initiator' => 'boolean',
+        ];
+    }
 
     public function role(): BelongsTo
     {

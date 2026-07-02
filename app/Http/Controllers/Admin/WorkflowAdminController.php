@@ -89,6 +89,23 @@ class WorkflowAdminController extends Controller
         $workflow = $this->workflowQuery->findForEdit($workflow->id);
 
         $workflowData = $workflow->toArray();
+
+        // Map initiator authorities to {value, is_initiator} objects for the frontend
+        $workflowData['initiator_roles'] = $workflow->initiatorAuthorities
+            ->filter(fn ($a) => $a->role_name)
+            ->map(fn ($a) => ['value' => $a->role_name, 'is_initiator' => (bool) $a->is_initiator])
+            ->values()->toArray();
+
+        $workflowData['initiator_departments'] = $workflow->initiatorAuthorities
+            ->filter(fn ($a) => $a->department_id)
+            ->map(fn ($a) => ['value' => (string) $a->department_id, 'is_initiator' => (bool) $a->is_initiator])
+            ->values()->toArray();
+
+        $workflowData['initiator_users'] = $workflow->initiatorAuthorities
+            ->filter(fn ($a) => $a->user_id)
+            ->map(fn ($a) => ['value' => (string) $a->user_id, 'is_initiator' => (bool) $a->is_initiator])
+            ->values()->toArray();
+
         $workflowData['steps'] = $workflow->steps->map(function ($s) {
             $sd = $s->toArray();
             $sd['role'] = $s->approverAuthorities->pluck('role_name')->filter()->values()->toArray();

@@ -10,11 +10,115 @@ import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor,
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Head, router, useForm } from '@inertiajs/react';
-import { CheckCircle2, Edit3, GitBranch, LayoutTemplate, PlusCircle, Shield, Users as UsersIcon } from 'lucide-react';
+import { CheckCircle2, Edit3, GitBranch, LayoutTemplate, PlusCircle, Shield, Trash2, Users as UsersIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import OrgScopeSelector from './components/OrgScopeSelector';
 import SortableStepItem from './components/SortableStepItem';
 import { MASTER_ACTIONS } from './constants';
+
+// --- Initiator Authority Table ---
+interface InitiatorItem {
+    value: string;
+    is_initiator: boolean;
+}
+
+interface InitiatorAuthorityTableProps {
+    label: string;
+    icon: React.ReactNode;
+    items: InitiatorItem[];
+    onItemsChange: (items: InitiatorItem[]) => void;
+    options: { value: string; label: string }[];
+    placeholder?: string;
+}
+
+function InitiatorAuthorityTable({ label, icon, items, onItemsChange, options, placeholder }: InitiatorAuthorityTableProps) {
+    const [selectedValue, setSelectedValue] = useState('');
+
+    const addItem = (val: string) => {
+        if (!val || items.some((i) => i.value === val)) return;
+        onItemsChange([...items, { value: val, is_initiator: false }]);
+        setSelectedValue('');
+    };
+
+    const removeItem = (val: string) => {
+        onItemsChange(items.filter((i) => i.value !== val));
+    };
+
+    const toggleIsInitiator = (val: string, checked: boolean) => {
+        onItemsChange(items.map((i) => (i.value === val ? { ...i, is_initiator: checked } : i)));
+    };
+
+    const getLabel = (val: string) => options.find((o) => o.value === val)?.label ?? val;
+
+    // Options not yet selected
+    const available = options.filter((o) => !items.some((i) => i.value === o.value));
+
+    return (
+        <div className="space-y-1.5">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                {icon} {label}
+            </label>
+
+            {/* Add row */}
+            <Select value={selectedValue} onValueChange={addItem}>
+                <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-xs font-medium dark:border-slate-800 dark:bg-card">
+                    <SelectValue placeholder={placeholder ?? `Tambah ${label}...`} />
+                </SelectTrigger>
+                <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-card">
+                    {available.map((o) => (
+                        <SelectItem key={o.value} value={o.value} className="py-2 text-xs font-medium">
+                            {o.label}
+                        </SelectItem>
+                    ))}
+                    {available.length === 0 && (
+                        <div className="px-3 py-2 text-xs text-slate-400">Semua sudah dipilih</div>
+                    )}
+                </SelectContent>
+            </Select>
+
+            {/* Table */}
+            {items.length > 0 && (
+                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                    <table className="w-full text-xs">
+                        <thead>
+                            <tr className="border-b border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
+                                <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-slate-400">{label}</th>
+                                <th className="px-3 py-2 text-center font-semibold text-slate-500 dark:text-slate-400 w-24">Is Initiator</th>
+                                <th className="w-8 px-2 py-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {items.map((item) => (
+                                <tr key={item.value} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
+                                    <td className="px-3 py-2 font-medium text-slate-700 dark:text-slate-300">
+                                        {getLabel(item.value)}
+                                    </td>
+                                    <td className="px-3 py-2 text-center">
+                                        <Checkbox
+                                            id={`is_initiator_${item.value}`}
+                                            checked={item.is_initiator}
+                                            onCheckedChange={(c) => toggleIsInitiator(item.value, !!c)}
+                                            className="h-4 w-4"
+                                        />
+                                    </td>
+                                    <td className="px-2 py-2 text-center">
+                                        <button
+                                            type="button"
+                                            onClick={() => removeItem(item.value)}
+                                            className="text-slate-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
 
 // --- Sortable Step Item (Compact) ---
 
@@ -115,8 +219,8 @@ export default function WorkflowEditor({
     });
 
     useEffect(() => {
-        const hasRoles = form.data.initiator_roles.length > 0 || form.data.initiator_departments.length > 0;
-        const hasUsers = form.data.initiator_users.length > 0;
+        const hasRoles = (form.data.initiator_roles?.length ?? 0) > 0 || (form.data.initiator_departments?.length ?? 0) > 0;
+        const hasUsers = (form.data.initiator_users?.length ?? 0) > 0;
 
         let type = 'all';
         if (hasUsers) type = 'user';
@@ -577,54 +681,36 @@ export default function WorkflowEditor({
                                                 </h3>
                                             </div>
 
-                                            <div className="space-y-3">
-                                                {/* Selector 1: Role */}
-                                                <div className="space-y-1.5">
+                                            <div className="space-y-4">
+                                                {/* Role */}
+                                                <InitiatorAuthorityTable
+                                                    label="Role"
+                                                    icon={<Shield size={10} />}
+                                                    items={form.data.initiator_roles || []}
+                                                    onItemsChange={(items: any[]) => form.setData('initiator_roles', items)}
+                                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                                    placeholder="Tambah Role..."
+                                                />
 
-                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                        <Shield size={10} /> Role
-                                                    </label>
-                                                    <SearchableMultiSelect
-                                                        values={form.data.initiator_roles || []}
-                                                        onValuesChange={(vals: string[]) => form.setData('initiator_roles', vals)}
-                                                        options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                                        placeholder="Semua Role..."
-                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
-                                                    />
-                                                </div>
+                                                {/* Department */}
+                                                <InitiatorAuthorityTable
+                                                    label="Unit / Department / Divisi"
+                                                    icon={<UsersIcon size={10} />}
+                                                    items={form.data.initiator_departments || []}
+                                                    onItemsChange={(items: any[]) => form.setData('initiator_departments', items)}
+                                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                    placeholder="Tambah Department..."
+                                                />
 
-                                                {/* Selector 2: Unit / Department / Divisi */}
-                                                <div className="space-y-1.5">
-
-                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                        <UsersIcon size={10} /> Unit / Department / Divisi
-                                                    </label>
-                                                    <SearchableMultiSelect
-                                                        values={form.data.initiator_departments?.map(String) || []}
-                                                        onValuesChange={(vals: string[]) => form.setData('initiator_departments', vals)}
-                                                        options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                        placeholder="Semua Unit / Departemen / Divisi..."
-                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
-                                                    />
-                                                </div>
-
-                                                {/* Selector 3: User */}
-                                                <div className="space-y-1.5">
-
-                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                        <UsersIcon size={10} /> User
-                                                    </label>
-                                                    <SearchableMultiSelect
-                                                        values={form.data.initiator_users?.map(String) || []}
-                                                        onValuesChange={(vals: string[]) => form.setData('initiator_users', vals)}
-                                                        options={users.map((u: any) => ({
-                                                            value: String(u.id),
-                                                            label: `${u.name} (${u.role})`,
-                                                        }))}
-                                                        placeholder="Semua User..."
-                                                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-card /50 dark:border-slate-800 dark:focus:border-primary"
-                                                    />
-                                                </div>
+                                                {/* User */}
+                                                <InitiatorAuthorityTable
+                                                    label="User"
+                                                    icon={<UsersIcon size={10} />}
+                                                    items={form.data.initiator_users || []}
+                                                    onItemsChange={(items: any[]) => form.setData('initiator_users', items)}
+                                                    options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
+                                                    placeholder="Tambah User..."
+                                                />
                                             </div>
                                         </div>
                                     </div>

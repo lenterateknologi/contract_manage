@@ -50,31 +50,39 @@ class StoreWorkflowAction
 
             // Sync Initiator Authorities
             if (! empty($data['initiator_roles'])) {
-                foreach ($data['initiator_roles'] as $role) {
-                    $resolvedId = $this->resolveRoleId($role);
-                        if ($resolvedId) {
-                            $workflow->initiatorAuthorities()->create(['role_id' => $resolvedId]);
-                        }
+                foreach ($data['initiator_roles'] as $item) {
+                    $value = is_array($item) ? ($item['value'] ?? null) : $item;
+                    $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
+                    $resolvedId = $this->resolveRoleId($value);
+                    if ($resolvedId) {
+                        $workflow->initiatorAuthorities()->create(['role_id' => $resolvedId, 'is_initiator' => $isInitiator]);
+                    }
                 }
             }
             if (! empty($data['initiator_departments'])) {
-                foreach ($data['initiator_departments'] as $deptId) {
-                    $resolvedId = $this->resolveDepartmentId($deptId);
+                foreach ($data['initiator_departments'] as $item) {
+                    $value = is_array($item) ? ($item['value'] ?? null) : $item;
+                    $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
+                    $resolvedId = $this->resolveDepartmentId($value);
                     if ($resolvedId) {
-                        $workflow->initiatorAuthorities()->create(['department_id' => $resolvedId]);
+                        $workflow->initiatorAuthorities()->create(['department_id' => $resolvedId, 'is_initiator' => $isInitiator]);
                     }
                 }
             }
             if (! empty($data['initiator_divisions'])) {
-                foreach ($data['initiator_divisions'] as $divId) {
-                    $workflow->initiatorAuthorities()->create(['division_id' => $divId]);
+                foreach ($data['initiator_divisions'] as $item) {
+                    $value = is_array($item) ? ($item['value'] ?? null) : $item;
+                    $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
+                    $workflow->initiatorAuthorities()->create(['division_id' => $value, 'is_initiator' => $isInitiator]);
                 }
             }
             if (! empty($data['initiator_users'])) {
-                foreach ($data['initiator_users'] as $userId) {
-                    $resolvedId = $this->resolveUserId($userId);
+                foreach ($data['initiator_users'] as $item) {
+                    $value = is_array($item) ? ($item['value'] ?? null) : $item;
+                    $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
+                    $resolvedId = $this->resolveUserId($value);
                     if ($resolvedId) {
-                        $workflow->initiatorAuthorities()->create(['user_id' => $resolvedId]);
+                        $workflow->initiatorAuthorities()->create(['user_id' => $resolvedId, 'is_initiator' => $isInitiator]);
                     }
                 }
             }
