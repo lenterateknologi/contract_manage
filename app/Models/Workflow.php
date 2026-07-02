@@ -44,13 +44,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read array $initiator_users
  * @property-read array $initiator_departments
  * @property-read string|null $contract_type_name
- * @property-read Collection<int, WorkflowInitiatorRole> $initiatorRolesData
- * @property-read Collection<int, WorkflowInitiatorDepartment> $initiatorDepartmentsData
- * @property-read Collection<int, WorkflowInitiatorUser> $initiatorUsersData
  * @property-read ContractType|null $contractType
  * @property-read Department|null $department
  * @property-read Collection<int, WorkflowStep> $steps
  * @property-read Collection<int, Contract> $contracts
+ * @property-read Collection<int, WorkflowInitiatorAuthority> $initiatorAuthorities
+ * @property-read Collection<int, WorkflowOrgScope> $orgScopes
  */
 class Workflow extends Model
 {
@@ -107,38 +106,62 @@ class Workflow extends Model
         'meta' => 'array',
     ];
 
-    protected $with = ['initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData', 'contractType'];
+    protected $with = ['contractType', 'orgScopes', 'initiatorAuthorities.role'];
 
-    protected $appends = ['initiator_roles', 'initiator_users', 'initiator_departments', 'contract_type_name'];
+    protected $appends = [
+        'initiator_roles',
+        'initiator_users',
+        'initiator_departments',
+        'initiator_divisions',
+        'contract_type_name',
+        'company_group_ids',
+        'region_ids',
+        'company_ids',
+    ];
 
-    public function initiatorRolesData(): HasMany
+    public function orgScopes(): HasMany
     {
-        return $this->hasMany(WorkflowInitiatorRole::class, 'workflow_id');
+        return $this->hasMany(WorkflowOrgScope::class, 'workflow_id');
     }
 
-    public function initiatorDepartmentsData(): HasMany
+    public function initiatorAuthorities(): HasMany
     {
-        return $this->hasMany(WorkflowInitiatorDepartment::class, 'workflow_id');
+        return $this->hasMany(WorkflowInitiatorAuthority::class, 'workflow_id');
     }
 
-    public function initiatorUsersData(): HasMany
+    public function getCompanyGroupIdsAttribute()
     {
-        return $this->hasMany(WorkflowInitiatorUser::class, 'workflow_id');
+        return $this->orgScopes->pluck('company_group_id')->filter()->unique()->values()->toArray();
+    }
+
+    public function getRegionIdsAttribute()
+    {
+        return $this->orgScopes->pluck('region_id')->filter()->unique()->values()->toArray();
+    }
+
+    public function getCompanyIdsAttribute()
+    {
+        return $this->orgScopes->pluck('company_id')->filter()->unique()->values()->toArray();
     }
 
     public function getInitiatorRolesAttribute()
     {
-        return $this->initiatorRolesData->pluck('role_name')->toArray();
+        return $this->initiatorAuthorities->pluck('role.name')->filter()->unique()->values()->toArray();
     }
 
     public function getInitiatorDepartmentsAttribute()
     {
-        return $this->initiatorDepartmentsData->pluck('department_id')->toArray();
+        return $this->initiatorAuthorities->pluck('department_id')->filter()->unique()->values()->toArray();
     }
 
     public function getInitiatorUsersAttribute()
     {
-        return $this->initiatorUsersData->pluck('user_id')->toArray();
+        return $this->initiatorAuthorities->pluck('user_id')->filter()->unique()->values()->toArray();
+    }
+
+    public function getInitiatorDivisionsAttribute()
+    {
+        return $this->initiatorAuthorities->pluck('division_id')->filter()->unique()->values()->toArray();
     }
 
     public function getContractTypeNameAttribute()

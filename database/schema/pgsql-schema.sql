@@ -2,9 +2,9 @@
 -- PostgreSQL database dump
 --
 
-\restrict hpBY8ggbj3guFKRPbUw7AzqjrIwVHVZIMvUzjR8ycHn7npwFn5t7xHCKzqDu0uT
+\restrict ahFZmAAkEeIw6w65O0BUnBhbHKZkp8lf8AUeSNaghXLD3mLTUtm9VVhUmgzhyuv
 
--- Dumped from database version 14.19 (Homebrew)
+-- Dumped from database version 17.7 (Homebrew)
 -- Dumped by pg_dump version 17.7 (Homebrew)
 
 SET statement_timeout = 0;
@@ -18,13 +18,6 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-
---
--- Name: public; Type: SCHEMA; Schema: -; Owner: -
---
-
--- *not* creating schema, since initdb creates it
-
 
 --
 -- Name: pgcrypto; Type: EXTENSION; Schema: -; Owner: -
@@ -78,7 +71,9 @@ CREATE TABLE public.cache (
 CREATE TABLE public.cache_locks (
     key character varying(255) NOT NULL,
     owner character varying(255) NOT NULL,
-    expiration integer NOT NULL
+    expiration integer NOT NULL,
+    created_by uuid,
+    updated_by uuid
 );
 
 
@@ -130,7 +125,9 @@ CREATE TABLE public.job_batches (
     options text,
     cancelled_at integer,
     created_at integer NOT NULL,
-    finished_at integer
+    finished_at integer,
+    created_by uuid,
+    updated_by uuid
 );
 
 
@@ -186,7 +183,49 @@ CREATE TABLE public.m_access_modules (
     updated_at timestamp(0) without time zone,
     deleted_at timestamp(0) without time zone,
     can_bulk_approve boolean DEFAULT false NOT NULL,
-    can_bulk_delete boolean DEFAULT false NOT NULL
+    can_bulk_delete boolean DEFAULT false NOT NULL,
+    sequence integer,
+    created_by uuid,
+    updated_by uuid
+);
+
+
+--
+-- Name: m_companies; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.m_companies (
+    id uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    code character varying(255) NOT NULL,
+    alias character varying(255),
+    address text,
+    company_group_id uuid,
+    region_id uuid,
+    is_active boolean DEFAULT true NOT NULL,
+    created_by uuid,
+    updated_by uuid,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    deleted_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: m_company_groups; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.m_company_groups (
+    id uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    code character varying(255) NOT NULL,
+    description text,
+    is_active boolean DEFAULT true NOT NULL,
+    created_by uuid,
+    updated_by uuid,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    deleted_at timestamp(0) without time zone
 );
 
 
@@ -207,10 +246,7 @@ CREATE TABLE public.m_contract_statuses (
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     deleted_at timestamp(0) without time zone,
-    is_active boolean DEFAULT true NOT NULL,
-    display_mode character varying(20) DEFAULT 'interactive'::character varying NOT NULL,
-    allow_info_edit boolean DEFAULT false NOT NULL,
-    allow_reference boolean DEFAULT false NOT NULL
+    is_active boolean DEFAULT true NOT NULL
 );
 
 
@@ -255,8 +291,18 @@ CREATE TABLE public.m_contract_types (
     f2_input_mechanism character varying(255) DEFAULT 'digital'::character varying,
     f2_form_template_id uuid,
     f1_contract_template_id uuid,
-    f2_contract_template_id uuid
+    f2_contract_template_id uuid,
+    workflow_id uuid,
+    features json,
+    parent_id uuid
 );
+
+
+--
+-- Name: COLUMN m_contract_types.parent_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.m_contract_types.parent_id IS 'induk dari jenis kontrak';
 
 
 --
@@ -268,6 +314,26 @@ CREATE TABLE public.m_departments (
     name character varying(255) NOT NULL,
     code character varying(255) NOT NULL,
     description text,
+    is_active boolean DEFAULT true NOT NULL,
+    created_by uuid,
+    updated_by uuid,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    deleted_at timestamp(0) without time zone,
+    company_id uuid
+);
+
+
+--
+-- Name: m_division; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.m_division (
+    id uuid NOT NULL,
+    code character varying(255),
+    id_portal_master uuid,
+    name character varying(255) NOT NULL,
+    department_id uuid,
     is_active boolean DEFAULT true NOT NULL,
     created_by uuid,
     updated_by uuid,
@@ -298,7 +364,9 @@ CREATE TABLE public.m_form_fields (
     "order" integer DEFAULT 0 NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
+    deleted_at timestamp(0) without time zone,
+    created_by uuid,
+    updated_by uuid
 );
 
 
@@ -357,7 +425,8 @@ CREATE TABLE public.m_modules (
     updated_by uuid,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
+    deleted_at timestamp(0) without time zone,
+    description text
 );
 
 
@@ -373,7 +442,29 @@ CREATE TABLE public.m_numbering_formats (
     padding integer DEFAULT 3 NOT NULL,
     is_active boolean DEFAULT true NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    created_by uuid,
+    updated_by uuid
+);
+
+
+--
+-- Name: m_regions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.m_regions (
+    id uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    code character varying(255) NOT NULL,
+    alias character varying(255),
+    id_portal_master character varying(255),
+    description text,
+    is_active boolean DEFAULT true NOT NULL,
+    created_by uuid,
+    updated_by uuid,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    deleted_at timestamp(0) without time zone
 );
 
 
@@ -386,7 +477,10 @@ CREATE TABLE public.m_role_module_groups (
     role_id uuid NOT NULL,
     module_group_id uuid NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    sequence integer,
+    created_by uuid,
+    updated_by uuid
 );
 
 
@@ -421,7 +515,8 @@ CREATE TABLE public.m_roles (
     updated_by uuid,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
+    deleted_at timestamp(0) without time zone,
+    company_id uuid
 );
 
 
@@ -452,7 +547,9 @@ CREATE TABLE public.m_template_folders (
     parent_id uuid,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
+    deleted_at timestamp(0) without time zone,
+    created_by uuid,
+    updated_by uuid
 );
 
 
@@ -463,16 +560,11 @@ CREATE TABLE public.m_template_folders (
 CREATE TABLE public.m_users (
     id uuid NOT NULL,
     name character varying(255) NOT NULL,
-    email character varying(255) NOT NULL,
+    email character varying(255),
     email_verified_at timestamp(0) without time zone,
     password character varying(255) NOT NULL,
     username character varying(255),
-    initials character varying(10),
-    role character varying(255),
-    "position" character varying(255),
-    phone character varying(255),
-    bg_color character varying(255),
-    text_color character varying(255),
+    phone_number character varying(255),
     role_id uuid,
     department_id uuid,
     is_active boolean DEFAULT true NOT NULL,
@@ -480,11 +572,29 @@ CREATE TABLE public.m_users (
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     deleted_at timestamp(0) without time zone,
-    company character varying(255),
-    location character varying(255),
-    bio text,
-    "group" character varying(255),
-    region character varying(255)
+    company_id uuid,
+    spv_id uuid,
+    code character varying(255),
+    company_group_id uuid,
+    division_id uuid,
+    login_status boolean DEFAULT false NOT NULL,
+    last_login timestamp(0) without time zone,
+    last_connected timestamp(0) without time zone,
+    address text,
+    birth_date date,
+    gender character varying(10),
+    created_by uuid,
+    updated_by uuid,
+    is_verified boolean DEFAULT false NOT NULL,
+    verified_by uuid,
+    verified_at timestamp(0) without time zone,
+    job_position_id uuid,
+    job_level_id uuid,
+    image_src character varying(255),
+    location_id uuid,
+    region_id uuid,
+    is_employee boolean DEFAULT true NOT NULL,
+    id_employee_portal_master integer
 );
 
 
@@ -501,7 +611,9 @@ CREATE TABLE public.m_vendor_documents (
     expires_at date,
     is_verified boolean DEFAULT false NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    created_by uuid,
+    updated_by uuid
 );
 
 
@@ -540,80 +652,76 @@ CREATE TABLE public.m_vendors (
 
 
 --
--- Name: m_workflow_initiator_departments; Type: TABLE; Schema: public; Owner: -
+-- Name: m_workflow_initiator_authorities; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.m_workflow_initiator_departments (
+CREATE TABLE public.m_workflow_initiator_authorities (
     id uuid NOT NULL,
     workflow_id uuid NOT NULL,
-    department_id uuid NOT NULL,
+    department_id uuid,
+    division_id uuid,
+    user_id uuid,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    role_id uuid
 );
 
 
 --
--- Name: m_workflow_initiator_roles; Type: TABLE; Schema: public; Owner: -
+-- Name: m_workflow_org_scopes; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.m_workflow_initiator_roles (
+CREATE TABLE public.m_workflow_org_scopes (
     id uuid NOT NULL,
     workflow_id uuid NOT NULL,
-    role_name character varying(255) NOT NULL,
+    company_group_id uuid,
+    region_id uuid,
+    company_id uuid,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone
 );
 
 
 --
--- Name: m_workflow_initiator_users; Type: TABLE; Schema: public; Owner: -
+-- Name: m_workflow_step_actions; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.m_workflow_initiator_users (
-    id uuid NOT NULL,
-    workflow_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: m_workflow_step_departments; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.m_workflow_step_departments (
+CREATE TABLE public.m_workflow_step_actions (
     id uuid NOT NULL,
     workflow_step_id uuid NOT NULL,
-    department_id uuid NOT NULL,
+    next_step_id uuid,
+    next_workflow_id uuid,
+    next_workflow_step_id uuid,
+    required_fields json,
+    autofilled_fields json,
+    is_active boolean DEFAULT true NOT NULL,
+    created_by uuid,
+    updated_by uuid,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    deleted_at timestamp(0) without time zone,
+    signing_parties json,
+    assignee_config json,
+    alias character varying(255),
+    description character varying(255),
+    action_code character varying(255),
+    transition_config json
 );
 
 
 --
--- Name: m_workflow_step_roles; Type: TABLE; Schema: public; Owner: -
+-- Name: m_workflow_step_authorities; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.m_workflow_step_roles (
+CREATE TABLE public.m_workflow_step_authorities (
     id uuid NOT NULL,
     workflow_step_id uuid NOT NULL,
-    role_name character varying(255) NOT NULL,
+    department_id uuid,
+    division_id uuid,
+    user_id uuid,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
-);
-
-
---
--- Name: m_workflow_step_users; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.m_workflow_step_users (
-    id uuid NOT NULL,
-    workflow_step_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    role_id uuid
 );
 
 
@@ -626,7 +734,6 @@ CREATE TABLE public.m_workflow_steps (
     workflow_id uuid NOT NULL,
     step integer NOT NULL,
     approver_type character varying(255) DEFAULT 'role'::character varying NOT NULL,
-    step_type character varying(255) DEFAULT 'approval'::character varying NOT NULL,
     condition_expression character varying(255),
     description text,
     is_active boolean DEFAULT true NOT NULL,
@@ -635,8 +742,54 @@ CREATE TABLE public.m_workflow_steps (
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     deleted_at timestamp(0) without time zone,
-    status_id uuid
+    phase character varying(255) DEFAULT 'f1_request'::character varying,
+    uploader_type character varying(255),
+    hierarchy_level integer,
+    role_id uuid,
+    step_category character varying(255),
+    is_optional boolean DEFAULT false NOT NULL,
+    optional_label character varying(255),
+    meta jsonb,
+    company_group_ids json,
+    region_ids json,
+    company_ids json,
+    label character varying(255),
+    allowed_actions json,
+    is_mandatory boolean DEFAULT true NOT NULL,
+    filter_department smallint DEFAULT '0'::smallint NOT NULL,
+    filter_company_group smallint DEFAULT '0'::smallint NOT NULL,
+    filter_region smallint DEFAULT '0'::smallint NOT NULL,
+    filter_company smallint DEFAULT '0'::smallint NOT NULL,
+    approver_config json
 );
+
+
+--
+-- Name: COLUMN m_workflow_steps.filter_department; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.m_workflow_steps.filter_department IS 'if yes then get department initiator';
+
+
+--
+-- Name: COLUMN m_workflow_steps.filter_company_group; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.m_workflow_steps.filter_company_group IS 'if yes then get company_group_from initiator';
+
+
+--
+-- Name: COLUMN m_workflow_steps.filter_region; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.m_workflow_steps.filter_region IS 'if yes then get region initiator';
+
+
+--
+-- Name: COLUMN m_workflow_steps.filter_company; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.m_workflow_steps.filter_company IS 'if yes then get company initiator';
 
 
 --
@@ -645,7 +798,6 @@ CREATE TABLE public.m_workflow_steps (
 
 CREATE TABLE public.m_workflows (
     id uuid NOT NULL,
-    contract_type character varying(255) NOT NULL,
     name character varying(255) NOT NULL,
     description text,
     department_id uuid,
@@ -661,7 +813,20 @@ CREATE TABLE public.m_workflows (
     sla_drafting_hours integer DEFAULT 72 NOT NULL,
     sla_total_hours integer DEFAULT 240 NOT NULL,
     sla_cutoff_hour integer DEFAULT 16 NOT NULL,
-    initiator_type character varying(255) DEFAULT 'all'::character varying NOT NULL
+    initiator_type character varying(255) DEFAULT 'all'::character varying NOT NULL,
+    scope character varying(255) DEFAULT 'HO'::character varying,
+    workflow_category character varying(255) DEFAULT 'unified'::character varying,
+    company_group_ids json,
+    region_ids json,
+    company_ids json,
+    approver_roles json,
+    approver_departments json,
+    approver_users json,
+    legal_roles json,
+    legal_departments json,
+    legal_users json,
+    contract_type_id uuid,
+    meta json
 );
 
 
@@ -769,15 +934,18 @@ CREATE TABLE public.t_approvals (
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     deleted_at timestamp(0) without time zone,
-    CONSTRAINT t_approvals_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'approved'::character varying, 'rejected'::character varying])::text[])))
+    attachment_path character varying(255),
+    sort_order integer DEFAULT 0 NOT NULL,
+    sub_step integer,
+    CONSTRAINT t_approvals_status_check CHECK (((status)::text = ANY (ARRAY['pending'::text, 'waiting'::text, 'approved'::text, 'rejected'::text])))
 );
 
 
 --
--- Name: t_contract_attachments; Type: TABLE; Schema: public; Owner: -
+-- Name: t_attachments; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.t_contract_attachments (
+CREATE TABLE public.t_attachments (
     id uuid NOT NULL,
     contract_id uuid NOT NULL,
     label character varying(255) NOT NULL,
@@ -788,41 +956,9 @@ CREATE TABLE public.t_contract_attachments (
     uploaded_by uuid NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
-);
-
-
---
--- Name: t_contract_form_submission_h; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.t_contract_form_submission_h (
-    id uuid NOT NULL,
-    submission_id uuid NOT NULL,
-    version_no integer NOT NULL,
-    form_data json NOT NULL,
-    change_summary text,
+    deleted_at timestamp(0) without time zone,
     created_by uuid,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
-);
-
-
---
--- Name: t_contract_form_submissions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.t_contract_form_submissions (
-    id uuid NOT NULL,
-    contract_id uuid NOT NULL,
-    form_template_id uuid NOT NULL,
-    document_type character varying(10) NOT NULL,
-    current_version integer DEFAULT 1 NOT NULL,
-    submitted_by uuid,
-    created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
+    updated_by uuid
 );
 
 
@@ -838,25 +974,40 @@ CREATE TABLE public.t_contract_h (
     actor_id uuid NOT NULL,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
+    deleted_at timestamp(0) without time zone,
+    created_by uuid,
+    updated_by uuid
 );
 
 
 --
--- Name: t_contract_messages; Type: TABLE; Schema: public; Owner: -
+-- Name: t_contract_meta; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.t_contract_messages (
-    id uuid NOT NULL,
+CREATE TABLE public.t_contract_meta (
     contract_id uuid NOT NULL,
-    user_id uuid NOT NULL,
-    message text NOT NULL,
-    read_by json,
+    kop_topik character varying(255),
+    kop_sub_topik character varying(255),
+    kop_lampiran character varying(255),
+    f1_tujuan text,
+    f1_sifat character varying(255),
+    p1_entity character varying(255),
+    p1_signer character varying(255),
+    p1_signer_position character varying(255),
+    p1_address text,
+    p2_entity character varying(255),
+    p2_signer character varying(255),
+    p2_signer_position character varying(255),
+    p2_address text,
+    f2_scope text,
+    f2_price character varying(255),
+    f2_payment character varying(255),
+    f2_tenure character varying(255),
+    f2_location text,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone,
-    attachment_path character varying(255),
-    attachment_name character varying(255)
+    created_by uuid,
+    updated_by uuid
 );
 
 
@@ -877,7 +1028,9 @@ CREATE TABLE public.t_contract_versions (
     file_hash character varying(255),
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    deleted_at timestamp(0) without time zone
+    deleted_at timestamp(0) without time zone,
+    created_by uuid,
+    updated_by uuid
 );
 
 
@@ -892,7 +1045,6 @@ CREATE TABLE public.t_contracts (
     description text,
     contract_date date,
     end_date date,
-    contract_type character varying(255),
     contract_type_id uuid,
     transaction_type character varying(255) DEFAULT 'General'::character varying NOT NULL,
     status character varying(255) DEFAULT 'draft'::character varying NOT NULL,
@@ -906,30 +1058,37 @@ CREATE TABLE public.t_contracts (
     updated_at timestamp(0) without time zone,
     deleted_at timestamp(0) without time zone,
     initiated_by_id uuid,
-    kop_topik character varying(255),
-    kop_sub_topik character varying(255),
-    kop_lampiran character varying(255),
-    f1_tujuan text,
-    f1_sifat character varying(255),
-    p1_entity character varying(255),
-    p1_signer character varying(255),
-    p1_address text,
-    p2_entity character varying(255),
-    p2_signer character varying(255),
-    p2_address text,
-    f2_scope text,
-    f2_price character varying(255),
-    f2_payment character varying(255),
-    f2_tenure character varying(255),
-    f2_location text,
     vendor_id uuid,
     parent_id uuid,
-    p1_signer_position character varying(255),
-    p2_signer_position character varying(255),
-    crown_no character varying(255),
     submission_type_id uuid,
-    CONSTRAINT t_contracts_status_check CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'in_review'::character varying, 'revision'::character varying, 'approved'::character varying, 'locked'::character varying, 'archived'::character varying])::text[])))
+    crown_no character varying(255),
+    is_digital_signature boolean DEFAULT false NOT NULL,
+    assigned_pic_id uuid,
+    assigned_by_id uuid,
+    received_at timestamp(0) without time zone,
+    assigned_at timestamp(0) without time zone,
+    finished_at timestamp(0) without time zone,
+    closed_at timestamp(0) without time zone,
+    closed_by uuid,
+    origin_workflow_id uuid,
+    contract_type_parent_id uuid,
+    updated_by uuid,
+    CONSTRAINT t_contracts_status_check CHECK (((status)::text = ANY (ARRAY['draft'::text, 'in_review'::text, 'revision'::text, 'approved'::text, 'locked'::text, 'archived'::text, 'pending'::text, 'expired'::text, 'completed'::text, 'signed'::text, 'rejected'::text, 'queue'::text])))
 );
+
+
+--
+-- Name: COLUMN t_contracts.origin_workflow_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.t_contracts.origin_workflow_id IS 'Workflow sebelumnya jika diubah dari workflow lain';
+
+
+--
+-- Name: COLUMN t_contracts.contract_type_parent_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.t_contracts.contract_type_parent_id IS 'induk dari jenis kontrak';
 
 
 --
@@ -944,7 +1103,120 @@ CREATE TABLE public.t_forgot_password (
     redeemed_at timestamp(0) without time zone,
     token character varying(64) NOT NULL,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    created_by uuid,
+    updated_by uuid
+);
+
+
+--
+-- Name: t_form_submission_h; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.t_form_submission_h (
+    id uuid NOT NULL,
+    submission_id uuid NOT NULL,
+    version_no integer NOT NULL,
+    form_data json NOT NULL,
+    change_summary text,
+    created_by uuid,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    deleted_at timestamp(0) without time zone,
+    updated_by uuid
+);
+
+
+--
+-- Name: t_form_submissions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.t_form_submissions (
+    id uuid NOT NULL,
+    contract_id uuid NOT NULL,
+    form_template_id uuid NOT NULL,
+    document_type character varying(10) NOT NULL,
+    current_version integer DEFAULT 1 NOT NULL,
+    submitted_by uuid,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    deleted_at timestamp(0) without time zone,
+    created_by uuid,
+    updated_by uuid
+);
+
+
+--
+-- Name: t_messages; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.t_messages (
+    id uuid NOT NULL,
+    contract_id uuid NOT NULL,
+    user_id uuid NOT NULL,
+    message text NOT NULL,
+    read_by json,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    deleted_at timestamp(0) without time zone,
+    attachment_path character varying(255),
+    attachment_name character varying(255),
+    created_by uuid,
+    updated_by uuid
+);
+
+
+--
+-- Name: telescope_entries; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telescope_entries (
+    sequence bigint NOT NULL,
+    uuid uuid NOT NULL,
+    batch_id uuid NOT NULL,
+    family_hash character varying(255),
+    should_display_on_index boolean DEFAULT true NOT NULL,
+    type character varying(20) NOT NULL,
+    content text NOT NULL,
+    created_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: telescope_entries_sequence_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.telescope_entries_sequence_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: telescope_entries_sequence_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.telescope_entries_sequence_seq OWNED BY public.telescope_entries.sequence;
+
+
+--
+-- Name: telescope_entries_tags; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telescope_entries_tags (
+    entry_uuid uuid NOT NULL,
+    tag character varying(255) NOT NULL
+);
+
+
+--
+-- Name: telescope_monitoring; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.telescope_monitoring (
+    tag character varying(255) NOT NULL
 );
 
 
@@ -981,6 +1253,13 @@ ALTER TABLE ONLY public.migrations ALTER COLUMN id SET DEFAULT nextval('public.m
 --
 
 ALTER TABLE ONLY public.personal_access_tokens ALTER COLUMN id SET DEFAULT nextval('public.personal_access_tokens_id_seq'::regclass);
+
+
+--
+-- Name: telescope_entries sequence; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telescope_entries ALTER COLUMN sequence SET DEFAULT nextval('public.telescope_entries_sequence_seq'::regclass);
 
 
 --
@@ -1037,6 +1316,38 @@ ALTER TABLE ONLY public.jobs
 
 ALTER TABLE ONLY public.m_access_modules
     ADD CONSTRAINT m_access_modules_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: m_companies m_companies_code_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_companies
+    ADD CONSTRAINT m_companies_code_unique UNIQUE (code);
+
+
+--
+-- Name: m_companies m_companies_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_companies
+    ADD CONSTRAINT m_companies_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: m_company_groups m_company_groups_code_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_company_groups
+    ADD CONSTRAINT m_company_groups_code_unique UNIQUE (code);
+
+
+--
+-- Name: m_company_groups m_company_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_company_groups
+    ADD CONSTRAINT m_company_groups_pkey PRIMARY KEY (id);
 
 
 --
@@ -1104,6 +1415,14 @@ ALTER TABLE ONLY public.m_departments
 
 
 --
+-- Name: m_division m_division_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_division
+    ADD CONSTRAINT m_division_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: m_form_fields m_form_fields_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1168,6 +1487,22 @@ ALTER TABLE ONLY public.m_numbering_formats
 
 
 --
+-- Name: m_regions m_regions_code_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_regions
+    ADD CONSTRAINT m_regions_code_unique UNIQUE (code);
+
+
+--
+-- Name: m_regions m_regions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_regions
+    ADD CONSTRAINT m_regions_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: m_role_module_groups m_role_module_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1216,14 +1551,6 @@ ALTER TABLE ONLY public.m_template_folders
 
 
 --
--- Name: m_users m_users_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_users
-    ADD CONSTRAINT m_users_email_unique UNIQUE (email);
-
-
---
 -- Name: m_users m_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1264,51 +1591,35 @@ ALTER TABLE ONLY public.m_vendors
 
 
 --
--- Name: m_workflow_initiator_departments m_workflow_initiator_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_initiator_authorities m_workflow_initiator_authorities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_initiator_departments
-    ADD CONSTRAINT m_workflow_initiator_departments_pkey PRIMARY KEY (id);
-
-
---
--- Name: m_workflow_initiator_roles m_workflow_initiator_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_workflow_initiator_roles
-    ADD CONSTRAINT m_workflow_initiator_roles_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.m_workflow_initiator_authorities
+    ADD CONSTRAINT m_workflow_initiator_authorities_pkey PRIMARY KEY (id);
 
 
 --
--- Name: m_workflow_initiator_users m_workflow_initiator_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_org_scopes m_workflow_org_scopes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_initiator_users
-    ADD CONSTRAINT m_workflow_initiator_users_pkey PRIMARY KEY (id);
-
-
---
--- Name: m_workflow_step_departments m_workflow_step_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_workflow_step_departments
-    ADD CONSTRAINT m_workflow_step_departments_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.m_workflow_org_scopes
+    ADD CONSTRAINT m_workflow_org_scopes_pkey PRIMARY KEY (id);
 
 
 --
--- Name: m_workflow_step_roles m_workflow_step_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_step_actions m_workflow_step_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_step_roles
-    ADD CONSTRAINT m_workflow_step_roles_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.m_workflow_step_actions
+    ADD CONSTRAINT m_workflow_step_actions_pkey PRIMARY KEY (id);
 
 
 --
--- Name: m_workflow_step_users m_workflow_step_users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_step_authorities m_workflow_step_authorities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_step_users
-    ADD CONSTRAINT m_workflow_step_users_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.m_workflow_step_authorities
+    ADD CONSTRAINT m_workflow_step_authorities_pkey PRIMARY KEY (id);
 
 
 --
@@ -1376,42 +1687,42 @@ ALTER TABLE ONLY public.t_approvals
 
 
 --
--- Name: t_contract_attachments t_contract_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: t_attachments t_contract_attachments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_attachments
+ALTER TABLE ONLY public.t_attachments
     ADD CONSTRAINT t_contract_attachments_pkey PRIMARY KEY (id);
 
 
 --
--- Name: t_contract_form_submission_h t_contract_form_submission_h_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submission_h t_contract_form_submission_h_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submission_h
+ALTER TABLE ONLY public.t_form_submission_h
     ADD CONSTRAINT t_contract_form_submission_h_pkey PRIMARY KEY (id);
 
 
 --
--- Name: t_contract_form_submission_h t_contract_form_submission_h_submission_id_version_no_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submission_h t_contract_form_submission_h_submission_id_version_no_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submission_h
+ALTER TABLE ONLY public.t_form_submission_h
     ADD CONSTRAINT t_contract_form_submission_h_submission_id_version_no_unique UNIQUE (submission_id, version_no);
 
 
 --
--- Name: t_contract_form_submissions t_contract_form_submissions_contract_id_document_type_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submissions t_contract_form_submissions_contract_id_document_type_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submissions
+ALTER TABLE ONLY public.t_form_submissions
     ADD CONSTRAINT t_contract_form_submissions_contract_id_document_type_unique UNIQUE (contract_id, document_type);
 
 
 --
--- Name: t_contract_form_submissions t_contract_form_submissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submissions t_contract_form_submissions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submissions
+ALTER TABLE ONLY public.t_form_submissions
     ADD CONSTRAINT t_contract_form_submissions_pkey PRIMARY KEY (id);
 
 
@@ -1424,11 +1735,19 @@ ALTER TABLE ONLY public.t_contract_h
 
 
 --
--- Name: t_contract_messages t_contract_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: t_messages t_contract_messages_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_messages
+ALTER TABLE ONLY public.t_messages
     ADD CONSTRAINT t_contract_messages_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: t_contract_meta t_contract_meta_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.t_contract_meta
+    ADD CONSTRAINT t_contract_meta_pkey PRIMARY KEY (contract_id);
 
 
 --
@@ -1472,10 +1791,196 @@ ALTER TABLE ONLY public.t_forgot_password
 
 
 --
+-- Name: telescope_entries telescope_entries_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telescope_entries
+    ADD CONSTRAINT telescope_entries_pkey PRIMARY KEY (sequence);
+
+
+--
+-- Name: telescope_entries_tags telescope_entries_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telescope_entries_tags
+    ADD CONSTRAINT telescope_entries_tags_pkey PRIMARY KEY (entry_uuid, tag);
+
+
+--
+-- Name: telescope_entries telescope_entries_uuid_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telescope_entries
+    ADD CONSTRAINT telescope_entries_uuid_unique UNIQUE (uuid);
+
+
+--
+-- Name: telescope_monitoring telescope_monitoring_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telescope_monitoring
+    ADD CONSTRAINT telescope_monitoring_pkey PRIMARY KEY (tag);
+
+
+--
+-- Name: cache_locks_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cache_locks_created_by_index ON public.cache_locks USING btree (created_by);
+
+
+--
+-- Name: cache_locks_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX cache_locks_updated_by_index ON public.cache_locks USING btree (updated_by);
+
+
+--
+-- Name: job_batches_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX job_batches_created_by_index ON public.job_batches USING btree (created_by);
+
+
+--
+-- Name: job_batches_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX job_batches_updated_by_index ON public.job_batches USING btree (updated_by);
+
+
+--
 -- Name: jobs_queue_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX jobs_queue_index ON public.jobs USING btree (queue);
+
+
+--
+-- Name: m_access_modules_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_access_modules_created_by_index ON public.m_access_modules USING btree (created_by);
+
+
+--
+-- Name: m_access_modules_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_access_modules_updated_by_index ON public.m_access_modules USING btree (updated_by);
+
+
+--
+-- Name: m_contract_types_parent_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_contract_types_parent_id_index ON public.m_contract_types USING btree (parent_id);
+
+
+--
+-- Name: m_form_fields_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_form_fields_created_by_index ON public.m_form_fields USING btree (created_by);
+
+
+--
+-- Name: m_form_fields_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_form_fields_updated_by_index ON public.m_form_fields USING btree (updated_by);
+
+
+--
+-- Name: m_numbering_formats_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_numbering_formats_created_by_index ON public.m_numbering_formats USING btree (created_by);
+
+
+--
+-- Name: m_numbering_formats_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_numbering_formats_updated_by_index ON public.m_numbering_formats USING btree (updated_by);
+
+
+--
+-- Name: m_role_module_groups_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_role_module_groups_created_by_index ON public.m_role_module_groups USING btree (created_by);
+
+
+--
+-- Name: m_role_module_groups_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_role_module_groups_updated_by_index ON public.m_role_module_groups USING btree (updated_by);
+
+
+--
+-- Name: m_users_company_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_users_company_id_index ON public.m_users USING btree (company_id);
+
+
+--
+-- Name: m_users_department_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_users_department_id_index ON public.m_users USING btree (department_id);
+
+
+--
+-- Name: m_users_role_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_users_role_id_index ON public.m_users USING btree (role_id);
+
+
+--
+-- Name: m_vendor_documents_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_vendor_documents_created_by_index ON public.m_vendor_documents USING btree (created_by);
+
+
+--
+-- Name: m_vendor_documents_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_vendor_documents_updated_by_index ON public.m_vendor_documents USING btree (updated_by);
+
+
+--
+-- Name: m_workflow_steps_filter_company_group_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_steps_filter_company_group_index ON public.m_workflow_steps USING btree (filter_company_group);
+
+
+--
+-- Name: m_workflow_steps_filter_company_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_steps_filter_company_index ON public.m_workflow_steps USING btree (filter_company);
+
+
+--
+-- Name: m_workflow_steps_filter_department_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_steps_filter_department_index ON public.m_workflow_steps USING btree (filter_department);
+
+
+--
+-- Name: m_workflow_steps_filter_region_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_steps_filter_region_index ON public.m_workflow_steps USING btree (filter_region);
 
 
 --
@@ -1486,10 +1991,10 @@ CREATE INDEX m_workflow_steps_step_index ON public.m_workflow_steps USING btree 
 
 
 --
--- Name: m_workflows_contract_type_index; Type: INDEX; Schema: public; Owner: -
+-- Name: m_workflows_contract_type_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX m_workflows_contract_type_index ON public.m_workflows USING btree (contract_type);
+CREATE INDEX m_workflows_contract_type_id_index ON public.m_workflows USING btree (contract_type_id);
 
 
 --
@@ -1514,6 +2019,13 @@ CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
 
 
 --
+-- Name: t_approvals_contract_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_approvals_contract_id_index ON public.t_approvals USING btree (contract_id);
+
+
+--
 -- Name: t_approvals_role_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1528,10 +2040,297 @@ CREATE INDEX t_approvals_status_index ON public.t_approvals USING btree (status)
 
 
 --
+-- Name: t_approvals_user_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_approvals_user_id_index ON public.t_approvals USING btree (user_id);
+
+
+--
+-- Name: t_approvals_workflow_step_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_approvals_workflow_step_id_index ON public.t_approvals USING btree (workflow_step_id);
+
+
+--
+-- Name: t_attachments_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_attachments_created_by_index ON public.t_attachments USING btree (created_by);
+
+
+--
+-- Name: t_attachments_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_attachments_updated_by_index ON public.t_attachments USING btree (updated_by);
+
+
+--
+-- Name: t_contract_h_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contract_h_created_by_index ON public.t_contract_h USING btree (created_by);
+
+
+--
+-- Name: t_contract_h_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contract_h_updated_by_index ON public.t_contract_h USING btree (updated_by);
+
+
+--
+-- Name: t_contract_meta_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contract_meta_created_by_index ON public.t_contract_meta USING btree (created_by);
+
+
+--
+-- Name: t_contract_meta_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contract_meta_updated_by_index ON public.t_contract_meta USING btree (updated_by);
+
+
+--
+-- Name: t_contract_versions_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contract_versions_created_by_index ON public.t_contract_versions USING btree (created_by);
+
+
+--
+-- Name: t_contract_versions_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contract_versions_updated_by_index ON public.t_contract_versions USING btree (updated_by);
+
+
+--
+-- Name: t_contracts_assigned_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_assigned_at_index ON public.t_contracts USING btree (assigned_at);
+
+
+--
+-- Name: t_contracts_assigned_by_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_assigned_by_id_index ON public.t_contracts USING btree (assigned_by_id);
+
+
+--
+-- Name: t_contracts_assigned_pic_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_assigned_pic_id_index ON public.t_contracts USING btree (assigned_pic_id);
+
+
+--
+-- Name: t_contracts_closed_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_closed_at_index ON public.t_contracts USING btree (closed_at);
+
+
+--
+-- Name: t_contracts_closed_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_closed_by_index ON public.t_contracts USING btree (closed_by);
+
+
+--
+-- Name: t_contracts_contract_type_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_contract_type_id_index ON public.t_contracts USING btree (contract_type_id);
+
+
+--
+-- Name: t_contracts_contract_type_parent_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_contract_type_parent_id_index ON public.t_contracts USING btree (contract_type_parent_id);
+
+
+--
+-- Name: t_contracts_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_created_by_index ON public.t_contracts USING btree (created_by);
+
+
+--
+-- Name: t_contracts_finished_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_finished_at_index ON public.t_contracts USING btree (finished_at);
+
+
+--
+-- Name: t_contracts_initiated_by_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_initiated_by_id_index ON public.t_contracts USING btree (initiated_by_id);
+
+
+--
+-- Name: t_contracts_origin_workflow_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_origin_workflow_id_index ON public.t_contracts USING btree (origin_workflow_id);
+
+
+--
+-- Name: t_contracts_parent_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_parent_id_index ON public.t_contracts USING btree (parent_id);
+
+
+--
+-- Name: t_contracts_received_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_received_at_index ON public.t_contracts USING btree (received_at);
+
+
+--
+-- Name: t_contracts_status_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_status_index ON public.t_contracts USING btree (status);
+
+
+--
+-- Name: t_contracts_submission_type_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_submission_type_id_index ON public.t_contracts USING btree (submission_type_id);
+
+
+--
+-- Name: t_contracts_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_updated_by_index ON public.t_contracts USING btree (updated_by);
+
+
+--
+-- Name: t_contracts_vendor_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_vendor_id_index ON public.t_contracts USING btree (vendor_id);
+
+
+--
+-- Name: t_contracts_workflow_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_workflow_id_index ON public.t_contracts USING btree (workflow_id);
+
+
+--
+-- Name: t_contracts_workflow_step_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_workflow_step_id_index ON public.t_contracts USING btree (workflow_step_id);
+
+
+--
+-- Name: t_forgot_password_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_forgot_password_created_by_index ON public.t_forgot_password USING btree (created_by);
+
+
+--
 -- Name: t_forgot_password_email_token_expire_at_index; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX t_forgot_password_email_token_expire_at_index ON public.t_forgot_password USING btree (email, token, expire_at);
+
+
+--
+-- Name: t_forgot_password_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_forgot_password_updated_by_index ON public.t_forgot_password USING btree (updated_by);
+
+
+--
+-- Name: t_form_submission_h_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_form_submission_h_updated_by_index ON public.t_form_submission_h USING btree (updated_by);
+
+
+--
+-- Name: t_form_submissions_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_form_submissions_created_by_index ON public.t_form_submissions USING btree (created_by);
+
+
+--
+-- Name: t_form_submissions_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_form_submissions_updated_by_index ON public.t_form_submissions USING btree (updated_by);
+
+
+--
+-- Name: t_messages_created_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_messages_created_by_index ON public.t_messages USING btree (created_by);
+
+
+--
+-- Name: t_messages_updated_by_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_messages_updated_by_index ON public.t_messages USING btree (updated_by);
+
+
+--
+-- Name: telescope_entries_batch_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telescope_entries_batch_id_index ON public.telescope_entries USING btree (batch_id);
+
+
+--
+-- Name: telescope_entries_created_at_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telescope_entries_created_at_index ON public.telescope_entries USING btree (created_at);
+
+
+--
+-- Name: telescope_entries_family_hash_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telescope_entries_family_hash_index ON public.telescope_entries USING btree (family_hash);
+
+
+--
+-- Name: telescope_entries_tags_tag_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telescope_entries_tags_tag_index ON public.telescope_entries_tags USING btree (tag);
+
+
+--
+-- Name: telescope_entries_type_should_display_on_index_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX telescope_entries_type_should_display_on_index_index ON public.telescope_entries USING btree (type, should_display_on_index);
 
 
 --
@@ -1556,6 +2355,22 @@ ALTER TABLE ONLY public.m_access_modules
 
 ALTER TABLE ONLY public.m_access_modules
     ADD CONSTRAINT m_access_modules_role_id_foreign FOREIGN KEY (role_id) REFERENCES public.m_roles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: m_companies m_companies_company_group_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_companies
+    ADD CONSTRAINT m_companies_company_group_id_foreign FOREIGN KEY (company_group_id) REFERENCES public.m_company_groups(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_companies m_companies_region_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_companies
+    ADD CONSTRAINT m_companies_region_id_foreign FOREIGN KEY (region_id) REFERENCES public.m_regions(id) ON DELETE SET NULL;
 
 
 --
@@ -1596,6 +2411,14 @@ ALTER TABLE ONLY public.m_contract_types
 
 ALTER TABLE ONLY public.m_contract_types
     ADD CONSTRAINT m_contract_types_f2_form_template_id_foreign FOREIGN KEY (f2_form_template_id) REFERENCES public.m_form_templates(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_departments m_departments_company_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_departments
+    ADD CONSTRAINT m_departments_company_id_foreign FOREIGN KEY (company_id) REFERENCES public.m_companies(id) ON DELETE SET NULL;
 
 
 --
@@ -1647,6 +2470,14 @@ ALTER TABLE ONLY public.m_role_module_groups
 
 
 --
+-- Name: m_roles m_roles_company_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_roles
+    ADD CONSTRAINT m_roles_company_id_foreign FOREIGN KEY (company_id) REFERENCES public.m_companies(id) ON DELETE SET NULL;
+
+
+--
 -- Name: m_template_folders m_template_folders_parent_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1655,11 +2486,51 @@ ALTER TABLE ONLY public.m_template_folders
 
 
 --
+-- Name: m_users m_users_company_group_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_users
+    ADD CONSTRAINT m_users_company_group_id_foreign FOREIGN KEY (company_group_id) REFERENCES public.m_company_groups(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_users m_users_company_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_users
+    ADD CONSTRAINT m_users_company_id_foreign FOREIGN KEY (company_id) REFERENCES public.m_companies(id) ON DELETE SET NULL;
+
+
+--
 -- Name: m_users m_users_department_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.m_users
     ADD CONSTRAINT m_users_department_id_foreign FOREIGN KEY (department_id) REFERENCES public.m_departments(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_users m_users_division_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_users
+    ADD CONSTRAINT m_users_division_id_foreign FOREIGN KEY (division_id) REFERENCES public.m_departments(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_users m_users_manager_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_users
+    ADD CONSTRAINT m_users_manager_id_foreign FOREIGN KEY (spv_id) REFERENCES public.m_users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_users m_users_region_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_users
+    ADD CONSTRAINT m_users_region_id_foreign FOREIGN KEY (region_id) REFERENCES public.m_regions(id) ON DELETE SET NULL;
 
 
 --
@@ -1679,91 +2550,83 @@ ALTER TABLE ONLY public.m_vendor_documents
 
 
 --
--- Name: m_workflow_initiator_departments m_workflow_initiator_departments_department_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_initiator_authorities m_workflow_initiator_authorities_role_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_initiator_departments
-    ADD CONSTRAINT m_workflow_initiator_departments_department_id_foreign FOREIGN KEY (department_id) REFERENCES public.m_departments(id) ON DELETE CASCADE;
-
-
---
--- Name: m_workflow_initiator_departments m_workflow_initiator_departments_workflow_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_workflow_initiator_departments
-    ADD CONSTRAINT m_workflow_initiator_departments_workflow_id_foreign FOREIGN KEY (workflow_id) REFERENCES public.m_workflows(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.m_workflow_initiator_authorities
+    ADD CONSTRAINT m_workflow_initiator_authorities_role_id_foreign FOREIGN KEY (role_id) REFERENCES public.m_roles(id) ON DELETE SET NULL;
 
 
 --
--- Name: m_workflow_initiator_roles m_workflow_initiator_roles_workflow_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_initiator_authorities m_workflow_initiator_authorities_workflow_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_initiator_roles
-    ADD CONSTRAINT m_workflow_initiator_roles_workflow_id_foreign FOREIGN KEY (workflow_id) REFERENCES public.m_workflows(id) ON DELETE CASCADE;
-
-
---
--- Name: m_workflow_initiator_users m_workflow_initiator_users_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_workflow_initiator_users
-    ADD CONSTRAINT m_workflow_initiator_users_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.m_users(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.m_workflow_initiator_authorities
+    ADD CONSTRAINT m_workflow_initiator_authorities_workflow_id_foreign FOREIGN KEY (workflow_id) REFERENCES public.m_workflows(id) ON DELETE CASCADE;
 
 
 --
--- Name: m_workflow_initiator_users m_workflow_initiator_users_workflow_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_org_scopes m_workflow_org_scopes_workflow_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_initiator_users
-    ADD CONSTRAINT m_workflow_initiator_users_workflow_id_foreign FOREIGN KEY (workflow_id) REFERENCES public.m_workflows(id) ON DELETE CASCADE;
-
-
---
--- Name: m_workflow_step_departments m_workflow_step_departments_department_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_workflow_step_departments
-    ADD CONSTRAINT m_workflow_step_departments_department_id_foreign FOREIGN KEY (department_id) REFERENCES public.m_departments(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.m_workflow_org_scopes
+    ADD CONSTRAINT m_workflow_org_scopes_workflow_id_foreign FOREIGN KEY (workflow_id) REFERENCES public.m_workflows(id) ON DELETE CASCADE;
 
 
 --
--- Name: m_workflow_step_departments m_workflow_step_departments_workflow_step_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_step_actions m_workflow_step_actions_next_step_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_step_departments
-    ADD CONSTRAINT m_workflow_step_departments_workflow_step_id_foreign FOREIGN KEY (workflow_step_id) REFERENCES public.m_workflow_steps(id) ON DELETE CASCADE;
-
-
---
--- Name: m_workflow_step_roles m_workflow_step_roles_workflow_step_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_workflow_step_roles
-    ADD CONSTRAINT m_workflow_step_roles_workflow_step_id_foreign FOREIGN KEY (workflow_step_id) REFERENCES public.m_workflow_steps(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.m_workflow_step_actions
+    ADD CONSTRAINT m_workflow_step_actions_next_step_id_foreign FOREIGN KEY (next_step_id) REFERENCES public.m_workflow_steps(id) ON DELETE SET NULL;
 
 
 --
--- Name: m_workflow_step_users m_workflow_step_users_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_step_actions m_workflow_step_actions_next_workflow_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.m_workflow_step_users
-    ADD CONSTRAINT m_workflow_step_users_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.m_users(id) ON DELETE CASCADE;
-
-
---
--- Name: m_workflow_step_users m_workflow_step_users_workflow_step_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_workflow_step_users
-    ADD CONSTRAINT m_workflow_step_users_workflow_step_id_foreign FOREIGN KEY (workflow_step_id) REFERENCES public.m_workflow_steps(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.m_workflow_step_actions
+    ADD CONSTRAINT m_workflow_step_actions_next_workflow_id_foreign FOREIGN KEY (next_workflow_id) REFERENCES public.m_workflows(id) ON DELETE SET NULL;
 
 
 --
--- Name: m_workflow_steps m_workflow_steps_status_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: m_workflow_step_actions m_workflow_step_actions_next_workflow_step_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_step_actions
+    ADD CONSTRAINT m_workflow_step_actions_next_workflow_step_id_foreign FOREIGN KEY (next_workflow_step_id) REFERENCES public.m_workflow_steps(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_workflow_step_actions m_workflow_step_actions_workflow_step_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_step_actions
+    ADD CONSTRAINT m_workflow_step_actions_workflow_step_id_foreign FOREIGN KEY (workflow_step_id) REFERENCES public.m_workflow_steps(id) ON DELETE CASCADE;
+
+
+--
+-- Name: m_workflow_step_authorities m_workflow_step_authorities_role_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_step_authorities
+    ADD CONSTRAINT m_workflow_step_authorities_role_id_foreign FOREIGN KEY (role_id) REFERENCES public.m_roles(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_workflow_step_authorities m_workflow_step_authorities_workflow_step_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_step_authorities
+    ADD CONSTRAINT m_workflow_step_authorities_workflow_step_id_foreign FOREIGN KEY (workflow_step_id) REFERENCES public.m_workflow_steps(id) ON DELETE CASCADE;
+
+
+--
+-- Name: m_workflow_steps m_workflow_steps_role_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.m_workflow_steps
-    ADD CONSTRAINT m_workflow_steps_status_id_foreign FOREIGN KEY (status_id) REFERENCES public.m_contract_statuses(id) ON DELETE SET NULL;
+    ADD CONSTRAINT m_workflow_steps_role_id_foreign FOREIGN KEY (role_id) REFERENCES public.m_roles(id) ON DELETE SET NULL;
 
 
 --
@@ -1772,6 +2635,14 @@ ALTER TABLE ONLY public.m_workflow_steps
 
 ALTER TABLE ONLY public.m_workflow_steps
     ADD CONSTRAINT m_workflow_steps_workflow_id_foreign FOREIGN KEY (workflow_id) REFERENCES public.m_workflows(id) ON DELETE CASCADE;
+
+
+--
+-- Name: m_workflows m_workflows_contract_type_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflows
+    ADD CONSTRAINT m_workflows_contract_type_id_foreign FOREIGN KEY (contract_type_id) REFERENCES public.m_contract_types(id) ON DELETE SET NULL;
 
 
 --
@@ -1823,58 +2694,58 @@ ALTER TABLE ONLY public.t_approvals
 
 
 --
--- Name: t_contract_attachments t_contract_attachments_contract_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_attachments t_contract_attachments_contract_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_attachments
+ALTER TABLE ONLY public.t_attachments
     ADD CONSTRAINT t_contract_attachments_contract_id_foreign FOREIGN KEY (contract_id) REFERENCES public.t_contracts(id) ON DELETE CASCADE;
 
 
 --
--- Name: t_contract_attachments t_contract_attachments_uploaded_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_attachments t_contract_attachments_uploaded_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_attachments
+ALTER TABLE ONLY public.t_attachments
     ADD CONSTRAINT t_contract_attachments_uploaded_by_foreign FOREIGN KEY (uploaded_by) REFERENCES public.m_users(id) ON DELETE CASCADE;
 
 
 --
--- Name: t_contract_form_submission_h t_contract_form_submission_h_created_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submission_h t_contract_form_submission_h_created_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submission_h
+ALTER TABLE ONLY public.t_form_submission_h
     ADD CONSTRAINT t_contract_form_submission_h_created_by_foreign FOREIGN KEY (created_by) REFERENCES public.m_users(id) ON DELETE SET NULL;
 
 
 --
--- Name: t_contract_form_submission_h t_contract_form_submission_h_submission_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submission_h t_contract_form_submission_h_submission_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submission_h
-    ADD CONSTRAINT t_contract_form_submission_h_submission_id_foreign FOREIGN KEY (submission_id) REFERENCES public.t_contract_form_submissions(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.t_form_submission_h
+    ADD CONSTRAINT t_contract_form_submission_h_submission_id_foreign FOREIGN KEY (submission_id) REFERENCES public.t_form_submissions(id) ON DELETE CASCADE;
 
 
 --
--- Name: t_contract_form_submissions t_contract_form_submissions_contract_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submissions t_contract_form_submissions_contract_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submissions
+ALTER TABLE ONLY public.t_form_submissions
     ADD CONSTRAINT t_contract_form_submissions_contract_id_foreign FOREIGN KEY (contract_id) REFERENCES public.t_contracts(id) ON DELETE CASCADE;
 
 
 --
--- Name: t_contract_form_submissions t_contract_form_submissions_form_template_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submissions t_contract_form_submissions_form_template_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submissions
+ALTER TABLE ONLY public.t_form_submissions
     ADD CONSTRAINT t_contract_form_submissions_form_template_id_foreign FOREIGN KEY (form_template_id) REFERENCES public.m_form_templates(id) ON DELETE CASCADE;
 
 
 --
--- Name: t_contract_form_submissions t_contract_form_submissions_submitted_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_form_submissions t_contract_form_submissions_submitted_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_form_submissions
+ALTER TABLE ONLY public.t_form_submissions
     ADD CONSTRAINT t_contract_form_submissions_submitted_by_foreign FOREIGN KEY (submitted_by) REFERENCES public.m_users(id) ON DELETE SET NULL;
 
 
@@ -1895,19 +2766,27 @@ ALTER TABLE ONLY public.t_contract_h
 
 
 --
--- Name: t_contract_messages t_contract_messages_contract_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_messages t_contract_messages_contract_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_messages
+ALTER TABLE ONLY public.t_messages
     ADD CONSTRAINT t_contract_messages_contract_id_foreign FOREIGN KEY (contract_id) REFERENCES public.t_contracts(id) ON DELETE CASCADE;
 
 
 --
--- Name: t_contract_messages t_contract_messages_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: t_messages t_contract_messages_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.t_contract_messages
+ALTER TABLE ONLY public.t_messages
     ADD CONSTRAINT t_contract_messages_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.m_users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: t_contract_meta t_contract_meta_contract_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.t_contract_meta
+    ADD CONSTRAINT t_contract_meta_contract_id_foreign FOREIGN KEY (contract_id) REFERENCES public.t_contracts(id) ON DELETE CASCADE;
 
 
 --
@@ -1924,6 +2803,22 @@ ALTER TABLE ONLY public.t_contract_versions
 
 ALTER TABLE ONLY public.t_contract_versions
     ADD CONSTRAINT t_contract_versions_uploaded_by_foreign FOREIGN KEY (uploaded_by) REFERENCES public.m_users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: t_contracts t_contracts_assigned_by_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.t_contracts
+    ADD CONSTRAINT t_contracts_assigned_by_id_foreign FOREIGN KEY (assigned_by_id) REFERENCES public.m_users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: t_contracts t_contracts_assigned_pic_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.t_contracts
+    ADD CONSTRAINT t_contracts_assigned_pic_id_foreign FOREIGN KEY (assigned_pic_id) REFERENCES public.m_users(id) ON DELETE SET NULL;
 
 
 --
@@ -1999,18 +2894,26 @@ ALTER TABLE ONLY public.t_forgot_password
 
 
 --
+-- Name: telescope_entries_tags telescope_entries_tags_entry_uuid_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.telescope_entries_tags
+    ADD CONSTRAINT telescope_entries_tags_entry_uuid_foreign FOREIGN KEY (entry_uuid) REFERENCES public.telescope_entries(uuid) ON DELETE CASCADE;
+
+
+--
 -- PostgreSQL database dump complete
 --
 
-\unrestrict hpBY8ggbj3guFKRPbUw7AzqjrIwVHVZIMvUzjR8ycHn7npwFn5t7xHCKzqDu0uT
+\unrestrict ahFZmAAkEeIw6w65O0BUnBhbHKZkp8lf8AUeSNaghXLD3mLTUtm9VVhUmgzhyuv
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict TdatuocqSWes2aRk3zlxXXUuzd8bKCqmOLclTMa5CdY4LVyFeQdeca2UXcQdgDk
+\restrict smvhVpxx0tBZ3X4BaacC5nK7UrqGGDobra0uvwsvmJTA9vmHudZuOwikYxxBjmZ
 
--- Dumped from database version 14.19 (Homebrew)
+-- Dumped from database version 17.7 (Homebrew)
 -- Dumped by pg_dump version 17.7 (Homebrew)
 
 SET statement_timeout = 0;
@@ -2030,40 +2933,104 @@ SET row_security = off;
 --
 
 COPY public.migrations (id, migration, batch) FROM stdin;
-1	2026_04_20_000001_create_framework_tables	1
-2	2026_04_20_000002_create_master_tables	1
-3	2026_04_20_000003_create_template_tables	1
-4	2026_04_20_000004_create_transaction_tables	1
-5	2026_04_20_000005_create_history_and_pivot_tables	1
-6	2026_04_21_000001_add_extra_fields_to_users_table	1
-7	2026_04_21_030416_add_group_and_region_to_users_table	1
-8	2026_04_22_021123_add_sla_and_initiator_fields	1
-9	2026_04_23_014247_add_f1_f2_fields_to_t_contracts_table	2
-10	2026_04_23_015645_add_legal_finance_fields_to_vendors	3
-11	2026_04_23_015646_create_m_vendor_documents_table	3
-12	2026_04_23_070140_add_vendor_id_to_t_contracts_table	4
-13	2026_04_23_093700_add_attachment_to_contract_messages_table	5
-14	2026_04_24_040027_add_parent_id_to_t_contracts_table	6
-15	2026_04_24_042404_add_signer_position_to_t_contracts_table	7
-16	2026_04_24_073713_create_m_numbering_formats_table	8
-17	2026_04_26_094703_add_input_fields_to_contract_types_table	9
-18	2026_04_26_095224_restructure_contract_types_for_f1_f2	10
-19	2026_04_26_095520_add_contract_template_ids_to_contract_types	11
-20	2026_04_26_100015_add_initiator_settings_to_workflows	12
-21	2026_04_26_102350_change_role_to_json_in_workflow_steps_table	13
-22	2026_04_26_103600_change_department_id_to_json_in_workflow_steps_table	14
-23	2026_04_26_105500_add_initiator_departments_to_workflows_table	14
-24	2026_04_26_113734_add_status_id_to_workflow_steps_table	14
-25	2026_04_27_014447_normalize_workflow_authority_tables	15
-26	2026_04_27_063518_add_crown_no_to_t_contracts	16
-27	2026_04_27_070903_add_is_active_to_m_contract_statuses_table	17
-28	2026_04_27_043000_create_m_submission_types_table	18
-29	2026_04_27_044000_add_submission_type_id_to_t_contracts_table	18
-30	2026_04_29_034507_add_display_mode_to_m_contract_statuses_table	19
-31	2026_04_29_035153_drop_sequence_columns_from_multiple_tables	20
-32	2026_04_29_062638_add_allow_info_edit_to_m_contract_statuses_table	21
-33	2026_04_29_063355_add_bulk_permissions_to_access_modules_table	22
-34	2026_04_30_033152_add_allow_reference_to_m_contract_statuses_table	23
+280	2026_07_02_124800_create_workflow_org_scopes_and_consolidate_initiators	27
+270	2026_06_29_094816_drop_position_column_from_m_users	26
+271	2026_06_29_095807_restore_t_approvals_columns	26
+272	2026_06_29_110052_sync_m_users_to_helpdesk	26
+273	2026_06_29_135241_rename_histories_to_h_tables	26
+274	2026_06_29_152450_modify_email_on_m_users_table	26
+275	2026_06_30_014300_add_created_by_and_updated_by_to_all_tables	26
+276	2026_07_01_080757_alter_t_contracts_status_constraint	26
+277	2026_07_01_082625_create_m_division_table	26
+278	2026_07_01_082812_insert_m_division_module_data	26
+279	2026_07_01_083255_create_m_workflow_step_divisions_table	26
+283	2026_07_02_063938_change_role_name_to_role_id_in_authority_tables	30
+187	2026_04_20_000001_create_framework_tables	26
+188	2026_04_20_000002_create_master_tables	26
+90	2026_07_01_030118_add_contract_type_ids_to_m_workflows	25
+189	2026_04_20_000003_create_template_tables	26
+190	2026_04_20_000004_create_transaction_tables	26
+191	2026_04_20_000005_create_history_and_pivot_tables	26
+192	2026_04_21_000001_add_extra_fields_to_users_table	26
+281	2026_07_02_125200_drop_old_workflow_initiator_tables	28
+193	2026_04_21_030416_add_group_and_region_to_users_table	26
+194	2026_04_22_021123_add_sla_and_initiator_fields	26
+195	2026_04_23_014247_add_f1_f2_fields_to_t_contracts_table	26
+282	2026_07_02_125700_create_workflow_step_authorities_table	29
+196	2026_04_23_015645_add_legal_finance_fields_to_vendors	26
+197	2026_04_23_015646_create_m_vendor_documents_table	26
+198	2026_04_23_070140_add_vendor_id_to_t_contracts_table	26
+199	2026_04_23_093700_add_attachment_to_contract_messages_table	26
+200	2026_04_24_040027_add_parent_id_to_t_contracts_table	26
+201	2026_04_24_042404_add_signer_position_to_t_contracts_table	26
+202	2026_04_24_073713_create_m_numbering_formats_table	26
+203	2026_04_26_094703_add_input_fields_to_contract_types_table	26
+204	2026_04_26_095224_restructure_contract_types_for_f1_f2	26
+205	2026_04_26_095520_add_contract_template_ids_to_contract_types	26
+206	2026_04_26_100015_add_initiator_settings_to_workflows	26
+207	2026_04_26_102350_change_role_to_json_in_workflow_steps_table	26
+208	2026_04_26_103600_change_department_id_to_json_in_workflow_steps_table	26
+209	2026_04_26_105500_add_initiator_departments_to_workflows_table	26
+210	2026_04_26_113734_add_status_id_to_workflow_steps_table	26
+211	2026_04_27_014447_normalize_workflow_authority_tables	26
+212	2026_04_27_043000_create_m_submission_types_table	26
+213	2026_04_27_044000_add_submission_type_id_to_t_contracts_table	26
+214	2026_04_27_063518_add_crown_no_to_t_contracts	26
+215	2026_04_27_070903_add_is_active_to_m_contract_statuses_table	26
+216	2026_04_29_034507_add_display_mode_to_m_contract_statuses_table	26
+217	2026_04_29_035153_drop_sequence_columns_from_multiple_tables	26
+218	2026_04_29_062638_add_allow_info_edit_to_m_contract_statuses_table	26
+219	2026_04_29_063355_add_bulk_permissions_to_access_modules_table	26
+220	2026_04_30_033152_add_allow_reference_to_m_contract_statuses_table	26
+221	2026_05_04_000001_add_dynamic_workflow_fields	26
+222	2026_05_05_074649_add_meeting_update_fields_to_contracts_and_approvals	26
+223	2026_05_06_012451_enhance_workflow_steps_structure_v2	26
+224	2026_05_06_014757_create_m_company_group_table	26
+225	2026_05_06_014818_create_m_company_table	26
+226	2026_05_06_032815_add_workflow_id_and_features_to_contract_types_table	26
+227	2026_05_06_075600_add_assigned_pic_and_manager_to_t_contracts_table	26
+228	2026_05_07_020603_add_meta_to_workflow_steps_table	26
+229	2026_05_08_000001_create_organizational_master_tables	26
+230	2026_05_08_025730_create_company_group_region_table	26
+231	2026_05_08_032850_drop_company_group_region_table	26
+232	2026_05_08_035924_add_organizational_filters_to_workflows_table	26
+233	2026_05_08_072529_simplify_workflows_and_steps	26
+234	2026_05_19_162638_drop_workflow_step_selection_rules_table	26
+235	2026_05_20_080859_drop_unneeded_fields_from_workflow_steps_table	26
+236	2026_05_20_083500_create_workflow_master_actions_and_step_actions	26
+237	2026_05_20_100747_add_signing_parties_to_workflow_step_actions	26
+238	2026_05_20_105109_add_assignee_config_to_workflow_step_actions	26
+239	2026_05_20_142355_add_alias_to_workflow_step_actions_table	26
+240	2026_05_21_022051_add_description_to_workflow_step_actions_table	26
+241	2026_05_21_022253_fix_master_action_references_and_status	26
+242	2026_05_21_022753_alter_t_contract_table	26
+243	2026_05_21_063849_add_master_data_sync_module	26
+244	2026_05_22_042300_alter_contract_table	26
+245	2026_05_22_042310_alter_contract_type_table	26
+246	2026_05_25_030327_alter_workflow_table	26
+247	2026_05_25_033010_optimize_t_contracts_and_create_contract_meta	26
+248	2026_05_26_011556_add_sequence_to_role_navigation_tables	26
+249	2026_05_26_013710_alter_workflow_steps_table	26
+250	2026_05_28_011831_add_created_by_and_updated_by_to_m_template_folders_table	26
+251	2026_05_28_032100_add_description_to_m_modules_table	26
+252	2026_05_29_013953_add_action_code_to_workflow_step_actions	26
+253	2026_05_29_021131_drop_m_master_actions_table	26
+254	2026_05_29_035539_add_sequential_support_to_approvals_table	26
+255	2026_05_30_153641_add_meta_to_m_workflows_table	26
+256	2026_05_30_154131_drop_legacy_columns_from_m_contract_statuses_table	26
+257	2026_06_01_123258_cleanup_database_and_optimize_indexes	26
+258	2026_06_02_015634_add_sub_step_to_t_approvals_table	26
+259	2026_06_02_063548_add_transition_config_to_workflow_step_actions	26
+260	2026_06_03_022812_create_telescope_entries_table	26
+261	2026_06_03_143910_drop_bg_color_and_text_color_from_m_users_table	26
+262	2026_06_03_144412_drop_initials_from_m_users_table	26
+263	2026_06_05_012537_rename_and_standardize_tables	26
+264	2026_06_05_013129_rename_form_builder_tables	26
+265	2026_06_05_074048_add_manager_id_to_users_table	26
+266	2026_06_05_074109_add_manager_id_to_m_users	26
+267	2026_06_05_075455_add_approver_config_to_workflow_steps	26
+268	2026_06_05_080417_add_approver_config_to_m_workflow_steps_table	26
+269	2026_06_29_094255_drop_role_column_from_m_users	26
 \.
 
 
@@ -2071,12 +3038,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 34, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 283, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict TdatuocqSWes2aRk3zlxXXUuzd8bKCqmOLclTMa5CdY4LVyFeQdeca2UXcQdgDk
+\unrestrict smvhVpxx0tBZ3X4BaacC5nK7UrqGGDobra0uvwsvmJTA9vmHudZuOwikYxxBjmZ
 

@@ -3,14 +3,8 @@
 namespace App\Http\Actions\Workflow;
 
 use App\Models\Workflow;
-use App\Models\WorkflowInitiatorDepartment;
-use App\Models\WorkflowInitiatorRole;
-use App\Models\WorkflowInitiatorUser;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepDepartment;
-use App\Models\WorkflowStepRole;
-use App\Models\WorkflowStepUser;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -38,36 +32,29 @@ class DuplicateWorkflowAction
             $newWorkflow->updated_by = Auth::id();
             $newWorkflow->save();
 
-            // Duplicate Initiator Roles
-            /** @var WorkflowInitiatorRole $role */
-            foreach ($workflow->initiatorRolesData as $role) {
-                $newWorkflow->initiatorRolesData()->create([
-                    'role_name' => $role->role_name,
+            // Duplicate Org Scopes
+            foreach ($workflow->orgScopes as $scope) {
+                $newWorkflow->orgScopes()->create([
+                    'company_group_id' => $scope->company_group_id,
+                    'region_id' => $scope->region_id,
+                    'company_id' => $scope->company_id,
                 ]);
             }
 
-            // Duplicate Initiator Departments
-            /** @var WorkflowInitiatorDepartment $dept */
-            foreach ($workflow->initiatorDepartmentsData as $dept) {
-                $newWorkflow->initiatorDepartmentsData()->create([
-                    'department_id' => $dept->department_id,
-                ]);
-            }
-
-            // Duplicate Initiator Users
-            /** @var WorkflowInitiatorUser $u */
-            foreach ($workflow->initiatorUsersData as $u) {
-                $newWorkflow->initiatorUsersData()->create([
-                    'user_id' => $u->user_id,
+            // Duplicate Initiator Authorities
+            foreach ($workflow->initiatorAuthorities as $auth) {
+                $newWorkflow->initiatorAuthorities()->create([
+                    'role_id' => $auth->role_id,
+                    'department_id' => $auth->department_id,
+                    'division_id' => $auth->division_id,
+                    'user_id' => $auth->user_id,
                 ]);
             }
 
             // Duplicate steps and keep a map of old step ID -> new step ID
             $stepIdMap = [];
             $workflow->load([
-                'steps.approverRoles',
-                'steps.approverDepartments',
-                'steps.approverUsers',
+                'steps.approverAuthorities',
                 'steps.actions',
             ]);
             $oldSteps = $workflow->steps; // Ordered by step
@@ -82,27 +69,13 @@ class DuplicateWorkflowAction
 
                 $stepIdMap[$oldStep->id] = $newStep->id;
 
-                // Duplicate step approver roles
-                /** @var WorkflowStepRole $role */
-                foreach ($oldStep->approverRoles as $role) {
-                    $newStep->approverRoles()->create([
-                        'role_name' => $role->role_name,
-                    ]);
-                }
-
-                // Duplicate step approver departments
-                /** @var WorkflowStepDepartment $dept */
-                foreach ($oldStep->approverDepartments as $dept) {
-                    $newStep->approverDepartments()->create([
-                        'department_id' => $dept->department_id,
-                    ]);
-                }
-
-                // Duplicate step approver users
-                /** @var WorkflowStepUser $u */
-                foreach ($oldStep->approverUsers as $u) {
-                    $newStep->approverUsers()->create([
-                        'user_id' => $u->user_id,
+                // Duplicate step approver authorities
+                foreach ($oldStep->approverAuthorities as $auth) {
+                    $newStep->approverAuthorities()->create([
+                        'role_id' => $auth->role_id,
+                        'department_id' => $auth->department_id,
+                        'division_id' => $auth->division_id,
+                        'user_id' => $auth->user_id,
                     ]);
                 }
             }

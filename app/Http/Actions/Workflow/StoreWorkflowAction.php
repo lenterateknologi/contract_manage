@@ -19,7 +19,10 @@ class StoreWorkflowAction
     public function execute(array $data): Workflow
     {
         return DB::transaction(function () use ($data) {
-            $workflowData = collect($data)->except(['initiator_roles', 'initiator_users', 'initiator_departments', 'steps'])->toArray();
+            $workflowData = collect($data)->except([
+                'initiator_roles', 'initiator_users', 'initiator_departments', 'initiator_divisions',
+                'company_group_ids', 'region_ids', 'company_ids', 'steps',
+            ])->toArray();
             if (empty($workflowData['contract_type_id'])) {
                 $workflowData['contract_type_id'] = null;
             }
@@ -30,25 +33,48 @@ class StoreWorkflowAction
                     ->update(['is_default' => false]);
             }
 
-            // Sync Initiators
+            // Sync Org Scopes
+            $groupIds = $data['company_group_ids'] ?? [];
+            $regionIds = $data['region_ids'] ?? [];
+            $companyIds = $data['company_ids'] ?? [];
+
+            foreach ($groupIds as $gid) {
+                $workflow->orgScopes()->create(['company_group_id' => $gid]);
+            }
+            foreach ($regionIds as $rid) {
+                $workflow->orgScopes()->create(['region_id' => $rid]);
+            }
+            foreach ($companyIds as $cid) {
+                $workflow->orgScopes()->create(['company_id' => $cid]);
+            }
+
+            // Sync Initiator Authorities
             if (! empty($data['initiator_roles'])) {
                 foreach ($data['initiator_roles'] as $role) {
-                    $workflow->initiatorRolesData()->create(['role_name' => $role]);
+                    $resolvedId = $this->resolveRoleId($role);
+                        if ($resolvedId) {
+                            $workflow->initiatorAuthorities()->create(['role_id' => $resolvedId]);
+                        }
                 }
             }
             if (! empty($data['initiator_departments'])) {
                 foreach ($data['initiator_departments'] as $deptId) {
                     $resolvedId = $this->resolveDepartmentId($deptId);
                     if ($resolvedId) {
-                        $workflow->initiatorDepartmentsData()->create(['department_id' => $resolvedId]);
+                        $workflow->initiatorAuthorities()->create(['department_id' => $resolvedId]);
                     }
+                }
+            }
+            if (! empty($data['initiator_divisions'])) {
+                foreach ($data['initiator_divisions'] as $divId) {
+                    $workflow->initiatorAuthorities()->create(['division_id' => $divId]);
                 }
             }
             if (! empty($data['initiator_users'])) {
                 foreach ($data['initiator_users'] as $userId) {
                     $resolvedId = $this->resolveUserId($userId);
                     if ($resolvedId) {
-                        $workflow->initiatorUsersData()->create(['user_id' => $resolvedId]);
+                        $workflow->initiatorAuthorities()->create(['user_id' => $resolvedId]);
                     }
                 }
             }
@@ -79,6 +105,7 @@ class StoreWorkflowAction
                         'region_ids' => $stepData['region_ids'] ?? null,
                         'company_ids' => $stepData['company_ids'] ?? null,
                         'meta' => $stepData['meta'] ?? null,
+                        'approver_config' => $stepData['approver_config'] ?? null,
                         'filter_department' => $stepData['filter_department'] ?? false,
                         'filter_company_group' => $stepData['filter_company_group'] ?? false,
                         'filter_region' => $stepData['filter_region'] ?? false,
@@ -87,25 +114,34 @@ class StoreWorkflowAction
 
                     $stepIdMap[$stepClientId] = $step->id;
 
-                    if (! empty($stepData['role'])) {
-                        foreach ((array) $stepData['role'] as $role) {
-                            $step->approverRoles()->create(['role_name' => $role]);
-                        }
-                    }
-                    if (! empty($stepData['department_ids'])) {
-                        foreach ((array) $stepData['department_ids'] as $deptId) {
-                            $resolvedId = $this->resolveDepartmentId($deptId);
+                    $rolesToSync = $stepData['approver_config']['roles'] ?? $stepData['role'] ?? [];
+                    $deptsToSync = $stepData['approver_config']['departments'] ?? $stepData['department_ids'] ?? [];
+                    $divsToSync = $stepData['division_ids'] ?? [];
+                    $usersToSync = $stepData['approver_config']['users'] ?? $stepData['user_ids'] ?? [];
+
+                    foreach ((array) $rolesToSync as $role) {
+                        if ($role) {
+                            $resolvedId = $this->resolveRoleId($role);
                             if ($resolvedId) {
-                                $step->approverDepartments()->create(['department_id' => $resolvedId]);
+                                $step->approverAuthorities()->create(['role_id' => $resolvedId]);
                             }
                         }
                     }
-                    if (! empty($stepData['user_ids'])) {
-                        foreach ((array) $stepData['user_ids'] as $userId) {
-                            $resolvedId = $this->resolveUserId($userId);
-                            if ($resolvedId) {
-                                $step->approverUsers()->create(['user_id' => $resolvedId]);
-                            }
+                    foreach ((array) $deptsToSync as $deptId) {
+                        $resolvedId = $this->resolveDepartmentId($deptId);
+                        if ($resolvedId) {
+                            $step->approverAuthorities()->create(['department_id' => $resolvedId]);
+                        }
+                    }
+                    foreach ((array) $divsToSync as $divId) {
+                        if ($divId) {
+                            $step->approverAuthorities()->create(['division_id' => $divId]);
+                        }
+                    }
+                    foreach ((array) $usersToSync as $userId) {
+                        $resolvedId = $this->resolveUserId($userId);
+                        if ($resolvedId) {
+                            $step->approverAuthorities()->create(['user_id' => $resolvedId]);
                         }
                     }
                 }

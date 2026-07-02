@@ -173,20 +173,8 @@ export function SearchableMultiSelect({
                             );
                         })}
                         {search && !mergedOptions.some(o => o.value.toLowerCase() === search.toLowerCase() || o.label.toLowerCase() === search.toLowerCase()) && (
-                            <div
-                                role="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    const val = search.trim();
-                                    if (val) {
-                                        toggleOption(val);
-                                        setSearch('');
-                                    }
-                                }}
-                                className="flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-[11px] font-semibold uppercase tracking-tight text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30 transition-colors"
-                            >
-                                <span>+ Tambah Kustom: "{search}"</span>
-                            </div>
+                            //    data tidak ditemukan
+                            <div className="py-6 text-center text-[9px] font-semibold uppercase text-slate-300 dark:text-slate-700 italic">data tidak ditemukan</div>
                         )}
                     </div>
                 </div>

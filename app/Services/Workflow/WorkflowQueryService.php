@@ -72,29 +72,34 @@ class WorkflowQueryService
             $q->where('initiator_type', 'all');
 
             if ($user) {
-                // Include workflows restricted by initiator_type != 'all' AND matched by user/role/dept
+                // Include workflows restricted by initiator_type != 'all' AND matched by user/role/dept/div
                 $q->orWhere(function ($sq) use ($user) {
                     $sq->where('initiator_type', '!=', 'all')
                         ->where(function ($ssq) use ($user) {
                             $ssq->where(function ($roleQuery) use ($user) {
-                                $roleQuery->whereHas('initiatorRolesData', fn ($s) => $s->where('role_name', $user->role))
-                                    ->orWhereDoesntHave('initiatorRolesData');
+                                $roleQuery->whereHas('initiatorAuthorities', fn ($s) => $s->where('role_name', $user->role))
+                                    ->orWhereDoesntHave('initiatorAuthorities', fn ($s) => $s->whereNotNull('role_name'));
                             });
 
                             $ssq->where(function ($deptQuery) use ($user) {
-                                $deptQuery->whereHas('initiatorDepartmentsData', fn ($s) => $s->where('department_id', $user->division_id))
-                                    ->orWhereDoesntHave('initiatorDepartmentsData');
+                                $deptQuery->whereHas('initiatorAuthorities', fn ($s) => $s->where('department_id', $user->division_id))
+                                    ->orWhereDoesntHave('initiatorAuthorities', fn ($s) => $s->whereNotNull('department_id'));
+                            });
+
+                            $ssq->where(function ($divQuery) use ($user) {
+                                $divQuery->whereHas('initiatorAuthorities', fn ($s) => $s->where('division_id', $user->division_id))
+                                    ->orWhereDoesntHave('initiatorAuthorities', fn ($s) => $s->whereNotNull('division_id'));
                             });
 
                             $ssq->where(function ($userQuery) use ($user) {
-                                $userQuery->whereHas('initiatorUsersData', fn ($s) => $s->where('user_id', $user->id))
-                                    ->orWhereDoesntHave('initiatorUsersData');
+                                $userQuery->whereHas('initiatorAuthorities', fn ($s) => $s->where('user_id', $user->id))
+                                    ->orWhereDoesntHave('initiatorAuthorities', fn ($s) => $s->whereNotNull('user_id'));
                             });
                         });
                 });
             }
         })
-            ->with(['steps', 'initiatorRolesData', 'initiatorDepartmentsData', 'initiatorUsersData'])
+            ->with(['steps', 'orgScopes', 'initiatorAuthorities'])
             ->get();
     }
 

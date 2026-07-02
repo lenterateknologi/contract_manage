@@ -22,15 +22,11 @@ use App\Models\Role;
 use App\Models\RoleModuleGroup;
 use App\Models\User;
 use App\Models\Workflow;
-use App\Models\WorkflowInitiatorDepartment;
-use App\Models\WorkflowInitiatorRole;
-use App\Models\WorkflowInitiatorUser;
+use App\Models\WorkflowInitiatorAuthority;
+use App\Models\WorkflowOrgScope;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
-use App\Models\WorkflowStepDepartment;
-use App\Models\WorkflowStepDivision;
-use App\Models\WorkflowStepRole;
-use App\Models\WorkflowStepUser;
+use App\Models\WorkflowStepAuthority;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -232,41 +228,37 @@ class MasterDataAdminController extends Controller
                     ];
                 })->toArray();
 
-                $exportData['workflow_step_departments'] = WorkflowStepDepartment::all()->map(function ($d) {
-                    return ['id' => $d->id, 'workflow_step_id' => $d->workflow_step_id, 'department_id' => $d->department_id];
-                })->toArray();
-
-                $exportData['workflow_step_divisions'] = WorkflowStepDivision::all()->map(function ($d) {
-                    return ['id' => $d->id, 'workflow_step_id' => $d->workflow_step_id, 'division_id' => $d->division_id];
-                })->toArray();
-
-                $exportData['workflow_step_roles'] = WorkflowStepRole::all()->map(function ($r) {
-                    return ['id' => $r->id, 'workflow_step_id' => $r->workflow_step_id, 'role_name' => $r->role_name];
-                })->toArray();
-
-                $exportData['workflow_step_users'] = WorkflowStepUser::with('user')->get()->map(function ($u) {
+                $exportData['workflow_step_authorities'] = WorkflowStepAuthority::with(['user', 'department', 'division'])->get()->map(function ($a) {
                     return [
-                        'id' => $u->id,
-                        'workflow_step_id' => $u->workflow_step_id,
-                        'user_id' => $u->user_id,
-                        'user_email' => $u->user->email ?? null,
+                        'id' => $a->id,
+                        'workflow_step_id' => $a->workflow_step_id,
+                        'role_name' => $a->role_name,
+                        'department_id' => $a->department_id,
+                        'division_id' => $a->division_id,
+                        'user_id' => $a->user_id,
+                        'user_email' => $a->user->email ?? null,
                     ];
                 })->toArray();
 
-                $exportData['workflow_initiator_departments'] = WorkflowInitiatorDepartment::all()->map(function ($d) {
-                    return ['id' => $d->id, 'workflow_id' => $d->workflow_id, 'department_id' => $d->department_id];
-                })->toArray();
-
-                $exportData['workflow_initiator_roles'] = WorkflowInitiatorRole::all()->map(function ($r) {
-                    return ['id' => $r->id, 'workflow_id' => $r->workflow_id, 'role_name' => $r->role_name];
-                })->toArray();
-
-                $exportData['workflow_initiator_users'] = WorkflowInitiatorUser::with('user')->get()->map(function ($u) {
+                $exportData['workflow_initiator_authorities'] = WorkflowInitiatorAuthority::with(['user', 'department'])->get()->map(function ($a) {
                     return [
-                        'id' => $u->id,
-                        'workflow_id' => $u->workflow_id,
-                        'user_id' => $u->user_id,
-                        'user_email' => $u->user->email ?? null,
+                        'id' => $a->id,
+                        'workflow_id' => $a->workflow_id,
+                        'role_name' => $a->role_name,
+                        'department_id' => $a->department_id,
+                        'division_id' => $a->division_id,
+                        'user_id' => $a->user_id,
+                        'user_email' => $a->user->email ?? null,
+                    ];
+                })->toArray();
+
+                $exportData['workflow_org_scopes'] = WorkflowOrgScope::all()->map(function ($s) {
+                    return [
+                        'id' => $s->id,
+                        'workflow_id' => $s->workflow_id,
+                        'company_group_id' => $s->company_group_id,
+                        'region_id' => $s->region_id,
+                        'company_id' => $s->company_id,
                     ];
                 })->toArray();
 
@@ -461,13 +453,9 @@ class MasterDataAdminController extends Controller
             'contract_types' => 0,
             'workflows' => 0,
             'workflow_steps' => 0,
-            'workflow_step_departments' => 0,
-            'workflow_step_divisions' => 0,
-            'workflow_step_roles' => 0,
-            'workflow_step_users' => 0,
-            'workflow_initiator_departments' => 0,
-            'workflow_initiator_roles' => 0,
-            'workflow_initiator_users' => 0,
+            'workflow_step_authorities' => 0,
+            'workflow_initiator_authorities' => 0,
+            'workflow_org_scopes' => 0,
             'workflow_step_actions' => 0,
             'roles' => 0,
             'access_mappings' => 0,
@@ -885,68 +873,55 @@ class MasterDataAdminController extends Controller
             }
         }
 
-        // 7. Workflow Initiator Departments
-        if (! empty($data['workflow_initiator_departments']) && is_array($data['workflow_initiator_departments'])) {
-            foreach ($data['workflow_initiator_departments'] as $d) {
-                try {
-                    if (empty($d['id'])) {
-                        continue;
-                    }
-                    $deptId = $departmentIdMap[$d['department_id']] ?? $d['department_id'];
-                    $wfId = $workflowIdMap[$d['workflow_id']] ?? $d['workflow_id'];
-
-                    $model = WorkflowInitiatorDepartment::firstOrNew(['id' => $d['id']]);
-                    $model->forceFill([
-                        'workflow_id' => $wfId,
-                        'department_id' => $deptId,
-                    ])->save();
-                    $counts['workflow_initiator_departments']++;
-                } catch (\Exception $e) {
-                    Log::warning('Gagal mengimpor WorkflowInitiatorDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
-                }
-            }
-        }
-
-        // 8. Workflow Initiator Roles
-        if (! empty($data['workflow_initiator_roles']) && is_array($data['workflow_initiator_roles'])) {
-            foreach ($data['workflow_initiator_roles'] as $r) {
-                try {
-                    if (empty($r['id'])) {
-                        continue;
-                    }
-                    $wfId = $workflowIdMap[$r['workflow_id']] ?? $r['workflow_id'];
-
-                    $model = WorkflowInitiatorRole::firstOrNew(['id' => $r['id']]);
-                    $model->forceFill([
-                        'workflow_id' => $wfId,
-                        'role_name' => $r['role_name'] ?? null,
-                    ])->save();
-                    $counts['workflow_initiator_roles']++;
-                } catch (\Exception $e) {
-                    Log::warning('Gagal mengimpor WorkflowInitiatorRole ID '.($r['id'] ?? '').': '.$e->getMessage());
-                }
-            }
-        }
-
-        // 9. Workflow Initiator Users
+        // 7. Workflow Initiator Authorities
         $userEmailMap = User::pluck('id', 'email')->all();
-        if (! empty($data['workflow_initiator_users']) && is_array($data['workflow_initiator_users'])) {
-            foreach ($data['workflow_initiator_users'] as $u) {
+        if (! empty($data['workflow_initiator_authorities']) && is_array($data['workflow_initiator_authorities'])) {
+            foreach ($data['workflow_initiator_authorities'] as $auth) {
                 try {
-                    if (empty($u['id'])) {
+                    if (empty($auth['id'])) {
                         continue;
                     }
-                    $wfId = $workflowIdMap[$u['workflow_id']] ?? $u['workflow_id'];
-                    $newUserId = ! empty($u['user_email']) ? ($userEmailMap[$u['user_email']] ?? $u['user_id']) : $u['user_id'];
+                    $wfId = $workflowIdMap[$auth['workflow_id']] ?? $auth['workflow_id'];
+                    $deptId = ! empty($auth['department_id']) ? ($departmentIdMap[$auth['department_id']] ?? $auth['department_id']) : null;
+                    $newUserId = ! empty($auth['user_email']) ? ($userEmailMap[$auth['user_email']] ?? $auth['user_id']) : $auth['user_id'];
 
-                    $model = WorkflowInitiatorUser::firstOrNew(['id' => $u['id']]);
+                    $model = WorkflowInitiatorAuthority::firstOrNew(['id' => $auth['id']]);
                     $model->forceFill([
                         'workflow_id' => $wfId,
+                        'role_name' => $auth['role_name'] ?? null,
+                        'department_id' => $deptId,
+                        'division_id' => $auth['division_id'] ?? null,
                         'user_id' => $newUserId,
                     ])->save();
-                    $counts['workflow_initiator_users']++;
+                    $counts['workflow_initiator_authorities']++;
                 } catch (\Exception $e) {
-                    Log::warning('Gagal mengimpor WorkflowInitiatorUser ID '.($u['id'] ?? '').': '.$e->getMessage());
+                    Log::warning('Gagal mengimpor WorkflowInitiatorAuthority ID '.($auth['id'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        // 8. Workflow Org Scopes
+        if (! empty($data['workflow_org_scopes']) && is_array($data['workflow_org_scopes'])) {
+            foreach ($data['workflow_org_scopes'] as $scope) {
+                try {
+                    if (empty($scope['id'])) {
+                        continue;
+                    }
+                    $wfId = $workflowIdMap[$scope['workflow_id']] ?? $scope['workflow_id'];
+                    $groupId = ! empty($scope['company_group_id']) ? ($companyGroupIdMap[$scope['company_group_id']] ?? $scope['company_group_id']) : null;
+                    $regId = ! empty($scope['region_id']) ? ($regionIdMap[$scope['region_id']] ?? $scope['region_id']) : null;
+                    $compId = ! empty($scope['company_id']) ? ($companyIdMap[$scope['company_id']] ?? $scope['company_id']) : null;
+
+                    $model = WorkflowOrgScope::firstOrNew(['id' => $scope['id']]);
+                    $model->forceFill([
+                        'workflow_id' => $wfId,
+                        'company_group_id' => $groupId,
+                        'region_id' => $regId,
+                        'company_id' => $compId,
+                    ])->save();
+                    $counts['workflow_org_scopes']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowOrgScope ID '.($scope['id'] ?? '').': '.$e->getMessage());
                 }
             }
         }
@@ -1024,90 +999,29 @@ class MasterDataAdminController extends Controller
             }
         }
 
-        // 11. Workflow Step Departments
-        if (! empty($data['workflow_step_departments']) && is_array($data['workflow_step_departments'])) {
-            foreach ($data['workflow_step_departments'] as $d) {
+        // 11. Workflow Step Authorities
+        if (! empty($data['workflow_step_authorities']) && is_array($data['workflow_step_authorities'])) {
+            foreach ($data['workflow_step_authorities'] as $auth) {
                 try {
-                    if (empty($d['id'])) {
+                    if (empty($auth['id'])) {
                         continue;
                     }
-                    $deptId = $departmentIdMap[$d['department_id']] ?? $d['department_id'];
-                    $stepId = $workflowStepIdMap[$d['workflow_step_id']] ?? $d['workflow_step_id'];
+                    $stepId = $workflowStepIdMap[$auth['workflow_step_id']] ?? $auth['workflow_step_id'];
+                    $deptId = ! empty($auth['department_id']) ? ($departmentIdMap[$auth['department_id']] ?? $auth['department_id']) : null;
+                    $divId = ! empty($auth['division_id']) ? ($divisionIdMap[$auth['division_id']] ?? $auth['division_id']) : null;
+                    $newUserId = ! empty($auth['user_email']) ? ($userEmailMap[$auth['user_email']] ?? $auth['user_id']) : $auth['user_id'];
 
-                    $model = WorkflowStepDepartment::firstOrNew(['id' => $d['id']]);
+                    $model = WorkflowStepAuthority::firstOrNew(['id' => $auth['id']]);
                     $model->forceFill([
                         'workflow_step_id' => $stepId,
+                        'role_name' => $auth['role_name'] ?? null,
                         'department_id' => $deptId,
-                    ])->save();
-                    $counts['workflow_step_departments']++;
-                } catch (\Exception $e) {
-                    Log::warning('Gagal mengimpor WorkflowStepDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
-
-                }
-            }
-        }
-
-        // 11b. Workflow Step Divisions
-        if (! empty($data['workflow_step_divisions']) && is_array($data['workflow_step_divisions'])) {
-            foreach ($data['workflow_step_divisions'] as $d) {
-                try {
-                    if (empty($d['id'])) {
-                        continue;
-                    }
-                    $divId = ! empty($d['division_id']) ? ($divisionIdMap[$d['division_id']] ?? $d['division_id']) : null;
-                    $stepId = $workflowStepIdMap[$d['workflow_step_id']] ?? $d['workflow_step_id'];
-
-                    $model = WorkflowStepDivision::firstOrNew(['id' => $d['id']]);
-                    $model->forceFill([
-                        'workflow_step_id' => $stepId,
                         'division_id' => $divId,
-                    ])->save();
-                    $counts['workflow_step_divisions']++;
-                } catch (\Exception $e) {
-                    Log::warning('Gagal mengimpor WorkflowStepDivision ID '.($d['id'] ?? '').': '.$e->getMessage());
-                }
-            }
-        }
-
-        // 12. Workflow Step Roles
-        if (! empty($data['workflow_step_roles']) && is_array($data['workflow_step_roles'])) {
-            foreach ($data['workflow_step_roles'] as $r) {
-                try {
-                    if (empty($r['id'])) {
-                        continue;
-                    }
-                    $stepId = $workflowStepIdMap[$r['workflow_step_id']] ?? $r['workflow_step_id'];
-
-                    $model = WorkflowStepRole::firstOrNew(['id' => $r['id']]);
-                    $model->forceFill([
-                        'workflow_step_id' => $stepId,
-                        'role_name' => $r['role_name'] ?? null,
-                    ])->save();
-                    $counts['workflow_step_roles']++;
-                } catch (\Exception $e) {
-                    Log::warning('Gagal mengimpor WorkflowStepRole ID '.($r['id'] ?? '').': '.$e->getMessage());
-                }
-            }
-        }
-
-        // 13. Workflow Step Users
-        if (! empty($data['workflow_step_users']) && is_array($data['workflow_step_users'])) {
-            foreach ($data['workflow_step_users'] as $u) {
-                try {
-                    if (empty($u['id'])) {
-                        continue;
-                    }
-                    $stepId = $workflowStepIdMap[$u['workflow_step_id']] ?? $u['workflow_step_id'];
-                    $newUserId = ! empty($u['user_email']) ? ($userEmailMap[$u['user_email']] ?? $u['user_id']) : $u['user_id'];
-
-                    $model = WorkflowStepUser::firstOrNew(['id' => $u['id']]);
-                    $model->forceFill([
-                        'workflow_step_id' => $stepId,
                         'user_id' => $newUserId,
                     ])->save();
-                    $counts['workflow_step_users']++;
+                    $counts['workflow_step_authorities']++;
                 } catch (\Exception $e) {
-                    Log::warning('Gagal mengimpor WorkflowStepUser ID '.($u['id'] ?? '').': '.$e->getMessage());
+                    Log::warning('Gagal mengimpor WorkflowStepAuthority ID '.($auth['id'] ?? '').': '.$e->getMessage());
                 }
             }
         }

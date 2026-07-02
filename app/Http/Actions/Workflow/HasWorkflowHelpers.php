@@ -5,6 +5,7 @@ namespace App\Http\Actions\Workflow;
 use App\Enums\WorkflowAction;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
@@ -114,5 +115,15 @@ trait HasWorkflowHelpers
         }
 
         return User::where('email', $identifier)->value('id');
+    }
+
+    protected function resolveRoleId(string $identifier): ?string
+    {
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return $identifier;
+        }
+
+        // ponytail: role_name is the canonical lookup key
+        return Role::where('name', $identifier)->value('id');
     }
 }

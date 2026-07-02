@@ -37,8 +37,39 @@ export default function WorkflowEditor({
     const { showToast } = useToast();
     const [isOrgExpanded, setIsOrgExpanded] = useState(false);
 
-    const [expandedStepIds, setExpandedStepIds] = useState<Record<string, boolean>>({});
-    const [mainTab, setMainTab] = useState<'settings' | 'steps'>('settings');
+    const [expandedStepIds, _setExpandedStepIds] = useState<Record<string, boolean>>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('workflow_expanded_steps');
+            return saved ? JSON.parse(saved) : {};
+        }
+        return {};
+    });
+
+    const setExpandedStepIds = (updater: any) => {
+        _setExpandedStepIds((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('workflow_expanded_steps', JSON.stringify(next));
+            }
+            return next;
+        });
+    };
+    const [mainTab, setMainTab] = useState<'settings' | 'steps'>(() => {
+        if (typeof window !== 'undefined') {
+            const tab = new URLSearchParams(window.location.search).get('tab');
+            if (tab === 'settings' || tab === 'steps') return tab;
+        }
+        return 'settings';
+    });
+
+    const handleTabChange = (tab: 'settings' | 'steps') => {
+        setMainTab(tab);
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', tab);
+            window.history.replaceState({}, '', url.toString());
+        }
+    };
 
     const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
@@ -182,13 +213,13 @@ export default function WorkflowEditor({
                     processing={form.processing}
                     isDirty={form.isDirty}
                     isEdit={!!workflow}
-                    onCollapseAll={() => setExpandedStepId(null)}
+                    onCollapseAll={() => setExpandedStepIds({})}
                     flat={true}
                     tabs={
                         <div className="flex bg-slate-100/80 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
                             <button
                                 type="button"
-                                onClick={() => setMainTab('settings')}
+                                onClick={() => handleTabChange('settings')}
                                 className={cn(
                                     'px-4 py-1.5 text-xs font-semibold rounded-lg transition-all',
                                     mainTab === 'settings'
@@ -200,7 +231,7 @@ export default function WorkflowEditor({
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setMainTab('steps')}
+                                onClick={() => handleTabChange('steps')}
                                 className={cn(
                                     'flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all',
                                     mainTab === 'steps'
@@ -675,9 +706,24 @@ export default function WorkflowEditor({
                                                                 }));
                                                                 form.setData('steps', normalized);
                                                             }}
+                                                            moveLocalStep={(i: number, direction: 'up' | 'down') => {
+                                                                const nextIndex = direction === 'up' ? i - 1 : i + 1;
+                                                                if (nextIndex < 0 || nextIndex >= form.data.steps.length) return;
+
+                                                                const updatedSteps = [...form.data.steps];
+                                                                const temp = updatedSteps[i];
+                                                                updatedSteps[i] = updatedSteps[nextIndex];
+                                                                updatedSteps[nextIndex] = temp;
+
+                                                                const normalized = updatedSteps.map((item: any, index: number) => ({
+                                                                    ...item,
+                                                                    step: index + 1,
+                                                                }));
+                                                                form.setData('steps', normalized);
+                                                            }}
                                                             isExpanded={!!expandedStepIds[step.id]}
                                                             setIsExpanded={(expanded) =>
-                                                                setExpandedStepIds((prev) => ({
+                                                                setExpandedStepIds((prev: Record<string, boolean>) => ({
                                                                     ...prev,
                                                                     [step.id]: expanded,
                                                                 }))
@@ -698,6 +744,16 @@ export default function WorkflowEditor({
                                         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent dark:via-slate-800" />
                                     </div>
                                 )}
+                                <div className="flex justify-center pb-6">
+                                    <button
+                                        type="button"
+                                        onClick={addLocalStep}
+                                        className="inline-flex items-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 px-8 py-3 text-sm font-bold text-primary transition-all hover:border-primary/60 hover:bg-primary/10 dark:border-primary/20 dark:bg-primary/[0.05] dark:hover:border-primary/40 dark:hover:bg-primary/10"
+                                    >
+                                        <PlusCircle size={16} />
+                                        Tambah Step
+                                    </button>
+                                </div>
                             </>
                         )}
                     </div>

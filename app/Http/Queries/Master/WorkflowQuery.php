@@ -18,12 +18,9 @@ class WorkflowQuery
             ->withCount('steps')
             ->with([
                 'contractType',
-                'steps.approverRoles',
-                'steps.approverDepartments',
-                'steps.approverUsers',
-                'initiatorRolesData',
-                'initiatorDepartmentsData',
-                'initiatorUsersData',
+                'steps.approverAuthorities',
+                'initiatorAuthorities',
+                'orgScopes',
             ])
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
@@ -36,13 +33,13 @@ class WorkflowQuery
                 $q->whereIn('contract_type_id', (array) $type);
             })
             ->when($request->company_group_id, function ($q, $id) {
-                $q->whereJsonContains('company_group_ids', $id);
+                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('company_group_id', (array) $id));
             })
             ->when($request->region_id, function ($q, $id) {
-                $q->whereJsonContains('region_ids', $id);
+                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('region_id', (array) $id));
             })
             ->when($request->company_id, function ($q, $id) {
-                $q->whereJsonContains('company_ids', $id);
+                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('company_id', (array) $id));
             });
     }
 
@@ -52,13 +49,10 @@ class WorkflowQuery
     public function findForEdit(string $id): Workflow
     {
         return Workflow::with([
-            'steps.approverRoles',
-            'steps.approverDepartments',
-            'steps.approverUsers',
+            'steps.approverAuthorities',
             'steps.actions',
-            'initiatorRolesData',
-            'initiatorDepartmentsData',
-            'initiatorUsersData',
+            'initiatorAuthorities',
+            'orgScopes',
         ])->findOrFail($id);
     }
 

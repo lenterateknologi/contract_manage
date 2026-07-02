@@ -80,7 +80,7 @@ class WorkflowStep extends Model
         ];
     }
 
-    protected $with = ['approverRoles', 'approverDepartments.department', 'approverDivisions.division', 'approverUsers', 'users'];
+    protected $with = ['approverAuthorities.role', 'approverAuthorities.division', 'approverAuthorities.user', 'users'];
 
     protected $appends = ['role', 'department_ids', 'department_names', 'division_ids', 'division_names', 'user_ids', 'name'];
 
@@ -97,70 +97,43 @@ class WorkflowStep extends Model
         return $this->hasMany(WorkflowStepAction::class, 'workflow_step_id');
     }
 
-    /**
-     * @return HasMany<WorkflowStepRole, WorkflowStep>
-     */
-    public function approverRoles(): HasMany
+    public function approverAuthorities(): HasMany
     {
-        return $this->hasMany(WorkflowStepRole::class, 'workflow_step_id');
-    }
-
-    /**
-     * @return HasMany<WorkflowStepDepartment, WorkflowStep>
-     */
-    public function approverDepartments(): HasMany
-    {
-        return $this->hasMany(WorkflowStepDepartment::class, 'workflow_step_id');
-    }
-
-    /**
-     * @return HasMany<WorkflowStepDivision, WorkflowStep>
-     */
-    public function approverDivisions(): HasMany
-    {
-        return $this->hasMany(WorkflowStepDivision::class, 'workflow_step_id');
-    }
-
-    /**
-     * @return HasMany<WorkflowStepUser, WorkflowStep>
-     */
-    public function approverUsers(): HasMany
-    {
-        return $this->hasMany(WorkflowStepUser::class, 'workflow_step_id');
+        return $this->hasMany(WorkflowStepAuthority::class, 'workflow_step_id');
     }
 
     public function getRoleAttribute()
     {
-        return $this->approverRoles->pluck('role_name')->toArray();
+        return $this->approverAuthorities->pluck('role.name')->filter()->unique()->values()->toArray();
     }
 
     public function getDepartmentIdsAttribute()
     {
-        return $this->approverDivisions->pluck('division_id')->toArray();
+        return $this->approverAuthorities->pluck('division_id')->filter()->unique()->values()->toArray();
     }
 
     public function getDepartmentNamesAttribute()
     {
-        return $this->approverDivisions->map(function ($sd) {
+        return $this->approverAuthorities->map(function ($sd) {
             return $sd->division?->name ?? 'All Divisions';
-        })->unique()->toArray();
+        })->filter()->unique()->toArray();
     }
 
     public function getDivisionIdsAttribute()
     {
-        return $this->approverDivisions->pluck('division_id')->toArray();
+        return $this->approverAuthorities->pluck('division_id')->filter()->unique()->values()->toArray();
     }
 
     public function getDivisionNamesAttribute()
     {
-        return $this->approverDivisions->map(function ($sd) {
+        return $this->approverAuthorities->map(function ($sd) {
             return $sd->division?->name ?? 'All Divisions';
-        })->unique()->toArray();
+        })->filter()->unique()->toArray();
     }
 
     public function getUserIdsAttribute()
     {
-        return $this->approverUsers->pluck('user_id')->toArray();
+        return $this->approverAuthorities->pluck('user_id')->filter()->unique()->values()->toArray();
     }
 
     public function workflow(): BelongsTo
@@ -177,9 +150,9 @@ class WorkflowStep extends Model
     {
         $config = $value ? (is_string($value) ? json_decode($value, true) : $value) : [];
 
-        $roleNames = $this->relationLoaded('approverRoles') ? $this->approverRoles->pluck('role_name')->toArray() : $this->approverRoles()->pluck('role_name')->toArray();
-        $userIds = $this->relationLoaded('approverUsers') ? $this->approverUsers->pluck('user_id')->toArray() : $this->approverUsers()->pluck('user_id')->toArray();
-        $departmentIds = $this->relationLoaded('approverDepartments') ? $this->approverDepartments->pluck('department_id')->toArray() : $this->approverDepartments()->pluck('department_id')->toArray();
+        $roleNames = $this->relationLoaded('approverAuthorities') ? $this->approverAuthorities->pluck('role.name')->filter()->toArray() : $this->approverAuthorities()->with('role')->get()->pluck('role.name')->filter()->toArray();
+        $userIds = $this->relationLoaded('approverAuthorities') ? $this->approverAuthorities->pluck('user_id')->filter()->toArray() : $this->approverAuthorities()->pluck('user_id')->filter()->toArray();
+        $departmentIds = $this->relationLoaded('approverAuthorities') ? $this->approverAuthorities->pluck('department_id')->filter()->toArray() : $this->approverAuthorities()->pluck('department_id')->filter()->toArray();
 
         return array_merge([
             'custom' => in_array($this->approver_type, ['initiator', 'assigned_pic', 'creator', 'atasan']) ? [$this->approver_type] : [],
@@ -194,6 +167,6 @@ class WorkflowStep extends Model
 
     public function users(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'm_workflow_step_users', 'workflow_step_id', 'user_id');
+        return $this->belongsToMany(User::class, 'm_workflow_step_authorities', 'workflow_step_id', 'user_id');
     }
 }

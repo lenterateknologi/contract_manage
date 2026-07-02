@@ -18,6 +18,7 @@ interface StepActionConfigCardProps {
     users: any[];
     updateAction: (actIdx: number, data: any) => void;
     removeAction: (actIdx: number) => void;
+    cloneAction: (actIdx: number) => void;
 }
 
 export function StepActionConfigCard({
@@ -33,6 +34,7 @@ export function StepActionConfigCard({
     users,
     updateAction,
     removeAction,
+    cloneAction,
 }: StepActionConfigCardProps) {
     const actionCode = (act.master_action?.code || act.action_code || act.master_action_id || '').toLowerCase();
     const isForwardAction = actionCode === 'forward';

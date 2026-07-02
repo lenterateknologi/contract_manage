@@ -17,12 +17,9 @@ class WorkflowListQuery
         return Workflow::withCount('steps')
             ->with([
                 'contractType',
-                'steps.approverRoles',
-                'steps.approverDepartments',
-                'steps.approverUsers',
-                'initiatorRolesData',
-                'initiatorDepartmentsData',
-                'initiatorUsersData',
+                'steps.approverAuthorities',
+                'initiatorAuthorities',
+                'orgScopes',
             ])
             ->when($request->search, function (Builder $q, string $search): void {
                 $search = strtolower($search);
@@ -35,13 +32,13 @@ class WorkflowListQuery
                 $q->whereIn('contract_type_id', (array) $type);
             })
             ->when($request->company_group_id, function (Builder $q, string $id): void {
-                $q->whereJsonContains('company_group_ids', $id);
+                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('company_group_id', (array) $id));
             })
             ->when($request->region_id, function (Builder $q, string $id): void {
-                $q->whereJsonContains('region_ids', $id);
+                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('region_id', (array) $id));
             })
             ->when($request->company_id, function (Builder $q, string $id): void {
-                $q->whereJsonContains('company_ids', $id);
+                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('company_id', (array) $id));
             });
     }
 }
