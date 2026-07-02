@@ -11,8 +11,37 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip if module already exists (idempotent)
+        if (DB::table('m_modules')->where('identifier', 'divisions')->exists()) {
+            return;
+        }
+
+        // Resolve module group dynamically — look up by name to avoid hardcoded UUID issues
+        $moduleGroupNames = ['Master Data', 'Pengaturan Sistem', 'Lainnya'];
+        $moduleGroup = null;
+        foreach ($moduleGroupNames as $groupName) {
+            $moduleGroup = DB::table('m_module_groups')->where('name', $groupName)->first();
+            if ($moduleGroup) {
+                break;
+            }
+        }
+
+        // If no matching group exists yet, create one
+        if (! $moduleGroup) {
+            $newGroupId = (string) Str::uuid();
+            DB::table('m_module_groups')->insert([
+                'id' => $newGroupId,
+                'name' => 'Master Data',
+                'icon' => 'Database',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $moduleGroupId = $newGroupId;
+        } else {
+            $moduleGroupId = $moduleGroup->id;
+        }
+
         $moduleId = (string) Str::uuid();
-        $moduleGroupId = '39703089-6c1d-4753-88ca-1123b52a7a48'; // Master Data group ID
 
         // 1. Insert Module
         DB::table('m_modules')->insert([
@@ -28,13 +57,11 @@ return new class extends Migration
             'updated_at' => now(),
         ]);
 
-        // 2. Grant Access to Admin (4ee99cd1-be94-4122-840f-1dec172b4296) and Super Admin (f0cbb5b2-6828-4ea3-9f86-ea53c6f2a5dd)
-        $rolesToGrant = [
-            '4ee99cd1-be94-4122-840f-1dec172b4296', // Admin
-            'f0cbb5b2-6828-4ea3-9f86-ea53c6f2a5dd', // Super Admin
-        ];
+        // 2. Grant Access to Admin and Super Admin roles (looked up by name to avoid hardcoded UUID issues)
+        $roleNames = ['Admin', 'Super Admin'];
+        $roles = DB::table('m_roles')->whereIn('name', $roleNames)->pluck('id');
 
-        foreach ($rolesToGrant as $roleId) {
+        foreach ($roles as $roleId) {
             DB::table('m_access_modules')->insert([
                 'id' => (string) Str::uuid(),
                 'role_id' => $roleId,
