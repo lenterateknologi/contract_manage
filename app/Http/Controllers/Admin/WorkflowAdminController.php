@@ -92,39 +92,39 @@ class WorkflowAdminController extends Controller
 
         // Map org scopes to {value, is_initiator} objects for the frontend
         $workflowData['company_group_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->company_group_id)
-            ->map(fn ($s) => ['value' => (string) $s->company_group_id, 'is_initiator' => (bool) $s->is_initiator])
+            ->filter(fn ($s) => $s->company_group_id || $s->is_initiator)
+            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_group_id, 'is_initiator' => (bool) $s->is_initiator])
             ->values()->toArray();
 
         $workflowData['region_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->region_id)
-            ->map(fn ($s) => ['value' => (string) $s->region_id, 'is_initiator' => (bool) $s->is_initiator])
+            ->filter(fn ($s) => $s->region_id || $s->is_initiator)
+            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->region_id, 'is_initiator' => (bool) $s->is_initiator])
             ->values()->toArray();
 
         $workflowData['company_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->company_id)
-            ->map(fn ($s) => ['value' => (string) $s->company_id, 'is_initiator' => (bool) $s->is_initiator])
+            ->filter(fn ($s) => $s->company_id || $s->is_initiator)
+            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_id, 'is_initiator' => (bool) $s->is_initiator])
             ->values()->toArray();
 
         // Map initiator authorities to {value, is_initiator} objects for the frontend
         $workflowData['initiator_roles'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->role_name)
-            ->map(fn ($a) => ['value' => $a->role_name, 'is_initiator' => (bool) $a->is_initiator])
+            ->filter(fn ($a) => $a->role_id || $a->is_initiator)
+            ->map(fn ($a) => ['value' => $a->is_initiator ? '__initiator__' : ($a->role?->name ?? $a->role_id), 'is_initiator' => (bool) $a->is_initiator])
             ->values()->toArray();
 
         $workflowData['initiator_departments'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->department_id)
-            ->map(fn ($a) => ['value' => (string) $a->department_id, 'is_initiator' => (bool) $a->is_initiator])
+            ->filter(fn ($a) => $a->department_id || $a->is_initiator)
+            ->map(fn ($a) => ['value' => $a->is_initiator ? '__initiator__' : (string) $a->department_id, 'is_initiator' => (bool) $a->is_initiator])
             ->values()->toArray();
 
         $workflowData['initiator_users'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->user_id)
-            ->map(fn ($a) => ['value' => (string) $a->user_id, 'is_initiator' => (bool) $a->is_initiator])
+            ->filter(fn ($a) => $a->user_id || $a->is_initiator)
+            ->map(fn ($a) => ['value' => $a->is_initiator ? '__initiator__' : (string) $a->user_id, 'is_initiator' => (bool) $a->is_initiator])
             ->values()->toArray();
 
         $workflowData['steps'] = $workflow->steps->map(function ($s) {
             $sd = $s->toArray();
-            $sd['role'] = $s->approverAuthorities->pluck('role_name')->filter()->values()->toArray();
+            $sd['role'] = $s->approverAuthorities->pluck('role.name')->filter()->values()->toArray();
             $sd['user_ids'] = $s->approverAuthorities->pluck('user_id')->filter()->values()->toArray();
             $sd['department_ids'] = $s->approverAuthorities->pluck('department_id')->filter()->values()->toArray();
             $sd['division_ids'] = $s->approverAuthorities->pluck('division_id')->filter()->values()->toArray();
@@ -308,7 +308,7 @@ class WorkflowAdminController extends Controller
                 'meta',
             ])->toArray();
 
-            $workflowData['initiator_roles'] = $workflow->initiatorAuthorities->pluck('role_name')->filter()->toArray();
+            $workflowData['initiator_roles'] = $workflow->initiatorAuthorities->pluck('role.name')->filter()->toArray();
             $workflowData['initiator_departments'] = $workflow->initiatorAuthorities->map(function ($item) {
                 return $item->department->code ?? $item->department_id;
             })->filter()->values()->toArray();
@@ -348,7 +348,7 @@ class WorkflowAdminController extends Controller
                 ])->toArray();
 
                 $stepData['id'] = $stepIdMap[$step->id];
-                $stepData['role'] = $step->approverAuthorities->pluck('role_name')->filter()->toArray();
+                $stepData['role'] = $step->approverAuthorities->pluck('role.name')->filter()->toArray();
                 $stepData['department_ids'] = $step->approverAuthorities->map(function ($item) {
                     return $item->department->code ?? $item->department_id;
                 })->filter()->values()->toArray();

@@ -28,6 +28,7 @@ import { AssignModal } from './modals/AssignModal';
 import { ForwardModal } from './modals/ForwardModal';
 import { RejectModal } from './modals/RejectModal';
 import { SignerModal } from './modals/SignerModal';
+import AuthoritySelector from './AuthoritySelector';
 
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { ALL_ROLES, APPROVER_TYPE_STYLES } from '../constants';
@@ -35,6 +36,7 @@ import { useWorkflowStepState } from '../hooks/useWorkflowStepState';
 import { StepActionConfigCard } from './StepActionConfigCard';
 import { StepSimulatorButtons } from './StepSimulatorButtons';
 import { FormInput } from '@/components/ui/inputs/FormInput';
+
 
 export default function SortableStepItem({
     step,
@@ -795,50 +797,30 @@ export default function SortableStepItem({
                                             </div>
                                             <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 transition-opacity duration-200 ${step.approver_config?.use_combination === false ? 'opacity-40 pointer-events-none' : ''}`}>
                                                 {/* Role Pool */}
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center justify-between px-0.5">
-                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Berdasarkan Role</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Checkbox
-                                                                id={`step-init-role-${idx}`}
-                                                                checked={step.approver_config?.is_initiator_role === true}
-                                                                onCheckedChange={(checked) => updateConfig('is_initiator_role', checked === true)}
-                                                                disabled={step.approver_config?.use_combination === false}
-                                                            />
-                                                            <label htmlFor={`step-init-role-${idx}`} className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">Sesuai Inisiator</label>
-                                                        </div>
-                                                    </div>
-                                                    <SearchableMultiSelect
-                                                        values={step.approver_config?.roles || []}
-                                                        onValuesChange={(vals: string[]) => updateConfig('roles', vals)}
-                                                        options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                                        placeholder={step.approver_config?.is_initiator_role ? "DITENTUKAN DARI ROLE INISIATOR" : "Pilih Role..."}
-                                                        disabled={step.approver_config?.is_initiator_role === true || step.approver_config?.use_combination === false}
-                                                    />
-                                                </div>
+                                                <AuthoritySelector
+                                                    label="Berdasarkan Role"
+                                                    idPrefix={`step-role-${idx}`}
+                                                    isInitiator={step.approver_config?.is_initiator_role === true}
+                                                    onIsInitiatorChange={(checked) => updateConfig('is_initiator_role', checked)}
+                                                    values={step.approver_config?.roles || []}
+                                                    onValuesChange={(vals) => updateConfig('roles', vals)}
+                                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
+                                                    placeholder="Pilih Role..."
+                                                    disabled={step.approver_config?.use_combination === false}
+                                                />
 
                                                 {/* Divisi Pool */}
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center justify-between px-0.5">
-                                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Divisi Pool</span>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Checkbox
-                                                                id={`step-init-dept-${idx}`}
-                                                                checked={step.approver_config?.is_initiator_department === true}
-                                                                onCheckedChange={(checked) => updateConfig('is_initiator_department', checked === true)}
-                                                                disabled={step.approver_config?.use_combination === false}
-                                                            />
-                                                            <label htmlFor={`step-init-dept-${idx}`} className="text-[10px] font-semibold text-slate-700 dark:text-slate-300 cursor-pointer">Sesuai Inisiator</label>
-                                                        </div>
-                                                    </div>
-                                                    <SearchableMultiSelect
-                                                        values={step.approver_config?.departments || []}
-                                                        onValuesChange={(vals: string[]) => updateConfig('departments', vals)}
-                                                        options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                        placeholder={step.approver_config?.is_initiator_department ? "DITENTUKAN DARI DIVISI INISIATOR" : "Pilih Divisi..."}
-                                                        disabled={step.approver_config?.is_initiator_department === true || step.approver_config?.use_combination === false}
-                                                    />
-                                                </div>
+                                                <AuthoritySelector
+                                                    label="Divisi Pool"
+                                                    idPrefix={`step-dept-${idx}`}
+                                                    isInitiator={step.approver_config?.is_initiator_department === true}
+                                                    onIsInitiatorChange={(checked) => updateConfig('is_initiator_department', checked)}
+                                                    values={step.approver_config?.departments || []}
+                                                    onValuesChange={(vals) => updateConfig('departments', vals)}
+                                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
+                                                    placeholder="Pilih Divisi..."
+                                                    disabled={step.approver_config?.use_combination === false}
+                                                />
                                             </div>
                                         </div>
                                     </div>
