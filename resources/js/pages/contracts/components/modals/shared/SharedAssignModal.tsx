@@ -83,13 +83,8 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 : (contract.next_step?.approver_config || contract.next_step);
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
 
-            // Existing assignees should be pre-selected
-            const existingAssigneeUserIds = (contract?.approvals || [])
-                .filter(
-                    (a: any) =>
-                        String(a.workflow_step_id) === String(finalTargetStepId) && a.role === ROLE_NAME && a.status !== 'rejected',
-                )
-                .map((a: any) => String(a.user_id));
+            // Existing assignees should be pre-selected from contract.assigned_pic_id
+            const existingAssigneeUserIds = contract?.assigned_pic_id ? [String(contract.assigned_pic_id)] : [];
 
             // Main approvers (of other roles) should not be available for selection
             const existingOtherMainUserIds = new Set(
@@ -118,7 +113,8 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
     };
 
     const handleUpdateSelectedUsers = (val: string[]) => {
-        setSelectedUserIds(Array.from(new Set(val)));
+        // Only allow 1 user to be selected
+        setSelectedUserIds(val.slice(-1));
     };
 
     const handleRemoveUser = (id: string) => {
@@ -141,16 +137,9 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
 
         setLoading(true);
         try {
-            const finalTargetStepId = selectedTargetStepId || contract.workflow_step_id;
-
-            const updatedContract = await contractApi.addAdhocApprover(
-                contract.id, 
-                selectedUserIds, 
-                note, 
-                isSequential, 
-                finalTargetStepId,
-                ROLE_NAME
-            );
+            const updatedContract = await contractApi.update(contract.id, {
+                assigned_pic_id: selectedUserIds[0] || null
+            });
             
             onUpdate(updatedContract);
             showToast(`Penugasan ${ROLE_NAME} berhasil diperbarui.`, 'success');
@@ -163,12 +152,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
         }
     };
 
-    const currentStepDelegates = (contract?.approvals || []).filter(
-        (a: any) =>
-            String(a.workflow_step_id) === String(selectedTargetStepId || contract?.workflow_step_id) &&
-            a.role === ROLE_NAME &&
-            a.status !== 'rejected',
-    );
+
 
     return (
         <Modal
@@ -208,51 +192,44 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                     </p>
                 </div>
 
-                {/* --- EXISTING DELEGATES LIST --- */}
-                {currentStepDelegates.length > 0 && (
+                {/* --- CURRENTLY ASSIGNED PIC --- */}
+                {contract?.assigned_pic && (
                     <div className="space-y-2.5">
                         <div className="text-text-soft flex items-center justify-between text-[10px] font-bold uppercase">
                             <div className="flex items-center gap-1.5">
                                 <Users size={12} className="text-primary" />
-                                {ROLE_NAME} Terdaftar
+                                PIC Ditugaskan Saat Ini
                             </div>
-                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary text-[9px]">
-                                {currentStepDelegates.length} Orang
-                            </span>
                         </div>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {currentStepDelegates.map((a: any) => (
-                                <div key={a.id} className="group border-surface-border bg-surface-muted/20 relative flex items-center gap-3 rounded-xl border p-2 transition-all hover:border-primary/30">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                        {a.approver_name?.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="flex min-w-0 flex-col">
-                                        <span className="text-text-main truncate text-xs leading-tight font-bold">{a.approver_name}</span>
-                                        <span className="text-text-soft text-[9px] tracking-tighter uppercase">{a.job_title || a.role}</span>
-                                    </div>
-                                    <div className="ml-auto flex items-center gap-1.5">
-                                        <StatusBadge status={a.status} />
-                                        <button
-                                            type="button"
-                                            disabled={loading}
-                                            onClick={async () => {
-                                                if (confirm(`Hapus penugasan untuk ${a.approver_name}?`)) {
-                                                    try {
-                                                        const updated = await contractApi.removeAdhocApprover(contract.id, a.id);
-                                                        onUpdate(updated);
-                                                        showToast('Penugasan berhasil dihapus.', 'success');
-                                                    } catch (err: any) {
-                                                        showToast(err.response?.data?.message || 'Gagal menghapus.', 'danger');
-                                                    }
-                                                }
-                                            }}
-                                            className="text-text-soft hover:text-danger hover:bg-danger/10 rounded-md p-1 opacity-0 transition-all group-hover:opacity-100"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="border-surface-border bg-surface-muted/20 relative flex items-center gap-3 rounded-xl border p-2">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                                {contract.assigned_pic.name?.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="flex min-w-0 flex-col">
+                                <span className="text-text-main truncate text-xs leading-tight font-bold">{contract.assigned_pic.name}</span>
+                                <span className="text-text-soft text-[9px] tracking-tighter uppercase">{contract.assigned_pic.role}</span>
+                            </div>
+                            <div className="ml-auto flex items-center gap-1.5">
+                                <button
+                                    type="button"
+                                    disabled={loading}
+                                    onClick={async () => {
+                                        if (confirm(`Hapus penugasan untuk ${contract.assigned_pic.name}?`)) {
+                                            try {
+                                                const updated = await contractApi.update(contract.id, { assigned_pic_id: null });
+                                                onUpdate(updated);
+                                                setSelectedUserIds([]);
+                                                showToast('Penugasan berhasil dihapus.', 'success');
+                                            } catch (err: any) {
+                                                showToast(err.response?.data?.message || 'Gagal menghapus.', 'danger');
+                                            }
+                                        }
+                                    }}
+                                    className="text-text-soft hover:text-danger hover:bg-danger/10 rounded-md p-1 opacity-0 transition-all group-hover:opacity-100"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
                         </div>
                         <div className="bg-surface-border/50 my-2 h-px" />
                     </div>

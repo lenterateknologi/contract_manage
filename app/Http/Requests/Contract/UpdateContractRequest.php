@@ -51,6 +51,7 @@ class UpdateContractRequest extends FormRequest
             'topic' => 'nullable|string',
             'workflow_id' => 'nullable|uuid|exists:m_workflows,id',
             'metadata' => 'nullable|array',
+            'assigned_pic_id' => 'nullable|uuid|exists:m_users,id',
         ];
     }
 }
