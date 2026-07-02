@@ -65,7 +65,6 @@ class ProfileController extends Controller
                 'location' => $user->company?->address,
                 'group' => $user->company?->group?->name,
                 'region' => $user->company?->region?->name,
-                'bio' => $user->bio,
                 'role' => $user->role,
                 'initials' => $user->initials,
                 'division_id' => $user->division_id,
