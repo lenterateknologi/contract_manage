@@ -277,16 +277,14 @@ class ContractFormatter
             return null;
         }
 
-        $attributes = $user->getAttributes();
-
         return [
             'id' => $user->id,
             'name' => $user->name,
-            'initials' => array_key_exists('initials', $attributes) ? $user->initials : ($user->getAttribute('initials') ?? ''),
-            'role' => array_key_exists('role', $attributes) ? $user->role : null,
-            'role_id' => array_key_exists('role_id', $attributes) ? $user->role_id : null,
-            'department_id' => $user->division_id ?? (array_key_exists('department_id', $attributes) ? $user->department_id : null),
-            'department_name' => $user->relationLoaded('department') ? $user->department?->name : null,
+            'initials' => $user->initials ?? '',
+            'role' => $user->role,
+            'role_id' => $user->role_id,
+            'department_id' => $user->division_id ?? $user->department_id,
+            'department_name' => $user->relationLoaded('department') ? $user->department?->name : ($user->relationLoaded('division') ? $user->division?->name : null),
             'email' => $user->email,
         ];
     }

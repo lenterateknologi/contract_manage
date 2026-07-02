@@ -638,7 +638,7 @@ export default function WorkflowEditor({
 
                                                 {/* Department */}
                                                 <AuthoritySelector
-                                                    label="Unit / Department / Divisi"
+                                                    label="Divisi"
                                                     idPrefix="init-dept"
                                                     isInitiator={!!form.data.initiator_departments?.is_initiator}
                                                     onIsInitiatorChange={(checked) =>
@@ -655,7 +655,7 @@ export default function WorkflowEditor({
                                                         })
                                                     }
                                                     options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                    placeholder="Tambah Department..."
+                                                    placeholder="Tambah Divisi..."
                                                 />
 
                                                 {/* User */}

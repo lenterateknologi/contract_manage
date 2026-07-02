@@ -236,12 +236,12 @@ export default function SortableStepItem({
                 }
                 // 3. Departments
                 if (cfg.is_initiator_department) {
-                    options.push({ value: 'initiator_department', label: 'DEPT / DIV SESUAI INISIATOR' });
+                    options.push({ value: 'initiator_department', label: 'DIVISI SESUAI INISIATOR' });
                 } else if (cfg.departments && cfg.departments.length > 0) {
                     cfg.departments.forEach((deptId: string) => {
                         const pool = divisions.length > 0 ? divisions : departments;
                         const dept = pool.find((d: any) => String(d.id) === String(deptId));
-                        options.push({ value: `dept_${deptId}`, label: `DEPT / DIV: ${dept ? dept.name.toUpperCase() : deptId}` });
+                        options.push({ value: `dept_${deptId}`, label: `DIVISI: ${dept ? dept.name.toUpperCase() : deptId}` });
                     });
                 }
                 // 4. Users
@@ -280,11 +280,11 @@ export default function SortableStepItem({
             parts.push(`ROLE: ${cfg.roles.join(', ')}`);
         }
         if (cfg.is_initiator_department) {
-            parts.push('DEPT / DIV INISIATOR');
+            parts.push('DIVISI INISIATOR');
         } else if (cfg.departments && cfg.departments.length > 0) {
             const pool = divisions.length > 0 ? divisions : departments;
             const deptNames = cfg.departments.map((id: string) => pool.find((d) => String(d.id) === id)?.name || id);
-            parts.push(`DEPT/DIV: ${deptNames.join(', ')}`);
+            parts.push(`DIVISI: ${deptNames.join(', ')}`);
         }
         if (cfg.users && cfg.users.length > 0) {
             const userNames = cfg.users.map((id: any) => (users || []).find((u) => String(u.id) === String(id))?.name || id);

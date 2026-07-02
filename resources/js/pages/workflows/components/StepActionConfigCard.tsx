@@ -45,7 +45,7 @@ export function StepActionConfigCard({
 
     const { color } = getActionTheme(actionCode);
 
-        const headerThemes: Record<string, { bg: string; text: string; border: string; buttonHover: string; activeColor: string }> = {
+    const headerThemes: Record<string, { bg: string; text: string; border: string; buttonHover: string; activeColor: string }> = {
         approve: {
             bg: 'bg-emerald-700/90 dark:bg-emerald-900/80',
             text: 'text-white',
@@ -451,9 +451,7 @@ export function StepActionConfigCard({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <p className="text-xs text-amber-600/70 italic dark:text-amber-500/70">
-                                Penandatangan akan dimasukkan sebagai sub-step pada langkah yang dipilih ini.
-                            </p>
+
                         </div>
 
                         {/* Multi-Source Pools for Signers (2x2 Grid) */}
@@ -510,9 +508,9 @@ export function StepActionConfigCard({
                                 placeholder="Pilih Role..."
                             />
 
-                            {/* 4. Departemen / Divisi Pool */}
+                            {/* 4. Divisi Pool */}
                             <AuthoritySelector
-                                label="Departemen / Divisi Pool"
+                                label="Divisi Pool"
                                 idPrefix={`act-sign-dept-${actIdx}`}
                                 isInitiator={act.signing_parties?.is_initiator_department === true}
                                 onIsInitiatorChange={(checked) =>
@@ -523,7 +521,7 @@ export function StepActionConfigCard({
                                     updateAction(actIdx, { signing_parties: { ...act.signing_parties, departments: vals } })
                                 }
                                 options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                placeholder="Pilih Unit / Departemen / Divisi..."
+                                placeholder="Pilih Divisi..."
                             />
                         </div>
                     </div>
@@ -538,7 +536,7 @@ export function StepActionConfigCard({
                                 {isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Konfigurasi Penugasan (Assignee)'}
                             </label>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {isForwardAction && (
                                 <div className={isForwardAction && isSignatureAction ? "space-y-1" : "space-y-1 sm:col-span-2"}>
@@ -655,9 +653,9 @@ export function StepActionConfigCard({
                                 placeholder="Pilih Role..."
                             />
 
-                            {/* 4. Departemen / Divisi Pool */}
+                            {/* 4. Divisi Pool */}
                             <AuthoritySelector
-                                label="Departemen / Divisi Pool"
+                                label="Divisi Pool"
                                 idPrefix={`act-init-dept-${actIdx}`}
                                 isInitiator={act.assignee_config?.is_initiator_department === true}
                                 onIsInitiatorChange={(checked) =>
@@ -668,15 +666,11 @@ export function StepActionConfigCard({
                                     updateAction(actIdx, { assignee_config: { ...act.assignee_config, departments: vals } })
                                 }
                                 options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                placeholder="Pilih Unit / Departemen / Divisi..."
+                                placeholder="Pilih Divisi..."
                             />
                         </div>
 
-                        <p className="text-xs text-indigo-500/70 italic">
-                            {isForwardAction
-                                ? 'Tentukan siapa saja yang boleh dipilih untuk memberikan approval tambahan.'
-                                : 'Konfigurasi siapa yang dapat dipilih atau ditugaskan pada saat aksi ini dijalankan.'}
-                        </p>
+
                     </div>
                 )}
             </div>

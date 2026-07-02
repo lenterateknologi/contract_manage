@@ -6,6 +6,7 @@ use App\Enums\WorkflowAction;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -88,5 +89,10 @@ class WorkflowStepAction extends Model
     public function masterAction(): BelongsTo
     {
         return $this->belongsTo(WorkflowMasterAction::class, 'master_action_id');
+    }
+
+    public function additionalAuthorities(): HasMany
+    {
+        return $this->hasMany(WorkflowStepAuthority::class, 'workflow_step_action_id');
     }
 }

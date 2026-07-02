@@ -20,12 +20,17 @@ class WorkflowStepAuthority extends Model
         'user_id',
         'is_initiator',
         'authority_type',
+        'is_additional',
+        'additional_type',
+        'workflow_step_action_id',
+        'target_step_id',
     ];
 
     protected function casts(): array
     {
         return [
             'is_initiator' => 'boolean',
+            'is_additional' => 'boolean',
         ];
     }
 
@@ -47,5 +52,15 @@ class WorkflowStepAuthority extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function workflowStepAction(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowStepAction::class, 'workflow_step_action_id');
+    }
+
+    public function targetStep(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowStep::class, 'target_step_id');
     }
 }

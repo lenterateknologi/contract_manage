@@ -99,7 +99,12 @@ class WorkflowStep extends Model
 
     public function approverAuthorities(): HasMany
     {
-        return $this->hasMany(WorkflowStepAuthority::class, 'workflow_step_id');
+        return $this->hasMany(WorkflowStepAuthority::class, 'workflow_step_id')->where('is_additional', false);
+    }
+
+    public function additionalAuthorities(): HasMany
+    {
+        return $this->hasMany(WorkflowStepAuthority::class, 'workflow_step_id')->where('is_additional', true);
     }
 
     public function getRoleAttribute()

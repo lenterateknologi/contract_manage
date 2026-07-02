@@ -86,11 +86,173 @@ trait HasWorkflowHelpers
 
             if ($isNew) {
                 $actionFields['created_by'] = Auth::id();
-                $step->actions()->create($actionFields);
+                $action = $step->actions()->create($actionFields);
             } else {
                 $action = WorkflowStepAction::findOrFail($actionId);
                 $action->update($actionFields);
             }
+
+            $this->syncActionAdditionalAuthorities($action, $actData, $stepIdMap);
+        }
+    }
+
+    /**
+     * Synchronize additional authorities for a specific step action.
+     */
+    protected function syncActionAdditionalAuthorities(WorkflowStepAction $action, array $actData, array $stepIdMap): void
+    {
+        $action->additionalAuthorities()->delete();
+
+        // 1. Process Signers (from signing_parties)
+        $signingParties = $actData['signing_parties'] ?? [];
+        if (! empty($signingParties)) {
+            $this->createAdditionalAuthorities(
+                $action,
+                'signer',
+                $signingParties,
+                null
+            );
+        }
+
+        // 2. Process Assignees (from assignee_config)
+        $assigneeConfig = $actData['assignee_config'] ?? [];
+        if (! empty($assigneeConfig)) {
+            $targetStepId = $assigneeConfig['default_target_step'] ?? $assigneeConfig['signature_target_step'] ?? null;
+            if ($targetStepId && isset($stepIdMap[$targetStepId])) {
+                $targetStepId = $stepIdMap[$targetStepId];
+            }
+            $this->createAdditionalAuthorities(
+                $action,
+                'assignee',
+                $assigneeConfig,
+                $targetStepId
+            );
+        }
+
+        // 3. Process Reviewers (from reviewer_config)
+        $reviewerConfig = $actData['reviewer_config'] ?? [];
+        if (! empty($reviewerConfig)) {
+            $targetStepId = $reviewerConfig['target_step_id'] ?? null;
+            if ($targetStepId && isset($stepIdMap[$targetStepId])) {
+                $targetStepId = $stepIdMap[$targetStepId];
+            }
+            $this->createAdditionalAuthorities(
+                $action,
+                'reviewer',
+                $reviewerConfig,
+                $targetStepId
+            );
+        }
+    }
+
+    /**
+     * Create WorkflowStepAuthority records for the action.
+     */
+    protected function createAdditionalAuthorities(
+        WorkflowStepAction $action,
+        string $type,
+        array $config,
+        ?string $targetStepId
+    ): void {
+        $roles = $config['roles'] ?? [];
+        $departments = $config['departments'] ?? [];
+        $users = $config['users'] ?? [];
+
+        $isInitiatorRole = $config['is_initiator_role'] ?? false;
+        $isInitiatorDept = $config['is_initiator_department'] ?? false;
+        $isInitiatorUser = $config['is_initiator_user'] ?? false;
+
+        $stepId = $action->workflow_step_id;
+
+        $customs = $config['custom'] ?? [];
+        foreach ((array) $customs as $customValue) {
+            if ($customValue) {
+                $action->additionalAuthorities()->create([
+                    'workflow_step_id' => $stepId,
+                    'is_additional' => true,
+                    'additional_type' => $type,
+                    'target_step_id' => $targetStepId,
+                    'authority_type' => $customValue,
+                ]);
+            }
+        }
+
+        foreach ((array) $roles as $role) {
+            if ($role) {
+                $resolvedId = $this->resolveRoleId($role);
+                if ($resolvedId) {
+                    $action->additionalAuthorities()->create([
+                        'workflow_step_id' => $stepId,
+                        'is_additional' => true,
+                        'additional_type' => $type,
+                        'target_step_id' => $targetStepId,
+                        'role_id' => $resolvedId,
+                    ]);
+                }
+            }
+        }
+
+        foreach ((array) $departments as $deptId) {
+            if ($deptId) {
+                $resolvedId = $this->resolveDepartmentId($deptId);
+                if ($resolvedId) {
+                    $action->additionalAuthorities()->create([
+                        'workflow_step_id' => $stepId,
+                        'is_additional' => true,
+                        'additional_type' => $type,
+                        'target_step_id' => $targetStepId,
+                        'department_id' => $resolvedId,
+                    ]);
+                }
+            }
+        }
+
+        foreach ((array) $users as $userId) {
+            if ($userId) {
+                $resolvedId = $this->resolveUserId($userId);
+                if ($resolvedId) {
+                    $action->additionalAuthorities()->create([
+                        'workflow_step_id' => $stepId,
+                        'is_additional' => true,
+                        'additional_type' => $type,
+                        'target_step_id' => $targetStepId,
+                        'user_id' => $resolvedId,
+                    ]);
+                }
+            }
+        }
+
+        if ($isInitiatorRole) {
+            $action->additionalAuthorities()->create([
+                'workflow_step_id' => $stepId,
+                'is_additional' => true,
+                'additional_type' => $type,
+                'target_step_id' => $targetStepId,
+                'is_initiator' => true,
+                'authority_type' => 'role',
+            ]);
+        }
+
+        if ($isInitiatorDept) {
+            $action->additionalAuthorities()->create([
+                'workflow_step_id' => $stepId,
+                'is_additional' => true,
+                'additional_type' => $type,
+                'target_step_id' => $targetStepId,
+                'is_initiator' => true,
+                'authority_type' => 'department',
+            ]);
+        }
+
+        if ($isInitiatorUser) {
+            $action->additionalAuthorities()->create([
+                'workflow_step_id' => $stepId,
+                'is_additional' => true,
+                'additional_type' => $type,
+                'target_step_id' => $targetStepId,
+                'is_initiator' => true,
+                'authority_type' => 'user',
+            ]);
         }
     }
 

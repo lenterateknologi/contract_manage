@@ -29,7 +29,7 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
 
-    const ROLE_NAME = actionAlias || 'Personil';
+    const ROLE_NAME = 'Penandatangan';
 
     useEffect(() => {
         if (open) {
@@ -68,8 +68,33 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
             });
 
             // Use signing_parties config, fallback to others
-            const config = activeAction?.signing_parties || activeAction?.assignee_config || contract.next_step;
+            const hasSigningConfig = activeAction?.signing_parties && (
+                (activeAction.signing_parties.custom && activeAction.signing_parties.custom.length > 0) ||
+                (activeAction.signing_parties.users && activeAction.signing_parties.users.length > 0) ||
+                (activeAction.signing_parties.roles && activeAction.signing_parties.roles.length > 0) ||
+                (activeAction.signing_parties.departments && activeAction.signing_parties.departments.length > 0) ||
+                activeAction.signing_parties.is_initiator_role ||
+                activeAction.signing_parties.is_initiator_department ||
+                activeAction.signing_parties.is_initiator_user
+            );
+
+            const hasAssigneeConfig = activeAction?.assignee_config && (
+                (activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
+                (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
+                (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
+                (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
+                activeAction.assignee_config.is_initiator_role ||
+                activeAction.assignee_config.is_initiator_department ||
+                activeAction.assignee_config.is_initiator_user
+            );
+
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
+            const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(finalTargetStepId))
+                || contract?.workflow_step;
+
+            const config = hasSigningConfig
+                ? activeAction.signing_parties
+                : (hasAssigneeConfig ? activeAction.assignee_config : (targetStep?.approver_config || targetStep));
 
             // Existing signers should be pre-selected
             const existingSignerUserIds = (contract?.approvals || [])

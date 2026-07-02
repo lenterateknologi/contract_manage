@@ -75,8 +75,23 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 );
             });
 
-            const config = activeAction?.assignee_config || {};
+            const hasAssigneeConfig = activeAction?.assignee_config && (
+                (activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
+                (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
+                (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
+                (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
+                activeAction.assignee_config.is_initiator_role ||
+                activeAction.assignee_config.is_initiator_department ||
+                activeAction.assignee_config.is_initiator_user
+            );
+
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
+            const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(finalTargetStepId))
+                || contract?.workflow_step;
+
+            const config = hasAssigneeConfig
+                ? activeAction.assignee_config
+                : (targetStep?.approver_config || targetStep);
 
             // Existing ad-hoc approvers should be pre-selected
             const existingAdhocUserIds = (contract?.approvals || [])

@@ -68,7 +68,19 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 return a.action_code === 'assign' || a.action_code === 'assign_pic';
             });
 
-            const config = activeAction?.assignee_config || contract.next_step?.approver_config || contract.next_step;
+            const hasAssigneeConfig = activeAction?.assignee_config && (
+                (activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
+                (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
+                (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
+                (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
+                activeAction.assignee_config.is_initiator_role ||
+                activeAction.assignee_config.is_initiator_department ||
+                activeAction.assignee_config.is_initiator_user
+            );
+
+            const config = hasAssigneeConfig
+                ? activeAction.assignee_config
+                : (contract.next_step?.approver_config || contract.next_step);
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
 
             // Existing assignees should be pre-selected
