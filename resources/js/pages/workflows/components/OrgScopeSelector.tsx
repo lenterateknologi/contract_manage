@@ -32,15 +32,17 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
     // 2. Region options - dependent on selected groups (if any selected)
     const filteredRegions = regions.filter((r: any) => {
         if (companyGroupIds.length === 0) {
-            return true;
-        }
-        // find region ids linked to companies in the selected groups
-        const validRegionIds = companies
-            .filter((c: any) => companyGroupIds.includes(String(c.company_group_id)))
-            .map((c: any) => c.region_id)
-            .filter(Boolean);
-        return validRegionIds.includes(r.id);
-    });
+            if (companyGroupIds.length === 0) {
+                return true;
+            }
+            // find region ids linked to companies in the selected groups
+            const validRegionIds = companies
+                .filter((c: any) => companyGroupIds.includes(String(c.company_group_id)))
+                .filter((c: any) => companyGroupIds.includes(String(c.company_group_id)))
+                .map((c: any) => c.region_id)
+                .filter(Boolean);
+            return validRegionIds.includes(r.id);
+        });
 
     const regionOptions = filteredRegions.map((r: any) => ({
         value: String(r.id),
@@ -77,6 +79,7 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                         </label>
                         <SearchableMultiSelect
                             values={companyGroupIds}
+                            values={companyGroupIds}
                             onValuesChange={(vals: string[]) => {
                                 form.setData({
                                     ...form.data,
@@ -99,6 +102,7 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                         </label>
                         <SearchableMultiSelect
                             values={regionIds}
+                            values={regionIds}
                             onValuesChange={(vals: string[]) => {
                                 form.setData({
                                     ...form.data,
@@ -109,11 +113,13 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                             options={regionOptions}
                             placeholder={
                                 companyGroupIds.length === 0
-                                    ? 'Semua Region (Pilih Group Dulu)...'
-                                    : 'Semua Region...'
+                                companyGroupIds.length === 0
+                        ? 'Semua Region (Pilih Group Dulu)...'
+                        : 'Semua Region...'
                             }
-                            disabled={companyGroupIds.length === 0}
-                            triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
+                        disabled={companyGroupIds.length === 0}
+                        disabled={companyGroupIds.length === 0}
+                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
 
@@ -125,17 +131,20 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                         </label>
                         <SearchableMultiSelect
                             values={companyIds}
+                            values={companyIds}
                             onValuesChange={(vals: string[]) => {
                                 form.setData('company_ids', vals);
                             }}
                             options={companyOptions}
                             placeholder={
                                 regionIds.length === 0
-                                    ? 'Semua Perusahaan (Pilih Region Dulu)...'
-                                    : 'Semua Perusahaan...'
+                                regionIds.length === 0
+                        ? 'Semua Perusahaan (Pilih Region Dulu)...'
+                        : 'Semua Perusahaan...'
                             }
-                            disabled={regionIds.length === 0}
-                            triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
+                        disabled={regionIds.length === 0}
+                        disabled={regionIds.length === 0}
+                        triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
                 </div>

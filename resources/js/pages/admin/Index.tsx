@@ -43,6 +43,7 @@ interface Props {
         regions: number;
         companies: number;
         departments: number;
+        divisions?: number;
         contract_statuses: number;
         contract_types: number;
         workflows: number;
@@ -53,6 +54,7 @@ interface Props {
         navigation_mappings: number;
         form_templates: number;
         form_fields: number;
+        users?: number;
     };
 }
 
