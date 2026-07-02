@@ -195,9 +195,9 @@ class WorkflowAdminController extends Controller
         Log::info('Incoming Workflow Store Request', $request->all());
 
         try {
-            $action->execute($request->validated());
+            $workflow = $action->execute($request->validated());
 
-            return redirect()->route('admin.workflows')->with('success', 'Workflow berhasil dibuat.');
+            return redirect()->route('admin.workflows.steps', $workflow->id)->with('success', 'Workflow berhasil dibuat. Silakan konfigurasikan tahapan alur kerja.');
         } catch (\Exception $e) {
             Log::error('Workflow Store Error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),

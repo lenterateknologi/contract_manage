@@ -68,7 +68,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 return a.action_code === 'assign' || a.action_code === 'assign_pic';
             });
 
-            const config = activeAction?.assignee_config || contract.next_step;
+            const config = activeAction?.assignee_config || contract.next_step?.approver_config || contract.next_step;
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
 
             // Existing assignees should be pre-selected

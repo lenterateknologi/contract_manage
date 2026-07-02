@@ -77,12 +77,12 @@ class WorkflowQueryService
                     $sq->where('initiator_type', '!=', 'all')
                         ->where(function ($ssq) use ($user) {
                             $ssq->where(function ($roleQuery) use ($user) {
-                                $roleQuery->whereHas('initiatorAuthorities', fn ($s) => $s->where('role_name', $user->role))
-                                    ->orWhereDoesntHave('initiatorAuthorities', fn ($s) => $s->whereNotNull('role_name'));
+                                $roleQuery->whereHas('initiatorAuthorities', fn ($s) => $s->where('role_id', $user->role_id))
+                                    ->orWhereDoesntHave('initiatorAuthorities', fn ($s) => $s->whereNotNull('role_id'));
                             });
 
                             $ssq->where(function ($deptQuery) use ($user) {
-                                $deptQuery->whereHas('initiatorAuthorities', fn ($s) => $s->where('department_id', $user->division_id))
+                                $deptQuery->whereHas('initiatorAuthorities', fn ($s) => $s->where('department_id', $user->department_id))
                                     ->orWhereDoesntHave('initiatorAuthorities', fn ($s) => $s->whereNotNull('department_id'));
                             });
 

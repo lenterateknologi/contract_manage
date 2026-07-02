@@ -232,7 +232,7 @@ class MasterDataAdminController extends Controller
                     return [
                         'id' => $a->id,
                         'workflow_step_id' => $a->workflow_step_id,
-                        'role_name' => $a->role_name,
+                        'role_id' => $a->role_id,
                         'department_id' => $a->department_id,
                         'division_id' => $a->division_id,
                         'user_id' => $a->user_id,
@@ -244,7 +244,7 @@ class MasterDataAdminController extends Controller
                     return [
                         'id' => $a->id,
                         'workflow_id' => $a->workflow_id,
-                        'role_name' => $a->role_name,
+                        'role_id' => $a->role_id,
                         'department_id' => $a->department_id,
                         'division_id' => $a->division_id,
                         'user_id' => $a->user_id,
@@ -888,7 +888,7 @@ class MasterDataAdminController extends Controller
                     $model = WorkflowInitiatorAuthority::firstOrNew(['id' => $auth['id']]);
                     $model->forceFill([
                         'workflow_id' => $wfId,
-                        'role_name' => $auth['role_name'] ?? null,
+                        'role_id' => $auth['role_id'] ?? null,
                         'department_id' => $deptId,
                         'division_id' => $auth['division_id'] ?? null,
                         'user_id' => $newUserId,
@@ -1014,7 +1014,7 @@ class MasterDataAdminController extends Controller
                     $model = WorkflowStepAuthority::firstOrNew(['id' => $auth['id']]);
                     $model->forceFill([
                         'workflow_step_id' => $stepId,
-                        'role_name' => $auth['role_name'] ?? null,
+                        'role_id' => $auth['role_id'] ?? null,
                         'department_id' => $deptId,
                         'division_id' => $divId,
                         'user_id' => $newUserId,

@@ -151,6 +151,7 @@ class ContractFormatter
                 'step_type' => 'APPROVAL',
                 'step_category' => $nextStep->step_category,
                 'meta' => $nextStep->meta ?? [],
+                'approver_config' => $nextStep->approver_config,
             ] : null,
             'requires_pic_assignment' => $requiresPicAssignment,
             'versions' => $c->versions->map(fn ($v) => [
