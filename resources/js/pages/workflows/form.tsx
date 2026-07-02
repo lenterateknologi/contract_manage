@@ -16,53 +16,63 @@ import OrgScopeSelector from './components/OrgScopeSelector';
 import SortableStepItem from './components/SortableStepItem';
 import { MASTER_ACTIONS } from './constants';
 
-// --- Initiator Authority Table ---
-interface InitiatorItem {
-    value: string;
+// --- Initiator Authority Section ---
+interface InitiatorSection {
     is_initiator: boolean;
+    items: string[];
 }
 
 interface InitiatorAuthorityTableProps {
     label: string;
     icon: React.ReactNode;
-    items: InitiatorItem[];
-    onItemsChange: (items: InitiatorItem[]) => void;
+    section: InitiatorSection;
+    onSectionChange: (s: InitiatorSection) => void;
     options: { value: string; label: string }[];
     placeholder?: string;
 }
 
-function InitiatorAuthorityTable({ label, icon, items, onItemsChange, options, placeholder }: InitiatorAuthorityTableProps) {
+function InitiatorAuthorityTable({ label, icon, section, onSectionChange, options, placeholder }: InitiatorAuthorityTableProps) {
     const [selectedValue, setSelectedValue] = useState('');
+    const { is_initiator, items } = section;
+
+    const toggleIsInitiator = (checked: boolean) => {
+        onSectionChange({ is_initiator: checked, items: checked ? [] : items });
+    };
 
     const addItem = (val: string) => {
-        if (!val || items.some((i) => i.value === val)) return;
-        onItemsChange([...items, { value: val, is_initiator: false }]);
+        if (!val || items.includes(val)) return;
+        onSectionChange({ ...section, items: [...items, val] });
         setSelectedValue('');
     };
 
     const removeItem = (val: string) => {
-        onItemsChange(items.filter((i) => i.value !== val));
-    };
-
-    const toggleIsInitiator = (val: string, checked: boolean) => {
-        onItemsChange(items.map((i) => (i.value === val ? { ...i, is_initiator: checked } : i)));
+        onSectionChange({ ...section, items: items.filter((i) => i !== val) });
     };
 
     const getLabel = (val: string) => options.find((o) => o.value === val)?.label ?? val;
-
-    // Options not yet selected
-    const available = options.filter((o) => !items.some((i) => i.value === o.value));
+    const available = options.filter((o) => !items.includes(o.value));
 
     return (
         <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                {icon} {label}
-            </label>
+            <div className="flex items-center justify-between">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                    {icon} {label}
+                </label>
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <Checkbox
+                        id={`is_initiator_${label}`}
+                        checked={is_initiator}
+                        onCheckedChange={(c) => toggleIsInitiator(!!c)}
+                        className="h-3.5 w-3.5"
+                    />
+                    <span className="text-[11px]">Sesuai Initiator</span>
+                </label>
+            </div>
 
-            {/* Add row */}
-            <Select value={selectedValue} onValueChange={addItem}>
-                <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-xs font-medium dark:border-slate-800 dark:bg-card">
-                    <SelectValue placeholder={placeholder ?? `Tambah ${label}...`} />
+            {/* Dropdown — disabled when is_initiator = true */}
+            <Select value={selectedValue} onValueChange={addItem} disabled={is_initiator}>
+                <SelectTrigger className="h-9 rounded-xl border-slate-200 bg-white text-xs font-medium disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-800 dark:bg-card">
+                    <SelectValue placeholder={is_initiator ? 'Diisi otomatis dari initiator' : (placeholder ?? `Tambah ${label}...`)} />
                 </SelectTrigger>
                 <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-card">
                     {available.map((o) => (
@@ -76,36 +86,22 @@ function InitiatorAuthorityTable({ label, icon, items, onItemsChange, options, p
                 </SelectContent>
             </Select>
 
-            {/* Table */}
-            {items.length > 0 && (
+            {/* Table of selected items — hidden when is_initiator = true */}
+            {!is_initiator && items.length > 0 && (
                 <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
                     <table className="w-full text-xs">
-                        <thead>
-                            <tr className="border-b border-slate-100 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
-                                <th className="px-3 py-2 text-left font-semibold text-slate-500 dark:text-slate-400">{label}</th>
-                                <th className="px-3 py-2 text-center font-semibold text-slate-500 dark:text-slate-400 w-24">Is Initiator</th>
-                                <th className="w-8 px-2 py-2"></th>
-                            </tr>
-                        </thead>
+
                         <tbody>
-                            {items.map((item) => (
-                                <tr key={item.value} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
+                            {items.map((val) => (
+                                <tr key={val} className="border-b border-slate-100 last:border-0 dark:border-slate-800">
                                     <td className="px-3 py-2 font-medium text-slate-700 dark:text-slate-300">
-                                        {getLabel(item.value)}
-                                    </td>
-                                    <td className="px-3 py-2 text-center">
-                                        <Checkbox
-                                            id={`is_initiator_${item.value}`}
-                                            checked={item.is_initiator}
-                                            onCheckedChange={(c) => toggleIsInitiator(item.value, !!c)}
-                                            className="h-4 w-4"
-                                        />
+                                        {getLabel(val)}
                                     </td>
                                     <td className="px-2 py-2 text-center">
                                         <button
                                             type="button"
-                                            onClick={() => removeItem(item.value)}
-                                            className="text-slate-400 hover:text-red-500 transition-colors"
+                                            onClick={() => removeItem(val)}
+                                            className="text-slate-400 transition-colors hover:text-red-500"
                                         >
                                             <Trash2 size={12} />
                                         </button>
@@ -175,7 +171,11 @@ export default function WorkflowEditor({
         }
     };
 
-    const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    );
 
     const form = useForm({
         name: workflow?.name || '',
@@ -183,9 +183,18 @@ export default function WorkflowEditor({
         description: workflow?.description || '',
         is_default: !!workflow?.is_default,
         initiator_type: workflow?.initiator_type || 'all',
-        initiator_roles: workflow?.initiator_roles || [],
-        initiator_users: workflow?.initiator_users || [],
-        initiator_departments: workflow?.initiator_departments || [],
+        initiator_roles: {
+            is_initiator: (workflow?.initiator_roles || []).some((r: any) => r?.is_initiator === true),
+            items: (workflow?.initiator_roles || []).filter((r: any) => !r?.is_initiator).map((r: any) => r?.value ?? r).filter(Boolean),
+        },
+        initiator_users: {
+            is_initiator: (workflow?.initiator_users || []).some((u: any) => u?.is_initiator === true),
+            items: (workflow?.initiator_users || []).filter((u: any) => !u?.is_initiator).map((u: any) => u?.value ?? u).filter(Boolean),
+        },
+        initiator_departments: {
+            is_initiator: (workflow?.initiator_departments || []).some((d: any) => d?.is_initiator === true),
+            items: (workflow?.initiator_departments || []).filter((d: any) => !d?.is_initiator).map((d: any) => d?.value ?? d).filter(Boolean),
+        },
         approver_roles: workflow?.approver_roles || [],
         approver_departments: workflow?.approver_departments || [],
         approver_users: workflow?.approver_users || [],
@@ -212,15 +221,26 @@ export default function WorkflowEditor({
             };
         }) || [],
         department_id: workflow?.department_id || null,
-        company_group_ids: workflow?.company_group_ids || [],
-        region_ids: workflow?.region_ids || [],
-        company_ids: workflow?.company_ids || [],
+        company_group_ids: (workflow?.company_group_ids || []).map((i: any) =>
+            typeof i === 'object' ? i : { value: String(i), is_initiator: false }
+        ),
+        region_ids: (workflow?.region_ids || []).map((i: any) =>
+            typeof i === 'object' ? i : { value: String(i), is_initiator: false }
+        ),
+        company_ids: (workflow?.company_ids || []).map((i: any) =>
+            typeof i === 'object' ? i : { value: String(i), is_initiator: false }
+        ),
         meta: workflow?.meta || {},
     });
 
+
     useEffect(() => {
-        const hasRoles = (form.data.initiator_roles?.length ?? 0) > 0 || (form.data.initiator_departments?.length ?? 0) > 0;
-        const hasUsers = (form.data.initiator_users?.length ?? 0) > 0;
+        const roles = form.data.initiator_roles;
+        const depts = form.data.initiator_departments;
+        const users = form.data.initiator_users;
+        const hasRoles = roles?.is_initiator || (roles?.items?.length ?? 0) > 0
+            || depts?.is_initiator || (depts?.items?.length ?? 0) > 0;
+        const hasUsers = users?.is_initiator || (users?.items?.length ?? 0) > 0;
 
         let type = 'all';
         if (hasUsers) type = 'user';
@@ -230,6 +250,7 @@ export default function WorkflowEditor({
             form.setData('initiator_type', type);
         }
     }, [form.data.initiator_roles, form.data.initiator_departments, form.data.initiator_users]);
+
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
@@ -686,8 +707,8 @@ export default function WorkflowEditor({
                                                 <InitiatorAuthorityTable
                                                     label="Role"
                                                     icon={<Shield size={10} />}
-                                                    items={form.data.initiator_roles || []}
-                                                    onItemsChange={(items: any[]) => form.setData('initiator_roles', items)}
+                                                    section={form.data.initiator_roles ?? { is_initiator: false, items: [] }}
+                                                    onSectionChange={(s) => form.setData('initiator_roles', s)}
                                                     options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
                                                     placeholder="Tambah Role..."
                                                 />
@@ -696,8 +717,8 @@ export default function WorkflowEditor({
                                                 <InitiatorAuthorityTable
                                                     label="Unit / Department / Divisi"
                                                     icon={<UsersIcon size={10} />}
-                                                    items={form.data.initiator_departments || []}
-                                                    onItemsChange={(items: any[]) => form.setData('initiator_departments', items)}
+                                                    section={form.data.initiator_departments ?? { is_initiator: false, items: [] }}
+                                                    onSectionChange={(s) => form.setData('initiator_departments', s)}
                                                     options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
                                                     placeholder="Tambah Department..."
                                                 />
@@ -706,8 +727,8 @@ export default function WorkflowEditor({
                                                 <InitiatorAuthorityTable
                                                     label="User"
                                                     icon={<UsersIcon size={10} />}
-                                                    items={form.data.initiator_users || []}
-                                                    onItemsChange={(items: any[]) => form.setData('initiator_users', items)}
+                                                    section={form.data.initiator_users ?? { is_initiator: false, items: [] }}
+                                                    onSectionChange={(s) => form.setData('initiator_users', s)}
                                                     options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
                                                     placeholder="Tambah User..."
                                                 />

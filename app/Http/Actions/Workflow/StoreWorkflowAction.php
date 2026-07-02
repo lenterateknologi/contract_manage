@@ -38,14 +38,26 @@ class StoreWorkflowAction
             $regionIds = $data['region_ids'] ?? [];
             $companyIds = $data['company_ids'] ?? [];
 
-            foreach ($groupIds as $gid) {
-                $workflow->orgScopes()->create(['company_group_id' => $gid]);
+            foreach ($groupIds as $item) {
+                $value = is_array($item) ? ($item['value'] ?? null) : $item;
+                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
+                if ($value) {
+                    $workflow->orgScopes()->create(['company_group_id' => $value, 'is_initiator' => $isInitiator]);
+                }
             }
-            foreach ($regionIds as $rid) {
-                $workflow->orgScopes()->create(['region_id' => $rid]);
+            foreach ($regionIds as $item) {
+                $value = is_array($item) ? ($item['value'] ?? null) : $item;
+                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
+                if ($value) {
+                    $workflow->orgScopes()->create(['region_id' => $value, 'is_initiator' => $isInitiator]);
+                }
             }
-            foreach ($companyIds as $cid) {
-                $workflow->orgScopes()->create(['company_id' => $cid]);
+            foreach ($companyIds as $item) {
+                $value = is_array($item) ? ($item['value'] ?? null) : $item;
+                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
+                if ($value) {
+                    $workflow->orgScopes()->create(['company_id' => $value, 'is_initiator' => $isInitiator]);
+                }
             }
 
             // Sync Initiator Authorities

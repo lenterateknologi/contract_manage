@@ -16,5 +16,13 @@ class WorkflowOrgScope extends Model
         'company_group_id',
         'region_id',
         'company_id',
+        'is_initiator',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_initiator' => 'boolean',
+        ];
+    }
 }

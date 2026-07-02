@@ -90,6 +90,22 @@ class WorkflowAdminController extends Controller
 
         $workflowData = $workflow->toArray();
 
+        // Map org scopes to {value, is_initiator} objects for the frontend
+        $workflowData['company_group_ids'] = $workflow->orgScopes
+            ->filter(fn ($s) => $s->company_group_id)
+            ->map(fn ($s) => ['value' => (string) $s->company_group_id, 'is_initiator' => (bool) $s->is_initiator])
+            ->values()->toArray();
+
+        $workflowData['region_ids'] = $workflow->orgScopes
+            ->filter(fn ($s) => $s->region_id)
+            ->map(fn ($s) => ['value' => (string) $s->region_id, 'is_initiator' => (bool) $s->is_initiator])
+            ->values()->toArray();
+
+        $workflowData['company_ids'] = $workflow->orgScopes
+            ->filter(fn ($s) => $s->company_id)
+            ->map(fn ($s) => ['value' => (string) $s->company_id, 'is_initiator' => (bool) $s->is_initiator])
+            ->values()->toArray();
+
         // Map initiator authorities to {value, is_initiator} objects for the frontend
         $workflowData['initiator_roles'] = $workflow->initiatorAuthorities
             ->filter(fn ($a) => $a->role_name)
