@@ -12,6 +12,25 @@ interface OrgScopeSelectorProps {
 }
 
 export default function OrgScopeSelector({ form, companyGroups = [], regions = [], companies = [] }: OrgScopeSelectorProps) {
+    // Helper to ensure values are arrays (handles cases where backend returns JSON string or undefined)
+    const getSafeArray = (val: any): string[] => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val.map(String);
+        if (typeof val === 'string') {
+            try {
+                const parsed = JSON.parse(val);
+                return Array.isArray(parsed) ? parsed.map(String) : [String(val)];
+            } catch {
+                return [val];
+            }
+        }
+        return [String(val)];
+    };
+
+    const companyGroupIds = getSafeArray(form.data.company_group_ids);
+    const regionIds = getSafeArray(form.data.region_ids);
+    const companyIds = getSafeArray(form.data.company_ids);
+
     // 1. Group options
     const groupOptions = companyGroups.map((g: any) => ({
         value: String(g.id),
@@ -20,12 +39,12 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
 
     // 2. Region options - dependent on selected groups (if any selected)
     const filteredRegions = regions.filter((r: any) => {
-        if (!form.data.company_group_ids || form.data.company_group_ids.length === 0) {
+        if (companyGroupIds.length === 0) {
             return true;
         }
         // find region ids linked to companies in the selected groups
         const validRegionIds = companies
-            .filter((c: any) => form.data.company_group_ids.includes(String(c.company_group_id)))
+            .filter((c: any) => companyGroupIds.includes(String(c.company_group_id)))
             .map((c: any) => c.region_id)
             .filter(Boolean);
         return validRegionIds.includes(r.id);
@@ -39,10 +58,11 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
     // 3. Company options - dependent on selected regions and groups
     const filteredCompanies = companies.filter((c: any) => {
         const matchesGroup =
-            !form.data.company_group_ids ||
-            form.data.company_group_ids.length === 0 ||
-            form.data.company_group_ids.includes(String(c.company_group_id));
-        const matchesRegion = !form.data.region_ids || form.data.region_ids.length === 0 || form.data.region_ids.includes(String(c.region_id));
+            companyGroupIds.length === 0 ||
+            companyGroupIds.includes(String(c.company_group_id));
+        const matchesRegion =
+            regionIds.length === 0 ||
+            regionIds.includes(String(c.region_id));
         return matchesGroup && matchesRegion;
     });
 
@@ -66,7 +86,7 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                             <Landmark size={10} /> Group
                         </label>
                         <SearchableMultiSelect
-                            values={form.data.company_group_ids?.map(String) || []}
+                            values={companyGroupIds}
                             onValuesChange={(vals: string[]) => {
                                 form.setData({
                                     ...form.data,
@@ -88,7 +108,7 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                             <Globe size={10} /> Region
                         </label>
                         <SearchableMultiSelect
-                            values={form.data.region_ids?.map(String) || []}
+                            values={regionIds}
                             onValuesChange={(vals: string[]) => {
                                 form.setData({
                                     ...form.data,
@@ -98,11 +118,11 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                             }}
                             options={regionOptions}
                             placeholder={
-                                !form.data.company_group_ids || form.data.company_group_ids.length === 0
+                                companyGroupIds.length === 0
                                     ? 'Semua Region (Pilih Group Dulu)...'
                                     : 'Semua Region...'
                             }
-                            disabled={!form.data.company_group_ids || form.data.company_group_ids.length === 0}
+                            disabled={companyGroupIds.length === 0}
                             triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>
@@ -114,17 +134,17 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
                             <Building2 size={10} /> Perusahaan
                         </label>
                         <SearchableMultiSelect
-                            values={form.data.company_ids?.map(String) || []}
+                            values={companyIds}
                             onValuesChange={(vals: string[]) => {
                                 form.setData('company_ids', vals);
                             }}
                             options={companyOptions}
                             placeholder={
-                                !form.data.region_ids || form.data.region_ids.length === 0
+                                regionIds.length === 0
                                     ? 'Semua Perusahaan (Pilih Region Dulu)...'
                                     : 'Semua Perusahaan...'
                             }
-                            disabled={!form.data.region_ids || form.data.region_ids.length === 0}
+                            disabled={regionIds.length === 0}
                             triggerClassName="min-h-9 h-auto py-1.5 px-3 rounded-xl text-xs font-medium bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary dark:bg-slate-900/50 dark:border-slate-800 dark:focus:border-primary"
                         />
                     </div>

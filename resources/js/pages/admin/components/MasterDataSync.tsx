@@ -30,6 +30,7 @@ interface Counts {
     regions: number;
     companies: number;
     departments: number;
+    divisions?: number;
     contract_statuses: number;
     contract_types: number;
     workflows: number;
@@ -60,6 +61,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         regions: 0,
         companies: 0,
         departments: 0,
+        divisions: 0,
         contract_statuses: 0,
         contract_types: 0,
         workflows: 0,
@@ -74,66 +76,53 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
 
     const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
 
-    const entities = [
-        { id: 'company_groups', label: 'Holding / Group', count: activeCounts.company_groups, icon: Layers, desc: 'Struktur korporasi utama' },
-        { id: 'regions', label: 'Regional', count: activeCounts.regions, icon: MapPin, desc: 'Wilayah administrasi operasional' },
-        { id: 'companies', label: 'Perusahaan PT', count: activeCounts.companies, icon: Building2, desc: 'Entitas hukum terdaftar' },
-        { id: 'departments', label: 'Unit / Departemen', count: activeCounts.departments, icon: Network, desc: 'Divisi operasional internal' },
+    const groupedEntities = [
         {
-            id: 'contract_statuses',
-            label: 'Status Alur',
-            count: activeCounts.contract_statuses,
-            icon: CheckSquare,
-            desc: 'Status siklus hidup kontrak',
+            groupName: 'Struktur Organisasi & Korporasi',
+            items: [
+                { id: 'company_groups', label: 'Holding / Group', count: activeCounts.company_groups, icon: Layers, desc: 'Struktur korporasi utama' },
+                { id: 'regions', label: 'Regional', count: activeCounts.regions, icon: MapPin, desc: 'Wilayah administrasi operasional' },
+                { id: 'companies', label: 'Perusahaan PT', count: activeCounts.companies, icon: Building2, desc: 'Entitas hukum terdaftar (Bergantung pada Group & Region)' },
+                { id: 'departments', label: 'Unit / Departemen', count: activeCounts.departments, icon: Network, desc: 'Unit kerja operasional (Bergantung pada Perusahaan)' },
+                { id: 'divisions', label: 'Divisi', count: activeCounts.divisions ?? 0, icon: Users, desc: 'Sub-unit kerja spesifik (Bergantung pada Departemen)' },
+            ]
         },
         {
-            id: 'contract_types',
-            label: 'Tipe Kategori',
-            count: activeCounts.contract_types,
-            icon: FileSpreadsheet,
-            desc: 'Templat & alur persetujuan',
-        },
-        { id: 'workflows', label: 'Alur Kerja (Workflows)', count: activeCounts.workflows, icon: GitBranch, desc: 'Definisi tahapan approval' },
-        {
-            id: 'contracts',
-            label: 'Transaksi Kontrak',
-            count: activeCounts.contracts ?? 0,
-            icon: FileText,
-            desc: 'Data kontrak, persetujuan, & riwayat versi',
-        },
-        { id: 'roles', label: 'Peran (Roles)', count: activeCounts.roles, icon: ShieldCheck, desc: 'Jabatan & otoritas sistem' },
-        {
-            id: 'access_mappings',
-            label: 'Hak Akses & Navigasi',
-            count: activeCounts.access_mappings + activeCounts.navigation_mappings,
-            icon: ShieldCheck,
-            desc: 'Konfigurasi hak akses modul dan struktur menu per role',
+            groupName: 'Konfigurasi Alur & Kategori Kontrak',
+            items: [
+                { id: 'contract_statuses', label: 'Status Alur', count: activeCounts.contract_statuses, icon: CheckSquare, desc: 'Status siklus hidup kontrak' },
+                { id: 'contract_types', label: 'Tipe Kategori Kontrak', count: activeCounts.contract_types, icon: FileSpreadsheet, desc: 'Definisi kategori kontrak (Hierarki Parent-Child)' },
+                { id: 'workflows', label: 'Alur Kerja (Workflows)', count: activeCounts.workflows, icon: GitBranch, desc: 'Definisi tahapan persetujuan/approval' },
+                { id: 'form_templates', label: 'Custom Formulir (F1 & F2)', count: activeCounts.form_templates, icon: FileJson, desc: 'Templat dan field dinamis untuk input formulir' },
+            ]
         },
         {
-            id: 'form_templates',
-            label: 'Custom Formulir',
-            count: activeCounts.form_templates,
-            icon: FileJson,
-            desc: 'Template dan field input formulir F1 & F2',
+            groupName: 'Hak Akses & Pengguna',
+            items: [
+                { id: 'roles', label: 'Peran (Roles)', count: activeCounts.roles, icon: ShieldCheck, desc: 'Definisi jabatan & wewenang sistem' },
+                { id: 'access_mappings', label: 'Hak Akses & Menu', count: activeCounts.access_mappings + activeCounts.navigation_mappings, icon: ShieldCheck, desc: 'Otorisasi modul dan struktur menu navigasi per peran' },
+                { id: 'users', label: 'Pengguna (Users)', count: activeCounts.users ?? 0, icon: Users, desc: 'Daftar akun pengguna aktif dan helpdesk' },
+            ]
         },
         {
-            id: 'users',
-            label: 'Pengguna (Users)',
-            count: activeCounts.users ?? 0,
-            icon: Users,
-            desc: 'Registri data akun pengguna dan helpdesk',
-        },
+            groupName: 'Data Transaksional',
+            items: [
+                { id: 'contracts', label: 'Transaksi Kontrak', count: activeCounts.contracts ?? 0, icon: FileText, desc: 'Kontrak, riwayat persetujuan, attachment, & versi dokumen' },
+            ]
+        }
     ];
+
+    const allEntityIds = groupedEntities.flatMap(g => g.items.map(i => i.id));
 
     const toggleEntity = (id: string) => {
         setSelectedEntities((prev) => (prev.includes(id) ? prev.filter((e) => e !== id) : [...prev, id]));
     };
 
     const toggleAll = () => {
-        if (selectedEntities.length === entities.length) {
+        if (selectedEntities.length === allEntityIds.length) {
             setSelectedEntities([]);
         } else {
-            setSelectedEntities(entities.map((e) => e.id));
+            setSelectedEntities(allEntityIds);
         }
     };
 
@@ -283,14 +272,14 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
             <div className="grid grid-cols-1 gap-8 px-5 select-none lg:grid-cols-12">
                 {/* Left: Entity Table */}
                 <div className="lg:col-span-8">
-                    <div className="border-surface-border bg-surface-base/40 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm">
+                    <div className="overflow-hidden rounded-2xl bg-surface-base/10">
                         <table className="w-full text-left">
                             <thead>
-                                <tr className="bg-surface-muted/40 border-surface-border border-b">
+                                <tr className="bg-surface-muted/20 border-surface-border border-b">
                                     <th className="w-12 px-4 py-3.5 text-center">
                                         <Checkbox
                                             className="border-surface-border h-4 w-4 rounded"
-                                            checked={selectedEntities.length === entities.length}
+                                            checked={selectedEntities.length === allEntityIds.length}
                                             onCheckedChange={toggleAll}
                                         />
                                     </th>
@@ -298,49 +287,59 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                                     <th className="text-text-desc px-4 py-3.5 text-center text-[11px] font-medium  uppercase">
                                         Volume
                                     </th>
-                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium  uppercase">Deskripsi</th>
+                                    <th className="text-text-desc px-4 py-3.5 text-[11px] font-medium  uppercase">Deskripsi & Dependensi</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-surface-border/30 divide-y">
-                                {entities.map((item) => (
-                                    <tr
-                                        key={item.id}
-                                        onClick={() => toggleEntity(item.id)}
-                                        className={cn(
-                                            'hover:bg-surface-muted/30 cursor-pointer transition-colors',
-                                            selectedEntities.includes(item.id) && 'bg-primary/[0.03]',
-                                        )}
-                                    >
-                                        <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
-                                            <Checkbox
-                                                className="border-surface-border h-4 w-4 rounded"
-                                                checked={selectedEntities.includes(item.id)}
-                                                onCheckedChange={() => toggleEntity(item.id)}
-                                            />
-                                        </td>
-                                        <td className="px-4 py-3.5">
-                                            <div className="flex items-center gap-3">
-                                                <item.icon size={14} className="text-primary opacity-60" />
-                                                <span className="text-text-main text-sm font-medium">{item.label}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3.5 text-center">
-                                            <span className="bg-surface-muted text-text-main rounded-lg px-2.5 py-1 font-mono text-[10px] font-semibold">
-                                                {item.count}
-                                            </span>
-                                        </td>
-                                        <td className="text-text-desc px-4 py-3.5 text-xs font-medium italic">{item.desc}</td>
-                                    </tr>
+                                {groupedEntities.map((group) => (
+                                    <React.Fragment key={group.groupName}>
+                                        <tr className="bg-surface-muted/10 border-surface-border border-y">
+                                            <td colSpan={4} className="px-4 py-2 text-[10px] font-bold text-text-desc uppercase tracking-wider">
+                                                {group.groupName}
+                                            </td>
+                                        </tr>
+                                        {group.items.map((item) => (
+                                            <tr
+                                                key={item.id}
+                                                onClick={() => toggleEntity(item.id)}
+                                                className={cn(
+                                                    'hover:bg-surface-muted/30 cursor-pointer transition-colors',
+                                                    selectedEntities.includes(item.id) && 'bg-primary/[0.03]',
+                                                )}
+                                            >
+                                                <td className="px-4 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
+                                                    <Checkbox
+                                                        className="border-surface-border h-4 w-4 rounded"
+                                                        checked={selectedEntities.includes(item.id)}
+                                                        onCheckedChange={() => toggleEntity(item.id)}
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3.5">
+                                                    <div className="flex items-center gap-3">
+                                                        <item.icon size={14} className="text-primary opacity-60" />
+                                                        <span className="text-text-main text-sm font-medium">{item.label}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-3.5 text-center">
+                                                    <span className="bg-surface-muted text-text-main rounded-lg px-2.5 py-1 font-mono text-[10px] font-semibold">
+                                                        {item.count}
+                                                    </span>
+                                                </td>
+                                                <td className="text-text-desc px-4 py-3.5 text-xs font-medium italic">{item.desc}</td>
+                                            </tr>
+                                        ))}
+                                    </React.Fragment>
                                 ))}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
+
                 {/* Right: Actions */}
                 <div className="flex flex-col gap-6 lg:col-span-4">
                     {/* Export Card */}
-                    <div className="border-surface-border bg-surface-base/40 rounded-2xl border p-6 shadow-sm backdrop-blur-sm">
+                    <div className="rounded-2xl bg-surface-base/10 p-6">
                         <div className="mb-4 flex items-center justify-between">
                             <h3 className="text-text-main text-[11px] font-semibold  uppercase">Export Configuration</h3>
                             <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-[10px] font-semibold">
@@ -353,7 +352,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                         <Button
                             onClick={handleExport}
                             disabled={selectedEntities.length === 0}
-                            className="shadow-primary/20 w-full"
+                            className="w-full"
                             variant="primary"
                         >
                             <Download size={14} className="mr-2" />
@@ -362,7 +361,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
 
                     {/* Import Card */}
-                    <div className="border-surface-border bg-surface-base/40 rounded-2xl border p-6 shadow-sm backdrop-blur-sm">
+                    <div className="rounded-2xl bg-surface-base/10 p-6">
                         <h3 className="text-text-main mb-4 text-[11px] font-semibold  uppercase">Quick Import</h3>
                         <div
                             onDragEnter={handleDrag}
@@ -371,12 +370,12 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
                             className={cn(
-                                'relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 transition-all duration-200',
-                                dragActive ? 'border-primary bg-primary/5' : 'border-surface-border hover:bg-surface-muted/20',
+                                'relative flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed p-8 transition-all duration-200 border-surface-border hover:bg-surface-muted/20',
+                                dragActive && 'border-primary bg-primary/5',
                             )}
                         >
                             <input ref={fileInputRef} type="file" accept=".json" onChange={handleChange} className="hidden" disabled={loading} />
-                            <div className="bg-surface-muted/60 border-surface-border mb-2 rounded-xl border p-2.5">
+                            <div className="bg-surface-muted/60 border border-surface-border mb-2 rounded-xl p-2.5">
                                 {file ? <FileJson size={20} className="text-primary" /> : <Upload size={20} className="text-text-soft" />}
                             </div>
                             <p className="text-text-main line-clamp-1 text-[11px] font-semibold">{file ? file.name : 'Drop file JSON di sini'}</p>
@@ -384,14 +383,14 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
 
                         {file && (
                             <div className="mt-4 flex flex-col gap-3">
-                                <div className="bg-success/5 border-success/20 text-success flex items-center gap-2 rounded-xl border p-3 text-[10px] font-semibold">
+                                <div className="bg-success/5 border border-success/20 text-success flex items-center gap-2 rounded-xl p-3 text-[10px] font-semibold">
                                     <CheckCircle2 size={12} /> Berkas siap disinkronkan
                                 </div>
                                 <div className="flex gap-2">
                                     <Button variant="white" onClick={() => setFile(null)} className="flex-1">
                                         RESET
                                     </Button>
-                                    <Button onClick={handleImport} disabled={loading} className="shadow-primary/20 flex-[2]" variant="primary">
+                                    <Button onClick={handleImport} disabled={loading} className="flex-[2]" variant="primary">
                                         {loading ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} className="mr-2" />}
                                         SYNC NOW
                                     </Button>
@@ -401,7 +400,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                     </div>
 
                     {/* Danger Zone: Clean Data Master Card */}
-                    <div className="border-danger/20 bg-danger/[0.02] rounded-2xl border p-6 shadow-sm backdrop-blur-sm">
+                    <div className="rounded-2xl bg-danger/[0.02] p-6">
                         <div className="mb-4 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <AlertTriangle size={16} className="text-danger" />
@@ -419,7 +418,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                             onClick={handleCleanData}
                             disabled={loading || selectedEntities.length === 0}
                             variant="destructive"
-                            className="shadow-danger/20 w-full"
+                            className="w-full"
                         >
                             {loading ? <Loader2 className="animate-spin" size={14} /> : <AlertTriangle size={14} className="mr-2" />}
                             CLEAN DATA TERPILIH

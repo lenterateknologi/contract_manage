@@ -12,6 +12,7 @@ use App\Models\Contract;
 use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\FormField;
 use App\Models\FormTemplate;
 use App\Models\Module;
@@ -27,6 +28,7 @@ use App\Models\WorkflowInitiatorUser;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
 use App\Models\WorkflowStepDepartment;
+use App\Models\WorkflowStepDivision;
 use App\Models\WorkflowStepRole;
 use App\Models\WorkflowStepUser;
 use Illuminate\Database\Eloquent\Model;
@@ -52,6 +54,7 @@ class MasterDataAdminController extends Controller
                 'regions' => Region::count(),
                 'companies' => Company::count(),
                 'departments' => Department::count(),
+                'divisions' => Division::count(),
                 'contract_statuses' => ContractStatus::count(),
                 'contract_types' => ContractType::count(),
                 'workflows' => Workflow::count(),
@@ -139,6 +142,20 @@ class MasterDataAdminController extends Controller
                 })->toArray();
             }
 
+            // 4b. Divisions
+            if (! $requestedEntities || in_array('divisions', $requestedEntities)) {
+                $exportData['divisions'] = Division::with(['department'])->get()->map(function ($d) {
+                    return [
+                        'id' => $d->id,
+                        'code' => $d->code,
+                        'name' => $d->name,
+                        'department_code' => $d->department->code ?? null,
+                        'id_portal_master' => $d->id_portal_master,
+                        'is_active' => $d->is_active,
+                    ];
+                })->toArray();
+            }
+
             // 5. Contract Statuses
             if (! $requestedEntities || in_array('contract_statuses', $requestedEntities)) {
                 $exportData['contract_statuses'] = ContractStatus::all()->map(function ($s) {
@@ -217,6 +234,10 @@ class MasterDataAdminController extends Controller
 
                 $exportData['workflow_step_departments'] = WorkflowStepDepartment::all()->map(function ($d) {
                     return ['id' => $d->id, 'workflow_step_id' => $d->workflow_step_id, 'department_id' => $d->department_id];
+                })->toArray();
+
+                $exportData['workflow_step_divisions'] = WorkflowStepDivision::all()->map(function ($d) {
+                    return ['id' => $d->id, 'workflow_step_id' => $d->workflow_step_id, 'division_id' => $d->division_id];
                 })->toArray();
 
                 $exportData['workflow_step_roles'] = WorkflowStepRole::all()->map(function ($r) {
@@ -435,11 +456,13 @@ class MasterDataAdminController extends Controller
             'regions' => 0,
             'companies' => 0,
             'departments' => 0,
+            'divisions' => 0,
             'contract_statuses' => 0,
             'contract_types' => 0,
             'workflows' => 0,
             'workflow_steps' => 0,
             'workflow_step_departments' => 0,
+            'workflow_step_divisions' => 0,
             'workflow_step_roles' => 0,
             'workflow_step_users' => 0,
             'workflow_initiator_departments' => 0,
@@ -697,6 +720,45 @@ class MasterDataAdminController extends Controller
             foreach ($data['departments'] as $d) {
                 if (! empty($d['id']) && ! empty($d['code'])) {
                     $departmentIdMap[$d['id']] = $deptMap[$d['code']] ?? null;
+                }
+            }
+        }
+
+        // 4b. Divisions
+        if (! empty($data['divisions']) && is_array($data['divisions'])) {
+            foreach ($data['divisions'] as $d) {
+                try {
+                    if (empty($d['code']) && empty($d['name'])) {
+                        continue;
+                    }
+                    $deptId = ! empty($d['department_code']) ? ($deptMap[$d['department_code']] ?? null) : null;
+
+                    Division::withTrashed()->updateOrCreate(
+                        ! empty($d['id']) ? ['id' => $d['id']] : ['code' => $d['code']],
+                        [
+                            'code' => $d['code'] ?? null,
+                            'name' => $d['name'],
+                            'department_id' => $deptId,
+                            'id_portal_master' => $d['id_portal_master'] ?? null,
+                            'is_active' => $d['is_active'] ?? true,
+                            'deleted_at' => null,
+                            'created_by' => $admin,
+                            'updated_by' => $admin,
+                        ],
+                    );
+                    $counts['divisions']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor Division '.($d['name'] ?? '').': '.$e->getMessage());
+                }
+            }
+        }
+
+        $divisionMap = Division::pluck('id', 'code')->all();
+        $divisionIdMap = [];
+        if (! empty($data['divisions']) && is_array($data['divisions'])) {
+            foreach ($data['divisions'] as $d) {
+                if (! empty($d['id']) && ! empty($d['code'])) {
+                    $divisionIdMap[$d['id']] = $divisionMap[$d['code']] ?? null;
                 }
             }
         }
@@ -980,6 +1042,29 @@ class MasterDataAdminController extends Controller
                     $counts['workflow_step_departments']++;
                 } catch (\Exception $e) {
                     Log::warning('Gagal mengimpor WorkflowStepDepartment ID '.($d['id'] ?? '').': '.$e->getMessage());
+
+                }
+            }
+        }
+
+        // 11b. Workflow Step Divisions
+        if (! empty($data['workflow_step_divisions']) && is_array($data['workflow_step_divisions'])) {
+            foreach ($data['workflow_step_divisions'] as $d) {
+                try {
+                    if (empty($d['id'])) {
+                        continue;
+                    }
+                    $divId = ! empty($d['division_id']) ? ($divisionIdMap[$d['division_id']] ?? $d['division_id']) : null;
+                    $stepId = $workflowStepIdMap[$d['workflow_step_id']] ?? $d['workflow_step_id'];
+
+                    $model = WorkflowStepDivision::firstOrNew(['id' => $d['id']]);
+                    $model->forceFill([
+                        'workflow_step_id' => $stepId,
+                        'division_id' => $divId,
+                    ])->save();
+                    $counts['workflow_step_divisions']++;
+                } catch (\Exception $e) {
+                    Log::warning('Gagal mengimpor WorkflowStepDivision ID '.($d['id'] ?? '').': '.$e->getMessage());
                 }
             }
         }
@@ -1447,6 +1532,12 @@ class MasterDataAdminController extends Controller
                     // 5. Departments
                     if (in_array('departments', $entities)) {
                         DB::table('m_departments')->delete();
+                    }
+
+                    // 5b. Divisions
+                    if (in_array('divisions', $entities)) {
+                        DB::table('m_workflow_step_divisions')->delete();
+                        DB::table('m_division')->delete();
                     }
 
                     // 6. Companies
