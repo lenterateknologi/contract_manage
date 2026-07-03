@@ -12,12 +12,12 @@ export interface LayoutToggleProps {
 
 const LayoutToggle = ({ value, onChange, className }: LayoutToggleProps) => {
     return (
-        <div className={cn("flex rounded-lg bg-sidebar-accent p-1 gap-0.5", className)}>
+        <div className={cn("flex rounded-lg bg-sidebar-accent p-1 gap-0.5 items-center", className)}>
             <button
                 type="button"
                 onClick={() => onChange('table')}
                 className={cn(
-                    'flex h-7 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold uppercase  transition-all font-sans',
+                    'flex h-8 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold uppercase  transition-all font-sans',
                     value === 'table'
                         ? 'bg-sidebar-primary text-white shadow-sm'
                         : 'text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/80',
@@ -30,7 +30,7 @@ const LayoutToggle = ({ value, onChange, className }: LayoutToggleProps) => {
                 type="button"
                 onClick={() => onChange('grid')}
                 className={cn(
-                    'flex h-7 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold uppercase  transition-all font-sans',
+                    'flex h-8 items-center gap-1.5 rounded-md px-3 text-[10px] font-semibold uppercase  transition-all font-sans',
                     value === 'grid'
                         ? 'bg-sidebar-primary text-white shadow-sm'
                         : 'text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/80',

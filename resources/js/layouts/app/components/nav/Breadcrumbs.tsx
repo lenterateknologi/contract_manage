@@ -13,22 +13,22 @@ export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[]
     return (
         <>
             {breadcrumbs.length > 0 && (
-                <Breadcrumb className="text-sidebar-foreground/60 text-[12px] font-semibold">
-                    <BreadcrumbList className="text-sidebar-foreground/40 gap-1 sm:gap-1">
+                <Breadcrumb className="text-text-main text-[11px] font-medium">
+                    <BreadcrumbList className="text-text-main/70 gap-1.5 sm:gap-1.5">
                         {breadcrumbs.map((item, index) => {
                             const isLast = index === breadcrumbs.length - 1;
                             return (
                                 <Fragment key={index}>
                                     <BreadcrumbItem>
                                         {isLast ? (
-                                            <BreadcrumbPage className="text-sidebar-foreground font-bold tracking-wide">{item.title}</BreadcrumbPage>
+                                            <BreadcrumbPage className="text-text-main font-semibold tracking-wide">{item.title}</BreadcrumbPage>
                                         ) : (
-                                            <BreadcrumbLink href={item.href} className="hover:text-sidebar-primary transition-colors">
+                                            <BreadcrumbLink href={item.href} className="text-text-main/60 hover:text-primary transition-colors">
                                                 {item.title}
-                                            </BreadcrumbLink>
+                                              </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>
-                                    {!isLast && <BreadcrumbSeparator className="opacity-20 [&>svg]:size-3" />}
+                                    {!isLast && <BreadcrumbSeparator className="text-text-main/30 [&>svg]:size-3" />}
                                 </Fragment>
                             );
                         })}

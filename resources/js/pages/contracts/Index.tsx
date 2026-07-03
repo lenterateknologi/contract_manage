@@ -470,8 +470,8 @@ function ContractPage({
             {
                 accessorKey: 'contract_no_title',
                 header: (
-                    <div className="flex items-center gap-2">
-                        <Hash size={14} className="text-text-desc" />
+                    <div className="flex items-center gap-2 text-white">
+                        <Hash size={14} className="text-white" />
                         <span>No. & Judul Kontrak</span>
                     </div>
                 ),
@@ -480,8 +480,8 @@ function ContractPage({
             {
                 accessorKey: 'contract_type_id',
                 header: (
-                    <div className="flex items-center gap-2">
-                        <FileType size={14} className="text-text-desc" />
+                    <div className="flex items-center gap-2 text-white">
+                        <FileType size={14} className="text-white" />
                         <span>Tipe & Vendor</span>
                     </div>
                 ),
@@ -490,8 +490,8 @@ function ContractPage({
             {
                 accessorKey: 'initiator',
                 header: (
-                    <div className="flex items-center gap-2">
-                        <User size={14} className="text-text-desc" />
+                    <div className="flex items-center gap-2 text-white">
+                        <User size={14} className="text-white" />
                         <span>Pembuat</span>
                     </div>
                 ),
@@ -500,8 +500,8 @@ function ContractPage({
             {
                 accessorKey: 'status',
                 header: (
-                    <div className="flex items-center gap-2">
-                        <GitBranch size={14} className="text-text-desc" />
+                    <div className="flex items-center gap-2 text-white">
+                        <GitBranch size={14} className="text-white" />
                         <span>Status & Step</span>
                     </div>
                 ),
@@ -510,8 +510,8 @@ function ContractPage({
             {
                 accessorKey: 'assigned_by',
                 header: (
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-text-desc" />
+                    <div className="flex items-center gap-2 text-white">
+                        <CheckCircle2 size={14} className="text-white" />
                         <span>Disetujui Oleh</span>
                     </div>
                 ),
@@ -520,8 +520,8 @@ function ContractPage({
             {
                 accessorKey: 'assigned_pic',
                 header: (
-                    <div className="flex items-center gap-2">
-                        <UserPlus size={14} className="text-text-desc" />
+                    <div className="flex items-center gap-2 text-white">
+                        <UserPlus size={14} className="text-white" />
                         <span>Ditugaskan</span>
                     </div>
                 ),
@@ -530,8 +530,8 @@ function ContractPage({
             {
                 accessorKey: 'created_at',
                 header: (
-                    <div className="flex items-center gap-2">
-                        <Calendar size={14} className="text-text-desc" />
+                    <div className="flex items-center gap-2 text-white">
+                        <Calendar size={14} className="text-white" />
                         <span>Dibuat</span>
                     </div>
                 ),
@@ -569,7 +569,7 @@ function ContractPage({
                     </div>
                 ) : (
                     <div className="animate-in fade-in slide-in-from-top-3 flex w-full flex-1 flex-col duration-300 ease-in-out">
-                        <div className="flex flex-col gap-4">
+                        <div className="flex flex-col gap-0">
                             {view === 'dashboard' && (
                                 <div className="p-5">
                                     <DashboardMetrics metrics={metrics} />
@@ -578,136 +578,194 @@ function ContractPage({
                             {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                             {view !== 'profile' && view !== 'dashboard' && (
                                 <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                    <div className="border-surface-border bg-surface-base/80 sticky top-0 z-[50] flex items-center gap-6 border-b px-5 py-4 backdrop-blur-md">
-                                        <div className="flex max-w-sm flex-1 items-center gap-2">
-                                            <SearchInput
-                                                containerClassName="flex-1"
-                                                placeholder="Cari kontrak..."
-                                                value={search}
-                                                onChange={(e) => setSearch(e.target.value)}
-                                            />
-                                            <FilterPopover
-                                                totalResults={contractsPaged.total}
-                                                activeFilters={{
-                                                    status: ensureArray(filters.status),
-                                                    contract_type_id: ensureArray(filters.contract_type_id),
-                                                    department_id: ensureArray(filters.department_id),
-                                                    created_from: filters.created_from || '',
-                                                    created_to: filters.created_to || '',
-                                                }}
-                                                onFilterChange={handleSingleFilterToggle}
-                                                onReset={handleClearAllFilters}
-                                                categories={[
-                                                    {
-                                                        label: 'Status Dokumen',
-                                                        key: 'status',
-                                                        type: 'searchable',
-                                                        options: [
-                                                            {
-                                                                label: 'Draft',
-                                                                value: 'draft',
-                                                                icon: Layers,
-                                                                color: 'bg-surface-muted text-text-soft',
-                                                            },
-                                                            { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-warning/10 text-warning' },
-                                                            {
-                                                                label: 'In Review',
-                                                                value: 'in_review',
-                                                                icon: Zap,
-                                                                color: 'bg-warning/10 text-warning',
-                                                            },
-                                                            {
-                                                                label: 'Revision',
-                                                                value: 'revision',
-                                                                icon: AlertTriangle,
-                                                                color: 'bg-danger/10 text-danger',
-                                                            },
-                                                            {
-                                                                label: 'Approved',
-                                                                value: 'approved',
-                                                                icon: CheckCircle2,
-                                                                color: 'bg-primary text-primary-foreground',
-                                                            },
-                                                            {
-                                                                label: 'Rejected',
-                                                                value: 'rejected',
-                                                                icon: AlertCircle,
-                                                                color: 'bg-danger/10 text-danger',
-                                                            },
-                                                        ],
-                                                    },
-                                                    {
-                                                        label: 'Departemen',
-                                                        key: 'department_id',
-                                                        type: 'searchable',
-                                                        options: departments.map((d) => ({
-                                                            label: d.name,
-                                                            value: d.id,
-                                                        })),
-                                                    },
-                                                    {
-                                                        label: 'Kategori Kontrak',
-                                                        key: 'contract_type_id',
-                                                        type: 'searchable',
-                                                        options: types.map((t) => ({
-                                                            label: t.name,
-                                                            value: t.id,
-                                                            icon: FileType,
-                                                        })),
-                                                    },
-                                                    {
-                                                        label: 'Rentang Tanggal Dibuat',
-                                                        key: 'created',
-                                                        type: 'date-range',
-                                                    },
-                                                ]}
-                                            >
-                                                <Button
-                                                    variant={activeFiltersCount > 0 ? 'primary' : 'white'}
-                                                    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-0"
-                                                >
-                                                    <Filter size={14} strokeWidth={2.5} />
-                                                    {activeFiltersCount > 0 && (
-                                                        <span className="bg-primary absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-md border border-white px-1 text-[9px] font-semibold text-white shadow-sm dark:border-black">
-                                                            {activeFiltersCount}
-                                                        </span>
-                                                    )}
-                                                </Button>
-                                            </FilterPopover>
-                                        </div>
-                                        <div className="ml-auto flex items-center gap-2">
-                                            <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
-                                            <Button variant="white" fontSize="11px" onClick={() => setCreateOpen(true)}>
-                                                <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
-                                            </Button>
+                                    {/* ponytail: mini-filament styled header title */}
+                                    <div className="px-5 pt-4 pb-2">
+                                        <div className="flex items-center gap-4">
+                                            <div>
+                                                <h1 className="text-lg font-bold text-text-main">
+                                                    {view === 'mine' ? 'Kontrak Saya' : view === 'pending' ? 'Persetujuan Tertunda' : view === 'expiry' ? 'Kontrak Segera Berakhir' : 'Daftar Seluruh Kontrak'}
+                                                </h1>
+                                                <p className="text-xs text-text-soft">
+                                                    Pantau berkas, status pengajuan, alur persetujuan, dan pencarian dokumen kontrak
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <div className="border-surface-border bg-surface-base/40 sticky top-[73px] z-10 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b px-5 py-2 backdrop-blur-md">
-                                        <Button
-                                            onClick={() => handleFilterChange({ submission_type_id: undefined, page: 1 })}
-                                            variant={!filters.submission_type_id ? 'primary' : 'ghost'}
-                                            size="sm"
-                                            fontSize="11px"
-                                            className="whitespace-nowrap"
-                                        >
-                                            Semua Kontrak
-                                        </Button>
-                                        {submissionTypes.map((type) => (
+                                    <div className="border-surface-border bg-surface-base/80 sticky top-0 z-[50] flex flex-col md:flex-row md:items-center justify-between gap-4 border-b px-5 py-3 backdrop-blur-md">
+                                        {/* Left Side: Filter Tabbar */}
+                                        <div className="flex scrollbar-none items-center gap-1.5 overflow-x-auto">
                                             <Button
-                                                key={type.id}
-                                                onClick={() => handleFilterChange({ submission_type_id: type.id, page: 1 })}
-                                                variant={filters.submission_type_id === type.id ? 'primary' : 'ghost'}
-                                                size="sm"
+                                                onClick={() => handleFilterChange({ submission_type_id: undefined, page: 1 })}
+                                                variant={!filters.submission_type_id ? 'primary' : 'ghost'}
                                                 fontSize="11px"
-                                                className="whitespace-nowrap"
+                                                className="whitespace-nowrap h-10 px-4"
                                             >
-                                                {type.name}
+                                                Semua Kontrak
                                             </Button>
-                                        ))}
+                                            {submissionTypes.map((type) => (
+                                                <Button
+                                                    key={type.id}
+                                                    onClick={() => handleFilterChange({ submission_type_id: type.id, page: 1 })}
+                                                    variant={filters.submission_type_id === type.id ? 'primary' : 'ghost'}
+                                                    fontSize="11px"
+                                                    className="whitespace-nowrap h-10 px-4"
+                                                >
+                                                    {type.name}
+                                                </Button>
+                                            ))}
+                                        </div>
+
+                                        {/* Right Side: Search and Actions */}
+                                        <div className="flex flex-wrap items-center gap-3 md:ml-auto">
+                                            <div className="flex items-center gap-2 min-w-[240px] md:w-80">
+                                                <SearchInput
+                                                    containerClassName="flex-1"
+                                                    placeholder="Cari kontrak..."
+                                                    value={search}
+                                                    onChange={(e) => setSearch(e.target.value)}
+                                                />
+                                                <FilterPopover
+                                                    totalResults={contractsPaged.total}
+                                                    activeFilters={{
+                                                        status: ensureArray(filters.status),
+                                                        contract_type_id: ensureArray(filters.contract_type_id),
+                                                        department_id: ensureArray(filters.department_id),
+                                                        created_from: filters.created_from || '',
+                                                        created_to: filters.created_to || '',
+                                                    }}
+                                                    onFilterChange={handleSingleFilterToggle}
+                                                    onReset={handleClearAllFilters}
+                                                    categories={[
+                                                        {
+                                                            label: 'Status Dokumen',
+                                                            key: 'status',
+                                                            type: 'searchable',
+                                                            options: [
+                                                                {
+                                                                    label: 'Draft',
+                                                                    value: 'draft',
+                                                                    icon: Layers,
+                                                                    color: 'bg-surface-muted text-text-soft',
+                                                                },
+                                                                { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-warning/10 text-warning' },
+                                                                {
+                                                                    label: 'In Review',
+                                                                    value: 'in_review',
+                                                                    icon: Zap,
+                                                                    color: 'bg-warning/10 text-warning',
+                                                                },
+                                                                {
+                                                                    label: 'Revision',
+                                                                    value: 'revision',
+                                                                    icon: AlertTriangle,
+                                                                    color: 'bg-danger/10 text-danger',
+                                                                },
+                                                                {
+                                                                    label: 'Approved',
+                                                                    value: 'approved',
+                                                                    icon: CheckCircle2,
+                                                                    color: 'bg-primary text-primary-foreground',
+                                                                },
+                                                                {
+                                                                    label: 'Rejected',
+                                                                    value: 'rejected',
+                                                                    icon: AlertCircle,
+                                                                    color: 'bg-danger/10 text-danger',
+                                                                },
+                                                            ],
+                                                        },
+                                                        {
+                                                            label: 'Departemen',
+                                                            key: 'department_id',
+                                                            type: 'searchable',
+                                                            options: departments.map((d) => ({
+                                                                label: d.name,
+                                                                value: d.id,
+                                                            })),
+                                                        },
+                                                        {
+                                                            label: 'Kategori Kontrak',
+                                                            key: 'contract_type_id',
+                                                            type: 'searchable',
+                                                            options: types.map((t) => ({
+                                                                label: t.name,
+                                                                value: t.id,
+                                                                icon: FileType,
+                                                            })),
+                                                        },
+                                                        {
+                                                            label: 'Rentang Tanggal Dibuat',
+                                                            key: 'created',
+                                                            type: 'date-range',
+                                                        },
+                                                    ]}
+                                                >
+                                                    <Button
+                                                        variant={activeFiltersCount > 0 ? 'primary' : 'white'}
+                                                        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg p-0 shadow-none border border-surface-border/80"
+                                                    >
+                                                        <Filter size={14} strokeWidth={2.5} />
+                                                        {activeFiltersCount > 0 && (
+                                                            <span className="bg-primary absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-semibold text-white shadow-none">
+                                                                {activeFiltersCount}
+                                                            </span>
+                                                        )}
+                                                    </Button>
+                                                </FilterPopover>
+                                            </div>
+                                            
+                                            {/* ponytail: inline pagination controls next to search/filter */}
+                                            <div className="flex items-center gap-1.5 select-none">
+                                                <Button
+                                                    variant="white"
+                                                    size="icon"
+                                                    disabled={contractsPaged.current_page === 1}
+                                                    onClick={() => router.get(globalThis.location.pathname, { ...filters, page: contractsPaged.current_page - 1 }, { preserveState: true })}
+                                                    className="h-10 w-10 rounded-lg border border-surface-border/80 hover:bg-surface-muted shadow-none shrink-0"
+                                                >
+                                                    <ChevronLeft className="h-4 w-4 text-text-main" />
+                                                </Button>
+
+                                                <div className="flex items-center gap-2 px-3 h-10 bg-surface-muted/60 rounded-lg border border-surface-border/40 shrink-0">
+                                                    <span className="text-xs font-medium text-primary">{contractsPaged.current_page}</span>
+                                                    <span className="text-xs font-medium text-text-soft">/</span>
+                                                    <span className="text-xs font-medium text-primary">{contractsPaged.last_page || 1}</span>
+                                                </div>
+
+                                                <Button
+                                                    variant="white"
+                                                    size="icon"
+                                                    disabled={contractsPaged.current_page === contractsPaged.last_page || contractsPaged.last_page === 0}
+                                                    onClick={() => router.get(globalThis.location.pathname, { ...filters, page: contractsPaged.current_page + 1 }, { preserveState: true })}
+                                                    className="h-10 w-10 rounded-lg border border-surface-border/80 hover:bg-surface-muted shadow-none shrink-0"
+                                                >
+                                                    <ChevronRight className="h-4 w-4 text-text-main" />
+                                                </Button>
+                                                
+                                                <select
+                                                    className="bg-surface-base/60 border border-surface-border/80 rounded-lg text-xs font-medium text-text-main px-3 h-10 outline-none focus:border-primary transition-all cursor-pointer select-none shadow-none shrink-0"
+                                                    value={filters.per_page || 10}
+                                                    onChange={(e) => {
+                                                        const val = Number(e.target.value);
+                                                        router.get(globalThis.location.pathname, { ...filters, per_page: val, page: 1 }, { preserveState: true });
+                                                    }}
+                                                >
+                                                    {[10, 25, 50, 100].map(n => (
+                                                        <option key={n} value={n}>{n}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 h-10">
+                                                <LayoutToggle className="h-10 flex items-center" value={layout as LayoutType} onChange={(val) => setLayout(val)} />
+                                                <Button variant="primary" className="h-10 px-4 gap-2" fontSize="12px" onClick={() => setCreateOpen(true)}>
+                                                    <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
+                                                </Button>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
+                                    <div className={cn('custom-scrollbar flex-1 overflow-auto w-full', layout === 'grid' && 'p-4')}>
                                         {layout === 'table' ? (
                                             <TableContract
                                                 columns={columns}
@@ -718,13 +776,6 @@ function ContractPage({
                                                 onSelectionChange={setSelectedRows}
                                                 selectedRows={selectedRows}
                                                 bulkActions={renderBulkActions(selectedRows)}
-                                                pagination={{
-                                                    currentPage: contractsPaged.current_page,
-                                                    lastPage: contractsPaged.last_page,
-                                                    total: contractsPaged.total,
-                                                    onPageChange: (page: number) =>
-                                                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
-                                                }}
                                             />
                                         ) : processing ? (
                                             <ContractCardSkeleton />

@@ -324,7 +324,7 @@ const SortableGroupItem = ({
     groups: Group[];
 }) => {
     const [isExpanded, setIsExpanded] = useState(true);
-    
+
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: group.id,
         data: { type: 'group', group },
@@ -345,7 +345,7 @@ const SortableGroupItem = ({
     }, [isGlobalDraggingGroup]);
 
     const style = { transform: CSS.Translate.toString(transform), transition };
-    
+
     return (
         <div
             ref={setNodeRef}
@@ -355,7 +355,7 @@ const SortableGroupItem = ({
                 isDragging && 'border-primary ring-primary/5 z-40 opacity-50 shadow-2xl ring-2',
             )}
         >
-            <div 
+            <div
                 className="border-border bg-card flex cursor-pointer items-center justify-between border-b px-4 py-3.5 transition-colors hover:bg-surface-muted/50"
                 onClick={() => !isDragging && setIsExpanded(!isExpanded)}
             >
@@ -432,9 +432,9 @@ const SortableGroupItem = ({
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
-                        <ChevronDown 
-                            size={14} 
-                            className={cn("text-muted-foreground/50 transition-transform duration-300 ml-1", isExpanded ? "rotate-180" : "rotate-0")} 
+                        <ChevronDown
+                            size={14}
+                            className={cn("text-muted-foreground/50 transition-transform duration-300 ml-1", isExpanded ? "rotate-180" : "rotate-0")}
                         />
                     </div>
                 </div>
@@ -452,7 +452,7 @@ const SortableGroupItem = ({
                     </Button>
                 </div>
             </div>
-            
+
             <div className={cn("grid transition-all duration-300 ease-in-out", isExpanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
                 <div className="overflow-hidden">
                     <div className="min-h-[80px] space-y-2.5 p-4">
@@ -1198,15 +1198,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-surface-border pb-6">
                     <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => window.history.back()}
-                            className="p-2 border border-surface-border rounded-xl hover:bg-surface-muted transition-all text-text-soft"
-                        >
-                            <ArrowLeft size={16} />
-                        </button>
+
                         <div>
                             <h1 className="text-lg font-bold text-text-main">
-                                 {activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'}
+                                {activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'}
                             </h1>
                             <p className="text-xs text-text-soft">
                                 Konfigurasi otoritas dan arsitektur untuk role <span className="font-bold">{role.name}</span>
@@ -1320,11 +1315,11 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         </Button>
                     </div>
                 </div>
-            <Head title={`Config: ${role.name}`} />
+                <Head title={`Config: ${role.name}`} />
 
-            {activeTab === 'access' ? (
-                <div className="flex flex-col gap-6">
-                    <div className="border border-surface-border rounded-2xl bg-card overflow-hidden">
+                {activeTab === 'access' ? (
+                    <div className="flex flex-col gap-6">
+                        <div className="border border-surface-border rounded-2xl bg-card overflow-hidden">
                             <div className="scrollbar-hide overflow-x-auto">
                                 <table className="w-full min-w-[800px] border-collapse text-left">
                                     <thead>
@@ -1445,399 +1440,399 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             </div>
                         </div>
                     </div>
-            ) : (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={pointerWithin}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
-                >
-                    <div className="flex flex-col gap-6">
-                        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-                            {/* COLUMN 1: Module Groups (col-span-3) */}
-                            <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
-                                <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Grup Menu</h3>
-                                    <div className="flex items-center gap-2">
-                                        <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">{navItems.length} Grup</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => openGroupModal()}
-                                            className="text-primary hover:bg-primary/10 border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-bold transition-all active:scale-95"
-                                            title="Tambah Grup Menu"
-                                        >
-                                            <Plus size={12} />
-                                        </button>
+                ) : (
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={pointerWithin}
+                        onDragStart={handleDragStart}
+                        onDragOver={handleDragOver}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <div className="flex flex-col gap-6">
+                            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+                                {/* COLUMN 1: Module Groups (col-span-3) */}
+                                <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
+                                    <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Grup Menu</h3>
+                                        <div className="flex items-center gap-2">
+                                            <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">{navItems.length} Grup</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => openGroupModal()}
+                                                className="text-primary hover:bg-primary/10 border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-bold transition-all active:scale-95"
+                                                title="Tambah Grup Menu"
+                                            >
+                                                <Plus size={12} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="h-[calc(100vh-290px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-2.5 p-4 border border-surface-border rounded-2xl bg-surface-muted/5 flex flex-col">
+                                        {navItems.map((group, index) => (
+                                            <div
+                                                key={group.id}
+                                                onClick={() => setSelectedGroupId(group.id)}
+                                                className={cn(
+                                                    "p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between group min-h-[58px]",
+                                                    selectedGroupId === group.id
+                                                        ? "border-primary bg-primary/5 text-primary shadow-xs"
+                                                        : "border-surface-border hover:bg-surface-muted bg-card text-text-main"
+                                                )}
+                                            >
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <span className="font-bold text-xs shrink-0 opacity-55">{index + 1}</span>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-xs font-bold truncate">{group.name}</span>
+                                                        <span className={cn(
+                                                            "text-[10px] font-semibold mt-0.5",
+                                                            selectedGroupId === group.id ? "text-primary/75" : "text-text-soft"
+                                                        )}>
+                                                            {group.modules.length} Modul Terdaftar
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <span className="bg-foreground/5 text-text-soft text-[9px] font-bold px-1.5 py-0.5 rounded-md group-hover:bg-primary/10">
+                                                        {group.modules.length}
+                                                    </span>
+                                                    {/* Reorder actions and inline crud */}
+                                                    <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            type="button"
+                                                            disabled={index === 0}
+                                                            onClick={() => handleMoveGroup(index, 'up')}
+                                                            className="text-text-soft hover:text-primary disabled:opacity-10"
+                                                            title="Pindahkan ke atas"
+                                                        >
+                                                            <ArrowUp size={12} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            disabled={index === navItems.length - 1}
+                                                            onClick={() => handleMoveGroup(index, 'down')}
+                                                            className="text-text-soft hover:text-primary disabled:opacity-10"
+                                                            title="Pindahkan ke bawah"
+                                                        >
+                                                            <ArrowDown size={12} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openGroupModal(group)}
+                                                            className="text-text-soft hover:text-primary"
+                                                            title="Ubah Grup"
+                                                        >
+                                                            <Edit2 size={12} />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDeleteGroup(group.id)}
+                                                            className="text-rose-500 hover:text-rose-600"
+                                                            title="Hapus Grup"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {navItems.length === 0 && (
+                                            <div className="border border-dashed border-surface-border rounded-xl p-4 text-center text-text-soft text-xs">
+                                                Belum ada grup menu
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="h-[calc(100vh-290px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-2.5 p-4 border border-surface-border rounded-2xl bg-surface-muted/5 flex flex-col">
-                                    {navItems.map((group, index) => (
-                                        <div
-                                            key={group.id}
-                                            onClick={() => setSelectedGroupId(group.id)}
-                                            className={cn(
-                                                "p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between group min-h-[58px]",
-                                                selectedGroupId === group.id
-                                                    ? "border-primary bg-primary/5 text-primary shadow-xs"
-                                                    : "border-surface-border hover:bg-surface-muted bg-card text-text-main"
-                                            )}
-                                        >
-                                            <div className="flex items-center gap-3 min-w-0">
-                                                <span className="font-bold text-xs shrink-0 opacity-55">{index + 1}</span>
-                                                <div className="flex flex-col min-w-0">
-                                                    <span className="text-xs font-bold truncate">{group.name}</span>
-                                                    <span className={cn(
-                                                        "text-[10px] font-semibold mt-0.5",
-                                                        selectedGroupId === group.id ? "text-primary/75" : "text-text-soft"
-                                                    )}>
-                                                        {group.modules.length} Modul Terdaftar
+
+                                {/* COLUMN 2: List Module in Selected Group (col-span-5) */}
+                                <div className="col-span-12 lg:col-span-5 flex flex-col gap-3">
+                                    {(() => {
+                                        const selectedGroup = navItems.find((g) => g.id === selectedGroupId) || navItems[0];
+                                        if (!selectedGroup) {
+                                            return (
+                                                <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-soft text-xs">
+                                                    Silakan pilih atau buat grup menu terlebih dahulu.
+                                                </div>
+                                            );
+                                        }
+                                        return (
+                                            <>
+                                                <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
+                                                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-main truncate max-w-[280px]">
+                                                        Modul di Formulir
+                                                    </h3>
+                                                    <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                                        {selectedGroup.modules.length} Modul
+                                                    </span>
+                                                </div>
+                                                <div className="h-[calc(100vh-290px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-2.5 p-4 border border-surface-border rounded-2xl bg-surface-muted/5 flex flex-col">
+                                                    <SortableContext id={'context-' + selectedGroup.id} items={selectedGroup.modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
+                                                        {selectedGroup.modules.map((module, mIdx) => (
+                                                            <SortableModuleItem
+                                                                key={module.id}
+                                                                module={module}
+                                                                onRemove={handleRemoveModule}
+                                                                index={mIdx}
+                                                                total={selectedGroup.modules.length}
+                                                                onMoveUp={() => handleMoveModuleIndex(selectedGroup.id, mIdx, 'up')}
+                                                                onMoveDown={() => handleMoveModuleIndex(selectedGroup.id, mIdx, 'down')}
+                                                                onEditModule={openModuleModal}
+                                                                onMoveToGroup={handleMoveModuleToGroup}
+                                                                groups={navItems}
+                                                            />
+                                                        ))}
+                                                    </SortableContext>
+                                                    {selectedGroup.modules.length === 0 && (
+                                                        <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-soft text-xs">
+                                                            Belum ada modul di grup ini.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </>
+                                        );
+                                    })()}
+                                </div>
+
+                                {/* COLUMN 3: Available Modules (col-span-4) */}
+                                <div className="col-span-12 lg:sticky lg:top-6 lg:col-span-4">
+                                    <AvailableListContainer
+                                        modules={availableModules}
+                                        onQuickAdd={(m) => {
+                                            const currentGroup = selectedGroupId || navItems[0]?.id;
+                                            if (!currentGroup) {
+                                                showToast('Buat grup navigasi terlebih dahulu', 'danger');
+                                                return;
+                                            }
+                                            setNavItems((prev) => prev.map((g) => (g.id === currentGroup ? { ...g, modules: [...g.modules, m] } : g)));
+                                            setAvailableModules((prev) => prev.filter((item) => item.id !== m.id));
+                                        }}
+                                        onEditModule={openModuleModal}
+                                        onAddModule={() => openModuleModal(null)}
+                                        onDeleteModule={handleDeleteModule}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }) }}>
+                            {activeId ? (
+                                activeType === 'group' ? (
+                                    <div className="border-primary bg-card ring-primary/20 w-full md:w-[calc(100vw/2-3rem)] max-w-2xl cursor-grabbing overflow-hidden rounded-xl border opacity-95 shadow-2xl ring-4">
+                                        <div className="flex items-center justify-between border-b px-4 py-3.5 bg-card">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-inner">
+                                                    <Layers size={14} strokeWidth={2.5} />
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <h3 className="text-foreground text-sm font-bold  ">
+                                                        {navItems.find((g) => g.id === activeId)?.name}
+                                                    </h3>
+                                                    <span className="text-muted-foreground text-sm font-semibold  ">
+                                                        {navItems.find((g) => g.id === activeId)?.modules?.length || 0} MODUL TERDAFTAR
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span className="bg-foreground/5 text-text-soft text-[9px] font-bold px-1.5 py-0.5 rounded-md group-hover:bg-primary/10">
-                                                    {group.modules.length}
-                                                </span>
-                                                {/* Reorder actions and inline crud */}
-                                                <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
-                                                    <button
-                                                        type="button"
-                                                        disabled={index === 0}
-                                                        onClick={() => handleMoveGroup(index, 'up')}
-                                                        className="text-text-soft hover:text-primary disabled:opacity-10"
-                                                        title="Pindahkan ke atas"
-                                                    >
-                                                        <ArrowUp size={12} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        disabled={index === navItems.length - 1}
-                                                        onClick={() => handleMoveGroup(index, 'down')}
-                                                        className="text-text-soft hover:text-primary disabled:opacity-10"
-                                                        title="Pindahkan ke bawah"
-                                                    >
-                                                        <ArrowDown size={12} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openGroupModal(group)}
-                                                        className="text-text-soft hover:text-primary"
-                                                        title="Ubah Grup"
-                                                    >
-                                                        <Edit2 size={12} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteGroup(group.id)}
-                                                        className="text-rose-500 hover:text-rose-600"
-                                                        title="Hapus Grup"
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
-                                                </div>
-                                            </div>
                                         </div>
-                                    ))}
-                                    {navItems.length === 0 && (
-                                        <div className="border border-dashed border-surface-border rounded-xl p-4 text-center text-text-soft text-xs">
-                                            Belum ada grup menu
+                                    </div>
+                                ) : (
+                                    <div className="border-border bg-card flex w-[280px] scale-105 cursor-grabbing items-center gap-3 rounded-xl border p-3 opacity-95 shadow-2xl">
+                                        <GripVertical size={14} className="text-primary" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-foreground text-sm font-bold">{allModules.find((m) => m.id === activeId)?.name}</p>
                                         </div>
-                                    )}
-                                </div>
-                            </div>
+                                    </div>
+                                )
+                            ) : null}
+                        </DragOverlay>
+                    </DndContext>
+                )}
 
-                            {/* COLUMN 2: List Module in Selected Group (col-span-5) */}
-                            <div className="col-span-12 lg:col-span-5 flex flex-col gap-3">
-                                {(() => {
-                                    const selectedGroup = navItems.find((g) => g.id === selectedGroupId) || navItems[0];
-                                    if (!selectedGroup) {
-                                        return (
-                                            <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-soft text-xs">
-                                                Silakan pilih atau buat grup menu terlebih dahulu.
-                                            </div>
-                                        );
-                                    }
-                                    return (
-                                        <>
-                                            <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
-                                                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main truncate max-w-[280px]">
-                                                    Modul di Formulir
-                                                </h3>
-                                                <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">
-                                                    {selectedGroup.modules.length} Modul
-                                                </span>
-                                            </div>
-                                            <div className="h-[calc(100vh-290px)] min-h-[350px] overflow-y-auto scrollbar-hide space-y-2.5 p-4 border border-surface-border rounded-2xl bg-surface-muted/5 flex flex-col">
-                                                <SortableContext id={'context-' + selectedGroup.id} items={selectedGroup.modules.map((m) => m.id)} strategy={verticalListSortingStrategy}>
-                                                    {selectedGroup.modules.map((module, mIdx) => (
-                                                        <SortableModuleItem
-                                                            key={module.id}
-                                                            module={module}
-                                                            onRemove={handleRemoveModule}
-                                                            index={mIdx}
-                                                            total={selectedGroup.modules.length}
-                                                            onMoveUp={() => handleMoveModuleIndex(selectedGroup.id, mIdx, 'up')}
-                                                            onMoveDown={() => handleMoveModuleIndex(selectedGroup.id, mIdx, 'down')}
-                                                            onEditModule={openModuleModal}
-                                                            onMoveToGroup={handleMoveModuleToGroup}
-                                                            groups={navItems}
-                                                        />
-                                                    ))}
-                                                </SortableContext>
-                                                {selectedGroup.modules.length === 0 && (
-                                                    <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-soft text-xs">
-                                                        Belum ada modul di grup ini.
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </>
-                                    );
-                                })()}
-                            </div>
-
-                            {/* COLUMN 3: Available Modules (col-span-4) */}
-                            <div className="col-span-12 lg:sticky lg:top-6 lg:col-span-4">
-                                <AvailableListContainer
-                                    modules={availableModules}
-                                    onQuickAdd={(m) => {
-                                        const currentGroup = selectedGroupId || navItems[0]?.id;
-                                        if (!currentGroup) {
-                                            showToast('Buat grup navigasi terlebih dahulu', 'danger');
-                                            return;
-                                        }
-                                        setNavItems((prev) => prev.map((g) => (g.id === currentGroup ? { ...g, modules: [...g.modules, m] } : g)));
-                                        setAvailableModules((prev) => prev.filter((item) => item.id !== m.id));
-                                    }}
-                                    onEditModule={openModuleModal}
-                                    onAddModule={() => openModuleModal(null)}
-                                    onDeleteModule={handleDeleteModule}
+                {/* Group CRUD Modal */}
+                <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
+                    <DialogContent className="rounded-2xl sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle className="text-foreground text-base font-semibold  ">
+                                {editingGroup ? 'Ubah Grup Navigasi' : 'Tambah Grup Navigasi'}
+                            </DialogTitle>
+                            <DialogDescription className="text-muted-foreground text-xs font-medium">
+                                {editingGroup ? 'Ganti nama grup navigasi yang sudah ada.' : 'Buat kontainer baru untuk mengelompokkan menu sidebar.'}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <div className="flex flex-col gap-2">
+                                <label className="text-muted-foreground text-sm font-semibold  ">Nama Grup</label>
+                                <input
+                                    value={groupName}
+                                    onChange={(e) => setGroupName(e.target.value)}
+                                    placeholder="Contoh: Manajemen Aset"
+                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
                                 />
                             </div>
                         </div>
-                    </div>
+                        <DialogFooter>
+                            <Button variant="ghost" onClick={() => setIsGroupModalOpen(false)} className="rounded-lg font-bold">
+                                BATAL
+                            </Button>
+                            <Button
+                                onClick={handleSaveGroup}
+                                disabled={isProcessingGroup || !groupName.trim()}
+                                className="rounded-lg font-bold"
+                                variant="primary"
+                            >
+                                {isProcessingGroup ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
+                                SIMPAN PERUBAHAN
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
-                    <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.5' } } }) }}>
-                        {activeId ? (
-                            activeType === 'group' ? (
-                                <div className="border-primary bg-card ring-primary/20 w-full md:w-[calc(100vw/2-3rem)] max-w-2xl cursor-grabbing overflow-hidden rounded-xl border opacity-95 shadow-2xl ring-4">
-                                    <div className="flex items-center justify-between border-b px-4 py-3.5 bg-card">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-inner">
-                                                <Layers size={14} strokeWidth={2.5} />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <h3 className="text-foreground text-sm font-bold  ">
-                                                    {navItems.find((g) => g.id === activeId)?.name}
-                                                </h3>
-                                                <span className="text-muted-foreground text-sm font-semibold  ">
-                                                    {navItems.find((g) => g.id === activeId)?.modules?.length || 0} MODUL TERDAFTAR
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="border-border bg-card flex w-[280px] scale-105 cursor-grabbing items-center gap-3 rounded-xl border p-3 opacity-95 shadow-2xl">
-                                    <GripVertical size={14} className="text-primary" />
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-foreground text-sm font-bold">{allModules.find((m) => m.id === activeId)?.name}</p>
-                                    </div>
-                                </div>
-                            )
-                        ) : null}
-                    </DragOverlay>
-                </DndContext>
-            )}
-
-            {/* Group CRUD Modal */}
-            <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
-                <DialogContent className="rounded-2xl sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-semibold  ">
-                            {editingGroup ? 'Ubah Grup Navigasi' : 'Tambah Grup Navigasi'}
-                        </DialogTitle>
-                        <DialogDescription className="text-muted-foreground text-xs font-medium">
-                            {editingGroup ? 'Ganti nama grup navigasi yang sudah ada.' : 'Buat kontainer baru untuk mengelompokkan menu sidebar.'}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Nama Grup</label>
-                            <input
-                                value={groupName}
-                                onChange={(e) => setGroupName(e.target.value)}
-                                placeholder="Contoh: Manajemen Aset"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsGroupModalOpen(false)} className="rounded-lg font-bold">
-                            BATAL
-                        </Button>
-                        <Button
-                            onClick={handleSaveGroup}
-                            disabled={isProcessingGroup || !groupName.trim()}
-                            className="rounded-lg font-bold"
-                            variant="primary"
-                        >
-                            {isProcessingGroup ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
-                            SIMPAN PERUBAHAN
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Module CRUD Modal */}
-            <Dialog open={isModuleModalOpen} onOpenChange={setIsModuleModalOpen}>
-                <DialogContent className="rounded-2xl sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-semibold  ">
-                            {editingModuleItem ? 'Ubah Modul' : 'Tambah Modul Baru'}
-                        </DialogTitle>
-                        <DialogDescription className="text-muted-foreground text-xs font-medium">
-                            {editingModuleItem ? 'Sesuaikan nama dan path rute untuk modul ini.' : 'Daftarkan modul baru ke dalam repository sistem.'}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Nama Modul</label>
-                            <input
-                                value={moduleName}
-                                onChange={(e) => setModuleName(e.target.value)}
-                                placeholder="Contoh: Daftar Kontrak"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Identifier</label>
-                            <input
-                                value={moduleIdentifier}
-                                onChange={(e) => setModuleIdentifier(e.target.value)}
-                                placeholder="Contoh: contract.index"
-                                disabled={!!editingModuleItem}
-                                className={cn(
-                                    'border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2',
-                                    editingModuleItem && 'cursor-not-allowed opacity-60',
-                                )}
-                            />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Path Rute / URL</label>
-                            <input
-                                value={moduleRoute}
-                                onChange={(e) => setModuleRoute(e.target.value)}
-                                placeholder="Contoh: /admin/contracts"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
-                            />
-                        </div>
-                        {!editingModuleItem && (
+                {/* Module CRUD Modal */}
+                <Dialog open={isModuleModalOpen} onOpenChange={setIsModuleModalOpen}>
+                    <DialogContent className="rounded-2xl sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle className="text-foreground text-base font-semibold  ">
+                                {editingModuleItem ? 'Ubah Modul' : 'Tambah Modul Baru'}
+                            </DialogTitle>
+                            <DialogDescription className="text-muted-foreground text-xs font-medium">
+                                {editingModuleItem ? 'Sesuaikan nama dan path rute untuk modul ini.' : 'Daftarkan modul baru ke dalam repository sistem.'}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4 py-4">
                             <div className="flex flex-col gap-2">
-                                <label className="text-muted-foreground text-sm font-semibold  ">Grup Navigasi</label>
-                                <select
-                                    value={moduleGroupId}
-                                    onChange={(e) => setModuleGroupId(e.target.value)}
-                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
-                                >
-                                    <option value="" disabled>
-                                        Pilih Grup Menu
-                                    </option>
-                                    {navItems.map((g) => (
-                                        <option key={g.id} value={g.id} className="text-foreground bg-card">
-                                            {g.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                <label className="text-muted-foreground text-sm font-semibold  ">Nama Modul</label>
+                                <input
+                                    value={moduleName}
+                                    onChange={(e) => setModuleName(e.target.value)}
+                                    placeholder="Contoh: Daftar Kontrak"
+                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                />
                             </div>
-                        )}
-                        <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Icon Modul</label>
-                            <Select value={moduleIcon} onValueChange={setModuleIcon}>
-                                <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
-                                    {Object.keys(SELECTABLE_ICONS).map((iconName) => {
-                                        const IconComponent = SELECTABLE_ICONS[iconName];
-                                        return (
-                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium ">
-                                                <div className="flex items-center gap-2">
-                                                    {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
-                                                    <span>{iconName}</span>
-                                                </div>
-                                            </SelectItem>
-                                        );
-                                    })}
-                                </SelectContent>
-                            </Select>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-muted-foreground text-sm font-semibold  ">Identifier</label>
+                                <input
+                                    value={moduleIdentifier}
+                                    onChange={(e) => setModuleIdentifier(e.target.value)}
+                                    placeholder="Contoh: contract.index"
+                                    disabled={!!editingModuleItem}
+                                    className={cn(
+                                        'border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2',
+                                        editingModuleItem && 'cursor-not-allowed opacity-60',
+                                    )}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-muted-foreground text-sm font-semibold  ">Path Rute / URL</label>
+                                <input
+                                    value={moduleRoute}
+                                    onChange={(e) => setModuleRoute(e.target.value)}
+                                    placeholder="Contoh: /admin/contracts"
+                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                />
+                            </div>
+                            {!editingModuleItem && (
+                                <div className="flex flex-col gap-2">
+                                    <label className="text-muted-foreground text-sm font-semibold  ">Grup Navigasi</label>
+                                    <select
+                                        value={moduleGroupId}
+                                        onChange={(e) => setModuleGroupId(e.target.value)}
+                                        className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                    >
+                                        <option value="" disabled>
+                                            Pilih Grup Menu
+                                        </option>
+                                        {navItems.map((g) => (
+                                            <option key={g.id} value={g.id} className="text-foreground bg-card">
+                                                {g.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            <div className="flex flex-col gap-2">
+                                <label className="text-muted-foreground text-sm font-semibold  ">Icon Modul</label>
+                                <Select value={moduleIcon} onValueChange={setModuleIcon}>
+                                    <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
+                                        {Object.keys(SELECTABLE_ICONS).map((iconName) => {
+                                            const IconComponent = SELECTABLE_ICONS[iconName];
+                                            return (
+                                                <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium ">
+                                                    <div className="flex items-center gap-2">
+                                                        {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
+                                                        <span>{iconName}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <label className="text-muted-foreground text-sm font-semibold  ">Deskripsi Modul</label>
+                                <textarea
+                                    value={moduleDescription}
+                                    onChange={(e) => setModuleDescription(e.target.value)}
+                                    placeholder="Contoh: Modul untuk mengelola seluruh dokumen kontrak"
+                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground min-h-[80px] w-full resize-none rounded-xl border p-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                />
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Deskripsi Modul</label>
-                            <textarea
-                                value={moduleDescription}
-                                onChange={(e) => setModuleDescription(e.target.value)}
-                                placeholder="Contoh: Modul untuk mengelola seluruh dokumen kontrak"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground min-h-[80px] w-full resize-none rounded-xl border p-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)} className="rounded-lg font-bold">
-                            BATAL
-                        </Button>
-                        <Button
-                            onClick={handleSaveModule}
-                            disabled={isProcessingModule || !moduleName.trim() || (!editingModuleItem && !moduleIdentifier.trim())}
-                            className="rounded-lg font-bold"
-                            variant="primary"
-                        >
-                            {isProcessingModule ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
-                            SIMPAN
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        <DialogFooter>
+                            <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)} className="rounded-lg font-bold">
+                                BATAL
+                            </Button>
+                            <Button
+                                onClick={handleSaveModule}
+                                disabled={isProcessingModule || !moduleName.trim() || (!editingModuleItem && !moduleIdentifier.trim())}
+                                className="rounded-lg font-bold"
+                                variant="primary"
+                            >
+                                {isProcessingModule ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
+                                SIMPAN
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
-            {/* Delete Group Confirmation Modal */}
-            <ConfirmationModal
-                open={isDeleteGroupModalOpen}
-                onClose={() => {
-                    setIsDeleteGroupModalOpen(false);
-                    setDeletingGroupId(null);
-                }}
-                onConfirm={confirmDeleteGroup}
-                title="Hapus Grup Navigasi?"
-                description="Modul di dalam grup ini akan dipindahkan kembali ke repository."
-                confirmText="Ya, Hapus"
-                cancelText="Batal"
-                variant="danger"
-            />
+                {/* Delete Group Confirmation Modal */}
+                <ConfirmationModal
+                    open={isDeleteGroupModalOpen}
+                    onClose={() => {
+                        setIsDeleteGroupModalOpen(false);
+                        setDeletingGroupId(null);
+                    }}
+                    onConfirm={confirmDeleteGroup}
+                    title="Hapus Grup Navigasi?"
+                    description="Modul di dalam grup ini akan dipindahkan kembali ke repository."
+                    confirmText="Ya, Hapus"
+                    cancelText="Batal"
+                    variant="danger"
+                />
 
-            {/* Delete Module Confirmation Modal */}
-            <ConfirmationModal
-                open={isDeleteModuleModalOpen}
-                onClose={() => {
-                    setIsDeleteModuleModalOpen(false);
-                    setDeletingModuleId(null);
-                }}
-                onConfirm={confirmDeleteModule}
-                title="Hapus Modul Secara Permanen?"
-                description="Tindakan ini akan menghapus modul secara permanen dari sistem dan tidak dapat dibatalkan."
-                confirmText="Ya, Hapus Permanen"
-                cancelText="Batal"
-                variant="danger"
-            />
+                {/* Delete Module Confirmation Modal */}
+                <ConfirmationModal
+                    open={isDeleteModuleModalOpen}
+                    onClose={() => {
+                        setIsDeleteModuleModalOpen(false);
+                        setDeletingModuleId(null);
+                    }}
+                    onConfirm={confirmDeleteModule}
+                    title="Hapus Modul Secara Permanen?"
+                    description="Tindakan ini akan menghapus modul secara permanen dari sistem dan tidak dapat dibatalkan."
+                    confirmText="Ya, Hapus Permanen"
+                    cancelText="Batal"
+                    variant="danger"
+                />
 
-            <style
-                dangerouslySetInnerHTML={{
-                    __html: `
+                <style
+                    dangerouslySetInnerHTML={{
+                        __html: `
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
                 .content-visibility-auto { content-visibility: auto; contain-intrinsic-size: auto 60px; }
             `,
-                }}
-            />
+                    }}
+                />
             </div>
         </>
     );

@@ -8,7 +8,7 @@ import { SiteCustomizer } from '@/layouts/app/components/SiteCustomizer';
 import { Breadcrumbs } from '@/layouts/app/components/nav/Breadcrumbs';
 import { SidebarTrigger } from '@/components/ui/navigation/Sidebar';
 import { cn } from '@/lib/utils';
-import { type BreadcrumbItem as BreadcrumbItemType } from '@/types';
+import { type BreadcrumbItem as BreadcrumbItemType, type SharedData, type NavGroup, type NavItem } from '@/types';
 import { usePage } from '@inertiajs/react';
 import { memo } from 'react';
 
@@ -47,28 +47,78 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                     <div className="bg-border dark:bg-border hidden h-4 w-px md:block" />
 
                     <div className="hidden flex-col gap-0.5 md:flex">
-                        {(() => {
-                            const path = typeof window !== 'undefined' ? window.location.pathname : '';
-                            let currentBreadcrumbs = [...breadcrumbs];
+                         {(() => {
+                            const { url, props } = usePage<SharedData>();
+                            const path = url.split('?')[0];
+                            // Force dynamic breadcrumbs from URL by ignoring controller props
+                            let currentBreadcrumbs: BreadcrumbItemType[] = [];
+                            
                             if (currentBreadcrumbs.length === 0) {
-                                if (path.includes('/contracts')) {
-                                    currentBreadcrumbs = [
-                                        { title: 'Modul Kontrak', href: '/dashboard' },
-                                        { title: 'Draft saya', href: '/dashboard' },
-                                        { title: 'Detail kontrak', href: '#' },
-                                    ];
-                                } else if (path.includes('/dashboard')) {
-                                    currentBreadcrumbs = [
-                                        { title: 'Modul Kontrak', href: '/dashboard' },
-                                        { title: 'Draft saya', href: '#' },
-                                    ];
-                                } else if (path.includes('/admin/contracts')) {
-                                    currentBreadcrumbs = [
-                                        { title: 'Modul Kontrak', href: '/admin/contracts' },
-                                        { title: 'Daftar Kontrak', href: '#' },
-                                    ];
-                                } else {
-                                    currentBreadcrumbs = [{ title: 'Modul Kontrak', href: '#' }];
+                                const rawSegments = path.split('/').filter(Boolean);
+                                const isUuidOrId = (str: string) => /^[0-9a-fA-F-]{36}$/.test(str) || /^\d+$/.test(str);
+                                
+                                const filteredSegments: { title: string; href: string }[] = [];
+                                let accumulatedPath = '';
+                                
+                                // ponytail: lookup matching titles from navigation groups registered in sidebarNavGroups
+                                const navGroups = (props.sidebarNavGroups as NavGroup[]) ?? [];
+                                
+                                rawSegments.forEach((seg) => {
+                                    accumulatedPath += `/${seg}`;
+                                    if (isUuidOrId(seg) || seg === 'admin') {
+                                        return;
+                                    }
+                                    
+                                    let title = seg.replace(/-/g, ' ');
+                                    let href = accumulatedPath;
+                                    
+                                    // Try to match with exact registered navigation menu item or group
+                                    let matchedItem: NavItem | undefined;
+                                    let matchedGroup: NavGroup | undefined;
+                                    
+                                    for (const g of navGroups) {
+                                        if (g.items) {
+                                            const item = g.items.find((i: NavItem) => i.url === href || i.url === href + '/create' || href.startsWith(i.url + '/'));
+                                            if (item) {
+                                                matchedItem = item;
+                                                matchedGroup = g;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    
+                                    if (seg === 'core') {
+                                        // Skip core segment, we will get the group and module info from the next segments
+                                        return;
+                                    }
+                                    
+                                    if (matchedItem && matchedGroup) {
+                                        // Push the group title first if it is not already in the list
+                                        const groupAlreadyAdded = filteredSegments.some(s => s.title === matchedGroup!.title);
+                                        if (!groupAlreadyAdded) {
+                                            filteredSegments.push({
+                                                title: matchedGroup.title,
+                                                href: '#'
+                                            });
+                                        }
+                                        title = matchedItem.title;
+                                    } else {
+                                        title = title.charAt(0).toUpperCase() + title.slice(1);
+                                    }
+                                    
+                                    filteredSegments.push({ title, href });
+                                });
+
+                                // Set last item's href to '#'
+                                if (filteredSegments.length > 0) {
+                                    filteredSegments[filteredSegments.length - 1].href = '#';
+                                }
+                                
+                                currentBreadcrumbs = filteredSegments.filter(
+                                    (seg) => seg.title !== 'Admin' && seg.title !== 'Administrator'
+                                );
+                                if (currentBreadcrumbs.length === 0) {
+                                    currentBreadcrumbs = [{ title: 'Dashboard', href: '#' }];
                                 }
                             }
                             return <Breadcrumbs breadcrumbs={currentBreadcrumbs} />;

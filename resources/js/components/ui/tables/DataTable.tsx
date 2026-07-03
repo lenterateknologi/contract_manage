@@ -171,11 +171,27 @@ export function DataTable<T extends Record<string, any>>({
     }, [data, localSearch, searchKey, onSearchChange]);
 
     return (
-        <div className="flex flex-col gap-4 antialiased text-foreground select-none animate-in fade-in duration-200">
+        <div className="flex flex-col gap-0 antialiased text-foreground select-none animate-in fade-in duration-200">
+            {/* Title display */}
+            {title && (
+                <div className="ml-5 mr-5">
+                    <div className="flex items-center gap-4">
+                        <div>
+                            <h1 className="text-lg font-bold text-text-main">
+                                {title}
+                            </h1>
+                            <p className="text-xs text-text-soft">
+                                Kelola data master, konfigurasi, dan otorisasi modul
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* --- TOP HEADER SECTION --- */}
-            {(title || onSearchChange || localSearch !== undefined || headerActions || filters.length > 0) && (
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 pt-2 mb-1 ml-8 mr-8">
-                    {/* Left side: Search input & Filter */}
+            {(title || onSearchChange || localSearch !== undefined || headerActions || filters.length > 0 || pagination) && (
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 ml-5 mr-5">
+                    {/* Left side: Search input, Filter & Pagination */}
                     <div className="flex items-center gap-3">
                         {onSearchChange !== undefined && (
                             <div className="w-full md:w-96">
@@ -202,7 +218,7 @@ export function DataTable<T extends Record<string, any>>({
                                 <Button
                                     variant={activeCount > 0 ? "primary" : "white"}
                                     size="icon"
-                                    className="relative h-9 w-9 rounded-xl animate-all duration-200"
+                                    className="relative h-10 w-10 rounded-lg animate-all duration-200 shadow-none"
                                     title="Filter Data"
                                 >
                                     <SlidersHorizontal size={14} />
@@ -213,6 +229,39 @@ export function DataTable<T extends Record<string, any>>({
                                     )}
                                 </Button>
                             </FilterPopover>
+                        )}
+
+                        {/* ponytail: inline pagination controls next to filters */}
+                        {pagination && (
+                            <div className="flex items-center gap-2 select-none">
+                                <Button
+                                    variant="white"
+                                    size="icon"
+                                    disabled={pagination.currentPage === 1}
+                                    onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+                                    className="h-10 w-10 rounded-lg border border-surface-border/80 hover:bg-surface-muted shadow-none shrink-0"
+                                    title="Halaman Sebelumnya"
+                                >
+                                    <ChevronLeft className="h-4 w-4 text-text-main" />
+                                </Button>
+
+                                <div className="flex items-center gap-2 px-3 h-10 bg-surface-muted/60 rounded-lg border border-surface-border/40 shrink-0">
+                                    <span className="text-xs font-medium text-primary">{pagination.currentPage}</span>
+                                    <span className="text-xs font-medium text-text-soft">/</span>
+                                    <span className="text-xs font-medium text-primary">{pagination.lastPage || 1}</span>
+                                </div>
+
+                                <Button
+                                    variant="white"
+                                    size="icon"
+                                    disabled={pagination.currentPage === pagination.lastPage || pagination.lastPage === 0}
+                                    onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+                                    className="h-10 w-10 rounded-lg border border-surface-border/80 hover:bg-surface-muted shadow-none shrink-0"
+                                    title="Halaman Berikutnya"
+                                >
+                                    <ChevronRight className="h-4 w-4 text-text-main" />
+                                </Button>
+                            </div>
                         )}
                     </div>
 
@@ -227,7 +276,7 @@ export function DataTable<T extends Record<string, any>>({
 
             {/* --- BULK ACTIONS HUD --- */}
             {activeSelectedRows.length > 0 && bulkActions && (
-                <div className="flex items-center justify-between p-3 bg-primary rounded-2xl shadow-lg border border-primary/20 animate-in slide-in-from-top-2 duration-300 mx-1">
+                <div className="flex items-center justify-between p-3 bg-primary! rounded-2xl shadow-lg border border-primary/20 animate-in slide-in-from-top-2 duration-300 mx-1" style={{ backgroundColor: 'var(--primary)' }}>
                     <div className="flex items-center gap-3 pl-2">
                         <div className="h-2 w-2 rounded-full bg-primary-foreground animate-pulse" />
                         <span className="text-xs font-semibold text-primary-foreground uppercase tracking-wide">
@@ -245,16 +294,16 @@ export function DataTable<T extends Record<string, any>>({
                 "overflow-hidden bg-surface-base/40 backdrop-blur-sm",
 
             )}>
-                <div className="overflow-x-auto custom-scrollbar ml-8 mr-8 min-h-[calc(100vh-280px)]">
+                <div className="overflow-x-auto custom-scrollbar min-h-[calc(100vh-280px)]">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
-                            <tr className="border-b border-surface-border/60 bg-surface-muted/40 backdrop-blur-md select-none">
+                            <tr className="border-b border-primary/20 bg-primary! select-none text-white" style={{ backgroundColor: 'var(--primary)' }}>
                                 {onSelectionChange && (
                                     <th className="py-3.5 px-4 w-10">
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
-                                            className="border-surface-border data-[state=checked]:bg-primary"
+                                            className="border-white/30 data-[state=checked]:bg-white data-[state=checked]:text-primary"
                                         />
                                     </th>
                                 )}
@@ -265,8 +314,8 @@ export function DataTable<T extends Record<string, any>>({
                                         <th
                                             key={idx}
                                             className={cn(
-                                                "py-3.5 px-4 text-[11px] font-medium uppercase  text-text-desc select-none",
-                                                isSortable && "cursor-pointer hover:text-text-main transition-colors",
+                                                "py-3.5 px-4 text-[11px] font-bold uppercase text-white select-none",
+                                                isSortable && "cursor-pointer transition-colors",
                                                 col.className
                                             )}
                                             onClick={() => {
@@ -276,19 +325,13 @@ export function DataTable<T extends Record<string, any>>({
                                                 }
                                             }}
                                         >
-                                            <div className="flex items-center gap-1.5">
+                                            <div className="flex items-center gap-1.5 text-white">
                                                 <span>{col.header}</span>
-                                                {isSortable && (
-                                                    <span className="flex flex-col text-[8px] leading-[6px] opacity-60">
-                                                        <span className={cn(isSorted && sortDir === 'asc' ? "text-primary" : "text-text-soft")}>▲</span>
-                                                        <span className={cn(isSorted && sortDir === 'desc' ? "text-primary" : "text-text-soft")}>▼</span>
-                                                    </span>
-                                                )}
                                             </div>
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-semibold uppercase  text-text-desc select-none">Aksi</th>}
+                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-bold uppercase text-white select-none">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">
@@ -337,7 +380,7 @@ export function DataTable<T extends Record<string, any>>({
                                         )}
                                         {columns.map((col, colIdx) => (
                                             <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-normal text-text-main", col.className)}>
-                                                {col.cell ? col.cell(row) : (col.accessorKey.split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
+                                                {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
                                             </td>
                                         ))}
                                         {rowActions && (
@@ -353,62 +396,7 @@ export function DataTable<T extends Record<string, any>>({
                 </div>
             </div>
 
-            {/* --- PAGINATION FOOTER --- */}
-            {pagination && (
-                <div className="flex flex-col sm:flex-row ml-8 mr-8 items-center justify-between gap-4 px-1 py-2 select-none animate-in fade-in duration-200">
-                    <div className="flex items-center gap-3 order-2 sm:order-1">
-                        <span className="text-xs font-medium text-text-desc uppercase">
-                            Menampilkan <span className="font-medium text-text-main">{displayData.length}</span> dari <span className="font-medium text-text-main">{pagination.total}</span> data
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-4 order-1 sm:order-2">
-                        <div className="flex items-center gap-2">
-                            <select
-                                className="bg-surface-base/60 border border-surface-border/80 rounded-xl text-xs font-medium text-text-main px-3 py-1.5 outline-none focus:border-primary transition-all cursor-pointer shadow-sm select-none"
-                                value={localPerPage}
-                                onChange={(e) => {
-                                    const val = Number(e.target.value);
-                                    setLocalPerPage(val);
-                                    pagination.onPerPageChange?.(val);
-                                }}
-                            >
-                                {[10, 25, 50, 100].map(n => (
-                                    <option key={n} value={n}>{n}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                            <Button
-                                variant="white"
-                                size="icon"
-                                disabled={pagination.currentPage === 1}
-                                onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                                className="h-9 w-9 rounded-xl border border-surface-border/80 hover:bg-surface-muted"
-                            >
-                                <ChevronLeft className="h-4 w-4 text-text-main" />
-                            </Button>
-
-                            <div className="flex items-center gap-2 px-3 h-9 bg-surface-muted/60 rounded-xl border border-surface-border/40">
-                                <span className="text-xs font-medium text-primary">{pagination.currentPage}</span>
-                                <span className="text-xs font-medium text-text-soft">/</span>
-                                <span className="text-xs font-medium text-primary">{pagination.lastPage || 1}</span>
-                            </div>
-
-                            <Button
-                                variant="white"
-                                size="icon"
-                                disabled={pagination.currentPage === pagination.lastPage || pagination.lastPage === 0}
-                                onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                                className="h-9 w-9 rounded-xl border border-surface-border/80 hover:bg-surface-muted"
-                            >
-                                <ChevronRight className="h-4 w-4 text-text-main" />
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* ponytail: pagination footer removed from here to clean up the bottom layout */}
 
 
         </div>

@@ -51,16 +51,17 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                 <div className="flex h-[calc(100vh-84px)] overflow-hidden font-sans">
                     {/* Sidebar: Daftar Kontrak */}
                     <div className="flex w-80 flex-col border-r border-surface-border bg-surface-base">
-                        <div className="p-4 border-b border-surface-border">
-                            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-                                <MessageSquare className="h-4 w-4 text-slate-500" /> Percakapan
+                        <div className="p-4 border-b border-primary/20 bg-primary! text-white" style={{ backgroundColor: 'var(--primary)' }}>
+                            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2 uppercase">
+                                <MessageSquare className="h-4 w-4 text-white" /> Percakapan
                             </h2>
-                            <SearchInput
+                             <SearchInput
                                 placeholder="Cari kontrak..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="h-9 text-xs"
-                            />
+                                className="h-9 text-xs bg-white text-text-main placeholder:text-text-soft/60 border-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:border-white focus-visible:ring-offset-0 dark:bg-white dark:text-text-main dark:placeholder:text-text-soft/60"
+                                containerClassName="[&_svg]:text-text-soft [&_svg]:group-focus-within:text-primary"
+                             />
                         </div>
 
                         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -86,19 +87,19 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                     <div className="flex-1 flex flex-col bg-surface-base">
                         {selectedContract ? (
                             <div className="flex flex-col h-full">
-                                <div className="p-4 border-b border-surface-border flex items-center justify-between bg-white dark:bg-zinc-900 shadow-sm z-10">
+                                <div className="p-4 border-b border-primary/20 flex items-center justify-between bg-primary! text-white shadow-sm z-10" style={{ backgroundColor: 'var(--primary)' }}>
                                     <div className="flex flex-col">
-                                        <h3 className="text-sm font-semibold text-text-main leading-none mb-1">
+                                        <h3 className="text-sm font-bold text-white leading-none mb-1 uppercase">
                                             {selectedContract.title}
                                         </h3>
-                                        <p className="text-xs text-text-soft">
+                                        <p className="text-xs text-white/70">
                                             Diskusi Kontrak {selectedContract.contract_no}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
-                                            className="px-3 py-1.5 rounded-lg border border-surface-border text-xs font-medium text-text-main hover:bg-surface-muted transition-all"
+                                            className="px-3 py-1.5 rounded-lg border border-white/20 text-xs font-semibold text-white hover:bg-white/10 transition-all"
                                         >
                                             Buka Kontrak
                                         </button>

@@ -245,37 +245,63 @@ export function FilterPopover({
                         {children}
                     </PopoverTrigger>
 
-                    <PopoverContent
-                        align="start"
-                        className="w-80 sm:w-96 p-0 border border-surface-border/80 bg-surface-base/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden z-[9999]"
-                    >
-                        {/* Header */}
-                        <div className="p-4 border-b border-surface-border bg-surface-muted/30 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white shadow-sm">
-                                    <Settings2 size={14} />
-                                </div>
-                                <div>
-                                    <h4 className="text-xs font-bold text-text-main">Saringan Data</h4>
-                                    <p className="text-[9px] font-medium text-text-desc">Persempit hasil pencarian</p>
-                                </div>
-                            </div>
+                     <PopoverContent
+                         align="start"
+                         className="w-80 sm:w-96 p-0 border border-surface-border/80 bg-surface-base/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden z-[9999]"
+                     >
+                         {/* Header */}
+                         <div className="p-4 border-b border-surface-border bg-surface-muted/30 space-y-3">
+                             <div className="flex items-center justify-between">
+                                 <div className="flex items-center gap-2">
+                                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white shadow-sm">
+                                         <Settings2 size={14} />
+                                     </div>
+                                     <div>
+                                         <h4 className="text-xs font-bold text-text-main">Saringan Data</h4>
+                                         <p className="text-[9px] font-medium text-text-desc">Persempit hasil pencarian</p>
+                                     </div>
+                                 </div>
 
-                            {hasActiveFilters && (
-                                <button
-                                    type="button"
-                                    onClick={onReset}
-                                    className="flex h-7 px-2 items-center gap-1 rounded-lg bg-danger/10 hover:bg-danger hover:text-white text-danger transition-all shadow-sm"
-                                >
-                                    <RotateCcw size={10} />
-                                    <span className="text-[9px] font-bold uppercase ">Reset</span>
-                                </button>
-                            )}
-                        </div>
+                                 {hasActiveFilters && (
+                                     <button
+                                         type="button"
+                                         onClick={onReset}
+                                         className="flex h-7 px-2 items-center gap-1 rounded-lg bg-danger/10 hover:bg-danger hover:text-white text-danger transition-all shadow-sm"
+                                     >
+                                         <RotateCcw size={10} />
+                                         <span className="text-[9px] font-bold uppercase ">Reset</span>
+                                     </button>
+                                 )}
+                             </div>
 
-                        {/* Body - Filter Categories */}
-                        <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
-                            {categories.map((category) => {
+                             {/* Search bar inside Filter Popover — sticky in header */}
+                             <div className="relative">
+                                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft pointer-events-none" size={13} />
+                                 <input
+                                     type="text"
+                                     placeholder="Cari opsi penyaringan..."
+                                     className="w-full h-8 pl-8 pr-3 text-xs bg-surface-muted/30 border border-surface-border rounded-lg text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                                     onChange={(e) => {
+                                         const query = e.target.value.toLowerCase();
+                                         // Simple local state dispatch/filtering for standard grid categories
+                                         const buttons = document.querySelectorAll('[data-filter-opt]');
+                                         buttons.forEach((el) => {
+                                             const label = el.getAttribute('data-filter-opt') || '';
+                                             if (label.toLowerCase().includes(query)) {
+                                                 (el as HTMLElement).style.display = '';
+                                             } else {
+                                                 (el as HTMLElement).style.display = 'none';
+                                             }
+                                         });
+                                     }}
+                                 />
+                             </div>
+                         </div>
+
+                         {/* Body - Filter Categories */}
+                         <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
+
+                             {categories.map((category) => {
                                 const currentVals = Array.isArray(activeFilters[category.key])
                                     ? activeFilters[category.key]
                                     : activeFilters[category.key]
@@ -314,6 +340,7 @@ export function FilterPopover({
                                                             <button
                                                                 key={String(opt.value)}
                                                                 type="button"
+                                                                data-filter-opt={opt.label}
                                                                 onClick={() => {
                                                                     const valStr = String(opt.value);
                                                                     const next = currentVals.map(String).includes(valStr)
