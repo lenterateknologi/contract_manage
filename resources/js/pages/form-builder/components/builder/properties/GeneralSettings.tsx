@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/buttons/Button';
 import { Input } from '@/components/ui/inputs/Input';
 import { Label } from '@/components/ui/forms/Label';
 import { Textarea } from '@/components/ui/inputs/Textarea';
@@ -185,19 +186,45 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                         <h4 className="font-sans text-[9px] font-semibold uppercase">Image & Branding</h4>
                     </div>
 
-                    <div className="space-y-1.5">
+                    <div className="space-y-2">
                         <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Logo / Image URL</Label>
-                        <Input
-                            value={selectedField.options?.logo_url || selectedField.options?.url || ''}
-                            onChange={(e) =>
-                                bulkUpdateOptions(selectedIds, {
-                                    logo_url: e.target.value,
-                                    url: e.target.value,
-                                })
-                            }
-                            className="h-8 font-sans text-[10px] font-medium"
-                            placeholder="https://..."
-                        />
+                        <div className="flex gap-2">
+                            <Input
+                                value={selectedField.options?.logo_url || selectedField.options?.url || ''}
+                                onChange={(e) =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        logo_url: e.target.value,
+                                        url: e.target.value,
+                                    })
+                                }
+                                className="h-8 flex-1 font-sans text-[10px] font-medium"
+                                placeholder="https://..."
+                            />
+                            <div className="relative">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = (event) => {
+                                                const base64 = event.target?.result as string;
+                                                bulkUpdateOptions(selectedIds, {
+                                                    logo_url: base64,
+                                                    url: base64,
+                                                });
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                <Button type="button" variant="outline" className="h-8 px-2.5 font-sans text-[9px] font-semibold uppercase">
+                                    Upload
+                                </Button>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

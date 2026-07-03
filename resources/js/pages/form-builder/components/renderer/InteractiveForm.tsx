@@ -114,23 +114,19 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
         const rootFields = (template?.fields || []).filter((f) => !f.parent_id).sort((a, b) => (a.order || 0) - (b.order || 0));
 
         const resultPages: FormField[][] = [[]];
-        let currentHeight = 0;
         let currentPageIdx = 0;
 
         rootFields.forEach((field) => {
-            const h = estimateHeight(field);
-            if (currentHeight + h > USABLE_HEIGHT && resultPages[currentPageIdx].length > 0) {
+            if (field.type === 'page_break') {
                 currentPageIdx++;
-                resultPages[currentPageIdx] = [field];
-                currentHeight = h;
+                resultPages[currentPageIdx] = [];
             } else {
                 resultPages[currentPageIdx].push(field);
-                currentHeight += h;
             }
         });
 
         return resultPages;
-    }, [template.fields, template.letterhead_json]);
+    }, [template.fields]);
 
     const allFieldIds = useMemo(() => (template.fields || []).map((f) => f.id), [template.fields]);
 

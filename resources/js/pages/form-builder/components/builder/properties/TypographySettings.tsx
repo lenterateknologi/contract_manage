@@ -48,35 +48,20 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                         className="border-input bg-background focus-visible:ring-ring h-9 w-full rounded-md border px-2 py-1 text-[11px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
                         style={{ fontFamily: selectedField.options?.font_family || "'Times New Roman', serif" }}
                     >
-                        <option value="'Montserrat', sans-serif" style={{ fontFamily: 'Montserrat' }}>
-                            Montserrat — Tema Aplikasi
-                        </option>
-                        <option value="'Inter', sans-serif" style={{ fontFamily: 'Inter' }}>
-                            Inter — Modern UI
-                        </option>
-                        <option value="'Open Sans', sans-serif" style={{ fontFamily: 'Open Sans' }}>
-                            Open Sans — Clean & Professional
-                        </option>
-                        <option value="'Roboto', sans-serif" style={{ fontFamily: 'Roboto' }}>
-                            Roboto — Modern Sans
-                        </option>
-                        <option value="'Lato', sans-serif" style={{ fontFamily: 'Lato' }}>
-                            Lato — Geometric Sans
-                        </option>
-                        <option value="'Playfair Display', serif" style={{ fontFamily: 'Playfair Display' }}>
-                            Playfair Display — Elegant Serif
-                        </option>
-                        <option value="sans-serif" style={{ fontFamily: 'Arial' }}>
-                            Arial / Sans-Serif
-                        </option>
                         <option value="'Times New Roman', serif" style={{ fontFamily: 'Times New Roman' }}>
-                            Times New Roman — Formal
+                            Times New Roman (Formal / Standard)
                         </option>
-                        <option value="serif" style={{ fontFamily: 'Georgia' }}>
-                            Georgia / Serif
+                        <option value="Arial, sans-serif" style={{ fontFamily: 'Arial' }}>
+                            Arial (Modern / Sans-serif)
                         </option>
-                        <option value="monospace" style={{ fontFamily: 'Courier New' }}>
-                            Courier — Monospace
+                        <option value="'Calibri', sans-serif" style={{ fontFamily: 'Calibri' }}>
+                            Calibri (Contemporary)
+                        </option>
+                        <option value="'Cambria', serif" style={{ fontFamily: 'Cambria' }}>
+                            Cambria (Standard Serif)
+                        </option>
+                        <option value="'Garamond', serif" style={{ fontFamily: 'Garamond' }}>
+                            Garamond (Classic Serif)
                         </option>
                     </select>
                     {/* Live font preview */}
@@ -97,7 +82,7 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Font Size (px)</Label>
+                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Font Size (Standard: 10 - 12 pt)</Label>
                         <Input
                             type="number"
                             value={selectedField.options?.font_size ?? ''}
@@ -106,6 +91,9 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                                     font_size: parseNumber(e.target.value, 12),
                                 })
                             }
+                            placeholder="e.g. 11"
+                            min={8}
+                            max={24}
                             className="h-8 font-sans text-[11px]"
                         />
                     </div>
@@ -205,10 +193,8 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                             ))}
                         </div>
                     </div>
-                </div>
-
-                <div className="space-y-1.5">
-                    <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Text Alignment</Label>
+                         <div className="space-y-1.5">
+                    <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Text Alignment X</Label>
                     <div className="grid grid-cols-4 gap-1">
                         {[
                             { label: 'Left', value: 'left', icon: AlignLeft },
@@ -238,7 +224,46 @@ export const TypographySettings: React.FC<TypographySettingsProps> = ({ selected
                         ))}
                     </div>
                 </div>
-            </div>
+
+                {['static_text', 'labeled_value'].includes(selectedField.type) && (
+                    <div className="space-y-1.5">
+                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Text Alignment Y</Label>
+                        <select
+                            value={selectedField.options?.valign || 'top'}
+                            onChange={(e) =>
+                                bulkUpdateOptions(selectedIds, {
+                                    valign: e.target.value,
+                                })
+                            }
+                            className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        >
+                            <option value="top">Top</option>
+                            <option value="middle">Middle</option>
+                            <option value="bottom">Bottom</option>
+                        </select>
+                    </div>
+                )}
+
+                {['static_text', 'labeled_value'].includes(selectedField.type) && (
+                    <div className="space-y-1.5">
+                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Text Case</Label>
+                        <select
+                            value={selectedField.options?.text_transform || 'none'}
+                            onChange={(e) =>
+                                bulkUpdateOptions(selectedIds, {
+                                    text_transform: e.target.value,
+                                })
+                            }
+                            className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        >
+                            <option value="none">Auto / Default</option>
+                            <option value="lowercase">lowercase</option>
+                            <option value="uppercase">UPPERCASE</option>
+                            <option value="capitalize">Capitalize First</option>
+                        </select>
+                    </div>
+                )}
+            </div>          </div>
 
             {/* List & Numbering */}
             {selectedField.type === 'static_text' && (

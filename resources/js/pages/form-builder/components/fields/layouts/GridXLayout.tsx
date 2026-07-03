@@ -34,7 +34,8 @@ export const GridXLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
                     borderWidth: field.options?.border_width !== undefined ? `${field.options.border_width}px` : undefined,
                     borderColor: field.options?.border_color || undefined,
                     backgroundColor: field.options?.background_color || undefined,
-                    minHeight: field.options?.height ? `${field.options.height}px` : undefined,
+                    height: field.options?.height ? (typeof field.options.height === 'number' || !isNaN(Number(field.options.height)) ? `${field.options.height}px` : field.options.height) : undefined,
+                    minHeight: field.options?.height ? (typeof field.options.height === 'number' || !isNaN(Number(field.options.height)) ? `${field.options.height}px` : field.options.height) : undefined,
                 }}
             >
                 {childrenArray}
@@ -70,7 +71,8 @@ export const GridXLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
                 borderWidth: field.options?.border_width !== undefined ? `${field.options.border_width}px` : undefined,
                 borderColor: field.options?.border_color || undefined,
                 backgroundColor: field.options?.background_color || undefined,
-                minHeight: field.options?.height ? `${field.options.height}px` : undefined,
+                height: field.options?.height ? (typeof field.options.height === 'number' || !isNaN(Number(field.options.height)) ? `${field.options.height}px` : field.options.height) : undefined,
+                minHeight: field.options?.height ? (typeof field.options.height === 'number' || !isNaN(Number(field.options.height)) ? `${field.options.height}px` : field.options.height) : undefined,
             }}
         >
             {children}

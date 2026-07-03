@@ -291,7 +291,7 @@ export function DataTable<T extends Record<string, any>>({
 
             {/* --- TABLE CONTENT AREA --- */}
             <div className={cn(
-                "overflow-hidden bg-surface-base/40 backdrop-blur-sm",
+                "overflow-hidden bg-surface-base/40 backdrop-blur-sm mt-4",
 
             )}>
                 <div className="overflow-x-auto custom-scrollbar min-h-[calc(100vh-280px)]">

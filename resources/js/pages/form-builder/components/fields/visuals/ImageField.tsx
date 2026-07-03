@@ -10,31 +10,34 @@ interface VisualFieldProps {
 
 export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
     const hasSource = !!(field.options?.logo_url || field.options?.url);
-    const width = field.options?.width || field.options?.size || field.options?.logo_size || 120;
-    const widthStyle = typeof width === 'number' ? `${width}px` : width;
+    const rawWidth = field.options?.width ?? field.width ?? 120;
+    const widthStyle = rawWidth !== '' && !isNaN(Number(rawWidth)) ? `${rawWidth}px` : rawWidth || '120px';
 
-    const heightStyle =
-        field.options?.height !== undefined && field.options?.height !== ''
-            ? typeof field.options.height === 'number' || !isNaN(Number(field.options.height))
-                ? `${field.options.height}px`
-                : field.options.height
-            : undefined;
+    const rawHeight = field.options?.height ?? field.height;
+    const heightStyle = rawHeight !== undefined && rawHeight !== ''
+        ? (!isNaN(Number(rawHeight)) ? `${rawHeight}px` : rawHeight)
+        : undefined;
 
     if (!hasSource) {
         return (
             <div
                 className={cn(
-                    'flex w-full',
+                    'flex',
                     field.options?.alignment === 'center' ? 'justify-center' : field.options?.alignment === 'right' ? 'justify-end' : 'justify-start',
                 )}
+                style={{
+                    width: '100%',
+                    height: heightStyle || 'auto',
+                }}
             >
                 <PlaceholderZone
                     icon={ImageIcon}
                     label={field.label || 'Logo / Gambar'}
-                    description="Pilih elemen ini untuk mengatur URL gambar"
+                    description="Upload gambar dari menu properti"
+                    className="min-h-0 py-4 px-2 flex items-center justify-center flex-col h-full"
                     style={{
                         width: widthStyle,
-                        height: heightStyle || '100px',
+                        height: heightStyle || '80px',
                         aspectRatio: field.options?.aspect_ratio && field.options?.aspect_ratio !== 'auto' ? field.options?.aspect_ratio : undefined,
                     }}
                 />
@@ -52,8 +55,6 @@ export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
         >
             <img
                 src={field.options?.logo_url || field.options?.url || '/storage/app/public/fr_logo.png'}
-                width={width}
-                height={field.options?.height || undefined}
                 style={{
                     width: widthStyle,
                     height: heightStyle || 'auto',

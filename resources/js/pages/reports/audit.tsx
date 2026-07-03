@@ -87,7 +87,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             header: 'Timestamp',
             accessorKey: 'created_at',
             cell: (row: any) => (
-                <span className="text-text-soft font-semibold whitespace-nowrap">
+                <span className="whitespace-nowrap">
                     {new Date(row.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} {new Date(row.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </span>
             )
@@ -95,7 +95,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         {
             header: 'Ref ID',
             accessorKey: 'contract_no',
-            cell: (row: any) => <span className="font-mono font-bold text-text-main">#{row.contract_no.split('/').pop()}</span>
+            cell: (row: any) => <span>#{row.contract_no.split('/').pop()}</span>
         },
         {
             header: 'Action Event',
@@ -108,7 +108,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
                 return (
                     <span className={cn(
-                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px]",
                         isAlert ? "bg-rose-50 text-rose-700 border border-rose-200" :
                         isSuccess ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
                         isSystem ? "bg-blue-50 text-blue-700 border border-blue-200" :
@@ -122,12 +122,12 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         {
             header: 'Transaction Log Data',
             accessorKey: 'description',
-            cell: (row: any) => <span className="text-text-main font-medium">{row.description}</span>
+            cell: (row: any) => <span>{row.description}</span>
         },
         {
             header: 'Author Entity',
             accessorKey: 'actor',
-            cell: (row: any) => <span className="text-text-soft font-bold uppercase italic">@{row.actor.split(' ')[0]}</span>
+            cell: (row: any) => <span>@{row.actor.split(' ')[0]}</span>
         }
     ];
 

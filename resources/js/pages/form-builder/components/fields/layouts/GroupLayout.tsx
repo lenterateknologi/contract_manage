@@ -25,13 +25,16 @@ export const GroupLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
                           : undefined,
                 borderColor: field.options?.border_color || undefined,
                 backgroundColor: field.options?.background_color || undefined,
+                height: field.options?.height ? (typeof field.options.height === 'number' || !isNaN(Number(field.options.height)) ? `${field.options.height}px` : field.options.height) : undefined,
+                minHeight: field.options?.height ? (typeof field.options.height === 'number' || !isNaN(Number(field.options.height)) ? `${field.options.height}px` : field.options.height) : undefined,
             }}
         >
             <div
-                className="flex flex-wrap gap-0"
+                className="flex flex-wrap gap-0 h-full w-full"
                 style={{
                     justifyContent: field.options?.justify_content || 'flex-start',
                     alignItems: field.options?.align_items || 'flex-start',
+                    minHeight: field.options?.height ? 'inherit' : undefined,
                 }}
             >
                 {children}

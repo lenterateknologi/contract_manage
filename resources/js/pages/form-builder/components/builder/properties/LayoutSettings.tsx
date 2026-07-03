@@ -83,7 +83,7 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-1.5">
                             <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Grid Gap (px)</Label>
                             <Input
@@ -95,35 +95,21 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                                     })
                                 }
                                 className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Height (px)</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.height ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        height: parseNumberOrUndefined(e.target.value),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                                placeholder="Otomatis"
                             />
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Grid Y Settings */}
-            {selectedField.type === 'grid_y' && (
+            {/* Grid X, Grid Y, and Group Alignments */}
+            {['grid_x', 'grid_y', 'group'].includes(selectedField.type) && (
                 <div className="border-border space-y-4 border-t pt-4">
                     <div className="flex items-center gap-2">
                         <Layout size={12} className="text-muted-foreground" />
                         <h4 className="font-sans text-[9px] font-semibold uppercase">Vertical Grid Layout</h4>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                         <div className="space-y-1.5">
                             <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Grid Gap (px)</Label>
                             <Input
@@ -135,20 +121,6 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                                     })
                                 }
                                 className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Height (px)</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.height ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        height: parseNumberOrUndefined(e.target.value),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                                placeholder="Otomatis"
                             />
                         </div>
                     </div>

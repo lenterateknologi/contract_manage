@@ -20,7 +20,12 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
     const isNoBorder = fieldStyle === 'none';
     const isDashed = !isNoBorder && fieldStyle !== 'box';
 
-    const typographyStyle = getTypographyStyle(field);
+    const typographyStyle = {
+        ...getTypographyStyle(field),
+        textTransform: (field.options?.text_transform as any) || undefined,
+    };
+
+    const valignClass = field.options?.valign === 'bottom' ? 'items-end' : field.options?.valign === 'middle' ? 'items-center' : 'items-start';
 
     if (readOnly) {
         let displayValue = value;
@@ -32,10 +37,15 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
         }
 
         return (
-            <div className="flex w-full items-baseline gap-1 py-0.5">
+            <div className={cn("flex w-full gap-1 py-0.5 h-full", valignClass)} style={{ minHeight: 'inherit' }}>
                 <span
                     className="shrink-0 whitespace-nowrap"
-                    style={{ width: labelWidth, minWidth: labelWidth, ...getTypographyStyle(field, 0.9, true) }}
+                    style={{
+                        width: labelWidth,
+                        minWidth: labelWidth,
+                        ...getTypographyStyle(field, 0.9, true),
+                        textTransform: (field.options?.text_transform as any) || undefined,
+                    }}
                 >
                     {field.label} {showColon && ':'}
                 </span>
@@ -53,8 +63,16 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
     }
 
     return (
-        <div className="flex w-full min-w-0 items-center gap-1 py-0.5">
-            <span className="shrink-0 whitespace-nowrap" style={{ width: labelWidth, minWidth: labelWidth, ...getTypographyStyle(field, 0.9, true) }}>
+        <div className={cn("flex w-full min-w-0 gap-1 py-0.5 h-full", valignClass)} style={{ minHeight: 'inherit' }}>
+            <span
+                className="shrink-0 whitespace-nowrap"
+                style={{
+                    width: labelWidth,
+                    minWidth: labelWidth,
+                    ...getTypographyStyle(field, 0.9, true),
+                    textTransform: (field.options?.text_transform as any) || undefined,
+                }}
+            >
                 {field.label} {showColon && ':'}
             </span>
             <div className="relative min-w-0 flex-1">
@@ -63,7 +81,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                     value={value || ''}
                     onChange={(e) => onChange?.(e.target.value)}
                     className={cn(
-                        'w-full min-w-0 transition-all',
+                        'w-full min-w-0 transition-all h-full',
                         isNoBorder
                             ? 'border-none bg-transparent px-0 shadow-none outline-none'
                             : isDashed
