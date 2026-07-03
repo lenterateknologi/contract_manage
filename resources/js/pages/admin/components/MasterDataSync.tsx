@@ -255,17 +255,15 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
     return (
         <>
             {/* Header */}
-            <div className="flex items-center justify-between px-5 pt-5 pb-6 select-none">
-                <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-xl shadow-sm backdrop-blur-sm">
-                        <Database size={18} />
-                    </div>
-                    <div className="flex flex-col">
-                        <h1 className="text-text-main text-base font-semibold tracking-tight uppercase italic">Sync & Control Center</h1>
-                        <p className="text-text-desc text-[10px] font-medium  uppercase">
-                            Manajemen migrasi dan granular export-import data master
-                        </p>
-                    </div>
+            <div className="flex items-center gap-4 px-5 pt-5 p-6 select-none">
+
+                <div>
+                    <h1 className="text-lg font-bold text-text-main ">
+                        Export Import Master Data
+                    </h1>
+                    <p className="text-xs text-text-soft">
+                        Manajemen migrasi dan granular export-import data master
+                    </p>
                 </div>
             </div>
 

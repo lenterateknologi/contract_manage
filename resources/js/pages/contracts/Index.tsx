@@ -579,10 +579,10 @@ function ContractPage({
                             {view !== 'profile' && view !== 'dashboard' && (
                                 <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
                                     {/* ponytail: mini-filament styled header title */}
-                                    <div className="px-5 pt-4 pb-2">
+                                    <div className="px-5 pt-4 p-6">
                                         <div className="flex items-center gap-4">
                                             <div>
-                                                <h1 className="text-lg font-bold text-text-main">
+                                                <h1 className="text-lg font-bold text-text-main ">
                                                     {view === 'mine' ? 'Kontrak Saya' : view === 'pending' ? 'Persetujuan Tertunda' : view === 'expiry' ? 'Kontrak Segera Berakhir' : 'Daftar Seluruh Kontrak'}
                                                 </h1>
                                                 <p className="text-xs text-text-soft">
@@ -713,7 +713,7 @@ function ContractPage({
                                                     </Button>
                                                 </FilterPopover>
                                             </div>
-                                            
+
                                             {/* ponytail: inline pagination controls next to search/filter */}
                                             <div className="flex items-center gap-1.5 select-none">
                                                 <Button
@@ -741,7 +741,7 @@ function ContractPage({
                                                 >
                                                     <ChevronRight className="h-4 w-4 text-text-main" />
                                                 </Button>
-                                                
+
                                                 <select
                                                     className="bg-surface-base/60 border border-surface-border/80 rounded-lg text-xs font-medium text-text-main px-3 h-10 outline-none focus:border-primary transition-all cursor-pointer select-none shadow-none shrink-0"
                                                     value={filters.per_page || 10}

@@ -174,7 +174,7 @@ export function DataTable<T extends Record<string, any>>({
         <div className="flex flex-col gap-0 antialiased text-foreground select-none animate-in fade-in duration-200">
             {/* Title display */}
             {title && (
-                <div className="ml-5 mr-5">
+                <div className="ml-5 mr-5 p-2">
                     <div className="flex items-center gap-4">
                         <div>
                             <h1 className="text-lg font-bold text-text-main">

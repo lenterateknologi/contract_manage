@@ -110,7 +110,7 @@ export function ProfileView({ meUser, showToast }: { meUser: User; showToast: (m
             <div className="h-px bg-surface-border/50" />
 
             {/* --- SECURITY --- */}
-            <section className="space-y-6">
+            <section className="space-y-6 p-6">
                 <div>
                     <h2 className="text-lg font-bold text-text-main">Keamanan</h2>
                     <p className="text-xs text-text-soft">Perbarui kata sandi untuk melindungi akun Anda.</p>

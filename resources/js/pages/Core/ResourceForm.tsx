@@ -31,12 +31,12 @@ function IconPicker({ value, onChange }: { value: string; onChange: (val: string
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filteredIcons = COMMON_ICONS.filter(icon => 
+    const filteredIcons = COMMON_ICONS.filter(icon =>
         icon.toLowerCase().includes(search.toLowerCase())
     );
 
-    const SelectedIcon = value && (LucideIcons as any)[value] 
-        ? (LucideIcons as any)[value] 
+    const SelectedIcon = value && (LucideIcons as any)[value]
+        ? (LucideIcons as any)[value]
         : null;
 
     return (
@@ -95,9 +95,8 @@ function IconPicker({ value, onChange }: { value: string; onChange: (val: string
                                         setIsOpen(false);
                                         setSearch('');
                                     }}
-                                    className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all gap-1 text-[10px] font-semibold text-center border border-transparent ${
-                                        value === iconName ? 'bg-primary/10 text-primary border-primary/20' : 'text-text-main'
-                                    }`}
+                                    className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all gap-1 text-[10px] font-semibold text-center border border-transparent ${value === iconName ? 'bg-primary/10 text-primary border-primary/20' : 'text-text-main'
+                                        }`}
                                 >
                                     {Icon && <Icon className="h-4 w-4" />}
                                     <span className="truncate w-full text-[9px]">{iconName}</span>
@@ -265,9 +264,8 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                             <select
                                 value={data[field.name]}
                                 onChange={(e) => setData(field.name, e.target.value)}
-                                className={`flex h-11 w-full appearance-none rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-sm font-sans font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50 disabled:border-slate-200 ${
-                                    data[field.name] ? 'text-foreground' : 'text-muted-foreground'
-                                }`}
+                                className={`flex h-11 w-full appearance-none rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-sm font-sans font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50 disabled:border-slate-200 ${data[field.name] ? 'text-foreground' : 'text-muted-foreground'
+                                    }`}
                                 required={field.required}
                             >
                                 <option value="" className="text-muted-foreground">
@@ -305,14 +303,12 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                 role="switch"
                                 aria-checked={!!data[field.name]}
                                 onClick={() => setData(field.name, !data[field.name])}
-                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden active:scale-95 ${
-                                    data[field.name] ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'
-                                }`}
+                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden active:scale-95 ${data[field.name] ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'
+                                    }`}
                             >
                                 <span
-                                    className={`pointer-events-none block h-4 w-4 rounded-full shadow-lg transition-transform duration-300 ring-0 ${
-                                        data[field.name] ? 'translate-x-6 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
-                                    }`}
+                                    className={`pointer-events-none block h-4 w-4 rounded-full shadow-lg transition-transform duration-300 ring-0 ${data[field.name] ? 'translate-x-6 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
+                                        }`}
                                 />
                             </button>
                         </div>
@@ -326,7 +322,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         <>
             <Head title={isEdit ? `Edit ${title}` : `Tambah ${title}`} />
 
-            <div className="flex flex-col gap-6 p-6 w-full">
+            <div className="flex flex-col gap-6 p-6 w-full p-2">
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/admin/core/${resourceSlug}`}
@@ -336,7 +332,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     </Link>
                     <div>
                         <h1 className="text-lg font-bold text-text-main">
-                             {isEdit ? `Edit ${title}` : `Tambah ${title}`}
+                            {isEdit ? `Edit ${title}` : `Tambah ${title}`}
                         </h1>
                         <p className="text-xs text-text-soft">
                             {isEdit ? 'Ubah informasi data yang sudah ada.' : 'Tambahkan data master baru ke sistem.'}
