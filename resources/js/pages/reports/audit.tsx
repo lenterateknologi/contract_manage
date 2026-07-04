@@ -9,6 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 
 interface AuditLog {
     id: string;
+    form_no: string;
     contract_no: string;
     action: string;
     description: string;
@@ -94,8 +95,8 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         },
         {
             header: 'Ref ID',
-            accessorKey: 'contract_no',
-            cell: (row: any) => <span className="font-mono font-bold text-text-main">#{row.contract_no.split('/').pop()}</span>
+            accessorKey: 'form_no',
+            cell: (row: any) => <span className="font-mono font-bold text-text-main">#{(row.form_no || row.contract_no || '').split('/').pop()}</span>
         },
         {
             header: 'Action Event',

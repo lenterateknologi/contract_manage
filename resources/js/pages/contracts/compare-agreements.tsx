@@ -43,7 +43,7 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
 
     return (
         <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-white font-sans antialiased selection:bg-indigo-100">
-            <Head title={`Audit ${titleLabel} - ${contract.contract_no}`} />
+            <Head title={`Audit ${titleLabel} - ${contract.form_no}`} />
 
             {/* Main Header */}
             <div className="z-[100] flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
@@ -52,7 +52,7 @@ export default function CompareAgreements({ contract, versions, initialV1, initi
                     <div className="flex flex-col">
                         <h1 className="font-montserrat text-sm font-bold text-slate-900">Audit {titleLabel}</h1>
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                            {contract.contract_no} &bull; {contract.title}
+                            {contract.form_no} &bull; {contract.title}
                         </p>
                     </div>
                 </div>

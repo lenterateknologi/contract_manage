@@ -37,9 +37,9 @@ class ContractExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMap
     {
         return [
             'ID',
-            'No. Kontrak',
+            'No. Pengajuan',
             'Judul',
-            'No. Crown',
+            'No. Kontrak',
             'Tipe Kontrak',
             'Tipe Pengajuan',
             'Status',
@@ -56,9 +56,9 @@ class ContractExport implements FromQuery, ShouldAutoSize, WithHeadings, WithMap
     {
         return [
             $contract->id,
-            $contract->contract_no,
+            $contract->form_no,
             $contract->title,
-            $contract->crown_no,
+            $contract->contract_no,
             $contract->contractType->name ?? '—',
             $contract->submissionType->name ?? '—',
             strtoupper($contract->status),

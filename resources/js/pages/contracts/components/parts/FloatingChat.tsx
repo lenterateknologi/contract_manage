@@ -127,7 +127,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
     const filteredContracts = React.useMemo(() => {
         return contracts.filter(
             (c) =>
-                c.contract_no.toLowerCase().includes(debouncedSearchList.toLowerCase()) ||
+                (c.form_no || c.contract_no || '').toLowerCase().includes(debouncedSearchList.toLowerCase()) ||
                 c.title?.toLowerCase().includes(debouncedSearchList.toLowerCase()),
         );
     }, [contracts, debouncedSearchList]);
@@ -219,7 +219,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                             <i className="fa-solid fa-arrow-left" />
                                         </button>
                                     )}
-                                    <span className="truncate text-[13px] font-semibold">{active ? active.contract_no : 'Diskusi Kontrak'}</span>
+                                    <span className="truncate text-[13px] font-semibold">{active ? (active.form_no || active.contract_no) : 'Diskusi Kontrak'}</span>
                                 </div>
                             </div>
                             <div className="ml-2 flex items-center gap-1">
@@ -298,7 +298,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center justify-between">
-                                                        <span className="truncate text-[12px] font-semibold text-gray-800">{c.contract_no}</span>
+                                                        <span className="truncate text-[12px] font-semibold text-gray-800">{c.form_no || c.contract_no}</span>
                                                         {last && (
                                                             <span className="ml-2 flex-shrink-0 text-[10px] text-gray-400">
                                                                 {last.created_at.split(' ')[1]}

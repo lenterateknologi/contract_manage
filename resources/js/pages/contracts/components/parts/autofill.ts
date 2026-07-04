@@ -3,7 +3,7 @@ import { Contract } from '@/pages/contracts/types';
 // ── F2 important field keys (from F1 data) ──────────────────────────
 // These are the F1 field names (snake_case) that should appear in the F2 summary.
 export const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; type?: string }[] = [
-    { key: 'crown_no', label: 'No. Kontrak (F2)', width: '1/2' },
+    { key: 'contract_no', label: 'No. Kontrak (F2)', width: '1/2' },
     { key: 'meta_no_kontrak', label: 'No. Kontrak (Draft)', width: '1/2' },
     { key: 'meta_judul_kontrak', label: 'Judul Perjanjian', width: '1/1' },
     { key: 'meta_tipe_perjanjian', label: 'Tipe Perjanjian', width: '1/2' },
@@ -32,15 +32,15 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
     if (name === 'meta_ruang_lingkup' && docType === 'f2') {
         const now = new Date();
         const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
-        const crownNo = (contract as any).crown_no || '';
+        const crownNo = contract.contract_no || '';
         const signer = contract.p1_signer || (contract as any).initiator?.name || '';
         return `${crownNo}/${dateStr}/${signer}`;
     }
 
     // 1. Identification / Metadata
-    if (name === 'meta_nomor') return contract.contract_no || '';
+    if (name === 'meta_nomor') return contract.form_no || '';
     if (name === 'meta_nomor_kontrak' || name === 'meta_no_kontrak' || name === 'meta_no_pengajuan')
-        return (contract as any).crown_no || contract.contract_no || '';
+        return contract.contract_no || contract.form_no || '';
     if (name === 'meta_judul' || name === 'meta_judul_kontrak' || name === 'meta_nama_kontrak') return contract.title || '';
     if (name === 'meta_topik' || name === 'meta_jenis_kontrak') {
         const type = (contract as any).contract_type;
@@ -96,7 +96,7 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
     if (name === 'meta_mekanisme_pembayaran') return (contract as any).payment_terms || '';
     if (name === 'meta_deskripsi' || name === 'keterangan') return contract.description || '';
 
-    if (name === 'crown_no' || name === 'meta_no_kontrak') return (contract as any).crown_no || (contract as any).contract_no || '';
+    if (name === 'contract_no' || name === 'meta_no_kontrak') return contract.contract_no || contract.form_no || '';
 
     // 4. Management Approvers for Signature Boxes
     if (name === 'meta_manager_legal') {

@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property bool $is_default
  * @property bool $is_template
  * @property bool $is_tax_involved
+ * @property bool $is_selectable
  * @property string|null $initiator_type
  * @property int|null $sla_drafting_hours
  * @property int|null $sla_total_hours
@@ -70,6 +71,7 @@ class Workflow extends Model
         'is_default',
         'is_template',
         'is_tax_involved',
+        'is_selectable',
         'initiator_type',
         'sla_drafting_hours',
         'sla_total_hours',
@@ -93,7 +95,9 @@ class Workflow extends Model
 
     protected $casts = [
         'is_default' => 'boolean',
+        'is_template' => 'boolean',
         'is_tax_involved' => 'boolean',
+        'is_selectable' => 'boolean',
         'company_group_ids' => 'array',
         'region_ids' => 'array',
         'company_ids' => 'array',

@@ -341,25 +341,25 @@ test('admin can export and import contract types hierarchy correctly', function 
 
 test('admin can clean master and transactional data', function () {
     // 1. Seed some master data
-    $w = Workflow::create([
+    $w = Workflow::forceCreate([
         'id' => (string) Str::uuid(),
         'name' => 'Clean Test Workflow',
         'is_active' => true,
     ]);
 
-    $companyGroup = CompanyGroup::create([
+    $companyGroup = CompanyGroup::forceCreate([
         'id' => (string) Str::uuid(),
         'code' => 'CG-TEST',
         'name' => 'CG Test Name',
         'is_active' => true,
     ]);
 
-    $group = ModuleGroup::create([
+    $group = ModuleGroup::forceCreate([
         'id' => (string) Str::uuid(),
         'name' => 'Clean Test Group',
     ]);
 
-    $module = Module::create([
+    $module = Module::forceCreate([
         'id' => (string) Str::uuid(),
         'name' => 'Clean Test Module',
         'identifier' => 'CLEAN_TEST_MOD',

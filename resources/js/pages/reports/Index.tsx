@@ -273,7 +273,7 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
                     <tbody className="divide-y divide-surface-border">
                         {contracts.map((c) => (
                             <tr key={c.id} className="hover:bg-surface-muted/50 transition-colors">
-                                <td className="px-4 py-3 font-mono font-semibold text-text-soft">{c.contract_no}</td>
+                                <td className="px-4 py-3 font-mono font-semibold text-text-soft">{c.form_no || c.contract_no || '—'}</td>
                                 <td className="px-4 py-3 font-bold text-text-main uppercase truncate max-w-[200px]">{c.title}</td>
                                 <td className="px-4 py-3 text-text-soft uppercase font-bold">{c.type || 'N/A'}</td>
                                 <td className="px-4 py-3 text-text-soft uppercase font-semibold">{c.creator}</td>
@@ -337,7 +337,7 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
                                         {new Date(h.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} {new Date(h.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                     </td>
                                     <td className="px-4 py-3 font-mono font-bold text-text-main">
-                                        #{h.contract_no.split('/').pop()}
+                                        #{(h.form_no || h.contract_no || '').split('/').pop()}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={cn(

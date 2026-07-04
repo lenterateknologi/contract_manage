@@ -29,6 +29,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
         const s = search.toLowerCase();
         return contracts.filter(c =>
             c.title.toLowerCase().includes(s) ||
+            c.form_no?.toLowerCase().includes(s) ||
             c.contract_no?.toLowerCase().includes(s)
         );
     }, [contracts, search]);
@@ -92,7 +93,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                             {selectedContract.title}
                                         </h3>
                                         <p className="text-xs text-text-soft">
-                                            Diskusi Kontrak {selectedContract.contract_no}
+                                            Diskusi Kontrak {selectedContract.form_no || selectedContract.contract_no}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">

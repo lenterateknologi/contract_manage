@@ -20,7 +20,7 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
             <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                     <span className="text-[10px] font-semibold text-text-soft">
-                        #{contract.contract_no || 'NO-REQ'}
+                        #{contract.form_no || 'NO-REQ'}
                     </span>
                     <span className="text-[9px] text-text-soft/60 tabular-nums">
                         {contract.updated_at_formatted || ''}

@@ -740,7 +740,7 @@ function ContractPage({
                                                             <div className="flex items-start justify-between gap-3">
                                                                 <div className="flex min-w-0 flex-col gap-1">
                                                                     <span className="group-hover:text-primary text-text-soft text-[10px] font-semibold tracking-wider uppercase transition-all">
-                                                                        {c.contract_no || 'No Req'}
+                                                                        {c.form_no || 'No Req'}
                                                                     </span>
                                                                     <h3 className="group-hover:text-primary text-text-main line-clamp-2 text-sm leading-tight font-semibold tracking-tight uppercase transition-colors">
                                                                         {c.title}
@@ -903,7 +903,7 @@ function ContractPage({
                                 <FileText className="text-primary size-4" /> Export Alur Approval
                             </h3>
                             <span className="text-text-soft text-[10px] font-semibold tracking-wider uppercase">
-                                {selected?.contract_no} — Generation Complete
+                                {selected?.form_no} — Generation Complete
                             </span>
                         </div>
                         <div className="flex items-center gap-3">

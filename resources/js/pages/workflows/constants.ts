@@ -4,8 +4,8 @@ export const AVAILABLE_FIELDS = [
     { value: 'attachment', label: 'Lampiran Kontrak (Attachment)' },
     { value: 'signed_attachment', label: 'Lampiran TTD Kontrak' },
     { value: 'notes', label: 'Catatan / Review (Notes)' },
-    { value: 'contract_no', label: 'Nomor Pengajuan' },
-    { value: 'crown_no', label: 'Nomor Kontrak (crown_no)' },
+    { value: 'form_no', label: 'Nomor Pengajuan' },
+    { value: 'contract_no', label: 'Nomor Kontrak' },
     { value: 'title', label: 'Judul Kontrak (title)' },
     { value: 'description', label: 'Deskripsi Kontrak (description)' },
     { value: 'contract_date', label: 'Tanggal Kontrak (contract_date)' },
@@ -34,6 +34,7 @@ export const AUTOFILLED_PARAMS = [
     { value: 'assigned_at-null', label: 'Kosongkan Waktu ditugaskan' },
     { value: 'finished_at-null', label: 'Kosongkan Waktu diselesaikan' },
     { value: 'closed_at-null', label: 'Kosongkan Waktu ditutup' },
+    { value: 'renew_number', label: 'Pembuatan nomor baru' },
 ];
 
 export const MASTER_ACTIONS = [

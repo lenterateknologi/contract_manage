@@ -22,8 +22,8 @@ class Contract extends Model
     protected $with = ['meta'];
 
     protected $fillable = [
+        'form_no',
         'contract_no',
-        'crown_no',
         'title',
         'description',
         'contract_date',

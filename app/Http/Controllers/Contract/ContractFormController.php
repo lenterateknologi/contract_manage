@@ -349,7 +349,7 @@ class ContractFormController extends Controller
         }
 
         if (empty($formData['meta_nomor'])) {
-            $formData['meta_nomor'] = $contract->contract_no;
+            $formData['meta_nomor'] = $contract->form_no;
         }
         if (empty($formData['meta_topik'])) {
             $formData['meta_topik'] = $contract->contractType->name ?? $contract->contract_type ?? '';

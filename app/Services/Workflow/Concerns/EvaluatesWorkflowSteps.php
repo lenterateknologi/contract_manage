@@ -278,6 +278,23 @@ trait EvaluatesWorkflowSteps
      */
     private function handleAutoApproval(Contract $contract, ?User $user): void
     {
-        // Auto-approval function is disabled per user request
+        if (! $user) {
+            return;
+        }
+
+        $pendingApprovals = $contract->approvals()
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->where('status', 'pending')
+            ->where('user_id', $user->id)
+            ->get();
+
+        foreach ($pendingApprovals as $approval) {
+            /** @var Approval $approval */
+            $step = $approval->workflowStep;
+            $skipCategories = ['signing', 'joint_upload'];
+            if (! in_array(strtolower($step->step_category ?? ''), $skipCategories)) {
+                $this->approveContract($contract, $approval, 'Sistem: Persetujuan Otomatis (Sama dengan penyetujui/inisiator sebelumnya)');
+            }
+        }
     }
 }

@@ -93,6 +93,7 @@ class ReportController extends Controller
         $contractsList->getCollection()->transform(function ($c) {
             return [
                 'id' => $c->id,
+                'form_no' => $c->form_no,
                 'contract_no' => $c->contract_no,
                 'title' => $c->title,
                 'type' => $c->contractType?->name,
@@ -115,6 +116,7 @@ class ReportController extends Controller
         $histories->getCollection()->transform(function ($h) {
             return [
                 'id' => $h->id,
+                'form_no' => $h->contract->form_no,
                 'contract_no' => $h->contract->contract_no,
                 'contract_title' => $h->contract->title,
                 'action' => $h->action,

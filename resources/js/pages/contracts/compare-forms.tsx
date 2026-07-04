@@ -124,7 +124,7 @@ export default function CompareForms({ contract, docType, template, versions, in
 
     return (
         <div className="flex h-screen min-h-screen flex-col overflow-hidden bg-slate-50 font-sans antialiased selection:bg-indigo-100">
-            <Head title={`Audit ${docType.toUpperCase()} - ${contract.contract_no}`} />
+            <Head title={`Audit ${docType.toUpperCase()} - ${contract.form_no}`} />
 
             {/* Global Header - Simplified */}
             <div className="z-[100] flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-8 py-3.5 shadow-sm">
@@ -138,7 +138,7 @@ export default function CompareForms({ contract, docType, template, versions, in
                             <span className="rounded-md border border-black bg-black px-2 py-0.5 text-[9px] font-bold text-white">Mode Audit</span>
                         </h2>
                         <p className="mt-0.5 text-xs font-medium text-black">
-                            {contract.contract_no} &bull; {contract.title}
+                            {contract.form_no} &bull; {contract.title}
                         </p>
                     </div>
                 </div>

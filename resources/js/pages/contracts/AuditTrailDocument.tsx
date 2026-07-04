@@ -16,7 +16,7 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
 
     return (
         <div className="custom-scrollbar flex min-h-screen flex-col items-center bg-slate-200/50 p-4 sm:p-8 print:bg-white print:p-0">
-            <Head title={`Audit Trail - ${contract.contract_no}`} />
+            <Head title={`Audit Trail - ${contract.form_no}`} />
 
             {/* Control Bar - Hidden on print */}
             <div className="fixed top-4 right-4 z-50 flex gap-2 print:hidden">
@@ -39,9 +39,17 @@ export default function AuditTrailDocument({ contract, histories, filters }: Pro
                             </h1>
                             <span className="mt-1 text-[10px] font-bold text-slate-500 uppercase">Audit Trail Log Report</span>
                         </div>
-                        <div className="text-right">
-                            <div className="mb-1 text-[10px] leading-none font-semibold text-slate-400 uppercase">Contract No.</div>
-                            <div className="font-mono text-sm font-bold text-slate-900">{contract.contract_no}</div>
+                        <div className="text-right flex flex-col items-end gap-1">
+                            <div>
+                                <span className="mr-2 text-[9px] font-semibold text-slate-400 uppercase">No. Pengajuan:</span>
+                                <span className="font-mono text-xs font-bold text-slate-900">{contract.form_no}</span>
+                            </div>
+                            {contract.contract_no && (
+                                <div>
+                                    <span className="mr-2 text-[9px] font-semibold text-slate-400 uppercase">No. Kontrak:</span>
+                                    <span className="font-mono text-xs font-bold text-slate-900">{contract.contract_no}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 

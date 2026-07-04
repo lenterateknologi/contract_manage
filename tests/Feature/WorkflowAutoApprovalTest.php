@@ -51,10 +51,11 @@ beforeEach(function () {
         'description' => 'Self Review Phase',
         'approver_type' => 'user',
     ]);
-    DB::table('m_workflow_step_users')->insert([
+    DB::table('m_workflow_step_authorities')->insert([
         'id' => Str::uuid()->toString(),
         'workflow_step_id' => $this->step2->id,
         'user_id' => $this->creator->id,
+        'is_additional' => false,
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -82,7 +83,7 @@ test('it does not auto-approve step 1 even if the user is the initiator', functi
     // 1. Create contract
     $contract = Contract::create([
         'title' => 'Test Step 1 Auto Approve',
-        'contract_no' => 'CTR-AUTO-001',
+        'form_no' => 'CTR-AUTO-001',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -112,7 +113,7 @@ test('it still auto-approves step 2 if the approver is the same as the step 1 ac
     // 1. Create contract
     $contract = Contract::create([
         'title' => 'Test Step 2 Auto Approve',
-        'contract_no' => 'CTR-AUTO-002',
+        'form_no' => 'CTR-AUTO-002',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -153,7 +154,7 @@ test('it still auto-approves step 2 if the approver is the same as the step 1 ac
 test('it supports sequential ad-hoc approvers', function () {
     $contract = Contract::create([
         'title' => 'Test Sequential Adhoc',
-        'contract_no' => 'CTR-SEQ-001',
+        'form_no' => 'CTR-SEQ-001',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -205,7 +206,7 @@ test('it supports sequential ad-hoc approvers', function () {
 test('it supports parallel ad-hoc approvers', function () {
     $contract = Contract::create([
         'title' => 'Test Parallel Adhoc',
-        'contract_no' => 'CTR-PAR-001',
+        'form_no' => 'CTR-PAR-001',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -243,7 +244,7 @@ test('it supports parallel ad-hoc approvers', function () {
 test('it activates future step sequential ad-hoc approvals on transition', function () {
     $contract = Contract::create([
         'title' => 'Test Future Sequential Adhoc',
-        'contract_no' => 'CTR-FUT-SEQ-001',
+        'form_no' => 'CTR-FUT-SEQ-001',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -315,7 +316,7 @@ test('it activates future step sequential ad-hoc approvals on transition', funct
 test('it separates Pihak 1 and Pihak 2 into sequential sub-steps and creates contract versions on upload', function () {
     $contract = Contract::create([
         'title' => 'Test Signing Substeps',
-        'contract_no' => 'CTR-SIGN-SUB-001',
+        'form_no' => 'CTR-SIGN-SUB-001',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -343,7 +344,6 @@ test('it separates Pihak 1 and Pihak 2 into sequential sub-steps and creates con
     $contract = $contract->fresh();
     expect($contract->workflow_step_id)->toBe($this->step2->id);
 
-    // Verify approval exists for Staff Legal (Setup)
     $setupApproval = Approval::where('contract_id', $contract->id)
         ->where('workflow_step_id', $this->step2->id)
         ->where('role', 'Staff Legal (Setup)')
@@ -438,7 +438,7 @@ test('it separates Pihak 1 and Pihak 2 into sequential sub-steps and creates con
 test('it supports exactly 1 signer and advances step when signed', function () {
     $contract = Contract::create([
         'title' => 'Test Single Signing Substep',
-        'contract_no' => 'CTR-SIGN-SUB-002',
+        'form_no' => 'CTR-SIGN-SUB-002',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,

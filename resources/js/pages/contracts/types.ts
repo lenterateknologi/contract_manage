@@ -121,8 +121,8 @@ export interface FormSubmissionInfo {
 
 export interface Contract {
     id: string;
-    contract_no: string;
-    crown_no?: string | null;
+    form_no: string;
+    contract_no?: string | null;
     is_digital_signature?: boolean;
     title: string;
     description: string;
@@ -137,7 +137,8 @@ export interface Contract {
     parent_id?: string | null;
     parent?: {
         id: string;
-        contract_no: string;
+        form_no?: string;
+        contract_no?: string | null;
         title: string;
         status: ContractStatus;
         created_at: string;

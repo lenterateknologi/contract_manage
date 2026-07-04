@@ -12,13 +12,27 @@ class WorkflowStepAuthority extends Model
 
     protected $table = 'm_workflow_step_authorities';
 
+    public const AUTHORITY_TYPES = [
+        'user',
+        'division',
+        'department',
+        'role',
+        'company_group',
+        'region',
+        'role-division',
+        'role-division-company_group',
+        'role-division_company_group-region',
+    ];
+
     protected $fillable = [
         'workflow_step_id',
         'role_id',
         'department_id',
         'division_id',
         'user_id',
-        'is_initiator',
+        'company_group_id',
+        'region_id',
+        'use_initiator_property',
         'authority_type',
         'is_additional',
         'additional_type',
@@ -29,7 +43,7 @@ class WorkflowStepAuthority extends Model
     protected function casts(): array
     {
         return [
-            'is_initiator' => 'boolean',
+            'use_initiator_property' => 'boolean',
             'is_additional' => 'boolean',
         ];
     }

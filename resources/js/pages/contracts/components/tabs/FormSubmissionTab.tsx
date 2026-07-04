@@ -498,13 +498,13 @@ function GenericFormTab({
                                 <FileText size={16} /> Preview Dokumen {docType.toUpperCase()}
                             </h3>
                             <span className="text-text-soft text-[9px] font-medium  uppercase">
-                                {selected.contract_no} — Ready for Download
+                                {selected.form_no} — Ready for Download
                             </span>
                         </div>
                         <div className="flex items-center gap-3">
                             <a
                                 href={pdfPreviewUrl}
-                                download={`${selected.contract_no}_${docType.toUpperCase()}.pdf`}
+                                download={`${selected.form_no}_${docType.toUpperCase()}.pdf`}
                                 className="bg-primary text-primary-foreground shadow-primary/20 flex h-10 items-center gap-2 rounded-xl px-6 text-[10px] font-medium uppercase shadow-lg transition-all hover:opacity-90 active:scale-95"
                             >
                                 <Download size={14} /> Download PDF

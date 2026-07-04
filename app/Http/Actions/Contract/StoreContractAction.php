@@ -31,15 +31,15 @@ class StoreContractAction
             $initiator = User::with('department')->find($initiatorId);
             $contractType = ContractType::find($validated['contract_type_id']);
 
-            $contract_no = NumberingFormat::generateNextNumber('contract', [
+            $form_no = NumberingFormat::generateNextNumber('contract', [
                 'kode_departemen' => $initiator?->department?->code ?? 'GEN',
                 'kode_perjanjian' => $contractType?->code ?? 'KTR',
             ]);
 
             $contract = Contract::create([
-                'contract_no' => $contract_no,
+                'form_no' => $form_no,
                 'title' => $validated['title'],
-                'crown_no' => $validated['crown_no'] ?? null,
+                'contract_no' => $validated['contract_no'] ?? null,
                 'description' => $validated['description'] ?? '—',
                 'contract_type_id' => $validated['contract_type_id'],
                 'contract_type_parent_id' => $validated['contract_type_parent_id'] ?? null,

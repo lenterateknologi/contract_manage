@@ -78,7 +78,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                                 <div className="flex min-w-0 flex-col">
                                     <div className="mb-1.5 flex flex-wrap items-center gap-2">
                                         <span className="text-muted-foreground font-mono text-[10px] font-bold  uppercase">
-                                            {parent.contract_no || 'DRAFT'}
+                                            {parent.contract_no || parent.form_no || 'DRAFT'}
                                         </span>
                                         <span className="h-1 w-1 rounded-full bg-black/10 dark:bg-white/10" />
                                         <span className="bg-primary/10 text-primary dark:bg-primary/20 rounded-full px-2.5 py-0.5 text-[9px] font-bold  uppercase shadow-sm dark:text-white">
@@ -198,7 +198,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                                         >
                                             <div className="min-w-0 flex-1">
                                                 <div className="text-muted-foreground/80 mb-1 font-mono text-[9px] font-bold tracking-tight uppercase">
-                                                    {c.contract_no || 'NO NUMBER'}
+                                                    {c.contract_no || c.form_no || 'NO NUMBER'}
                                                 </div>
                                                 <div className="text-foreground group-hover:text-primary line-clamp-1 text-[13px] font-bold transition-colors dark:text-white">
                                                     {c.title}

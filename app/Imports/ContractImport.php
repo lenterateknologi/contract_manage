@@ -27,9 +27,9 @@ class ContractImport implements ToModel, WithHeadingRow, WithValidation
         return Contract::updateOrCreate(
             ['id' => $id],
             [
-                'contract_no' => $row['no_kontrak'] ?? null,
+                'form_no' => $row['no_pengajuan'] ?? $row['no_kontrak'] ?? null,
                 'title' => $row['judul'],
-                'crown_no' => $row['no_crown'] ?? null,
+                'contract_no' => isset($row['no_pengajuan']) ? ($row['no_kontrak'] ?? null) : ($row['no_crown'] ?? null),
                 'contract_type_id' => $contractType?->id,
                 'submission_type_id' => $submissionType?->id,
                 'status' => strtolower($row['status'] ?? 'draft'),

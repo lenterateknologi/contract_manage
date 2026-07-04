@@ -12,8 +12,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { Head, router, useForm } from '@inertiajs/react';
 import { CheckCircle2, Edit3, GitBranch, LayoutTemplate, PlusCircle, Shield, Trash2, Users as UsersIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import OrgScopeSelector from './components/OrgScopeSelector';
-import AuthoritySelector from './components/AuthoritySelector';
+import AuthorityTableManager from './components/AuthorityTableManager';
 import SortableStepItem from './components/SortableStepItem';
 import { MASTER_ACTIONS } from './constants';
 
@@ -36,7 +35,6 @@ export default function WorkflowEditor({
     formTemplates = [],
 }: any) {
     const { showToast } = useToast();
-    const [isOrgExpanded, setIsOrgExpanded] = useState(false);
 
     const [expandedStepIds, _setExpandedStepIds] = useState<Record<string, boolean>>(() => {
         if (typeof window !== 'undefined') {
@@ -83,6 +81,7 @@ export default function WorkflowEditor({
         contract_type_id: workflow?.contract_type_id || '',
         description: workflow?.description || '',
         is_default: !!workflow?.is_default,
+        is_selectable: !!workflow?.is_selectable,
         initiator_type: workflow?.initiator_type || 'all',
         initiator_roles: {
             is_initiator: (workflow?.initiator_roles || []).some((r: any) => r?.is_initiator === true),
@@ -110,6 +109,7 @@ export default function WorkflowEditor({
 
             return {
                 ...s,
+                approver_authorities: s.approver_authorities || [],
                 approver_config: {
                     custom: config.custom || [],
                     roles: config.roles && config.roles.length > 0 ? config.roles : (s.approver_type === 'role' && hasRoles ? s.role : []),
@@ -131,6 +131,7 @@ export default function WorkflowEditor({
         company_ids: (workflow?.company_ids || []).map((i: any) =>
             typeof i === 'object' ? i : { value: String(i), is_initiator: false }
         ),
+        initiator_authorities: workflow?.initiator_authorities || [],
         meta: workflow?.meta || {},
     });
 
@@ -337,8 +338,9 @@ export default function WorkflowEditor({
                                             <Edit3 size={14} className="text-primary" />
                                             <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Informasi Dasar</h3>
                                         </div>
-                                        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                                            <div className="lg:col-span-6">
+                                        <div className="space-y-4">
+                                            {/* Row 1: Nama Alur Kerja */}
+                                            <div>
                                                 <FormInput
                                                     label={
                                                         <>
@@ -355,9 +357,9 @@ export default function WorkflowEditor({
                                                     size="sm"
                                                 />
                                             </div>
-                                            <div className="lg:col-span-3">
+                                            {/* Row 2: Jenis Kontrak, Status Alur, Dapat Dipilih */}
+                                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                                                 <div className="space-y-2">
-
                                                     <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <LayoutTemplate size={10} /> Jenis Kontrak
                                                     </label>
@@ -384,8 +386,6 @@ export default function WorkflowEditor({
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                            </div>
-                                            <div className="lg:col-span-3">
                                                 <div className="space-y-2">
                                                     <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         Status Alur
@@ -405,12 +405,31 @@ export default function WorkflowEditor({
                                                         </label>
                                                     </div>
                                                 </div>
+                                                <div className="space-y-2">
+                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
+                                                        Tampil sebagai pilihan
+                                                    </label>
+                                                    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-4 dark:border-slate-800 dark:bg-card /50">
+                                                        <Checkbox
+                                                            id="is_selectable"
+                                                            checked={form.data.is_selectable}
+                                                            onCheckedChange={(c) => form.setData('is_selectable', !!c)}
+                                                            className="h-4 w-4"
+                                                        />
+                                                        <label
+                                                            htmlFor="is_selectable"
+                                                            className="text-primary cursor-pointer text-xs font-medium dark:text-white"
+                                                        >
+                                                            Dapat dipilih
+                                                        </label>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* --- Advanced Workflow Configurations (1x3 Grid) --- */}
-                                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                                    {/* --- Advanced Workflow Configurations (1x2 Grid) --- */}
+                                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                                         {/* Column 1: Pengaturan Mode Dokumen */}
                                         <div className="space-y-4">
                                             <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
@@ -594,92 +613,19 @@ export default function WorkflowEditor({
                                             </div>
                                         </div>
 
-                                        {/* Column 2: Ruang Lingkup Organisasi */}
-                                        <OrgScopeSelector
-                                            form={form}
-                                            companyGroups={companyGroups}
-                                            regions={regions}
-                                            companies={companies}
-                                            isOrgExpanded={isOrgExpanded}
-                                            setIsOrgExpanded={setIsOrgExpanded}
-                                        />
-
-                                        {/* Column 3: Otoritas Akses (Initiator) */}
-                                        <div className="space-y-4">
-                                            <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
-                                                <Shield size={14} className="text-primary" />
-                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                                                    Otoritas Inisiator
-                                                </h3>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                {/* Role */}
-                                                <AuthoritySelector
-                                                    label="Role"
-                                                    idPrefix="init-role"
-                                                    isInitiator={!!form.data.initiator_roles?.is_initiator}
-                                                    onIsInitiatorChange={(checked) =>
-                                                        form.setData('initiator_roles', {
-                                                            is_initiator: checked,
-                                                            items: checked ? [] : (form.data.initiator_roles?.items ?? []),
-                                                        })
-                                                    }
-                                                    values={form.data.initiator_roles?.items ?? []}
-                                                    onValuesChange={(vals) =>
-                                                        form.setData('initiator_roles', {
-                                                            is_initiator: !!form.data.initiator_roles?.is_initiator,
-                                                            items: vals,
-                                                        })
-                                                    }
-                                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                                    placeholder="Tambah Role..."
-                                                />
-
-                                                {/* Department */}
-                                                <AuthoritySelector
-                                                    label="Divisi"
-                                                    idPrefix="init-dept"
-                                                    isInitiator={!!form.data.initiator_departments?.is_initiator}
-                                                    onIsInitiatorChange={(checked) =>
-                                                        form.setData('initiator_departments', {
-                                                            is_initiator: checked,
-                                                            items: checked ? [] : (form.data.initiator_departments?.items ?? []),
-                                                        })
-                                                    }
-                                                    values={form.data.initiator_departments?.items ?? []}
-                                                    onValuesChange={(vals) =>
-                                                        form.setData('initiator_departments', {
-                                                            is_initiator: !!form.data.initiator_departments?.is_initiator,
-                                                            items: vals,
-                                                        })
-                                                    }
-                                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                    placeholder="Tambah Divisi..."
-                                                />
-
-                                                {/* User */}
-                                                <AuthoritySelector
-                                                    label="User"
-                                                    idPrefix="init-user"
-                                                    isInitiator={!!form.data.initiator_users?.is_initiator}
-                                                    onIsInitiatorChange={(checked) =>
-                                                        form.setData('initiator_users', {
-                                                            is_initiator: checked,
-                                                            items: checked ? [] : (form.data.initiator_users?.items ?? []),
-                                                        })
-                                                    }
-                                                    values={form.data.initiator_users?.items ?? []}
-                                                    onValuesChange={(vals) =>
-                                                        form.setData('initiator_users', {
-                                                            is_initiator: !!form.data.initiator_users?.is_initiator,
-                                                            items: vals,
-                                                        })
-                                                    }
-                                                    options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
-                                                    placeholder="Tambah User..."
-                                                />
-                                            </div>
+                                        {/* Column 2: Otoritas Akses (Initiator) - Spans full width at the bottom */}
+                                        <div className="lg:col-span-2 space-y-4">
+                                            <AuthorityTableManager
+                                                title="Otoritas Inisiator"
+                                                authorities={form.data.initiator_authorities || []}
+                                                onChange={(vals) => form.setData('initiator_authorities', vals)}
+                                                users={users}
+                                                roles={roles}
+                                                departments={departments}
+                                                divisions={divisions}
+                                                companyGroups={companyGroups}
+                                                regions={regions}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -721,6 +667,8 @@ export default function WorkflowEditor({
                                                             departments={departments}
                                                             divisions={divisions}
                                                             users={users}
+                                                            companyGroups={companyGroups}
+                                                            regions={regions}
                                                             step={step}
                                                             idx={idx}
                                                             isExpanded={!!expandedStepIds[step.id]}

@@ -54,7 +54,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                 <table className="w-full border-collapse text-left">
                     <thead>
                         <tr className="border-border/40 bg-muted/20 border-b dark:border-slate-800/40 dark:bg-slate-900/35">
-                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">No. Kontrak</th>
+                            <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">No. Pengajuan</th>
                             <th className="text-muted-foreground px-5 py-3 text-[9px] font-medium  uppercase">Judul & Pembuat</th>
                             <th className="text-muted-foreground hidden px-5 py-3 text-[9px] font-medium  uppercase md:table-cell">
                                 Tipe
@@ -90,7 +90,7 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                         {/* No. Kontrak */}
                                         <td className="px-5 py-3.5">
                                             <span className="text-primary/80 group-hover:text-primary font-mono text-[10px] font-medium whitespace-nowrap transition-colors">
-                                                {c.contract_no}
+                                                {c.form_no || c.contract_no}
                                             </span>
                                         </td>
 

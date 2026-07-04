@@ -7,7 +7,7 @@ test('it creates a contract and stores its metadata transparently in t_contract_
     $user = User::factory()->create();
 
     $contract = Contract::create([
-        'contract_no' => 'CTR/2026/TEST-OPTIMIZE',
+        'form_no' => 'CTR/2026/TEST-OPTIMIZE',
         'title' => 'Test Contract Optimization',
         'created_by' => $user->id,
         'kop_topik' => 'Penting Sekali',
@@ -20,7 +20,7 @@ test('it creates a contract and stores its metadata transparently in t_contract_
     // Verify contract is stored in t_contracts
     $this->assertDatabaseHas('t_contracts', [
         'id' => $contract->id,
-        'contract_no' => 'CTR/2026/TEST-OPTIMIZE',
+        'form_no' => 'CTR/2026/TEST-OPTIMIZE',
     ]);
 
     // Verify metadata columns do NOT exist in t_contracts table (they should be in t_contract_meta)
@@ -44,7 +44,7 @@ test('it updates metadata transparently in t_contract_meta when updated on contr
     $user = User::factory()->create();
 
     $contract = Contract::create([
-        'contract_no' => 'CTR/2026/TEST-UPDATE',
+        'form_no' => 'CTR/2026/TEST-UPDATE',
         'title' => 'Test Update Contract',
         'created_by' => $user->id,
         'kop_topik' => 'Topik Awal',
@@ -74,7 +74,7 @@ test('it includes metadata attributes in toArray and JSON serialization', functi
     $user = User::factory()->create();
 
     $contract = Contract::create([
-        'contract_no' => 'CTR/2026/TEST-SERIALIZE',
+        'form_no' => 'CTR/2026/TEST-SERIALIZE',
         'title' => 'Test Serialize Contract',
         'created_by' => $user->id,
         'kop_topik' => 'Topik Serialize',

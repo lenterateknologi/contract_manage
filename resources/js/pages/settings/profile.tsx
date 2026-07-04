@@ -45,6 +45,7 @@ import { UserProfile as BaseUserProfile } from '@/pages/contracts/types';
 
 interface RecentContract {
     id: string;
+    form_no: string;
     contract_no: string;
     title: string;
     type: string;
@@ -369,7 +370,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
                                                 <div className="flex items-start justify-between gap-3">
                                                     <div className="min-w-0">
                                                         <p className="text-primary mb-1 truncate text-xs font-medium">
-                                                            {c.contract_no || '—'}
+                                                            {c.form_no || c.contract_no || '—'}
                                                         </p>
                                                         <p className="text-text-main line-clamp-2 text-sm font-medium leading-snug">
                                                             {c.title}

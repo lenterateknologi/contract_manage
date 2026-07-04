@@ -86,9 +86,9 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
 
     const columns = [
         {
-            header: 'No. Kontrak',
-            accessorKey: 'contract_no',
-            cell: (row: any) => <span className="font-mono font-semibold text-text-soft">{row.contract_no}</span>
+            header: 'No. Pengajuan',
+            accessorKey: 'form_no',
+            cell: (row: any) => <span className="font-mono font-semibold text-text-soft">{row.form_no || row.contract_no || '—'}</span>
         },
         {
             header: 'Judul',

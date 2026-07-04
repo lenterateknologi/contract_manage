@@ -53,12 +53,12 @@ export function ActivityFeed({ items }: ActivityFeedProps) {
                                 <div className="min-w-0 flex-1">
                                     <p className="text-text-main text-[12px] font-medium tracking-tight">{act.description}</p>
                                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                                        {act.contract_no && (
+                                        {(act.form_no || act.contract_no) && (
                                             <span
                                                 onClick={() => act.contract_id && router.get(`/contracts/${act.contract_id}`)}
                                                 className="text-primary hover:text-primary/80 cursor-pointer font-mono text-[10px] font-medium transition-colors"
                                             >
-                                                {act.contract_no}
+                                                {act.form_no || act.contract_no}
                                             </span>
                                         )}
                                         <span className="text-text-desc/30 text-[10px]">·</span>

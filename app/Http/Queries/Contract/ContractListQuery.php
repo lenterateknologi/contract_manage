@@ -40,7 +40,7 @@ class ContractListQuery
         'initiator:id,name,role_id,department_id,division_id,company_id,email',
         'initiator.department:id,name',
         'initiator.company:id,name,company_group_id,region_id',
-        'parent:id,contract_no,title',
+        'parent:id,form_no,contract_no,title',
         'assignedPic:id,name,role_id,department_id,division_id,company_id,email',
         'assignedPic.department:id,name',
         'assignedBy:id,name,role_id,department_id,division_id,company_id,email',
@@ -52,11 +52,11 @@ class ContractListQuery
      * Selected columns for list queries.
      */
     private const SELECT = [
-        'id', 'contract_no', 'title', 'description', 'contract_date', 'end_date',
+        'id', 'form_no', 'title', 'description', 'contract_date', 'end_date',
         'contract_type_id', 'transaction_type', 'status', 'current_version',
         'workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
         'created_at', 'updated_at', 'initiated_by_id', 'vendor_id', 'parent_id',
-        'submission_type_id', 'crown_no', 'assigned_pic_id', 'assigned_by_id',
+        'submission_type_id', 'contract_no', 'assigned_pic_id', 'assigned_by_id',
         'contract_type_parent_id',
     ];
 
@@ -127,7 +127,7 @@ class ContractListQuery
     }
 
     /**
-     * Apply full-text search filter across title, contract_no, crown_no and creator name.
+     * Apply full-text search filter across title, form_no, contract_no and creator name.
      */
     private function applySearchFilter(Builder $query, Request $request): void
     {
@@ -138,8 +138,8 @@ class ContractListQuery
         $search = strtolower($request->search);
         $query->where(function (Builder $q) use ($search): void {
             $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
+                ->orWhere(DB::raw('LOWER(form_no)'), 'like', "%{$search}%")
                 ->orWhere(DB::raw('LOWER(contract_no)'), 'like', "%{$search}%")
-                ->orWhere(DB::raw('LOWER(crown_no)'), 'like', "%{$search}%")
                 ->orWhereHas('creator', fn (Builder $uq) => $uq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%"));
         });
     }

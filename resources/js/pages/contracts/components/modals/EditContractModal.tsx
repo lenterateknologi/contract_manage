@@ -30,7 +30,7 @@ export function EditContractModal({
     processing,
 }: EditContractModalProps) {
     const [title, setTitle] = useState('');
-    const [contractNo, setContractNo] = useState('');
+    const [formNo, setFormNo] = useState('');
     const [description, setDescription] = useState('');
     const [date, setDate] = useState('');
     const [typeId, setTypeId] = useState('');
@@ -40,7 +40,7 @@ export function EditContractModal({
     useEffect(() => {
         if (open && contract) {
             setTitle(contract.title);
-            setContractNo(contract.contract_no);
+            setFormNo(contract.form_no);
             setDescription(contract.description || '');
             setDate(contract.contract_date ? contract.contract_date.split('T')[0] : '');
 
@@ -55,7 +55,7 @@ export function EditContractModal({
     const handleSubmit = () => {
         onSubmit({
             title,
-            contract_no: contractNo,
+            form_no: formNo,
             description,
             contract_date: date,
             contract_type_id: typeId,
@@ -98,7 +98,7 @@ export function EditContractModal({
                         placeholder="Masukkan judul kontrak"
                         required
                     />
-                    <FormInput label="No. Pengajuan" value={contractNo} onChange={(e) => setContractNo(e.target.value)} placeholder="CTR/2026/..." />
+                    <FormInput label="No. Pengajuan" value={formNo} onChange={(e) => setFormNo(e.target.value)} placeholder="CTR/2026/..." />
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3">

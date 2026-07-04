@@ -30,12 +30,14 @@ export interface ActivityItem {
     actor: string;
     contract_id: string;
     contract_title: string;
+    form_no: string;
     contract_no: string;
     created_at: string;
 }
 
 export interface ContractItem {
     id: string;
+    form_no: string;
     contract_no: string;
     title: string;
     status: string;

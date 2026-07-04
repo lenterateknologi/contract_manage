@@ -10,8 +10,8 @@ interface ContractInfoFormProps {
     isDraft: boolean;
     title: string;
     setTitle: (val: string) => void;
-    crownNo: string;
-    setCrownNo: (val: string) => void;
+    contractNo: string;
+    setContractNo: (val: string) => void;
     typeId: string;
     setTypeId: (val: string) => void;
     submissionTypeId: string;
@@ -29,8 +29,8 @@ export function ContractInfoForm({
     isDraft,
     title,
     setTitle,
-    crownNo,
-    setCrownNo,
+    contractNo,
+    setContractNo,
     typeId,
     setTypeId,
     submissionTypeId,
@@ -58,18 +58,18 @@ export function ContractInfoForm({
             <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                     <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Kontrak (F2)</div>
-                    <MetaBadge name="crown_no" />
+                    <MetaBadge name="contract_no" />
                 </div>
                 {selected.workflow_step?.meta?.allow_f2_edit === true ? (
                     <Input
-                        value={crownNo}
-                        onChange={(e) => setCrownNo(e.target.value)}
+                        value={contractNo}
+                        onChange={(e) => setContractNo(e.target.value)}
                         placeholder="Masukkan nomor kontrak F2..."
                         className={inputCls}
                     />
                 ) : (
                     <div className="text-primary text-sm font-bold">
-                        {selected.crown_no || <span className="text-text-soft/40 text-xs font-medium italic">Belum diisi</span>}
+                        {selected.contract_no || <span className="text-text-soft/40 text-xs font-medium italic">Belum diisi</span>}
                     </div>
                 )}
             </div>

@@ -29,8 +29,8 @@ class ContractFormatter
 
         return [
             'id' => $c->id,
+            'form_no' => $c->form_no,
             'contract_no' => $c->contract_no,
-            'crown_no' => $c->crown_no,
             'title' => $c->title,
             'description' => $c->description,
             'contract_date' => $c->contract_date,
@@ -75,7 +75,7 @@ class ContractFormatter
             'allow_reference' => (bool) data_get($c->workflowStep?->meta, 'allow_reference', true),
 
             // Specialized permissions
-            'can_fill_crown_no' => Auth::user()?->role === Role::ADMIN || Auth::user()?->role === 'Legal Staff' || Auth::user()?->role === 'PIC Legal',
+            'can_fill_contract_no' => Auth::user()?->role === Role::ADMIN || Auth::user()?->role === 'Legal Staff' || Auth::user()?->role === 'PIC Legal',
             'can_set_digital_signature' => Auth::user()?->role === Role::ADMIN || Auth::user()?->role === 'PIC Legal',
 
             'current_version' => $c->current_version,
@@ -95,6 +95,7 @@ class ContractFormatter
             'parent_id' => $c->parent_id,
             'parent' => $c->parent ? [
                 'id' => $c->parent->id,
+                'form_no' => $c->parent->form_no,
                 'contract_no' => $c->parent->contract_no,
                 'title' => $c->parent->title,
             ] : null,

@@ -302,7 +302,7 @@ const ContractDetailView = ({
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-3">
                             <span className="text-text-soft text-[10px] font-semibold tracking-[0.2em] uppercase">
-                                #{contract.contract_no || 'NO-REQ'}
+                                #{contract.form_no || 'NO-REQ'}
                             </span>
                         </div>
                     </div>

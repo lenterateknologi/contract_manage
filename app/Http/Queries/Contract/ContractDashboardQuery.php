@@ -475,6 +475,7 @@ class ContractDashboardQuery
             ->get()
             ->map(fn ($item) => [
                 'id' => $item->id,
+                'form_no' => $item->form_no,
                 'contract_no' => $item->contract_no,
                 'title' => $item->title,
                 'status' => $item->status,
@@ -500,6 +501,7 @@ class ContractDashboardQuery
             ->get()
             ->map(fn ($item) => [
                 'id' => $item->id,
+                'form_no' => $item->form_no,
                 'contract_no' => $item->contract_no,
                 'title' => $item->title,
                 'end_date' => $item->end_date,
@@ -522,6 +524,7 @@ class ContractDashboardQuery
             ->map(fn ($app) => [
                 'id' => $app->id,
                 'contract_id' => $app->contract_id,
+                'form_no' => $app->contract->form_no,
                 'contract_no' => $app->contract->contract_no,
                 'title' => $app->contract->title,
                 'creator' => $app->contract->creator?->name,
@@ -547,6 +550,7 @@ class ContractDashboardQuery
                 'm_users.name as actor_name',
                 't_contracts.id as contract_id',
                 't_contracts.title as contract_title',
+                't_contracts.form_no',
                 't_contracts.contract_no',
             )
             ->orderByDesc('t_contract_h.created_at')
@@ -559,6 +563,7 @@ class ContractDashboardQuery
                 'actor' => $item->actor_name ?? 'Sistem',
                 'contract_id' => $item->contract_id,
                 'contract_title' => $item->contract_title,
+                'form_no' => $item->form_no,
                 'contract_no' => $item->contract_no,
                 'created_at' => $item->created_at,
             ])

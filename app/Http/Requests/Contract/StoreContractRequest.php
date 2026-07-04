@@ -25,7 +25,8 @@ class StoreContractRequest extends FormRequest
         return [
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'crown_no' => 'nullable|string|max:255',
+            'contract_no' => 'nullable|string|max:255',
+            'form_no' => 'nullable|string|max:255',
             'contract_type_id' => 'required|exists:m_contract_types,id',
             'contract_type_parent_id' => 'nullable|exists:m_contract_types,id',
             'submission_type_id' => 'nullable|exists:m_submission_types,id',

@@ -135,7 +135,7 @@ export const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
 );
 
 export const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-primary font-mono text-xs font-medium">{c.contract_no || 'N/A'}</span>
+    <span className="text-primary font-mono text-xs font-medium">{c.form_no || 'N/A'}</span>
 );
 
 export const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
@@ -171,7 +171,7 @@ export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: C
 
 export const ContractNoAndTitleCell = ({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col gap-0.5 py-0.5">
-        <span className="text-primary font-mono text-[11px] leading-none font-semibold">{c.contract_no || 'N/A'}</span>
+        <span className="text-primary font-mono text-[11px] leading-none font-semibold">{c.form_no || 'N/A'}</span>
         <span className="text-text-main mt-1.5 line-clamp-1 text-[12px] leading-tight font-normal">{c.title}</span>
     </div>
 );

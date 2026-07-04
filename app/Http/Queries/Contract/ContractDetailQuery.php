@@ -45,11 +45,11 @@ class ContractDetailQuery
      * Selected columns for detail query.
      */
     private const SELECT = [
-        'id', 'contract_no', 'title', 'description', 'contract_date', 'end_date',
+        'id', 'form_no', 'title', 'description', 'contract_date', 'end_date',
         'contract_type_id', 'transaction_type', 'status', 'current_version',
         'workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
         'created_at', 'updated_at', 'initiated_by_id', 'vendor_id', 'parent_id',
-        'submission_type_id', 'crown_no', 'assigned_pic_id', 'assigned_by_id',
+        'submission_type_id', 'contract_no', 'assigned_pic_id', 'assigned_by_id',
         'contract_type_parent_id', 'metadata',
     ];
 

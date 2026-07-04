@@ -31,6 +31,7 @@ class ProfileController extends Controller
             ->get()
             ->map(fn ($c) => [
                 'id' => $c->id,
+                'form_no' => $c->form_no,
                 'contract_no' => $c->contract_no,
                 'title' => $c->title,
                 'type' => $c->contractType?->name,

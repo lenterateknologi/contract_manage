@@ -29,6 +29,7 @@ import { ForwardModal } from './modals/ForwardModal';
 import { RejectModal } from './modals/RejectModal';
 import { SignerModal } from './modals/SignerModal';
 import AuthoritySelector from './AuthoritySelector';
+import AuthorityTableManager from './AuthorityTableManager';
 
 import { ALL_ROLES, APPROVER_TYPE_STYLES } from '../constants';
 
@@ -53,6 +54,8 @@ export default function SortableStepItem({
     departments,
     divisions = [],
     users,
+    companyGroups = [],
+    regions = [],
     allWorkflows = [],
     allWorkflowSteps = [],
 }: {
@@ -70,6 +73,8 @@ export default function SortableStepItem({
     departments: any[];
     divisions?: any[];
     users: any[];
+    companyGroups?: any[];
+    regions?: any[];
     allWorkflows?: any[];
     allWorkflowSteps?: any[];
 }) {
@@ -745,98 +750,19 @@ export default function SortableStepItem({
                                     </div>
                                 </div>
                             </div>
-                        )}
-
-                        {stepTab === 'actors' && (
+                        )}                        {stepTab === 'actors' && (
                             <div className="space-y-6 animate-in fade-in duration-200 w-full">
-                                {/* --- Column 2: Actors / People Settings --- */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
-                                        <UsersIcon size={14} className="text-slate-400" />
-                                        <h4 className="text-xs font-bold tracking-wide text-slate-700 dark:text-slate-300">
-                                            Pool Otoritas Langkah (Multi-Source)
-                                        </h4>
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        {/* Grid Row 1: Custom Actors & Direct Users side-by-side */}
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {/* 1. Kelompok Aktor */}
-                                            <AuthoritySelector
-                                                label="Aktor Kustom"
-                                                idPrefix={`step-actor-custom-${idx}`}
-                                                isInitiator={false}
-                                                showCheckbox={false}
-                                                values={step.approver_config?.custom || []}
-                                                onValuesChange={(vals) => updateConfig('custom', vals)}
-                                                options={[
-                                                    { value: 'initiator', label: 'INISIATOR' },
-                                                    { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
-                                                    { value: 'creator', label: 'PEMBUAT' }
-                                                ]}
-                                                placeholder="Pilih Aktor..."
-                                            />
-
-                                            {/* 3. Kelompok User Langsung */}
-                                            <AuthoritySelector
-                                                label="User Langsung"
-                                                idPrefix={`step-user-direct-${idx}`}
-                                                isInitiator={false}
-                                                showCheckbox={false}
-                                                values={step.approver_config?.users || []}
-                                                onValuesChange={(vals) => updateConfig('users', vals)}
-                                                options={userOptions}
-                                                placeholder="Pilih User..."
-                                            />
-                                        </div>
-
-
-                                        {/* 2. Kelompok Divisi & Role */}
-                                        <div className="space-y-3 pt-2">
-                                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <Shield size={13} className="text-slate-400" />
-                                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tracking-wide">Kombinasi Divisi & Role</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800">
-                                                    <Checkbox
-                                                        id={`step-use-combo-${idx}`}
-                                                        checked={step.approver_config?.use_combination !== false}
-                                                        onCheckedChange={(checked) => updateConfig('use_combination', checked === true)}
-                                                    />
-                                                    <label htmlFor={`step-use-combo-${idx}`} className="text-[10px] font-bold text-slate-700 dark:text-slate-300 cursor-pointer tracking-wider">Aktifkan</label>
-                                                </div>
-                                            </div>
-                                            <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 transition-opacity duration-200 ${step.approver_config?.use_combination === false ? 'opacity-40 pointer-events-none' : ''}`}>
-                                                {/* Role Pool */}
-                                                <AuthoritySelector
-                                                    label="Berdasarkan Role"
-                                                    idPrefix={`step-role-${idx}`}
-                                                    isInitiator={step.approver_config?.is_initiator_role === true}
-                                                    onIsInitiatorChange={(checked) => updateConfig('is_initiator_role', checked)}
-                                                    values={step.approver_config?.roles || []}
-                                                    onValuesChange={(vals) => updateConfig('roles', vals)}
-                                                    options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                                    placeholder="Pilih Role..."
-                                                    disabled={step.approver_config?.use_combination === false}
-                                                />
-
-                                                {/* Divisi Pool */}
-                                                <AuthoritySelector
-                                                    label="Divisi Pool"
-                                                    idPrefix={`step-dept-${idx}`}
-                                                    isInitiator={step.approver_config?.is_initiator_department === true}
-                                                    onIsInitiatorChange={(checked) => updateConfig('is_initiator_department', checked)}
-                                                    values={step.approver_config?.departments || []}
-                                                    onValuesChange={(vals) => updateConfig('departments', vals)}
-                                                    options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                                    placeholder="Pilih Divisi..."
-                                                    disabled={step.approver_config?.use_combination === false}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <AuthorityTableManager
+                                    title="Otoritas Langkah"
+                                    authorities={step.approver_authorities || []}
+                                    onChange={(vals) => updateLocalStep(idx, { approver_authorities: vals })}
+                                    users={users}
+                                    roles={roles}
+                                    departments={departments}
+                                    divisions={divisions}
+                                    companyGroups={companyGroups}
+                                    regions={regions}
+                                />
                             </div>
                         )}
 

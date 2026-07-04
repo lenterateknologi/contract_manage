@@ -50,10 +50,11 @@ beforeEach(function () {
         'description' => 'Manager Approval',
         'approver_type' => 'role',
     ]);
-    DB::table('m_workflow_step_roles')->insert([
+    DB::table('m_workflow_step_authorities')->insert([
         'id' => Str::uuid()->toString(),
         'workflow_step_id' => $this->step2->id,
-        'role_name' => 'Manager',
+        'role_id' => Role::firstOrCreate(['name' => 'Manager'])->id,
+        'is_additional' => false,
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -65,10 +66,11 @@ beforeEach(function () {
         'description' => 'VP Approval',
         'approver_type' => 'user',
     ]);
-    DB::table('m_workflow_step_users')->insert([
+    DB::table('m_workflow_step_authorities')->insert([
         'id' => Str::uuid()->toString(),
         'workflow_step_id' => $this->step3->id,
         'user_id' => $this->vp->id,
+        'is_additional' => false,
         'created_at' => now(),
         'updated_at' => now(),
     ]);
@@ -103,7 +105,7 @@ test('it can add adhoc approver during active review', function () {
     // 1. Create contract in draft
     $contract = Contract::create([
         'title' => 'Test Adhoc Approval Contract',
-        'contract_no' => 'CTR-ADHOC-001',
+        'form_no' => 'CTR-ADHOC-001',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -148,14 +150,14 @@ test('it can add adhoc approver during active review', function () {
     // Verify contract history logged the event
     $this->assertDatabaseHas('t_contract_h', [
         'contract_id' => $contract->id,
-        'action' => 'ADHOC_APPROVER_ADDED',
+        'action' => 'ADHOC_PARTICIPANT_ADDED',
     ]);
 });
 
 test('it prevents adding duplicate adhoc approver', function () {
     $contract = Contract::create([
         'title' => 'Test Adhoc Duplicate',
-        'contract_no' => 'CTR-ADHOC-002',
+        'form_no' => 'CTR-ADHOC-002',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -183,7 +185,7 @@ test('it prevents adding duplicate adhoc approver', function () {
 test('it can add multiple adhoc approvers at once', function () {
     $contract = Contract::create([
         'title' => 'Test Multiple Adhoc',
-        'contract_no' => 'CTR-ADHOC-005',
+        'form_no' => 'CTR-ADHOC-005',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -221,7 +223,7 @@ test('it can add multiple adhoc approvers at once', function () {
 test('step does not advance until both regular and adhoc approvals are approved', function () {
     $contract = Contract::create([
         'title' => 'Test Adhoc Block',
-        'contract_no' => 'CTR-ADHOC-003',
+        'form_no' => 'CTR-ADHOC-003',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,
@@ -288,7 +290,7 @@ test('step does not advance until both regular and adhoc approvals are approved'
 test('rejecting adhoc approval sends contract back to revision', function () {
     $contract = Contract::create([
         'title' => 'Test Adhoc Reject',
-        'contract_no' => 'CTR-ADHOC-004',
+        'form_no' => 'CTR-ADHOC-004',
         'contract_type_id' => $this->type->id,
         'created_by' => $this->creator->id,
         'initiated_by_id' => $this->creator->id,

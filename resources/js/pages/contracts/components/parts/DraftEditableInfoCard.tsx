@@ -57,7 +57,7 @@ export function DraftEditableInfoCard({
     const [vendorId, setVendorId] = useState(selected.vendor_id || '');
     const [submissionTypeId, setSubmissionTypeId] = useState(selected.submission_type_id || '');
     const [kopSubTopik, setKopSubTopik] = useState((selected as any).kop_sub_topik || '');
-    const [crownNo, setCrownNo] = useState((selected as any).crown_no || '');
+    const [contractNo, setContractNo] = useState(selected.contract_no || '');
     const [minimized, setMinimized] = useState(false);
     const [taxRequired, setTaxRequired] = useState<boolean>(() => !!selected.metadata?.tax_required);
 
@@ -77,7 +77,7 @@ export function DraftEditableInfoCard({
         setVendorId(selected.vendor_id || '');
         setSubmissionTypeId(selected.submission_type_id || '');
         setKopSubTopik((selected as any).kop_sub_topik || '');
-        setCrownNo((selected as any).crown_no || '');
+        setContractNo(selected.contract_no || '');
         setTaxRequired(!!selected.metadata?.tax_required);
     }, [
         selected.id,
@@ -108,7 +108,7 @@ export function DraftEditableInfoCard({
             vendorId !== (selected.vendor_id || '') ||
             submissionTypeId !== (selected.submission_type_id || '') ||
             kopSubTopik !== ((selected as any).kop_sub_topik || '') ||
-            crownNo !== ((selected as any).crown_no || '') ||
+            contractNo !== (selected.contract_no || '') ||
             taxRequired !== !!selected.metadata?.tax_required
         );
     }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, taxRequired, selected, types]);
@@ -129,7 +129,7 @@ export function DraftEditableInfoCard({
                         vendor_id: vendorId || null,
                         submission_type_id: submissionTypeId || null,
                         kop_sub_topik: kopSubTopik,
-                        crown_no: crownNo || null,
+                        contract_no: contractNo || null,
                         metadata: {
                             ...selected.metadata,
                             tax_required: taxRequired,
@@ -144,7 +144,7 @@ export function DraftEditableInfoCard({
         return () => {
             if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
         };
-    }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, crownNo, taxRequired, isDraft, onUpdate]);
+    }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, contractNo, taxRequired, isDraft, onUpdate]);
 
     const inputCls =
         'w-full bg-surface-base border-surface-border rounded-lg px-3 py-2 text-sm font-medium text-text-main outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all shadow-xs placeholder:text-text-soft/30';
@@ -216,8 +216,8 @@ export function DraftEditableInfoCard({
                         isDraft={isDraft}
                         title={title}
                         setTitle={setTitle}
-                        crownNo={crownNo}
-                        setCrownNo={setCrownNo}
+                        contractNo={contractNo}
+                        setContractNo={setContractNo}
                         typeId={typeId}
                         setTypeId={setTypeId}
                         submissionTypeId={submissionTypeId}

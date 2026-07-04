@@ -116,6 +116,10 @@ class ContractWorkflowService
 
         $this->createApprovalForStep($contract, $firstStep);
 
+        if ($submit) {
+            $this->handleAutoApproval($contract, Auth::user());
+        }
+
         $this->queryService->logHistory($contract, 'CONTRACT_SENT', 'Kontrak dikirim untuk persetujuan', Auth::id());
 
         return $contract->fresh();
@@ -258,6 +262,9 @@ class ContractWorkflowService
                     in_array('atasan', $config['custom'] ?? []) ? ['Atasan Langsung'] : [],
                     in_array('assigned_pic', $config['custom'] ?? []) ? ['Staff Legal'] : []
                 );
+                if ($step->step_category === 'signing' && empty($roles)) {
+                    $roles = ['Staff Legal (Setup)'];
+                }
             } else {
                 if ($step->approver_type === 'atasan') {
                     $approvers = $this->queryService->resolveHierarchyApprover($contract, $step);

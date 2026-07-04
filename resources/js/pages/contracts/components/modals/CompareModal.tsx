@@ -113,7 +113,7 @@ export default function CompareModal({ open, onClose, contract, initialVersion, 
                             <div className="text-[13px] font-bold">
                                 {contract.title} ({type.toUpperCase()})
                             </div>
-                            <div className="text-[10px] text-gray-400">{contract.contract_no}</div>
+                            <div className="text-[10px] text-gray-400">{contract.form_no}</div>
                         </div>
                     </div>
                     <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">

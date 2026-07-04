@@ -1414,12 +1414,9 @@ class MasterDataAdminController extends Controller
                     // 2. Workflows
                     if (in_array('workflows', $entities)) {
                         DB::table('m_workflow_step_actions')->delete();
-                        DB::table('m_workflow_step_departments')->delete();
-                        DB::table('m_workflow_step_roles')->delete();
-                        DB::table('m_workflow_step_users')->delete();
-                        DB::table('m_workflow_initiator_departments')->delete();
-                        DB::table('m_workflow_initiator_roles')->delete();
-                        DB::table('m_workflow_initiator_users')->delete();
+                        DB::table('m_workflow_step_authorities')->delete();
+                        DB::table('m_workflow_initiator_authorities')->delete();
+                        DB::table('m_workflow_org_scopes')->delete();
                         DB::table('m_workflow_steps')->delete();
                         DB::table('m_workflows')->delete();
                     }
