@@ -922,8 +922,7 @@ function FormBuilder({ template }: Props) {
     const [isFullscreenJson, setIsFullscreenJson] = useState(false);
     const [jsonError, setJsonError] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
-    const [pdfJobId, setPdfJobId] = useState<string | null>(null);
-    const [pdfJobStatus, setPdfJobStatus] = useState<any>(null);
+
     const [leftPanelTab, setLeftPanelTab] = useState<'library' | 'structure' | 'json'>('library');
 
     // Undo / Redo State
@@ -1594,7 +1593,6 @@ function FormBuilder({ template }: Props) {
 
     const handleTestDownload = async () => {
         setSaving(true);
-        setPdfJobStatus({ status: 'pending', progress: 10 });
 
         try {
             const res = await axios.post(`/admin/form-templates/export-queue`, {
@@ -1603,43 +1601,43 @@ function FormBuilder({ template }: Props) {
             });
 
             const jobId = res.data.job_id;
-            setPdfJobId(jobId);
 
-            // Start Polling
+            // Poll the status endpoint until complete or failed
             const interval = setInterval(async () => {
                 try {
                     const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`);
                     const statusData = statusRes.data;
-                    setPdfJobStatus(statusData);
 
                     if (statusData.status === 'completed') {
                         clearInterval(interval);
-                        window.open(statusData.url, '_blank');
                         setSaving(false);
-                        setPdfJobId(null);
+                        if (statusData.url) {
+                            window.open(statusData.url, '_blank');
+                        }
                     } else if (statusData.status === 'failed') {
                         clearInterval(interval);
                         setSaving(false);
-                        setPdfJobId(null);
                         openDialog({
                             title: 'Gagal Export PDF',
-                            description: 'Gagal mendownload PDF: ' + (statusData.error || 'Unknown error'),
+                            description: `Proses export gagal: ${statusData.error || 'Terjadi kesalahan internal.'}`,
                             variant: 'warning',
                             confirmText: 'Tutup',
                             onConfirm: closeDialog,
                         });
                     }
                 } catch (err) {
-                    console.error('Polling failed:', err);
+                    clearInterval(interval);
+                    setSaving(false);
+                    console.error('Polling PDF status failed:', err);
                 }
             }, 2000);
+
         } catch (error) {
-            console.error('Queue failed:', error);
+            console.error('Export PDF failed:', error);
             setSaving(false);
-            setPdfJobId(null);
             openDialog({
-                title: 'Gagal Antrikan PDF',
-                description: 'Gagal antrikan PDF. Pastikan server antrian (queue) berjalan.',
+                title: 'Gagal Export PDF',
+                description: 'Gagal mengekspor PDF. Silakan coba lagi.',
                 variant: 'warning',
                 confirmText: 'Tutup',
                 onConfirm: closeDialog,
@@ -1805,12 +1803,12 @@ function FormBuilder({ template }: Props) {
                             type="button"
                             variant="outline"
                             onClick={handleTestDownload}
-                            disabled={saving || !!pdfJobId}
+                            disabled={saving}
                             className="h-8 px-3 lg:px-4 text-[10px] rounded-none active:scale-95 border-border/50 hover:bg-muted/50"
                         >
-                            {saving && !!pdfJobId ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
-                            <span className="hidden lg:inline">{saving && !!pdfJobId ? 'Generating...' : 'Download PDF'}</span>
-                            <span className="inline lg:hidden">{saving && !!pdfJobId ? 'Gen...' : 'PDF'}</span>
+                            {saving ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
+                            <span className="hidden lg:inline">{saving ? 'Exporting...' : 'Download PDF'}</span>
+                            <span className="inline lg:hidden">{saving ? '...' : 'PDF'}</span>
                         </Button>
 
                         <Button type="submit" variant="primary" className="h-8 px-4 lg:px-6 text-[10px] active:scale-95 rounded-none" disabled={processing}>

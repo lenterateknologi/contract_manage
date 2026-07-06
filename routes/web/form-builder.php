@@ -8,13 +8,13 @@ use Illuminate\Support\Facades\Route;
  * This feature is web-only for administrative management of forms.
  */
 
-Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+// Public Signed Routes for Browsershot / PDF Rendering
+Route::prefix('admin/form-templates')->controller(FormTemplateController::class)->group(function () {
+    Route::get('/render-adhoc/{key}', 'renderAdhoc')->name('admin.form-templates.render-adhoc')->middleware('signed');
+    Route::get('/{template}/render-print', 'renderPrint')->name('admin.form-templates.render-print')->middleware('signed');
+});
 
-    // Signed Routes for Browsershot / PDF Rendering
-    Route::prefix('form-templates')->controller(FormTemplateController::class)->group(function () {
-        Route::get('/render-adhoc/{key}', 'renderAdhoc')->name('admin.form-templates.render-adhoc')->middleware('signed');
-        Route::get('/{template}/render-print', 'renderPrint')->name('admin.form-templates.render-print')->middleware('signed');
-    });
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     // Form Builder Management
     Route::controller(FormTemplateController::class)->prefix('form-templates')->group(function () {

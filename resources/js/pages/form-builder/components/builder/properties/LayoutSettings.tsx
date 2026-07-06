@@ -18,6 +18,54 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
 
     return (
         <div className="space-y-4">
+            {/* Group Settings */}
+            {selectedField.type === 'group' && (
+                <div className="border-border space-y-4 border-t pt-4">
+                    <div className="flex items-center gap-2">
+                        <Layout size={12} className="text-muted-foreground" />
+                        <h4 className="font-sans text-[9px] font-semibold uppercase">Group Layout</h4>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Align Horizontal (X)</Label>
+                            <select
+                                value={selectedField.options?.justify_content || 'flex-start'}
+                                onChange={(e) =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        justify_content: e.target.value,
+                                    })
+                                }
+                                className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            >
+                                <option value="flex-start">Kiri (Left)</option>
+                                <option value="center">Tengah (Center)</option>
+                                <option value="flex-end">Kanan (Right)</option>
+                                <option value="space-between">Space Between</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Align Vertical (Y)</Label>
+                            <select
+                                value={selectedField.options?.align_items || 'flex-start'}
+                                onChange={(e) =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        align_items: e.target.value,
+                                    })
+                                }
+                                className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            >
+                                <option value="flex-start">Atas (Top)</option>
+                                <option value="center">Tengah (Center)</option>
+                                <option value="flex-end">Bawah (Bottom)</option>
+                                <option value="stretch">Penuh (Stretch)</option>
+                                <option value="baseline">Garis Bawah Teks (Baseline)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Grid X Settings */}
             {selectedField.type === 'grid_x' && (
                 <div className="border-border space-y-4 border-t pt-4">

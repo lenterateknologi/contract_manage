@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
-use Spatie\Browsershot\Browsershot;
 
 class FormTemplateController extends Controller
 {
@@ -57,46 +57,47 @@ class FormTemplateController extends Controller
     }
 
     /**
-     * Export form to PDF via Background Queue (Reliable choice).
+     * Export form template to PDF — saves to storage and returns a download URL.
      */
     public function exportAdhocQueue(Request $request)
     {
         try {
             $templateData = $request->input('template');
-            $formData = $request->input('form_data', '[]');
+            $formData = json_decode($request->input('form_data', '[]'), true) ?? [];
 
+            // ponytail: Dispatch PDF generation to background queue to prevent single-threaded server deadlock
             $jobId = (string) Str::uuid();
-            $cacheKey = 'pdf_adhoc_'.$jobId;
-
-            Cache::put($cacheKey, [
+            $key = 'pdf_adhoc_'.$jobId;
+            Cache::put($key, [
                 'template' => $templateData,
-                'formData' => json_decode($formData, true) ?? [],
+                'formData' => $formData,
             ], 1800); // 30 minutes
 
             $printUrl = URL::temporarySignedRoute(
                 'admin.form-templates.render-adhoc',
                 now()->addMinutes(30),
-                ['key' => $cacheKey],
+                ['key' => $key],
             );
 
             if (app()->environment('local')) {
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            $fileName = (Str::slug($templateData['name'] ?? 'test')).'_'.time().'.pdf';
+            $fileName = Str::slug($templateData['name'] ?? 'form').'_'.time().'.pdf';
 
-            // Queue the job
             GeneratePdfJob::dispatch($jobId, $printUrl, $fileName);
 
             Cache::put('pdf_status_'.$jobId, ['status' => 'pending', 'progress' => 10], 1800);
 
             return response()->json([
+                'success' => true,
                 'job_id' => $jobId,
-                'message' => 'PDF generation started in background.',
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to queue PDF: '.$e->getMessage()], 500);
+            Log::error('Queue Adhoc Export Failed: '.$e->getMessage());
+
+            return response()->json(['message' => 'Gagal export PDF: '.$e->getMessage()], 500);
         }
     }
 

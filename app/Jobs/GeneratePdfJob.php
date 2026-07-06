@@ -42,7 +42,7 @@ class GeneratePdfJob implements ShouldQueue
         try {
             Cache::put('pdf_status_'.$this->jobId, ['status' => 'processing', 'progress' => 30], 1800);
 
-            // High-Fidelity PDF rendering via Browsershot (Overhaul Optimized)
+            // ponytail: always use Browsershot for 100% identical output to the React UI
             $pdfContent = Browsershot::url($this->printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')

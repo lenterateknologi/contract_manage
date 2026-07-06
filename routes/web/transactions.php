@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::controller(ContractExportController::class)->group(function () {
     Route::get('/api/contracts/{id}/approval/document/print', 'renderApprovalTimeline')->name('contracts.approval.document.print')->middleware('signed');
     Route::get('/api/contracts/{id}/audit-trail/document/print', 'renderAuditDocument')->name('contracts.audit.document.print')->middleware('signed');
+    Route::get('/api/contracts/{id}/form-submissions/{type}/print', 'renderFormSubmission')->name('contracts.form-submissions.print')->middleware('signed');
 });
 
 Route::controller(ContractController::class)->group(function () {
@@ -49,5 +50,5 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::post('/contracts/import', 'import')->name('admin.contracts.import');
         Route::post('/contracts', 'store')->name('contracts.store');
     });
-    Route::post('/admin/contracts/{id}/form-submissions/{type}/export-queue', [ContractExportController::class, 'exportFormSubmissionPdfQueue'])->name('admin.contracts.export-queue');
+    Route::post('/contracts/{id}/form-submissions/{type}/export-queue', [ContractExportController::class, 'exportFormSubmissionPdfQueue'])->name('admin.contracts.export-queue');
 });

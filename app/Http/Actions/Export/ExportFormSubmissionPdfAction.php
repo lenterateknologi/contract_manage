@@ -4,7 +4,6 @@ namespace App\Http\Actions\Export;
 
 use App\Models\Contract;
 use App\Models\FormSubmission;
-use App\Models\FormSubmissionHistory;
 use App\Models\FormTemplate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -17,9 +16,9 @@ class ExportFormSubmissionPdfAction
 
     public function execute(Contract $contract, string $type, string $disposition = 'attachment'): mixed
     {
-        set_time_limit(120);
+        set_time_limit(180);
 
-        $template = FormTemplate::where('document_type', $type)->first();
+        $template = FormTemplate::where('document_type', $type)->with('fields')->first();
 
         if (! $template) {
             return response()->json(['message' => "Form template $type not found."], 404);
@@ -29,23 +28,9 @@ class ExportFormSubmissionPdfAction
             ->where('document_type', $type)
             ->first();
 
-        /** @var FormSubmissionHistory|null $latestVersion */
         $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
-        $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
 
-        if ($type === 'f2') {
-            $f1Submission = FormSubmission::where('contract_id', $contract->id)
-                ->where('document_type', 'f1')
-                ->first();
-
-            /** @var FormSubmissionHistory|null $latestF1 */
-            $latestF1 = $f1Submission ? $f1Submission->versions()->orderByDesc('version_no')->first() : null;
-            $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
-
-            $formData = $this->applyInheritance($f1Data, $contract, $formData);
-        }
-
-        if (! $formData && $type === 'f1') {
+        if (! $latestVersion && $type === 'f1') {
             return response()->json(['message' => 'Data form belum diisi.'], 404);
         }
 
@@ -63,17 +48,18 @@ class ExportFormSubmissionPdfAction
         }
 
         try {
+            // ponytail: Browsershot visits the same React page as the preview → 100% identical output
             $printUrl = URL::temporarySignedRoute(
-                'admin.form-templates.render-print',
+                'contracts.form-submissions.print',
                 now()->addMinutes(10),
-                ['template' => $template->id, 'data' => json_encode($formData)],
+                ['id' => $contract->id, 'type' => $type],
             );
 
             if (app()->environment('local')) {
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
-            $pdfContent = Browsershot::url($printUrl)
+            $finalPdf = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -88,13 +74,12 @@ class ExportFormSubmissionPdfAction
                     '--disable-extensions',
                 ])
                 ->timeout(180)
-                ->format('A4')
+                ->paperSize(210, 297, 'mm')
                 ->margins(0, 0, 0, 0)
                 ->showBackground()
                 ->waitForSelector('#pdf-render-complete')
-                ->setDelay(200);
-
-            $finalPdf = $pdfContent->pdf();
+                ->setDelay(1000)
+                ->pdf();
 
             if (! Storage::disk('local')->exists($pdfDir)) {
                 Storage::disk('local')->makeDirectory($pdfDir);
@@ -106,7 +91,7 @@ class ExportFormSubmissionPdfAction
                 ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
 
         } catch (\Exception $e) {
-            Log::error('Browsershot Export Failed: '.$e->getMessage());
+            Log::error('Browsershot Form Submission Export Failed: '.$e->getMessage());
             abort(500, 'Gagal menghasilkan PDF: '.$e->getMessage());
         }
     }

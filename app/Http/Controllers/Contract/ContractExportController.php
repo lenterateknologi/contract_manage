@@ -12,6 +12,8 @@ use App\Http\Actions\Export\ExportFormSubmissionPdfQueueAction;
 use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
 use App\Http\Queries\Contract\ContractDetailQuery;
+use App\Models\FormSubmission;
+use App\Models\FormTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -106,6 +108,28 @@ class ContractExportController extends Controller
             'contract' => ContractFormatter::formatContract($contract),
             'histories' => $histories,
             'filters' => $request->only(['search', 'actor_id', 'date_from', 'date_to']),
+        ]);
+    }
+
+    public function renderFormSubmission(string $id, string $type, Request $request)
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        $template = FormTemplate::where('document_type', $type)->with('fields')->first();
+        if (! $template) {
+            abort(404, "Form template {$type} not found.");
+        }
+
+        $submission = FormSubmission::where('contract_id', $contract->id)
+            ->where('document_type', $type)
+            ->first();
+
+        $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
+        $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
+
+        return Inertia::render('form-management/Print', [
+            'template' => $template,
+            'formData' => $formData,
         ]);
     }
 
