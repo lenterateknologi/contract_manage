@@ -5,7 +5,6 @@ namespace App\Http\Formatters;
 use App\Enums\WorkflowAction;
 use App\Models\Contract;
 use App\Models\Role;
-use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
@@ -278,15 +277,17 @@ class ContractFormatter
             return null;
         }
 
+        $attributes = $user->getAttributes();
+
         return [
             'id' => $user->id,
             'name' => $user->name,
             'initials' => $user->initials ?? '',
             'role' => $user->role,
-            'role_id' => $user->role_id,
-            'department_id' => $user->division_id ?? $user->department_id,
+            'role_id' => array_key_exists('role_id', $attributes) ? $user->role_id : null,
+            'department_id' => array_key_exists('division_id', $attributes) ? ($user->division_id ?? (array_key_exists('department_id', $attributes) ? $user->department_id : null)) : (array_key_exists('department_id', $attributes) ? $user->department_id : null),
             'department_name' => $user->relationLoaded('department') ? $user->department?->name : ($user->relationLoaded('division') ? $user->division?->name : null),
-            'email' => $user->email,
+            'email' => array_key_exists('email', $attributes) ? $user->email : null,
         ];
     }
 
@@ -340,60 +341,10 @@ class ContractFormatter
             // Resolve potential approvers for placeholders
             // Skip this heavy logic in list mode
             if ($isDetail) {
-                if ($step->approver_type === 'user') {
-                    $targetApprovers = $step->users->pluck('name')->implode(', ');
-                    $targetEmails = $step->users->pluck('email')->implode(', ');
-                } elseif ($step->approver_type === 'atasan') {
-                    $approvers = $workflowService->resolveHierarchyApprover($c, $step);
-                    $targetApprovers = $approvers->pluck('name')->implode(', ');
-                    $targetEmails = $approvers->pluck('email')->implode(', ');
-                } elseif ($step->approver_type === 'initiator') {
-                    $targetApprovers = $c->initiator?->name;
-                    $targetEmails = $c->initiator?->email;
-                } elseif ($step->approver_type === 'assigned_pic') {
-                    if ($c->assigned_pic_id) {
-                        $targetApprovers = $c->assignedPic?->name;
-                        $targetEmails = $c->assignedPic?->email;
-                    } else {
-                        $targetApprovers = 'PIC (Belum Ditugaskan)';
-                    }
-                } elseif ($step->approver_type === 'role') {
-                    $roles = (array) $step->role;
-                    $targetDeptIds = (array) ($step->department_ids ?? []);
-                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $roles));
-
-                    $config = $step->approver_config;
-                    $isInitDept = $step->filter_department || (! empty($config) && ! empty($config['is_initiator_department']));
-
-                    if ($isInitDept) {
-                        $query->where('division_id', $c->initiator->division_id ?? '00000000-0000-0000-0000-000000000000');
-                    } elseif (! empty($targetDeptIds)) {
-                        $query->whereIn('division_id', $targetDeptIds);
-                    }
-
-                    $initiatorCompany = $c->initiator?->company;
-                    if ($step->filter_company_group || $step->filter_region) {
-                        $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
-                            if ($step->filter_company_group) {
-                                $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
-                                $q->where('company_group_id', $groupId);
-                            }
-                            if ($step->filter_region) {
-                                $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
-                                $q->where('region_id', $regionId);
-                            }
-                        });
-                    }
-
-                    if ($step->filter_company) {
-                        $companyId = $c->initiator->company_id ?? '00000000-0000-0000-0000-000000000000';
-                        $query->where('company_id', $companyId);
-                    }
-
-                    $approvers = $query->get();
-                    $targetApprovers = $approvers->pluck('name')->implode(', ');
-                    $targetEmails = $approvers->pluck('email')->implode(', ');
-                }
+                $resolved = $workflowService->resolveApproversForStep($c, $step);
+                $approvers = $resolved['approvers'];
+                $targetApprovers = $approvers->pluck('name')->implode(', ');
+                $targetEmails = $approvers->pluck('email')->implode(', ');
 
                 if (empty($targetApprovers)) {
                     $targetApprovers = 'Belum di-set';

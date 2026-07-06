@@ -27,7 +27,7 @@ class ContractListQuery
         'approvals.workflowStep.workflow:id,name,contract_type_id,meta',
         'workflow:id,name,contract_type_id,meta',
         'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company',
-        'workflow.steps.users:id,name,email',
+        'workflow.steps.users:id,name,role_id,email',
         'workflowStep',
         'workflowStep.actions',
         'versions.uploader:id,name,role_id,department_id,division_id,company_id,email',

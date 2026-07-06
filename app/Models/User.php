@@ -141,6 +141,10 @@ class User extends Authenticatable
      */
     public function getRoleAttribute(): ?string
     {
+        if (! array_key_exists('role_id', $this->attributes)) {
+            return null;
+        }
+
         return $this->roleRelation?->name;
     }
 

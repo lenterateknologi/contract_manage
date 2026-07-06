@@ -333,15 +333,15 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
 
                             return (
                                 <tr key={h.id} className="hover:bg-surface-muted/50 transition-colors">
-                                    <td className="px-4 py-3 text-text-soft font-semibold whitespace-nowrap">
+                                    <td className="px-4 py-3 text-text-desc text-sm whitespace-nowrap">
                                         {new Date(h.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} {new Date(h.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                                     </td>
-                                    <td className="px-4 py-3 font-mono font-bold text-text-main">
+                                    <td className="px-4 py-3 font-mono text-sm text-text-main">
                                         #{(h.form_no || h.contract_no || '').split('/').pop()}
                                     </td>
                                     <td className="px-4 py-3">
                                         <span className={cn(
-                                            "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                                            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium tracking-wide",
                                             isAlert ? "bg-rose-50 text-rose-700 border border-rose-200" :
                                             isSuccess ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
                                             isSystem ? "bg-blue-50 text-blue-700 border border-blue-200" :
@@ -350,8 +350,8 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
                                             {h.action}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3 text-text-main font-medium">{h.description}</td>
-                                    <td className="px-4 py-3 text-text-soft font-bold uppercase italic">@{h.actor.split(' ')[0]}</td>
+                                    <td className="px-4 py-3 text-text-main text-sm">{h.description}</td>
+                                    <td className="px-4 py-3 text-text-desc text-sm">@{h.actor.split(' ')[0]}</td>
                                 </tr>
                             );
                         })}

@@ -130,200 +130,9 @@ class ContractWorkflowService
      */
     public function createApprovalForStep(Contract $contract, WorkflowStep $step): void
     {
-        $roles = (array) $step->role;
-        $lowerRoles = array_map('strtolower', $roles);
-        $approvers = collect();
-
-        if ($step->step_category === 'joint_upload') {
-            $metadata = $contract->metadata ?? [];
-            $order = $metadata['step_12_order'] ?? null;
-            $finished = $metadata['step_12_finished'] ?? [];
-
-            if ($order) {
-                $remaining = array_diff($order, $finished);
-                if (! empty($remaining)) {
-                    $nextActorKey = array_values($remaining)[0];
-                    if ($nextActorKey === 'initiator') {
-                        $approvers = collect([$contract->initiator]);
-                        $roles = ['Initiator'];
-                    } else {
-                        $picId = $metadata['assigned_pic_id'] ?? null;
-                        $pic = $picId ? User::find($picId) : null;
-                        $approvers = $pic ? collect([$pic]) : collect();
-                        $roles = ['Staff Legal'];
-                    }
-                }
-            }
-        }
-
-        if ($step->step_category === 'signing') {
-            if ($step->approver_type === 'assigned_pic' && $contract->assigned_pic_id) {
-                $pic = User::find($contract->assigned_pic_id);
-                $approvers = $pic ? collect([$pic]) : collect();
-            } else {
-                $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', ['Staff Legal', 'Admin']));
-                $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : [];
-                if (! empty($targetDeptIds)) {
-                    $query->whereIn('division_id', $targetDeptIds);
-                }
-                $approvers = $query->get();
-            }
-            $roles = ['Staff Legal (Setup)'];
-        }
-
-        if ($approvers->isEmpty()) {
-            $config = $step->approver_config;
-            if (! empty($config) && (
-                ! empty($config['custom']) ||
-                ! empty($config['roles']) ||
-                ! empty($config['departments']) ||
-                ! empty($config['users'])
-            )) {
-                // 1. Resolve Custom
-                if (! empty($config['custom'])) {
-                    if (in_array('initiator', $config['custom'])) {
-                        if ($contract->initiator) {
-                            $approvers->push($contract->initiator);
-                        }
-                    }
-                    if (in_array('creator', $config['custom'])) {
-                        if ($contract->creator) {
-                            $approvers->push($contract->creator);
-                        }
-                    }
-                    if (in_array('assigned_pic', $config['custom'])) {
-                        $picId = $contract->assigned_pic_id ?? ($contract->metadata['assigned_pic_id'] ?? null);
-                        if ($picId) {
-                            $pic = User::find($picId);
-                            if ($pic) {
-                                $approvers->push($pic);
-                            }
-                        }
-                    }
-                    if (in_array('atasan', $config['custom'])) {
-                        $atasanList = $this->queryService->resolveHierarchyApprover($contract, $step);
-                        if ($atasanList) {
-                            $approvers = $approvers->merge($atasanList);
-                        }
-                    }
-                }
-
-                // 2 & 3. Resolve Roles and Departments (Intersection if both present)
-                $targetRoles = [];
-                $targetDepts = [];
-
-                if (data_get($config, 'use_combination', true) !== false) {
-                    $targetRoles = ! empty($config['roles']) ? $config['roles'] : [];
-                    if (! empty($config['is_initiator_role']) && $contract->initiator && $contract->initiator->role) {
-                        $targetRoles[] = $contract->initiator->role;
-                    }
-
-                    $targetDepts = ! empty($config['departments']) ? $config['departments'] : [];
-                    if (! empty($config['is_initiator_department']) && $contract->initiator && $contract->initiator->division_id) {
-                        $targetDepts[] = $contract->initiator->division_id;
-                    }
-                }
-
-                if (! empty($targetRoles) && ! empty($targetDepts)) {
-                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $targetRoles))
-                        ->whereIn('division_id', $targetDepts);
-                    $query = $this->applyStepFilters($query, $step, $contract);
-                    $approvers = $approvers->merge($query->get());
-                } elseif (! empty($targetRoles)) {
-                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $targetRoles));
-                    $query = $this->applyStepFilters($query, $step, $contract);
-                    $approvers = $approvers->merge($query->get());
-                } elseif (! empty($targetDepts)) {
-                    $query = User::whereIn('division_id', $targetDepts);
-                    $query = $this->applyStepFilters($query, $step, $contract);
-                    $approvers = $approvers->merge($query->get());
-                }
-
-                // 4. Resolve Users
-                $targetUsers = ! empty($config['users']) ? $config['users'] : [];
-                if (! empty($config['is_initiator_user']) && $contract->initiator) {
-                    $targetUsers[] = $contract->initiator->id;
-                }
-                if (! empty($targetUsers)) {
-                    $approvers = $approvers->merge(User::whereIn('id', $targetUsers)->get());
-                }
-
-                // Ensure unique IDs
-                $approvers = $approvers->unique('id');
-
-                // Re-populate roles tags
-                $roles = array_merge(
-                    ! empty($config['roles']) ? $config['roles'] : [],
-                    ! empty($config['is_initiator_role']) ? ['Role Inisiator'] : [],
-                    ! empty($config['is_initiator_department']) ? ['Dept Inisiator'] : [],
-                    ! empty($config['is_initiator_user']) ? ['User Inisiator'] : [],
-                    in_array('initiator', $config['custom'] ?? []) ? ['Initiator'] : [],
-                    in_array('creator', $config['custom'] ?? []) ? ['Creator'] : [],
-                    in_array('atasan', $config['custom'] ?? []) ? ['Atasan Langsung'] : [],
-                    in_array('assigned_pic', $config['custom'] ?? []) ? ['Staff Legal'] : []
-                );
-                if ($step->step_category === 'signing' && empty($roles)) {
-                    $roles = ['Staff Legal (Setup)'];
-                }
-            } else {
-                if ($step->approver_type === 'atasan') {
-                    $approvers = $this->queryService->resolveHierarchyApprover($contract, $step);
-                } elseif ($step->approver_type === 'user') {
-                    $approvers = $step->users()->get();
-                } elseif ($step->approver_type === 'initiator' || in_array('initiator', $lowerRoles)) {
-                    $approvers = collect([$contract->initiator]);
-                } else {
-                    $metadata = $contract->metadata ?? [];
-                    $picId = $contract->assigned_pic_id ?? ($metadata['assigned_pic_id'] ?? null);
-
-                    if ($step->approver_type === 'assigned_pic' && $picId) {
-                        $pic = User::find($picId);
-                        if ($pic) {
-                            $approvers = collect([$pic]);
-                        }
-                    }
-
-                    if ($approvers->isEmpty()) {
-                        $useCombo = data_get($config, 'use_combination', true) !== false;
-                        $query = User::query();
-
-                        if ($useCombo && ! empty($roles)) {
-                            $query->whereHas('roleRelation', fn ($q) => $q->whereIn('name', $roles));
-                        }
-                        $targetDeptIds = $useCombo ? ($step->department_ids ?? []) : [];
-
-                        $isInitDept = $useCombo && ($step->filter_department || (! empty($config) && ! empty($config['is_initiator_department'])));
-
-                        if ($isInitDept) {
-                            $initDeptId = $contract->initiator->division_id ?? '00000000-0000-0000-0000-000000000000';
-                            $query->where('division_id', $initDeptId);
-                        } elseif (! empty($targetDeptIds)) {
-                            $query->whereIn('division_id', $targetDeptIds);
-                        }
-
-                        $initiatorCompany = $contract->initiator->company;
-                        if ($step->filter_company_group || $step->filter_region) {
-                            $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
-                                if ($step->filter_company_group) {
-                                    $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
-                                    $q->where('company_group_id', $groupId);
-                                }
-                                if ($step->filter_region) {
-                                    $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
-                                    $q->where('region_id', $regionId);
-                                }
-                            });
-                        }
-
-                        if ($step->filter_company) {
-                            $query->where('company_id', $contract->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
-                        }
-
-                        $approvers = $query->get();
-                    }
-                }
-            }
-        }
+        $res = $this->resolveApproversForStep($contract, $step);
+        $approvers = $res['approvers'];
+        $roles = $res['roles'];
 
         $hasAdhoc = Approval::where('contract_id', $contract->id)
             ->where('workflow_step_id', $step->id)
@@ -384,6 +193,215 @@ class ContractWorkflowService
                 }
             }
         }
+    }
+
+    /**
+     * Resolve the list of actual users authorized to approve a step.
+     */
+    public function resolveApproversForStep(Contract $contract, WorkflowStep $step): array
+    {
+        $roles = $step->relationLoaded('approverAuthorities')
+            ? $step->approverAuthorities->filter(fn ($a) => $a->authority_type === 'role' && ! $a->use_initiator_property)->pluck('role.name')->filter()->toArray()
+            : $step->approverAuthorities()->where('authority_type', 'role')->where('use_initiator_property', false)->with('role')->get()->pluck('role.name')->filter()->toArray();
+
+        $lowerRoles = array_map('strtolower', $roles);
+        $approvers = collect();
+
+        if ($step->step_category === 'joint_upload') {
+            $metadata = $contract->metadata ?? [];
+            $order = $metadata['step_12_order'] ?? null;
+            $finished = $metadata['step_12_finished'] ?? [];
+
+            if ($order) {
+                $remaining = array_diff($order, $finished);
+                if (! empty($remaining)) {
+                    $nextActorKey = array_values($remaining)[0];
+                    if ($nextActorKey === 'initiator') {
+                        $approvers = collect([$contract->initiator]);
+                        $roles = ['Initiator'];
+                    } else {
+                        $picId = $metadata['assigned_pic_id'] ?? null;
+                        $pic = $picId ? User::find($picId) : null;
+                        $approvers = $pic ? collect([$pic]) : collect();
+                        $roles = ['Staff Legal'];
+                    }
+                }
+            }
+        }
+
+        if ($step->step_category === 'signing') {
+            if ($step->approver_type === 'assigned_pic' && $contract->assigned_pic_id) {
+                $pic = User::find($contract->assigned_pic_id);
+                $approvers = $pic ? collect([$pic]) : collect();
+            } else {
+                $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', ['Staff Legal', 'Admin']));
+                $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : [];
+                if (! empty($targetDeptIds)) {
+                    $query->whereIn('division_id', $targetDeptIds);
+                }
+                $approvers = $query->get();
+            }
+            $roles = ['Staff Legal (Setup)'];
+        }
+
+        if ($approvers->isEmpty()) {
+            $hasExplicitAuthorities = $step->relationLoaded('approverAuthorities')
+                ? $step->approverAuthorities->isNotEmpty()
+                : $step->approverAuthorities()->exists();
+
+            if ($hasExplicitAuthorities) {
+                $authorities = $step->relationLoaded('approverAuthorities')
+                    ? $step->approverAuthorities
+                    : $step->approverAuthorities()->get();
+
+                // 1. Resolve Custom Actors
+                $customs = $authorities->filter(fn ($a) => ! empty($a->authority_type) && in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator', 'atasan']))->pluck('authority_type')->toArray();
+                if (! empty($customs)) {
+                    if (in_array('initiator', $customs) && $contract->initiator) {
+                        $approvers->push($contract->initiator);
+                    }
+                    if (in_array('creator', $customs) && $contract->creator) {
+                        $approvers->push($contract->creator);
+                    }
+                    if (in_array('assigned_pic', $customs)) {
+                        $picId = $contract->assigned_pic_id ?? ($contract->metadata['assigned_pic_id'] ?? null);
+                        if ($picId) {
+                            $pic = User::find($picId);
+                            if ($pic) {
+                                $approvers->push($pic);
+                            }
+                        }
+                    }
+                    if (in_array('atasan', $customs)) {
+                        $atasanList = $this->queryService->resolveHierarchyApprover($contract, $step);
+                        if ($atasanList) {
+                            $approvers = $approvers->merge($atasanList);
+                        }
+                    }
+                }
+
+                // 2 & 3. Resolve Roles and Departments (using combinations if configured)
+                $stepRoles = $authorities->filter(fn ($a) => $a->authority_type === 'role' && ! empty($a->role_id))->pluck('role.name')->filter()->toArray();
+                $isInitiatorRole = $authorities->contains(fn ($a) => $a->authority_type === 'role' && $a->use_initiator_property);
+                if ($isInitiatorRole && $contract->initiator && $contract->initiator->role) {
+                    $stepRoles[] = $contract->initiator->role;
+                }
+
+                $stepDepts = $authorities->filter(fn ($a) => ($a->authority_type === 'department' || $a->authority_type === 'division') && ! empty($a->department_id))->pluck('department_id')->filter()->toArray();
+                $isInitiatorDept = $authorities->contains(fn ($a) => ($a->authority_type === 'department' || $a->authority_type === 'division') && $a->use_initiator_property);
+                if ($isInitiatorDept && $contract->initiator && $contract->initiator->division_id) {
+                    $stepDepts[] = $contract->initiator->division_id;
+                }
+
+                if (! empty($stepRoles) && ! empty($stepDepts)) {
+                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $stepRoles))
+                        ->whereIn('division_id', $stepDepts);
+                    $query = $this->applyStepFilters($query, $step, $contract);
+                    $approvers = $approvers->merge($query->get());
+                } elseif (! empty($stepRoles)) {
+                    $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', $stepRoles));
+                    $query = $this->applyStepFilters($query, $step, $contract);
+                    $approvers = $approvers->merge($query->get());
+                } elseif (! empty($stepDepts)) {
+                    $query = User::whereIn('division_id', $stepDepts);
+                    $query = $this->applyStepFilters($query, $step, $contract);
+                    $approvers = $approvers->merge($query->get());
+                }
+
+                // 4. Resolve Users
+                $stepUsers = $authorities->filter(fn ($a) => $a->authority_type === 'user' && ! empty($a->user_id))->pluck('user_id')->toArray();
+                $isInitiatorUser = $authorities->contains(fn ($a) => $a->authority_type === 'user' && $a->use_initiator_property);
+                if ($isInitiatorUser && $contract->initiator) {
+                    $stepUsers[] = $contract->initiator->id;
+                }
+                if (! empty($stepUsers)) {
+                    $approvers = $approvers->merge(User::whereIn('id', $stepUsers)->get());
+                }
+
+                $approvers = $approvers->unique('id');
+
+                $roles = array_merge(
+                    $stepRoles,
+                    $isInitiatorRole ? ['Role Inisiator'] : [],
+                    $isInitiatorDept ? ['Dept Inisiator'] : [],
+                    $isInitiatorUser ? ['User Inisiator'] : [],
+                    in_array('initiator', $customs) ? ['Initiator'] : [],
+                    in_array('creator', $customs) ? ['Creator'] : [],
+                    in_array('atasan', $customs) ? ['Atasan Langsung'] : [],
+                    in_array('assigned_pic', $customs) ? ['Staff Legal'] : []
+                );
+            } else {
+                if ($step->approver_type === 'atasan') {
+                    $approvers = $this->queryService->resolveHierarchyApprover($contract, $step);
+                } elseif ($step->approver_type === 'user') {
+                    $approvers = $step->users()->get();
+                } elseif ($step->approver_type === 'initiator') {
+                    $approvers = collect([$contract->initiator]);
+                } else {
+                    $metadata = $contract->metadata ?? [];
+                    $picId = $contract->assigned_pic_id ?? ($metadata['assigned_pic_id'] ?? null);
+
+                    if ($step->approver_type === 'assigned_pic' && $picId) {
+                        $pic = User::find($picId);
+                        if ($pic) {
+                            $approvers = collect([$pic]);
+                        }
+                    }
+
+                    if ($approvers->isEmpty()) {
+                        $query = User::query();
+                        $hasFilters = false;
+
+                        $legacyRoles = $step->role ? (is_array($step->role) ? $step->role : [$step->role]) : [];
+                        if (! empty($legacyRoles)) {
+                            $query->whereHas('roleRelation', fn ($q) => $q->whereIn('name', $legacyRoles));
+                            $hasFilters = true;
+                        }
+
+                        $targetDeptIds = $step->department_ids ?? [];
+                        if ($step->filter_department) {
+                            $initDeptId = $contract->initiator->division_id ?? '00000000-0000-0000-0000-000000000000';
+                            $query->where('division_id', $initDeptId);
+                            $hasFilters = true;
+                        } elseif (! empty($targetDeptIds)) {
+                            $query->whereIn('division_id', $targetDeptIds);
+                            $hasFilters = true;
+                        }
+
+                        $initiatorCompany = $contract->initiator->company;
+                        if ($step->filter_company_group || $step->filter_region) {
+                            $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
+                                if ($step->filter_company_group) {
+                                    $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
+                                    $q->where('company_group_id', $groupId);
+                                }
+                                if ($step->filter_region) {
+                                    $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
+                                    $q->where('region_id', $regionId);
+                                }
+                            });
+                            $hasFilters = true;
+                        }
+
+                        if ($step->filter_company) {
+                            $query->where('company_id', $contract->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
+                            $hasFilters = true;
+                        }
+
+                        if ($hasFilters) {
+                            $approvers = $query->get();
+                        } else {
+                            $approvers = collect();
+                        }
+                    }
+                }
+            }
+        }
+
+        return [
+            'approvers' => $approvers,
+            'roles' => $roles,
+        ];
     }
 
     /**

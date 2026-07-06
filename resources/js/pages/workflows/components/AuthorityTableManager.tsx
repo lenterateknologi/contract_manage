@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/buttons/Button';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
+import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 
 interface AuthorityItem {
     id?: string;
@@ -27,6 +28,8 @@ interface AuthorityTableManagerProps {
     companyGroups: any[];
     regions: any[];
     title?: string;
+    showCustom?: boolean;
+    showCombinations?: boolean;
 }
 
 const SINGLE_TYPES = [
@@ -55,6 +58,8 @@ export default function AuthorityTableManager({
     companyGroups = [],
     regions = [],
     title = 'Otoritas Akses',
+    showCustom = false,
+    showCombinations = true,
 }: AuthorityTableManagerProps) {
     const [selectedTypeForModal, setSelectedTypeForModal] = useState<string | null>(null);
     const [modalUseInitiator, setModalUseInitiator] = useState(false);
@@ -91,6 +96,7 @@ export default function AuthorityTableManager({
         const type = selectedTypeForModal;
 
         // Populate fields based on type
+        if (type === 'custom') newAuth.user_id = modalUserId || null;
         if (type === 'user') newAuth.user_id = modalUserId || null;
         if (type === 'role') newAuth.role_id = modalRoleId || null;
         if (type === 'department') newAuth.department_id = modalDepartmentId || null;
@@ -145,7 +151,12 @@ export default function AuthorityTableManager({
                     if (auth.use_initiator_property) {
                         parts.push('Sesuai Inisiator');
                     } else {
-                        if (auth.user_id) parts.push(`User: ${getUserLabel(auth.user_id)}`);
+                        if (auth.authority_type === 'custom' && auth.user_id) {
+                            const customLabel = auth.user_id === 'initiator' ? 'INISIATOR' : auth.user_id === 'assigned_pic' ? 'PIC DITUGASKAN' : auth.user_id === 'creator' ? 'PEMBUAT' : auth.user_id;
+                            parts.push(`Kustom: ${customLabel}`);
+                        } else {
+                            if (auth.user_id) parts.push(`User: ${getUserLabel(auth.user_id)}`);
+                        }
                         if (auth.role_id) parts.push(`Role: ${getRoleLabel(auth.role_id)}`);
                         if (auth.department_id) parts.push(`Dept: ${getDeptLabel(auth.department_id)}`);
                         if (auth.division_id) parts.push(`Divisi: ${getDivLabel(auth.division_id)}`);
@@ -204,6 +215,7 @@ export default function AuthorityTableManager({
             return false;
         }
 
+        if (field === 'custom') return type === 'custom';
         if (field === 'user') return type === 'user';
         if (field === 'role') return ['role', 'role-division', 'role-company_group', 'role-division-company_group', 'role-division-company_group-region'].includes(type);
         if (field === 'department') return type === 'department';
@@ -213,6 +225,10 @@ export default function AuthorityTableManager({
 
         return false;
     };
+
+    const singleTypes = showCustom
+        ? [{ type: 'custom', label: 'Aktor Kustom' }, ...SINGLE_TYPES]
+        : SINGLE_TYPES;
 
     return (
         <div className="space-y-4 w-full">
@@ -239,7 +255,7 @@ export default function AuthorityTableManager({
                                 Tunggal
                             </td>
                         </tr>
-                        {SINGLE_TYPES.map(st => (
+                        {singleTypes.map(st => (
                             <tr key={st.type} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
                                 <td className="px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300">{st.label}</td>
                                 <td className="px-4 py-3">{renderDataCell(st.type)}</td>
@@ -248,18 +264,22 @@ export default function AuthorityTableManager({
                         ))}
 
                         {/* Combination Section */}
-                        <tr className="bg-slate-100/50 dark:bg-slate-900/20">
-                            <td colSpan={3} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                                Kombinasi
-                            </td>
-                        </tr>
-                        {COMBINATION_TYPES.map(ct => (
-                            <tr key={ct.type} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
-                                <td className="px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300">{ct.label}</td>
-                                <td className="px-4 py-3">{renderDataCell(ct.type)}</td>
-                                <td className="px-4 py-3 text-center">{renderUseInitiatorCell(ct.type)}</td>
-                            </tr>
-                        ))}
+                        {showCombinations && (
+                            <>
+                                <tr className="bg-slate-100/50 dark:bg-slate-900/20">
+                                    <td colSpan={3} className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Kombinasi
+                                    </td>
+                                </tr>
+                                {COMBINATION_TYPES.map(ct => (
+                                    <tr key={ct.type} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
+                                        <td className="px-4 py-3 text-xs font-bold text-slate-700 dark:text-slate-300">{ct.label}</td>
+                                        <td className="px-4 py-3">{renderDataCell(ct.type)}</td>
+                                        <td className="px-4 py-3 text-center">{renderUseInitiatorCell(ct.type)}</td>
+                                    </tr>
+                                ))}
+                            </>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -291,22 +311,33 @@ export default function AuthorityTableManager({
                             </div>
                         )}
 
+                        {/* Select Custom Actor */}
+                        {hasTypeSelect('custom') && (
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Aktor Kustom</label>
+                                <SearchableSelect
+                                    value={modalUserId}
+                                    onValueChange={setModalUserId}
+                                    options={[
+                                        { value: 'initiator', label: 'INISIATOR' },
+                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
+                                        { value: 'creator', label: 'PEMBUAT' }
+                                    ]}
+                                    placeholder="Pilih Aktor..."
+                                />
+                            </div>
+                        )}
+
                         {/* Select User */}
                         {hasTypeSelect('user') && (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih User</label>
-                                <Select value={modalUserId} onValueChange={setModalUserId}>
-                                    <SelectTrigger className="w-full text-xs font-semibold h-10 rounded-xl">
-                                        <SelectValue placeholder="Pilih User..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-60">
-                                        {users.map(u => (
-                                            <SelectItem key={u.id} value={String(u.id)} className="text-xs font-medium">
-                                                {u.name} ({u.role})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    value={modalUserId}
+                                    onValueChange={setModalUserId}
+                                    options={users.map(u => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
+                                    placeholder="Pilih User..."
+                                />
                             </div>
                         )}
 
@@ -314,18 +345,12 @@ export default function AuthorityTableManager({
                         {hasTypeSelect('role') && (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Role</label>
-                                <Select value={modalRoleId} onValueChange={setModalRoleId}>
-                                    <SelectTrigger className="w-full text-xs font-semibold h-10 rounded-xl">
-                                        <SelectValue placeholder="Pilih Role..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-60">
-                                        {roles.map(r => (
-                                            <SelectItem key={r.id} value={String(r.id)} className="text-xs font-medium">
-                                                {r.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    value={modalRoleId}
+                                    onValueChange={setModalRoleId}
+                                    options={roles.map(r => ({ value: String(r.id), label: r.name }))}
+                                    placeholder="Pilih Role..."
+                                />
                             </div>
                         )}
 
@@ -333,18 +358,12 @@ export default function AuthorityTableManager({
                         {hasTypeSelect('department') && (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Departemen</label>
-                                <Select value={modalDepartmentId} onValueChange={setModalDepartmentId}>
-                                    <SelectTrigger className="w-full text-xs font-semibold h-10 rounded-xl">
-                                        <SelectValue placeholder="Pilih Departemen..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-60">
-                                        {departments.map(d => (
-                                            <SelectItem key={d.id} value={String(d.id)} className="text-xs font-medium">
-                                                {d.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    value={modalDepartmentId}
+                                    onValueChange={setModalDepartmentId}
+                                    options={departments.map(d => ({ value: String(d.id), label: d.name }))}
+                                    placeholder="Pilih Departemen..."
+                                />
                             </div>
                         )}
 
@@ -352,18 +371,12 @@ export default function AuthorityTableManager({
                         {hasTypeSelect('division') && (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Divisi</label>
-                                <Select value={modalDivisionId} onValueChange={setModalDivisionId}>
-                                    <SelectTrigger className="w-full text-xs font-semibold h-10 rounded-xl">
-                                        <SelectValue placeholder="Pilih Divisi..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-60">
-                                        {divisions.map(d => (
-                                            <SelectItem key={d.id} value={String(d.id)} className="text-xs font-medium">
-                                                {d.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    value={modalDivisionId}
+                                    onValueChange={setModalDivisionId}
+                                    options={divisions.map(d => ({ value: String(d.id), label: d.name }))}
+                                    placeholder="Pilih Divisi..."
+                                />
                             </div>
                         )}
 
@@ -371,18 +384,12 @@ export default function AuthorityTableManager({
                         {hasTypeSelect('company_group') && (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Company Group</label>
-                                <Select value={modalCompanyGroupId} onValueChange={setModalCompanyGroupId}>
-                                    <SelectTrigger className="w-full text-xs font-semibold h-10 rounded-xl">
-                                        <SelectValue placeholder="Pilih Company Group..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-60">
-                                        {companyGroups.map(cg => (
-                                            <SelectItem key={cg.id} value={String(cg.id)} className="text-xs font-medium">
-                                                {cg.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    value={modalCompanyGroupId}
+                                    onValueChange={setModalCompanyGroupId}
+                                    options={companyGroups.map(cg => ({ value: String(cg.id), label: cg.name }))}
+                                    placeholder="Pilih Company Group..."
+                                />
                             </div>
                         )}
 
@@ -390,18 +397,12 @@ export default function AuthorityTableManager({
                         {hasTypeSelect('region') && (
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Wilayah (Region)</label>
-                                <Select value={modalRegionId} onValueChange={setModalRegionId}>
-                                    <SelectTrigger className="w-full text-xs font-semibold h-10 rounded-xl">
-                                        <SelectValue placeholder="Pilih Region..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-60">
-                                        {regions.map(r => (
-                                            <SelectItem key={r.id} value={String(r.id)} className="text-xs font-medium">
-                                                {r.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SearchableSelect
+                                    value={modalRegionId}
+                                    onValueChange={setModalRegionId}
+                                    options={regions.map(r => ({ value: String(r.id), label: r.name }))}
+                                    placeholder="Pilih Region..."
+                                />
                             </div>
                         )}
                     </div>

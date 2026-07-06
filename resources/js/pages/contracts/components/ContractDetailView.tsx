@@ -297,7 +297,7 @@ const ContractDetailView = ({
                     <div className="bg-surface-border h-10 w-px" />
                     <div className="flex flex-col">
                         <div className="flex items-center gap-3">
-                            <h2 className="text-text-main text-lg leading-none font-semibold tracking-tight uppercase italic">{contract.title}</h2>
+                            <h2 className="text-text-main text-lg leading-none font-semibold">{contract.title}</h2>
                             <StatusBadge status={contract.status} />
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-3">

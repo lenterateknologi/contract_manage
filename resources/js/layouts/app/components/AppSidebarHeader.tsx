@@ -122,25 +122,21 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
 
                 {/* Right Section: Actions & Profile */}
                 <div className="flex items-center gap-1.5">
-                    {/* Action Group */}
-                    <div className="bg-muted border-border flex items-center gap-0.5 rounded-xl border px-1 py-1">
+                    {/* <div className="bg-muted border-border flex items-center gap-0.5 rounded-xl border px-1 py-1">
                         <HeaderLanguage />
                         <HeaderChat />
                         <HeaderNotifications />
                         <HeaderHelp />
-                    </div>
+                    </div> */}
 
-                    {/* Separator */}
-                    <div className="bg-border dark:bg-border mx-1 h-5 w-px" />
+                    {/* <div className="bg-border dark:bg-border mx-1 h-5 w-px" /> */}
 
-                    {/* System Group */}
-                    <div className="flex items-center gap-1">
+                    {/* <div className="flex items-center gap-1">
                         <SiteCustomizer />
                         <AppearanceToggleDropdown />
-                    </div>
+                    </div> */}
 
-                    {/* Profile Section */}
-                    <div className="border-border dark:border-border ml-2 border-l pl-2">
+                    <div className="border-border dark:border-border ml-2  pl-2">
                         <HeaderUserMenu />
                     </div>
                 </div>

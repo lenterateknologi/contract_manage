@@ -5,7 +5,74 @@ import { Briefcase, Copy, FileSignature, Settings2, Shield, Trash2, Users as Use
 import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, getActionTheme } from '../constants';
 import { cn } from '@/lib/utils';
 import AuthoritySelector from './AuthoritySelector';
+import AuthorityTableManager from './AuthorityTableManager';
 
+const mapConfigToAuthorities = (config: any) => {
+    const list: any[] = [];
+    if (!config) return list;
+
+    if (config.custom && Array.isArray(config.custom)) {
+        config.custom.forEach((c: string) => {
+            if (c) list.push({ authority_type: 'custom', user_id: c });
+        });
+    }
+    if (config.users && Array.isArray(config.users)) {
+        config.users.forEach((u: string) => {
+            if (u) list.push({ authority_type: 'user', user_id: u });
+        });
+    }
+    if (config.roles && Array.isArray(config.roles)) {
+        config.roles.forEach((r: string) => {
+            if (r) list.push({ authority_type: 'role', role_id: r });
+        });
+    }
+    if (config.departments && Array.isArray(config.departments)) {
+        config.departments.forEach((d: string) => {
+            if (d) list.push({ authority_type: 'department', department_id: d });
+        });
+    }
+    if (config.is_initiator_role) {
+        list.push({ authority_type: 'role', use_initiator_property: true });
+    }
+    if (config.is_initiator_department) {
+        list.push({ authority_type: 'department', use_initiator_property: true });
+    }
+    return list;
+};
+
+const mapAuthoritiesToConfig = (authorities: any[]) => {
+    const config: any = {
+        custom: [],
+        users: [],
+        roles: [],
+        departments: [],
+        is_initiator_role: false,
+        is_initiator_department: false,
+    };
+    if (!authorities) return config;
+
+    authorities.forEach((auth) => {
+        if (auth.authority_type === 'custom') {
+            if (auth.user_id) config.custom.push(auth.user_id);
+        } else if (auth.authority_type === 'user') {
+            if (auth.user_id) config.users.push(auth.user_id);
+        } else if (auth.authority_type === 'role') {
+            if (auth.use_initiator_property) {
+                config.is_initiator_role = true;
+            } else if (auth.role_id) {
+                config.roles.push(auth.role_id);
+            }
+        } else if (auth.authority_type === 'department' || auth.authority_type === 'division') {
+            if (auth.use_initiator_property) {
+                config.is_initiator_department = true;
+            } else {
+                const depId = auth.department_id || auth.division_id;
+                if (depId) config.departments.push(depId);
+            }
+        }
+    });
+    return config;
+};
 
 interface StepActionConfigCardProps {
     act: any;
@@ -17,6 +84,8 @@ interface StepActionConfigCardProps {
     roles: any[];
     departments: any[];
     divisions?: any[];
+    companyGroups?: any[];
+    regions?: any[];
     users: any[];
     updateAction: (actIdx: number, data: any) => void;
     removeAction: (actIdx: number) => void;
@@ -33,6 +102,8 @@ export function StepActionConfigCard({
     roles,
     departments,
     divisions = [],
+    companyGroups = [],
+    regions = [],
     users,
     updateAction,
     removeAction,
@@ -418,7 +489,7 @@ export function StepActionConfigCard({
 
                 {/* Cell 5: Signers (Conditional) */}
                 {isSignatureAction && (
-                    <div className="col-span-1 space-y-3 rounded-lg border border-amber-100/50 bg-amber-50/50 p-3 sm:col-span-2 dark:border-amber-800/30 dark:bg-amber-900/10">
+                    <div className="col-span-1 space-y-4 rounded-lg border border-amber-100/50 bg-amber-50/50 p-4 sm:col-span-2 dark:border-amber-800/30 dark:bg-amber-900/10 w-full">
                         <div className="flex items-center gap-1.5">
                             <FileSignature size={12} className="text-amber-500" />
                             <label className="text-sm font-semibold text-amber-600  dark:text-amber-500">
@@ -451,77 +522,21 @@ export function StepActionConfigCard({
                                     ))}
                                 </SelectContent>
                             </Select>
-
                         </div>
 
-                        {/* Multi-Source Pools for Signers (2x2 Grid) */}
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-t border-amber-200/30 pt-2">
-                            {/* 1. Custom Targets */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 px-0.5">
-                                    <Settings2 size={11} className="text-slate-400" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Aktor Kustom</span>
-                                </div>
-                                <SearchableMultiSelect
-                                    values={act.signing_parties?.custom || []}
-                                    onValuesChange={(vals) =>
-                                        updateAction(actIdx, { signing_parties: { ...act.signing_parties, custom: vals } })
-                                    }
-                                    options={[
-                                        { value: 'initiator', label: 'INISIATOR' },
-                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
-                                        { value: 'creator', label: 'PEMBUAT' }
-                                    ]}
-                                    placeholder="Pilih Aktor..."
-                                />
-                            </div>
-
-                            {/* 2. User Spesifik */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 px-0.5">
-                                    <UsersIcon size={11} className="text-slate-400" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ">User Spesifik</span>
-                                </div>
-                                <SearchableMultiSelect
-                                    values={act.signing_parties?.users || []}
-                                    onValuesChange={(vals) =>
-                                        updateAction(actIdx, { signing_parties: { ...act.signing_parties, users: vals } })
-                                    }
-                                    options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
-                                    placeholder="Pilih User..."
-                                />
-                            </div>
-
-                            {/* 3. Role Pool */}
-                            <AuthoritySelector
-                                label="Berdasarkan Role"
-                                idPrefix={`act-sign-role-${actIdx}`}
-                                isInitiator={act.signing_parties?.is_initiator_role === true}
-                                onIsInitiatorChange={(checked) =>
-                                    updateAction(actIdx, { signing_parties: { ...act.signing_parties, is_initiator_role: checked, roles: checked ? [] : (act.signing_parties?.roles || []) } })
-                                }
-                                values={act.signing_parties?.roles || []}
-                                onValuesChange={(vals) =>
-                                    updateAction(actIdx, { signing_parties: { ...act.signing_parties, roles: vals } })
-                                }
-                                options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                placeholder="Pilih Role..."
-                            />
-
-                            {/* 4. Divisi Pool */}
-                            <AuthoritySelector
-                                label="Divisi Pool"
-                                idPrefix={`act-sign-dept-${actIdx}`}
-                                isInitiator={act.signing_parties?.is_initiator_department === true}
-                                onIsInitiatorChange={(checked) =>
-                                    updateAction(actIdx, { signing_parties: { ...act.signing_parties, is_initiator_department: checked, departments: checked ? [] : (act.signing_parties?.departments || []) } })
-                                }
-                                values={act.signing_parties?.departments || []}
-                                onValuesChange={(vals) =>
-                                    updateAction(actIdx, { signing_parties: { ...act.signing_parties, departments: vals } })
-                                }
-                                options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                placeholder="Pilih Divisi..."
+                        <div className="border-t border-amber-200/30 pt-3">
+                            <AuthorityTableManager
+                                title="Aktor Penandatangan"
+                                authorities={mapConfigToAuthorities(act.signing_parties)}
+                                onChange={(vals) => updateAction(actIdx, { signing_parties: mapAuthoritiesToConfig(vals) })}
+                                users={users}
+                                roles={roles}
+                                departments={departments}
+                                divisions={divisions}
+                                companyGroups={companyGroups}
+                                regions={regions}
+                                showCustom={true}
+                                showCombinations={false}
                             />
                         </div>
                     </div>
@@ -596,78 +611,22 @@ export function StepActionConfigCard({
                                 </div>
                             )}
 
-                            {/* Divider line if targets are present */}
-                            {(isForwardAction || isSignatureAction) && (
-                                <div className="sm:col-span-2 border-b border-indigo-200/20 my-1"></div>
-                            )}
-
-                            {/* 1. Custom Targets */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 px-0.5">
-                                    <Settings2 size={11} className="text-slate-400" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Aktor Kustom</span>
-                                </div>
-                                <SearchableMultiSelect
-                                    values={act.assignee_config?.custom || []}
-                                    onValuesChange={(vals) =>
-                                        updateAction(actIdx, { assignee_config: { ...act.assignee_config, custom: vals } })
-                                    }
-                                    options={[
-                                        { value: 'initiator', label: 'INISIATOR' },
-                                        { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
-                                        { value: 'creator', label: 'PEMBUAT' }
-                                    ]}
-                                    placeholder="Pilih Aktor..."
+                            {/* Authority Table Manager for Assignee/Reviewer */}
+                            <div className="sm:col-span-2 border-t border-indigo-200/20 pt-3">
+                                <AuthorityTableManager
+                                    title={isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Aktor Penugasan (Assignee)'}
+                                    authorities={mapConfigToAuthorities(act.assignee_config)}
+                                    onChange={(vals) => updateAction(actIdx, { assignee_config: mapAuthoritiesToConfig(vals) })}
+                                    users={users}
+                                    roles={roles}
+                                    departments={departments}
+                                    divisions={divisions}
+                                    companyGroups={companyGroups}
+                                    regions={regions}
+                                    showCustom={true}
+                                    showCombinations={false}
                                 />
                             </div>
-
-                            {/* 2. User Spesifik */}
-                            <div className="space-y-1.5">
-                                <div className="flex items-center gap-1.5 px-0.5">
-                                    <UsersIcon size={11} className="text-slate-400" />
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300 ">User Spesifik</span>
-                                </div>
-                                <SearchableMultiSelect
-                                    values={act.assignee_config?.users || []}
-                                    onValuesChange={(vals) =>
-                                        updateAction(actIdx, { assignee_config: { ...act.assignee_config, users: vals } })
-                                    }
-                                    options={users.map((u: any) => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
-                                    placeholder="Pilih User..."
-                                />
-                            </div>
-
-                            {/* 3. Role Pool */}
-                            <AuthoritySelector
-                                label="Berdasarkan Role"
-                                idPrefix={`act-init-role-${actIdx}`}
-                                isInitiator={act.assignee_config?.is_initiator_role === true}
-                                onIsInitiatorChange={(checked) =>
-                                    updateAction(actIdx, { assignee_config: { ...act.assignee_config, is_initiator_role: checked, roles: checked ? [] : (act.assignee_config?.roles || []) } })
-                                }
-                                values={act.assignee_config?.roles || []}
-                                onValuesChange={(vals) =>
-                                    updateAction(actIdx, { assignee_config: { ...act.assignee_config, roles: vals } })
-                                }
-                                options={roles.map((r: any) => ({ value: r.name, label: r.name }))}
-                                placeholder="Pilih Role..."
-                            />
-
-                            {/* 4. Divisi Pool */}
-                            <AuthoritySelector
-                                label="Divisi Pool"
-                                idPrefix={`act-init-dept-${actIdx}`}
-                                isInitiator={act.assignee_config?.is_initiator_department === true}
-                                onIsInitiatorChange={(checked) =>
-                                    updateAction(actIdx, { assignee_config: { ...act.assignee_config, is_initiator_department: checked, departments: checked ? [] : (act.assignee_config?.departments || []) } })
-                                }
-                                values={act.assignee_config?.departments || []}
-                                onValuesChange={(vals) =>
-                                    updateAction(actIdx, { assignee_config: { ...act.assignee_config, departments: vals } })
-                                }
-                                options={(divisions.length > 0 ? divisions : departments).map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                placeholder="Pilih Divisi..."
-                            />
                         </div>
 
 

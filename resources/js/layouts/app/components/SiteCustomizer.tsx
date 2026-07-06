@@ -6,9 +6,9 @@ import { Check, Maximize2, Palette, Settings2, Type } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const fonts = [
-    { name: 'Inter', value: "'Inter', sans-serif" },
+    { name: 'Inter', value: "'Inter', -apple-system, sans-serif" },
+    { name: 'System', value: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" },
     { name: 'Roboto', value: "'Roboto', sans-serif" },
-    { name: 'System', value: 'system-ui, -apple-system, sans-serif' },
 ];
 
 const fontSizes = [
@@ -20,9 +20,9 @@ const fontSizes = [
 export function SiteCustomizer() {
     const [activeFont, setActiveFont] = useState(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('site-font') || "'Inter', sans-serif";
+            return localStorage.getItem('site-font') || "'Inter', -apple-system, sans-serif";
         }
-        return "'Inter', sans-serif";
+        return "'Inter', -apple-system, sans-serif";
     });
 
     const [activeFontSize, setActiveFontSize] = useState(() => {
@@ -43,8 +43,13 @@ export function SiteCustomizer() {
             }
 
             styleTag.innerHTML = `
-                :root { --font-sans: ${activeFont}; }
-                * { font-family: ${activeFont} !important; }
+                :root {
+                    --font-sans: ${activeFont};
+                    --font-primary: ${activeFont};
+                }
+                body, input, button, select, textarea {
+                    font-family: ${activeFont};
+                }
                 html { font-size: ${activeFontSize} !important; }
             `;
 

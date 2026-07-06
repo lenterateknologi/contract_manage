@@ -762,6 +762,7 @@ export default function SortableStepItem({
                                     divisions={divisions}
                                     companyGroups={companyGroups}
                                     regions={regions}
+                                    showCustom={true}
                                 />
                             </div>
                         )}
@@ -797,6 +798,8 @@ export default function SortableStepItem({
                                                         roles={roles}
                                                         departments={departments}
                                                         divisions={divisions}
+                                                        companyGroups={companyGroups}
+                                                        regions={regions}
                                                         users={users}
                                                         updateAction={updateAction}
                                                         removeAction={removeAction}

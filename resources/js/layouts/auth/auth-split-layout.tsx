@@ -57,7 +57,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
     const rightTransform = isMoving ? 'translate-x-full' : 'translate-x-0';
 
     return (
-        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-slate-50 font-sans text-slate-900">
+        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-slate-50 text-slate-900">
             {/* Split Screen Container */}
             <div className="flex min-h-svh w-full overflow-hidden">
                 {/* Left Panel: Form Content - Using Theme Colors */}

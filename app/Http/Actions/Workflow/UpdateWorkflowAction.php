@@ -196,6 +196,30 @@ class UpdateWorkflowAction
             $incomingStepIds = [];
 
             if (! empty($data['steps'])) {
+                foreach ($data['steps'] as $stepData) {
+                    if (! empty($stepData['id'])) {
+                        $incomingStepIds[] = $stepData['id'];
+                    }
+                }
+            }
+
+            // Delete steps that are no longer in the incoming list
+            $deletedStepIds = array_diff($existingStepIds, $incomingStepIds);
+            if (! empty($deletedStepIds)) {
+                WorkflowStep::whereIn('id', $deletedStepIds)->forceDelete();
+            }
+
+            // Set negative temporary steps to prevent unique constraint violations on reordering/renumbering
+            if (! empty($data['steps'])) {
+                foreach ($data['steps'] as $index => $stepData) {
+                    $stepId = $stepData['id'] ?? null;
+                    if ($stepId && in_array($stepId, $existingStepIds)) {
+                        WorkflowStep::where('id', $stepId)->update(['step' => -($index + 1)]);
+                    }
+                }
+            }
+
+            if (! empty($data['steps'])) {
                 $stepIdMap = [];
                 foreach ($data['steps'] as $index => $stepData) {
                     $stepId = $stepData['id'] ?? null;
@@ -263,14 +287,14 @@ class UpdateWorkflowAction
 
                     // Sync Approvers
                     $step->approverAuthorities()->delete();
-                    if (! empty($stepData['approver_authorities'])) {
+                    if (isset($stepData['approver_authorities'])) {
                         foreach ((array) $stepData['approver_authorities'] as $auth) {
                             $step->approverAuthorities()->create([
-                                'authority_type' => $auth['authority_type'] ?? null,
+                                'authority_type' => ($auth['authority_type'] ?? null) === 'custom' ? ($auth['user_id'] ?? null) : ($auth['authority_type'] ?? null),
                                 'role_id' => ! empty($auth['role_id']) ? $this->resolveRoleId($auth['role_id']) : null,
                                 'department_id' => ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null,
                                 'division_id' => $auth['division_id'] ?? null,
-                                'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
+                                'user_id' => ($auth['authority_type'] ?? null) === 'custom' ? null : (! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null),
                                 'company_group_id' => $auth['company_group_id'] ?? null,
                                 'region_id' => $auth['region_id'] ?? null,
                                 'use_initiator_property' => (bool) ($auth['use_initiator_property'] ?? false),

@@ -130,7 +130,15 @@ class WorkflowAdminController extends Controller
             $sd['user_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->use_initiator_property)->pluck('user_id')->filter()->values()->toArray();
             $sd['department_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->use_initiator_property)->pluck('department_id')->filter()->values()->toArray();
             $sd['division_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->use_initiator_property)->pluck('division_id')->filter()->values()->toArray();
-            $sd['approver_authorities'] = $s->approverAuthorities->toArray();
+            $sd['approver_authorities'] = $s->approverAuthorities->map(function ($a) {
+                $arr = $a->toArray();
+                if (in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator'])) {
+                    $arr['authority_type'] = 'custom';
+                    $arr['user_id'] = $a->authority_type;
+                }
+
+                return $arr;
+            })->toArray();
 
             // Reconstruct approver_config if present, or initialize empty
             $config = $s->approver_config ?? [];
