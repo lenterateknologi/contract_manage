@@ -581,7 +581,6 @@ const ContractDetailView = ({
                                                     onClick={() => {
                                                         const code = action.action_code?.toLowerCase();
                                                         setActiveActionCode(action.action_code);
-
                                                         if (isForwardType) {
                                                             setAddhocOpen(true);
                                                         } else if (isRejectType) {
@@ -589,7 +588,15 @@ const ContractDetailView = ({
                                                         } else if (code === 'assign' || code === 'assign_pic') {
                                                             setAssignOpen(true);
                                                         } else if (code === 'sign' || code === 'signature') {
-                                                            setSignerOpen(true);
+                                                            const hasSignersAssigned = (contract?.approvals || []).some(
+                                                                (a: any) => String(a.workflow_step_id) === String(contract.workflow_step_id) && 
+                                                                            (a.role === 'Penandatangan' || a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === action.alias)
+                                                            );
+                                                            if (hasSignersAssigned) {
+                                                                setApproveOpen(true);
+                                                            } else {
+                                                                setSignerOpen(true);
+                                                            }
                                                         } else {
                                                             setApproveOpen(true);
                                                         }

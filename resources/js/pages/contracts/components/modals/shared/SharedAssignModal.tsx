@@ -73,6 +73,10 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
                 (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
                 (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
+                (activeAction.assignee_config.divisions && activeAction.assignee_config.divisions.length > 0) ||
+                (activeAction.assignee_config.company_groups && activeAction.assignee_config.company_groups.length > 0) ||
+                (activeAction.assignee_config.regions && activeAction.assignee_config.regions.length > 0) ||
+                (activeAction.assignee_config.authorities && activeAction.assignee_config.authorities.length > 0) ||
                 activeAction.assignee_config.is_initiator_role ||
                 activeAction.assignee_config.is_initiator_department ||
                 activeAction.assignee_config.is_initiator_user
@@ -86,15 +90,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             // Existing assignees should be pre-selected from contract.assigned_pic_id
             const existingAssigneeUserIds = contract?.assigned_pic_id ? [String(contract.assigned_pic_id)] : [];
 
-            // Main approvers (of other roles) should not be available for selection
-            const existingOtherMainUserIds = new Set(
-                (contract?.approvals || [])
-                    .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role !== ROLE_NAME && a.role !== 'Persetujuan Tambahan')
-                    .map((a: any) => String(a.user_id)),
-            );
-
             const availableUsers = allUsers.filter((u: any) => {
-                if (existingOtherMainUserIds.has(String(u.id))) return false;
                 return matchUserAgainstWorkflowPool(u, config, contract);
             });
 
@@ -137,9 +133,17 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
 
         setLoading(true);
         try {
-            const updatedContract = await contractApi.update(contract.id, {
-                assigned_pic_id: selectedUserIds[0] || null
-            });
+            const updatedContract = await contractApi.approve(
+                contract.id,
+                note || '',
+                undefined, // attachment
+                selectedUserIds[0] || undefined, // assignedPicId
+                undefined, // executionOrder
+                undefined, // signerUserIds
+                actionCode || 'assign',
+                undefined, // isFinal
+                selectedTargetStepId || undefined // targetStepId
+            );
             
             onUpdate(updatedContract);
             showToast(`Penugasan ${ROLE_NAME} berhasil diperbarui.`, 'success');

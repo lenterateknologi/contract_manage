@@ -44,8 +44,8 @@ const SINGLE_TYPES = [
 const COMBINATION_TYPES = [
     { type: 'role-division', label: 'Role - Divisi' },
     { type: 'role-company_group', label: 'Role - Company Group' },
-    { type: 'role-division-company_group', label: 'Role - Divisi - Company Group' },
-    { type: 'role-division-company_group-region', label: 'Role - Divisi - Company Group - Region' },
+    { type: 'role-div-comp', label: 'Role - Divisi - Company Group' },
+    { type: 'role-div-comp-reg', label: 'Role - Divisi - Company Group - Region' },
 ];
 
 export default function AuthorityTableManager({
@@ -112,12 +112,12 @@ export default function AuthorityTableManager({
             newAuth.role_id = modalRoleId || null;
             newAuth.company_group_id = modalCompanyGroupId || null;
         }
-        if (type === 'role-division-company_group') {
+        if (type === 'role-div-comp') {
             newAuth.role_id = modalRoleId || null;
             newAuth.division_id = modalDivisionId || null;
             newAuth.company_group_id = modalCompanyGroupId || null;
         }
-        if (type === 'role-division-company_group-region') {
+        if (type === 'role-div-comp-reg') {
             newAuth.role_id = modalRoleId || null;
             newAuth.division_id = modalDivisionId || null;
             newAuth.company_group_id = modalCompanyGroupId || null;
@@ -217,11 +217,11 @@ export default function AuthorityTableManager({
 
         if (field === 'custom') return type === 'custom';
         if (field === 'user') return type === 'user';
-        if (field === 'role') return ['role', 'role-division', 'role-company_group', 'role-division-company_group', 'role-division-company_group-region'].includes(type);
+        if (field === 'role') return ['role', 'role-division', 'role-company_group', 'role-div-comp', 'role-div-comp-reg'].includes(type);
         if (field === 'department') return type === 'department';
-        if (field === 'division') return ['division', 'role-division', 'role-division-company_group', 'role-division-company_group-region'].includes(type);
-        if (field === 'company_group') return ['company_group', 'role-company_group', 'role-division-company_group', 'role-division-company_group-region'].includes(type);
-        if (field === 'region') return ['region', 'role-division-company_group-region'].includes(type);
+        if (field === 'division') return ['division', 'role-division', 'role-div-comp', 'role-div-comp-reg'].includes(type);
+        if (field === 'company_group') return ['company_group', 'role-company_group', 'role-div-comp', 'role-div-comp-reg'].includes(type);
+        if (field === 'region') return ['region', 'role-div-comp-reg'].includes(type);
 
         return false;
     };

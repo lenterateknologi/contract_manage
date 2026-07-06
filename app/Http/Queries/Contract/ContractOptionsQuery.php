@@ -52,8 +52,8 @@ class ContractOptionsQuery
                 ->orderBy('name')
                 ->get(),
 
-            'users' => fn () => User::with('department')
-                ->when($isManager, fn ($q) => $q->where('division_id', $user->division_id))
+            'users' => fn () => User::with(['department', 'roleRelation'])
+                ->when($isManager && ! request()->boolean('all'), fn ($q) => $q->where('division_id', $user->division_id))
                 ->orderBy('name')
                 ->get()
                 ->map(fn ($u) => ContractFormatter::formatUser($u))

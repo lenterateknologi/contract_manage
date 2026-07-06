@@ -286,6 +286,7 @@ class ContractFormatter
             'role' => $user->role,
             'role_id' => array_key_exists('role_id', $attributes) ? $user->role_id : null,
             'department_id' => array_key_exists('division_id', $attributes) ? ($user->division_id ?? (array_key_exists('department_id', $attributes) ? $user->department_id : null)) : (array_key_exists('department_id', $attributes) ? $user->department_id : null),
+            'division_id' => array_key_exists('division_id', $attributes) ? $user->division_id : null,
             'department_name' => $user->relationLoaded('department') ? $user->department?->name : ($user->relationLoaded('division') ? $user->division?->name : null),
             'email' => array_key_exists('email', $attributes) ? $user->email : null,
         ];

@@ -73,6 +73,10 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
                 (activeAction.signing_parties.users && activeAction.signing_parties.users.length > 0) ||
                 (activeAction.signing_parties.roles && activeAction.signing_parties.roles.length > 0) ||
                 (activeAction.signing_parties.departments && activeAction.signing_parties.departments.length > 0) ||
+                (activeAction.signing_parties.divisions && activeAction.signing_parties.divisions.length > 0) ||
+                (activeAction.signing_parties.company_groups && activeAction.signing_parties.company_groups.length > 0) ||
+                (activeAction.signing_parties.regions && activeAction.signing_parties.regions.length > 0) ||
+                (activeAction.signing_parties.authorities && activeAction.signing_parties.authorities.length > 0) ||
                 activeAction.signing_parties.is_initiator_role ||
                 activeAction.signing_parties.is_initiator_department ||
                 activeAction.signing_parties.is_initiator_user
@@ -83,6 +87,10 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
                 (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
                 (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
                 (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
+                (activeAction.assignee_config.divisions && activeAction.assignee_config.divisions.length > 0) ||
+                (activeAction.assignee_config.company_groups && activeAction.assignee_config.company_groups.length > 0) ||
+                (activeAction.assignee_config.regions && activeAction.assignee_config.regions.length > 0) ||
+                (activeAction.assignee_config.authorities && activeAction.assignee_config.authorities.length > 0) ||
                 activeAction.assignee_config.is_initiator_role ||
                 activeAction.assignee_config.is_initiator_department ||
                 activeAction.assignee_config.is_initiator_user
@@ -104,15 +112,7 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
                 )
                 .map((a: any) => String(a.user_id));
 
-            // Main approvers should not be available for selection as signer
-            const existingMainUserIds = new Set(
-                (contract?.approvals || [])
-                    .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role !== ROLE_NAME && a.role !== 'Persetujuan Tambahan')
-                    .map((a: any) => String(a.user_id)),
-            );
-
             const availableUsers = allUsers.filter((u: any) => {
-                if (existingMainUserIds.has(String(u.id))) return false;
                 return matchUserAgainstWorkflowPool(u, config, contract);
             });
 
@@ -156,13 +156,16 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
         try {
             const finalTargetStepId = selectedTargetStepId || contract.workflow_step_id;
 
-            const updatedContract = await contractApi.addAdhocApprover(
-                contract.id, 
-                selectedUserIds, 
-                note, 
-                isSequential, 
-                finalTargetStepId,
-                ROLE_NAME
+            const updatedContract = await contractApi.approve(
+                contract.id,
+                note || '',
+                undefined, // attachment
+                undefined, // assignedPicId
+                isSequential ? 'sequential' : 'parallel', // executionOrder
+                selectedUserIds, // signerUserIds
+                actionCode || 'signature',
+                undefined, // isFinal
+                finalTargetStepId || undefined // targetStepId
             );
             
             onUpdate(updatedContract);

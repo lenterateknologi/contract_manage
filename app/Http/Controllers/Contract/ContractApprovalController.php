@@ -169,9 +169,9 @@ class ContractApprovalController extends Controller
         try {
             $contract = $this->contractDetailQuery->find($id);
 
-            if (! in_array($contract->status, ['draft', 'in_review', 'revision'])) {
-                return response()->json(['message' => 'Partisipan tambahan hanya dapat ditambahkan pada kontrak yang sedang berjalan.'], 422);
-            }
+            // if (! in_array($contract->status, ['draft', 'in_review', 'revision'])) {
+            //     return response()->json(['message' => 'Partisipan tambahan hanya dapat ditambahkan pada kontrak yang sedang berjalan.'], 422);
+            // }
 
             $targetStepId = $request->input('target_step_id');
             // Sanitize target_step_id: convert "null", "none", "current" or empty to null

@@ -8,9 +8,12 @@ import AuthoritySelector from './AuthoritySelector';
 import AuthorityTableManager from './AuthorityTableManager';
 
 const mapConfigToAuthorities = (config: any) => {
-    const list: any[] = [];
-    if (!config) return list;
+    if (!config) return [];
+    if (config.authorities && Array.isArray(config.authorities)) {
+        return config.authorities;
+    }
 
+    const list: any[] = [];
     if (config.custom && Array.isArray(config.custom)) {
         config.custom.forEach((c: string) => {
             if (c) list.push({ authority_type: 'custom', user_id: c });
@@ -31,6 +34,21 @@ const mapConfigToAuthorities = (config: any) => {
             if (d) list.push({ authority_type: 'department', department_id: d });
         });
     }
+    if (config.divisions && Array.isArray(config.divisions)) {
+        config.divisions.forEach((d: string) => {
+            if (d) list.push({ authority_type: 'division', division_id: d });
+        });
+    }
+    if (config.company_groups && Array.isArray(config.company_groups)) {
+        config.company_groups.forEach((cg: string) => {
+            if (cg) list.push({ authority_type: 'company_group', company_group_id: cg });
+        });
+    }
+    if (config.regions && Array.isArray(config.regions)) {
+        config.regions.forEach((r: string) => {
+            if (r) list.push({ authority_type: 'region', region_id: r });
+        });
+    }
     if (config.is_initiator_role) {
         list.push({ authority_type: 'role', use_initiator_property: true });
     }
@@ -46,8 +64,12 @@ const mapAuthoritiesToConfig = (authorities: any[]) => {
         users: [],
         roles: [],
         departments: [],
+        divisions: [],
+        company_groups: [],
+        regions: [],
         is_initiator_role: false,
         is_initiator_department: false,
+        authorities: authorities,
     };
     if (!authorities) return config;
 
@@ -62,13 +84,22 @@ const mapAuthoritiesToConfig = (authorities: any[]) => {
             } else if (auth.role_id) {
                 config.roles.push(auth.role_id);
             }
-        } else if (auth.authority_type === 'department' || auth.authority_type === 'division') {
+        } else if (auth.authority_type === 'department') {
             if (auth.use_initiator_property) {
                 config.is_initiator_department = true;
-            } else {
-                const depId = auth.department_id || auth.division_id;
-                if (depId) config.departments.push(depId);
+            } else if (auth.department_id) {
+                config.departments.push(auth.department_id);
             }
+        } else if (auth.authority_type === 'division') {
+            if (auth.use_initiator_property) {
+                config.is_initiator_department = true;
+            } else if (auth.division_id) {
+                config.divisions.push(auth.division_id);
+            }
+        } else if (auth.authority_type === 'company_group') {
+            if (auth.company_group_id) config.company_groups.push(auth.company_group_id);
+        } else if (auth.authority_type === 'region') {
+            if (auth.region_id) config.regions.push(auth.region_id);
         }
     });
     return config;
@@ -536,7 +567,7 @@ export function StepActionConfigCard({
                                 companyGroups={companyGroups}
                                 regions={regions}
                                 showCustom={true}
-                                showCombinations={false}
+                                showCombinations={true}
                             />
                         </div>
                     </div>
@@ -624,7 +655,7 @@ export function StepActionConfigCard({
                                     companyGroups={companyGroups}
                                     regions={regions}
                                     showCustom={true}
-                                    showCombinations={false}
+                                    showCombinations={true}
                                 />
                             </div>
                         </div>

@@ -156,6 +156,7 @@ trait HasWorkflowHelpers
     ): void {
         $roles = $config['roles'] ?? [];
         $departments = $config['departments'] ?? [];
+        $divisions = $config['divisions'] ?? [];
         $users = $config['users'] ?? [];
 
         $isInitiatorRole = $config['is_initiator_role'] ?? false;
@@ -202,6 +203,21 @@ trait HasWorkflowHelpers
                         'additional_type' => $type,
                         'target_step_id' => $targetStepId,
                         'department_id' => $resolvedId,
+                    ]);
+                }
+            }
+        }
+
+        foreach ((array) $divisions as $divId) {
+            if ($divId) {
+                $resolvedId = $this->resolveDivisionId($divId);
+                if ($resolvedId) {
+                    $action->additionalAuthorities()->create([
+                        'workflow_step_id' => $stepId,
+                        'is_additional' => true,
+                        'additional_type' => $type,
+                        'target_step_id' => $targetStepId,
+                        'division_id' => $resolvedId,
                     ]);
                 }
             }
@@ -287,5 +303,14 @@ trait HasWorkflowHelpers
 
         // ponytail: role_name is the canonical lookup key
         return Role::where('name', $identifier)->value('id');
+    }
+
+    protected function resolveDivisionId(string $identifier): ?string
+    {
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return $identifier;
+        }
+
+        return Division::where('code', $identifier)->value('id');
     }
 }

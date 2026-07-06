@@ -80,6 +80,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
                 (activeAction.assignee_config.roles && activeAction.assignee_config.roles.length > 0) ||
                 (activeAction.assignee_config.departments && activeAction.assignee_config.departments.length > 0) ||
+                (activeAction.assignee_config.divisions && activeAction.assignee_config.divisions.length > 0) ||
+                (activeAction.assignee_config.company_groups && activeAction.assignee_config.company_groups.length > 0) ||
+                (activeAction.assignee_config.regions && activeAction.assignee_config.regions.length > 0) ||
+                (activeAction.assignee_config.authorities && activeAction.assignee_config.authorities.length > 0) ||
                 activeAction.assignee_config.is_initiator_role ||
                 activeAction.assignee_config.is_initiator_department ||
                 activeAction.assignee_config.is_initiator_user
@@ -101,15 +105,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 )
                 .map((a: any) => String(a.user_id));
 
-            // Main approvers should not be available for selection
-            const existingMainUserIds = new Set(
-                (contract?.approvals || [])
-                    .filter((a: any) => String(a.workflow_step_id) === String(finalTargetStepId) && a.role !== 'Persetujuan Tambahan')
-                    .map((a: any) => String(a.user_id)),
-            );
-
             const availableUsers = allUsers.filter((u: any) => {
-                if (existingMainUserIds.has(String(u.id))) return false;
                 return matchUserAgainstWorkflowPool(u, config, contract);
             });
 
