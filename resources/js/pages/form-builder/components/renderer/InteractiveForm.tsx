@@ -47,90 +47,24 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
     comparisonData = {},
 }) => {
     // --- PAGE SPLITTING LOGIC ---
+    // ponytail: page splitting is only triggered by explicit page_break elements.
     const pages = useMemo(() => {
-        const margins = template.letterhead_json?.margins ?? { top: 15, bottom: 15, left: 15, right: 15 };
-        const SAFETY_BUFFER = 3;
-        const USABLE_HEIGHT = 297 - (margins.top + margins.bottom) - SAFETY_BUFFER;
-
-        const estimateHeight = (field: FormField): number => {
-            let h = 0;
-            const extraMargins =
-                (Number(field.options?.margin_top) || 0) +
-                (Number(field.options?.margin_bottom) || 2) + // 2mm default
-                (Number(field.options?.spacing_before) || 0) +
-                (Number(field.options?.spacing_after) || 0);
-
-            const fontSize = Number(field.options?.font_size) || 12;
-            const lineHeight = Number(field.options?.line_height) || 1.2;
-            const pxToMm = 0.264583; // 1px = 0.264583mm
-
-            switch (field.type) {
-                case 'image':
-                case 'f1_header':
-                    const imgH = field.options?.height || field.options?.size || 100;
-                    h = typeof imgH === 'number' ? imgH * pxToMm : 30;
-                    break;
-                case 'static_text':
-                    const cleanLabel = (field.label || '').trim();
-                    const lines = cleanLabel.split('\n').length;
-                    // Approximation for word wrap (A4 usable width is ~180mm)
-                    const charPerLine = 90;
-                    const charLines = Math.ceil(cleanLabel.length / charPerLine);
-                    const totalLines = Math.max(lines, charLines);
-                    h = totalLines * (fontSize * lineHeight * pxToMm);
-                    break;
-                case 'textfield':
-                case 'number':
-                case 'date':
-                case 'labeled_value':
-                    h = fontSize * 1.5 * pxToMm + 4; // text height + padding
-                    break;
-                case 'textarea':
-                    h = field.options?.min_height ? field.options.min_height * pxToMm : 25;
-                    break;
-                case 'signature_box':
-                    h = 45;
-                    break;
-                case 'group':
-                case 'grid_x':
-                case 'grid_y':
-                    const children = (template?.fields || []).filter((f) => f.parent_id === field.id);
-                    if (field.type === 'grid_x') {
-                        h = Math.max(...children.map(estimateHeight), 0) + 4;
-                    } else {
-                        h = children.reduce((acc, child) => acc + estimateHeight(child), 0) + 4;
-                    }
-                    break;
-                case 'page_break':
-                    h = 297;
-                    break;
-                default:
-                    h = 10;
-                    break;
-            }
-            return h + extraMargins;
-        };
-
         const rootFields = (template?.fields || []).filter((f) => !f.parent_id).sort((a, b) => (a.order || 0) - (b.order || 0));
 
         const resultPages: FormField[][] = [[]];
-        let currentHeight = 0;
         let currentPageIdx = 0;
 
         rootFields.forEach((field) => {
-            const h = estimateHeight(field);
-            if (currentHeight + h > USABLE_HEIGHT && resultPages[currentPageIdx].length > 0) {
+            if (resultPages[currentPageIdx].length > 0 && resultPages[currentPageIdx][resultPages[currentPageIdx].length - 1]?.type === 'page_break') {
                 currentPageIdx++;
                 resultPages[currentPageIdx] = [field];
-                currentHeight = h;
             } else {
                 resultPages[currentPageIdx].push(field);
-                currentHeight += h;
             }
         });
 
         return resultPages;
-    }, [template.fields, template.letterhead_json]);
+    }, [template.fields]);
 
     const allFieldIds = useMemo(() => (template.fields || []).map((f) => f.id), [template.fields]);
 
