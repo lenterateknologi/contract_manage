@@ -55,24 +55,26 @@ export function ContractInfoForm({
 
     return (
         <>
-            <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Kontrak (F2)</div>
-                    <MetaBadge name="contract_no" />
-                </div>
-                {selected.workflow_step?.meta?.allow_f2_edit === true ? (
-                    <Input
-                        value={contractNo}
-                        onChange={(e) => setContractNo(e.target.value)}
-                        placeholder="Masukkan nomor kontrak F2..."
-                        className={inputCls}
-                    />
-                ) : (
-                    <div className="text-primary text-sm font-bold">
-                        {selected.contract_no || <span className="text-text-soft/40 text-xs font-medium italic">Belum diisi</span>}
+            {selected.workflow_step?.meta?.show_f2_contract_no !== false && (
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">No. Kontrak (F2)</div>
+                        <MetaBadge name="contract_no" />
                     </div>
-                )}
-            </div>
+                    {selected.workflow_step?.meta?.allow_f2_edit === true ? (
+                        <Input
+                            value={contractNo}
+                            onChange={(e) => setContractNo(e.target.value)}
+                            placeholder="Masukkan nomor kontrak F2..."
+                            className={inputCls}
+                        />
+                    ) : (
+                        <div className="text-primary text-sm font-bold">
+                            {selected.contract_no || <span className="text-text-soft/40 text-xs font-medium italic">Belum diisi</span>}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {isDraft ? (
                 <div className="flex flex-col gap-1.5">

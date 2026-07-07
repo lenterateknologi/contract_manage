@@ -192,7 +192,7 @@ export function DraftEditableInfoCard({
 
             {!minimized && (
                 <div className="grid grid-cols-1 gap-5 p-5">
-                    {isDraft && (
+                    {isDraft && selected.workflow_step?.meta?.show_tax_toggle !== false && (
                         <div className="border-surface-border col-span-full mt-2 border-t pt-4">
                             <TaxToggle
                                 taxRequired={taxRequired}

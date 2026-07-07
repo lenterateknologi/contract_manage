@@ -216,6 +216,17 @@ export interface Contract {
         step_type: string;
         step_category: string | null;
         target_approvers?: string | null;
+        meta?: {
+            allow_info_edit?: boolean;
+            allow_f1_edit?: boolean;
+            allow_f2_edit?: boolean;
+            allow_agreement_edit?: boolean;
+            allow_attachment_edit?: boolean;
+            allow_reference?: boolean;
+            is_manager?: boolean;
+            show_f2_contract_no?: boolean;
+            show_tax_toggle?: boolean;
+        } | null;
         actions?: Array<{
             id: string;
             action_code: string;
