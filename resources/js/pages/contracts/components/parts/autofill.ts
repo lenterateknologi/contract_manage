@@ -51,7 +51,7 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
         const vendor = (contract as any).vendor;
         const docs = vendor?.documents || [];
         if (docs.length === 0) return '';
-        
+
         const docLabels: Record<string, string> = {
             'NIB': 'Nomor Induk Berusaha (NIB)',
             'SIUP': 'Surat Izin Usaha Perdagangan (SIUP)',
@@ -130,7 +130,7 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
     }
 
     // 5. Tax Requirement
-    if (name === 'meta_tax_required' || name === 'meta_pajak') {
+    if (name === 'meta_tax_required' || name === 'meta_pajak' || name === 'has_tax' || name === 'contract.has_tax') {
         return contract.metadata?.tax_required ? 'Ya' : 'Tidak';
     }
 

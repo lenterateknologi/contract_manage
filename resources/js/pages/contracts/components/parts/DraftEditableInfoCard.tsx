@@ -192,26 +192,6 @@ export function DraftEditableInfoCard({
 
             {!minimized && (
                 <div className="grid grid-cols-1 gap-5 p-5">
-                    {isDraft && selected.workflow_step?.meta?.show_tax_toggle !== false && (
-                        <div className="border-surface-border col-span-full mt-2 border-t pt-4">
-                            <TaxToggle
-                                taxRequired={taxRequired}
-                                setTaxRequired={(newVal) => {
-                                    setTaxRequired(newVal);
-                                    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-                                    setLocalSaving(true);
-                                    Promise.resolve(
-                                        onUpdate({
-                                            metadata: {
-                                                ...selected.metadata,
-                                                tax_required: newVal,
-                                            },
-                                        }),
-                                    ).finally(() => setLocalSaving(false));
-                                }}
-                            />
-                        </div>
-                    )}
                     <ContractInfoForm
                         isDraft={isDraft}
                         title={title}
@@ -229,6 +209,20 @@ export function DraftEditableInfoCard({
                         vendors={vendors}
                         selected={selected}
                         inputCls={inputCls}
+                        taxRequired={taxRequired}
+                        onTaxRequiredChange={(newVal) => {
+                            setTaxRequired(newVal);
+                            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+                            setLocalSaving(true);
+                            Promise.resolve(
+                                onUpdate({
+                                    metadata: {
+                                        ...selected.metadata,
+                                        tax_required: newVal,
+                                    },
+                                }),
+                            ).finally(() => setLocalSaving(false));
+                        }}
                     />
 
                     <div className="flex flex-col gap-1">

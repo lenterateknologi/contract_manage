@@ -24,6 +24,7 @@ class ContractFormatter
         ]);
         $nextStep = self::getNextStep($c);
         $requiresPicAssignment = $nextStep && $nextStep->approver_type === 'assigned_pic';
+        $effectiveStep = $c->workflowStep ?: ($c->workflow ? $c->workflow->steps->first() : null);
         $progress = $c->progressData();
 
         return [
@@ -66,12 +67,14 @@ class ContractFormatter
             'f2_form_template_id' => $c->contractType?->f2_form_template_id,
             'contract_mode' => self::getEffectiveMode($c, 'contract', ($c->contractType?->contract_input_mechanism === 'manual') ? 'interactive' : 'upload'),
             'contract_form_template_id' => $c->contractType?->contract_form_template_id,
-            'allow_info_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_info_edit', true),
-            'allow_f1_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_f1_edit', true),
-            'allow_f2_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_f2_edit', true),
-            'allow_agreement_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_agreement_edit', true),
-            'allow_attachment_edit' => (bool) data_get($c->workflowStep?->meta, 'allow_attachment_edit', true),
-            'allow_reference' => (bool) data_get($c->workflowStep?->meta, 'allow_reference', true),
+            'allow_info_edit' => (bool) data_get($effectiveStep?->meta, 'allow_info_edit', true),
+            'allow_f1_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f1_edit', true),
+            'allow_f2_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f2_edit', true),
+            'allow_agreement_edit' => (bool) data_get($effectiveStep?->meta, 'allow_agreement_edit', true),
+            'allow_attachment_edit' => (bool) data_get($effectiveStep?->meta, 'allow_attachment_edit', true),
+            'allow_reference' => (bool) data_get($effectiveStep?->meta, 'allow_reference', true),
+            'show_f2_contract_no' => (bool) data_get($effectiveStep?->meta, 'show_f2_contract_no', true),
+            'show_tax_toggle' => (bool) data_get($effectiveStep?->meta, 'show_tax_toggle', true),
 
             // Specialized permissions
             'can_fill_contract_no' => Auth::user()?->role === Role::ADMIN || Auth::user()?->role === 'Legal Staff' || Auth::user()?->role === 'PIC Legal',

@@ -160,6 +160,8 @@ export interface Contract {
     allow_agreement_edit?: boolean;
     allow_attachment_edit?: boolean;
     allow_reference?: boolean;
+    show_f2_contract_no?: boolean;
+    show_tax_toggle?: boolean;
     current_version: number;
     requires_pic_assignment?: boolean;
     created_at: string;
