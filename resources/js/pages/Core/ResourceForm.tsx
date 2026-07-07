@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, router } from '@inertiajs/react';
 import { FormInput } from '@/components/ui/inputs/FormInput';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Button } from '@/components/ui/buttons/Button';
@@ -126,6 +126,7 @@ interface Props {
 
 export default function ResourceForm({ resourceSlug, title, formSchema, formColumns = 1, record }: Props) {
     const isEdit = !!record;
+    const [activeTab, setActiveTab] = useState<'info' | 'docs'>('info');
 
     // Helper to get flattened fields for initial state and validation
     const getFlattenedFields = (schema: any[]): any[] => {
@@ -371,8 +372,38 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
-                    <div className={getGridClass()}>
+                {resourceSlug === 'vendors' && isEdit && (
+                    <div className="flex border-b border-surface-border -mb-2">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('info')}
+                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                                activeTab === 'info'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-text-soft hover:text-text-main'
+                            }`}
+                        >
+                            <LucideIcons.User size={14} />
+                            Informasi Vendor
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('docs')}
+                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                                activeTab === 'docs'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-text-soft hover:text-text-main'
+                            }`}
+                        >
+                            <LucideIcons.FileCheck size={14} />
+                            Dokumen Legalitas
+                        </button>
+                    </div>
+                )}
+
+                {(!isEdit || resourceSlug !== 'vendors' || activeTab === 'info') && (
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full animate-in fade-in duration-200">
+                        <div className={getGridClass()}>
                         {formSchema.map((field: any) => {
                             if (field.isGroup) {
                                 // ponytail: for contract-types, hide configuration groups if parent_id is empty (indicating it is a parent category)
@@ -418,6 +449,103 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         </Button>
                     </div>
                 </form>
+                )}
+
+                {/* ponytail: Vendor Documents Section */}
+                {resourceSlug === 'vendors' && isEdit && activeTab === 'docs' && (
+                    <div className="border border-surface-border bg-surface-base rounded-2xl p-6 flex flex-col gap-5 animate-in fade-in duration-200">
+                        <div className="flex items-center gap-2 pb-3 border-b border-surface-border">
+                            <LucideIcons.FileCheck className="h-4 w-4 text-primary shrink-0 opacity-80" />
+                            <div>
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Dokumen Legalitas Vendor</h3>
+                                <p className="text-[11px] text-text-soft mt-0.5">Kelola berkas legalitas dan lampiran wajib untuk vendor ini.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {[
+                                { type: 'NIB', label: 'Nomor Induk Berusaha (NIB)' },
+                                { type: 'SIUP', label: 'Surat Izin Usaha Perdagangan (SIUP)' },
+                                { type: 'NPWP', label: 'Nomor Pokok Wajib Pajak (NPWP)' },
+                                { type: 'Akta Pendirian', label: 'Akta Pendirian Perusahaan' },
+                                { type: 'KTP Direktur', label: 'KTP Direktur / PIC' },
+                                { type: 'SPPKP', label: 'Surat Pengukuhan Pengusaha Kena Pajak (SPPKP)' },
+                            ].map((docType) => {
+                                const doc = record?.documents?.find((d: any) => d.document_type === docType.type);
+
+                                return (
+                                    <div key={docType.type} className="flex flex-col justify-between gap-2 p-4 border border-surface-border rounded-xl bg-surface-base min-h-[120px]">
+                                        <span className="text-[10px] font-bold text-text-soft uppercase tracking-wider">{docType.label}</span>
+                                        {doc ? (
+                                            <div className="flex items-center justify-between gap-3 mt-1">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <LucideIcons.FileText className="h-5 w-5 text-emerald-500 shrink-0" />
+                                                    <span className="text-xs font-medium text-text-main truncate" title={doc.document_name}>
+                                                        {doc.document_name}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <a
+                                                        href={doc.file_url}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="p-1.5 rounded-lg hover:bg-slate-50 text-text-soft/60 hover:text-text-main transition-all"
+                                                        title="Lihat / Download"
+                                                    >
+                                                        <LucideIcons.Download className="h-4 w-4" />
+                                                    </a>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (confirm(`Hapus dokumen ${docType.type}?`)) {
+                                                                router.delete(`/admin/vendors/${record.id}/documents/${doc.id}`, {
+                                                                    preserveScroll: true
+                                                                });
+                                                            }
+                                                        }}
+                                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-text-soft/60 hover:text-rose-600 transition-all"
+                                                        title="Hapus"
+                                                    >
+                                                        <LucideIcons.Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col gap-2 mt-1">
+                                                <div className="flex items-center gap-1.5 text-rose-500 text-[10px] font-bold uppercase tracking-wider">
+                                                    <LucideIcons.AlertCircle className="h-3.5 w-3.5" />
+                                                    <span>Belum Dilengkapi</span>
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type="file"
+                                                        accept=".pdf,.docx,.jpg,.jpeg,.png"
+                                                        onChange={(e) => {
+                                                            const file = e.target.files?.[0];
+                                                            if (file) {
+                                                                const fd = new FormData();
+                                                                fd.append('document_file', file);
+                                                                fd.append('document_type', docType.type);
+                                                                router.post(`/admin/vendors/${record.id}/documents`, fd, {
+                                                                    preserveScroll: true
+                                                                });
+                                                            }
+                                                        }}
+                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                    />
+                                                    <div className="flex h-9 items-center justify-center gap-2 rounded-lg border border-dashed border-surface-border bg-surface-muted/20 text-xs font-semibold text-text-soft hover:bg-surface-muted/40 transition-all cursor-pointer">
+                                                        <LucideIcons.Upload className="h-3.5 w-3.5" /> Upload File
+                                                    </div>
+                                                </div>
+                                                <span className="text-[9px] text-text-soft/60 font-semibold tracking-wide mt-0.5">Format: PDF, DOCX, JPG, PNG (Maks. 5MB)</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
         </>
     );

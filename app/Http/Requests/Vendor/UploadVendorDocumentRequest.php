@@ -14,7 +14,7 @@ class UploadVendorDocumentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'document_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'document_file' => 'required|file|mimes:pdf,docx,jpg,jpeg,png|max:5120',
             'document_type' => 'required|string',
             'expires_at' => 'nullable|date',
         ];

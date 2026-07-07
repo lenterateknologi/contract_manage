@@ -59,6 +59,10 @@ class ResourceController extends Controller
         // Start query
         $query = $modelClass::with($resourceClass::$with ?? []);
 
+        if ($resourceSlug === 'vendors') {
+            $query->with('documents');
+        }
+
         if ($resourceSlug === 'contract-types' && ! $request->filled('search')) {
             $query->whereNull('parent_id')->with(['children' => function ($q) {
                 $q->with(['f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate', 'children.f1FormTemplate', 'children.f2FormTemplate', 'children.contractFormTemplate']);
@@ -162,6 +166,10 @@ class ResourceController extends Controller
         $resourceClass = $this->getResourceClass($resourceSlug);
         $modelClass = $resourceClass::$model;
         $record = $modelClass::findOrFail($id);
+
+        if ($resourceSlug === 'vendors') {
+            $record->load('documents');
+        }
 
         return Inertia::render('Core/ResourceForm', [
             'resourceSlug' => $resourceSlug,

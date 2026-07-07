@@ -255,16 +255,17 @@ class ContractFormController extends Controller
             ]);
         }
 
-        // For F2: ALWAYS generate prefill_data
-        if ($type === 'f2') {
-            $f1Submission = FormSubmission::where('contract_id', $contract->id)
-                ->where('document_type', 'f1')
-                ->first();
-
+        // For F1 & F2: ALWAYS generate prefill_data
+        if ($type === 'f1' || $type === 'f2') {
             $f1Data = [];
-            if ($f1Submission) {
-                $latestF1 = $f1Submission->versions()->orderByDesc('version_no')->first();
-                $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
+            if ($type === 'f2') {
+                $f1Submission = FormSubmission::where('contract_id', $contract->id)
+                    ->where('document_type', 'f1')
+                    ->first();
+                if ($f1Submission) {
+                    $latestF1 = $f1Submission->versions()->orderByDesc('version_no')->first();
+                    $f1Data = $latestF1 ? ($latestF1->form_data ?? []) : [];
+                }
             }
             $prefillData = $this->applyInheritance($f1Data, $contract);
         }
@@ -350,6 +351,9 @@ class ContractFormController extends Controller
 
         if (empty($formData['meta_nomor'])) {
             $formData['meta_nomor'] = $contract->form_no;
+        }
+        if (empty($formData['meta_created_at'])) {
+            $formData['meta_created_at'] = $contract->created_at->format('Y-m-d');
         }
         if (empty($formData['meta_topik'])) {
             $formData['meta_topik'] = $contract->contractType->name ?? $contract->contract_type ?? '';

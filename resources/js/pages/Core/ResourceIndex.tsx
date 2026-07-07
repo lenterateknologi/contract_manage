@@ -161,6 +161,20 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         cell: (row: any) => {
             const val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
             
+            // Custom render for documents count
+            if (col.name === 'documents_count' && resourceSlug === 'vendors') {
+                const count = Array.isArray(row.documents) ? row.documents.length : 0;
+                const total = 6;
+                const isComplete = count === total;
+                return (
+                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[11px] font-bold ${
+                        isComplete ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
+                    }`}>
+                        {count}/{total}
+                    </span>
+                );
+            }
+
             // Custom render for name column if resource is contract-types (showing tree structure)
             if (col.name === 'name' && resourceSlug === 'contract-types') {
                 const depth = row._depth || 0;

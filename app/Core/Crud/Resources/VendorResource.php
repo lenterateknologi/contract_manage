@@ -28,6 +28,7 @@ class VendorResource extends Resource
             TextColumn::make('company_type', 'Tipe Perusahaan')->sortable()->searchable(),
             TextColumn::make('email', 'Email')->sortable()->searchable(),
             TextColumn::make('phone', 'No. Telepon')->searchable(),
+            TextColumn::make('documents_count', 'Lampiran'),
             BooleanColumn::make('is_active', 'Status Aktif'),
         ];
     }

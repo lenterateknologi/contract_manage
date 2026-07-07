@@ -51,15 +51,27 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
         const vendor = (contract as any).vendor;
         const docs = vendor?.documents || [];
         if (docs.length === 0) return '';
+        
+        const docLabels: Record<string, string> = {
+            'NIB': 'Nomor Induk Berusaha (NIB)',
+            'SIUP': 'Surat Izin Usaha Perdagangan (SIUP)',
+            'NPWP': 'Nomor Pokok Wajib Pajak (NPWP)',
+            'Akta Pendirian': 'Akta Pendirian Perusahaan',
+            'KTP Direktur': 'KTP Direktur / PIC',
+            'SPPKP': 'Surat Pengukuhan Pengusaha Kena Pajak (SPPKP)',
+        };
+
+        const getDocLabel = (d: any) => docLabels[d.document_type] || d.document_type || d.document_name || d.name || 'Dokumen';
+
         if (docs.length > 3) {
             return (
                 docs
                     .slice(0, 3)
-                    .map((d: any, i: number) => `${i + 1}. ${d.name}`)
+                    .map((d: any, i: number) => `${i + 1}. ${getDocLabel(d)}`)
                     .join(', ') + `, dan +${docs.length - 3} lainnya`
             );
         }
-        return docs.map((d: any, i: number) => `${i + 1}. ${d.name}`).join(', ');
+        return docs.map((d: any, i: number) => `${i + 1}. ${getDocLabel(d)}`).join(', ');
     }
 
     // 2. Dates
