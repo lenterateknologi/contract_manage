@@ -83,4 +83,23 @@ class Approval extends Model
             'updated_by' => Auth::id(),
         ]);
     }
+
+    protected static function booted()
+    {
+        static::saved(function ($approval) {
+            // ponytail: send email notification when status becomes pending
+            $isNewPending = $approval->wasRecentlyCreated && $approval->status === 'pending';
+            $isStatusChangedToPending = $approval->wasChanged('status') && $approval->status === 'pending';
+
+            if ($isNewPending || $isStatusChangedToPending) {
+                if (config('notifications.email.enabled', true)) {
+                    $approval->loadMissing(['approver', 'contract', 'workflowStep']);
+                    if ($approval->approver && $approval->approver->email) {
+                        \Illuminate\Support\Facades\Mail::to($approval->approver->email)
+                            ->queue(new \App\Mail\ContractActionRequiredMail($approval));
+                    }
+                }
+            }
+        });
+    }
 }
