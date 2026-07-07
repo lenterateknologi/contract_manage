@@ -376,15 +376,7 @@ export default function SortableStepItem({
                 <div className="flex min-w-0 flex-1 items-center justify-between">
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
                         <div className="flex flex-wrap items-center gap-2">
-                            <div
-                                title={approverLabel}
-                                className={cn(
-                                    'flex max-w-[280px] items-center gap-1.5 truncate rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase',
-                                    APPROVER_TYPE_STYLES[step.approver_type] || APPROVER_TYPE_STYLES.role,
-                                )}
-                            >
-                                <UserCheck size={10} className="shrink-0" /> <span className="truncate">{approverLabel}</span>
-                            </div>
+
 
                             {/* Conditional Flag */}
                             {step.condition_expression && (

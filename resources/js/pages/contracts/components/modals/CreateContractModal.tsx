@@ -72,12 +72,13 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         setFetchingWorkflows(true);
         try {
             const data = await contractApi.getWorkflows(tId, initId);
-            setWorkflows(data);
+            const selectableWorkflows = (data || []).filter((w: any) => !!w.is_selectable);
+            setWorkflows(selectableWorkflows);
 
-            if (data.length === 1) {
-                setWorkflowId(data[0].id);
-            } else if (data.length > 1) {
-                const defaultWf = data.find((w: any) => w.is_default);
+            if (selectableWorkflows.length === 1) {
+                setWorkflowId(selectableWorkflows[0].id);
+            } else if (selectableWorkflows.length > 1) {
+                const defaultWf = selectableWorkflows.find((w: any) => w.is_default);
                 if (defaultWf) setWorkflowId(defaultWf.id);
             }
         } catch (err) {

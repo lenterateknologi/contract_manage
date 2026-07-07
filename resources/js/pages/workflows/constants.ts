@@ -61,6 +61,15 @@ export const APPROVER_TYPE_STYLES: Record<string, string> = {
     role: 'border-emerald-100 bg-emerald-50 text-emerald-600 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-400',
 };
 
+export const TRANSITION_OPTIONS = [
+    { value: 'sequential', label: 'Langkah + 1 (Default)' },
+    { value: 'stay', label: 'Tetap di Langkah Saat Ini (Stay)' },
+    { value: 'back', label: 'Langkah - 1 (Back)' },
+    { value: 'initial_step', label: 'Langkah awal' },
+    { value: 'absolute', label: 'Langkah Spesifik Alur Kerja Ini' },
+    { value: 'cross_workflow', label: 'Langkah ke Workflow N & Step N' },
+];
+
 export const ACTION_THEMES: Record<string, { color: string; icon: any; actionType: string }> = {
     approve: { color: 'bg-emerald-600 hover:bg-emerald-700', icon: CheckCircle2, actionType: 'approve' },
     reject: { color: 'bg-rose-500 hover:bg-rose-600', icon: XCircle, actionType: 'reject' },

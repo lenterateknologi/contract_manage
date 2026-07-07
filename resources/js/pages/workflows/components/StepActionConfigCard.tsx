@@ -2,7 +2,7 @@ import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMulti
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { Briefcase, Copy, FileSignature, Settings2, Shield, Trash2, Users as UsersIcon } from 'lucide-react';
 
-import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, getActionTheme } from '../constants';
+import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, TRANSITION_OPTIONS, getActionTheme } from '../constants';
 import { cn } from '@/lib/utils';
 import AuthoritySelector from './AuthoritySelector';
 import AuthorityTableManager from './AuthorityTableManager';
@@ -218,6 +218,7 @@ export function StepActionConfigCard({
                 return 'absolute';
             }
             if (act.transition_config.type === 'cross_workflow') return 'cross_workflow';
+            if (act.transition_config.type === 'initial_step') return 'initial_step';
         }
 
         // Fallback for backward compatibility
@@ -366,6 +367,13 @@ export function StepActionConfigCard({
                                     next_workflow_id: null,
                                     next_workflow_step_id: null,
                                 });
+                            } else if (val === 'initial_step') {
+                                updateAction(actIdx, {
+                                    transition_config: { type: 'initial_step' },
+                                    next_step_id: null,
+                                    next_workflow_id: null,
+                                    next_workflow_step_id: null,
+                                });
                             }
                         }}
                     >
@@ -373,21 +381,11 @@ export function StepActionConfigCard({
                             <SelectValue placeholder="Pilih Transisi" />
                         </SelectTrigger>
                         <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-                            <SelectItem value="sequential" className="text-sm font-medium ">
-                                Langkah + 1 (Default)
-                            </SelectItem>
-                            <SelectItem value="stay" className="text-sm font-medium ">
-                                Tetap di Langkah Saat Ini (Stay)
-                            </SelectItem>
-                            <SelectItem value="back" className="text-sm font-medium ">
-                                Langkah - 1 (Back)
-                            </SelectItem>
-                            <SelectItem value="absolute" className="text-sm font-medium ">
-                                Langkah Spesifik Alur Kerja Ini
-                            </SelectItem>
-                            <SelectItem value="cross_workflow" className="text-sm font-medium ">
-                                Langkah ke Workflow N & Step N
-                            </SelectItem>
+                            {TRANSITION_OPTIONS.map((opt) => (
+                                <SelectItem key={opt.value} value={opt.value} className="text-sm font-medium ">
+                                    {opt.label}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
