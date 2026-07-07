@@ -69,18 +69,74 @@ function flattenTreeFromParents(parents: any[], depth = 0): any[] {
     return result;
 }
 
-export default function ResourceIndex({ resourceSlug, title, tableSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false }: Props) {
+export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [selectedRows, setSelectedRows] = useState<any[]>([]);
+    const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+    const [bulkSelectedFields, setBulkSelectedFields] = useState<Record<string, boolean>>({});
+    const [bulkFieldValues, setBulkFieldValues] = useState<Record<string, any>>({});
+    const [bulkProcessing, setBulkProcessing] = useState(false);
 
     React.useEffect(() => {
         setSelectedRows([]);
+        setBulkSelectedFields({});
+        setBulkFieldValues({});
     }, [resourceSlug]);
 
     const handleDelete = () => {
         if (!deleteId) return;
         router.delete(`/admin/core/${resourceSlug}/${deleteId}`, {
             onSuccess: () => setDeleteId(null),
+        });
+    };
+
+    // Helper to get flattened fields for bulk edit
+    const flattenedFields = React.useMemo(() => {
+        const getFlattened = (schema: any[]): any[] => {
+            let fields: any[] = [];
+            schema.forEach((item) => {
+                if (item.isGroup && Array.isArray(item.schema)) {
+                    fields = [...fields, ...getFlattened(item.schema)];
+                } else {
+                    fields.push(item);
+                }
+            });
+            return fields;
+        };
+        return getFlattened(formSchema || []);
+    }, [formSchema]);
+
+    // Handle bulk edit save
+    const handleBulkSave = () => {
+        const valuesToUpdate: Record<string, any> = {};
+        let hasSelection = false;
+        Object.keys(bulkSelectedFields).forEach(name => {
+            if (bulkSelectedFields[name]) {
+                valuesToUpdate[name] = bulkFieldValues[name] ?? '';
+                hasSelection = true;
+            }
+        });
+
+        if (!hasSelection) {
+            alert('Silakan pilih minimal satu field yang ingin diubah.');
+            return;
+        }
+
+        setBulkProcessing(true);
+        router.post(`/admin/core/${resourceSlug}/bulk-update`, {
+            ids: selectedRows.map(r => r.id),
+            values: valuesToUpdate
+        }, {
+            onSuccess: () => {
+                setShowBulkEditModal(false);
+                setSelectedRows([]);
+                setBulkSelectedFields({});
+                setBulkFieldValues({});
+                setBulkProcessing(false);
+            },
+            onError: () => {
+                setBulkProcessing(false);
+            }
         });
     };
 
@@ -121,6 +177,67 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, data, 
                         <span>{val}</span>
                     </span>
                 );
+            }
+
+            // ponytail: custom render for merged mechanism and template details in contract-types
+            if (resourceSlug === 'contract-types') {
+                if (col.name === 'f1_details' || col.name === 'f2_details' || col.name === 'agreement_details') {
+                    if (!row.parent_id) {
+                        return <span className="text-text-soft/40">—</span>;
+                    }
+                }
+
+                if (col.name === 'f1_details') {
+                    const isManual = row.f1_input_mechanism === 'manual';
+                    const mech = isManual ? 'Manual (Form)' : (row.f1_input_mechanism === 'digital' ? 'Digital (Upload)' : row.f1_input_mechanism || '—');
+                    const templateName = row.f1_form_template?.name || row.f1FormTemplate?.name;
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left">
+                            <span className="font-semibold text-xs text-text-main">{mech}</span>
+                            {isManual && (
+                                templateName ? (
+                                    <span className="text-[10px] text-text-soft/80 font-medium">{templateName}</span>
+                                ) : (
+                                    <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                )
+                            )}
+                        </div>
+                    );
+                }
+                if (col.name === 'f2_details') {
+                    const isManual = row.f2_input_mechanism === 'manual';
+                    const mech = isManual ? 'Manual (Form)' : (row.f2_input_mechanism === 'digital' ? 'Digital (Upload)' : row.f2_input_mechanism || '—');
+                    const templateName = row.f2_form_template?.name || row.f2FormTemplate?.name;
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left">
+                            <span className="font-semibold text-xs text-text-main">{mech}</span>
+                            {isManual && (
+                                templateName ? (
+                                    <span className="text-[10px] text-text-soft/80 font-medium">{templateName}</span>
+                                ) : (
+                                    <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                )
+                            )}
+                        </div>
+                    );
+                }
+                if (col.name === 'agreement_details') {
+                    const isManual = row.contract_input_mechanism === 'manual';
+                    const mech = isManual ? 'Manual (Form)' : (row.contract_input_mechanism === 'digital' ? 'Digital (Upload)' : row.contract_input_mechanism || '—');
+                    const templateName = row.contract_form_template?.name || row.contractFormTemplate?.name;
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left">
+                            <span className="font-semibold text-xs text-text-main">{mech}</span>
+                            {isManual && (
+                                templateName ? (
+                                    <span className="text-[10px] text-text-soft/80 font-medium">{templateName}</span>
+                                ) : (
+                                    <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                )
+                            )}
+                        </div>
+                    );
+                }
             }
 
             if (col.name === 'label' && resourceSlug === 'contract-statuses') {
@@ -192,25 +309,36 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, data, 
                 sortBy={activeFilters.sort_by}
                 sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
                 onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}
+                isRowSelectable={(row) => resourceSlug !== 'contract-types' || !!row.parent_id}
                 onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
                 selectedRows={selectedRows}
                 bulkActions={(selected: any[]) => (
-                    <Button
-                        variant="white"
-                        size="sm"
-                        onClick={() => {
-                            if (confirm(`Hapus ${selected.length} data terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
-                                router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
-                                    ids: selected.map((r: any) => r.id)
-                                }, {
-                                    onSuccess: () => setSelectedRows([])
-                                });
-                            }
-                        }}
-                        className="text-xs py-1.5 px-3 h-8 hover:bg-rose-50 hover:border-rose-200 text-rose-500 rounded-xl flex items-center gap-1.5 font-bold uppercase tracking-wider bg-white border border-surface-border shadow-sm"
-                    >
-                        <Trash2 size={13} /> Hapus Terpilih
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="white"
+                            size="sm"
+                            onClick={() => {
+                                if (confirm(`Hapus ${selected.length} data terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
+                                    router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
+                                        ids: selected.map((r: any) => r.id)
+                                    }, {
+                                        onSuccess: () => setSelectedRows([])
+                                    });
+                                }
+                            }}
+                            className="text-xs py-1.5 px-3 h-8 hover:bg-rose-50 hover:border-rose-200 text-rose-500 rounded-xl flex items-center gap-1.5 font-bold uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
+                        >
+                            <Trash2 size={13} /> Hapus Terpilih
+                        </Button>
+                        <Button
+                            variant="white"
+                            size="sm"
+                            onClick={() => setShowBulkEditModal(true)}
+                            className="text-xs py-1.5 px-3 h-8 hover:bg-slate-50 hover:border-slate-300 text-text-main rounded-xl flex items-center gap-1.5 font-bold uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
+                        >
+                            <LucideIcons.Edit2 size={13} /> Ubah Massal ({selected.length})
+                        </Button>
+                    </div>
                 )}
                 headerActions={
                     <div className="flex items-center gap-2">
@@ -252,6 +380,133 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, data, 
                 cancelText="Batal"
                 variant="danger"
             />
+
+            {/* ponytail: Bulk Edit Modal */}
+            {showBulkEditModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 dark:bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="relative mx-auto my-auto bg-white dark:bg-slate-900 w-full max-w-lg overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+                        {/* Header */}
+                        <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <div>
+                                <h3 className="text-slate-900 dark:text-slate-100 text-base font-bold tracking-tight">
+                                    Ubah Massal Data {title}
+                                </h3>
+                                <p className="text-slate-500 dark:text-slate-400 text-xs font-normal mt-0.5">
+                                    Mengubah {selectedRows.length} data terpilih sekaligus. Centang field yang ingin diubah.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setShowBulkEditModal(false)}
+                                className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-text-soft/60 hover:text-text-main transition-all"
+                            >
+                                <LucideIcons.X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Fields Form */}
+                        <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4">
+                            {flattenedFields.map((field) => {
+                                // Don't bulk edit primary keys or password fields or descriptions to avoid mistakes
+                                if (field.name === 'id' || field.name === 'code' || field.name === 'password' || field.name === 'description') return null;
+
+                                const isFieldChecked = !!bulkSelectedFields[field.name];
+
+                                return (
+                                    <div key={field.name} className="flex gap-4 items-start p-3 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/20 dark:bg-slate-800/10">
+                                        <div className="pt-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={isFieldChecked}
+                                                onChange={(e) => {
+                                                    setBulkSelectedFields(prev => ({ ...prev, [field.name]: e.target.checked }));
+                                                    if (!e.target.checked) {
+                                                        setBulkFieldValues(prev => ({ ...prev, [field.name]: undefined }));
+                                                    }
+                                                }}
+                                                className="h-4 w-4 rounded-sm border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                                            />
+                                        </div>
+                                        <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                                            <label className="text-[11px] font-bold text-text-main uppercase tracking-wider">
+                                                {field.label}
+                                            </label>
+                                            {isFieldChecked ? (
+                                                <div className="w-full">
+                                                    {field.type === 'select' && (
+                                                        <select
+                                                            value={bulkFieldValues[field.name] ?? ''}
+                                                            onChange={(e) => setBulkFieldValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+                                                            className="flex h-10 w-full appearance-none rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                                                        >
+                                                            <option value="">Pilih...</option>
+                                                            {(Array.isArray(field.options) ? field.options : Object.entries(field.options || {})).map((option: any) => {
+                                                                const val = Array.isArray(field.options) ? option : option[0];
+                                                                const label = Array.isArray(field.options) ? option : option[1];
+                                                                return (
+                                                                    <option key={val} value={val}>{label}</option>
+                                                                );
+                                                            })}
+                                                        </select>
+                                                    )}
+                                                    {field.type === 'switch' && (
+                                                        <div className="flex items-center h-10">
+                                                            <button
+                                                                type="button"
+                                                                role="switch"
+                                                                aria-checked={!!bulkFieldValues[field.name]}
+                                                                onClick={() => setBulkFieldValues(prev => ({ ...prev, [field.name]: !prev[field.name] }))}
+                                                                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden ${
+                                                                    bulkFieldValues[field.name] ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'
+                                                                }`}
+                                                            >
+                                                                <span
+                                                                    className={`pointer-events-none block h-4 w-4 rounded-full shadow-lg transition-transform duration-300 ring-0 ${
+                                                                        bulkFieldValues[field.name] ? 'translate-x-6 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
+                                                                    }`}
+                                                                />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {field.type === 'text' && (
+                                                        <input
+                                                            type="text"
+                                                            value={bulkFieldValues[field.name] ?? ''}
+                                                            onChange={(e) => setBulkFieldValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+                                                            className="flex h-10 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
+                                                            placeholder={`Masukkan ${field.label}...`}
+                                                        />
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-[10px] italic text-text-soft/60">Centang kotak di samping untuk mengubah field ini massal.</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-3 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                                onClick={() => setShowBulkEditModal(false)}
+                                disabled={bulkProcessing}
+                                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                            <button
+                                onClick={handleBulkSave}
+                                disabled={bulkProcessing}
+                                className="flex-1 rounded-xl px-4 py-2.5 text-xs font-bold text-white transition-all bg-primary hover:bg-primary/95 disabled:opacity-50 shadow-md flex items-center justify-center gap-1.5"
+                            >
+                                {bulkProcessing && <LucideIcons.Loader2 size={12} className="animate-spin" />}
+                                Simpan Perubahan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

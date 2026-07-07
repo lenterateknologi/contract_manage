@@ -63,6 +63,7 @@ export interface DataTableProps<T> {
     sortBy?: string;
     sortDir?: 'asc' | 'desc';
     onSortChange?: (sortBy: string, sortDir: 'asc' | 'desc') => void;
+    isRowSelectable?: (row: T) => boolean;
 }
 
 /**
@@ -94,6 +95,7 @@ export function DataTable<T extends Record<string, any>>({
     sortBy,
     sortDir,
     onSortChange,
+    isRowSelectable,
 }: DataTableProps<T>) {
 
     const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 10);
@@ -127,7 +129,8 @@ export function DataTable<T extends Record<string, any>>({
     }, [debouncedSearch, onSearchChange, searchValue]);
 
     const handleSelectAll = (checked: boolean) => {
-        const value = checked ? data : [];
+        const selectable = isRowSelectable ? data.filter(isRowSelectable) : data;
+        const value = checked ? selectable : [];
         if (hasSelectionFromProps) onSelectionChange?.(value);
         else setInternalSelectedRows(value);
     };
@@ -328,16 +331,20 @@ export function DataTable<T extends Record<string, any>>({
                                     >
                                         {onSelectionChange && (
                                             <td className="py-3.5 px-4 w-10" onClick={(e) => e.stopPropagation()}>
-                                                <Checkbox
-                                                    checked={activeSelectedRows.some(r => r.id === row.id)}
-                                                    onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
-                                                    className="border-surface-border"
-                                                />
+                                                {(!isRowSelectable || isRowSelectable(row)) ? (
+                                                    <Checkbox
+                                                        checked={activeSelectedRows.some(r => r.id === row.id)}
+                                                        onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
+                                                        className="border-surface-border"
+                                                    />
+                                                ) : (
+                                                    <span className="text-text-soft/20 text-xs select-none flex items-center justify-center font-bold">—</span>
+                                                )}
                                             </td>
                                         )}
                                         {columns.map((col, colIdx) => (
                                             <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-normal text-text-main", col.className)}>
-                                                {col.cell ? col.cell(row) : (col.accessorKey.split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
+                                                {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
                                             </td>
                                         ))}
                                         {rowActions && (

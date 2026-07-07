@@ -28,6 +28,8 @@ class ContractType extends Model
         'f2_input_mechanism',
         'f2_form_template_id',
         'f2_contract_template_id',
+        'contract_input_mechanism',
+        'contract_form_template_id',
         'is_active',
     ];
 
@@ -58,6 +60,11 @@ class ContractType extends Model
     public function f2FormTemplate(): BelongsTo
     {
         return $this->belongsTo(FormTemplate::class, 'f2_form_template_id');
+    }
+
+    public function contractFormTemplate(): BelongsTo
+    {
+        return $this->belongsTo(FormTemplate::class, 'contract_form_template_id');
     }
 
     public function formTemplates(): HasMany

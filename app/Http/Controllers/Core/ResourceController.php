@@ -60,7 +60,9 @@ class ResourceController extends Controller
         $query = $modelClass::with($resourceClass::$with ?? []);
 
         if ($resourceSlug === 'contract-types' && ! $request->filled('search')) {
-            $query->whereNull('parent_id')->with('children');
+            $query->whereNull('parent_id')->with(['children' => function ($q) {
+                $q->with(['f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate', 'children.f1FormTemplate', 'children.f2FormTemplate', 'children.contractFormTemplate']);
+            }]);
         }
 
         // Implement simple search if exists
@@ -216,6 +218,29 @@ class ResourceController extends Controller
         $modelClass::whereIn('id', $request->input('ids'))->delete();
 
         return redirect()->route('core.index', $resourceSlug)->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil dihapus.');
+    }
+
+    public function bulkUpdate(string $resourceSlug, Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'required',
+            'values' => 'required|array',
+        ]);
+
+        $resourceClass = $this->getResourceClass($resourceSlug);
+        $modelClass = $resourceClass::$model;
+
+        // Filter null and empty strings, but keep false and 0
+        $fieldsToUpdate = array_filter($request->input('values'), function ($value) {
+            return $value !== null && $value !== '';
+        });
+
+        if (! empty($fieldsToUpdate)) {
+            $modelClass::whereIn('id', $request->input('ids'))->update($fieldsToUpdate);
+        }
+
+        return redirect()->route('core.index', $resourceSlug)->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil diperbarui.');
     }
 
     public function export(string $resourceSlug)

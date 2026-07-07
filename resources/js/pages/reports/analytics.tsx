@@ -88,12 +88,12 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
         {
             header: 'No. Pengajuan',
             accessorKey: 'form_no',
-            cell: (row: any) => <span className="font-mono font-semibold text-text-soft">{row.form_no || row.contract_no || '—'}</span>
+            cell: (row: any) => <span className="font-semibold text-text-main">{row.form_no || row.contract_no || '—'}</span>
         },
         {
             header: 'Judul',
             accessorKey: 'title',
-            cell: (row: any) => <span className="font-bold text-text-main uppercase truncate max-w-[300px] block">{row.title}</span>
+            cell: (row: any) => <span className="font-semibold text-text-main truncate max-w-[300px] block">{row.title}</span>
         },
         {
             header: 'Status',
@@ -121,7 +121,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
             header: 'Tanggal Registrasi',
             accessorKey: 'created_at',
             cell: (row: any) => (
-                <span className="text-text-soft font-semibold">
+                <span className="text-text-main font-normal">
                     {new Date(row.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
             )

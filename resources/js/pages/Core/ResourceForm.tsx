@@ -150,6 +150,32 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
     const { data, setData, post, put, errors, processing } = useForm(initialFormState);
 
+    // ponytail: disable template selection if input mechanism is upload (digital)
+    const isFieldDisabled = (fieldName: string) => {
+        if (fieldName === 'f1_form_template_id') return data.f1_input_mechanism === 'digital';
+        if (fieldName === 'f2_form_template_id') return data.f2_input_mechanism === 'digital';
+        if (fieldName === 'contract_form_template_id') return data.contract_input_mechanism === 'digital';
+        return false;
+    };
+
+    useEffect(() => {
+        if (data.f1_input_mechanism === 'digital' && data.f1_form_template_id !== '') {
+            setData('f1_form_template_id', '');
+        }
+    }, [data.f1_input_mechanism]);
+
+    useEffect(() => {
+        if (data.f2_input_mechanism === 'digital' && data.f2_form_template_id !== '') {
+            setData('f2_form_template_id', '');
+        }
+    }, [data.f2_input_mechanism]);
+
+    useEffect(() => {
+        if (data.contract_input_mechanism === 'digital' && data.contract_form_template_id !== '') {
+            setData('contract_form_template_id', '');
+        }
+    }, [data.contract_input_mechanism]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (isEdit) {
@@ -269,6 +295,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                     data[field.name] ? 'text-foreground' : 'text-muted-foreground'
                                 }`}
                                 required={field.required}
+                                disabled={isFieldDisabled(field.name)}
                             >
                                 <option value="" className="text-muted-foreground">
                                     {field.placeholder || `Pilih ${field.label.toLowerCase()}...`}
@@ -348,6 +375,12 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     <div className={getGridClass()}>
                         {formSchema.map((field: any) => {
                             if (field.isGroup) {
+                                // ponytail: for contract-types, hide configuration groups if parent_id is empty (indicating it is a parent category)
+                                const isConfigGroup = ['Konfigurasi Formulir F1', 'Konfigurasi Formulir F2', 'Konfigurasi Draft Perjanjian'].includes(field.label);
+                                if (resourceSlug === 'contract-types' && isConfigGroup && !data.parent_id) {
+                                    return null;
+                                }
+
                                 const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
                                     ? (LucideIcons as any)[field.icon]
                                     : undefined;
