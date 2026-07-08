@@ -22,11 +22,16 @@ class UpdateWorkflowAction
             $workflowData = collect($data)->except([
                 'initiator_roles', 'initiator_users', 'initiator_departments', 'initiator_divisions',
                 'company_group_ids', 'region_ids', 'company_ids', 'steps', 'initiator_authorities',
+                'contract_type_ids',
             ])->toArray();
             if (empty($workflowData['contract_type_id'])) {
                 $workflowData['contract_type_id'] = null;
             }
             $workflow->update($workflowData);
+
+            if (isset($data['contract_type_ids'])) {
+                $workflow->contractTypes()->sync($data['contract_type_ids']);
+            }
 
             if ($workflow->is_default) {
                 Workflow::where('id', '!=', $workflow->id)

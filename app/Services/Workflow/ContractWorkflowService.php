@@ -292,37 +292,63 @@ class ContractWorkflowService
                     $query = User::query();
                     $hasFilters = false;
 
+                    $requiresRole = in_array($a->authority_type, ['role', 'role-division', 'role-company_group', 'role-div-comp', 'role-div-comp-reg']);
                     if ($a->role_id) {
                         $query->where('role_id', $a->role_id);
                         $hasFilters = true;
-                    } elseif ($a->authority_type === 'role' && $a->use_initiator_property && $contract->initiator?->role_id) {
+                    } elseif (($a->use_initiator_property || $a->role_use_initiator) && $contract->initiator?->role_id && $requiresRole) {
                         $query->where('role_id', $contract->initiator->role_id);
+                        $hasFilters = true;
+                    } elseif ($requiresRole) {
+                        $query->whereNull('role_id');
                         $hasFilters = true;
                     }
 
+                    $requiresDept = in_array($a->authority_type, ['department']);
                     if ($a->department_id) {
                         $query->where('department_id', $a->department_id);
                         $hasFilters = true;
-                    } elseif ($a->authority_type === 'department' && $a->use_initiator_property && $contract->initiator?->department_id) {
+                    } elseif (($a->use_initiator_property || $a->department_use_initiator) && $contract->initiator?->department_id && $requiresDept) {
                         $query->where('department_id', $contract->initiator->department_id);
+                        $hasFilters = true;
+                    } elseif ($requiresDept) {
+                        $query->whereNull('department_id');
                         $hasFilters = true;
                     }
 
+                    $requiresDiv = in_array($a->authority_type, ['division', 'role-division', 'role-div-comp', 'role-div-comp-reg']);
                     if ($a->division_id) {
                         $query->where('division_id', $a->division_id);
                         $hasFilters = true;
-                    } elseif ($a->authority_type === 'division' && $a->use_initiator_property && $contract->initiator?->division_id) {
+                    } elseif (($a->use_initiator_property || $a->division_use_initiator) && $contract->initiator?->division_id && $requiresDiv) {
                         $query->where('division_id', $contract->initiator->division_id);
+                        $hasFilters = true;
+                    } elseif ($requiresDiv) {
+                        $query->whereNull('division_id');
                         $hasFilters = true;
                     }
 
+                    $requiresCompGroup = in_array($a->authority_type, ['company_group', 'role-company_group', 'role-div-comp', 'role-div-comp-reg']);
                     if ($a->company_group_id) {
                         $query->where('company_group_id', $a->company_group_id);
                         $hasFilters = true;
+                    } elseif (($a->use_initiator_property || $a->company_group_use_initiator) && $contract->initiator?->company?->company_group_id && $requiresCompGroup) {
+                        $query->whereHas('company', fn ($q) => $q->where('company_group_id', $contract->initiator->company->company_group_id));
+                        $hasFilters = true;
+                    } elseif ($requiresCompGroup) {
+                        $query->whereNull('company_group_id'); // Or force a fail
+                        $hasFilters = true;
                     }
 
+                    $requiresRegion = in_array($a->authority_type, ['region', 'role-div-comp-reg']);
                     if ($a->region_id) {
                         $query->where('region_id', $a->region_id);
+                        $hasFilters = true;
+                    } elseif (($a->use_initiator_property || $a->region_use_initiator) && $contract->initiator?->company?->region_id && $requiresRegion) {
+                        $query->whereHas('company', fn ($q) => $q->where('region_id', $contract->initiator->company->region_id));
+                        $hasFilters = true;
+                    } elseif ($requiresRegion) {
+                        $query->whereNull('region_id'); // Or force a fail
                         $hasFilters = true;
                     }
 

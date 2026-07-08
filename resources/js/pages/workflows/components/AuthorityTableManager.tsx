@@ -16,6 +16,11 @@ interface AuthorityItem {
     company_group_id?: string | null;
     region_id?: string | null;
     use_initiator_property?: boolean;
+    role_use_initiator?: boolean;
+    department_use_initiator?: boolean;
+    division_use_initiator?: boolean;
+    company_group_use_initiator?: boolean;
+    region_use_initiator?: boolean;
 }
 
 interface AuthorityTableManagerProps {
@@ -63,6 +68,11 @@ export default function AuthorityTableManager({
 }: AuthorityTableManagerProps) {
     const [selectedTypeForModal, setSelectedTypeForModal] = useState<string | null>(null);
     const [modalUseInitiator, setModalUseInitiator] = useState(false);
+    const [modalRoleUseInit, setModalRoleUseInit] = useState(false);
+    const [modalDeptUseInit, setModalDeptUseInit] = useState(false);
+    const [modalDivUseInit, setModalDivUseInit] = useState(false);
+    const [modalCompUseInit, setModalCompUseInit] = useState(false);
+    const [modalRegUseInit, setModalRegUseInit] = useState(false);
     const [modalRoleId, setModalRoleId] = useState<string>('');
     const [modalDepartmentId, setModalDepartmentId] = useState<string>('');
     const [modalDivisionId, setModalDivisionId] = useState<string>('');
@@ -73,6 +83,11 @@ export default function AuthorityTableManager({
     const openModal = (type: string) => {
         setSelectedTypeForModal(type);
         setModalUseInitiator(false);
+        setModalRoleUseInit(false);
+        setModalDeptUseInit(false);
+        setModalDivUseInit(false);
+        setModalCompUseInit(false);
+        setModalRegUseInit(false);
         setModalRoleId('');
         setModalDepartmentId('');
         setModalDivisionId('');
@@ -91,6 +106,11 @@ export default function AuthorityTableManager({
         const newAuth: AuthorityItem = {
             authority_type: selectedTypeForModal,
             use_initiator_property: modalUseInitiator,
+            role_use_initiator: modalRoleUseInit,
+            department_use_initiator: modalDeptUseInit,
+            division_use_initiator: modalDivUseInit,
+            company_group_use_initiator: modalCompUseInit,
+            region_use_initiator: modalRegUseInit,
         };
 
         const type = selectedTypeForModal;
@@ -157,11 +177,11 @@ export default function AuthorityTableManager({
                         } else {
                             if (auth.user_id) parts.push(`User: ${getUserLabel(auth.user_id)}`);
                         }
-                        if (auth.role_id) parts.push(`Role: ${getRoleLabel(auth.role_id)}`);
-                        if (auth.department_id) parts.push(`Dept: ${getDeptLabel(auth.department_id)}`);
-                        if (auth.division_id) parts.push(`Divisi: ${getDivLabel(auth.division_id)}`);
-                        if (auth.company_group_id) parts.push(`Group: ${getCompanyGroupLabel(auth.company_group_id)}`);
-                        if (auth.region_id) parts.push(`Region: ${getRegionLabel(auth.region_id)}`);
+                        if (auth.role_id) parts.push(`Role: ${getRoleLabel(auth.role_id)}`); else if (auth.role_use_initiator) parts.push('Role: Sesuai Inisiator');
+                        if (auth.department_id) parts.push(`Dept: ${getDeptLabel(auth.department_id)}`); else if (auth.department_use_initiator) parts.push('Dept: Sesuai Inisiator');
+                        if (auth.division_id) parts.push(`Divisi: ${getDivLabel(auth.division_id)}`); else if (auth.division_use_initiator) parts.push('Divisi: Sesuai Inisiator');
+                        if (auth.company_group_id) parts.push(`Group: ${getCompanyGroupLabel(auth.company_group_id)}`); else if (auth.company_group_use_initiator) parts.push('Group: Sesuai Inisiator');
+                        if (auth.region_id) parts.push(`Region: ${getRegionLabel(auth.region_id)}`); else if (auth.region_use_initiator) parts.push('Region: Sesuai Inisiator');
                     }
 
                     return (
@@ -193,11 +213,11 @@ export default function AuthorityTableManager({
     };
 
     const renderUseInitiatorCell = (type: string) => {
-        const hasUseInitiator = authorities.some(auth => auth.authority_type === type && auth.use_initiator_property === true);
+        const hasUseInitiator = authorities.some(auth => auth.authority_type === type && (auth.use_initiator_property || auth.role_use_initiator || auth.department_use_initiator || auth.division_use_initiator || auth.company_group_use_initiator || auth.region_use_initiator));
         if (hasUseInitiator) {
             return (
                 <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-bold text-green-700 dark:bg-green-950/30 dark:text-green-400">
-                    <Check size={10} /> Ya
+                    <Check size={10} /> Parsial/Ya
                 </span>
             );
         }
@@ -208,12 +228,7 @@ export default function AuthorityTableManager({
         if (!selectedTypeForModal) return false;
         const type = selectedTypeForModal;
 
-        if (field === 'use_initiator_property') return true;
-
-        if (modalUseInitiator) {
-            // If "Sesuai Inisiator" is checked, we don't need manual selection fields
-            return false;
-        }
+        if (field === 'use_initiator_property') return false;
 
         if (field === 'custom') return type === 'custom';
         if (field === 'user') return type === 'user';
@@ -344,7 +359,13 @@ export default function AuthorityTableManager({
                         {/* Select Role */}
                         {hasTypeSelect('role') && (
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Role</label>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Role</label>
+                                    <div className="flex items-center gap-1.5">
+                                        <label htmlFor="role-use-init" className="text-[10px] font-semibold text-slate-500 cursor-pointer">Sesuai Inisiator</label>
+                                        <Checkbox id="role-use-init" checked={modalRoleUseInit} onCheckedChange={(v) => setModalRoleUseInit(!!v)} className="h-3.5 w-3.5 rounded-sm" />
+                                    </div>
+                                </div>
                                 <SearchableSelect
                                     value={modalRoleId}
                                     onValueChange={setModalRoleId}
@@ -357,7 +378,13 @@ export default function AuthorityTableManager({
                         {/* Select Department */}
                         {hasTypeSelect('department') && (
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Departemen</label>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Departemen</label>
+                                    <div className="flex items-center gap-1.5">
+                                        <label htmlFor="dept-use-init" className="text-[10px] font-semibold text-slate-500 cursor-pointer">Sesuai Inisiator</label>
+                                        <Checkbox id="dept-use-init" checked={modalDeptUseInit} onCheckedChange={(v) => setModalDeptUseInit(!!v)} className="h-3.5 w-3.5 rounded-sm" />
+                                    </div>
+                                </div>
                                 <SearchableSelect
                                     value={modalDepartmentId}
                                     onValueChange={setModalDepartmentId}
@@ -370,7 +397,13 @@ export default function AuthorityTableManager({
                         {/* Select Division */}
                         {hasTypeSelect('division') && (
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Divisi</label>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Divisi</label>
+                                    <div className="flex items-center gap-1.5">
+                                        <label htmlFor="div-use-init" className="text-[10px] font-semibold text-slate-500 cursor-pointer">Sesuai Inisiator</label>
+                                        <Checkbox id="div-use-init" checked={modalDivUseInit} onCheckedChange={(v) => setModalDivUseInit(!!v)} className="h-3.5 w-3.5 rounded-sm" />
+                                    </div>
+                                </div>
                                 <SearchableSelect
                                     value={modalDivisionId}
                                     onValueChange={setModalDivisionId}
@@ -383,7 +416,13 @@ export default function AuthorityTableManager({
                         {/* Select Company Group */}
                         {hasTypeSelect('company_group') && (
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Company Group</label>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Company Group</label>
+                                    <div className="flex items-center gap-1.5">
+                                        <label htmlFor="comp-use-init" className="text-[10px] font-semibold text-slate-500 cursor-pointer">Sesuai Inisiator</label>
+                                        <Checkbox id="comp-use-init" checked={modalCompUseInit} onCheckedChange={(v) => setModalCompUseInit(!!v)} className="h-3.5 w-3.5 rounded-sm" />
+                                    </div>
+                                </div>
                                 <SearchableSelect
                                     value={modalCompanyGroupId}
                                     onValueChange={setModalCompanyGroupId}
@@ -396,7 +435,13 @@ export default function AuthorityTableManager({
                         {/* Select Region */}
                         {hasTypeSelect('region') && (
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Wilayah (Region)</label>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Wilayah (Region)</label>
+                                    <div className="flex items-center gap-1.5">
+                                        <label htmlFor="reg-use-init" className="text-[10px] font-semibold text-slate-500 cursor-pointer">Sesuai Inisiator</label>
+                                        <Checkbox id="reg-use-init" checked={modalRegUseInit} onCheckedChange={(v) => setModalRegUseInit(!!v)} className="h-3.5 w-3.5 rounded-sm" />
+                                    </div>
+                                </div>
                                 <SearchableSelect
                                     value={modalRegionId}
                                     onValueChange={setModalRegionId}

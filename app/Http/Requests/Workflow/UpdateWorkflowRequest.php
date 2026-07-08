@@ -15,7 +15,9 @@ class UpdateWorkflowRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id',
+            'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id', // Keep for backward compatibility if needed temporarily
+            'contract_type_ids' => 'nullable|array',
+            'contract_type_ids.*' => 'uuid|exists:m_contract_types,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
             'is_selectable' => 'boolean',
@@ -76,7 +78,12 @@ class UpdateWorkflowRequest extends FormRequest
             'steps.*.approver_authorities.*.user_id' => 'nullable|string',
             'steps.*.approver_authorities.*.company_group_id' => 'nullable|string',
             'steps.*.approver_authorities.*.region_id' => 'nullable|string',
-            'steps.*.approver_authorities.*.use_initiator_property' => 'nullable|boolean',
+                        'steps.*.approver_authorities.*.use_initiator_property' => 'nullable|boolean',
+            'steps.*.approver_authorities.*.role_use_initiator' => 'nullable|boolean',
+            'steps.*.approver_authorities.*.department_use_initiator' => 'nullable|boolean',
+            'steps.*.approver_authorities.*.division_use_initiator' => 'nullable|boolean',
+            'steps.*.approver_authorities.*.company_group_use_initiator' => 'nullable|boolean',
+            'steps.*.approver_authorities.*.region_use_initiator' => 'nullable|boolean',
             'steps.*.user_ids' => 'nullable|array',
             'steps.*.department_ids' => 'nullable|array',
             'steps.*.approver_config' => 'nullable|array',

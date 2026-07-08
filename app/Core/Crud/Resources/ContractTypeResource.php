@@ -10,7 +10,6 @@ use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
-use App\Models\ContractTemplate;
 use App\Models\ContractType;
 use App\Models\FormTemplate;
 

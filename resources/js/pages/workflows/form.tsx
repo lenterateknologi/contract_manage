@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
+import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { FormInput } from '@/components/ui/inputs/FormInput';
 import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -78,7 +79,8 @@ export default function WorkflowEditor({
 
     const form = useForm({
         name: workflow?.name || '',
-        contract_type_id: workflow?.contract_type_id || '',
+        contract_type_id: workflow?.contract_type_id || '', // Kept for backward compatibility if needed
+        contract_type_ids: workflow?.contract_type_ids || [],
         description: workflow?.description || '',
         is_default: !!workflow?.is_default,
         is_selectable: !!workflow?.is_selectable,
@@ -363,28 +365,14 @@ export default function WorkflowEditor({
                                                     <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         <LayoutTemplate size={10} /> Jenis Kontrak
                                                     </label>
-                                                    <Select
-                                                        value={form.data.contract_type_id || 'all'}
-                                                        onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
-                                                    >
-                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-medium transition-all focus:ring-1 dark:border-slate-800 dark:bg-card /50">
-                                                            <SelectValue placeholder="SEMUA JENIS" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                            <SelectItem value="all" className="py-2.5 text-xs font-medium">
-                                                                SEMUA JENIS
-                                                            </SelectItem>
-                                                            {contractTypes.map((t: any) => (
-                                                                <SelectItem
-                                                                    key={t.id}
-                                                                    value={t.id}
-                                                                    className="py-2.5 text-xs font-medium"
-                                                                >
-                                                                    {t.name}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
+                                                    <TreeSelect
+                                                        value={form.data.contract_type_ids}
+                                                        onValueChange={(val) => form.setData('contract_type_ids', val)}
+                                                        items={contractTypes}
+                                                        placeholder="Pilih Jenis Kontrak"
+                                                        multiple={true}
+                                                        parentSelectsChildrenOnly={true}
+                                                    />
                                                 </div>
                                                 <div className="space-y-2">
                                                     <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">

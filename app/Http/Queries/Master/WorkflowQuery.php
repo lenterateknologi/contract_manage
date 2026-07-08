@@ -17,7 +17,7 @@ class WorkflowQuery
         return Workflow::query()
             ->withCount('steps')
             ->with([
-                'contractType',
+                'contractTypes',
                 'steps.approverAuthorities',
                 'initiatorAuthorities',
                 'orgScopes',
@@ -49,6 +49,7 @@ class WorkflowQuery
     public function findForEdit(string $id): Workflow
     {
         return Workflow::with([
+            'contractTypes',
             'steps.approverAuthorities',
             'steps.actions',
             'initiatorAuthorities',

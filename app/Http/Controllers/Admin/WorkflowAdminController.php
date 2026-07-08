@@ -89,6 +89,7 @@ class WorkflowAdminController extends Controller
         $workflow = $this->workflowQuery->findForEdit($workflow->id);
 
         $workflowData = $workflow->toArray();
+        $workflowData['contract_type_ids'] = $workflow->contractTypes->pluck('id')->toArray();
 
         // Map org scopes to {value, is_initiator} objects for the frontend
         $workflowData['company_group_ids'] = $workflow->orgScopes

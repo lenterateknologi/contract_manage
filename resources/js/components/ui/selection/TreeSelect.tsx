@@ -19,6 +19,7 @@ interface TreeSelectProps {
     triggerClassName?: string;
     multiple?: boolean;
     disabled?: boolean;
+    parentSelectsChildrenOnly?: boolean;
 }
 
 export function TreeSelect({
@@ -31,6 +32,7 @@ export function TreeSelect({
     triggerClassName,
     multiple = false,
     disabled = false,
+    parentSelectsChildrenOnly = false,
 }: TreeSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
@@ -121,7 +123,7 @@ export function TreeSelect({
                 newSelected = newSelected.filter(sid => sid !== id && !children.some(c => String(c.id) === sid));
             } else {
                 // Select parent and all children
-                if (!newSelected.includes(id)) newSelected.push(id);
+                if (!newSelected.includes(id) && !parentSelectsChildrenOnly) newSelected.push(id);
                 children.forEach(c => {
                     const cid = String(c.id);
                     if (!newSelected.includes(cid)) newSelected.push(cid);

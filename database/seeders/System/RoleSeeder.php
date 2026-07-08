@@ -10,7 +10,7 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $dir = database_path('data_json');
-        $files = glob($dir . '/master_data_export_*.json');
+        $files = glob($dir.'/master_data_export_*.json');
         if (empty($files)) {
             return;
         }

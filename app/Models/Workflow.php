@@ -182,6 +182,11 @@ class Workflow extends Model
         return $this->belongsTo(ContractType::class, 'contract_type_id');
     }
 
+    public function contractTypes()
+    {
+        return $this->belongsToMany(ContractType::class, 'm_workflow_contract_types', 'workflow_id', 'contract_type_id');
+    }
+
     public function department(): BelongsTo
     {
         return $this->belongsTo(Division::class);

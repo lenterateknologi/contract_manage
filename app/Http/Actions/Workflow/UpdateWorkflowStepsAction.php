@@ -68,6 +68,11 @@ class UpdateWorkflowStepsAction
                                 'company_group_id' => $auth['company_group_id'] ?? null,
                                 'region_id' => $auth['region_id'] ?? null,
                                 'use_initiator_property' => (bool) ($auth['use_initiator_property'] ?? false),
+                                'role_use_initiator' => (bool) ($auth['role_use_initiator'] ?? false),
+                                'department_use_initiator' => (bool) ($auth['department_use_initiator'] ?? false),
+                                'division_use_initiator' => (bool) ($auth['division_use_initiator'] ?? false),
+                                'company_group_use_initiator' => (bool) ($auth['company_group_use_initiator'] ?? false),
+                                'region_use_initiator' => (bool) ($auth['region_use_initiator'] ?? false),
                             ]);
                         }
                     } else {

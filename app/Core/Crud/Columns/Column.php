@@ -8,10 +8,15 @@ use JsonSerializable;
 class Column implements JsonSerializable
 {
     protected string $name;
+
     protected string $label;
+
     protected string $type = 'text';
+
     protected bool $isSortable = false;
+
     protected bool $isSearchable = false;
+
     protected mixed $formatStateUsing = null;
 
     public function __construct(string $name, ?string $label = null)
@@ -28,24 +33,28 @@ class Column implements JsonSerializable
     public function sortable(bool $condition = true): static
     {
         $this->isSortable = $condition;
+
         return $this;
     }
 
     public function searchable(bool $condition = true): static
     {
         $this->isSearchable = $condition;
+
         return $this;
     }
 
     public function type(string $type): static
     {
         $this->type = $type;
+
         return $this;
     }
 
     public function formatStateUsing(callable $callback): static
     {
         $this->formatStateUsing = $callback;
+
         return $this;
     }
 
@@ -64,6 +73,7 @@ class Column implements JsonSerializable
         if ($this->formatStateUsing) {
             return call_user_func($this->formatStateUsing, $state, $record);
         }
+
         return $state;
     }
 

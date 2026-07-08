@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
+use App\Mail\ContractActionRequiredMail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class Approval extends Model
 {
@@ -95,8 +97,8 @@ class Approval extends Model
                 if (config('notifications.email.enabled', true)) {
                     $approval->loadMissing(['approver', 'contract', 'workflowStep']);
                     if ($approval->approver && $approval->approver->email) {
-                        \Illuminate\Support\Facades\Mail::to($approval->approver->email)
-                            ->queue(new \App\Mail\ContractActionRequiredMail($approval));
+                        Mail::to($approval->approver->email)
+                            ->queue(new ContractActionRequiredMail($approval));
                     }
                 }
             }

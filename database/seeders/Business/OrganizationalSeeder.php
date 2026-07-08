@@ -22,7 +22,7 @@ class OrganizationalSeeder extends Seeder
                     break;
                 }
             }
-            if (!empty($groups)) {
+            if (! empty($groups)) {
                 foreach ($groups as $g) {
                     CompanyGroup::updateOrCreate(
                         ['id' => $g['id']],
@@ -48,7 +48,7 @@ class OrganizationalSeeder extends Seeder
                     break;
                 }
             }
-            if (!empty($regions)) {
+            if (! empty($regions)) {
                 foreach ($regions as $r) {
                     Region::updateOrCreate(
                         ['id' => $r['id']],
@@ -74,7 +74,7 @@ class OrganizationalSeeder extends Seeder
                     break;
                 }
             }
-            if (!empty($companies)) {
+            if (! empty($companies)) {
                 foreach ($companies as $c) {
                     Company::updateOrCreate(
                         ['id' => $c['id']],

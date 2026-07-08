@@ -2,14 +2,16 @@
 
 namespace App\Core\Crud\Resources;
 
-use App\Core\Crud\Resource;
-use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Columns\BooleanColumn;
-use App\Core\Crud\Fields\TextInput;
+use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextareaInput;
+use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Resource;
+use App\Exports\CompaniesExport;
+use App\Imports\CompaniesImport;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\Region;
@@ -17,12 +19,18 @@ use App\Models\Region;
 class CompanyResource extends Resource
 {
     public static string $model = Company::class;
+
     public static array $with = ['group', 'region'];
+
     public static ?string $title = 'Perusahaan';
+
     public static ?string $slug = 'companies';
+
     public static int $formColumns = 2;
-    public static ?string $exportClass = \App\Exports\CompaniesExport::class;
-    public static ?string $importClass = \App\Imports\CompaniesImport::class;
+
+    public static ?string $exportClass = CompaniesExport::class;
+
+    public static ?string $importClass = CompaniesImport::class;
 
     public static function table(): array
     {
@@ -46,10 +54,10 @@ class CompanyResource extends Resource
                 ->rules(['string', 'max:255']),
             SelectInput::make('company_group_id', 'Company Group')
                 ->required()
-                ->options(fn() => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
             SelectInput::make('region_id', 'Region')
                 ->required()
-                ->options(fn() => Region::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
             TextareaInput::make('address', 'Alamat')
                 ->rules(['nullable', 'string'])
                 ->columnSpan(2),
@@ -63,9 +71,9 @@ class CompanyResource extends Resource
     {
         return [
             Filter::make('company_group_id', 'Company Group')
-                ->options(fn() => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Region')
-                ->options(fn() => Region::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('is_active', 'Status Aktif')
                 ->options([
                     '1' => 'Aktif',
