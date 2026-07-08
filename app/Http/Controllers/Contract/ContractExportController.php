@@ -125,7 +125,13 @@ class ContractExportController extends Controller
             ->first();
 
         $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
-        $formData = $latestVersion ? ($latestVersion->form_data ?? []) : [];
+        
+        $targetVersion = $latestVersion;
+        if ($submission && $request->has('version')) {
+            $targetVersion = $submission->versions()->where('version_no', $request->query('version'))->first();
+        }
+
+        $formData = $targetVersion ? ($targetVersion->form_data ?? []) : [];
 
         return Inertia::render('form-management/Print', [
             'template' => $template,

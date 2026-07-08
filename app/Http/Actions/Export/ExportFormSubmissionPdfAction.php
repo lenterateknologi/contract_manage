@@ -14,7 +14,7 @@ class ExportFormSubmissionPdfAction
 {
     use HasExportHelpers;
 
-    public function execute(Contract $contract, string $type, string $disposition = 'attachment'): mixed
+    public function execute(Contract $contract, string $type, string $disposition = 'attachment', ?int $versionNo = null): mixed
     {
         set_time_limit(180);
 
@@ -29,12 +29,17 @@ class ExportFormSubmissionPdfAction
             ->first();
 
         $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
+        
+        $targetVersion = $latestVersion;
+        if ($submission && $versionNo !== null) {
+            $targetVersion = $submission->versions()->where('version_no', $versionNo)->first();
+        }
 
-        if (! $latestVersion && $type === 'f1') {
+        if (! $targetVersion && $type === 'f1') {
             return response()->json(['message' => 'Data form belum diisi.'], 404);
         }
 
-        $vno = $latestVersion ? $latestVersion->version_no : 0;
+        $vno = $targetVersion ? $targetVersion->version_no : 0;
         $pdfDir = "contracts/{$contract->id}/pdfs";
         $pdfFileName = "{$type}_v{$vno}.pdf";
         $pdfPath = "{$pdfDir}/{$pdfFileName}";
@@ -49,10 +54,15 @@ class ExportFormSubmissionPdfAction
 
         try {
             // ponytail: Browsershot visits the same React page as the preview → 100% identical output
+            $routeParams = ['id' => $contract->id, 'type' => $type];
+            if ($versionNo !== null) {
+                $routeParams['version'] = $versionNo;
+            }
+
             $printUrl = URL::temporarySignedRoute(
                 'contracts.form-submissions.print',
                 now()->addMinutes(10),
-                ['id' => $contract->id, 'type' => $type],
+                $routeParams,
             );
 
             if (app()->environment('local')) {
