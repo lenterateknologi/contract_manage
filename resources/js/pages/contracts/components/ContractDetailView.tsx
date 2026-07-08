@@ -272,7 +272,7 @@ const ContractDetailView = ({
         () =>
             [
                 { id: 'form_template', label: 'F1 (Permohonan)', mode: (contract as any).f1_mode || 'upload' },
-                { id: 'f2', label: 'F2 (Ringkasan)', mode: (contract as any).f2_mode || 'upload' },
+                { id: 'f2', label: 'F2 (Ringkasan)', mode: contract.show_f2_contract_no === false ? 'none' : ((contract as any).f2_mode || 'upload') },
                 { id: 'agreement', label: 'Draft Perjanjian', mode: (contract as any).contract_mode || 'upload' },
                 { id: 'timeline', label: 'Alur Persetujuan', mode: 'always' },
                 { id: 'attachments', label: 'Lampiran', mode: 'always' },

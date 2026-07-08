@@ -37,6 +37,7 @@ class Contract extends Model
         'created_by',
         'current_version',
         'workflow_id',
+        'origin_workflow_id',
         'workflow_step_id',
         'metadata',
         'submitted_at',

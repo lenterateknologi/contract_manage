@@ -22,7 +22,7 @@ class UpdateContractAction
 
         // If the contract is in draft state, the workflow or steps might need to change
         // due to changes in metadata (e.g. tax_required) or contract type.
-        if ($contract->status === 'draft') {
+        if ($contract->status === 'draft' && empty($contract->workflow_id)) {
             $contract = $this->workflowService->sendForApproval($contract, null, null, false);
         }
 

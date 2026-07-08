@@ -107,12 +107,18 @@ class ContractWorkflowService
             : ($firstStep->step === 1 ? 'draft' : 'in_review');
         $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
-        $contract->update([
+        $updateData = [
             'workflow_id' => $workflow->id,
             'workflow_step_id' => $firstStep->id,
             'status' => $nextStatus?->code ?: $statusStr,
             'submitted_at' => $firstStep->step === 1 ? $contract->submitted_at : now(),
-        ]);
+        ];
+
+        if (empty($contract->origin_workflow_id)) {
+            $updateData['origin_workflow_id'] = $workflow->id;
+        }
+
+        $contract->update($updateData);
 
         $this->createApprovalForStep($contract, $firstStep);
 
@@ -905,18 +911,43 @@ class ContractWorkflowService
 
                 case 'absolute':
                     $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
-
-                    return WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', $targetSequence)->first();
+                    $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', $targetSequence)->first();
+                    if ($targetStep) {
+                        $contract->update([
+                            'workflow_id' => $contract->workflow_id,
+                            'workflow_step_id' => $targetStep->id,
+                        ]);
+                        return $targetStep;
+                    }
+                    break;
 
                 case 'cross_workflow':
                     $workflowId = $transition['workflow_id'] ?? null;
                     if ($workflowId) {
-                        $contract->update(['workflow_id' => $workflowId]);
                         $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
-
-                        return WorkflowStep::where('workflow_id', $workflowId)->where('step', $targetSequence)->first();
+                        $targetStep = WorkflowStep::where('workflow_id', $workflowId)->where('step', $targetSequence)->first();
+                        if ($targetStep) {
+                            $contract->update([
+                                'workflow_id' => $workflowId,
+                                'workflow_step_id' => $targetStep->id,
+                            ]);
+                            return $targetStep;
+                        }
                     }
+                    break;
 
+                case 'initial_step':
+                    $workflowId = $contract->origin_workflow_id ?: $contract->workflow_id;
+                    if ($workflowId) {
+                        $targetStep = WorkflowStep::where('workflow_id', $workflowId)->orderBy('step')->first();
+                        if ($targetStep) {
+                            $contract->update([
+                                'workflow_id' => $workflowId,
+                                'workflow_step_id' => $targetStep->id,
+                            ]);
+                            return $targetStep;
+                        }
+                    }
                     break;
             }
         }
