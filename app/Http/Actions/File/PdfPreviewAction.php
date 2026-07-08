@@ -27,7 +27,7 @@ class PdfPreviewAction
             ->first();
 
         if (! $version && ($type === 'f1' || $type === 'f2')) {
-            return $this->exportAction->exportFormSubmissionPdf($contract, $type, 'inline');
+            return $this->exportAction->execute($contract, $type, 'inline', $versionNo);
         }
 
         if (! $version || ! $version->file_path || ! Storage::disk('local')->exists($version->file_path)) {
