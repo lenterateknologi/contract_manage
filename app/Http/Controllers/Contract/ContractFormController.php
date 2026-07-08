@@ -372,13 +372,25 @@ class ContractFormController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        $matchingTemplate = FormTemplate::where('document_type', $type)
-            ->where(function ($q) use ($contract) {
-                $q->where('contract_type_id', $contract->contract_type_id)
-                    ->orWhereNull('contract_type_id');
-            })
-            ->orderByRaw('contract_type_id IS NULL ASC')
-            ->first();
+        $contract->loadMissing('contractType');
+        $templateId = $type === 'f1' 
+            ? $contract->contractType?->f1_form_template_id 
+            : ($type === 'f2' ? $contract->contractType?->f2_form_template_id : $contract->contractType?->contract_form_template_id);
+
+        $matchingTemplate = null;
+        if ($templateId) {
+            $matchingTemplate = FormTemplate::find($templateId);
+        }
+
+        if (! $matchingTemplate) {
+            $matchingTemplate = FormTemplate::where('document_type', $type)
+                ->where(function ($q) use ($contract) {
+                    $q->where('contract_type_id', $contract->contract_type_id)
+                        ->orWhereNull('contract_type_id');
+                })
+                ->orderByRaw('contract_type_id IS NULL ASC')
+                ->first();
+        }
 
         $submission = FormSubmission::where('contract_id', $contract->id)
             ->where('document_type', $type)

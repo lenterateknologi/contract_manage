@@ -52,11 +52,13 @@ class EmailTestController extends Controller
             }
 
             // Send test email
-            Mail::raw($request->message, function ($mail) use ($request) {
-                $mail->to($request->email)
-                    ->subject($request->subject)
-                    ->from(config('mail.from.address'), config('mail.from.name'));
-            });
+            if (config('notifications.email.enabled', true)) {
+                Mail::raw($request->message, function ($mail) use ($request) {
+                    $mail->to($request->email)
+                        ->subject($request->subject)
+                        ->from(config('mail.from.address'), config('mail.from.name'));
+                });
+            }
 
             return response()->json([
                 'status' => 'success',

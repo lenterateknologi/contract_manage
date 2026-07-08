@@ -123,7 +123,15 @@ function GenericFormTab({
     const [pdfJobStatus, setPdfJobStatus] = useState<any>(null);
     const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
 
+    const templateId =
+        docType === 'f1'
+            ? (selected as any).f1_form_template_id
+            : docType === 'f2'
+                ? (selected as any).f2_form_template_id
+                : (selected as any).contract_form_template_id;
+
     const matchingTemplate =
+        formTemplates.find((ft) => templateId && ft.id === templateId) ??
         formTemplates.find((ft) => selected.contract_type_id && ft.contract_type_id === selected.contract_type_id && ft.document_type === docType) ??
         formTemplates.find((ft) => ft.contract_type_name === selected.contract_type && ft.document_type === docType) ??
         formTemplates.find((ft) => ft.name.includes('FORMULIR PERMINTAAN PERJANJIAN') && ft.document_type === docType) ??

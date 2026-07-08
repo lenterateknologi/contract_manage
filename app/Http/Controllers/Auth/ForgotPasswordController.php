@@ -55,8 +55,10 @@ class ForgotPasswordController extends Controller
 
         $resetUrl = route('password.reset', ['token' => $token]);
 
-        Mail::to($user->email)
-            ->queue(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
+        if (config('notifications.email.enabled', true)) {
+            Mail::to($user->email)
+                ->queue(new ForgotPasswordResetMail($user, $resetUrl, $expireAt));
+        }
 
         return back()->with('status', 'Password reset link has been queued for delivery to your email address.');
     }
