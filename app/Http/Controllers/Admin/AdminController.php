@@ -201,9 +201,16 @@ class AdminController extends Controller
     public function roleConfig(Role $role, Request $request, ?string $forcedTab = null)
     {
         // 1. Get Modules with Access for the Matrix Tab
-        $modules = Module::with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
-            $query->where('role_id', $role->id);
-        }])->orderBy('module_group_id')->orderBy('id')->get();
+        $modules = Module::where('is_active', true)
+            ->whereHas('accessModules', function ($query) use ($role) {
+                $query->where('role_id', $role->id)->where('can_read', true);
+            })
+            ->with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
+                $query->where('role_id', $role->id);
+            }])
+            ->orderBy('module_group_id')
+            ->orderBy('id')
+            ->get();
 
         $modules->transform(function ($module) {
             $module->access = $module->accessModules->first();
@@ -234,7 +241,7 @@ class AdminController extends Controller
                 return $group;
             })->values();
 
-        $allModules = Module::orderBy('name')->get();
+        $allModules = Module::where('is_active', true)->orderBy('name')->get();
 
         $allRoles = Role::orderBy('name')->get();
 

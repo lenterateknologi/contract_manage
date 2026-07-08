@@ -201,44 +201,56 @@ class HandleInertiaRequests extends Middleware
 
         $isAdmin = $request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin;
         if ($isAdmin) {
-            $foundSystemGroup = false;
-            foreach ($groups as &$group) {
-                if (trim($group['title']) === 'Pengaturan Sistem') {
-                    $group['items'][] = [
-                        'title' => 'Ekspor Impor Master',
-                        'url' => '/admin/master-data-sync',
-                        'icon' => 'RefreshCw',
-                        'sequence' => 99,
-                    ];
-                    // Sort items of this group after appending
-                    usort($group['items'], function ($a, $b) {
-                        $orderA = $a['sequence'] ?? 9999;
-                        $orderB = $b['sequence'] ?? 9999;
-                        if ($orderA === $orderB) {
-                            return strcmp($a['title'], $b['title']);
-                        }
-
-                        return $orderA <=> $orderB;
-                    });
-                    $foundSystemGroup = true;
-                    break;
+            $exists = false;
+            foreach ($groups as $group) {
+                foreach ($group['items'] as $item) {
+                    if ($item['url'] === '/admin/master-data-sync') {
+                        $exists = true;
+                        break 2;
+                    }
                 }
             }
-            unset($group);
 
-            if (! $foundSystemGroup) {
-                $groups[] = [
-                    'title' => 'Pengaturan Sistem',
-                    'sequence' => 99,
-                    'items' => [
-                        [
+            if (!$exists) {
+                $foundSystemGroup = false;
+                foreach ($groups as &$group) {
+                    if (trim($group['title']) === 'Pengaturan Sistem') {
+                        $group['items'][] = [
                             'title' => 'Ekspor Impor Master',
                             'url' => '/admin/master-data-sync',
                             'icon' => 'RefreshCw',
                             'sequence' => 99,
+                        ];
+                        // Sort items of this group after appending
+                        usort($group['items'], function ($a, $b) {
+                            $orderA = $a['sequence'] ?? 9999;
+                            $orderB = $b['sequence'] ?? 9999;
+                            if ($orderA === $orderB) {
+                                return strcmp($a['title'], $b['title']);
+                            }
+    
+                            return $orderA <=> $orderB;
+                        });
+                        $foundSystemGroup = true;
+                        break;
+                    }
+                }
+                unset($group);
+    
+                if (! $foundSystemGroup) {
+                    $groups[] = [
+                        'title' => 'Pengaturan Sistem',
+                        'sequence' => 99,
+                        'items' => [
+                            [
+                                'title' => 'Ekspor Impor Master',
+                                'url' => '/admin/master-data-sync',
+                                'icon' => 'RefreshCw',
+                                'sequence' => 99,
+                            ],
                         ],
-                    ],
-                ];
+                    ];
+                }
             }
         }
 

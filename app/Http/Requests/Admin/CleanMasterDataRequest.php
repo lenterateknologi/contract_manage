@@ -15,7 +15,7 @@ class CleanMasterDataRequest extends FormRequest
     {
         return [
             'entities' => 'required|array',
-            'entities.*' => 'string|in:company_groups,regions,companies,departments,contract_statuses,contract_types,workflows,contracts,roles,access_mappings,navigation_mappings,form_templates,form_fields,users',
+            'entities.*' => 'string|in:company_groups,regions,companies,departments,divisions,contract_statuses,contract_types,workflows,contracts,roles,access_mappings,navigation_mappings,form_templates,form_fields,users',
         ];
     }
 }

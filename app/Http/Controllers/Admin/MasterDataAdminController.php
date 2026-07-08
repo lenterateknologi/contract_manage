@@ -89,6 +89,7 @@ class MasterDataAdminController extends Controller
                         'name' => $g->name,
                         'description' => $g->description,
                         'is_active' => $g->is_active,
+                        'deleted_at' => null,
                     ];
                 })->toArray();
             }
@@ -103,6 +104,7 @@ class MasterDataAdminController extends Controller
                         'alias' => $r->alias,
                         'description' => $r->description,
                         'is_active' => $r->is_active,
+                        'deleted_at' => null,
                         'id_portal_master' => $r->id_portal_master,
                     ];
                 })->toArray();
@@ -120,6 +122,7 @@ class MasterDataAdminController extends Controller
                         'company_group_code' => $c->group->code ?? null,
                         'region_code' => $c->region->code ?? null,
                         'is_active' => $c->is_active,
+                        'deleted_at' => null,
                     ];
                 })->toArray();
             }
@@ -134,6 +137,7 @@ class MasterDataAdminController extends Controller
                         'description' => $d->description,
                         'company_code' => $d->company->code ?? null,
                         'is_active' => $d->is_active,
+                        'deleted_at' => null,
                     ];
                 })->toArray();
             }
@@ -148,6 +152,7 @@ class MasterDataAdminController extends Controller
                         'department_code' => $d->department->code ?? null,
                         'id_portal_master' => $d->id_portal_master,
                         'is_active' => $d->is_active,
+                        'deleted_at' => null,
                     ];
                 })->toArray();
             }
@@ -164,6 +169,7 @@ class MasterDataAdminController extends Controller
                         'icon' => $s->icon,
                         'description' => $s->description,
                         'is_active' => $s->is_active,
+                        'deleted_at' => null,
                     ];
                 })->toArray();
             }
@@ -222,6 +228,7 @@ class MasterDataAdminController extends Controller
                         'allowed_actions' => $s->allowed_actions,
                         'is_mandatory' => $s->is_mandatory,
                         'is_active' => $s->is_active,
+                        'deleted_at' => null,
                         'meta' => $s->meta,
                         'created_by' => $s->created_by,
                         'updated_by' => $s->updated_by,
@@ -278,6 +285,7 @@ class MasterDataAdminController extends Controller
                         'alias' => $a->alias,
                         'description' => $a->description,
                         'is_active' => $a->is_active,
+                        'deleted_at' => null,
                         'created_by' => $a->created_by,
                         'updated_by' => $a->updated_by,
                     ];
@@ -369,6 +377,7 @@ class MasterDataAdminController extends Controller
                         'has_letterhead' => $ft->has_letterhead,
                         'letterhead_json' => $ft->letterhead_json,
                         'is_active' => $ft->is_active,
+                        'deleted_at' => null,
                     ];
                 })->toArray();
 
@@ -415,6 +424,7 @@ class MasterDataAdminController extends Controller
                         'code' => $u->code,
                         'phone_number' => $u->phone_number,
                         'is_active' => $u->is_active,
+                        'deleted_at' => null,
                         'is_employee' => $u->is_employee,
                         'role_name' => $u->roleRelation->name ?? null,
                         'department_name' => $u->department->name ?? null,
@@ -475,7 +485,7 @@ class MasterDataAdminController extends Controller
                     if (empty($r['name'])) {
                         continue;
                     }
-                    Role::updateOrCreate(
+                    Role::withTrashed()->updateOrCreate(
                         ! empty($r['id']) ? ['id' => $r['id']] : ['name' => $r['name']],
                         [
                             'name' => $r['name'],
@@ -521,6 +531,7 @@ class MasterDataAdminController extends Controller
                             'id' => $mg['id'] ?? (string) Str::uuid(),
                             'name' => $mg['name'],
                             'icon' => $mg['icon'] ?? 'LayoutGrid',
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ]);
@@ -540,7 +551,7 @@ class MasterDataAdminController extends Controller
                         continue;
                     }
                     $groupId = ! empty($m['module_group_name']) ? ($moduleGroupMap[$m['module_group_name']] ?? null) : null;
-                    Module::updateOrCreate(
+                    Module::withTrashed()->updateOrCreate(
                         ! empty($m['id']) ? ['id' => $m['id']] : ['identifier' => $m['identifier']],
                         [
                             'identifier' => $m['identifier'],
@@ -550,6 +561,7 @@ class MasterDataAdminController extends Controller
                             'description' => $m['description'] ?? null,
                             'module_group_id' => $groupId,
                             'showed_as_menu' => $m['showed_as_menu'] ?? true,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -568,13 +580,15 @@ class MasterDataAdminController extends Controller
                     if (empty($g['code'])) {
                         continue;
                     }
-                    CompanyGroup::updateOrCreate(
+                    CompanyGroup::withTrashed()->updateOrCreate(
                         ! empty($g['id']) ? ['id' => $g['id']] : ['code' => $g['code']],
                         [
                             'code' => $g['code'],
                             'name' => $g['name'] ?? $g['code'],
                             'description' => $g['description'] ?? null,
                             'is_active' => $g['is_active'] ?? true,
+                            'deleted_at' => null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -603,7 +617,7 @@ class MasterDataAdminController extends Controller
                     if (empty($r['code'])) {
                         continue;
                     }
-                    Region::updateOrCreate(
+                    Region::withTrashed()->updateOrCreate(
                         ! empty($r['id']) ? ['id' => $r['id']] : ['code' => $r['code']],
                         [
                             'code' => $r['code'],
@@ -611,7 +625,9 @@ class MasterDataAdminController extends Controller
                             'alias' => $r['alias'] ?? null,
                             'description' => $r['description'] ?? null,
                             'is_active' => $r['is_active'] ?? true,
+                            'deleted_at' => null,
                             'id_portal_master' => $r['id_portal_master'] ?? null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -643,7 +659,7 @@ class MasterDataAdminController extends Controller
                     $groupId = ! empty($c['company_group_code']) ? ($groupMap[$c['company_group_code']] ?? null) : null;
                     $regionId = ! empty($c['region_code']) ? ($regionMap[$c['region_code']] ?? null) : null;
 
-                    Company::updateOrCreate(
+                    Company::withTrashed()->updateOrCreate(
                         ! empty($c['id']) ? ['id' => $c['id']] : ['code' => $c['code']],
                         [
                             'code' => $c['code'],
@@ -653,6 +669,8 @@ class MasterDataAdminController extends Controller
                             'company_group_id' => $groupId,
                             'region_id' => $regionId,
                             'is_active' => $c['is_active'] ?? true,
+                            'deleted_at' => null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -683,7 +701,7 @@ class MasterDataAdminController extends Controller
                     }
                     $companyId = ! empty($d['company_code']) ? ($companyMap[$d['company_code']] ?? null) : null;
 
-                    Department::updateOrCreate(
+                    Department::withTrashed()->updateOrCreate(
                         ! empty($d['id']) ? ['id' => $d['id']] : ['code' => $d['code']],
                         [
                             'code' => $d['code'],
@@ -691,6 +709,8 @@ class MasterDataAdminController extends Controller
                             'description' => $d['description'] ?? null,
                             'company_id' => $companyId,
                             'is_active' => $d['is_active'] ?? true,
+                            'deleted_at' => null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -730,6 +750,8 @@ class MasterDataAdminController extends Controller
                             'id_portal_master' => $d['id_portal_master'] ?? null,
                             'is_active' => $d['is_active'] ?? true,
                             'deleted_at' => null,
+                            'deleted_at' => null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -758,7 +780,7 @@ class MasterDataAdminController extends Controller
                     if (empty($s['code'])) {
                         continue;
                     }
-                    ContractStatus::updateOrCreate(
+                    ContractStatus::withTrashed()->updateOrCreate(
                         ! empty($s['id']) ? ['id' => $s['id']] : ['code' => $s['code']],
                         [
                             'code' => $s['code'],
@@ -768,6 +790,8 @@ class MasterDataAdminController extends Controller
                             'icon' => $s['icon'] ?? null,
                             'description' => $s['description'] ?? null,
                             'is_active' => $s['is_active'] ?? true,
+                            'deleted_at' => null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -791,6 +815,7 @@ class MasterDataAdminController extends Controller
 
         // 6. Workflows
         $workflowIdMap = [];
+        $workflowContractTypeUpdates = [];
         if (! empty($data['workflows']) && is_array($data['workflows'])) {
             foreach ($data['workflows'] as $w) {
                 try {
@@ -841,7 +866,7 @@ class MasterDataAdminController extends Controller
                         }
                     }
 
-                    $dbW = Workflow::updateOrCreate(
+                    $dbW = Workflow::withTrashed()->updateOrCreate(
                         ['id' => $w['id']],
                         [
                             'name' => $w['name'],
@@ -859,13 +884,18 @@ class MasterDataAdminController extends Controller
                             'region_ids' => $w['region_ids'] ?? null,
                             'company_ids' => $w['company_ids'] ?? null,
                             'department_id' => $w['department_id'] ?? null,
-                            'contract_type_id' => $w['contract_type_id'] ?? null,
+                            // 'contract_type_id' => $w['contract_type_id'] ?? null, // deferred
                             'is_active' => $w['is_active'] ?? true,
+                            'deleted_at' => null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
                     );
                     $workflowIdMap[$w['id']] = $dbW->id;
+                    if (! empty($w['contract_type_id'])) {
+                        $workflowContractTypeUpdates[$w['id']] = $w['contract_type_id'];
+                    }
                     $counts['workflows']++;
                 } catch (\Exception $e) {
                     Log::warning('Gagal mengimpor Workflow '.($w['name'] ?? '').': '.$e->getMessage());
@@ -960,7 +990,7 @@ class MasterDataAdminController extends Controller
                         }
                     }
 
-                    $dbStep = WorkflowStep::updateOrCreate(
+                    $dbStep = WorkflowStep::withTrashed()->updateOrCreate(
                         ! empty($s['id']) ? ['id' => $s['id']] : [
                             'workflow_id' => $workflowId,
                             'step' => $s['step'],
@@ -986,7 +1016,9 @@ class MasterDataAdminController extends Controller
                             'allowed_actions' => $s['allowed_actions'] ?? null,
                             'is_mandatory' => $s['is_mandatory'] ?? true,
                             'is_active' => $s['is_active'] ?? true,
+                            'deleted_at' => null,
                             'meta' => $s['meta'] ?? null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -1040,7 +1072,8 @@ class MasterDataAdminController extends Controller
                     $nextWorkflowId = ! empty($a['next_workflow_id']) ? ($workflowIdMap[$a['next_workflow_id']] ?? $a['next_workflow_id']) : null;
                     $nextWorkflowStepId = ! empty($a['next_workflow_step_id']) ? ($workflowStepIdMap[$a['next_workflow_step_id']] ?? $a['next_workflow_step_id']) : null;
 
-                    $model = WorkflowStepAction::firstOrNew(['id' => $a['id']]);
+                    $model = WorkflowStepAction::withTrashed()->firstOrNew(['id' => $a['id']]);
+                    $model->deleted_at = null;
                     $model->forceFill([
                         'workflow_step_id' => $stepId,
                         'action_code' => $a['action_code'] ?? ($a['master_action_code'] ?? null),
@@ -1054,6 +1087,8 @@ class MasterDataAdminController extends Controller
                         'alias' => $a['alias'] ?? null,
                         'description' => $a['description'] ?? null,
                         'is_active' => $a['is_active'] ?? true,
+                        'deleted_at' => null,
+                        'deleted_at' => null,
                         'created_by' => $admin,
                         'updated_by' => $admin,
                     ])->save();
@@ -1074,7 +1109,7 @@ class MasterDataAdminController extends Controller
                     }
                     $typeId = ! empty($ft['contract_type_code']) ? ($typeMap[$ft['contract_type_code']] ?? null) : null;
 
-                    FormTemplate::updateOrCreate(
+                    FormTemplate::withTrashed()->updateOrCreate(
                         ['id' => $ft['id']],
                         [
                             'name' => $ft['name'],
@@ -1084,6 +1119,8 @@ class MasterDataAdminController extends Controller
                             'has_letterhead' => $ft['has_letterhead'] ?? false,
                             'letterhead_json' => $ft['letterhead_json'] ?? null,
                             'is_active' => $ft['is_active'] ?? true,
+                            'deleted_at' => null,
+                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -1101,7 +1138,7 @@ class MasterDataAdminController extends Controller
                     if (empty($ff['id'])) {
                         continue;
                     }
-                    FormField::updateOrCreate(
+                    FormField::withTrashed()->updateOrCreate(
                         ['id' => $ff['id']],
                         [
                             'form_template_id' => $ff['form_template_id'],
@@ -1136,7 +1173,7 @@ class MasterDataAdminController extends Controller
                     }
                     $workflowId = ! empty($t['workflow_name']) ? ($workflowMap[$t['workflow_name']] ?? null) : null;
 
-                    ContractType::updateOrCreate(
+                    ContractType::withTrashed()->updateOrCreate(
                         ! empty($t['id']) ? ['id' => $t['id']] : ['code' => $t['code']],
                         [
                             'code' => $t['code'],
@@ -1189,7 +1226,7 @@ class MasterDataAdminController extends Controller
                     }
 
                     if ($roleId && $moduleId) {
-                        AccessModule::updateOrCreate(
+                        AccessModule::withTrashed()->updateOrCreate(
                             ! empty($am['id']) ? ['id' => $am['id']] : ['role_id' => $roleId, 'module_id' => $moduleId],
                             [
                                 'role_id' => $roleId,
@@ -1237,7 +1274,7 @@ class MasterDataAdminController extends Controller
                             foreach ($rmg['modules'] as $m) {
                                 $moduleId = $moduleMap[$m['module_identifier']] ?? null;
                                 if ($moduleId) {
-                                    AccessModule::updateOrCreate(
+                                    AccessModule::withTrashed()->updateOrCreate(
                                         [
                                             'role_id' => $roleId,
                                             'module_id' => $moduleId,
@@ -1310,7 +1347,7 @@ class MasterDataAdminController extends Controller
                         $deptId = isset($validDepartments[$u['department_id']]) ? $u['department_id'] : null;
                     }
 
-                    User::updateOrCreate(
+                    User::withTrashed()->updateOrCreate(
                         ! empty($u['id']) ? ['id' => $u['id']] : ['username' => $u['username']],
                         [
                             'username' => $u['username'] ?? null,
@@ -1326,6 +1363,7 @@ class MasterDataAdminController extends Controller
                             'region_id' => $u['region_id'] ?? null,
                             'role_id' => $roleId,
                             'is_active' => $u['is_active'] ?? true,
+                            'deleted_at' => null,
                             'is_employee' => $u['is_employee'] ?? true,
                         ]
                     );
@@ -1391,10 +1429,8 @@ class MasterDataAdminController extends Controller
             DB::transaction(function () use ($entities) {
                 $driver = DB::connection()->getDriverName();
                 if ($driver === 'pgsql') {
-                    DB::statement("SET session_replication_role = 'replica';");
+                    DB::statement("SET LOCAL session_replication_role = 'replica';");
                 }
-
-                try {
                     // 1. Transactional Contracts
                     if (in_array('contracts', $entities)) {
                         if (Schema::hasTable('t_contracts') && Schema::hasColumn('t_contracts', 'parent_id')) {
@@ -1447,7 +1483,9 @@ class MasterDataAdminController extends Controller
 
                     // 5b. Divisions
                     if (in_array('divisions', $entities)) {
-                        DB::table('m_workflow_step_divisions')->delete();
+                        if (Schema::hasTable('m_workflow_step_divisions')) {
+                            DB::table('m_workflow_step_divisions')->delete();
+                        }
                         DB::table('m_division')->delete();
                     }
 
@@ -1493,11 +1531,6 @@ class MasterDataAdminController extends Controller
                     if (in_array('users', $entities)) {
                         DB::table('m_users')->where('email', '!=', 'admin@example.com')->delete();
                     }
-                } finally {
-                    if ($driver === 'pgsql') {
-                        DB::statement("SET session_replication_role = 'origin';");
-                    }
-                }
             });
 
             return redirect()->route('admin.master-data-sync')->with('success', 'Entitas data terpilih berhasil dibersihkan.');

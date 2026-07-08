@@ -102,6 +102,12 @@ class RoleAccessAction
                 ->whereNotIn('module_id', $activeModuleIds)
                 ->update([
                     'can_read' => false,
+                    'can_create' => false,
+                    'can_update' => false,
+                    'can_delete' => false,
+                    'can_approve' => false,
+                    'can_bulk_approve' => false,
+                    'can_bulk_delete' => false,
                     'module_group_id' => null,
                     'sequence' => null,
                 ]);
