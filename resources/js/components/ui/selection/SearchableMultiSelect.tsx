@@ -96,7 +96,7 @@ export function SearchableMultiSelect({
                 className={cn(
                     'flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
                     !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
-                    open && 'border-black dark:border-slate-100',
+                    open && 'border-primary ring-1 ring-primary',
                     disabled && 'bg-slate-50 border-slate-100 dark:bg-slate-950 dark:border-slate-900 dark:text-slate-500',
                     triggerClassName
                 )}
@@ -112,7 +112,7 @@ export function SearchableMultiSelect({
                                 <span
                                     key={val}
                                     onClick={(e) => e.stopPropagation()}
-                                    className="inline-flex items-center gap-1 bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-2 py-0.5 rounded text-[10px] hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors"
+                                    className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-2 py-0.5 rounded text-[10px] hover:bg-primary/90 transition-colors"
                                 >
                                     {showOrder ? `${idx + 1}. ${displayLabel}` : displayLabel}
                                     <button
@@ -162,7 +162,7 @@ export function SearchableMultiSelect({
                                     className={cn(
                                         'flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50',
                                         isSelected
-                                            ? 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200'
+                                            ? 'bg-primary text-white hover:bg-primary/90'
                                             : 'text-slate-900 dark:text-slate-100',
                                         opt.italic && 'italic text-slate-500 dark:text-slate-500'
                                     )}

@@ -201,26 +201,39 @@ class HandleInertiaRequests extends Middleware
 
         $isAdmin = $request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin;
         if ($isAdmin) {
-            $exists = false;
+            $hasSync = false;
+            $hasOrgTree = false;
             foreach ($groups as $group) {
                 foreach ($group['items'] as $item) {
                     if ($item['url'] === '/admin/master-data-sync') {
-                        $exists = true;
-                        break 2;
+                        $hasSync = true;
+                    }
+                    if ($item['url'] === '/admin/organization-tree') {
+                        $hasOrgTree = true;
                     }
                 }
             }
 
-            if (!$exists) {
+            if (! $hasSync || ! $hasOrgTree) {
                 $foundSystemGroup = false;
                 foreach ($groups as &$group) {
                     if (trim($group['title']) === 'Pengaturan Sistem') {
-                        $group['items'][] = [
-                            'title' => 'Ekspor Impor Master',
-                            'url' => '/admin/master-data-sync',
-                            'icon' => 'RefreshCw',
-                            'sequence' => 99,
-                        ];
+                        if (! $hasSync) {
+                            $group['items'][] = [
+                                'title' => 'Ekspor Impor Master',
+                                'url' => '/admin/master-data-sync',
+                                'icon' => 'RefreshCw',
+                                'sequence' => 99,
+                            ];
+                        }
+                        if (! $hasOrgTree) {
+                            $group['items'][] = [
+                                'title' => 'Organization Tree',
+                                'url' => '/admin/organization-tree',
+                                'icon' => 'Building2',
+                                'sequence' => 100,
+                            ];
+                        }
                         // Sort items of this group after appending
                         usort($group['items'], function ($a, $b) {
                             $orderA = $a['sequence'] ?? 9999;
@@ -228,7 +241,6 @@ class HandleInertiaRequests extends Middleware
                             if ($orderA === $orderB) {
                                 return strcmp($a['title'], $b['title']);
                             }
-    
                             return $orderA <=> $orderB;
                         });
                         $foundSystemGroup = true;
@@ -236,19 +248,29 @@ class HandleInertiaRequests extends Middleware
                     }
                 }
                 unset($group);
-    
+
                 if (! $foundSystemGroup) {
+                    $newItems = [];
+                    if (! $hasSync) {
+                        $newItems[] = [
+                            'title' => 'Ekspor Impor Master',
+                            'url' => '/admin/master-data-sync',
+                            'icon' => 'RefreshCw',
+                            'sequence' => 99,
+                        ];
+                    }
+                    if (! $hasOrgTree) {
+                        $newItems[] = [
+                            'title' => 'Organization Tree',
+                            'url' => '/admin/organization-tree',
+                            'icon' => 'Building2',
+                            'sequence' => 100,
+                        ];
+                    }
                     $groups[] = [
                         'title' => 'Pengaturan Sistem',
                         'sequence' => 99,
-                        'items' => [
-                            [
-                                'title' => 'Ekspor Impor Master',
-                                'url' => '/admin/master-data-sync',
-                                'icon' => 'RefreshCw',
-                                'sequence' => 99,
-                            ],
-                        ],
+                        'items' => $newItems,
                     ];
                 }
             }

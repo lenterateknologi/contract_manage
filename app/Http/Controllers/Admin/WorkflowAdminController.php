@@ -106,21 +106,7 @@ class WorkflowAdminController extends Controller
             ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_id, 'is_initiator' => (bool) $s->is_initiator])
             ->values()->toArray();
 
-        // Map initiator authorities to {value, is_initiator} objects for the frontend
-        $workflowData['initiator_roles'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->role_id || ($a->use_initiator_property && in_array($a->authority_type, ['role', null])))
-            ->map(fn ($a) => ['value' => $a->use_initiator_property ? '__initiator__' : ($a->role?->name ?? $a->role_id), 'is_initiator' => (bool) $a->use_initiator_property])
-            ->values()->toArray();
 
-        $workflowData['initiator_departments'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->department_id || ($a->use_initiator_property && in_array($a->authority_type, ['department', null])))
-            ->map(fn ($a) => ['value' => $a->use_initiator_property ? '__initiator__' : (string) $a->department_id, 'is_initiator' => (bool) $a->use_initiator_property])
-            ->values()->toArray();
-
-        $workflowData['initiator_users'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->user_id || ($a->use_initiator_property && in_array($a->authority_type, ['user', null])))
-            ->map(fn ($a) => ['value' => $a->use_initiator_property ? '__initiator__' : (string) $a->user_id, 'is_initiator' => (bool) $a->use_initiator_property])
-            ->values()->toArray();
 
         $workflowData['initiator_authorities'] = $workflow->initiatorAuthorities->toArray();
 
@@ -146,9 +132,7 @@ class WorkflowAdminController extends Controller
                 $config = [];
             }
 
-            // Determine initiator status from DB step authorities
-            $config['is_initiator_role'] = $s->approverAuthorities->contains(fn ($a) => $a->use_initiator_property && in_array($a->authority_type, ['role', null]));
-            $config['is_initiator_department'] = $s->approverAuthorities->contains(fn ($a) => $a->use_initiator_property && in_array($a->authority_type, ['department', null]));
+
 
             // Ensure items inside config are consistent with the arrays
             $config['roles'] = $config['roles'] ?? $sd['role'];

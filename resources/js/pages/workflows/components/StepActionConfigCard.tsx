@@ -49,12 +49,6 @@ const mapConfigToAuthorities = (config: any) => {
             if (r) list.push({ authority_type: 'region', region_id: r });
         });
     }
-    if (config.is_initiator_role) {
-        list.push({ authority_type: 'role', use_initiator_property: true });
-    }
-    if (config.is_initiator_department) {
-        list.push({ authority_type: 'department', use_initiator_property: true });
-    }
     return list;
 };
 
@@ -67,8 +61,6 @@ const mapAuthoritiesToConfig = (authorities: any[]) => {
         divisions: [],
         company_groups: [],
         regions: [],
-        is_initiator_role: false,
-        is_initiator_department: false,
         authorities: authorities,
     };
     if (!authorities) return config;
@@ -79,23 +71,11 @@ const mapAuthoritiesToConfig = (authorities: any[]) => {
         } else if (auth.authority_type === 'user') {
             if (auth.user_id) config.users.push(auth.user_id);
         } else if (auth.authority_type === 'role') {
-            if (auth.use_initiator_property) {
-                config.is_initiator_role = true;
-            } else if (auth.role_id) {
-                config.roles.push(auth.role_id);
-            }
+            if (auth.role_id) config.roles.push(auth.role_id);
         } else if (auth.authority_type === 'department') {
-            if (auth.use_initiator_property) {
-                config.is_initiator_department = true;
-            } else if (auth.department_id) {
-                config.departments.push(auth.department_id);
-            }
+            if (auth.department_id) config.departments.push(auth.department_id);
         } else if (auth.authority_type === 'division') {
-            if (auth.use_initiator_property) {
-                config.is_initiator_department = true;
-            } else if (auth.division_id) {
-                config.divisions.push(auth.division_id);
-            }
+            if (auth.division_id) config.divisions.push(auth.division_id);
         } else if (auth.authority_type === 'company_group') {
             if (auth.company_group_id) config.company_groups.push(auth.company_group_id);
         } else if (auth.authority_type === 'region') {

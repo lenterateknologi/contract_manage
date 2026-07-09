@@ -32,15 +32,12 @@ class WorkflowInitiatorAuthority extends Model
         'user_id',
         'company_group_id',
         'region_id',
-        'use_initiator_property',
         'authority_type',
     ];
 
     protected function casts(): array
     {
-        return [
-            'use_initiator_property' => 'boolean',
-        ];
+        return [];
     }
 
     public function role(): BelongsTo

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
 use App\Http\Controllers\Core\ResourceController;
+use App\Http\Controllers\Master\OrganizationTreeController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\System\EmailTestController;
 use App\Http\Controllers\Template\TemplateController;
@@ -65,6 +66,8 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
             Route::post('/bulk-delete', 'bulkDestroyModules')->name('admin.modules.bulk-destroy');
         });
     });
+
+    Route::get('/organization-tree', [OrganizationTreeController::class, 'index'])->name('admin.organization-tree');
 
     Route::controller(OrganizationController::class)->group(function () {
         Route::prefix('company-groups')->group(function () {
