@@ -51,6 +51,7 @@ class UpdateWorkflowStepsRequest extends FormRequest
             'steps.*.actions.*.transition_config' => 'nullable|array',
             'steps.*.actions.*.signing_parties' => 'nullable|array',
             'steps.*.actions.*.assignee_config' => 'nullable|array',
+            'steps.*.actions.*.reviewer_config' => 'nullable|array',
             'steps.*.actions.*.alias' => 'nullable|string',
             'steps.*.actions.*.description' => 'nullable|string',
             'steps.*.actions.*.is_active' => 'nullable|boolean',

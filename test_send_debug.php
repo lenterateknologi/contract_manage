@@ -1,8 +1,9 @@
 <?php
+
 require 'vendor/autoload.php';
 $app = require_once 'bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-$kernel->handle(Illuminate\Http\Request::capture());
+$kernel = $app->make(Kernel::class);
+$kernel->handle(Request::capture());
 
 use App\Models\Contract;
 use App\Models\ContractType;
@@ -10,6 +11,9 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
+use App\Services\Workflow\ContractWorkflowService;
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -74,11 +78,11 @@ try {
     ]);
 
     auth()->login($creator);
-    $service = app(App\Services\Workflow\ContractWorkflowService::class);
+    $service = app(ContractWorkflowService::class);
     $service->sendForApproval($contract, $workflow->id, [], true);
-    echo "Success!" . PHP_EOL;
-} catch (\Exception $e) {
-    echo "Error: " . $e->getMessage() . PHP_EOL;
-    echo "File: " . $e->getFile() . ":" . $e->getLine() . PHP_EOL;
-    echo $e->getTraceAsString() . PHP_EOL;
+    echo 'Success!'.PHP_EOL;
+} catch (Exception $e) {
+    echo 'Error: '.$e->getMessage().PHP_EOL;
+    echo 'File: '.$e->getFile().':'.$e->getLine().PHP_EOL;
+    echo $e->getTraceAsString().PHP_EOL;
 }

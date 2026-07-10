@@ -14,6 +14,7 @@ use App\Models\Role;
 use App\Models\SubmissionType;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\Workflow;
 use Illuminate\Support\Facades\Auth;
 
 class ContractOptionsQuery
@@ -96,7 +97,37 @@ class ContractOptionsQuery
 
             'roles' => fn () => Role::orderBy('name')->get(),
             'contractStatuses' => fn () => ContractStatus::all(),
-            'types' => fn () => ContractType::all(),
+            'types' => function () {
+                $workflows = Workflow::where('is_active', true)->where('is_selectable', true)->get();
+                $globalWorkflowExists = $workflows->contains(fn ($w) => empty($w->contract_type_id) && empty($w->meta['contract_type_ids']));
+
+                if ($globalWorkflowExists) {
+                    return ContractType::all();
+                }
+
+                $allowedTypeIds = collect();
+                foreach ($workflows as $w) {
+                    if ($w->contract_type_id) {
+                        $allowedTypeIds->push($w->contract_type_id);
+                    }
+                    if (! empty($w->meta['contract_type_ids']) && is_array($w->meta['contract_type_ids'])) {
+                        foreach ($w->meta['contract_type_ids'] as $id) {
+                            $allowedTypeIds->push($id);
+                        }
+                    }
+                }
+
+                $uniqueIds = $allowedTypeIds->unique()->filter()->values()->toArray();
+
+                return ContractType::whereIn('id', $uniqueIds)
+                    ->orWhereIn('id', function ($q) use ($uniqueIds) {
+                        $q->select('parent_id')
+                            ->from('m_contract_types')
+                            ->whereIn('id', $uniqueIds)
+                            ->whereNotNull('parent_id');
+                    })
+                    ->get();
+            },
             'submissionTypes' => fn () => SubmissionType::where('is_active', true)->get(),
         ];
     }

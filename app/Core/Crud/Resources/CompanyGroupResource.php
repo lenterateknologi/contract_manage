@@ -5,6 +5,8 @@ namespace App\Core\Crud\Resources;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Resource;
+use App\Exports\CompanyGroupsExport;
+use App\Imports\CompanyGroupsImport;
 use App\Models\CompanyGroup;
 
 class CompanyGroupResource extends Resource
@@ -15,9 +17,9 @@ class CompanyGroupResource extends Resource
 
     public static ?string $slug = 'company-groups';
 
-    public static ?string $exportClass = \App\Exports\CompanyGroupsExport::class;
+    public static ?string $exportClass = CompanyGroupsExport::class;
 
-    public static ?string $importClass = \App\Imports\CompanyGroupsImport::class;
+    public static ?string $importClass = CompanyGroupsImport::class;
 
     public static function table(): array
     {

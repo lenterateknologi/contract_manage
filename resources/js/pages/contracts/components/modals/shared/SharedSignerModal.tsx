@@ -102,7 +102,7 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
 
             const config = hasSigningConfig
                 ? activeAction.signing_parties
-                : (hasAssigneeConfig ? activeAction.assignee_config : (targetStep?.approver_config || targetStep));
+                : {};
 
             // Existing signers should be pre-selected
             const existingSignerUserIds = (contract?.approvals || [])

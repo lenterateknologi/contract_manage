@@ -123,6 +123,7 @@ class ContractFormatter
                 'description' => $c->workflowStep->description,
                 'step_type' => 'APPROVAL',
                 'step_category' => $c->workflowStep->step_category,
+                'meta' => $c->workflowStep->meta ?? [],
                 'target_approvers' => $c->approvals->where('sequence', $c->workflowStep->step)->whereIn('status', ['pending', 'waiting'])->first()?->target_approvers,
                 'actions' => $c->workflowStep->actions->map(function ($action) {
                     /* @var \App\Models\WorkflowStepAction $action */

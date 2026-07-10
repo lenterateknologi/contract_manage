@@ -1431,106 +1431,106 @@ class MasterDataAdminController extends Controller
                 if ($driver === 'pgsql') {
                     DB::statement("SET LOCAL session_replication_role = 'replica';");
                 }
-                    // 1. Transactional Contracts
-                    if (in_array('contracts', $entities)) {
-                        if (Schema::hasTable('t_contracts') && Schema::hasColumn('t_contracts', 'parent_id')) {
-                            DB::table('t_contracts')->update(['parent_id' => null]);
-                        }
-                        DB::table('t_approvals')->delete();
-                        DB::table('t_attachments')->delete();
-                        DB::table('t_form_submission_h')->delete();
-                        DB::table('t_form_submissions')->delete();
-                        DB::table('t_messages')->delete();
-                        DB::table('t_contract_meta')->delete();
-                        DB::table('t_contract_versions')->delete();
-                        DB::table('t_contract_h')->delete();
-                        DB::table('t_contracts')->delete();
+                // 1. Transactional Contracts
+                if (in_array('contracts', $entities)) {
+                    if (Schema::hasTable('t_contracts') && Schema::hasColumn('t_contracts', 'parent_id')) {
+                        DB::table('t_contracts')->update(['parent_id' => null]);
                     }
+                    DB::table('t_approvals')->delete();
+                    DB::table('t_attachments')->delete();
+                    DB::table('t_form_submission_h')->delete();
+                    DB::table('t_form_submissions')->delete();
+                    DB::table('t_messages')->delete();
+                    DB::table('t_contract_meta')->delete();
+                    DB::table('t_contract_versions')->delete();
+                    DB::table('t_contract_h')->delete();
+                    DB::table('t_contracts')->delete();
+                }
 
-                    // 2. Workflows
-                    if (in_array('workflows', $entities)) {
-                        DB::table('m_workflow_step_actions')->delete();
-                        DB::table('m_workflow_step_authorities')->delete();
-                        DB::table('m_workflow_initiator_authorities')->delete();
-                        DB::table('m_workflow_org_scopes')->delete();
-                        DB::table('m_workflow_steps')->delete();
-                        DB::table('m_workflows')->delete();
-                    }
+                // 2. Workflows
+                if (in_array('workflows', $entities)) {
+                    DB::table('m_workflow_step_actions')->delete();
+                    DB::table('m_workflow_step_authorities')->delete();
+                    DB::table('m_workflow_initiator_authorities')->delete();
+                    DB::table('m_workflow_org_scopes')->delete();
+                    DB::table('m_workflow_steps')->delete();
+                    DB::table('m_workflows')->delete();
+                }
 
-                    // 3. Contract Statuses
-                    if (in_array('contract_statuses', $entities)) {
-                        DB::table('m_contract_statuses')->delete();
-                    }
+                // 3. Contract Statuses
+                if (in_array('contract_statuses', $entities)) {
+                    DB::table('m_contract_statuses')->delete();
+                }
 
-                    // 3.5 Form Templates & Fields
-                    if (in_array('form_templates', $entities) || in_array('form_fields', $entities)) {
-                        DB::table('m_form_fields')->delete();
-                        DB::table('m_form_templates')->delete();
-                    }
+                // 3.5 Form Templates & Fields
+                if (in_array('form_templates', $entities) || in_array('form_fields', $entities)) {
+                    DB::table('m_form_fields')->delete();
+                    DB::table('m_form_templates')->delete();
+                }
 
-                    // 4. Contract Types
-                    if (in_array('contract_types', $entities)) {
-                        if (Schema::hasTable('m_contract_types') && Schema::hasColumn('m_contract_types', 'parent_id')) {
-                            DB::table('m_contract_types')->update(['parent_id' => null]);
-                        }
-                        DB::table('m_contract_types')->delete();
+                // 4. Contract Types
+                if (in_array('contract_types', $entities)) {
+                    if (Schema::hasTable('m_contract_types') && Schema::hasColumn('m_contract_types', 'parent_id')) {
+                        DB::table('m_contract_types')->update(['parent_id' => null]);
                     }
+                    DB::table('m_contract_types')->delete();
+                }
 
-                    // 5. Departments
-                    if (in_array('departments', $entities)) {
-                        DB::table('m_departments')->delete();
-                    }
+                // 5. Departments
+                if (in_array('departments', $entities)) {
+                    DB::table('m_departments')->delete();
+                }
 
-                    // 5b. Divisions
-                    if (in_array('divisions', $entities)) {
-                        if (Schema::hasTable('m_workflow_step_divisions')) {
-                            DB::table('m_workflow_step_divisions')->delete();
-                        }
-                        DB::table('m_division')->delete();
+                // 5b. Divisions
+                if (in_array('divisions', $entities)) {
+                    if (Schema::hasTable('m_workflow_step_divisions')) {
+                        DB::table('m_workflow_step_divisions')->delete();
                     }
+                    DB::table('m_division')->delete();
+                }
 
-                    // 6. Companies
-                    if (in_array('companies', $entities)) {
-                        DB::table('m_companies')->delete();
-                        if (Schema::hasTable('m_company')) {
-                            DB::table('m_company')->delete();
-                        }
+                // 6. Companies
+                if (in_array('companies', $entities)) {
+                    DB::table('m_companies')->delete();
+                    if (Schema::hasTable('m_company')) {
+                        DB::table('m_company')->delete();
                     }
+                }
 
-                    // 7. Regions
-                    if (in_array('regions', $entities)) {
-                        DB::table('m_regions')->delete();
-                    }
+                // 7. Regions
+                if (in_array('regions', $entities)) {
+                    DB::table('m_regions')->delete();
+                }
 
-                    // 8. Company Groups
-                    if (in_array('company_groups', $entities)) {
-                        DB::table('m_company_groups')->delete();
-                        if (Schema::hasTable('m_company_group')) {
-                            DB::table('m_company_group')->delete();
-                        }
+                // 8. Company Groups
+                if (in_array('company_groups', $entities)) {
+                    DB::table('m_company_groups')->delete();
+                    if (Schema::hasTable('m_company_group')) {
+                        DB::table('m_company_group')->delete();
                     }
+                }
 
-                    // 9. Roles
-                    if (in_array('roles', $entities)) {
-                        DB::table('m_roles')->delete();
-                    }
+                // 9. Roles
+                if (in_array('roles', $entities)) {
+                    DB::table('m_roles')->delete();
+                }
 
-                    // 10. Access Mappings
-                    if (in_array('access_mappings', $entities)) {
-                        DB::table('m_access_modules')->delete();
-                    }
+                // 10. Access Mappings
+                if (in_array('access_mappings', $entities)) {
+                    DB::table('m_access_modules')->delete();
+                }
 
-                    // 11. Navigation Mappings
-                    if (in_array('navigation_mappings', $entities)) {
-                        DB::table('m_role_module_groups')->delete();
-                        DB::table('m_modules')->delete();
-                        DB::table('m_module_groups')->delete();
-                    }
+                // 11. Navigation Mappings
+                if (in_array('navigation_mappings', $entities)) {
+                    DB::table('m_role_module_groups')->delete();
+                    DB::table('m_modules')->delete();
+                    DB::table('m_module_groups')->delete();
+                }
 
-                    // 12. Users
-                    if (in_array('users', $entities)) {
-                        DB::table('m_users')->where('email', '!=', 'admin@example.com')->delete();
-                    }
+                // 12. Users
+                if (in_array('users', $entities)) {
+                    DB::table('m_users')->where('email', '!=', 'admin@example.com')->delete();
+                }
             });
 
             return redirect()->route('admin.master-data-sync')->with('success', 'Entitas data terpilih berhasil dibersihkan.');

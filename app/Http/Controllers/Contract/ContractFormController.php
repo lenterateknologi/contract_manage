@@ -373,8 +373,8 @@ class ContractFormController extends Controller
         $contract = $this->contractDetailQuery->find($id);
 
         $contract->loadMissing('contractType');
-        $templateId = $type === 'f1' 
-            ? $contract->contractType?->f1_form_template_id 
+        $templateId = $type === 'f1'
+            ? $contract->contractType?->f1_form_template_id
             : ($type === 'f2' ? $contract->contractType?->f2_form_template_id : $contract->contractType?->contract_form_template_id);
 
         $matchingTemplate = null;

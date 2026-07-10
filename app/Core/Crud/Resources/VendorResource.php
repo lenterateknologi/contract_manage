@@ -2,23 +2,30 @@
 
 namespace App\Core\Crud\Resources;
 
-use App\Core\Crud\Resource;
-use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Columns\BooleanColumn;
-use App\Core\Crud\Fields\TextInput;
+use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\TextareaInput;
+use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Filters\Filter;
+use App\Core\Crud\Resource;
+use App\Exports\VendorsExport;
+use App\Imports\VendorsImport;
 use App\Models\Vendor;
 
 class VendorResource extends Resource
 {
     public static string $model = Vendor::class;
+
     public static ?string $title = 'Vendor';
+
     public static ?string $slug = 'vendors';
+
     public static int $formColumns = 2;
-    public static ?string $exportClass = \App\Exports\VendorsExport::class;
-    public static ?string $importClass = \App\Imports\VendorsImport::class;
+
+    public static ?string $exportClass = VendorsExport::class;
+
+    public static ?string $importClass = VendorsImport::class;
 
     public static function table(): array
     {

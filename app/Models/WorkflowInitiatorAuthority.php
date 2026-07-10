@@ -22,6 +22,7 @@ class WorkflowInitiatorAuthority extends Model
         'role-division',
         'role-division-company_group',
         'role-division_company_group-region',
+        'group',
     ];
 
     protected $fillable = [

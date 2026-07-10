@@ -118,6 +118,7 @@ class Workflow extends Model
         'initiator_departments',
         'initiator_divisions',
         'contract_type_name',
+        'contract_type_ids',
         'company_group_ids',
         'region_ids',
         'company_ids',
@@ -177,6 +178,11 @@ class Workflow extends Model
         return $this->contractType?->name;
     }
 
+    public function getContractTypeIdsAttribute()
+    {
+        return $this->meta['contract_type_ids'] ?? [];
+    }
+
     public function contractType(): BelongsTo
     {
         return $this->belongsTo(ContractType::class, 'contract_type_id');
@@ -205,16 +211,26 @@ class Workflow extends Model
 
             $query = self::query();
             if ($isUuid) {
-                $query->where('contract_type_id', $contractType);
+                $query->where(function ($q) use ($contractType) {
+                    $q->where('contract_type_id', $contractType)
+                        ->orWhereJsonContains('meta->contract_type_ids', $contractType);
+                });
             } else {
                 // If it's a legacy string (code or name), try to resolve it from m_contract_types
                 $typeId = ContractType::where('code', $contractType)
                     ->orWhere('name', $contractType)
                     ->value('id');
                 if ($typeId) {
-                    $query->where('contract_type_id', $typeId);
+                    $query->where(function ($q) use ($typeId) {
+                        $q->where('contract_type_id', $typeId)
+                            ->orWhereJsonContains('meta->contract_type_ids', $typeId);
+                    });
                 } else {
-                    $query->whereNull('contract_type_id'); // Match GLOBAL
+                    $query->whereNull('contract_type_id')
+                        ->where(function ($q) {
+                            $q->whereNull('meta->contract_type_ids')
+                                ->orWhereJsonLength('meta->contract_type_ids', 0);
+                        }); // Match GLOBAL
                 }
             }
 

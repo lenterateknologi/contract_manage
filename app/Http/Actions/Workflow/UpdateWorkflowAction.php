@@ -19,10 +19,17 @@ class UpdateWorkflowAction
     public function execute(Workflow $workflow, array $data): Workflow
     {
         return DB::transaction(function () use ($data, $workflow) {
+            $contractTypeIds = $data['contract_type_ids'] ?? [];
             $workflowData = collect($data)->except([
                 'initiator_roles', 'initiator_users', 'initiator_departments', 'initiator_divisions',
                 'company_group_ids', 'region_ids', 'company_ids', 'steps', 'initiator_authorities',
+                'contract_type_ids',
             ])->toArray();
+
+            $meta = $workflowData['meta'] ?? $workflow->meta ?? [];
+            $meta['contract_type_ids'] = $contractTypeIds;
+            $workflowData['meta'] = $meta;
+
             if (empty($workflowData['contract_type_id'])) {
                 $workflowData['contract_type_id'] = null;
             }

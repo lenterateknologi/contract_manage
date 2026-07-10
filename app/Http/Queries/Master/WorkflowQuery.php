@@ -50,7 +50,7 @@ class WorkflowQuery
     {
         return Workflow::with([
             'steps.approverAuthorities',
-            'steps.actions',
+            'steps.actions.additionalAuthorities',
             'initiatorAuthorities',
             'orgScopes',
         ])->findOrFail($id);

@@ -12,7 +12,7 @@ interface ContractTypeTableManagerProps {
 }
 
 export default function ContractTypeTableManager({
-    title = "Jenis Kontrak",
+    title = "Kategori Kontrak",
     contractTypeIds,
     onChange,
     contractTypes,
@@ -70,20 +70,20 @@ export default function ContractTypeTableManager({
                     </h3>
                 </div>
                 <Button variant="primary" size="sm" onClick={openModal} className="h-8 text-xs">
-                    <Plus size={14} className="mr-1" /> Tambah Jenis Kontrak
+                    <Plus size={14} className="mr-1" /> Tambah Kategori Kontrak
                 </Button>
             </div>
 
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden overflow-x-auto">
                 {contractTypeIds.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 text-sm">
-                        Belum ada jenis kontrak yang dipilih. Semua jenis kontrak akan diizinkan.
+                        Belum ada kategori kontrak yang dipilih. Semua kategori kontrak akan diizinkan.
                     </div>
                 ) : (
                     <table className="w-full border-collapse text-left text-xs whitespace-nowrap">
                         <thead>
                             <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider w-full">Jenis Kontrak</th>
+                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider w-full">Kategori Kontrak</th>
                                 <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
                             </tr>
                         </thead>
@@ -124,12 +124,12 @@ export default function ContractTypeTableManager({
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="max-w-2xl h-[90vh] max-h-[90vh] flex flex-col overflow-hidden bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                     <DialogHeader>
-                        <DialogTitle>{editIndex !== null ? 'Edit Jenis Kontrak' : 'Tambah Jenis Kontrak'}</DialogTitle>
+                        <DialogTitle>{editIndex !== null ? 'Edit Kategori Kontrak' : 'Tambah Kategori Kontrak'}</DialogTitle>
                     </DialogHeader>
 
                     <div className="py-4 space-y-4 flex-1 overflow-y-auto">
                         <div className="space-y-2">
-                            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Pilih Jenis Kontrak</label>
+                            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Pilih Kategori Kontrak</label>
                             <TreeSelect
                                 value={modalSelectedIds}
                                 onValueChange={setModalSelectedIds}
@@ -138,8 +138,8 @@ export default function ContractTypeTableManager({
                                     name: t.name,
                                     parent_id: t.parent_id
                                 }))}
-                                placeholder="Pilih Jenis Kontrak..."
-                                searchPlaceholder="Cari jenis kontrak..."
+                                placeholder="Pilih Kategori Kontrak..."
+                                searchPlaceholder="Cari kategori kontrak..."
                                 multiple={true}
                                 inline={true}
                                 defaultExpandAll={true}

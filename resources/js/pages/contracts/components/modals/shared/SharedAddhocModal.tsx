@@ -95,7 +95,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
             const config = hasAssigneeConfig
                 ? activeAction.assignee_config
-                : (targetStep?.approver_config || targetStep);
+                : {};
 
             // Existing ad-hoc approvers should be pre-selected
             const existingAdhocUserIds = (contract?.approvals || [])

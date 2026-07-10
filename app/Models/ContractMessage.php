@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Mail\NewMessageNotificationMail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Mail;
 
 class ContractMessage extends Model
 {
@@ -51,18 +53,18 @@ class ContractMessage extends Model
                 $contract->created_by,
                 $contract->initiated_by_id,
             ])
-            ->concat($contract->approvals()->pluck('user_id'))
-            ->concat($contract->messages()->where('id', '!=', $message->id)->pluck('user_id'))
-            ->filter()
-            ->unique()
-            ->reject(fn ($id) => $id === $message->user_id);
+                ->concat($contract->approvals()->pluck('user_id'))
+                ->concat($contract->messages()->where('id', '!=', $message->id)->pluck('user_id'))
+                ->filter()
+                ->unique()
+                ->reject(fn ($id) => $id === $message->user_id);
 
             if (config('notifications.email.enabled', true)) {
                 $users = User::whereIn('id', $involvedUserIds)->get();
                 foreach ($users as $user) {
                     if ($user->email) {
-                        \Illuminate\Support\Facades\Mail::to($user->email)
-                            ->queue(new \App\Mail\NewMessageNotificationMail($message, $user));
+                        Mail::to($user->email)
+                            ->queue(new NewMessageNotificationMail($message, $user));
                     }
                 }
             }

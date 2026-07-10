@@ -15,6 +15,7 @@ import { CheckCircle2, Edit3, GitBranch, LayoutTemplate, PlusCircle, Shield, Tra
 import React, { useEffect, useState } from 'react';
 import AuthorityTableManager from './components/AuthorityTableManager';
 import ContractTypeTableManager from './components/ContractTypeTableManager';
+
 import SortableStepItem from './components/SortableStepItem';
 import { MASTER_ACTIONS } from './constants';
 
@@ -373,7 +374,6 @@ export default function WorkflowEditor({
                                         </div>
                                     </div>
 
-                                    {/* ponytail: removed Mode Dokumen configuration from workflow level, now configured in contract-types */}
                                     <div className="space-y-4">
                                         <ContractTypeTableManager
                                             contractTypeIds={form.data.contract_type_ids || []}
@@ -381,6 +381,7 @@ export default function WorkflowEditor({
                                             contractTypes={contractTypes}
                                         />
                                     </div>
+
                                     <div className="space-y-4 mt-6">
                                         <AuthorityTableManager
                                             title="Otoritas Inisiator"

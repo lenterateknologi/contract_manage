@@ -125,7 +125,7 @@ class ContractExportController extends Controller
             ->first();
 
         $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
-        
+
         $targetVersion = $latestVersion;
         if ($submission && $request->has('version')) {
             $targetVersion = $submission->versions()->where('version_no', $request->query('version'))->first();

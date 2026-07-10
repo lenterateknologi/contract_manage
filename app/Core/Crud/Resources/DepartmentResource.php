@@ -8,6 +8,8 @@ use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
+use App\Exports\DepartmentsExport;
+use App\Imports\DepartmentsImport;
 use App\Models\Department;
 
 class DepartmentResource extends Resource
@@ -18,9 +20,9 @@ class DepartmentResource extends Resource
 
     public static ?string $slug = 'departments';
 
-    public static ?string $exportClass = \App\Exports\DepartmentsExport::class;
+    public static ?string $exportClass = DepartmentsExport::class;
 
-    public static ?string $importClass = \App\Imports\DepartmentsImport::class;
+    public static ?string $importClass = DepartmentsImport::class;
 
     public static function table(): array
     {

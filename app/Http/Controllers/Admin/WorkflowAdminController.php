@@ -106,8 +106,6 @@ class WorkflowAdminController extends Controller
             ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_id, 'is_initiator' => (bool) $s->is_initiator])
             ->values()->toArray();
 
-
-
         $workflowData['initiator_authorities'] = $workflow->initiatorAuthorities->toArray();
 
         $workflowData['steps'] = $workflow->steps->map(function ($s) {
@@ -132,8 +130,6 @@ class WorkflowAdminController extends Controller
                 $config = [];
             }
 
-
-
             // Ensure items inside config are consistent with the arrays
             $config['roles'] = $config['roles'] ?? $sd['role'];
             $config['departments'] = $config['departments'] ?? $sd['department_ids'];
@@ -142,6 +138,24 @@ class WorkflowAdminController extends Controller
             $sd['approver_config'] = $config;
 
             $sd['actions'] = $s->actions->map(function ($action) {
+                // ponytail: Reconstruct sub-flex arrays from additionalAuthorities
+                $addAuth = $action->additionalAuthorities->groupBy('additional_type');
+
+                $signingParties = $action->signing_parties ?? [];
+                if (isset($addAuth['signer'])) {
+                    $signingParties['authorities'] = $addAuth['signer']->map->toArray()->toArray();
+                }
+
+                $assigneeConfig = $action->assignee_config ?? [];
+                if (isset($addAuth['assignee'])) {
+                    $assigneeConfig['authorities'] = $addAuth['assignee']->map->toArray()->toArray();
+                }
+
+                $reviewerConfig = [];
+                if (isset($addAuth['reviewer'])) {
+                    $reviewerConfig['authorities'] = $addAuth['reviewer']->map->toArray()->toArray();
+                }
+
                 return [
                     'id' => $action->id,
                     'master_action_id' => $action->action_code ? $action->action_code->value : null,
@@ -152,8 +166,9 @@ class WorkflowAdminController extends Controller
                     'next_workflow_step_id' => $action->next_workflow_step_id,
                     'required_fields' => $action->required_fields ?? [],
                     'autofilled_fields' => $action->autofilled_fields ?? [],
-                    'signing_parties' => $action->signing_parties ?? [],
-                    'assignee_config' => $action->assignee_config ?? [],
+                    'signing_parties' => $signingParties,
+                    'assignee_config' => $assigneeConfig,
+                    'reviewer_config' => $reviewerConfig,
                     'transition_config' => $action->transition_config,
                     'alias' => $action->alias,
                     'description' => $action->description,

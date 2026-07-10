@@ -18,12 +18,12 @@ class NewMessageNotificationMail extends Mailable implements ShouldQueue
     public function __construct(
         public ContractMessage $contractMessage,
         public User $user
-    ) {
-    }
+    ) {}
 
     public function envelope(): Envelope
     {
-        $subject = 'Pesan Baru di Diskusi Kontrak: ' . ($this->contractMessage->contract->title ?? $this->contractMessage->contract->form_no);
+        $subject = 'Pesan Baru di Diskusi Kontrak: '.($this->contractMessage->contract->title ?? $this->contractMessage->contract->form_no);
+
         return new Envelope(
             subject: $subject,
         );

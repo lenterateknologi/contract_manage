@@ -27,7 +27,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [desc, setDesc] = useState('');
     const [parentTypeId, setParentTypeId] = useState('');
     const [typeId, setTypeId] = useState('');
-    const [submissionTypeId, setSubmissionTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
     const [taxRequired, setTaxRequired] = useState(true);
     const [initiatedById, setInitiatedById] = useState('');
@@ -113,9 +112,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         if (parentTypeId) {
             fd.append('contract_type_parent_id', parentTypeId);
         }
-        if (submissionTypeId) {
-            fd.append('submission_type_id', submissionTypeId);
-        }
         fd.append('transaction_type', transactionType);
         fd.append('tax_required', taxRequired ? '1' : '0');
         if (initiatedById) {
@@ -145,7 +141,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setDesc('');
             setParentTypeId('');
             setTypeId('');
-            setSubmissionTypeId('');
             setTransactionType('Perjanjian Baru');
             setTaxRequired(true);
             setInitiatedById(auth?.user?.id || '');
@@ -201,20 +196,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div className="space-y-1.5">
-                        <label className="text-muted-foreground text-[11px] font-bold  uppercase">
-                            Tipe Pengajuan <span className="text-rose-500">*</span>
-                        </label>
-                        <PortalSelect
-                            value={submissionTypeId}
-                            onValueChange={(val) => setSubmissionTypeId(val)}
-                            options={Array.isArray(submissionTypes) ? submissionTypes.map((st) => ({ value: String(st.id), label: st.name })) : []}
-                            placeholder="Pilih Tipe Pengajuan"
-                        />
-                        {errors.submission_type_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.submission_type_id}</div>}
-                    </div>
-
+                <div className="grid grid-cols-1 gap-6">
                     <div className="space-y-1.5">
                         <label className="text-muted-foreground text-[11px] font-bold  uppercase">
                             Klasifikasi & Jenis Kontrak <span className="text-rose-500">*</span>
@@ -224,11 +206,28 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             onValueChange={(childId, parentId) => {
                                 setTypeId(childId);
                                 setParentTypeId(parentId ?? '');
-                                const selectedType = Array.isArray(types) ? types.find((t) => String(t.id) === childId) : undefined;
-                                if (selectedType) setTitle(selectedType.name);
+                                
+                                if (Array.isArray(types)) {
+                                    const selectedType = types.find((t) => String(t.id) === childId);
+                                    if (selectedType) {
+                                        const pathNames = [selectedType.name];
+                                        let current = selectedType;
+                                        while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
+                                            const parent = types.find((t) => String(t.id) === String(current.parent_id));
+                                            if (parent && String(parent.id) !== String(current.id)) {
+                                                pathNames.unshift(parent.name);
+                                                current = parent;
+                                            } else {
+                                                break;
+                                            }
+                                        }
+                                        setTitle(pathNames.join(' - '));
+                                    }
+                                }
                             }}
                             items={types}
                             placeholder="Pilih Klasifikasi / Jenis Kontrak"
+                            disableParentSelection={true}
                         />
                         {errors.contract_type_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>}
                     </div>

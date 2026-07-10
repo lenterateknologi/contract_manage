@@ -21,6 +21,7 @@ interface TreeSelectProps {
     disabled?: boolean;
     inline?: boolean;
     defaultExpandAll?: boolean;
+    disableParentSelection?: boolean;
 }
 
 export function TreeSelect({
@@ -35,6 +36,7 @@ export function TreeSelect({
     disabled = false,
     inline = false,
     defaultExpandAll = false,
+    disableParentSelection = false,
 }: TreeSelectProps) {
     const [open, setOpen] = React.useState(inline);
     const [search, setSearch] = React.useState('');
@@ -180,7 +182,23 @@ export function TreeSelect({
         } else {
             if (selectedIds.length === 0) return null;
             const item = items.find(i => String(i.id) === selectedIds[0]);
-            return item ? item.name : selectedIds[0];
+            if (!item) return selectedIds[0];
+            
+            const pathNames = [item.name];
+            let current = item;
+            
+            // Traverse up to find all ancestors
+            while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
+                const parent = items.find((i: any) => String(i.id) === String(current.parent_id));
+                if (parent && String(parent.id) !== String(current.id)) {
+                    pathNames.unshift(parent.name);
+                    current = parent;
+                } else {
+                    break;
+                }
+            }
+            
+            return pathNames.join(' - ');
         }
     }, [selectedIds, multiple, items]);
 
@@ -270,33 +288,41 @@ export function TreeSelect({
                     >
                         <button
                             type="button"
-                            onClick={() => handleSelect(node)}
+                            onClick={(e) => {
+                                if (disableParentSelection && hasChildren) {
+                                    toggleParentExpansion(nId, e as any);
+                                } else {
+                                    handleSelect(node);
+                                }
+                            }}
                             className={cn(
                                 "flex flex-1 items-center gap-2 py-2 text-left text-[11px] uppercase tracking-tight transition-colors",
                                 depth === 0 ? "font-bold px-3" : "font-semibold px-2",
                                 fullySelected ? "text-sidebar-primary" : "text-sidebar-foreground/80"
                             )}
                         >
-                            {multiple ? (
-                                <div className={cn(
-                                    "flex h-3.5 w-3.5 items-center justify-center rounded border transition-all",
-                                    fullySelected 
-                                        ? "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground" 
-                                        : partiallySelected 
-                                            ? "border-sidebar-primary bg-sidebar-primary/20 text-sidebar-primary"
+                            {(!disableParentSelection || !hasChildren) && (
+                                multiple ? (
+                                    <div className={cn(
+                                        "flex h-3.5 w-3.5 items-center justify-center rounded border transition-all",
+                                        fullySelected 
+                                            ? "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground" 
+                                            : partiallySelected 
+                                                ? "border-sidebar-primary bg-sidebar-primary/20 text-sidebar-primary"
+                                                : "border-sidebar-border bg-transparent group-hover:border-sidebar-foreground/30"
+                                    )}>
+                                        {fullySelected ? <Check size={10} /> : partiallySelected ? <div className="h-1 w-1.5 rounded-sm bg-current" /> : null}
+                                    </div>
+                                ) : (
+                                    <div className={cn(
+                                        "flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-all",
+                                        fullySelected 
+                                            ? "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground" 
                                             : "border-sidebar-border bg-transparent group-hover:border-sidebar-foreground/30"
-                                )}>
-                                    {fullySelected ? <Check size={10} /> : partiallySelected ? <div className="h-1 w-1.5 rounded-sm bg-current" /> : null}
-                                </div>
-                            ) : (
-                                <div className={cn(
-                                    "flex h-3.5 w-3.5 items-center justify-center rounded-full border transition-all",
-                                    fullySelected 
-                                        ? "border-sidebar-primary bg-sidebar-primary text-sidebar-primary-foreground" 
-                                        : "border-sidebar-border bg-transparent group-hover:border-sidebar-foreground/30"
-                                )}>
-                                    {fullySelected && <div className="h-1.5 w-1.5 rounded-full bg-current" />}
-                                </div>
+                                    )}>
+                                        {fullySelected && <div className="h-1.5 w-1.5 rounded-full bg-current" />}
+                                    </div>
+                                )
                             )}
                             <span className="flex-1 truncate">{node.name}</span>
                         </button>

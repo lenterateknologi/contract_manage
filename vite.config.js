@@ -29,19 +29,19 @@ export default defineConfig({
             output: {
                 manualChunks: (id) => {
                     if (id.includes('node_modules')) {
-                        if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+                        if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/scheduler/')) {
                             return 'vendor-react';
                         }
-                        if (id.includes('@inertiajs')) {
+                        if (id.includes('node_modules/@inertiajs/')) {
                             return 'vendor-inertia';
                         }
-                        if (id.includes('recharts') || id.includes('d3')) {
+                        if (id.includes('node_modules/recharts/') || id.includes('node_modules/d3')) {
                             return 'vendor-charts';
                         }
-                        if (id.includes('@xyflow')) {
+                        if (id.includes('node_modules/@xyflow/')) {
                             return 'vendor-flow';
                         }
-                        if (id.includes('lucide-react')) {
+                        if (id.includes('node_modules/lucide-react/')) {
                             return 'vendor-icons';
                         }
                         return 'vendor';

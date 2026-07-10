@@ -29,7 +29,7 @@ class ExportFormSubmissionPdfAction
             ->first();
 
         $latestVersion = $submission ? $submission->versions()->orderByDesc('version_no')->first() : null;
-        
+
         $targetVersion = $latestVersion;
         if ($submission && $versionNo !== null) {
             $targetVersion = $submission->versions()->where('version_no', $versionNo)->first();

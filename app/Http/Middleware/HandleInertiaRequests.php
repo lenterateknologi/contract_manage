@@ -241,6 +241,7 @@ class HandleInertiaRequests extends Middleware
                             if ($orderA === $orderB) {
                                 return strcmp($a['title'], $b['title']);
                             }
+
                             return $orderA <=> $orderB;
                         });
                         $foundSystemGroup = true;

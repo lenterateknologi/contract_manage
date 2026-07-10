@@ -15,7 +15,8 @@ class StoreWorkflowRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'contract_type_id' => 'nullable|uuid|exists:m_contract_types,id',
+            'contract_type_ids' => 'nullable|array',
+            'contract_type_ids.*' => 'uuid|exists:m_contract_types,id',
             'description' => 'nullable|string',
             'is_default' => 'boolean',
             'initiator_type' => 'nullable|string|in:all,role,user',
@@ -103,6 +104,7 @@ class StoreWorkflowRequest extends FormRequest
             'steps.*.actions.*.transition_config' => 'nullable|array',
             'steps.*.actions.*.signing_parties' => 'nullable|array',
             'steps.*.actions.*.assignee_config' => 'nullable|array',
+            'steps.*.actions.*.reviewer_config' => 'nullable|array',
             'steps.*.actions.*.alias' => 'nullable|string',
             'steps.*.actions.*.description' => 'nullable|string',
             'steps.*.actions.*.is_active' => 'nullable|boolean',

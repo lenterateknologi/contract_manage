@@ -19,10 +19,17 @@ class StoreWorkflowAction
     public function execute(array $data): Workflow
     {
         return DB::transaction(function () use ($data) {
+            $contractTypeIds = $data['contract_type_ids'] ?? [];
             $workflowData = collect($data)->except([
                 'initiator_roles', 'initiator_users', 'initiator_departments', 'initiator_divisions',
                 'company_group_ids', 'region_ids', 'company_ids', 'steps', 'initiator_authorities',
+                'contract_type_ids',
             ])->toArray();
+
+            $meta = $workflowData['meta'] ?? [];
+            $meta['contract_type_ids'] = $contractTypeIds;
+            $workflowData['meta'] = $meta;
+
             if (empty($workflowData['contract_type_id'])) {
                 $workflowData['contract_type_id'] = null;
             }
@@ -80,7 +87,7 @@ class StoreWorkflowAction
                         'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
                         'company_group_id' => $auth['company_group_id'] ?? null,
                         'region_id' => $auth['region_id'] ?? null,
-                       
+
                     ]);
                 }
             } else {
