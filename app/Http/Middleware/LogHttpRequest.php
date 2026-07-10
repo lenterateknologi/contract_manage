@@ -2,7 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\HttpLog;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,20 +51,10 @@ class LogHttpRequest
                 $body = substr($body, 0, 60000).'... [TRUNCATED]';
             }
 
-            HttpLog::create([
-                'id' => now()->getTimestampMs() * 1000 + rand(0, 999), // unique id
-                'method' => $request->method(),
-                'full_url' => $url,
-                'domain' => $parsedUrl['host'] ?? '',
-                'path' => $request->path(),
-                'path_index' => substr($request->path(), 0, 255),
-                'title' => $request->route() ? $request->route()->getName() : null,
+            Log::info("HTTP Request: " . $request->method() . " " . $url, [
                 'ip' => $request->ip(),
-                'header' => json_encode($request->headers->all()),
-                'file' => $request->hasFile('file') ? json_encode($request->allFiles()) : null,
-                'body' => $body,
                 'user_id' => Auth::id(),
-                'created_at' => now(),
+                'body' => $body ? 'Has Body' : 'No Body',
             ]);
         } catch (\Exception $e) {
             Log::error('LogHttpRequest termination error: '.$e->getMessage());

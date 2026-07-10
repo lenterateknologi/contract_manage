@@ -40,42 +40,6 @@ class UpdateWorkflowAction
                     ->update(['is_default' => false]);
             }
 
-            // Sync Org Scopes
-            $workflow->orgScopes()->delete();
-            $groupIds = $data['company_group_ids'] ?? [];
-            $regionIds = $data['region_ids'] ?? [];
-            $companyIds = $data['company_ids'] ?? [];
-
-            foreach ($groupIds as $item) {
-                $value = is_array($item) ? ($item['value'] ?? null) : $item;
-                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
-                if ($value === '__initiator__') {
-                    $value = null;
-                }
-                if ($value || $isInitiator) {
-                    $workflow->orgScopes()->create(['company_group_id' => $value, 'is_initiator' => $isInitiator, 'scope_type' => 'company_group']);
-                }
-            }
-            foreach ($regionIds as $item) {
-                $value = is_array($item) ? ($item['value'] ?? null) : $item;
-                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
-                if ($value === '__initiator__') {
-                    $value = null;
-                }
-                if ($value || $isInitiator) {
-                    $workflow->orgScopes()->create(['region_id' => $value, 'is_initiator' => $isInitiator, 'scope_type' => 'region']);
-                }
-            }
-            foreach ($companyIds as $item) {
-                $value = is_array($item) ? ($item['value'] ?? null) : $item;
-                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
-                if ($value === '__initiator__') {
-                    $value = null;
-                }
-                if ($value || $isInitiator) {
-                    $workflow->orgScopes()->create(['company_id' => $value, 'is_initiator' => $isInitiator, 'scope_type' => 'company']);
-                }
-            }
 
             // Sync Initiator Authorities
             $workflow->initiatorAuthorities()->delete();

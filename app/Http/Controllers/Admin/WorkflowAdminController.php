@@ -90,21 +90,7 @@ class WorkflowAdminController extends Controller
 
         $workflowData = $workflow->toArray();
 
-        // Map org scopes to {value, is_initiator} objects for the frontend
-        $workflowData['company_group_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->company_group_id || ($s->is_initiator && in_array($s->scope_type, ['company_group', null])))
-            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_group_id, 'is_initiator' => (bool) $s->is_initiator])
-            ->values()->toArray();
 
-        $workflowData['region_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->region_id || ($s->is_initiator && in_array($s->scope_type, ['region', null])))
-            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->region_id, 'is_initiator' => (bool) $s->is_initiator])
-            ->values()->toArray();
-
-        $workflowData['company_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->company_id || ($s->is_initiator && in_array($s->scope_type, ['company', null])))
-            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_id, 'is_initiator' => (bool) $s->is_initiator])
-            ->values()->toArray();
 
         $workflowData['initiator_authorities'] = $workflow->initiatorAuthorities->toArray();
 

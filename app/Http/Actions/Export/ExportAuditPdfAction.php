@@ -3,7 +3,6 @@
 namespace App\Http\Actions\Export;
 
 use App\Models\Contract;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -71,32 +70,7 @@ class ExportAuditPdfAction
 
         } catch (\Exception $e) {
             Log::error('Audit Trail Browsershot Export Failed: '.$e->getMessage());
-
-            $contract->load(['creator', 'contractType']);
-
-            $query = $contract->histories()->with('actor');
-            if ($request->filled('search')) {
-                $query->where('description', 'like', '%'.$request->search.'%');
-            }
-            if ($request->filled('actor_id')) {
-                $query->where('actor_id', $request->actor_id);
-            }
-            if ($request->filled('date_from')) {
-                $query->whereDate('created_at', '>=', $request->date_from);
-            }
-            if ($request->filled('date_to')) {
-                $query->whereDate('created_at', '<=', $request->date_to);
-            }
-            $histories = $query->orderBy('created_at', 'asc')->get();
-
-            $pdf = Pdf::loadView('pdf.contract-audit', [
-                'contract' => $contract,
-                'histories' => $histories,
-                'generated_at' => now()->format('d M Y H:i'),
-                'generated_by' => Auth::user()->name,
-            ]);
-
-            return $pdf->download("Audit_Trail_{$contract->contract_no}.pdf");
+            abort(500, 'Gagal menghasilkan PDF: '.$e->getMessage());
         }
     }
 }

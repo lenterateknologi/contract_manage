@@ -23,7 +23,6 @@ use App\Models\RoleModuleGroup;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInitiatorAuthority;
-use App\Models\WorkflowOrgScope;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepAction;
 use App\Models\WorkflowStepAuthority;
@@ -256,16 +255,6 @@ class MasterDataAdminController extends Controller
                         'division_id' => $a->division_id,
                         'user_id' => $a->user_id,
                         'user_email' => $a->user->email ?? null,
-                    ];
-                })->toArray();
-
-                $exportData['workflow_org_scopes'] = WorkflowOrgScope::all()->map(function ($s) {
-                    return [
-                        'id' => $s->id,
-                        'workflow_id' => $s->workflow_id,
-                        'company_group_id' => $s->company_group_id,
-                        'region_id' => $s->region_id,
-                        'company_id' => $s->company_id,
                     ];
                 })->toArray();
 
@@ -930,32 +919,6 @@ class MasterDataAdminController extends Controller
             }
         }
 
-        // 8. Workflow Org Scopes
-        if (! empty($data['workflow_org_scopes']) && is_array($data['workflow_org_scopes'])) {
-            foreach ($data['workflow_org_scopes'] as $scope) {
-                try {
-                    if (empty($scope['id'])) {
-                        continue;
-                    }
-                    $wfId = $workflowIdMap[$scope['workflow_id']] ?? $scope['workflow_id'];
-                    $groupId = ! empty($scope['company_group_id']) ? ($companyGroupIdMap[$scope['company_group_id']] ?? $scope['company_group_id']) : null;
-                    $regId = ! empty($scope['region_id']) ? ($regionIdMap[$scope['region_id']] ?? $scope['region_id']) : null;
-                    $compId = ! empty($scope['company_id']) ? ($companyIdMap[$scope['company_id']] ?? $scope['company_id']) : null;
-
-                    $model = WorkflowOrgScope::firstOrNew(['id' => $scope['id']]);
-                    $model->forceFill([
-                        'workflow_id' => $wfId,
-                        'company_group_id' => $groupId,
-                        'region_id' => $regId,
-                        'company_id' => $compId,
-                    ])->save();
-                    $counts['workflow_org_scopes']++;
-                } catch (\Exception $e) {
-                    Log::warning('Gagal mengimpor WorkflowOrgScope ID '.($scope['id'] ?? '').': '.$e->getMessage());
-                }
-            }
-        }
-
         // 10. Workflow Steps
         $workflowStepIdMap = [];
         if (! empty($data['workflow_steps']) && is_array($data['workflow_steps'])) {
@@ -1452,7 +1415,6 @@ class MasterDataAdminController extends Controller
                     DB::table('m_workflow_step_actions')->delete();
                     DB::table('m_workflow_step_authorities')->delete();
                     DB::table('m_workflow_initiator_authorities')->delete();
-                    DB::table('m_workflow_org_scopes')->delete();
                     DB::table('m_workflow_steps')->delete();
                     DB::table('m_workflows')->delete();
                 }
@@ -1483,9 +1445,6 @@ class MasterDataAdminController extends Controller
 
                 // 5b. Divisions
                 if (in_array('divisions', $entities)) {
-                    if (Schema::hasTable('m_workflow_step_divisions')) {
-                        DB::table('m_workflow_step_divisions')->delete();
-                    }
                     DB::table('m_division')->delete();
                 }
 

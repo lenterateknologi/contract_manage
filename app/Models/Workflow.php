@@ -50,7 +50,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read Collection<int, WorkflowStep> $steps
  * @property-read Collection<int, Contract> $contracts
  * @property-read Collection<int, WorkflowInitiatorAuthority> $initiatorAuthorities
- * @property-read Collection<int, WorkflowOrgScope> $orgScopes
  */
 class Workflow extends Model
 {
@@ -110,7 +109,7 @@ class Workflow extends Model
         'meta' => 'array',
     ];
 
-    protected $with = ['contractType', 'orgScopes', 'initiatorAuthorities.role'];
+    protected $with = ['contractType', 'initiatorAuthorities.role'];
 
     protected $appends = [
         'initiator_roles',
@@ -119,34 +118,11 @@ class Workflow extends Model
         'initiator_divisions',
         'contract_type_name',
         'contract_type_ids',
-        'company_group_ids',
-        'region_ids',
-        'company_ids',
     ];
-
-    public function orgScopes(): HasMany
-    {
-        return $this->hasMany(WorkflowOrgScope::class, 'workflow_id');
-    }
 
     public function initiatorAuthorities(): HasMany
     {
         return $this->hasMany(WorkflowInitiatorAuthority::class, 'workflow_id');
-    }
-
-    public function getCompanyGroupIdsAttribute()
-    {
-        return $this->orgScopes->pluck('company_group_id')->filter()->unique()->values()->toArray();
-    }
-
-    public function getRegionIdsAttribute()
-    {
-        return $this->orgScopes->pluck('region_id')->filter()->unique()->values()->toArray();
-    }
-
-    public function getCompanyIdsAttribute()
-    {
-        return $this->orgScopes->pluck('company_id')->filter()->unique()->values()->toArray();
     }
 
     public function getInitiatorRolesAttribute()

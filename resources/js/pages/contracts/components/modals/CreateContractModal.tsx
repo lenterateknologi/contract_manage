@@ -196,17 +196,17 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 gap-6">
-                    <div className="space-y-1.5">
+                <div className="grid grid-cols-2 gap-6 items-start">
+                    <div className="col-span-1 space-y-1.5">
                         <label className="text-muted-foreground text-[11px] font-bold  uppercase">
-                            Klasifikasi & Jenis Kontrak <span className="text-rose-500">*</span>
+                            Klasifikasi & Jenis Dokument <span className="text-rose-500">*</span>
                         </label>
                         <TreeSelect
                             value={typeId}
                             onValueChange={(childId, parentId) => {
                                 setTypeId(childId);
                                 setParentTypeId(parentId ?? '');
-                                
+
                                 if (Array.isArray(types)) {
                                     const selectedType = types.find((t) => String(t.id) === childId);
                                     if (selectedType) {
@@ -231,22 +231,23 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         />
                         {errors.contract_type_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>}
                     </div>
-                </div>
 
-                <div className="animate-in fade-in slide-in-from-top-2  py-2">
-                    <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
-                        <ShieldCheck size={14} /> Pilih Alur Kerja (Workflow) <span className="text-rose-500">*</span>
-                    </label>
-                    <PortalSelect
-                        value={workflowId}
-                        onValueChange={(val) => setWorkflowId(val)}
-                        options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
-                        placeholder={fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
-                    />
-                    <p className="text-muted-foreground text-[9px] leading-relaxed font-medium italic">
-                        Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
-                    </p>
-                    {errors.workflow_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
+                    <div className="col-span-1 animate-in fade-in slide-in-from-top-2 space-y-1.5">
+                        <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
+                            <ShieldCheck size={14} /> Pilih Alur Kerja <span className="text-rose-500">*</span>
+                        </label>
+                        <PortalSelect
+                            value={workflowId}
+                            onValueChange={(val) => setWorkflowId(val)}
+                            options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
+                            placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
+                            disabled={!typeId || fetchingWorkflows}
+                        />
+                        <p className="text-muted-foreground text-[9px] leading-relaxed font-medium italic mt-1">
+                            Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
+                        </p>
+                        {errors.workflow_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
+                    </div>
                 </div>
 
                 <FormInput

@@ -97,4 +97,36 @@ class ContractType extends Model
     {
         return $this->belongsTo(Workflow::class);
     }
+
+    public function getInheritedTemplateId(string $attribute)
+    {
+        if (! empty($this->getAttribute($attribute))) {
+            return $this->getAttribute($attribute);
+        }
+
+        if (array_key_exists('parent_id', $this->getAttributes()) && $this->getAttribute('parent_id')) {
+            $parent = $this->relationLoaded('parent') ? $this->parent : ContractType::find($this->getAttribute('parent_id'));
+            if ($parent) {
+                return $parent->getInheritedTemplateId($attribute);
+            }
+        }
+
+        return null;
+    }
+
+    public function getInheritedInputMechanism(string $attribute)
+    {
+        if (! empty($this->getAttribute($attribute))) {
+            return $this->getAttribute($attribute);
+        }
+
+        if (array_key_exists('parent_id', $this->getAttributes()) && $this->getAttribute('parent_id')) {
+            $parent = $this->relationLoaded('parent') ? $this->parent : ContractType::find($this->getAttribute('parent_id'));
+            if ($parent) {
+                return $parent->getInheritedInputMechanism($attribute);
+            }
+        }
+
+        return null;
+    }
 }

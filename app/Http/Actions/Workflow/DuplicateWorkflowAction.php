@@ -32,14 +32,6 @@ class DuplicateWorkflowAction
             $newWorkflow->updated_by = Auth::id();
             $newWorkflow->save();
 
-            // Duplicate Org Scopes
-            foreach ($workflow->orgScopes as $scope) {
-                $newWorkflow->orgScopes()->create([
-                    'company_group_id' => $scope->company_group_id,
-                    'region_id' => $scope->region_id,
-                    'company_id' => $scope->company_id,
-                ]);
-            }
 
             // Duplicate Initiator Authorities
             foreach ($workflow->initiatorAuthorities as $auth) {
