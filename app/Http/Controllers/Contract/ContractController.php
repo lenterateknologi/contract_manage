@@ -92,11 +92,13 @@ class ContractController extends Controller
     {
         $loaders = $this->contractOptionsQuery->getLoaders();
 
-        $contracts = $this->contractListQuery
-            ->build($request, $view)
-            ->paginate($request->integer('per_page', 10))
-            ->withQueryString()
-            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
+        $contracts = in_array($view, ['dashboard', 'profile'])
+            ? new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10)
+            : $this->contractListQuery
+                ->build($request, $view)
+                ->paginate($request->integer('per_page', 10))
+                ->withQueryString()
+                ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         $data = [
             'currentView' => $view,
