@@ -7,7 +7,6 @@ use App\Jobs\GeneratePdfJob;
 use App\Models\ContractType;
 use App\Models\FormField;
 use App\Models\FormTemplate;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;

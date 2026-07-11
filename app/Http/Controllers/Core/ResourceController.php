@@ -64,8 +64,12 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'contract-types' && ! $request->filled('search')) {
-            $query->whereNull('parent_id')->with(['children' => function ($q) {
-                $q->with(['f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate', 'children.f1FormTemplate', 'children.f2FormTemplate', 'children.contractFormTemplate']);
+            $query->whereNull('parent_id')->with(['f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate', 'children' => function ($q) {
+                $q->with(['f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate', 'children' => function ($q2) {
+                    $q2->with(['f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate', 'children' => function ($q3) {
+                        $q3->with(['f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate', 'children']);
+                    }]);
+                }]);
             }]);
         }
 

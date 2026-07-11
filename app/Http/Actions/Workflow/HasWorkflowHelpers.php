@@ -154,6 +154,38 @@ trait HasWorkflowHelpers
         array $config,
         ?string $targetStepId
     ): void {
+        $stepId = $action->workflow_step_id;
+
+        // ponytail: If the UI sends a flex-style 'authorities' array, parse it directly.
+        if (isset($config['authorities']) && is_array($config['authorities'])) {
+            foreach ($config['authorities'] as $auth) {
+                if (empty($auth['authority_type'])) {
+                    continue;
+                }
+                $action->additionalAuthorities()->create([
+                    'workflow_step_id' => $stepId,
+                    'is_additional' => true,
+                    'additional_type' => $type,
+                    'target_step_id' => $targetStepId,
+                    'authority_type' => $auth['authority_type'] ?? null,
+                    'role_id' => ! empty($auth['role_id']) ? $this->resolveRoleId($auth['role_id']) : null,
+                    'department_id' => ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null,
+                    'division_id' => ! empty($auth['division_id']) ? $this->resolveDivisionId($auth['division_id']) : null,
+                    'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
+                    'company_group_id' => $auth['company_group_id'] ?? null,
+                    'region_id' => $auth['region_id'] ?? null,
+                    'role_use_initiator' => $auth['role_use_initiator'] ?? false,
+                    'department_use_initiator' => $auth['department_use_initiator'] ?? false,
+                    'division_use_initiator' => $auth['division_use_initiator'] ?? false,
+                    'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
+                    'region_use_initiator' => $auth['region_use_initiator'] ?? false,
+                ]);
+            }
+
+            return;
+        }
+
+        // fallback to old way
         $roles = $config['roles'] ?? [];
         $departments = $config['departments'] ?? [];
         $divisions = $config['divisions'] ?? [];
@@ -162,8 +194,6 @@ trait HasWorkflowHelpers
         $isInitiatorRole = $config['is_initiator_role'] ?? false;
         $isInitiatorDept = $config['is_initiator_department'] ?? false;
         $isInitiatorUser = $config['is_initiator_user'] ?? false;
-
-        $stepId = $action->workflow_step_id;
 
         $customs = $config['custom'] ?? [];
         foreach ((array) $customs as $customValue) {

@@ -17,7 +17,7 @@ class ContractListQuery
         'creator:id,name,role_id,department_id,division_id,company_id,email',
         'creator.department:id,name',
         'creator.company:id,name,company_group_id,region_id',
-        'contractType:id,name,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
+        'contractType:id,name,parent_id,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'contractTypeParent:id,name,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'submissionType:id,name',
         'statusDetail:code,label',

@@ -188,6 +188,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                 └─
                             </span>
                         )}
+                        {row.code && (
+                            <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
+                                {row.code}
+                            </span>
+                        )}
                         <span>{val}</span>
                     </span>
                 );
@@ -195,15 +200,12 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
 
             // ponytail: custom render for merged mechanism and template details in contract-types
             if (resourceSlug === 'contract-types') {
-                if (col.name === 'f1_details' || col.name === 'f2_details' || col.name === 'agreement_details') {
-                    if (!row.parent_id) {
+                if (col.name === 'f1_details') {
+                    if (!row.f1_input_mechanism || row.f1_input_mechanism === 'none') {
                         return <span className="text-text-soft/40">—</span>;
                     }
-                }
-
-                if (col.name === 'f1_details') {
                     const isManual = row.f1_input_mechanism === 'manual';
-                    const mech = isManual ? 'Manual (Form)' : (row.f1_input_mechanism === 'digital' ? 'Digital (Upload)' : row.f1_input_mechanism || '—');
+                    const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
                     const templateName = row.f1_form_template?.name || row.f1FormTemplate?.name;
                     return (
                         <div className="flex flex-col gap-0.5 text-left">
@@ -219,8 +221,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     );
                 }
                 if (col.name === 'f2_details') {
+                    if (!row.f2_input_mechanism || row.f2_input_mechanism === 'none') {
+                        return <span className="text-text-soft/40">—</span>;
+                    }
                     const isManual = row.f2_input_mechanism === 'manual';
-                    const mech = isManual ? 'Manual (Form)' : (row.f2_input_mechanism === 'digital' ? 'Digital (Upload)' : row.f2_input_mechanism || '—');
+                    const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
                     const templateName = row.f2_form_template?.name || row.f2FormTemplate?.name;
                     return (
                         <div className="flex flex-col gap-0.5 text-left">
@@ -236,8 +241,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     );
                 }
                 if (col.name === 'agreement_details') {
+                    if (!row.contract_input_mechanism || row.contract_input_mechanism === 'none') {
+                        return <span className="text-text-soft/40">—</span>;
+                    }
                     const isManual = row.contract_input_mechanism === 'manual';
-                    const mech = isManual ? 'Manual (Form)' : (row.contract_input_mechanism === 'digital' ? 'Digital (Upload)' : row.contract_input_mechanism || '—');
+                    const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
                     const templateName = row.contract_form_template?.name || row.contractFormTemplate?.name;
                     return (
                         <div className="flex flex-col gap-0.5 text-left">
@@ -323,7 +331,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 sortBy={activeFilters.sort_by}
                 sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
                 onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}
-                isRowSelectable={(row) => resourceSlug !== 'contract-types' || !!row.parent_id}
+                isRowSelectable={(row) => true}
                 onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
                 selectedRows={selectedRows}
                 bulkActions={(selected: any[]) => (

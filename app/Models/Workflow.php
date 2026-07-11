@@ -50,7 +50,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property-read Collection<int, WorkflowStep> $steps
  * @property-read Collection<int, Contract> $contracts
  * @property-read Collection<int, WorkflowInitiatorAuthority> $initiatorAuthorities
- * @property-read Collection<int, WorkflowOrgScope> $orgScopes
  */
 class Workflow extends Model
 {
@@ -110,7 +109,7 @@ class Workflow extends Model
         'meta' => 'array',
     ];
 
-    protected $with = ['contractType', 'orgScopes', 'initiatorAuthorities.role'];
+    protected $with = ['contractType', 'initiatorAuthorities.role'];
 
     protected $appends = [
         'initiator_roles',
@@ -118,34 +117,12 @@ class Workflow extends Model
         'initiator_departments',
         'initiator_divisions',
         'contract_type_name',
-        'company_group_ids',
-        'region_ids',
-        'company_ids',
+        'contract_type_ids',
     ];
-
-    public function orgScopes(): HasMany
-    {
-        return $this->hasMany(WorkflowOrgScope::class, 'workflow_id');
-    }
 
     public function initiatorAuthorities(): HasMany
     {
         return $this->hasMany(WorkflowInitiatorAuthority::class, 'workflow_id');
-    }
-
-    public function getCompanyGroupIdsAttribute()
-    {
-        return $this->orgScopes->pluck('company_group_id')->filter()->unique()->values()->toArray();
-    }
-
-    public function getRegionIdsAttribute()
-    {
-        return $this->orgScopes->pluck('region_id')->filter()->unique()->values()->toArray();
-    }
-
-    public function getCompanyIdsAttribute()
-    {
-        return $this->orgScopes->pluck('company_id')->filter()->unique()->values()->toArray();
     }
 
     public function getInitiatorRolesAttribute()
@@ -177,6 +154,11 @@ class Workflow extends Model
         return $this->contractType?->name;
     }
 
+    public function getContractTypeIdsAttribute()
+    {
+        return $this->meta['contract_type_ids'] ?? [];
+    }
+
     public function contractType(): BelongsTo
     {
         return $this->belongsTo(ContractType::class, 'contract_type_id');
@@ -205,16 +187,26 @@ class Workflow extends Model
 
             $query = self::query();
             if ($isUuid) {
-                $query->where('contract_type_id', $contractType);
+                $query->where(function ($q) use ($contractType) {
+                    $q->where('contract_type_id', $contractType)
+                        ->orWhereJsonContains('meta->contract_type_ids', $contractType);
+                });
             } else {
                 // If it's a legacy string (code or name), try to resolve it from m_contract_types
                 $typeId = ContractType::where('code', $contractType)
                     ->orWhere('name', $contractType)
                     ->value('id');
                 if ($typeId) {
-                    $query->where('contract_type_id', $typeId);
+                    $query->where(function ($q) use ($typeId) {
+                        $q->where('contract_type_id', $typeId)
+                            ->orWhereJsonContains('meta->contract_type_ids', $typeId);
+                    });
                 } else {
-                    $query->whereNull('contract_type_id'); // Match GLOBAL
+                    $query->whereNull('contract_type_id')
+                        ->where(function ($q) {
+                            $q->whereNull('meta->contract_type_ids')
+                                ->orWhereJsonLength('meta->contract_type_ids', 0);
+                        }); // Match GLOBAL
                 }
             }
 

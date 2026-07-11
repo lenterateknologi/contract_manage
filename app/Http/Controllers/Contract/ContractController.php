@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -92,11 +93,13 @@ class ContractController extends Controller
     {
         $loaders = $this->contractOptionsQuery->getLoaders();
 
-        $contracts = $this->contractListQuery
-            ->build($request, $view)
-            ->paginate($request->integer('per_page', 10))
-            ->withQueryString()
-            ->through(fn ($c) => ContractFormatter::formatContract($c, false));
+        $contracts = in_array($view, ['dashboard', 'profile'])
+            ? new LengthAwarePaginator([], 0, 10)
+            : $this->contractListQuery
+                ->build($request, $view)
+                ->paginate($request->integer('per_page', 10))
+                ->withQueryString()
+                ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         $data = [
             'currentView' => $view,

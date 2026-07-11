@@ -90,37 +90,7 @@ class WorkflowAdminController extends Controller
 
         $workflowData = $workflow->toArray();
 
-        // Map org scopes to {value, is_initiator} objects for the frontend
-        $workflowData['company_group_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->company_group_id || ($s->is_initiator && in_array($s->scope_type, ['company_group', null])))
-            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_group_id, 'is_initiator' => (bool) $s->is_initiator])
-            ->values()->toArray();
 
-        $workflowData['region_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->region_id || ($s->is_initiator && in_array($s->scope_type, ['region', null])))
-            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->region_id, 'is_initiator' => (bool) $s->is_initiator])
-            ->values()->toArray();
-
-        $workflowData['company_ids'] = $workflow->orgScopes
-            ->filter(fn ($s) => $s->company_id || ($s->is_initiator && in_array($s->scope_type, ['company', null])))
-            ->map(fn ($s) => ['value' => $s->is_initiator ? '__initiator__' : (string) $s->company_id, 'is_initiator' => (bool) $s->is_initiator])
-            ->values()->toArray();
-
-        // Map initiator authorities to {value, is_initiator} objects for the frontend
-        $workflowData['initiator_roles'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->role_id || ($a->use_initiator_property && in_array($a->authority_type, ['role', null])))
-            ->map(fn ($a) => ['value' => $a->use_initiator_property ? '__initiator__' : ($a->role?->name ?? $a->role_id), 'is_initiator' => (bool) $a->use_initiator_property])
-            ->values()->toArray();
-
-        $workflowData['initiator_departments'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->department_id || ($a->use_initiator_property && in_array($a->authority_type, ['department', null])))
-            ->map(fn ($a) => ['value' => $a->use_initiator_property ? '__initiator__' : (string) $a->department_id, 'is_initiator' => (bool) $a->use_initiator_property])
-            ->values()->toArray();
-
-        $workflowData['initiator_users'] = $workflow->initiatorAuthorities
-            ->filter(fn ($a) => $a->user_id || ($a->use_initiator_property && in_array($a->authority_type, ['user', null])))
-            ->map(fn ($a) => ['value' => $a->use_initiator_property ? '__initiator__' : (string) $a->user_id, 'is_initiator' => (bool) $a->use_initiator_property])
-            ->values()->toArray();
 
         $workflowData['initiator_authorities'] = $workflow->initiatorAuthorities->toArray();
 
@@ -146,10 +116,6 @@ class WorkflowAdminController extends Controller
                 $config = [];
             }
 
-            // Determine initiator status from DB step authorities
-            $config['is_initiator_role'] = $s->approverAuthorities->contains(fn ($a) => $a->use_initiator_property && in_array($a->authority_type, ['role', null]));
-            $config['is_initiator_department'] = $s->approverAuthorities->contains(fn ($a) => $a->use_initiator_property && in_array($a->authority_type, ['department', null]));
-
             // Ensure items inside config are consistent with the arrays
             $config['roles'] = $config['roles'] ?? $sd['role'];
             $config['departments'] = $config['departments'] ?? $sd['department_ids'];
@@ -158,6 +124,24 @@ class WorkflowAdminController extends Controller
             $sd['approver_config'] = $config;
 
             $sd['actions'] = $s->actions->map(function ($action) {
+                // ponytail: Reconstruct sub-flex arrays from additionalAuthorities
+                $addAuth = $action->additionalAuthorities->groupBy('additional_type');
+
+                $signingParties = $action->signing_parties ?? [];
+                if (isset($addAuth['signer'])) {
+                    $signingParties['authorities'] = $addAuth['signer']->map->toArray()->toArray();
+                }
+
+                $assigneeConfig = $action->assignee_config ?? [];
+                if (isset($addAuth['assignee'])) {
+                    $assigneeConfig['authorities'] = $addAuth['assignee']->map->toArray()->toArray();
+                }
+
+                $reviewerConfig = [];
+                if (isset($addAuth['reviewer'])) {
+                    $reviewerConfig['authorities'] = $addAuth['reviewer']->map->toArray()->toArray();
+                }
+
                 return [
                     'id' => $action->id,
                     'master_action_id' => $action->action_code ? $action->action_code->value : null,
@@ -168,8 +152,9 @@ class WorkflowAdminController extends Controller
                     'next_workflow_step_id' => $action->next_workflow_step_id,
                     'required_fields' => $action->required_fields ?? [],
                     'autofilled_fields' => $action->autofilled_fields ?? [],
-                    'signing_parties' => $action->signing_parties ?? [],
-                    'assignee_config' => $action->assignee_config ?? [],
+                    'signing_parties' => $signingParties,
+                    'assignee_config' => $assigneeConfig,
+                    'reviewer_config' => $reviewerConfig,
                     'transition_config' => $action->transition_config,
                     'alias' => $action->alias,
                     'description' => $action->description,

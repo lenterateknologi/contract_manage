@@ -14,13 +14,12 @@ class ContractActionRequiredMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public function __construct(public Approval $approval)
-    {
-    }
+    public function __construct(public Approval $approval) {}
 
     public function envelope(): Envelope
     {
-        $subject = 'Tindakan Diperlukan: Kontrak ' . ($this->approval->contract->title ?? $this->approval->contract->form_no);
+        $subject = 'Tindakan Diperlukan: Kontrak '.($this->approval->contract->title ?? $this->approval->contract->form_no);
+
         return new Envelope(
             subject: $subject,
         );

@@ -19,7 +19,6 @@ class WorkflowListQuery
                 'contractType',
                 'steps.approverAuthorities',
                 'initiatorAuthorities',
-                'orgScopes',
             ])
             ->when($request->search, function (Builder $q, string $search): void {
                 $search = strtolower($search);
@@ -30,15 +29,6 @@ class WorkflowListQuery
             })
             ->when($request->contract_type_id, function (Builder $q, mixed $type): void {
                 $q->whereIn('contract_type_id', (array) $type);
-            })
-            ->when($request->company_group_id, function (Builder $q, string $id): void {
-                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('company_group_id', (array) $id));
-            })
-            ->when($request->region_id, function (Builder $q, string $id): void {
-                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('region_id', (array) $id));
-            })
-            ->when($request->company_id, function (Builder $q, string $id): void {
-                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('company_id', (array) $id));
             });
     }
 }

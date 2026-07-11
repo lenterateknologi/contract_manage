@@ -31,11 +31,27 @@ class ContractType extends Model
         'contract_input_mechanism',
         'contract_form_template_id',
         'is_active',
+        'level',
     ];
 
     protected $casts = [
         'features' => 'array',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (ContractType $contractType) {
+            $level = 0;
+            if ($contractType->parent_id) {
+                // Find parent's level if possible to avoid multiple queries
+                $parent = self::find($contractType->parent_id);
+                if ($parent) {
+                    $level = $parent->level + 1;
+                }
+            }
+            $contractType->level = $level;
+        });
+    }
 
     public function parent(): BelongsTo
     {
@@ -45,6 +61,11 @@ class ContractType extends Model
     public function children(): HasMany
     {
         return $this->hasMany(ContractType::class, 'parent_id');
+    }
+
+    public function allChildren(): HasMany
+    {
+        return $this->hasMany(ContractType::class, 'parent_id')->with(['f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate', 'allChildren']);
     }
 
     public function contracts(): HasMany
@@ -75,5 +96,37 @@ class ContractType extends Model
     public function workflow(): BelongsTo
     {
         return $this->belongsTo(Workflow::class);
+    }
+
+    public function getInheritedTemplateId(string $attribute)
+    {
+        if (! empty($this->getAttribute($attribute))) {
+            return $this->getAttribute($attribute);
+        }
+
+        if (array_key_exists('parent_id', $this->getAttributes()) && $this->getAttribute('parent_id')) {
+            $parent = $this->relationLoaded('parent') ? $this->parent : ContractType::find($this->getAttribute('parent_id'));
+            if ($parent) {
+                return $parent->getInheritedTemplateId($attribute);
+            }
+        }
+
+        return null;
+    }
+
+    public function getInheritedInputMechanism(string $attribute)
+    {
+        if (! empty($this->getAttribute($attribute))) {
+            return $this->getAttribute($attribute);
+        }
+
+        if (array_key_exists('parent_id', $this->getAttributes()) && $this->getAttribute('parent_id')) {
+            $parent = $this->relationLoaded('parent') ? $this->parent : ContractType::find($this->getAttribute('parent_id'));
+            if ($parent) {
+                return $parent->getInheritedInputMechanism($attribute);
+            }
+        }
+
+        return null;
     }
 }

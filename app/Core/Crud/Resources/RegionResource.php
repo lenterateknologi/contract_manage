@@ -5,6 +5,8 @@ namespace App\Core\Crud\Resources;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Resource;
+use App\Exports\RegionsExport;
+use App\Imports\RegionsImport;
 use App\Models\Region;
 
 class RegionResource extends Resource
@@ -15,9 +17,9 @@ class RegionResource extends Resource
 
     public static ?string $slug = 'regions';
 
-    public static ?string $exportClass = \App\Exports\RegionsExport::class;
+    public static ?string $exportClass = RegionsExport::class;
 
-    public static ?string $importClass = \App\Imports\RegionsImport::class;
+    public static ?string $importClass = RegionsImport::class;
 
     public static function table(): array
     {

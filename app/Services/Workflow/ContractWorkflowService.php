@@ -207,8 +207,8 @@ class ContractWorkflowService
     public function resolveApproversForStep(Contract $contract, WorkflowStep $step): array
     {
         $roles = $step->relationLoaded('approverAuthorities')
-            ? $step->approverAuthorities->filter(fn ($a) => $a->authority_type === 'role' && ! $a->use_initiator_property)->pluck('role.name')->filter()->toArray()
-            : $step->approverAuthorities()->where('authority_type', 'role')->where('use_initiator_property', false)->with('role')->get()->pluck('role.name')->filter()->toArray();
+            ? $step->approverAuthorities->filter(fn ($a) => $a->authority_type === 'role')->pluck('role.name')->filter()->toArray()
+            : $step->approverAuthorities()->where('authority_type', 'role')->with('role')->get()->pluck('role.name')->filter()->toArray();
 
         $lowerRoles = array_map('strtolower', $roles);
         $approvers = collect();
@@ -298,37 +298,37 @@ class ContractWorkflowService
                     $query = User::query();
                     $hasFilters = false;
 
-                    if ($a->role_id) {
-                        $query->where('role_id', $a->role_id);
-                        $hasFilters = true;
-                    } elseif ($a->authority_type === 'role' && $a->use_initiator_property && $contract->initiator?->role_id) {
-                        $query->where('role_id', $contract->initiator->role_id);
+                    // ponytail: strictly apply filters based on authority_type, or apply all available if 'group'
+                    $isGroup = $a->authority_type === 'group';
+
+                    // ponytail: support *_use_initiator flags for dynamic targeting
+                    $roleId = $a->role_use_initiator ? $contract->initiator?->role_id : $a->role_id;
+                    if ($roleId && ($isGroup || $a->authority_type === 'role')) {
+                        $query->where('role_id', $roleId);
                         $hasFilters = true;
                     }
 
-                    if ($a->department_id) {
-                        $query->where('department_id', $a->department_id);
-                        $hasFilters = true;
-                    } elseif ($a->authority_type === 'department' && $a->use_initiator_property && $contract->initiator?->department_id) {
-                        $query->where('department_id', $contract->initiator->department_id);
+                    $departmentId = $a->department_use_initiator ? $contract->initiator?->department_id : $a->department_id;
+                    if ($departmentId && ($isGroup || $a->authority_type === 'department')) {
+                        $query->where('department_id', $departmentId);
                         $hasFilters = true;
                     }
 
-                    if ($a->division_id) {
-                        $query->where('division_id', $a->division_id);
-                        $hasFilters = true;
-                    } elseif ($a->authority_type === 'division' && $a->use_initiator_property && $contract->initiator?->division_id) {
-                        $query->where('division_id', $contract->initiator->division_id);
+                    $divisionId = $a->division_use_initiator ? $contract->initiator?->division_id : $a->division_id;
+                    if ($divisionId && ($isGroup || $a->authority_type === 'division')) {
+                        $query->where('division_id', $divisionId);
                         $hasFilters = true;
                     }
 
-                    if ($a->company_group_id) {
-                        $query->where('company_group_id', $a->company_group_id);
+                    $companyGroupId = $a->company_group_use_initiator ? $contract->initiator?->company_group_id : $a->company_group_id;
+                    if ($companyGroupId && ($isGroup || $a->authority_type === 'company_group')) {
+                        $query->where('company_group_id', $companyGroupId);
                         $hasFilters = true;
                     }
 
-                    if ($a->region_id) {
-                        $query->where('region_id', $a->region_id);
+                    $regionId = $a->region_use_initiator ? $contract->initiator?->region_id : $a->region_id;
+                    if ($regionId && ($isGroup || $a->authority_type === 'region')) {
+                        $query->where('region_id', $regionId);
                         $hasFilters = true;
                     }
 
@@ -340,10 +340,6 @@ class ContractWorkflowService
 
                 // 4. Resolve Users
                 $stepUsers = $authorities->filter(fn ($a) => $a->authority_type === 'user' && ! empty($a->user_id))->pluck('user_id')->toArray();
-                $isInitiatorUser = $authorities->contains(fn ($a) => $a->authority_type === 'user' && $a->use_initiator_property);
-                if ($isInitiatorUser && $contract->initiator) {
-                    $stepUsers[] = $contract->initiator->id;
-                }
                 if (! empty($stepUsers)) {
                     $approvers = $approvers->merge(User::whereIn('id', $stepUsers)->get());
                 }
@@ -352,14 +348,9 @@ class ContractWorkflowService
 
                 // Extract roles label tags
                 $stepRoles = $authorities->filter(fn ($a) => $a->role_id && $a->role?->name)->pluck('role.name')->filter()->toArray();
-                $isInitiatorRole = $authorities->contains(fn ($a) => $a->authority_type === 'role' && $a->use_initiator_property);
-                $isInitiatorDept = $authorities->contains(fn ($a) => ($a->authority_type === 'department' || $a->authority_type === 'division') && $a->use_initiator_property);
 
                 $roles = array_merge(
                     $stepRoles,
-                    $isInitiatorRole ? ['Role Inisiator'] : [],
-                    $isInitiatorDept ? ['Dept Inisiator'] : [],
-                    $isInitiatorUser ? ['User Inisiator'] : [],
                     in_array('initiator', $customs) ? ['Initiator'] : [],
                     in_array('creator', $customs) ? ['Creator'] : [],
                     in_array('atasan', $customs) ? ['Atasan Langsung'] : [],
@@ -917,6 +908,7 @@ class ContractWorkflowService
                             'workflow_id' => $contract->workflow_id,
                             'workflow_step_id' => $targetStep->id,
                         ]);
+
                         return $targetStep;
                     }
                     break;
@@ -931,6 +923,7 @@ class ContractWorkflowService
                                 'workflow_id' => $workflowId,
                                 'workflow_step_id' => $targetStep->id,
                             ]);
+
                             return $targetStep;
                         }
                     }
@@ -945,6 +938,7 @@ class ContractWorkflowService
                                 'workflow_id' => $workflowId,
                                 'workflow_step_id' => $targetStep->id,
                             ]);
+
                             return $targetStep;
                         }
                     }

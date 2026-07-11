@@ -22,6 +22,7 @@ class WorkflowStepAuthority extends Model
         'role-division',
         'role-division-company_group',
         'role-division_company_group-region',
+        'group',
     ];
 
     protected $fillable = [
@@ -32,7 +33,11 @@ class WorkflowStepAuthority extends Model
         'user_id',
         'company_group_id',
         'region_id',
-        'use_initiator_property',
+        'role_use_initiator',
+        'department_use_initiator',
+        'division_use_initiator',
+        'company_group_use_initiator',
+        'region_use_initiator',
         'authority_type',
         'is_additional',
         'additional_type',
@@ -43,7 +48,11 @@ class WorkflowStepAuthority extends Model
     protected function casts(): array
     {
         return [
-            'use_initiator_property' => 'boolean',
+            'role_use_initiator' => 'boolean',
+            'department_use_initiator' => 'boolean',
+            'division_use_initiator' => 'boolean',
+            'company_group_use_initiator' => 'boolean',
+            'region_use_initiator' => 'boolean',
             'is_additional' => 'boolean',
         ];
     }

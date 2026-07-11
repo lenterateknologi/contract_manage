@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { FormInput } from '@/components/ui/inputs/FormInput';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,8 @@ import { Head, router, useForm } from '@inertiajs/react';
 import { CheckCircle2, Edit3, GitBranch, LayoutTemplate, PlusCircle, Shield, Trash2, Users as UsersIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import AuthorityTableManager from './components/AuthorityTableManager';
+import ContractTypeTableManager from './components/ContractTypeTableManager';
+
 import SortableStepItem from './components/SortableStepItem';
 import { MASTER_ACTIONS } from './constants';
 
@@ -78,23 +81,12 @@ export default function WorkflowEditor({
 
     const form = useForm({
         name: workflow?.name || '',
-        contract_type_id: workflow?.contract_type_id || '',
+        contract_type_ids: workflow?.contract_type_ids || (workflow?.contract_type_id ? [workflow.contract_type_id] : []),
         description: workflow?.description || '',
         is_default: !!workflow?.is_default,
         is_selectable: !!workflow?.is_selectable,
         initiator_type: workflow?.initiator_type || 'all',
-        initiator_roles: {
-            is_initiator: (workflow?.initiator_roles || []).some((r: any) => r?.is_initiator === true),
-            items: (workflow?.initiator_roles || []).filter((r: any) => !r?.is_initiator).map((r: any) => r?.value ?? r).filter(Boolean),
-        },
-        initiator_users: {
-            is_initiator: (workflow?.initiator_users || []).some((u: any) => u?.is_initiator === true),
-            items: (workflow?.initiator_users || []).filter((u: any) => !u?.is_initiator).map((u: any) => u?.value ?? u).filter(Boolean),
-        },
-        initiator_departments: {
-            is_initiator: (workflow?.initiator_departments || []).some((d: any) => d?.is_initiator === true),
-            items: (workflow?.initiator_departments || []).filter((d: any) => !d?.is_initiator).map((d: any) => d?.value ?? d).filter(Boolean),
-        },
+
         approver_roles: workflow?.approver_roles || [],
         approver_departments: workflow?.approver_departments || [],
         approver_users: workflow?.approver_users || [],
@@ -116,8 +108,6 @@ export default function WorkflowEditor({
                     departments: config.departments && config.departments.length > 0 ? config.departments : (s.approver_type === 'role' && hasDepts ? s.department_ids : []),
                     users: config.users && config.users.length > 0 ? config.users : (s.approver_type === 'user' && hasUsers ? s.user_ids : []),
                     is_default: config.is_default !== undefined ? config.is_default : false,
-                    is_initiator_role: config.is_initiator_role !== undefined ? config.is_initiator_role : false,
-                    is_initiator_department: config.is_initiator_department !== undefined ? config.is_initiator_department : false,
                 }
             };
         }) || [],
@@ -136,22 +126,7 @@ export default function WorkflowEditor({
     });
 
 
-    useEffect(() => {
-        const roles = form.data.initiator_roles;
-        const depts = form.data.initiator_departments;
-        const users = form.data.initiator_users;
-        const hasRoles = roles?.is_initiator || (roles?.items?.length ?? 0) > 0
-            || depts?.is_initiator || (depts?.items?.length ?? 0) > 0;
-        const hasUsers = users?.is_initiator || (users?.items?.length ?? 0) > 0;
 
-        let type = 'all';
-        if (hasUsers) type = 'user';
-        else if (hasRoles) type = 'role';
-
-        if (form.data.initiator_type !== type) {
-            form.setData('initiator_type', type);
-        }
-    }, [form.data.initiator_roles, form.data.initiator_departments, form.data.initiator_users]);
 
 
     const handleDragEnd = (event: DragEndEvent) => {
@@ -184,8 +159,6 @@ export default function WorkflowEditor({
                     departments: [],
                     users: [],
                     is_default: false,
-                    is_initiator_role: false,
-                    is_initiator_department: false,
                     use_combination: true,
                 },
                 step_category: null,
@@ -357,35 +330,8 @@ export default function WorkflowEditor({
                                                     size="sm"
                                                 />
                                             </div>
-                                            {/* Row 2: Jenis Kontrak, Status Alur, Dapat Dipilih */}
-                                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                                                <div className="space-y-2">
-                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                        <LayoutTemplate size={10} /> Jenis Kontrak
-                                                    </label>
-                                                    <Select
-                                                        value={form.data.contract_type_id || 'all'}
-                                                        onValueChange={(v) => form.setData('contract_type_id', v === 'all' ? '' : String(v))}
-                                                    >
-                                                        <SelectTrigger className="focus:border-primary focus:ring-primary dark:focus:border-primary h-10 rounded-xl border-slate-200 bg-slate-50/50 text-xs font-medium transition-all focus:ring-1 dark:border-slate-800 dark:bg-card /50">
-                                                            <SelectValue placeholder="SEMUA JENIS" />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="z-[100] rounded-xl border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-                                                            <SelectItem value="all" className="py-2.5 text-xs font-medium">
-                                                                SEMUA JENIS
-                                                            </SelectItem>
-                                                            {contractTypes.map((t: any) => (
-                                                                <SelectItem
-                                                                    key={t.id}
-                                                                    value={t.id}
-                                                                    className="py-2.5 text-xs font-medium"
-                                                                >
-                                                                    {t.name}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                            {/* Row 2: Status Alur, Dapat Dipilih */}
+                                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                                                 <div className="space-y-2">
                                                     <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
                                                         Status Alur
@@ -428,8 +374,15 @@ export default function WorkflowEditor({
                                         </div>
                                     </div>
 
-                                    {/* ponytail: removed Mode Dokumen configuration from workflow level, now configured in contract-types */}
                                     <div className="space-y-4">
+                                        <ContractTypeTableManager
+                                            contractTypeIds={form.data.contract_type_ids || []}
+                                            onChange={(vals) => form.setData('contract_type_ids', vals)}
+                                            contractTypes={contractTypes}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-4 mt-6">
                                         <AuthorityTableManager
                                             title="Otoritas Inisiator"
                                             authorities={form.data.initiator_authorities || []}

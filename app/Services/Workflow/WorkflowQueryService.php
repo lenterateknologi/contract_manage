@@ -50,7 +50,7 @@ class WorkflowQueryService
             $query->where(function ($q) use ($contractType, $isUuid) {
                 if ($isUuid) {
                     $q->where('contract_type_id', $contractType)
-                        ->orWhereNull('contract_type_id')
+                        ->orWhereJsonContains('meta->contract_type_ids', $contractType)
                         ->orWhere('is_default', true);
                 } else {
                     $typeId = ContractType::where('code', $contractType)
@@ -58,9 +58,10 @@ class WorkflowQueryService
                         ->value('id');
                     if ($typeId) {
                         $q->where('contract_type_id', $typeId)
-                            ->orWhereNull('contract_type_id');
+                            ->orWhereJsonContains('meta->contract_type_ids', $typeId);
                     } else {
-                        $q->whereNull('contract_type_id');
+                        // No matching type, return only defaults or none
+                        $q->whereRaw('1 = 0');
                     }
                     $q->orWhere('is_default', true);
                 }
@@ -144,7 +145,7 @@ class WorkflowQueryService
                 });
             }
         })
-            ->with(['steps', 'orgScopes', 'initiatorAuthorities'])
+            ->with(['steps', 'initiatorAuthorities'])
             ->get();
     }
 

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict ahFZmAAkEeIw6w65O0BUnBhbHKZkp8lf8AUeSNaghXLD3mLTUtm9VVhUmgzhyuv
+\restrict WqSdABcclldD9qcUsPNcxpRbPrUHKn4yxvqc4adEnV7Jsk8eetbrMIBN4A1vNea
 
 -- Dumped from database version 17.7 (Homebrew)
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -294,7 +294,10 @@ CREATE TABLE public.m_contract_types (
     f2_contract_template_id uuid,
     workflow_id uuid,
     features json,
-    parent_id uuid
+    parent_id uuid,
+    contract_input_mechanism character varying(255) DEFAULT 'digital'::character varying,
+    contract_form_template_id uuid,
+    level smallint DEFAULT '0'::smallint NOT NULL
 );
 
 
@@ -303,6 +306,13 @@ CREATE TABLE public.m_contract_types (
 --
 
 COMMENT ON COLUMN public.m_contract_types.parent_id IS 'induk dari jenis kontrak';
+
+
+--
+-- Name: COLUMN m_contract_types.level; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.m_contract_types.level IS '0=Parent, 1=Child, 2=Subchild';
 
 
 --
@@ -652,6 +662,16 @@ CREATE TABLE public.m_vendors (
 
 
 --
+-- Name: m_workflow_contract_types; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.m_workflow_contract_types (
+    workflow_id uuid NOT NULL,
+    contract_type_id uuid NOT NULL
+);
+
+
+--
 -- Name: m_workflow_initiator_authorities; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -663,7 +683,15 @@ CREATE TABLE public.m_workflow_initiator_authorities (
     user_id uuid,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    role_id uuid
+    role_id uuid,
+    authority_type character varying(32),
+    company_group_id uuid,
+    region_id uuid,
+    role_use_initiator boolean DEFAULT false NOT NULL,
+    department_use_initiator boolean DEFAULT false NOT NULL,
+    division_use_initiator boolean DEFAULT false NOT NULL,
+    company_group_use_initiator boolean DEFAULT false NOT NULL,
+    region_use_initiator boolean DEFAULT false NOT NULL
 );
 
 
@@ -678,7 +706,9 @@ CREATE TABLE public.m_workflow_org_scopes (
     region_id uuid,
     company_id uuid,
     created_at timestamp(0) without time zone,
-    updated_at timestamp(0) without time zone
+    updated_at timestamp(0) without time zone,
+    is_initiator boolean DEFAULT false NOT NULL,
+    scope_type character varying(32)
 );
 
 
@@ -721,7 +751,19 @@ CREATE TABLE public.m_workflow_step_authorities (
     user_id uuid,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    role_id uuid
+    role_id uuid,
+    authority_type character varying(32),
+    is_additional boolean DEFAULT false NOT NULL,
+    additional_type character varying(32),
+    workflow_step_action_id uuid,
+    target_step_id uuid,
+    company_group_id uuid,
+    region_id uuid,
+    role_use_initiator boolean DEFAULT false NOT NULL,
+    department_use_initiator boolean DEFAULT false NOT NULL,
+    division_use_initiator boolean DEFAULT false NOT NULL,
+    company_group_use_initiator boolean DEFAULT false NOT NULL,
+    region_use_initiator boolean DEFAULT false NOT NULL
 );
 
 
@@ -826,7 +868,8 @@ CREATE TABLE public.m_workflows (
     legal_departments json,
     legal_users json,
     contract_type_id uuid,
-    meta json
+    meta json,
+    is_selectable boolean DEFAULT true NOT NULL
 );
 
 
@@ -1040,7 +1083,7 @@ CREATE TABLE public.t_contract_versions (
 
 CREATE TABLE public.t_contracts (
     id uuid NOT NULL,
-    contract_no character varying(255) NOT NULL,
+    form_no character varying(255) NOT NULL,
     title character varying(255) NOT NULL,
     description text,
     contract_date date,
@@ -1061,7 +1104,7 @@ CREATE TABLE public.t_contracts (
     vendor_id uuid,
     parent_id uuid,
     submission_type_id uuid,
-    crown_no character varying(255),
+    contract_no character varying(255),
     is_digital_signature boolean DEFAULT false NOT NULL,
     assigned_pic_id uuid,
     assigned_by_id uuid,
@@ -1072,8 +1115,7 @@ CREATE TABLE public.t_contracts (
     closed_by uuid,
     origin_workflow_id uuid,
     contract_type_parent_id uuid,
-    updated_by uuid,
-    CONSTRAINT t_contracts_status_check CHECK (((status)::text = ANY (ARRAY['draft'::text, 'in_review'::text, 'revision'::text, 'approved'::text, 'locked'::text, 'archived'::text, 'pending'::text, 'expired'::text, 'completed'::text, 'signed'::text, 'rejected'::text, 'queue'::text])))
+    updated_by uuid
 );
 
 
@@ -1591,6 +1633,14 @@ ALTER TABLE ONLY public.m_vendors
 
 
 --
+-- Name: m_workflow_contract_types m_workflow_contract_types_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_contract_types
+    ADD CONSTRAINT m_workflow_contract_types_pkey PRIMARY KEY (workflow_id, contract_type_id);
+
+
+--
 -- Name: m_workflow_initiator_authorities m_workflow_initiator_authorities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1756,14 +1806,6 @@ ALTER TABLE ONLY public.t_contract_meta
 
 ALTER TABLE ONLY public.t_contract_versions
     ADD CONSTRAINT t_contract_versions_pkey PRIMARY KEY (id);
-
-
---
--- Name: t_contracts t_contracts_contract_no_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.t_contracts
-    ADD CONSTRAINT t_contracts_contract_no_unique UNIQUE (contract_no);
 
 
 --
@@ -1956,6 +1998,48 @@ CREATE INDEX m_vendor_documents_updated_by_index ON public.m_vendor_documents US
 
 
 --
+-- Name: m_workflow_contract_types_contract_type_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_contract_types_contract_type_id_index ON public.m_workflow_contract_types USING btree (contract_type_id);
+
+
+--
+-- Name: m_workflow_contract_types_workflow_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_contract_types_workflow_id_index ON public.m_workflow_contract_types USING btree (workflow_id);
+
+
+--
+-- Name: m_workflow_initiator_authorities_company_group_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_initiator_authorities_company_group_id_index ON public.m_workflow_initiator_authorities USING btree (company_group_id);
+
+
+--
+-- Name: m_workflow_initiator_authorities_region_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_initiator_authorities_region_id_index ON public.m_workflow_initiator_authorities USING btree (region_id);
+
+
+--
+-- Name: m_workflow_step_authorities_company_group_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_step_authorities_company_group_id_index ON public.m_workflow_step_authorities USING btree (company_group_id);
+
+
+--
+-- Name: m_workflow_step_authorities_region_id_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX m_workflow_step_authorities_region_id_index ON public.m_workflow_step_authorities USING btree (region_id);
+
+
+--
 -- Name: m_workflow_steps_filter_company_group_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2145,6 +2229,13 @@ CREATE INDEX t_contracts_closed_by_index ON public.t_contracts USING btree (clos
 
 
 --
+-- Name: t_contracts_contract_no_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_contract_no_index ON public.t_contracts USING btree (contract_no);
+
+
+--
 -- Name: t_contracts_contract_type_id_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2170,6 +2261,13 @@ CREATE INDEX t_contracts_created_by_index ON public.t_contracts USING btree (cre
 --
 
 CREATE INDEX t_contracts_finished_at_index ON public.t_contracts USING btree (finished_at);
+
+
+--
+-- Name: t_contracts_form_no_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX t_contracts_form_no_index ON public.t_contracts USING btree (form_no);
 
 
 --
@@ -2382,6 +2480,14 @@ ALTER TABLE ONLY public.m_contract_templates
 
 
 --
+-- Name: m_contract_types m_contract_types_contract_form_template_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_contract_types
+    ADD CONSTRAINT m_contract_types_contract_form_template_id_foreign FOREIGN KEY (contract_form_template_id) REFERENCES public.m_form_templates(id) ON DELETE SET NULL;
+
+
+--
 -- Name: m_contract_types m_contract_types_f1_contract_template_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2518,14 +2624,6 @@ ALTER TABLE ONLY public.m_users
 
 
 --
--- Name: m_users m_users_manager_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.m_users
-    ADD CONSTRAINT m_users_manager_id_foreign FOREIGN KEY (spv_id) REFERENCES public.m_users(id) ON DELETE SET NULL;
-
-
---
 -- Name: m_users m_users_region_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2547,6 +2645,22 @@ ALTER TABLE ONLY public.m_users
 
 ALTER TABLE ONLY public.m_vendor_documents
     ADD CONSTRAINT m_vendor_documents_vendor_id_foreign FOREIGN KEY (vendor_id) REFERENCES public.m_vendors(id) ON DELETE CASCADE;
+
+
+--
+-- Name: m_workflow_contract_types m_workflow_contract_types_contract_type_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_contract_types
+    ADD CONSTRAINT m_workflow_contract_types_contract_type_id_foreign FOREIGN KEY (contract_type_id) REFERENCES public.m_contract_types(id) ON DELETE CASCADE;
+
+
+--
+-- Name: m_workflow_contract_types m_workflow_contract_types_workflow_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_contract_types
+    ADD CONSTRAINT m_workflow_contract_types_workflow_id_foreign FOREIGN KEY (workflow_id) REFERENCES public.m_workflows(id) ON DELETE CASCADE;
 
 
 --
@@ -2611,6 +2725,22 @@ ALTER TABLE ONLY public.m_workflow_step_actions
 
 ALTER TABLE ONLY public.m_workflow_step_authorities
     ADD CONSTRAINT m_workflow_step_authorities_role_id_foreign FOREIGN KEY (role_id) REFERENCES public.m_roles(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_workflow_step_authorities m_workflow_step_authorities_target_step_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_step_authorities
+    ADD CONSTRAINT m_workflow_step_authorities_target_step_id_foreign FOREIGN KEY (target_step_id) REFERENCES public.m_workflow_steps(id) ON DELETE SET NULL;
+
+
+--
+-- Name: m_workflow_step_authorities m_workflow_step_authorities_workflow_step_action_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.m_workflow_step_authorities
+    ADD CONSTRAINT m_workflow_step_authorities_workflow_step_action_id_foreign FOREIGN KEY (workflow_step_action_id) REFERENCES public.m_workflow_step_actions(id) ON DELETE CASCADE;
 
 
 --
@@ -2846,14 +2976,6 @@ ALTER TABLE ONLY public.t_contracts
 
 
 --
--- Name: t_contracts t_contracts_parent_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.t_contracts
-    ADD CONSTRAINT t_contracts_parent_id_foreign FOREIGN KEY (parent_id) REFERENCES public.t_contracts(id) ON DELETE SET NULL;
-
-
---
 -- Name: t_contracts t_contracts_submission_type_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2905,13 +3027,13 @@ ALTER TABLE ONLY public.telescope_entries_tags
 -- PostgreSQL database dump complete
 --
 
-\unrestrict ahFZmAAkEeIw6w65O0BUnBhbHKZkp8lf8AUeSNaghXLD3mLTUtm9VVhUmgzhyuv
+\unrestrict WqSdABcclldD9qcUsPNcxpRbPrUHKn4yxvqc4adEnV7Jsk8eetbrMIBN4A1vNea
 
 --
 -- PostgreSQL database dump
 --
 
-\restrict smvhVpxx0tBZ3X4BaacC5nK7UrqGGDobra0uvwsvmJTA9vmHudZuOwikYxxBjmZ
+\restrict xSJwocZuIhUguGD4jrn6zLVx3yiYemfonfe4qQEjm5PGMJxShmjK6Z3gwmq6z8s
 
 -- Dumped from database version 17.7 (Homebrew)
 -- Dumped by pg_dump version 17.7 (Homebrew)
@@ -2933,104 +3055,124 @@ SET row_security = off;
 --
 
 COPY public.migrations (id, migration, batch) FROM stdin;
-280	2026_07_02_124800_create_workflow_org_scopes_and_consolidate_initiators	27
-270	2026_06_29_094816_drop_position_column_from_m_users	26
-271	2026_06_29_095807_restore_t_approvals_columns	26
-272	2026_06_29_110052_sync_m_users_to_helpdesk	26
-273	2026_06_29_135241_rename_histories_to_h_tables	26
-274	2026_06_29_152450_modify_email_on_m_users_table	26
-275	2026_06_30_014300_add_created_by_and_updated_by_to_all_tables	26
-276	2026_07_01_080757_alter_t_contracts_status_constraint	26
-277	2026_07_01_082625_create_m_division_table	26
-278	2026_07_01_082812_insert_m_division_module_data	26
-279	2026_07_01_083255_create_m_workflow_step_divisions_table	26
+394	2026_07_03_093622_cleanup_orphaned_relations	32
+395	2026_07_03_094103_drop_self_relations_foreign_keys	32
+396	2026_07_03_015732_alter_contract_table	33
+397	2026_07_03_074429_rename_columns_in_t_contracts_table	33
+398	2026_07_04_024540_rename_is_initiator_to_use_initiator_property_in_workflow_step_authorities_table	33
+399	2026_07_04_055739_rename_is_initiator_to_use_initiator_property_in_workflow_initiator_authorities_table	33
+400	2026_07_04_064313_add_company_group_id_and_region_id_to_workflow_authorities_tables	33
+403	2026_07_07_165057_create_workflow_contract_types_table	35
+406	2026_07_08_164640_add_level_to_contract_types_table	38
 283	2026_07_02_063938_change_role_name_to_role_id_in_authority_tables	30
-187	2026_04_20_000001_create_framework_tables	26
-188	2026_04_20_000002_create_master_tables	26
 90	2026_07_01_030118_add_contract_type_ids_to_m_workflows	25
-189	2026_04_20_000003_create_template_tables	26
-190	2026_04_20_000004_create_transaction_tables	26
-191	2026_04_20_000005_create_history_and_pivot_tables	26
-192	2026_04_21_000001_add_extra_fields_to_users_table	26
-281	2026_07_02_125200_drop_old_workflow_initiator_tables	28
-193	2026_04_21_030416_add_group_and_region_to_users_table	26
-194	2026_04_22_021123_add_sla_and_initiator_fields	26
-195	2026_04_23_014247_add_f1_f2_fields_to_t_contracts_table	26
-282	2026_07_02_125700_create_workflow_step_authorities_table	29
-196	2026_04_23_015645_add_legal_finance_fields_to_vendors	26
-197	2026_04_23_015646_create_m_vendor_documents_table	26
-198	2026_04_23_070140_add_vendor_id_to_t_contracts_table	26
-199	2026_04_23_093700_add_attachment_to_contract_messages_table	26
-200	2026_04_24_040027_add_parent_id_to_t_contracts_table	26
-201	2026_04_24_042404_add_signer_position_to_t_contracts_table	26
-202	2026_04_24_073713_create_m_numbering_formats_table	26
-203	2026_04_26_094703_add_input_fields_to_contract_types_table	26
-204	2026_04_26_095224_restructure_contract_types_for_f1_f2	26
-205	2026_04_26_095520_add_contract_template_ids_to_contract_types	26
-206	2026_04_26_100015_add_initiator_settings_to_workflows	26
-207	2026_04_26_102350_change_role_to_json_in_workflow_steps_table	26
-208	2026_04_26_103600_change_department_id_to_json_in_workflow_steps_table	26
-209	2026_04_26_105500_add_initiator_departments_to_workflows_table	26
-210	2026_04_26_113734_add_status_id_to_workflow_steps_table	26
-211	2026_04_27_014447_normalize_workflow_authority_tables	26
-212	2026_04_27_043000_create_m_submission_types_table	26
-213	2026_04_27_044000_add_submission_type_id_to_t_contracts_table	26
-214	2026_04_27_063518_add_crown_no_to_t_contracts	26
-215	2026_04_27_070903_add_is_active_to_m_contract_statuses_table	26
-216	2026_04_29_034507_add_display_mode_to_m_contract_statuses_table	26
-217	2026_04_29_035153_drop_sequence_columns_from_multiple_tables	26
-218	2026_04_29_062638_add_allow_info_edit_to_m_contract_statuses_table	26
-219	2026_04_29_063355_add_bulk_permissions_to_access_modules_table	26
-220	2026_04_30_033152_add_allow_reference_to_m_contract_statuses_table	26
-221	2026_05_04_000001_add_dynamic_workflow_fields	26
-222	2026_05_05_074649_add_meeting_update_fields_to_contracts_and_approvals	26
-223	2026_05_06_012451_enhance_workflow_steps_structure_v2	26
-224	2026_05_06_014757_create_m_company_group_table	26
-225	2026_05_06_014818_create_m_company_table	26
-226	2026_05_06_032815_add_workflow_id_and_features_to_contract_types_table	26
-227	2026_05_06_075600_add_assigned_pic_and_manager_to_t_contracts_table	26
-228	2026_05_07_020603_add_meta_to_workflow_steps_table	26
-229	2026_05_08_000001_create_organizational_master_tables	26
-230	2026_05_08_025730_create_company_group_region_table	26
-231	2026_05_08_032850_drop_company_group_region_table	26
-232	2026_05_08_035924_add_organizational_filters_to_workflows_table	26
-233	2026_05_08_072529_simplify_workflows_and_steps	26
-234	2026_05_19_162638_drop_workflow_step_selection_rules_table	26
-235	2026_05_20_080859_drop_unneeded_fields_from_workflow_steps_table	26
-236	2026_05_20_083500_create_workflow_master_actions_and_step_actions	26
-237	2026_05_20_100747_add_signing_parties_to_workflow_step_actions	26
-238	2026_05_20_105109_add_assignee_config_to_workflow_step_actions	26
-239	2026_05_20_142355_add_alias_to_workflow_step_actions_table	26
-240	2026_05_21_022051_add_description_to_workflow_step_actions_table	26
-241	2026_05_21_022253_fix_master_action_references_and_status	26
-242	2026_05_21_022753_alter_t_contract_table	26
-243	2026_05_21_063849_add_master_data_sync_module	26
-244	2026_05_22_042300_alter_contract_table	26
-245	2026_05_22_042310_alter_contract_type_table	26
-246	2026_05_25_030327_alter_workflow_table	26
-247	2026_05_25_033010_optimize_t_contracts_and_create_contract_meta	26
-248	2026_05_26_011556_add_sequence_to_role_navigation_tables	26
-249	2026_05_26_013710_alter_workflow_steps_table	26
-250	2026_05_28_011831_add_created_by_and_updated_by_to_m_template_folders_table	26
-251	2026_05_28_032100_add_description_to_m_modules_table	26
-252	2026_05_29_013953_add_action_code_to_workflow_step_actions	26
-253	2026_05_29_021131_drop_m_master_actions_table	26
-254	2026_05_29_035539_add_sequential_support_to_approvals_table	26
-255	2026_05_30_153641_add_meta_to_m_workflows_table	26
-256	2026_05_30_154131_drop_legacy_columns_from_m_contract_statuses_table	26
-257	2026_06_01_123258_cleanup_database_and_optimize_indexes	26
-258	2026_06_02_015634_add_sub_step_to_t_approvals_table	26
-259	2026_06_02_063548_add_transition_config_to_workflow_step_actions	26
-260	2026_06_03_022812_create_telescope_entries_table	26
-261	2026_06_03_143910_drop_bg_color_and_text_color_from_m_users_table	26
-262	2026_06_03_144412_drop_initials_from_m_users_table	26
-263	2026_06_05_012537_rename_and_standardize_tables	26
-264	2026_06_05_013129_rename_form_builder_tables	26
-265	2026_06_05_074048_add_manager_id_to_users_table	26
-266	2026_06_05_074109_add_manager_id_to_m_users	26
-267	2026_06_05_075455_add_approver_config_to_workflow_steps	26
-268	2026_06_05_080417_add_approver_config_to_m_workflow_steps_table	26
-269	2026_06_29_094255_drop_role_column_from_m_users	26
+401	2026_07_07_085831_add_contract_mode_to_contract_types_table	34
+404	2026_07_07_173826_add_per_field_initiator_flags	36
+407	2026_07_09_091933_remove_use_initiator_property_from_workflow_authorities_tables	39
+291	2026_04_20_000001_create_framework_tables	31
+292	2026_04_20_000002_create_master_tables	31
+293	2026_04_20_000003_create_template_tables	31
+294	2026_04_20_000004_create_transaction_tables	31
+295	2026_04_20_000005_create_history_and_pivot_tables	31
+296	2026_04_21_000001_add_extra_fields_to_users_table	31
+297	2026_04_21_030416_add_group_and_region_to_users_table	31
+298	2026_04_22_021123_add_sla_and_initiator_fields	31
+299	2026_04_23_014247_add_f1_f2_fields_to_t_contracts_table	31
+300	2026_04_23_015645_add_legal_finance_fields_to_vendors	31
+301	2026_04_23_015646_create_m_vendor_documents_table	31
+302	2026_04_23_070140_add_vendor_id_to_t_contracts_table	31
+303	2026_04_23_093700_add_attachment_to_contract_messages_table	31
+304	2026_04_24_040027_add_parent_id_to_t_contracts_table	31
+305	2026_04_24_042404_add_signer_position_to_t_contracts_table	31
+306	2026_04_24_073713_create_m_numbering_formats_table	31
+307	2026_04_26_094703_add_input_fields_to_contract_types_table	31
+308	2026_04_26_095224_restructure_contract_types_for_f1_f2	31
+309	2026_04_26_095520_add_contract_template_ids_to_contract_types	31
+310	2026_04_26_100015_add_initiator_settings_to_workflows	31
+311	2026_04_26_102350_change_role_to_json_in_workflow_steps_table	31
+312	2026_04_26_103600_change_department_id_to_json_in_workflow_steps_table	31
+313	2026_04_26_105500_add_initiator_departments_to_workflows_table	31
+314	2026_04_26_113734_add_status_id_to_workflow_steps_table	31
+315	2026_04_27_014447_normalize_workflow_authority_tables	31
+316	2026_04_27_043000_create_m_submission_types_table	31
+317	2026_04_27_044000_add_submission_type_id_to_t_contracts_table	31
+318	2026_04_27_063518_add_crown_no_to_t_contracts	31
+319	2026_04_27_070903_add_is_active_to_m_contract_statuses_table	31
+320	2026_04_29_034507_add_display_mode_to_m_contract_statuses_table	31
+321	2026_04_29_035153_drop_sequence_columns_from_multiple_tables	31
+322	2026_04_29_062638_add_allow_info_edit_to_m_contract_statuses_table	31
+323	2026_04_29_063355_add_bulk_permissions_to_access_modules_table	31
+324	2026_04_30_033152_add_allow_reference_to_m_contract_statuses_table	31
+325	2026_05_04_000001_add_dynamic_workflow_fields	31
+326	2026_05_05_074649_add_meeting_update_fields_to_contracts_and_approvals	31
+327	2026_05_06_012451_enhance_workflow_steps_structure_v2	31
+328	2026_05_06_014757_create_m_company_group_table	31
+329	2026_05_06_014818_create_m_company_table	31
+330	2026_05_06_032815_add_workflow_id_and_features_to_contract_types_table	31
+331	2026_05_06_075600_add_assigned_pic_and_manager_to_t_contracts_table	31
+332	2026_05_07_020603_add_meta_to_workflow_steps_table	31
+333	2026_05_08_000001_create_organizational_master_tables	31
+334	2026_05_08_025730_create_company_group_region_table	31
+335	2026_05_08_032850_drop_company_group_region_table	31
+336	2026_05_08_035924_add_organizational_filters_to_workflows_table	31
+337	2026_05_08_072529_simplify_workflows_and_steps	31
+338	2026_05_19_162638_drop_workflow_step_selection_rules_table	31
+339	2026_05_20_080859_drop_unneeded_fields_from_workflow_steps_table	31
+340	2026_05_20_083500_create_workflow_master_actions_and_step_actions	31
+341	2026_05_20_100747_add_signing_parties_to_workflow_step_actions	31
+342	2026_05_20_105109_add_assignee_config_to_workflow_step_actions	31
+343	2026_05_20_142355_add_alias_to_workflow_step_actions_table	31
+344	2026_05_21_022051_add_description_to_workflow_step_actions_table	31
+345	2026_05_21_022253_fix_master_action_references_and_status	31
+346	2026_05_21_022753_alter_t_contract_table	31
+347	2026_05_21_063849_add_master_data_sync_module	31
+348	2026_05_22_042300_alter_contract_table	31
+349	2026_05_22_042310_alter_contract_type_table	31
+350	2026_05_25_030327_alter_workflow_table	31
+351	2026_05_25_033010_optimize_t_contracts_and_create_contract_meta	31
+352	2026_05_26_011556_add_sequence_to_role_navigation_tables	31
+353	2026_05_26_013710_alter_workflow_steps_table	31
+354	2026_05_28_011831_add_created_by_and_updated_by_to_m_template_folders_table	31
+355	2026_05_28_032100_add_description_to_m_modules_table	31
+356	2026_05_29_013953_add_action_code_to_workflow_step_actions	31
+357	2026_05_29_021131_drop_m_master_actions_table	31
+358	2026_05_29_035539_add_sequential_support_to_approvals_table	31
+359	2026_05_30_153641_add_meta_to_m_workflows_table	31
+360	2026_05_30_154131_drop_legacy_columns_from_m_contract_statuses_table	31
+361	2026_06_01_123258_cleanup_database_and_optimize_indexes	31
+362	2026_06_02_015634_add_sub_step_to_t_approvals_table	31
+363	2026_06_02_063548_add_transition_config_to_workflow_step_actions	31
+364	2026_06_03_022812_create_telescope_entries_table	31
+365	2026_06_03_143910_drop_bg_color_and_text_color_from_m_users_table	31
+366	2026_06_03_144412_drop_initials_from_m_users_table	31
+367	2026_06_05_012537_rename_and_standardize_tables	31
+368	2026_06_05_013129_rename_form_builder_tables	31
+369	2026_06_05_074048_add_manager_id_to_users_table	31
+370	2026_06_05_074109_add_manager_id_to_m_users	31
+371	2026_06_05_075455_add_approver_config_to_workflow_steps	31
+372	2026_06_05_080417_add_approver_config_to_m_workflow_steps_table	31
+373	2026_06_29_094255_drop_role_column_from_m_users	31
+374	2026_06_29_094816_drop_position_column_from_m_users	31
+375	2026_06_29_095807_restore_t_approvals_columns	31
+376	2026_06_29_110052_sync_m_users_to_helpdesk	31
+377	2026_06_29_135241_rename_histories_to_h_tables	31
+378	2026_06_29_152450_modify_email_on_m_users_table	31
+379	2026_06_30_014300_add_created_by_and_updated_by_to_all_tables	31
+380	2026_07_01_080757_alter_t_contracts_status_constraint	31
+381	2026_07_01_082625_create_m_division_table	31
+382	2026_07_01_082812_insert_m_division_module_data	31
+383	2026_07_01_083255_create_m_workflow_step_divisions_table	31
+384	2026_07_02_124800_create_workflow_org_scopes_and_consolidate_initiators	31
+385	2026_07_02_125200_drop_old_workflow_initiator_tables	31
+386	2026_07_02_125700_create_workflow_step_authorities_table	31
+387	2026_07_02_125800_change_role_name_to_role_id_in_authority_tables	31
+388	2026_07_02_125900_add_is_initiator_to_workflow_initiator_authorities	31
+389	2026_07_02_130000_add_is_initiator_to_org_scopes_and_step_authorities	31
+390	2026_07_02_130100_add_scope_type_to_workflow_org_scopes	31
+391	2026_07_02_130200_add_authority_type_to_workflow_initiator_authorities	31
+392	2026_07_02_130300_add_authority_type_to_workflow_step_authorities	31
+393	2026_07_02_130400_add_additional_approval_fields_to_workflow_step_authorities_table	31
+405	2026_07_08_083400_drop_t_contracts_status_check_constraint	37
 \.
 
 
@@ -3038,12 +3180,12 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 283, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 407, true);
 
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict smvhVpxx0tBZ3X4BaacC5nK7UrqGGDobra0uvwsvmJTA9vmHudZuOwikYxxBjmZ
+\unrestrict xSJwocZuIhUguGD4jrn6zLVx3yiYemfonfe4qQEjm5PGMJxShmjK6Z3gwmq6z8s
 

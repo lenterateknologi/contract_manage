@@ -20,7 +20,6 @@ class WorkflowQuery
                 'contractType',
                 'steps.approverAuthorities',
                 'initiatorAuthorities',
-                'orgScopes',
             ])
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
@@ -31,15 +30,6 @@ class WorkflowQuery
             })
             ->when($request->contract_type_id, function ($q, $type) {
                 $q->whereIn('contract_type_id', (array) $type);
-            })
-            ->when($request->company_group_id, function ($q, $id) {
-                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('company_group_id', (array) $id));
-            })
-            ->when($request->region_id, function ($q, $id) {
-                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('region_id', (array) $id));
-            })
-            ->when($request->company_id, function ($q, $id) {
-                $q->whereHas('orgScopes', fn ($sq) => $sq->whereIn('company_id', (array) $id));
             });
     }
 
@@ -50,9 +40,8 @@ class WorkflowQuery
     {
         return Workflow::with([
             'steps.approverAuthorities',
-            'steps.actions',
+            'steps.actions.additionalAuthorities',
             'initiatorAuthorities',
-            'orgScopes',
         ])->findOrFail($id);
     }
 

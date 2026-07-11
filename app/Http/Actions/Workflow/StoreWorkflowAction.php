@@ -19,10 +19,17 @@ class StoreWorkflowAction
     public function execute(array $data): Workflow
     {
         return DB::transaction(function () use ($data) {
+            $contractTypeIds = $data['contract_type_ids'] ?? [];
             $workflowData = collect($data)->except([
                 'initiator_roles', 'initiator_users', 'initiator_departments', 'initiator_divisions',
                 'company_group_ids', 'region_ids', 'company_ids', 'steps', 'initiator_authorities',
+                'contract_type_ids',
             ])->toArray();
+
+            $meta = $workflowData['meta'] ?? [];
+            $meta['contract_type_ids'] = $contractTypeIds;
+            $workflowData['meta'] = $meta;
+
             if (empty($workflowData['contract_type_id'])) {
                 $workflowData['contract_type_id'] = null;
             }
@@ -33,41 +40,7 @@ class StoreWorkflowAction
                     ->update(['is_default' => false]);
             }
 
-            // Sync Org Scopes
-            $groupIds = $data['company_group_ids'] ?? [];
-            $regionIds = $data['region_ids'] ?? [];
-            $companyIds = $data['company_ids'] ?? [];
 
-            foreach ($groupIds as $item) {
-                $value = is_array($item) ? ($item['value'] ?? null) : $item;
-                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
-                if ($value === '__initiator__') {
-                    $value = null;
-                }
-                if ($value || $isInitiator) {
-                    $workflow->orgScopes()->create(['company_group_id' => $value, 'is_initiator' => $isInitiator, 'scope_type' => 'company_group']);
-                }
-            }
-            foreach ($regionIds as $item) {
-                $value = is_array($item) ? ($item['value'] ?? null) : $item;
-                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
-                if ($value === '__initiator__') {
-                    $value = null;
-                }
-                if ($value || $isInitiator) {
-                    $workflow->orgScopes()->create(['region_id' => $value, 'is_initiator' => $isInitiator, 'scope_type' => 'region']);
-                }
-            }
-            foreach ($companyIds as $item) {
-                $value = is_array($item) ? ($item['value'] ?? null) : $item;
-                $isInitiator = is_array($item) ? (bool) ($item['is_initiator'] ?? false) : false;
-                if ($value === '__initiator__') {
-                    $value = null;
-                }
-                if ($value || $isInitiator) {
-                    $workflow->orgScopes()->create(['company_id' => $value, 'is_initiator' => $isInitiator, 'scope_type' => 'company']);
-                }
-            }
 
             // Sync Initiator Authorities
             if (! empty($data['initiator_authorities'])) {
@@ -80,7 +53,7 @@ class StoreWorkflowAction
                         'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
                         'company_group_id' => $auth['company_group_id'] ?? null,
                         'region_id' => $auth['region_id'] ?? null,
-                        'use_initiator_property' => (bool) ($auth['use_initiator_property'] ?? false),
+
                     ]);
                 }
             } else {
@@ -90,12 +63,12 @@ class StoreWorkflowAction
                         $isInit = (bool) ($rolesData['is_initiator'] ?? false);
                         $items = (array) ($rolesData['items'] ?? []);
                         if ($isInit) {
-                            $workflow->initiatorAuthorities()->create(['role_id' => null, 'use_initiator_property' => true, 'authority_type' => 'role']);
+                            $workflow->initiatorAuthorities()->create(['role_id' => null, 'authority_type' => 'role']);
                         } else {
                             foreach ($items as $val) {
                                 $resolvedId = $this->resolveRoleId($val);
                                 if ($resolvedId) {
-                                    $workflow->initiatorAuthorities()->create(['role_id' => $resolvedId, 'use_initiator_property' => false, 'authority_type' => 'role']);
+                                    $workflow->initiatorAuthorities()->create(['role_id' => $resolvedId, 'authority_type' => 'role']);
                                 }
                             }
                         }
@@ -108,7 +81,7 @@ class StoreWorkflowAction
                             }
                             $resolvedId = $value ? $this->resolveRoleId($value) : null;
                             if ($resolvedId || $isInitiator) {
-                                $workflow->initiatorAuthorities()->create(['role_id' => $resolvedId, 'use_initiator_property' => $isInitiator, 'authority_type' => 'role']);
+                                $workflow->initiatorAuthorities()->create(['role_id' => $resolvedId, 'authority_type' => 'role']);
                             }
                         }
                     }
@@ -119,12 +92,12 @@ class StoreWorkflowAction
                         $isInit = (bool) ($deptsData['is_initiator'] ?? false);
                         $items = (array) ($deptsData['items'] ?? []);
                         if ($isInit) {
-                            $workflow->initiatorAuthorities()->create(['department_id' => null, 'use_initiator_property' => true, 'authority_type' => 'department']);
+                            $workflow->initiatorAuthorities()->create(['department_id' => null, 'authority_type' => 'department']);
                         } else {
                             foreach ($items as $val) {
                                 $resolvedId = $this->resolveDepartmentId($val);
                                 if ($resolvedId) {
-                                    $workflow->initiatorAuthorities()->create(['department_id' => $resolvedId, 'use_initiator_property' => false, 'authority_type' => 'department']);
+                                    $workflow->initiatorAuthorities()->create(['department_id' => $resolvedId, 'authority_type' => 'department']);
                                 }
                             }
                         }
@@ -137,7 +110,7 @@ class StoreWorkflowAction
                             }
                             $resolvedId = $value ? $this->resolveDepartmentId($value) : null;
                             if ($resolvedId || $isInitiator) {
-                                $workflow->initiatorAuthorities()->create(['department_id' => $resolvedId, 'use_initiator_property' => $isInitiator, 'authority_type' => 'department']);
+                                $workflow->initiatorAuthorities()->create(['department_id' => $resolvedId, 'authority_type' => 'department']);
                             }
                         }
                     }
@@ -150,7 +123,7 @@ class StoreWorkflowAction
                             $value = null;
                         }
                         if ($value || $isInitiator) {
-                            $workflow->initiatorAuthorities()->create(['division_id' => $value, 'use_initiator_property' => $isInitiator, 'authority_type' => 'division']);
+                            $workflow->initiatorAuthorities()->create(['division_id' => $value, 'authority_type' => 'division']);
                         }
                     }
                 }
@@ -160,12 +133,12 @@ class StoreWorkflowAction
                         $isInit = (bool) ($usersData['is_initiator'] ?? false);
                         $items = (array) ($usersData['items'] ?? []);
                         if ($isInit) {
-                            $workflow->initiatorAuthorities()->create(['user_id' => null, 'use_initiator_property' => true, 'authority_type' => 'user']);
+                            $workflow->initiatorAuthorities()->create(['user_id' => null, 'authority_type' => 'user']);
                         } else {
                             foreach ($items as $val) {
                                 $resolvedId = $this->resolveUserId($val);
                                 if ($resolvedId) {
-                                    $workflow->initiatorAuthorities()->create(['user_id' => $resolvedId, 'use_initiator_property' => false, 'authority_type' => 'user']);
+                                    $workflow->initiatorAuthorities()->create(['user_id' => $resolvedId, 'authority_type' => 'user']);
                                 }
                             }
                         }
@@ -178,7 +151,7 @@ class StoreWorkflowAction
                             }
                             $resolvedId = $value ? $this->resolveUserId($value) : null;
                             if ($resolvedId || $isInitiator) {
-                                $workflow->initiatorAuthorities()->create(['user_id' => $resolvedId, 'use_initiator_property' => $isInitiator, 'authority_type' => 'user']);
+                                $workflow->initiatorAuthorities()->create(['user_id' => $resolvedId, 'authority_type' => 'user']);
                             }
                         }
                     }
@@ -230,7 +203,11 @@ class StoreWorkflowAction
                                 'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
                                 'company_group_id' => $auth['company_group_id'] ?? null,
                                 'region_id' => $auth['region_id'] ?? null,
-                                'use_initiator_property' => (bool) ($auth['use_initiator_property'] ?? false),
+                                'role_use_initiator' => $auth['role_use_initiator'] ?? false,
+                                'department_use_initiator' => $auth['department_use_initiator'] ?? false,
+                                'division_use_initiator' => $auth['division_use_initiator'] ?? false,
+                                'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
+                                'region_use_initiator' => $auth['region_use_initiator'] ?? false,
                             ]);
                         }
                     } else {
@@ -243,38 +220,38 @@ class StoreWorkflowAction
                         $isInitiatorDept = (bool) ($approverConfig['is_initiator_department'] ?? false);
 
                         if ($isInitiatorRole) {
-                            $step->approverAuthorities()->create(['role_id' => null, 'use_initiator_property' => true, 'authority_type' => 'role']);
+                            $step->approverAuthorities()->create(['role_id' => null, 'authority_type' => 'role']);
                         } else {
                             foreach ((array) $rolesToSync as $role) {
                                 if ($role) {
                                     $resolvedId = $this->resolveRoleId($role);
                                     if ($resolvedId) {
-                                        $step->approverAuthorities()->create(['role_id' => $resolvedId, 'use_initiator_property' => false, 'authority_type' => 'role']);
+                                        $step->approverAuthorities()->create(['role_id' => $resolvedId, 'authority_type' => 'role']);
                                     }
                                 }
                             }
                         }
 
                         if ($isInitiatorDept) {
-                            $step->approverAuthorities()->create(['department_id' => null, 'use_initiator_property' => true, 'authority_type' => 'department']);
+                            $step->approverAuthorities()->create(['department_id' => null, 'authority_type' => 'department']);
                         } else {
                             foreach ((array) $deptsToSync as $deptId) {
                                 $resolvedId = $this->resolveDepartmentId($deptId);
                                 if ($resolvedId) {
-                                    $step->approverAuthorities()->create(['department_id' => $resolvedId, 'use_initiator_property' => false, 'authority_type' => 'department']);
+                                    $step->approverAuthorities()->create(['department_id' => $resolvedId, 'authority_type' => 'department']);
                                 }
                             }
                         }
 
                         foreach ((array) $divsToSync as $divId) {
                             if ($divId) {
-                                $step->approverAuthorities()->create(['division_id' => $divId, 'use_initiator_property' => false, 'authority_type' => 'division']);
+                                $step->approverAuthorities()->create(['division_id' => $divId, 'authority_type' => 'division']);
                             }
                         }
                         foreach ((array) $usersToSync as $userId) {
                             $resolvedId = $this->resolveUserId($userId);
                             if ($resolvedId) {
-                                $step->approverAuthorities()->create(['user_id' => $resolvedId, 'use_initiator_property' => false, 'authority_type' => 'user']);
+                                $step->approverAuthorities()->create(['user_id' => $resolvedId, 'authority_type' => 'user']);
                             }
                         }
                     }

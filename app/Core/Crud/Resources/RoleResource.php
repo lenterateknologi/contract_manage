@@ -5,6 +5,8 @@ namespace App\Core\Crud\Resources;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Resource;
+use App\Exports\RolesExport;
+use App\Imports\RolesImport;
 use App\Models\Role;
 
 class RoleResource extends Resource
@@ -15,9 +17,9 @@ class RoleResource extends Resource
 
     public static ?string $slug = 'roles';
 
-    public static ?string $exportClass = \App\Exports\RolesExport::class;
+    public static ?string $exportClass = RolesExport::class;
 
-    public static ?string $importClass = \App\Imports\RolesImport::class;
+    public static ?string $importClass = RolesImport::class;
 
     public static function table(): array
     {

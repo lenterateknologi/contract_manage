@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
 import { ArrowLeft } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
+import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 
 const COMMON_ICONS = [
     'Clock', 'CheckCircle2', 'XCircle', 'AlertCircle', 'AlertTriangle',
@@ -151,28 +152,28 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
     const { data, setData, post, put, errors, processing } = useForm(initialFormState);
 
-    // ponytail: disable template selection if input mechanism is upload (digital)
+    // ponytail: disable template selection if input mechanism is upload (digital) or none
     const isFieldDisabled = (fieldName: string) => {
-        if (fieldName === 'f1_form_template_id') return data.f1_input_mechanism === 'digital';
-        if (fieldName === 'f2_form_template_id') return data.f2_input_mechanism === 'digital';
-        if (fieldName === 'contract_form_template_id') return data.contract_input_mechanism === 'digital';
+        if (fieldName === 'f1_form_template_id') return data.f1_input_mechanism === 'digital' || data.f1_input_mechanism === 'none';
+        if (fieldName === 'f2_form_template_id') return data.f2_input_mechanism === 'digital' || data.f2_input_mechanism === 'none';
+        if (fieldName === 'contract_form_template_id') return data.contract_input_mechanism === 'digital' || data.contract_input_mechanism === 'none';
         return false;
     };
 
     useEffect(() => {
-        if (data.f1_input_mechanism === 'digital' && data.f1_form_template_id !== '') {
+        if ((data.f1_input_mechanism === 'digital' || data.f1_input_mechanism === 'none') && data.f1_form_template_id !== '') {
             setData('f1_form_template_id', '');
         }
     }, [data.f1_input_mechanism]);
 
     useEffect(() => {
-        if (data.f2_input_mechanism === 'digital' && data.f2_form_template_id !== '') {
+        if ((data.f2_input_mechanism === 'digital' || data.f2_input_mechanism === 'none') && data.f2_form_template_id !== '') {
             setData('f2_form_template_id', '');
         }
     }, [data.f2_input_mechanism]);
 
     useEffect(() => {
-        if (data.contract_input_mechanism === 'digital' && data.contract_form_template_id !== '') {
+        if ((data.contract_input_mechanism === 'digital' || data.contract_input_mechanism === 'none') && data.contract_form_template_id !== '') {
             setData('contract_form_template_id', '');
         }
     }, [data.contract_input_mechanism]);
@@ -322,6 +323,25 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         )}
                     </div>
                 )}
+                {field.type === 'tree_select' && (
+                    <div className="flex flex-col gap-1.5 w-full">
+                        <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5">
+                            {field.label} {field.required && <span className="text-rose-500">*</span>}
+                        </Label>
+                        <TreeSelect
+                            value={data[field.name]}
+                            onValueChange={(val) => setData(field.name, val)}
+                            items={field.options}
+                            placeholder={field.placeholder || `Pilih ${field.label}...`}
+                            disabled={isFieldDisabled(field.name)}
+                        />
+                        {errors[field.name] && (
+                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1">
+                                {errors[field.name]}
+                            </span>
+                        )}
+                    </div>
+                )}
                 {field.type === 'switch' && (
                     <div className="flex flex-col gap-1.5 w-full">
                         <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5">
@@ -406,12 +426,6 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         <div className={getGridClass()}>
                         {formSchema.map((field: any) => {
                             if (field.isGroup) {
-                                // ponytail: for contract-types, hide configuration groups if parent_id is empty (indicating it is a parent category)
-                                const isConfigGroup = ['Konfigurasi Formulir F1', 'Konfigurasi Formulir F2', 'Konfigurasi Draft Perjanjian'].includes(field.label);
-                                if (resourceSlug === 'contract-types' && isConfigGroup && !data.parent_id) {
-                                    return null;
-                                }
-
                                 const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
                                     ? (LucideIcons as any)[field.icon]
                                     : undefined;

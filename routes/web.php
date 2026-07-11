@@ -17,4 +17,3 @@ require __DIR__.'/web/form-builder.php';
 
 require __DIR__.'/web/settings.php';
 require __DIR__.'/web/auth.php';
-

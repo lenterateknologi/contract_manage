@@ -23,7 +23,7 @@ import {
     UserPlus,
     Zap,
 } from 'lucide-react';
-import React, { useMemo, useState, lazy, Suspense } from 'react';
+import React, { useMemo, useState, lazy, Suspense, useEffect } from 'react';
 
 import { DraftEditableInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
 
@@ -116,6 +116,23 @@ const ContractDetailView = ({
     const [signerOpen, setSignerOpen] = useState(false);
     const [rejectOpen, setRejectOpen] = useState(false);
     const [addhocOpen, setAddhocOpen] = useState(false);
+
+    const [headerTitle, setHeaderTitle] = useState(contract.title);
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const isDraftTitle = contract.status === 'draft' && contract.workflow_step?.meta?.allow_info_edit !== false && (contract.can_approve || contract.created_by === meId);
+
+    useEffect(() => {
+        setHeaderTitle(contract.title);
+    }, [contract.title]);
+
+    const handleTitleBlur = () => {
+        setIsEditingTitle(false);
+        if (headerTitle.trim() && headerTitle !== contract.title) {
+            handleUpdate({ title: headerTitle }, true);
+        } else {
+            setHeaderTitle(contract.title);
+        }
+    };
 
     const handleUpdate = async (data: any, silent = false) => {
         if (!silent) setProcessing(true);
@@ -269,18 +286,34 @@ const ContractDetailView = ({
     );
 
     const tabs = useMemo(
-        () =>
-            [
-                { id: 'form_template', label: 'F1 (Permohonan)', mode: (contract as any).f1_mode || 'upload' },
-                { id: 'f2', label: 'F2 (Ringkasan)', mode: contract.show_f2_contract_no === false ? 'none' : ((contract as any).f2_mode || 'upload') },
-                { id: 'agreement', label: 'Draft Perjanjian', mode: (contract as any).contract_mode || 'upload' },
-                { id: 'timeline', label: 'Alur Persetujuan', mode: 'always' },
-                { id: 'attachments', label: 'Lampiran', mode: 'always' },
-                { id: 'chat', label: 'Chat', mode: 'always' },
-                { id: 'references', label: 'Kontrak Referensi', mode: 'always' },
-            ].filter((tab) => tab.mode !== 'none'),
+        () => {
+            const meta = contract.workflow_step?.meta || {};
+            return [
+                { id: 'form_template', label: 'F1 (Permohonan)', mode: meta.show_tab_f1 === false ? 'none' : ((contract as any).f1_mode || 'upload') },
+                { id: 'f2', label: 'F2 (Ringkasan)', mode: meta.show_tab_f2 === false ? 'none' : ((contract as any).f2_mode || 'upload') },
+                { id: 'agreement', label: 'Draft Perjanjian', mode: meta.show_tab_agreement === false ? 'none' : ((contract as any).contract_mode || 'upload') },
+                { id: 'timeline', label: 'Alur Persetujuan', mode: meta.show_tab_timeline === false ? 'none' : 'always' },
+                { id: 'attachments', label: 'Lampiran', mode: meta.show_tab_attachments === false ? 'none' : 'always' },
+                { id: 'chat', label: 'Chat', mode: meta.show_tab_chat === false ? 'none' : 'always' },
+                { id: 'references', label: 'Kontrak Referensi', mode: meta.show_tab_references === false ? 'none' : 'always' },
+            ].filter((tab) => tab.mode !== 'none');
+        },
         [contract],
     );
+
+    useEffect(() => {
+        const meta = contract.workflow_step?.meta || {};
+        const isAudit = detailTab === 'audit';
+        const isMembers = detailTab === 'members' && meta.show_tab_members !== false;
+        const isExternalTab = isAudit || isMembers;
+
+        if (tabs.length > 0 && !tabs.some(t => t.id === detailTab) && !isExternalTab) {
+            setDetailTab(tabs[0].id);
+        } else if (tabs.length === 0 && !isExternalTab) {
+            setDetailTab('empty');
+        }
+    }, [tabs, detailTab, contract.workflow_step?.meta]);
+
 
     return (
         <div className="mx-auto flex w-full max-w-full flex-1 flex-col gap-6 p-4">
@@ -297,7 +330,25 @@ const ContractDetailView = ({
                     <div className="bg-surface-border h-10 w-px" />
                     <div className="flex flex-col">
                         <div className="flex items-center gap-3">
-                            <h2 className="text-text-main text-lg leading-none font-semibold">{contract.title}</h2>
+                            {isEditingTitle && isDraftTitle ? (
+                                <input
+                                    autoFocus
+                                    value={headerTitle}
+                                    onChange={(e) => setHeaderTitle(e.target.value)}
+                                    onBlur={handleTitleBlur}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleTitleBlur(); }}
+                                    className="text-text-main text-lg leading-none font-semibold bg-transparent border-b border-primary focus:outline-none min-w-[400px] md:min-w-[600px] w-full"
+                                    placeholder="Masukkan judul kontrak..."
+                                />
+                            ) : (
+                                <h2 
+                                    className={`text-text-main text-lg leading-none font-semibold ${isDraftTitle ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                                    onClick={() => { if (isDraftTitle) setIsEditingTitle(true); }}
+                                    title={isDraftTitle ? "Klik untuk mengedit judul" : ""}
+                                >
+                                    {contract.title || <span className="italic text-text-soft">Tanpa Judul</span>}
+                                </h2>
+                            )}
                             <StatusBadge status={contract.status} />
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-3">
@@ -348,13 +399,14 @@ const ContractDetailView = ({
 
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                 <div className="flex flex-col gap-6">
-                    <div className="bg-surface-base border-surface-border overflow-hidden rounded-2xl border shadow-sm">
-                        <div className="bg-primary border-surface-border flex h-12 items-center justify-between border-b px-4">
-                            <div className="text-primary-foreground flex items-center gap-2 text-sm font-semibold  uppercase">
-                                <FileText size={16} className="text-primary-foreground/70" /> Detail Dokumen & Alur Kerja
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <DropdownMenu>
+                    {contract.workflow_step?.meta?.show_document_detail !== false && (
+                        <div className="bg-surface-base border-surface-border overflow-hidden rounded-2xl border shadow-sm">
+                            <div className="bg-primary border-surface-border flex h-12 items-center justify-between border-b px-4">
+                                <div className="text-primary-foreground flex items-center gap-2 text-sm font-semibold  uppercase">
+                                    <FileText size={16} className="text-primary-foreground/70" /> Detail Dokumen & Alur Kerja
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button
                                             variant="ghost"
@@ -383,36 +435,40 @@ const ContractDetailView = ({
                                             <Clock size={14} className={cn(detailTab === 'audit' ? 'text-primary-foreground' : 'text-text-soft')} />{' '}
                                             Audit Trail
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => setDetailTab('timeline')}
-                                            className={cn(
-                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
-                                                detailTab === 'timeline'
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'text-text-main hover:bg-surface-muted',
-                                            )}
-                                        >
-                                            <CheckCircle2
-                                                size={14}
-                                                className={cn(detailTab === 'timeline' ? 'text-primary-foreground' : 'text-text-soft')}
-                                            />{' '}
-                                            Alur Persetujuan
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem
-                                            onClick={() => setDetailTab('members')}
-                                            className={cn(
-                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
-                                                detailTab === 'members'
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'text-text-main hover:bg-surface-muted',
-                                            )}
-                                        >
-                                            <UserPlus
-                                                size={14}
-                                                className={cn(detailTab === 'members' ? 'text-primary-foreground' : 'text-text-soft')}
-                                            />{' '}
-                                            Daftar Member
-                                        </DropdownMenuItem>
+                                        {tabs.some(t => t.id === 'timeline') && (
+                                            <DropdownMenuItem
+                                                onClick={() => setDetailTab('timeline')}
+                                                className={cn(
+                                                    'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
+                                                    detailTab === 'timeline'
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'text-text-main hover:bg-surface-muted',
+                                                )}
+                                            >
+                                                <CheckCircle2
+                                                    size={14}
+                                                    className={cn(detailTab === 'timeline' ? 'text-primary-foreground' : 'text-text-soft')}
+                                                />{' '}
+                                                Alur Persetujuan
+                                            </DropdownMenuItem>
+                                        )}
+                                        {contract.workflow_step?.meta?.show_tab_members !== false && (
+                                            <DropdownMenuItem
+                                                onClick={() => setDetailTab('members')}
+                                                className={cn(
+                                                    'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
+                                                    detailTab === 'members'
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'text-text-main hover:bg-surface-muted',
+                                                )}
+                                            >
+                                                <UserPlus
+                                                    size={14}
+                                                    className={cn(detailTab === 'members' ? 'text-primary-foreground' : 'text-text-soft')}
+                                                />{' '}
+                                                Daftar Member
+                                            </DropdownMenuItem>
+                                        )}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
@@ -483,13 +539,20 @@ const ContractDetailView = ({
 
                                 {detailTab === 'chat' && <ChatTab contract={contract} meId={meId} users={vendors} onUpdate={onUpdate} />}
                                 {detailTab === 'members' && <MembersTab contract={contract} users={users} />}
+                                {detailTab === 'empty' && (
+                                    <div className="flex h-full min-h-[400px] flex-col items-center justify-center text-slate-400">
+                                        <FileText size={48} className="mb-4 text-slate-300 opacity-50" />
+                                        <p className="text-sm font-semibold uppercase">Tidak Ada Tab Tersedia</p>
+                                        <p className="mt-1 text-xs text-slate-500">Semua tab disembunyikan berdasarkan pengaturan alur kerja saat ini.</p>
+                                    </div>
+                                )}
                             </Suspense>
                         </div>
                     </div>
+                    )}
                 </div>
-
                 <div className="sticky top-6 flex flex-col gap-4 self-start">
-                    {canApprove && (
+                    {canApprove && contract.workflow_step?.meta?.show_action_panel !== false && (
                         <div className="border-primary/20 bg-surface-base ring-primary/5 flex flex-col gap-4 overflow-hidden rounded-2xl border p-6 shadow-xl ring-1">
                             <div className="flex items-center gap-3">
                                 <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-xl shadow-inner">
@@ -667,21 +730,23 @@ const ContractDetailView = ({
                         </div>
                     )}
 
-                    <DraftEditableInfoCard
-                        selected={contract}
-                        types={types}
-                        submissionTypes={submissionTypes}
-                        vendors={vendors}
-                        formTemplates={formTemplates}
-                        canUpdate={canUpdate}
-                        onUpdate={(d: any) => handleUpdate(d, true)}
-                        processing={processing}
-                        setPreviewTitle={setPreviewTitle}
-                        setPreviewUrl={setPreviewUrl}
-                        setPreviewHasFile={setPreviewHasFile}
-                        setPreviewOpen={setPreviewOpen}
-                        meId={meId}
-                    />
+                    {contract.workflow_step?.meta?.show_info !== false && (
+                        <DraftEditableInfoCard
+                            selected={contract}
+                            types={types}
+                            submissionTypes={submissionTypes}
+                            vendors={vendors}
+                            formTemplates={formTemplates}
+                            canUpdate={canUpdate}
+                            onUpdate={(d: any) => handleUpdate(d, true)}
+                            processing={processing}
+                            setPreviewTitle={setPreviewTitle}
+                            setPreviewUrl={setPreviewUrl}
+                            setPreviewHasFile={setPreviewHasFile}
+                            setPreviewOpen={setPreviewOpen}
+                            meId={meId}
+                        />
+                    )}
 
                     {/* Debug Access Control Panel */}
                     {/* <div className="text-text-main rounded-2xl border border-black/5 bg-black/5 p-4 opacity-60 transition-opacity hover:opacity-100 dark:border-white/5 dark:bg-white/5">

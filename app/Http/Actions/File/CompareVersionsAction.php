@@ -5,6 +5,7 @@ namespace App\Http\Actions\File;
 use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractVersion;
+use App\Models\FormSubmission;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,12 +18,12 @@ class CompareVersionsAction
     public function execute(Contract $contract, string $type, Request $request): Response
     {
         if (in_array($type, ['f1', 'f2'])) {
-            $submission = \App\Models\FormSubmission::where('contract_id', $contract->id)
+            $submission = FormSubmission::where('contract_id', $contract->id)
                 ->where('document_type', $type)
                 ->first();
-                
+
             $versionsCollection = $submission ? $submission->versions()->with('createdBy')->get() : collect();
-            
+
             $versions = $versionsCollection->map(fn ($v) => [
                 'id' => $v->id,
                 'version_no' => $v->version_no,

@@ -1,6 +1,7 @@
 import { ContractType } from '@/pages/contracts/types';
 import { Input } from '@/components/ui/inputs/Input';
 import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
+import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 
 // --- CONFIGURATION ---
@@ -81,49 +82,7 @@ export function ContractInfoForm({
                 </div>
             )}
 
-            {isDraft ? (
-                <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Judul Kontrak</div>
-                        <MetaBadge name="meta_judul_kontrak" />
-                    </div>
-                    <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Masukkan nama kontrak..." className={inputCls} />
-                </div>
-            ) : null}
 
-            <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Jenis Kontrak</div>
-                    <MetaBadge name="meta_jenis_kontrak" />
-                </div>
-                {isDraft ? (
-                    <SearchableSelect
-                        value={typeId}
-                        onValueChange={setTypeId}
-                        options={Array.isArray(types) ? types.map(t => ({ value: String(t.id), label: t.name })) : []}
-                        placeholder="Pilih Tipe"
-                    />
-                ) : (
-                    <div className="text-text-main text-sm font-semibold">{selected.contract_type}</div>
-                )}
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Perjanjian</div>
-                    <MetaBadge name="meta_tipe_perjanjian" />
-                </div>
-                {isDraft ? (
-                    <SearchableSelect
-                        value={submissionTypeId}
-                        onValueChange={setSubmissionTypeId}
-                        options={Array.isArray(submissionTypes) ? submissionTypes.map(st => ({ value: String(st.id), label: st.name })) : []}
-                        placeholder="Pilih Tipe"
-                    />
-                ) : (
-                    <div className="text-text-main text-sm font-semibold">{selected.submission_type || '—'}</div>
-                )}
-            </div>
 
             <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
@@ -166,6 +125,13 @@ export function ContractInfoForm({
                     )}
                 </div>
             )}
+
+            <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Kategori Kontrak</div>
+                </div>
+                <div className="text-text-main text-sm font-semibold">{selected.contract_type || '—'}</div>
+            </div>
         </>
     );
 }

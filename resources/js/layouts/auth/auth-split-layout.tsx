@@ -14,40 +14,16 @@ export default function AuthSplitLayout({ children, title, description, isSucces
     const [isSliding, setIsSliding] = useState(true);
     const [isExiting, setIsExiting] = useState(false);
 
-    const onAnimationEnd = (url: URL, visit: any) => {
-        router.visit(url, {
-            ...visit,
-            onStart: () => {}, // Clear interceptor loop
-        });
-    };
 
-    const handleNavigation = (event: any) => {
-        const visit = event.detail.visit;
-        // Only intercept GET requests from this origin to avoid blocking form submissions or external links
-        if (isExiting || visit.method !== 'get' || visit.url.origin !== globalThis.location.origin) return;
-
-        // Prevent immediate navigation
-        event.preventDefault();
-
-        // Trigger exit animation (Gate opens)
-        setIsExiting(true);
-
-        // Wait for the animation to finish (850ms) then perform the visit
-        setTimeout(() => onAnimationEnd(event.detail.visit.url, event.detail.visit), 850);
-    };
 
     useEffect(() => {
         // Entry animation: Gate closes to show content
         const timer = setTimeout(() => setIsSliding(false), 50);
 
-        // Intercept navigation to ensure exit animation plays fully before switching pages
-        const unbind = router.on('before', handleNavigation);
-
         return () => {
             clearTimeout(timer);
-            unbind();
         };
-    }, [isExiting, handleNavigation]);
+    }, []);
 
     const shouldPull = isSuccess || isExiting;
     const isMoving = isSliding || shouldPull;
