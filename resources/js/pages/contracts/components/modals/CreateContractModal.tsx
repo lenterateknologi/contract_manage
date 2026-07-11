@@ -7,7 +7,7 @@ import { Modal } from '@/components/ui/dialogs/Modal';
 import { contractApi } from '@/pages/contracts/utils';
 import { usePage } from '@inertiajs/react';
 import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TaxToggle } from '../parts/TaxToggle';
 import { validateContractForm } from '@/pages/contracts/validations/contractValidation';
 
@@ -27,7 +27,14 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [desc, setDesc] = useState('');
     const [parentTypeId, setParentTypeId] = useState('');
     const [typeId, setTypeId] = useState('');
+    const [submissionTypeId, setSubmissionTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
+
+    const availableSubmissionTypes = useMemo(() => {
+        if (!typeId || !Array.isArray(types)) return [];
+        const selectedType = types.find((t) => String(t.id) === String(typeId));
+        return selectedType?.submission_types || [];
+    }, [typeId, types]);
     const [taxRequired, setTaxRequired] = useState(true);
     const [initiatedById, setInitiatedById] = useState('');
     const [vendorId, setVendorId] = useState('');
@@ -98,6 +105,10 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             workflows.length > 0
         );
 
+        if (availableSubmissionTypes.length > 0 && !submissionTypeId) {
+            validationErrors.submission_type_id = 'Tipe pengiriman/pengajuan harus dipilih';
+        }
+
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
@@ -111,6 +122,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         fd.append('contract_type_id', typeId);
         if (parentTypeId) {
             fd.append('contract_type_parent_id', parentTypeId);
+        }
+        if (submissionTypeId) {
+            fd.append('submission_type_id', submissionTypeId);
         }
         fd.append('transaction_type', transactionType);
         fd.append('tax_required', taxRequired ? '1' : '0');
@@ -141,6 +155,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             setDesc('');
             setParentTypeId('');
             setTypeId('');
+            setSubmissionTypeId('');
             setTransactionType('Perjanjian Baru');
             setTaxRequired(true);
             setInitiatedById(auth?.user?.id || '');
@@ -206,6 +221,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             onValueChange={(childId, parentId) => {
                                 setTypeId(childId);
                                 setParentTypeId(parentId ?? '');
+                                setSubmissionTypeId('');
 
                                 if (Array.isArray(types)) {
                                     const selectedType = types.find((t) => String(t.id) === childId);
@@ -232,22 +248,36 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         {errors.contract_type_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>}
                     </div>
 
-                    <div className="col-span-1 animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                        <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
-                            <ShieldCheck size={14} /> Pilih Alur Kerja <span className="text-rose-500">*</span>
+                    <div className="col-span-1 space-y-1.5">
+                        <label className="text-muted-foreground text-[11px] font-bold  uppercase">
+                            Tipe Pengiriman Formulir <span className="text-rose-500">*</span>
                         </label>
                         <PortalSelect
-                            value={workflowId}
-                            onValueChange={(val) => setWorkflowId(val)}
-                            options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
-                            placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
-                            disabled={!typeId || fetchingWorkflows}
+                            value={submissionTypeId}
+                            onValueChange={(val) => setSubmissionTypeId(val)}
+                            options={availableSubmissionTypes.map((st) => ({ value: String(st.id), label: st.name }))}
+                            placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : availableSubmissionTypes.length === 0 ? 'Tidak ada tipe pengiriman' : 'Pilih Tipe Pengiriman'}
+                            disabled={!typeId || availableSubmissionTypes.length === 0}
                         />
-                        <p className="text-muted-foreground text-[9px] leading-relaxed font-medium italic mt-1">
-                            Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
-                        </p>
-                        {errors.workflow_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
+                        {errors.submission_type_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.submission_type_id}</div>}
                     </div>
+                </div>
+
+                <div className="animate-in fade-in slide-in-from-top-2 space-y-1.5">
+                    <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
+                        <ShieldCheck size={14} /> Pilih Alur Kerja <span className="text-rose-500">*</span>
+                    </label>
+                    <PortalSelect
+                        value={workflowId}
+                        onValueChange={(val) => setWorkflowId(val)}
+                        options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
+                        placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
+                        disabled={!typeId || fetchingWorkflows}
+                    />
+                    <p className="text-muted-foreground text-[9px] leading-relaxed font-medium italic mt-1">
+                        Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
+                    </p>
+                    {errors.workflow_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
                 </div>
 
                 <FormInput

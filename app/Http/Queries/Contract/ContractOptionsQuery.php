@@ -102,7 +102,7 @@ class ContractOptionsQuery
                 $globalWorkflowExists = $workflows->contains(fn ($w) => empty($w->contract_type_id) && empty($w->meta['contract_type_ids']));
 
                 if ($globalWorkflowExists) {
-                    return ContractType::all();
+                    return ContractType::with('submissionTypes')->get();
                 }
 
                 $allowedTypeIds = collect();
@@ -119,7 +119,8 @@ class ContractOptionsQuery
 
                 $uniqueIds = $allowedTypeIds->unique()->filter()->values()->toArray();
 
-                return ContractType::whereIn('id', $uniqueIds)
+                return ContractType::with('submissionTypes')
+                    ->whereIn('id', $uniqueIds)
                     ->orWhereIn('id', function ($q) use ($uniqueIds) {
                         $q->select('parent_id')
                             ->from('m_contract_types')

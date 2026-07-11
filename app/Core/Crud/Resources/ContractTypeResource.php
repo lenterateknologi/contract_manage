@@ -9,10 +9,12 @@ use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Fields\TreeSelectInput;
+use App\Core\Crud\Fields\CheckboxListInput;
 use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
 use App\Models\ContractType;
 use App\Models\FormTemplate;
+use App\Models\SubmissionType;
 
 class ContractTypeResource extends Resource
 {
@@ -89,6 +91,11 @@ class ContractTypeResource extends Resource
                 SelectInput::make('contract_form_template_id', 'Template Form Agreement')
                     ->options(fn () => FormTemplate::orderBy('name')->pluck('name', 'id')->toArray()),
             ])->icon('FileSpreadsheet'),
+
+            Section::make('Jenis Pengiriman Formulir', [
+                CheckboxListInput::make('submission_type_ids', 'Jenis Pengiriman')
+                    ->options(fn () => SubmissionType::where('is_active', true)->pluck('name', 'id')->toArray())
+            ])->icon('FileText'),
         ];
     }
 

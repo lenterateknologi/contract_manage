@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -128,5 +129,15 @@ class ContractType extends Model
         }
 
         return null;
+    }
+
+    public function submissionTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(SubmissionType::class, 'm_submission_contract_types', 'contract_type_id', 'submission_type_id');
+    }
+
+    public function submissionContractTypes(): HasMany
+    {
+        return $this->hasMany(MSubmissionContractType::class, 'contract_type_id');
     }
 }

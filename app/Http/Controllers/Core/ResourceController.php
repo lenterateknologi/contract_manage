@@ -15,6 +15,7 @@ use App\Core\Crud\Resources\UserResource;
 use App\Core\Crud\Resources\VendorResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Common\ImportFileRequest;
+use App\Models\MSubmissionContractType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -160,7 +161,24 @@ class ResourceController extends Controller
             unset($validated['password']);
         }
 
-        $modelClass::create($validated);
+        if (array_key_exists('submission_type_ids', $validated)) {
+            unset($validated['submission_type_ids']);
+        }
+
+        $record = $modelClass::create($validated);
+
+        if ($resourceSlug === 'contract-types' && $request->has('submission_type_ids')) {
+            $contractTypeId = $record->id;
+            MSubmissionContractType::where('contract_type_id', $contractTypeId)->delete();
+            foreach ($request->input('submission_type_ids', []) as $subTypeId) {
+                if (!empty($subTypeId)) {
+                    MSubmissionContractType::create([
+                        'contract_type_id' => $contractTypeId,
+                        'submission_type_id' => $subTypeId,
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('core.index', $resourceSlug)->with('success', $resourceClass::getTitle().' created successfully.');
     }
@@ -173,6 +191,11 @@ class ResourceController extends Controller
 
         if ($resourceSlug === 'vendors') {
             $record->load('documents');
+        }
+
+        if ($resourceSlug === 'contract-types') {
+            $record->load('submissionTypes');
+            $record->submission_type_ids = $record->submissionTypes->pluck('id')->toArray();
         }
 
         return Inertia::render('Core/ResourceForm', [
@@ -202,7 +225,24 @@ class ResourceController extends Controller
             unset($validated['password']);
         }
 
+        if (array_key_exists('submission_type_ids', $validated)) {
+            unset($validated['submission_type_ids']);
+        }
+
         $record->update($validated);
+
+        if ($resourceSlug === 'contract-types' && $request->has('submission_type_ids')) {
+            $contractTypeId = $record->id;
+            MSubmissionContractType::where('contract_type_id', $contractTypeId)->delete();
+            foreach ($request->input('submission_type_ids', []) as $subTypeId) {
+                if (!empty($subTypeId)) {
+                    MSubmissionContractType::create([
+                        'contract_type_id' => $contractTypeId,
+                        'submission_type_id' => $subTypeId,
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('core.index', $resourceSlug)->with('success', $resourceClass::getTitle().' updated successfully.');
     }

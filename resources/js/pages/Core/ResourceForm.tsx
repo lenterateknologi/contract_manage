@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/forms/Label';
 import { ArrowLeft } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 
 const COMMON_ICONS = [
     'Clock', 'CheckCircle2', 'XCircle', 'AlertCircle', 'AlertTriangle',
@@ -146,7 +147,13 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
     // Initial form state based on schema and existing record values
     const initialFormState = flattenedFields.reduce((acc: any, field: any) => {
-        acc[field.name] = isEdit ? (record[field.name] ?? '') : (field.defaultValue ?? '');
+        let val = isEdit ? record[field.name] : field.defaultValue;
+        if (field.type === 'checkbox_list') {
+            val = Array.isArray(val) ? val : [];
+        } else {
+            val = val ?? '';
+        }
+        acc[field.name] = val;
         return acc;
     }, {});
 
@@ -364,6 +371,56 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                 />
                             </button>
                         </div>
+                    </div>
+                )}
+                {field.type === 'checkbox_list' && (
+                    <div className="flex flex-col gap-2 w-full">
+                        <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5 mb-1">
+                            {field.label} {field.required && <span className="text-rose-500">*</span>}
+                        </Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full border border-surface-border bg-surface-base rounded-lg p-4">
+                            {(Array.isArray(field.options) ? field.options : Object.entries(field.options || {})).map((option: any) => {
+                                const val = Array.isArray(field.options) ? option : option[0];
+                                const label = Array.isArray(field.options) ? option : option[1];
+                                const isChecked = (data[field.name] || []).includes(val);
+                                
+                                const handleCheckboxChange = (checked: boolean) => {
+                                    const currentValues = [...(data[field.name] || [])];
+                                    if (checked) {
+                                        if (!currentValues.includes(val)) {
+                                            currentValues.push(val);
+                                        }
+                                    } else {
+                                        const index = currentValues.indexOf(val);
+                                        if (index > -1) {
+                                            currentValues.splice(index, 1);
+                                        }
+                                    }
+                                    setData(field.name, currentValues);
+                                };
+
+                                return (
+                                    <div key={val} className="flex items-center gap-3 py-1.5 px-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900 transition-all">
+                                        <Checkbox
+                                            id={`${field.name}-${val}`}
+                                            checked={isChecked}
+                                            onCheckedChange={handleCheckboxChange}
+                                        />
+                                        <label
+                                            htmlFor={`${field.name}-${val}`}
+                                            className="text-xs font-semibold text-text-main cursor-pointer select-none flex-1"
+                                        >
+                                            {label}
+                                        </label>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        {errors[field.name] && (
+                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1">
+                                {errors[field.name]}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>

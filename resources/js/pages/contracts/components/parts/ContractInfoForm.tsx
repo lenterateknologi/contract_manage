@@ -3,6 +3,7 @@ import { Input } from '@/components/ui/inputs/Input';
 import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { useMemo } from 'react';
 
 // --- CONFIGURATION ---
 const SHOW_META_KEYS = true; // Set to false to hide technical keys from the UI
@@ -58,6 +59,12 @@ export function ContractInfoForm({
             </span>
         );
     };
+
+    const availableSubmissionTypes = useMemo(() => {
+        if (!typeId || !Array.isArray(types)) return [];
+        const selectedType = types.find((t) => String(t.id) === String(typeId));
+        return selectedType?.submission_types || [];
+    }, [typeId, types]);
 
     return (
         <>
@@ -131,6 +138,13 @@ export function ContractInfoForm({
                     <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Kategori Kontrak</div>
                 </div>
                 <div className="text-text-main text-sm font-semibold">{selected.contract_type || '—'}</div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+                <div className="flex items-center justify-between">
+                    <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase font-sans">Formulir Pengajuan</div>
+                </div>
+                <div className="text-text-main text-sm font-semibold">{selected.submission_type || '—'}</div>
             </div>
         </>
     );
