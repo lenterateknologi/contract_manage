@@ -1,8 +1,11 @@
 import { Input } from '@/components/ui/inputs/Input';
 import { cn } from '@/lib/utils';
-import { ChevronDown, FileText, Layout, Search, Trash2, X } from 'lucide-react';
+import { ChevronDown, FileText, Layout, Search, Trash2, X, GripVertical } from 'lucide-react';
 import React, { useState } from 'react';
 import { FIELD_TYPES } from './constants';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 interface StructurePanelProps {
     fieldTree: any[];
@@ -13,6 +16,92 @@ interface StructurePanelProps {
     onRemoveAll?: () => void;
     onRemoveSelected?: () => void;
 }
+
+const SortableStructureNode = ({ item, selectedFieldIds, onSelectField, onRemoveField }: any) => {
+    const isSelected = selectedFieldIds.includes(item.id);
+    const Icon = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === item.type)?.icon || FileText;
+
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+        id: `struct_${item.id}`,
+        data: {
+            type: 'StructureNode',
+            field: item,
+        },
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.3 : 1,
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} className="animate-in fade-in slide-in-from-left-1 duration-300">
+            <div
+                className={cn(
+                    'group flex items-center gap-2 rounded-lg px-2 py-1.5 text-[10px] transition-all',
+                    isSelected
+                        ? 'bg-primary/10 text-primary ring-primary/20 ring-1'
+                        : 'hover:bg-muted text-muted-foreground/80 hover:text-foreground',
+                )}
+            >
+                {/* Drag Handle */}
+                <div 
+                    {...attributes} 
+                    {...listeners} 
+                    className="flex cursor-grab active:cursor-grabbing items-center justify-center p-0.5 opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity"
+                >
+                    <GripVertical size={10} />
+                </div>
+                
+                <div 
+                    className="flex flex-1 items-center gap-2 cursor-pointer"
+                    onClick={(e) => onSelectField(item.id, e)}
+                >
+                    <div className="flex h-4 w-4 shrink-0 items-center justify-center">
+                        {item.children?.length > 0 ? (
+                            <ChevronDown size={10} className="text-muted-foreground/40" />
+                        ) : (
+                            <div className="bg-muted-foreground/20 h-1 w-1 rounded-full" />
+                        )}
+                    </div>
+                    <Icon size={12} className={cn('shrink-0', isSelected ? 'text-primary' : 'text-muted-foreground/40')} />
+                    <span className={cn('flex-1 truncate font-sans font-semibold tracking-tight uppercase', isSelected && 'text-primary')}>
+                        {item.label || item.type.replace('_', ' ')}
+                    </span>
+                    {onRemoveField && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onRemoveField(item.id);
+                            }}
+                            className="text-muted-foreground/40 hover:text-destructive rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100 z-10"
+                        >
+                            <Trash2 size={10} />
+                        </button>
+                    )}
+                    {isSelected && <div className="bg-primary h-1 w-1 rounded-full shrink-0" />}
+                </div>
+            </div>
+            {item.children?.length > 0 && (
+                <div className="border-border/50 mt-0.5 ml-3.5 space-y-0.5 border-l pl-2">
+                    <SortableContext items={item.children.map((c: any) => `struct_${c.id}`)} strategy={verticalListSortingStrategy}>
+                        {item.children.map((child: any) => (
+                            <SortableStructureNode
+                                key={child.id}
+                                item={child}
+                                selectedFieldIds={selectedFieldIds}
+                                onSelectField={onSelectField}
+                                onRemoveField={onRemoveField}
+                            />
+                        ))}
+                    </SortableContext>
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const StructurePanel: React.FC<StructurePanelProps> = ({
     fieldTree,
@@ -44,55 +133,6 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
     };
 
     const filteredTree = searchQuery ? filterTree(fieldTree) : fieldTree;
-
-    const renderFieldTree = (item: any) => {
-        const isSelected = selectedFieldIds.includes(item.id);
-        const Icon = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === item.type)?.icon || FileText;
-
-        return (
-            <div key={item.id} className="animate-in fade-in slide-in-from-left-1 duration-300">
-                <div
-                    className={cn(
-                        'group flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[10px] transition-all',
-                        isSelected
-                            ? 'bg-primary/10 text-primary ring-primary/20 ring-1'
-                            : 'hover:bg-muted text-muted-foreground/80 hover:text-foreground',
-                    )}
-                    onClick={(e) => onSelectField(item.id, e)}
-                >
-                    <div className="flex h-4 w-4 shrink-0 items-center justify-center">
-                        {item.children?.length > 0 ? (
-                            <ChevronDown size={10} className="text-muted-foreground/40" />
-                        ) : (
-                            <div className="bg-muted-foreground/20 h-1 w-1 rounded-full" />
-                        )}
-                    </div>
-                    <Icon size={12} className={cn('shrink-0', isSelected ? 'text-primary' : 'text-muted-foreground/40')} />
-                    <span className={cn('flex-1 truncate font-sans font-semibold tracking-tight uppercase', isSelected && 'text-primary')}>
-                        {item.label || item.type.replace('_', ' ')}
-                    </span>
-                    {onRemoveField && (
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onRemoveField(item.id);
-                            }}
-                            className="text-muted-foreground/40 hover:text-destructive rounded p-0.5 opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                            <Trash2 size={10} />
-                        </button>
-                    )}
-                    {isSelected && <div className="bg-primary h-1 w-1 rounded-full" />}
-                </div>
-                {item.children?.length > 0 && (
-                    <div className="border-border/50 mt-0.5 ml-3.5 space-y-0.5 border-l pl-2">
-                        {item.children.map((child: any) => renderFieldTree(child))}
-                    </div>
-                )}
-            </div>
-        );
-    };
 
     return (
         <div className="animate-in fade-in slide-in-from-left-4 space-y-4 duration-300">
@@ -156,7 +196,17 @@ export const StructurePanel: React.FC<StructurePanelProps> = ({
                         </p>
                     </div>
                 ) : (
-                    filteredTree.map((f: any) => renderFieldTree(f))
+                    <SortableContext items={filteredTree.map((f: any) => `struct_${f.id}`)} strategy={verticalListSortingStrategy}>
+                        {filteredTree.map((f: any) => (
+                            <SortableStructureNode
+                                key={f.id}
+                                item={f}
+                                selectedFieldIds={selectedFieldIds}
+                                onSelectField={onSelectField}
+                                onRemoveField={onRemoveField}
+                            />
+                        ))}
+                    </SortableContext>
                 )}
             </div>
         </div>

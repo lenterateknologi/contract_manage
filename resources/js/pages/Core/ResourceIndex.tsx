@@ -3,7 +3,7 @@ import { Head, router, Link } from '@inertiajs/react';
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { Button } from '@/components/ui/buttons/Button';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
+import LucideIcons from '@/lib/lucide-dynamic';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { ExcelActions } from '@/components/ui/tables/ExcelActions';
 

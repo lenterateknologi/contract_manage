@@ -819,81 +819,59 @@ function ContractPage({
                                                 }}
                                             />
                                         ) : processing ? (
-                                            <ContractCardSkeleton />
+                            <ContractCardSkeleton />
                                         ) : (
                                             <div className="flex flex-col gap-8">
-                                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                                                     {contractsPaged.data.map((c) => (
                                                         <button
                                                             key={c.id}
                                                             onClick={() => openDetail(c)}
-                                                            className="group border-surface-border bg-surface-base/60 hover:border-primary hover:shadow-primary/5 focus:ring-primary relative flex cursor-pointer flex-col gap-4 rounded-2xl border p-6 text-left backdrop-blur-sm transition-all hover:shadow-2xl focus:ring-2 focus:outline-none"
+                                                            className="group border-surface-border bg-surface-base/60 hover:border-primary hover:shadow-primary/5 focus:ring-primary relative flex cursor-pointer flex-col gap-2.5 rounded-xl border p-3 text-left backdrop-blur-sm transition-all hover:shadow-md focus:ring-2 focus:outline-none"
                                                         >
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div className="flex min-w-0 flex-col gap-1">
-                                                                    <span className="group-hover:text-primary text-text-soft text-[10px] font-semibold tracking-wider uppercase transition-all">
-                                                                        {c.form_no || 'No Req'}
-                                                                    </span>
-                                                                    <h3 className="group-hover:text-primary text-text-main line-clamp-2 text-sm leading-tight font-semibold tracking-tight uppercase transition-colors">
-                                                                        {c.title}
-                                                                    </h3>
-                                                                    <span className="text-text-desc mt-0.5 text-[10px] font-medium uppercase italic">
-                                                                        {c.contract_type}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex-shrink-0 origin-top-right scale-90">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="group-hover:text-primary text-text-soft text-[9px] font-bold tracking-wider uppercase transition-all">
+                                                                    {c.form_no || 'No Req'}
+                                                                </span>
+                                                                <div className="flex-shrink-0 origin-right scale-[0.75]">
                                                                     <StatusBadge status={c.status} />
                                                                 </div>
                                                             </div>
 
-                                                            <div className="border-surface-border/40 bg-surface-muted/30 group-hover:border-primary/20 flex flex-col gap-3 rounded-xl border p-4 transition-all">
-                                                                <div className="flex items-center justify-between">
-                                                                    <span className="text-text-soft text-[10px] font-semibold uppercase">
-                                                                        Departemen
-                                                                    </span>
-                                                                    <span className="text-text-main truncate text-[11px] font-semibold uppercase">
-                                                                        {c.initiator?.department_name || 'Umum'}
-                                                                    </span>
-                                                                </div>
-                                                                {c.assigned_pic && (
-                                                                    <div className="flex items-center justify-between">
-                                                                        <span className="text-text-soft text-[10px] font-semibold uppercase">
-                                                                            PJ Legal
-                                                                        </span>
-                                                                        <span className="text-text-main truncate text-[11px] font-semibold uppercase">
-                                                                            {c.assigned_pic.name}
-                                                                        </span>
-                                                                    </div>
-                                                                )}
-                                                                <div className="flex items-center justify-between pt-1 text-[10px] font-semibold uppercase">
-                                                                    <span className="text-text-soft">Progress</span>
-                                                                    <span className="text-primary bg-primary/5 rounded-lg px-2 py-0.5 font-semibold">
-                                                                        {c.progress.done}/{c.progress.total}
-                                                                    </span>
-                                                                </div>
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <h3 className="group-hover:text-primary text-text-main truncate text-xs font-semibold tracking-tight uppercase transition-colors">
+                                                                    {c.title}
+                                                                </h3>
+                                                                <span className="text-text-desc text-[9px] font-medium uppercase italic truncate">
+                                                                    {c.contract_type}
+                                                                </span>
                                                             </div>
 
-                                                            <div className="border-surface-border/50 mt-auto flex items-center justify-end border-t pt-4">
-                                                                <div className="origin-right scale-75">
-                                                                    <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
+                                                            <div className="flex items-center justify-between border-t border-surface-border/40 pt-2.5 text-[9px] font-semibold text-text-soft uppercase">
+                                                                <div className="flex items-center gap-1.5 truncate max-w-[60%]">
+                                                                    <span className="truncate">{c.initiator?.department_name || 'Umum'}</span>
+                                                                    <span className="text-text-soft/40">•</span>
+                                                                    <span className="truncate font-normal">{c.assigned_pic?.name || 'No PIC'}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2 shrink-0">
+                                                                    <span className="text-primary bg-primary/5 rounded-md px-1.5 py-0.5 font-bold">
+                                                                        {c.progress.done}/{c.progress.total}
+                                                                    </span>
+                                                                    <div className="origin-right scale-[0.65]">
+                                                                        <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </button>
                                                     ))}
                                                 </div>
 
-                                                <div className="mt-8 mb-10 flex w-full items-center justify-between px-1">
-                                                    <div className="border-surface-border bg-surface-muted/40 flex items-center gap-4 rounded-xl border px-6 py-2 shadow-sm backdrop-blur-sm transition-all duration-500">
-                                                        <div className="text-text-desc text-xs font-semibold tracking-wider whitespace-nowrap uppercase">
-                                                            Menampilkan{' '}
-                                                            <span className="text-text-main font-semibold">
-                                                                {contractsPaged.from} - {contractsPaged.to}
-                                                            </span>{' '}
-                                                            dari <span className="text-text-main font-semibold">{contractsPaged.total}</span> data
-                                                        </div>
-                                                    </div>
+                                                <div className="mt-8 mb-10 flex w-full items-center justify-between px-2 text-xs select-none">
+                                                    <span className="text-text-soft">
+                                                        Menampilkan <span className="font-semibold text-text-main">{contractsPaged.from || 0} - {contractsPaged.to || 0}</span> dari <span className="font-semibold text-text-main">{contractsPaged.total || 0}</span> kontrak
+                                                    </span>
 
-                                                    <div className="border-surface-border bg-surface-base/40 flex items-center gap-1.5 rounded-2xl border p-1.5 shadow-sm backdrop-blur-sm transition-all duration-500">
+                                                    <div className="flex items-center gap-1.5">
                                                         <Button
                                                             variant="white"
                                                             size="icon"
@@ -905,14 +883,14 @@ function ContractPage({
                                                                     { preserveState: true },
                                                                 )
                                                             }
-                                                            className="h-9 w-9 rounded-xl"
+                                                            className="h-8 w-8 rounded-lg border border-surface-border bg-surface-base"
                                                         >
                                                             <ChevronLeft className="text-text-main h-4 w-4" />
                                                         </Button>
-                                                        <div className="bg-surface-muted/60 border-surface-border/40 mx-2 flex h-9 items-center gap-2 rounded-xl border px-4">
-                                                            <span className="text-primary text-xs font-semibold">{contractsPaged.current_page}</span>
-                                                            <span className="text-text-soft text-xs font-semibold">/</span>
-                                                            <span className="text-primary text-xs font-semibold">
+                                                        <div className="flex h-8 items-center gap-1 rounded-lg border border-surface-border bg-surface-base px-3 text-[11px] font-semibold">
+                                                            <span className="text-primary font-bold">{contractsPaged.current_page}</span>
+                                                            <span className="text-text-soft/60">/</span>
+                                                            <span className="text-text-main">
                                                                 {contractsPaged.last_page || 1}
                                                             </span>
                                                         </div>
@@ -927,7 +905,7 @@ function ContractPage({
                                                                     { preserveState: true },
                                                                 )
                                                             }
-                                                            className="h-9 w-9 rounded-xl"
+                                                            className="h-8 w-8 rounded-lg border border-surface-border bg-surface-base"
                                                         >
                                                             <ChevronRight className="text-text-main h-4 w-4" />
                                                         </Button>

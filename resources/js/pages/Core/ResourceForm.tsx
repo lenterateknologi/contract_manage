@@ -5,7 +5,7 @@ import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
 import { ArrowLeft } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
+import LucideIcons from '@/lib/lucide-dynamic';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 
 const COMMON_ICONS = [

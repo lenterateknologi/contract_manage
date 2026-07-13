@@ -64,20 +64,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                 </div>
             )}
 
-            <div className="space-y-1.5">
-                <Label className="font-sans text-[9px] font-semibold uppercase">Block Width</Label>
-                <select
-                    value={selectedField.width || '100'}
-                    onChange={(e) => updateField(selectedIds, 'width', e.target.value)}
-                    className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                >
-                    {['20', '25', '35', '50', '65', '75', '100'].map((w) => (
-                        <option key={w} value={w}>
-                            {w}% Width
-                        </option>
-                    ))}
-                </select>
-            </div>
+
 
             {selectedField.type === 'labeled_value' && (
                 <div className="border-border/50 bg-muted/10 space-y-3 rounded-lg border p-3">

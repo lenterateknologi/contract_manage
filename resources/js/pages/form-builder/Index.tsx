@@ -1,5 +1,6 @@
 import { CanvasArea } from '@/pages/form-builder/components/builder/CanvasArea';
 import { FIELD_TYPES } from '@/pages/form-builder/components/builder/constants';
+import { FormElement } from '@/pages/form-builder/components/fields/FormElement';
 import { JSONEditorPanel } from '@/pages/form-builder/components/builder/JSONEditorPanel';
 import { LibraryPanel } from '@/pages/form-builder/components/builder/LibraryPanel';
 import { PropertiesPanel } from '@/pages/form-builder/components/builder/PropertiesPanel';
@@ -831,6 +832,7 @@ const generatePresetFields = (
                     font_size: 11,
                     font_weight: 'bold',
                     font_family: "'Inter', sans-serif",
+                    height: '7mm',
                     margin_top: 0,
                     margin_bottom: 0,
                     margin_left: 0,
@@ -918,6 +920,7 @@ function FormBuilder({ template }: Props) {
 
     // Essential UI States
     const [activeLibItem, setActiveLibItem] = useState<string | null>(null);
+    const [activeFieldId, setActiveFieldId] = useState<string | null>(null);
     const [localJsonStr, setLocalJsonStr] = useState('');
     const [isFullscreenJson, setIsFullscreenJson] = useState(false);
     const [jsonError, setJsonError] = useState<string | null>(null);
@@ -1222,6 +1225,10 @@ function FormBuilder({ template }: Props) {
     const handleDragStart = (event: any) => {
         if (event.active.id.toString().startsWith('lib-')) {
             setActiveLibItem(event.active.id.toString().replace('lib-', ''));
+            setActiveFieldId(null);
+        } else {
+            setActiveLibItem(null);
+            setActiveFieldId(event.active.id.toString());
         }
         // Visual feedback for Trash Zone
         document.documentElement.style.setProperty('--trash-opacity', '1');
@@ -1229,17 +1236,20 @@ function FormBuilder({ template }: Props) {
     };
 
     const handleDragEnd = (event: DragEndEvent) => {
-        const { active, over } = event;
         setActiveLibItem(null);
-
-        // Custom: Reset Trash Zone visual state
+        setActiveFieldId(null);
         document.documentElement.style.setProperty('--trash-opacity', '0');
         document.documentElement.style.setProperty('--trash-transform', 'translateY(80px)');
 
+        const { active, over } = event;
+
         if (!over) return;
 
-        const activeId = active.id.toString();
+        let activeId = active.id.toString();
         let overId = over.id.toString();
+
+        if (activeId.startsWith('struct_')) activeId = activeId.replace('struct_', '');
+        if (overId.startsWith('struct_')) overId = overId.replace('struct_', '');
 
         // If over a placeholder, route to the parent grid layout ID
         if (overId.startsWith('placeholder:')) {
@@ -1327,6 +1337,23 @@ function FormBuilder({ template }: Props) {
         if (activeId === overId) return;
 
         const activeField = (data?.fields || []).find((f) => f.id === activeId);
+
+        if (overId === 'canvas-area' || overId === 'canvas-bottom') {
+            if (!activeField) return;
+            const newFields = [...(data?.fields || [])];
+            const oldIndex = newFields.findIndex((f) => f.id === activeId);
+
+            const updatedActive = { ...activeField, parent_id: null };
+            newFields.splice(oldIndex, 1);
+            newFields.push(updatedActive);
+
+            setData(
+                'fields',
+                newFields.map((f, i) => ({ ...f, order: i })),
+            );
+            return;
+        }
+
         const overField = (data?.fields || []).find((f) => f.id === overId);
         if (!activeField || !overField) return;
 
@@ -1941,11 +1968,63 @@ function FormBuilder({ template }: Props) {
 
                     <TrashZone />
                     <DragOverlay>
-                        {activeLibItem && (
-                            <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-none border-2 px-6 py-4 font-sans text-[10px] font-semibold text-white uppercase backdrop-blur-md">
-                                <Plus size={16} strokeWidth={3} /> New {activeLibItem.replace('_', ' ')}
-                            </div>
-                        )}
+                        {/* Dragging from Library */}
+                        {activeLibItem && (() => {
+                            const typeInfo = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === activeLibItem);
+                            const isPreset = activeLibItem.startsWith('preset_');
+                            
+                            if (isPreset) {
+                                return (
+                                    <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-none border-2 px-6 py-4 font-sans text-[10px] font-semibold text-white uppercase backdrop-blur-md">
+                                        <Plus size={16} strokeWidth={3} /> New {typeInfo?.label || activeLibItem.replace('_', ' ')}
+                                    </div>
+                                );
+                            }
+
+                            const dummyField: any = {
+                                id: 'dummy-drag',
+                                parent_id: null,
+                                label: typeInfo?.defaultLabel || typeInfo?.label || `New ${activeLibItem}`,
+                                name: `dummy_drag_field`,
+                                type: activeLibItem,
+                                placeholder: typeInfo?.defaultPlaceholder || '',
+                                is_required: false,
+                                width: '100',
+                                options: {
+                                    ...(activeLibItem === 'select' || activeLibItem === 'searchable_select' || activeLibItem === 'radio' ? { items: [{ label: 'Option 1', value: '1' }] } : {}),
+                                    ...(typeInfo?.defaultOptions || {}),
+                                },
+                                order: 0,
+                            };
+
+                            return (
+                                <div className="pointer-events-none opacity-90 w-[400px] shadow-2xl scale-95 origin-top-left">
+                                    <FormElement
+                                        field={dummyField}
+                                        allFields={[]}
+                                        value=""
+                                        isBuilder={true}
+                                    />
+                                </div>
+                            );
+                        })()}
+
+                        {/* Dragging an existing field */}
+                        {activeFieldId && (() => {
+                            const draggingField = data.fields.find(f => f.id === activeFieldId);
+                            if (!draggingField) return null;
+                            return (
+                                <div className="pointer-events-none opacity-90 shadow-2xl scale-95 origin-top-left">
+                                    <FormElement
+                                        field={draggingField}
+                                        allFields={data.fields}
+                                        value=""
+                                        isBuilder={true}
+                                        isSelected={true}
+                                    />
+                                </div>
+                            );
+                        })()}
                     </DragOverlay>
                 </DndContext>
             </form>

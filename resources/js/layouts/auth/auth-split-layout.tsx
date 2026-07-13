@@ -10,11 +10,23 @@ interface AuthSplitLayoutProps {
     image?: string;
 }
 
+const loadLottie = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector('script[src*="lottie-player"]')) {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load lottie-player'));
+        document.body.appendChild(script);
+    });
+};
+
 export default function AuthSplitLayout({ children, title, description, isSuccess = false, image }: Readonly<AuthSplitLayoutProps>) {
     const [isSliding, setIsSliding] = useState(true);
     const [isExiting, setIsExiting] = useState(false);
-
-
 
     useEffect(() => {
         // Entry animation: Gate closes to show content
@@ -24,6 +36,12 @@ export default function AuthSplitLayout({ children, title, description, isSucces
             clearTimeout(timer);
         };
     }, []);
+
+    useEffect(() => {
+        if (isSuccess || isExiting) {
+            loadLottie().catch(err => console.error(err));
+        }
+    }, [isSuccess, isExiting]);
 
     const shouldPull = isSuccess || isExiting;
     const isMoving = isSliding || shouldPull;

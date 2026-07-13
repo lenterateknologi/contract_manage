@@ -72,6 +72,7 @@ export const FIELD_TYPES: any[] = [
                     field_style: 'dashed_bottom',
                     font_size: 11,
                     font_family: "'Inter', sans-serif",
+                    height: '7mm',
                 },
             },
             {

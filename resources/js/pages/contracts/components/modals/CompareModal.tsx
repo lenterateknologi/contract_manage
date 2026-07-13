@@ -18,16 +18,28 @@ function esc(s: string) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+const loadMammoth = (): Promise<void> => {
+    return new Promise((resolve, reject) => {
+        if (typeof mammoth !== 'undefined') {
+            resolve();
+            return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load mammoth.js'));
+        document.body.appendChild(script);
+    });
+};
+
 async function fetchVersionText(contractId: string, versionNo: number, type: string): Promise<string> {
     try {
         const res = await fetch(`/api/contracts/${contractId}/file/${versionNo}?type=${type}`, { credentials: 'same-origin' });
         if (!res.ok) return `[File v${versionNo} (${type}) tidak tersedia]`;
         const buf = await res.arrayBuffer();
-        if (typeof mammoth !== 'undefined') {
-            const result = await mammoth.extractRawText({ arrayBuffer: buf });
-            return result.value;
-        }
-        return '[mammoth.js belum dimuat]';
+        await loadMammoth();
+        const result = await mammoth.extractRawText({ arrayBuffer: buf });
+        return result.value;
     } catch {
         return `[Gagal memuat file v${versionNo}]`;
     }

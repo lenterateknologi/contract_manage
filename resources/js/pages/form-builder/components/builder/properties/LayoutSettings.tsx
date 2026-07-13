@@ -97,39 +97,7 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                         </select>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Lebar Kolom (Width)</Label>
-                        <div className="bg-muted/20 border-border/50 space-y-2 rounded-lg border p-3">
-                            {Array.from({ length: selectedField.options?.grid_cols || 2 }).map((_, idx) => {
-                                const currentSizes = selectedField.options?.col_sizes || [];
-                                const val = currentSizes[idx] || '1fr';
-                                return (
-                                    <div key={idx} className="flex items-center gap-2">
-                                        <span className="text-muted-foreground w-14 text-[9px] font-semibold uppercase">Klm {idx + 1}:</span>
-                                        <Input
-                                            type="text"
-                                            value={val}
-                                            onChange={(e) => {
-                                                const newSizes = [...currentSizes];
-                                                while (newSizes.length <= idx) {
-                                                    newSizes.push('1fr');
-                                                }
-                                                newSizes[idx] = e.target.value || '1fr';
-                                                bulkUpdateOptions(selectedIds, {
-                                                    col_sizes: newSizes,
-                                                });
-                                            }}
-                                            className="h-7 flex-1 px-2 font-sans text-[10px]"
-                                            placeholder="Contoh: 1fr, 200px, 50%"
-                                        />
-                                    </div>
-                                );
-                            })}
-                            <p className="text-muted-foreground/60 mt-1 text-[7px] leading-relaxed">
-                                Gunakan satuan CSS seperti <b>1fr</b> (lebar merata), <b>px</b> (pixel), atau <b>%</b>.
-                            </p>
-                        </div>
-                    </div>
+
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">

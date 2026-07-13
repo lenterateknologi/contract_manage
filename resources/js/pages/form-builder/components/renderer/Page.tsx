@@ -24,14 +24,12 @@ export const Page: React.FC<PageProps> = ({
     isBuilder = false,
 }) => {
     return (
-        <div className="relative mb-20 last:mb-0 print:m-0">
+        <div className="relative print:m-0 w-full mt-10 mb-20 last:mb-0">
             {/* Floating Page Info */}
             <div className="absolute -top-8 left-0 flex items-center gap-3 print:hidden">
-                {isBuilder && (
-                    <div className="bg-primary/10 text-primary ring-primary/20 flex h-6 items-center justify-center rounded-none px-3 text-[10px] font-semibold tracking-widest uppercase ring-1">
-                        Halaman {pageNumber}
-                    </div>
-                )}
+                <div className="bg-primary/10 text-primary ring-primary/20 flex h-6 items-center justify-center rounded-none px-3 text-[10px] font-semibold tracking-widest uppercase ring-1">
+                    Halaman {pageNumber}
+                </div>
                 <div className="text-muted-foreground/40 text-[9px] font-semibold tracking-tight uppercase">
                     A4 (210mm x 297mm) • Margins: {margins.top}mm {margins.right}mm {margins.bottom}mm {margins.left}mm
                 </div>
@@ -40,8 +38,10 @@ export const Page: React.FC<PageProps> = ({
             {/* The A4 Paper Container */}
             <div
                 className={cn(
-                    'bg-card text-foreground border-border relative mx-auto flex flex-col border shadow-none transition-all print:m-0 print:shadow-none print:ring-0',
-                    isBuilder ? 'my-4 rounded-none' : 'mb-20 rounded-none', 'h-[297mm] w-[210mm] shrink-0 overflow-hidden', // Fixed A4 Size
+                    'bg-card text-foreground relative mx-auto flex flex-col transition-all print:m-0 print:shadow-none print:ring-0 print:border-none w-[210mm]',
+                    'border-border border shadow-sm my-4 rounded-none shrink-0',
+                    'min-h-[297mm]',
+                    !isBuilder && 'overflow-hidden',
                     className,
                 )}
                 style={{
@@ -74,7 +74,7 @@ export const Page: React.FC<PageProps> = ({
                             className="pointer-events-none absolute h-4 w-4 border-r border-b border-blue-400/30 print:hidden"
                             style={{ bottom: `${margins.bottom}mm`, right: `${margins.right}mm` }}
                         />
-
+ 
                         {/* Dashed Margin Lines */}
                         <div
                             className="pointer-events-none absolute inset-0 border border-dashed border-blue-200/20 print:hidden"
@@ -87,12 +87,14 @@ export const Page: React.FC<PageProps> = ({
                         />
                     </>
                 )}
-
+ 
                 <div className="relative z-10 flex-1">{children}</div>
             </div>
-
+ 
             {/* Page Separator Shadow */}
-            <div className="via-border pointer-events-none absolute right-[10%] -bottom-10 left-[10%] h-px bg-gradient-to-r from-transparent to-transparent print:hidden" />
+            {isBuilder && (
+                <div className="via-border pointer-events-none absolute right-[10%] -bottom-10 left-[10%] h-px bg-gradient-to-r from-transparent to-transparent print:hidden" />
+            )}
         </div>
     );
 };

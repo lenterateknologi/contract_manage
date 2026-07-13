@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useSortable } from '@dnd-kit/sortable';
+import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import React from 'react';
 
@@ -59,6 +59,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
         onRemove,
         onDuplicate,
         onSelect,
+        onMove,
         isSelected = false,
         selectedFieldIds = [],
         diffData = {},
@@ -125,7 +126,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             return <EmptyDropZone />;
         }
 
-        return children.map((child) => (
+        const renderedChildren = children.map((child) => (
             <FormElement
                 key={child.id}
                 field={child}
@@ -140,13 +141,23 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
                 updateValue={updateValue}
                 readOnly={readOnly}
                 isBuilder={isBuilder}
-                isSelected={selectedFieldIds?.includes(child.id)}
-                selectedFieldIds={selectedFieldIds}
                 onRemove={onRemove}
                 onDuplicate={onDuplicate}
                 onSelect={onSelect}
+                onMove={onMove}
+                isSelected={selectedFieldIds?.includes(child.id)}
+                selectedFieldIds={selectedFieldIds}
             />
         ));
+
+        if (isBuilder) {
+            return (
+                <SortableContext items={children.map(c => String(c.id))} strategy={verticalListSortingStrategy}>
+                    {renderedChildren}
+                </SortableContext>
+            );
+        }
+        return renderedChildren;
     };
 
     const fieldProps = { field, value, onChange, readOnly, isBuilder };
@@ -212,14 +223,17 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
             {...listeners}
             className={cn(
                 'group/element form-element-container relative',
-                isBuilder && `hover:${ringColor}/40 rounded-sm transition-all hover:ring-1`,
-                isBuilder && isSelected && `${ringColor} z-30 ring-2`,
+                isBuilder && cn(
+                    cat ? cat.borderColor : 'border-primary/20 hover:border-primary/40',
+                    'border border-dashed rounded-md transition-all',
+                    ['group', 'grid_x', 'grid_y'].includes(field.type) ? 'p-4' : 'p-2'
+                ),
+                isBuilder && isSelected && `ring-primary bg-primary/5 z-30 ring-2 ring-offset-1 border-transparent shadow-sm`,
                 isBuilder &&
                     isOver &&
                     !isDragging &&
                     ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) &&
                     `${ringColor} ring-dashed ${bgDashed} ring-2`,
-                isBuilder && ['group', 'grid_x', 'grid_y'].includes(field.type) && 'border-muted-foreground/10 border border-dashed p-4',
             )}
             onClick={(e) => {
                 if (isBuilder) {

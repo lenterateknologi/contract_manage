@@ -1,11 +1,12 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/cards/Card';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { Input } from '@/components/ui/inputs/Input';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
-import { Briefcase, Calendar, Clock, Filter, Layers, MessageSquare, Send, UserCheck, X } from 'lucide-react';
+import { Briefcase, Calendar, Clock, Filter, Layers, UserCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { MetricItem } from './MetricItem';
 
@@ -76,9 +77,6 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
     const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'sibuk'>('all');
     const [selectedDeptId, setSelectedDeptId] = useState<string>(!isAdmin && userDeptId ? String(userDeptId) : 'all');
 
-    const [selectedChatUser, setSelectedChatUser] = useState<UserWorkload | null>(null);
-    const [chatMessage, setChatMessage] = useState('');
-    const [chatHistory, setChatHistory] = useState<Record<string, Array<{ sender: 'me' | 'them'; text: string; time: string }>>>({});
 
     const filteredWorkloads = useMemo(() => {
         return userWorkloads.filter((user) => {
@@ -113,51 +111,11 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
 
     const contractTypesLevel0 = data?.contractTypeDistribution || [];
 
-    const handleOpenChat = (user: UserWorkload) => {
-        setSelectedChatUser(user);
-        if (!chatHistory[user.id]) {
-            setChatHistory((prev) => ({
-                ...prev,
-                [user.id]: [
-                    {
-                        sender: 'them',
-                        text: `Halo! Saya PIC/Legal untuk beberapa kontrak Anda. Ada yang bisa saya bantu terkait persetujuan atau revisi kontrak?`,
-                        time: '10:30',
-                    },
-                ],
-            }));
-        }
-    };
-
-    const handleSendMessage = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!chatMessage.trim() || !selectedChatUser) return;
-        const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-        const newMessage = { sender: 'me' as const, text: chatMessage, time };
-        setChatHistory((prev) => ({
-            ...prev,
-            [selectedChatUser.id]: [...(prev[selectedChatUser.id] || []), newMessage],
-        }));
-        setChatMessage('');
-        setTimeout(() => {
-            const replies = [
-                `Baik, pesan Anda telah saya terima. Saya sedang meninjau kontrak aktif dan akan segera memperbarui status alur persetujuannya.`,
-                `Tentu, revisi pasal tersebut sedang kami diskusikan dengan divisi terkait. Saya hubungi kembali setelah draf siap.`,
-                `Siap! Saya prioritaskan pengerjaan dokumen ini hari ini agar bisa segera disetujui oleh Direktur.`,
-            ];
-            const randomReply = replies[Math.floor(Math.random() * replies.length)];
-            const replyTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-            setChatHistory((prev) => ({
-                ...prev,
-                [selectedChatUser.id]: [...(prev[selectedChatUser.id] || []), { sender: 'them', text: randomReply, time: replyTime }],
-            }));
-        }, 1200);
-    };
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
+        <div className="animate-in fade-in slide-in-from-bottom-2 space-y-4 duration-300">
             {/* KPI Cards: Contract Types */}
-            <div className="grid grid-cols-1 gap-6 select-none md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 select-none md:grid-cols-2 lg:grid-cols-4">
                 {contractTypesLevel0.length > 0 ? (
                     contractTypesLevel0.map((type: any, index: number) => {
                         const icons = [Layers, Briefcase, Calendar, Clock, UserCheck];
@@ -174,9 +132,9 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                 color={colorClass} 
                             >
                                 {type.children && type.children.length > 0 && (
-                                    <div className="flex flex-col gap-1.5 w-full pr-8">
+                                    <div className="custom-scrollbar flex flex-col gap-1.5 w-full pr-2 max-h-[50px] overflow-y-auto">
                                         {type.children.map((child: any, cIndex: number) => (
-                                            <div key={child.id || cIndex} className="flex justify-between items-center text-[10px]">
+                                            <div key={child.id || cIndex} className="flex justify-between items-center text-[10px] pr-1">
                                                 <span className="text-text-desc truncate max-w-[120px]">{child.label}</span>
                                                 <span className="font-bold text-text-main">{child.count}</span>
                                             </div>
@@ -191,122 +149,121 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                 )}
             </div>
 
-            <div className="space-y-4 lg:col-span-1">
-                <div className="flex flex-col items-stretch justify-between gap-3 p-3 sm:flex-row sm:items-center">
+            <div className="space-y-3 lg:col-span-1">
+                <div className="flex flex-col items-stretch justify-between gap-2.5 p-1 sm:flex-row sm:items-center">
                     <div className="flex flex-1 flex-col items-stretch gap-2 md:flex-row md:items-center">
                         <div className="relative flex-1">
                             <SearchInput
                                 placeholder="Cari nama, peran, divisi..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-background h-9"
+                                className="bg-background h-8.5"
                             />
                         </div>
-                        <div className="relative shrink-0">
-                            <select
-                                value={selectedDeptId}
-                                onChange={(e) => setSelectedDeptId(e.target.value)}
-                                disabled={!isAdmin}
-                                className="bg-background border-input focus:ring-primary h-9 w-full cursor-pointer appearance-none rounded-lg border pr-8 pl-3 text-xs font-medium outline-none focus:ring-1 disabled:opacity-75 md:w-auto"
-                            >
-                                {isAdmin && <option value="all">Semua Divisi</option>}
-                                {departments.map((dept: any) =>
-                                    !isAdmin && String(dept.id) !== selectedDeptId ? null : (
-                                        <option key={dept.id} value={String(dept.id)}>
-                                            {dept.name}
-                                        </option>
-                                    ),
-                                )}
-                            </select>
-                            <Filter size={10} className="text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2" />
-                        </div>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="h-8.5 shrink-0 gap-2 px-3 text-[11px] font-semibold">
+                                    <Filter size={14} />
+                                    Filter PIC
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent align="end" className="w-64 p-4 dark:bg-slate-900 dark:border-slate-800">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-semibold">Divisi</label>
+                                        <div className="relative">
+                                            <select
+                                                value={selectedDeptId}
+                                                onChange={(e) => setSelectedDeptId(e.target.value)}
+                                                disabled={!isAdmin}
+                                                className="bg-background border-input focus:ring-primary h-8.5 w-full cursor-pointer appearance-none rounded-lg border px-3 text-[11px] outline-none focus:ring-1 disabled:opacity-75"
+                                            >
+                                                {isAdmin && <option value="all">Semua Divisi</option>}
+                                                {departments.map((dept: any) =>
+                                                    !isAdmin && String(dept.id) !== selectedDeptId ? null : (
+                                                        <option key={dept.id} value={String(dept.id)}>
+                                                            {dept.name}
+                                                        </option>
+                                                    ),
+                                                )}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-semibold">Status Beban</label>
+                                        <div className="relative">
+                                            <select
+                                                value={statusFilter}
+                                                onChange={(e) => setStatusFilter(e.target.value as any)}
+                                                className="bg-background border-input focus:ring-primary h-8.5 w-full cursor-pointer appearance-none rounded-lg border px-3 text-[11px] outline-none focus:ring-1"
+                                            >
+                                                <option value="all">Semua Status</option>
+                                                <option value="ready">Ready (Siap Menerima)</option>
+                                                <option value="sibuk">Sibuk (Beban Penuh)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                     </div>
                 </div>
-                <div className="grid max-h-[580px] grid-cols-1 gap-4 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid max-h-[580px] grid-cols-1 gap-3 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-4">
                     {filteredWorkloads.length === 0 ? (
-                        <Card className="col-span-full flex flex-col items-center justify-center border-dashed py-10 opacity-60">
-                            <Briefcase className="mb-2 h-8 w-8 opacity-20" />
-                            <p className="text-text-desc text-xs font-medium  uppercase">PIC tidak ditemukan</p>
+                        <Card className="col-span-full flex flex-col items-center justify-center border-dashed py-10 opacity-60 !bg-surface-base/40 border-surface-border/60">
+                            <Briefcase className="mb-2 h-7 w-7 opacity-20" />
+                            <p className="text-text-desc text-[10px] font-medium uppercase">PIC tidak ditemukan</p>
                         </Card>
                     ) : (
                         filteredWorkloads.map((user) => {
-                            const activeCount = user.active_contracts_count;
-                            const capacityPct = Math.min((activeCount / 5) * 100, 100);
                             const isBusy = user.load_status === 'Sibuk';
                             const customAvatarStyle =
                                 user.bg_color && user.text_color ? { backgroundColor: user.bg_color, color: user.text_color } : undefined;
                             return (
                                 <Card
                                     key={user.id}
-                                    className={cn('group transition-all hover:shadow-md', isBusy && 'border-danger/20 dark:border-danger/40')}
+                                    className={cn('group transition-all hover:shadow-xs select-none !bg-surface-base/60 dark:!bg-surface-base/40 border-surface-border/60 hover:!bg-surface-base/80', isBusy && 'border-danger/20 dark:border-danger/40')}
                                 >
-                                    <CardContent className="flex h-full flex-col justify-between p-4">
-                                        <div className="space-y-3">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex min-w-0 items-center gap-2.5">
-                                                    <div
-                                                        style={customAvatarStyle}
-                                                        className={cn(
-                                                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-black/5 text-[10px] font-medium dark:border-white/5',
-                                                            !customAvatarStyle && 'bg-surface-muted text-text-desc',
-                                                        )}
-                                                    >
-                                                        {user.initials ?? user.name.substring(0, 2).toUpperCase()}
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <span className="text-text-main block truncate text-[11px] leading-tight font-medium">
-                                                            {user.name}
-                                                        </span>
-                                                        <span className="text-text-desc mt-0.5 block truncate text-[9px] font-semibold">
-                                                            {user.position || user.role}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => handleOpenChat(user)}
-                                                    className="border-surface-border/60 h-7 gap-1.5 px-3 text-[9px] font-semibold shadow-sm"
+                                    <CardContent className="p-3 space-y-2.5 flex flex-col justify-between h-full">
+                                        <div className="flex items-center justify-between gap-2.5">
+                                            <div className="flex min-w-0 items-center gap-2">
+                                                <div
+                                                    style={customAvatarStyle}
+                                                    className={cn(
+                                                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-black/5 text-[9px] font-bold dark:border-white/5',
+                                                        !customAvatarStyle && 'bg-surface-muted text-text-desc',
+                                                    )}
                                                 >
-                                                    <MessageSquare size={10} /> DISKUSI
-                                                </Button>
-                                            </div>
-                                            <div className="text-text-desc bg-surface-muted/50 w-max max-w-full truncate rounded-lg px-2 py-1 text-[9px] font-medium">
-                                                {user.department_name || 'Direksi & Staff Umum'}
-                                            </div>
-
-                                            <div className="bg-surface-muted/30 border-surface-border/40 rounded-lg border p-3">
-                                                <div className="border-surface-border/40 mb-3 flex items-center gap-1.5 border-b pb-2">
-                                                    <Calendar size={10} className="text-primary opacity-60" />
-                                                    <span className="text-text-desc text-[9px] font-semibold tracking-widest uppercase">
-                                                        Aktivitas Bulan Ini
+                                                    {user.initials ?? user.name.substring(0, 2).toUpperCase()}
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <span className="text-text-main block truncate text-[11px] leading-tight font-semibold">
+                                                        {user.name}
+                                                    </span>
+                                                    <span className="text-text-soft block truncate text-[8px] font-bold uppercase tracking-wider mt-0.5">
+                                                        {user.position || user.role} {user.department_name ? `• ${user.department_name}` : ''}
                                                     </span>
                                                 </div>
-                                                <div className="divide-surface-border/40 grid grid-cols-3 gap-2 divide-x text-center">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-text-soft text-[9px] font-semibold  uppercase">
-                                                            Menunggu
-                                                        </span>
-                                                        <span className="text-warning text-sm font-semibold">
-                                                            {user.stats_this_month?.pending || 0}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-text-soft text-[9px] leading-tight font-semibold  uppercase">
-                                                            Dikerjakan
-                                                        </span>
-                                                        <span className="text-primary text-sm font-semibold">
-                                                            {user.stats_this_month?.active || 0}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-text-soft text-[9px] font-semibold  uppercase">
-                                                            Selesai
-                                                        </span>
-                                                        <span className="text-success text-sm font-semibold">
-                                                            {user.stats_this_month?.completed || 0}
-                                                        </span>
-                                                    </div>
+                                            </div>
+
+                                        </div>
+
+                                        <div className="flex items-center justify-between gap-2 border-t border-surface-border/40 pt-2 text-[9px] font-semibold text-text-soft uppercase">
+                                            <span className="text-text-desc truncate max-w-[40%] bg-surface-muted/60 px-1.5 py-0.5 rounded text-[8px] font-bold">
+                                                {user.department_name || 'Umum'}
+                                            </span>
+                                            <div className="flex items-center gap-2.5 shrink-0">
+                                                <div className="flex items-center gap-0.5">
+                                                    <span className="text-text-soft text-[8px] font-medium">TUNGGU:</span>
+                                                    <span className="text-warning font-bold">{user.stats_this_month?.pending || 0}</span>
+                                                </div>
+                                                <div className="flex items-center gap-0.5">
+                                                    <span className="text-text-soft text-[8px] font-medium">PROSES:</span>
+                                                    <span className="text-primary font-bold">{user.stats_this_month?.active || 0}</span>
+                                                </div>
+                                                <div className="flex items-center gap-0.5">
+                                                    <span className="text-text-soft text-[8px] font-medium">SELESAI:</span>
+                                                    <span className="text-success font-bold">{user.stats_this_month?.completed || 0}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -318,62 +275,6 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                 </div>
             </div>
 
-            {selectedChatUser && (
-                <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm duration-200">
-                    <Card className="animate-in zoom-in-95 flex max-h-[500px] w-full max-w-md flex-col overflow-hidden shadow-2xl duration-200">
-                        <CardHeader className="bg-muted/30 flex flex-row items-center justify-between space-y-0 border-b p-4">
-                            <div className="flex items-center gap-3">
-                                <div
-                                    style={
-                                        selectedChatUser.bg_color && selectedChatUser.text_color
-                                            ? { backgroundColor: selectedChatUser.bg_color, color: selectedChatUser.text_color }
-                                            : undefined
-                                    }
-                                    className="flex h-8 w-8 items-center justify-center rounded-full border border-black/5 text-[10px] font-medium dark:border-white/5"
-                                >
-                                    {selectedChatUser.initials ?? selectedChatUser.name.substring(0, 2).toUpperCase()}
-                                </div>
-                                <div>
-                                    <CardTitle className="text-xs leading-none font-medium">{selectedChatUser.name}</CardTitle>
-                                    <p className="text-muted-foreground mt-1 text-[9px] font-medium">
-                                        {selectedChatUser.position || selectedChatUser.role}
-                                    </p>
-                                </div>
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={() => setSelectedChatUser(null)} className="h-8 w-8">
-                                <X size={14} />
-                            </Button>
-                        </CardHeader>
-                        <CardContent className="bg-muted/5 min-h-[220px] flex-1 space-y-3 overflow-y-auto p-4">
-                            {chatHistory[selectedChatUser.id]?.map((msg, i) => (
-                                <div
-                                    key={i}
-                                    className={cn(
-                                        'flex max-w-[80%] flex-col rounded-lg px-3 py-2 text-xs',
-                                        msg.sender === 'me'
-                                            ? 'bg-primary text-primary-foreground ml-auto rounded-tr-none shadow-sm'
-                                            : 'dark:bg-muted text-foreground border-border/10 mr-auto rounded-tl-none border bg-white',
-                                    )}
-                                >
-                                    <p className="font-medium">{msg.text}</p>
-                                    <span className={cn('mt-1 block text-right text-[8px] opacity-70')}>{msg.time}</span>
-                                </div>
-                            ))}
-                        </CardContent>
-                        <form onSubmit={handleSendMessage} className="bg-background flex gap-2 border-t p-3">
-                            <Input
-                                placeholder={`Kirim pesan...`}
-                                value={chatMessage}
-                                onChange={(e) => setChatMessage(e.target.value)}
-                                className="h-9 text-xs"
-                            />
-                            <Button type="submit" size="icon" className="h-9 w-9 shrink-0">
-                                <Send size={14} />
-                            </Button>
-                        </form>
-                    </Card>
-                </div>
-            )}
         </div>
     );
 }

@@ -112,7 +112,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
             </div>
 
             <div className="space-y-6">
-                {/* 1. General, Meta Key, Block Width, Image & Labeled Value settings */}
+                {/* 1. General, Meta Key, Image & Labeled Value settings */}
                 <GeneralSettings
                     selectedField={selectedField}
                     selectedIds={selectedIds}

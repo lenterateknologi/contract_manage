@@ -57,7 +57,7 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
         <Popover className="relative">
             <PopoverTrigger
                 className={cn(
-                    'hover:bg-muted/10 flex h-10 cursor-pointer items-center gap-2 rounded-lg border px-4 text-xs font-semibold shadow-sm transition-all outline-none select-none',
+                    'hover:bg-muted/10 flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-[11px] font-semibold shadow-xs transition-all outline-none select-none',
                     selectedValues.length > 0
                         ? 'bg-primary text-primary-foreground border-primary'
                         : 'bg-transparent border-surface-border text-text-main hover:bg-surface-muted/50',
@@ -194,10 +194,10 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
     };
 
     return (
-        <div className="animate-in fade-in slide-in-from-top-4 space-y-8 duration-500 select-none">
+        <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500 select-none">
             {/* Premium Chip Navigation */}
-            <div className="flex flex-col justify-between gap-6 pb-2 md:flex-row md:items-center">
-                <div className="flex scrollbar-none items-center gap-3 overflow-x-auto pb-2 md:pb-0">
+            <div className="flex flex-col justify-between gap-4 pb-2 md:flex-row md:items-center">
+                <div className="flex scrollbar-none items-center gap-2 overflow-x-auto pb-1 md:pb-0">
                     <DashboardTab
                         active={activeTab === 'overview'}
                         onClick={() => setActiveTab('overview')}
@@ -207,59 +207,7 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
                     <DashboardTab active={activeTab === 'workload'} onClick={() => setActiveTab('workload')} label="Beban Kerja" icon={Briefcase} />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    {hasFullAccess && (
-                        <>
-                            <DropdownSearchFilter
-                                label="Wilayah"
-                                options={regions.map((r: any) => ({ value: String(r.id), label: r.name }))}
-                                selectedValues={activeFilters.region_ids}
-                                onChange={(vals) => handleFilterChange('region_ids', vals)}
-                                placeholder="Cari wilayah..."
-                            />
-                            <DropdownSearchFilter
-                                label="Grup"
-                                options={companyGroups.map((g: any) => ({ value: String(g.id), label: g.name }))}
-                                selectedValues={activeFilters.company_group_ids}
-                                onChange={(vals) => handleFilterChange('company_group_ids', vals)}
-                                placeholder="Cari grup..."
-                            />
-                            <DropdownSearchFilter
-                                label="Perusahaan"
-                                options={companies.map((c: any) => ({ value: String(c.id), label: c.name }))}
-                                selectedValues={activeFilters.company_ids}
-                                onChange={(vals) => handleFilterChange('company_ids', vals)}
-                                placeholder="Cari perusahaan..."
-                            />
-                            <DropdownSearchFilter
-                                label="Divisi"
-                                options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                selectedValues={activeFilters.department_ids}
-                                onChange={(vals) => handleFilterChange('department_ids', vals)}
-                                placeholder="Cari divisi..."
-                            />
-                        </>
-                    )}
 
-                    {isManager && (
-                        <>
-                            <DropdownSearchFilter
-                                label="Perusahaan"
-                                options={companies.map((c: any) => ({ value: String(c.id), label: c.name }))}
-                                selectedValues={activeFilters.company_ids}
-                                onChange={(vals) => handleFilterChange('company_ids', vals)}
-                                placeholder="Cari perusahaan..."
-                            />
-                            <DropdownSearchFilter
-                                label="Divisi"
-                                options={departments.map((d: any) => ({ value: String(d.id), label: d.name }))}
-                                selectedValues={activeFilters.department_ids}
-                                onChange={(vals) => handleFilterChange('department_ids', vals)}
-                                placeholder="Cari divisi..."
-                            />
-                        </>
-                    )}
-                </div>
             </div>
 
             {/* Tab Contents with Premium Transitions */}
@@ -287,14 +235,14 @@ function DashboardTab({ active, onClick, label, icon: Icon }: { active: boolean;
         <button
             onClick={onClick}
             className={cn(
-                'group relative flex cursor-pointer items-center gap-2.5 rounded-lg border px-5 py-2.5 text-[11px] font-semibold tracking-[0.15em] whitespace-nowrap uppercase transition-all duration-300 outline-none',
+                'group relative flex cursor-pointer items-center gap-2 rounded-lg border px-3.5 py-1.5 text-[10px] font-bold tracking-[0.1em] whitespace-nowrap uppercase transition-all duration-300 outline-none',
                 active
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-transparent text-primary border-primary/50 hover:bg-primary/10 hover:border-primary',
             )}
         >
             <Icon
-                size={14}
+                size={12}
                 className={cn('transition-colors', active ? 'text-primary-foreground' : 'text-primary opacity-70 group-hover:opacity-100')}
             />
             {label}

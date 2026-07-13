@@ -22,8 +22,8 @@ export const PlaceholderZone: React.FC<PlaceholderZoneProps> = ({ id, icon: Icon
             onClick={onClick}
             style={style}
             className={cn(
-                'border-primary/20 bg-primary/5 text-primary/40 flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-4 text-center transition-all',
-                isOver ? 'border-primary bg-primary/10 text-primary scale-[0.98]' : 'hover:bg-primary/10',
+                'bg-primary/5 text-primary/40 flex w-full cursor-pointer flex-col items-center justify-center rounded-lg p-4 text-center transition-all',
+                isOver ? 'bg-primary/10 text-primary scale-[0.98]' : 'hover:bg-primary/10',
                 className,
             )}
         >
