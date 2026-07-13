@@ -172,20 +172,45 @@ class ContractListQuery
         }
     }
 
-    /**
-     * Apply contract type filter (single value or array).
-     */
     private function applyTypeFilter(Builder $query, Request $request): void
     {
         if (! $request->filled('contract_type_id') || $request->contract_type_id === 'all') {
             return;
         }
 
-        if (is_array($request->contract_type_id)) {
-            $query->whereIn('contract_type_id', $request->contract_type_id);
-        } else {
-            $query->where('contract_type_id', $request->contract_type_id);
+        $typeIds = is_array($request->contract_type_id)
+            ? $request->contract_type_id
+            : [$request->contract_type_id];
+
+        $allIds = [];
+        foreach ($typeIds as $id) {
+            $allIds[] = $id;
+            $allIds = array_merge($allIds, $this->getDescendantTypeIds($id));
         }
+        $allIds = array_unique(array_filter($allIds));
+
+        $query->whereIn('contract_type_id', $allIds);
+    }
+
+    /**
+     * Recursively retrieve all descendant IDs for a contract type.
+     *
+     * @return array<string>
+     */
+    private function getDescendantTypeIds(string $parentId): array
+    {
+        $childIds = DB::table('m_contract_types')
+            ->where('parent_id', $parentId)
+            ->pluck('id')
+            ->toArray();
+
+        $descendants = [];
+        foreach ($childIds as $id) {
+            $descendants[] = $id;
+            $descendants = array_merge($descendants, $this->getDescendantTypeIds($id));
+        }
+
+        return $descendants;
     }
 
     /**

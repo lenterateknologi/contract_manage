@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Contract extends Model
 {
@@ -18,6 +19,29 @@ class Contract extends Model
     protected $table = 't_contracts';
 
     use HasFactory, HasUuids, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => static::refreshMaterializedView());
+        static::deleted(fn () => static::refreshMaterializedView());
+        static::restored(fn () => static::refreshMaterializedView());
+    }
+
+    public static function refreshMaterializedView(): void
+    {
+        // ponytail: Refresh materialized view concurrently for the dashboard data.
+        // In SQLite (used for testing), we use a normal VIEW which updates automatically,
+        // so we don't need to (and can't) run the REFRESH command.
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
+        try {
+            DB::statement('REFRESH MATERIALIZED VIEW CONCURRENTLY mv_dashboard_contracts');
+        } catch (\Throwable $e) {
+            DB::statement('REFRESH MATERIALIZED VIEW mv_dashboard_contracts');
+        }
+    }
 
     protected $with = ['meta'];
 

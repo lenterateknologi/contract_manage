@@ -4,8 +4,19 @@ import {
     defineConfig
 } from 'vite';
 import tailwindcss from "@tailwindcss/vite";
+import { globSync } from 'node:fs';
+
+const pageInputs = [
+    'resources/css/app.css',
+    'resources/js/app.tsx',
+    ...globSync('resources/js/pages/*.tsx'),
+    ...globSync('resources/js/pages/*/*.tsx'),
+];
 
 export default defineConfig({
+    resolve: {
+        dedupe: ['react', 'react-dom', 'react-is'],
+    },
     server: {
         host: '127.0.0.1',
         port: 5173,
@@ -13,7 +24,7 @@ export default defineConfig({
     },
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            input: pageInputs,
             ssr: 'resources/js/ssr.jsx',
             refresh: true,
         }),
@@ -35,7 +46,14 @@ export default defineConfig({
                         if (id.includes('node_modules/@inertiajs/')) {
                             return 'vendor-inertia';
                         }
-                        if (id.includes('node_modules/recharts/') || id.includes('node_modules/d3')) {
+                        if (
+                            id.includes('node_modules/recharts/') ||
+                            id.includes('node_modules/d3') ||
+                            id.includes('node_modules/victory-vendor/') ||
+                            id.includes('node_modules/reselect/') ||
+                            id.includes('node_modules/react-redux/') ||
+                            id.includes('node_modules/@reduxjs/toolkit/')
+                        ) {
                             return 'vendor-charts';
                         }
                         if (id.includes('node_modules/@xyflow/')) {

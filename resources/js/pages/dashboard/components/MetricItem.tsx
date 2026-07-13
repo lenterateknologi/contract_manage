@@ -7,9 +7,10 @@ interface MetricItemProps {
     color: string;
     onClick?: () => void;
     isAlert?: boolean;
+    children?: React.ReactNode;
 }
 
-export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert }: MetricItemProps) {
+export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert, children }: MetricItemProps) {
     const getCardBgColor = (textColor: string) => {
         if (textColor.includes('primary')) return 'bg-white border-primary/20 text-primary';
         if (textColor.includes('amber')) return 'bg-white border-amber-500/20 text-amber-500';
@@ -71,9 +72,10 @@ export function MetricItem({ label, value, icon: Icon, color, onClick, isAlert }
                 <Icon size={120} strokeWidth={1.5} className="currentColor" />
             </div>
 
-            <div className="z-10 space-y-1.5">
+            <div className="z-10 space-y-1.5 w-full">
                 <p className="text-text-soft text-[10px] leading-none font-semibold uppercase">{label}</p>
                 <p className="text-text-main text-3xl leading-none font-extrabold tracking-tight">{value}</p>
+                {children && <div className="mt-3 pt-3 border-t border-surface-border/50">{children}</div>}
             </div>
 
         </div>

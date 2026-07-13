@@ -50,6 +50,7 @@ interface WorkloadTabProps {
         categoryTraffic?: CategoryTraffic[];
         departmentWorkload?: DepartmentWorkload[];
         renewalCompletionRate?: number;
+        contractTypeDistribution?: any[];
         [key: string]: any;
     };
 }
@@ -110,6 +111,8 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
         return totalPendingThisMonth + totalActiveThisMonth;
     }, [totalPendingThisMonth, totalActiveThisMonth]);
 
+    const contractTypesLevel0 = data?.contractTypeDistribution || [];
+
     const handleOpenChat = (user: UserWorkload) => {
         setSelectedChatUser(user);
         if (!chatHistory[user.id]) {
@@ -153,12 +156,39 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-2 space-y-6 duration-300">
-            {/* KPI Cards */}
+            {/* KPI Cards: Contract Types */}
             <div className="grid grid-cols-1 gap-6 select-none md:grid-cols-2 lg:grid-cols-4">
-                <MetricItem label="Total Kontrak Diproses" value={totalInProcessThisMonth} icon={Layers} color="text-primary" />
-                <MetricItem label="Kontrak Pending" value={totalPendingThisMonth} icon={Clock} color="text-warning" />
-                <MetricItem label="Kontrak Dikerjakan" value={totalActiveThisMonth} icon={Briefcase} color="text-cyan-500" />
-                <MetricItem label="Total Kontrak Selesai" value={totalCompletedThisMonth} icon={UserCheck} color="text-success" />
+                {contractTypesLevel0.length > 0 ? (
+                    contractTypesLevel0.map((type: any, index: number) => {
+                        const icons = [Layers, Briefcase, Calendar, Clock, UserCheck];
+                        const colors = ['text-primary', 'text-warning', 'text-cyan-500', 'text-success', 'text-purple-500'];
+                        const Icon = icons[index % icons.length];
+                        const colorClass = colors[index % colors.length];
+
+                        return (
+                            <MetricItem 
+                                key={type.id || index} 
+                                label={type.label} 
+                                value={type.count || 0} 
+                                icon={Icon} 
+                                color={colorClass} 
+                            >
+                                {type.children && type.children.length > 0 && (
+                                    <div className="flex flex-col gap-1.5 w-full pr-8">
+                                        {type.children.map((child: any, cIndex: number) => (
+                                            <div key={child.id || cIndex} className="flex justify-between items-center text-[10px]">
+                                                <span className="text-text-desc truncate max-w-[120px]">{child.label}</span>
+                                                <span className="font-bold text-text-main">{child.count}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </MetricItem>
+                        );
+                    })
+                ) : (
+                    <div className="col-span-full text-center text-xs text-muted-foreground">Tidak ada data tipe kontrak</div>
+                )}
             </div>
 
             <div className="space-y-4 lg:col-span-1">

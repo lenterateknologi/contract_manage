@@ -1,12 +1,167 @@
-import { Activity, Clock, FileText, ShieldCheck } from 'lucide-react';
+import { Activity, Clock, FileText, ShieldCheck, ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { MetricItem } from './MetricItem';
 
 interface OverviewTabProps {
     data: any;
     onNavigate: (view: string, params?: any) => void;
 }
+
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+
+const flattenNodes = (nodes: any[], level = 0): any[] => {
+    let result: any[] = [];
+    for (const node of nodes) {
+        result.push({ 
+            ...node, 
+            level, 
+        });
+        if (node.children && node.children.length > 0) {
+            result = result.concat(flattenNodes(node.children, level + 1));
+        }
+    }
+    return result;
+};
+
+const TreeRechartsBar = ({ data }: { data: any[] }) => {
+    const [activeTab, setActiveTab] = useState<string>('all');
+
+    const allNodes = flattenNodes(data).map(node => ({
+        ...node,
+        displayName: (node.level > 0 && activeTab === 'all') 
+            ? `${' '.repeat(node.level * 4)} ↳ ${node.label || node.name}` 
+            : (node.label || node.name) 
+    }));
+
+    const maxLevel = Math.max(...allNodes.map(n => n.level), 0);
+    
+    // 1. Data for level-specific tabs (Single Bar)
+    const visibleNodes = allNodes.filter(n => n.level <= parseInt(activeTab));
+
+    // 2. Data for 'all' tab (Stacked Bar)
+    const stackedData: any[] = [];
+    const allSegmentKeys = new Set<string>();
+    
+    for (const root of data) {
+        const item: any = { displayName: root.label || root.name };
+        if (root.children && root.children.length > 0) {
+            let childSum = 0;
+            for (const child of root.children) {
+                const childName = child.label || child.name;
+                item[childName] = child.count;
+                childSum += child.count;
+                allSegmentKeys.add(childName);
+            }
+            if (root.count > childSum) {
+                const diffName = `Lainnya (${root.label || root.name})`;
+                item[diffName] = root.count - childSum;
+                allSegmentKeys.add(diffName);
+            }
+        } else {
+            const selfName = root.label || root.name;
+            item[selfName] = root.count;
+            allSegmentKeys.add(selfName);
+        }
+        stackedData.push(item);
+    }
+    const segmentKeys = Array.from(allSegmentKeys);
+    const STACK_COLORS = ['#4f46e5', '#8b5cf6', '#0ea5e9', '#10b981', '#f59e0b', '#f43f5e', '#64748b', '#ec4899', '#14b8a6', '#f97316'];
+
+    return (
+        <div className="w-full h-full flex flex-col">
+            <div className="flex items-center justify-end gap-2 mb-2">
+                <button 
+                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-colors ${activeTab === 'all' ? 'bg-primary text-primary-foreground' : 'bg-surface-muted text-text-soft hover:bg-surface-muted/80'}`}
+                    onClick={() => setActiveTab('all')}
+                >
+                    Semua
+                </button>
+                {Array.from({ length: maxLevel + 1 }).map((_, i) => (
+                    <button 
+                        key={i}
+                        className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-colors ${activeTab === i.toString() ? 'bg-primary text-primary-foreground' : 'bg-surface-muted text-text-soft hover:bg-surface-muted/80'}`}
+                        onClick={() => setActiveTab(i.toString())}
+                    >
+                        Level {i + 1}
+                    </button>
+                ))}
+            </div>
+
+            <div className="flex-1 w-full min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={activeTab === 'all' ? stackedData : visibleNodes} margin={{ top: 10, right: 10, left: 40, bottom: 60 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                        <XAxis
+                            dataKey="displayName"
+                            stroke="#64748b"
+                            tickLine={false}
+                            axisLine={false}
+                            fontSize={10}
+                            fontWeight={500}
+                            angle={-45}
+                            textAnchor="end"
+                            height={100}
+                            tickFormatter={(val) => (val.length > 35 ? val.substring(0, 32) + '...' : val)}
+                        />
+                        <YAxis fontSize={10} fontWeight={500} stroke="#64748b" tickLine={false} axisLine={false} />
+                        <Tooltip
+                            cursor={{ fill: 'rgba(79,70,229,0.03)' }}
+                            content={({ active, payload }: any) => {
+                                if (active && payload && payload.length) {
+                                    if (activeTab === 'all') {
+                                        const validPayload = payload.filter((p: any) => p.value > 0);
+                                        return (
+                                            <div className="dark:bg-surface-base/90 border-surface-border/40 flex flex-col gap-2 rounded-lg border bg-white/90 p-3 shadow-xl backdrop-blur-sm">
+                                                <p className="text-text-main text-[11px] font-bold uppercase border-b border-surface-border/50 pb-2 mb-1">
+                                                    {payload[0].payload.displayName}
+                                                </p>
+                                                {validPayload.map((p: any, idx: number) => (
+                                                    <div key={idx} className="flex items-center justify-between gap-4">
+                                                        <span className="text-text-soft text-[10px] font-semibold" style={{ color: p.color }}>{p.name}</span>
+                                                        <span className="text-text-main text-[11px] font-bold">{p.value}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    }
+                                    return (
+                                        <div className="dark:bg-surface-base/90 border-surface-border/40 flex flex-col gap-1 rounded-lg border bg-white/90 p-3 shadow-xl backdrop-blur-sm">
+                                            <p className="text-text-soft text-[10px] leading-none font-semibold uppercase">
+                                                {payload[0].payload.label || payload[0].payload.name}
+                                            </p>
+                                            <p className="text-primary text-xs leading-none font-bold">{payload[0].value}</p>
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
+                        />
+                        {activeTab === 'all' ? (
+                            segmentKeys.map((key, i) => (
+                                <Bar key={key} dataKey={key} fill={STACK_COLORS[i % STACK_COLORS.length]} radius={[4, 4, 0, 0]} />
+                            ))
+                        ) : (
+                            <Bar 
+                                dataKey="count" 
+                                radius={[6, 6, 0, 0]} 
+                                barSize={32}
+                            >
+                                {visibleNodes.map((entry: any) => (
+                                    <Cell
+                                        key={`cell-${entry.id}`}
+                                        fill={entry.level === 0 ? '#4f46e5' : (entry.level === 1 ? '#8b5cf6' : '#0ea5e9')}
+                                        className="opacity-90 transition-all hover:opacity-100"
+                                    />
+                                ))}
+                            </Bar>
+                        )}
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+};
 
 export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
     const [isMounted, setIsMounted] = useState(false);
@@ -22,15 +177,25 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
         expiring_soon: 0,
     };
 
-    const submissionTypeData = (data?.submissionTypeDistribution || []).map((item: any) => ({
-        name: item.label,
-        value: item.count,
-    }));
-
-    const contractTypeData = (data?.contractTypeDistribution || []).map((item: any) => ({
-        name: item.label,
-        value: item.count,
-    }));
+    const contractTypeData = data?.contractTypeDistribution || [];
+    const allContractNodes = flattenNodes(contractTypeData);
+    
+    const pieChartData = Object.values(
+        allContractNodes
+            .filter(n => n.level === 2)
+            .map(item => ({
+                name: (item.label || item.name).trim(),
+                value: item.count,
+            }))
+            .filter(item => item.value > 0)
+            .reduce((acc: any, curr: any) => {
+                if (!acc[curr.name]) {
+                    acc[curr.name] = { name: curr.name, value: 0 };
+                }
+                acc[curr.name].value += curr.value;
+                return acc;
+            }, {})
+    ) as { name: string; value: number }[];
 
     const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#f43f5e', '#0ea5e9', '#8b5cf6'];
 
@@ -74,15 +239,15 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                         </div>
                         <div className="p-6 flex-1 flex flex-col">
                             <div className="space-y-1 pb-6">
-                                <p className="text-text-soft text-[10px] font-medium uppercase">Berdasarkan Tipe Submission</p>
+                                <p className="text-text-soft text-[10px] font-medium uppercase">Berdasarkan Klasifikasi Level 3</p>
                             </div>
 
                         <div className="relative h-[300px] w-full">
-                            {isMounted && submissionTypeData.length > 0 ? (
+                            {isMounted && pieChartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <PieChart style={{ outline: 'none' }}>
                                         <Pie
-                                            data={submissionTypeData}
+                                            data={pieChartData}
                                             cx="50%"
                                             cy="50%"
                                             innerRadius={70}
@@ -91,7 +256,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                             dataKey="value"
                                             stroke="none"
                                         >
-                                            {submissionTypeData.map((entry: any, index: number) => (
+                                            {pieChartData.map((entry: any, index: number) => (
                                                 <Cell
                                                     key={`cell-${index}`}
                                                     fill={COLORS[index % COLORS.length]}
@@ -120,7 +285,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                         </div>
 
                         <div className="mt-6 grid grid-cols-2 gap-3">
-                            {submissionTypeData.map((entry: any, index: number) => (
+                            {pieChartData.map((entry: any, index: number) => (
                                 <div
                                     key={index}
                                     className="bg-surface-muted/30 border-surface-border/40 flex items-center gap-2.5 rounded-lg border px-3 py-2"
@@ -151,49 +316,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
 
                         <div className="h-[400px] w-full">
                             {isMounted && contractTypeData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={contractTypeData} margin={{ top: 10, right: 10, left: 40, bottom: 10 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                        <XAxis
-                                            dataKey="name"
-                                            stroke="#64748b"
-                                            tickLine={false}
-                                            axisLine={false}
-                                            fontSize={10}
-                                            fontWeight={500}
-                                            angle={-45}
-                                            textAnchor="end"
-                                            height={110}
-                                            tickFormatter={(val) => (val.length > 40 ? val.substring(0, 37) + '...' : val)}
-                                        />
-                                        <YAxis fontSize={10} fontWeight={500} stroke="#64748b" tickLine={false} axisLine={false} />
-                                        <Tooltip
-                                            cursor={{ fill: 'rgba(79,70,229,0.03)' }}
-                                            content={({ active, payload, label }: any) => {
-                                                if (active && payload && payload.length) {
-                                                    return (
-                                                        <div className="dark:bg-surface-base/90 border-surface-border/40 flex flex-col gap-1 rounded-lg border bg-white/90 p-3 shadow-xl backdrop-blur-sm">
-                                                            <p className="text-text-soft text-[10px] leading-none font-semibold  uppercase">
-                                                                {label}
-                                                            </p>
-                                                            <p className="text-primary text-xs leading-none font-bold">{payload[0].value}</p>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
-                                        <Bar dataKey="value" radius={[10, 10, 10, 10]} barSize={32}>
-                                            {contractTypeData.map((entry: any, index: number) => (
-                                                <Cell
-                                                    key={`cell-${index}`}
-                                                    fill={COLORS[(index + 1) % COLORS.length]}
-                                                    className="cursor-pointer opacity-80 transition-all hover:opacity-100"
-                                                />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
+                                <TreeRechartsBar data={contractTypeData} />
                             ) : (
                                 <div className="flex h-full flex-col items-center justify-center gap-4 opacity-20">
                                     <Activity size={48} strokeWidth={1} />

@@ -5,13 +5,12 @@ namespace App\Http\Queries\Contract;
 use App\Enums\ContractStatusEnum;
 use App\Http\Formatters\ContractFormatter;
 use App\Models\Approval;
-use App\Models\Contract;
 use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\SubmissionType;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -43,6 +42,7 @@ class ContractDashboardQuery
         $picIds = $this->normalizeArray($request->input('pic_ids', []));
         $departmentIds = $this->normalizeArray($request->input('department_ids', []));
 
+        // ponytail: Query against the materialized view for maximum speed
         $baseQuery = $this->buildBaseQuery(
             $user,
             $hasFullAccess,
@@ -67,7 +67,7 @@ class ContractDashboardQuery
             ->count();
         $activeContracts = (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
-            ->where(fn (Builder $q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))
+            ->where(fn (QueryBuilder $q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))
             ->count();
         $expiringSoonContracts = (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
@@ -87,10 +87,7 @@ class ContractDashboardQuery
 
         // Total contract value
         $totalValue = 0;
-        $prices = DB::table('t_contracts')
-            ->join('t_contract_meta', 't_contracts.id', '=', 't_contract_meta.contract_id')
-            ->whereIn('t_contracts.id', (clone $baseQuery)->pluck('id'))
-            ->pluck('t_contract_meta.f2_price');
+        $prices = (clone $baseQuery)->pluck('f2_price');
         foreach ($prices as $price) {
             $totalValue += ContractFormatter::parsePrice($price);
         }
@@ -100,7 +97,7 @@ class ContractDashboardQuery
             ->where('status', ContractStatusEnum::Approved->value)
             ->orderByDesc('updated_at')
             ->limit(50)
-            ->get();
+            ->get(['id', 'updated_at']);
         $avgDays = 0;
         if ($approvedContracts->count() > 0) {
             $contractIds = $approvedContracts->pluck('id');
@@ -109,7 +106,7 @@ class ContractDashboardQuery
                 ->groupBy('contract_id')
                 ->pluck('first_sent_at', 'contract_id')
                 ->all();
-            $totalDays = $approvedContracts->sum(function (Contract $c) use ($firstApprovals): float {
+            $totalDays = $approvedContracts->sum(function ($c) use ($firstApprovals): float {
                 $firstSentAt = $firstApprovals[$c->id] ?? null;
 
                 return $firstSentAt ? Carbon::parse($firstSentAt)->diffInHours($c->updated_at) / 24 : 0;
@@ -144,8 +141,11 @@ class ContractDashboardQuery
 
         // Analysis
         $expiryRiskHeatmap = $this->getExpiryRiskHeatmap($baseQuery);
-        $allContracts = Contract::select('id', 'parent_id')->get();
-        $renewedIds = $allContracts->whereNotNull('parent_id')->pluck('parent_id')->all();
+        // ponytail: Query materialized view directly to get id and parent_id of all active contracts
+        $renewedIds = DB::table('mv_dashboard_contracts')
+            ->whereNotNull('parent_id')
+            ->pluck('parent_id')
+            ->all();
         $renewalFailureByCategory = $this->getRenewalFailureByCategory($baseQuery, $renewedIds);
         $vendorPerformance = $this->getVendorPerformance($baseQuery, $renewedIds);
         $valueDistribution = $this->getValueDistribution($baseQuery);
@@ -154,14 +154,65 @@ class ContractDashboardQuery
 
         // Workload
         [$startOfMonth, $endOfMonth] = $this->resolveWorkloadPeriod($createdFrom, $createdTo);
+
+        // ponytail: Pre-load active/pending workload counts to prevent N+1 queries in loop
+        $activeCounts = DB::table('mv_dashboard_contracts')
+            ->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])
+            ->select('assigned_pic_id', DB::raw('count(*) as count'))
+            ->groupBy('assigned_pic_id')
+            ->pluck('count', 'assigned_pic_id');
+
+        $pendingCounts = DB::table('t_approvals')
+            ->where('status', 'pending')
+            ->select('user_id', DB::raw('count(*) as count'))
+            ->groupBy('user_id')
+            ->pluck('count', 'user_id');
+
+        $initiatedCounts = DB::table('mv_dashboard_contracts')
+            ->select(DB::raw('COALESCE(initiated_by_id, created_by) as user_id'), DB::raw('count(*) as count'))
+            ->groupBy('user_id')
+            ->pluck('count', 'user_id');
+
+        $pendingThisMonth = DB::table('t_approvals')
+            ->where('status', 'pending')
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->select('user_id', DB::raw('count(*) as count'))
+            ->groupBy('user_id')
+            ->pluck('count', 'user_id');
+
+        $activeThisMonth = DB::table('mv_dashboard_contracts')
+            ->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->select('assigned_pic_id', DB::raw('count(*) as count'))
+            ->groupBy('assigned_pic_id')
+            ->pluck('count', 'assigned_pic_id');
+
+        $completedApprovalsThisMonth = DB::table('t_approvals')
+            ->where('status', 'approved')
+            ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
+            ->select('user_id', DB::raw('count(*) as count'))
+            ->groupBy('user_id')
+            ->pluck('count', 'user_id');
+
+        $completedContractsThisMonth = DB::table('mv_dashboard_contracts')
+            ->whereIn('status', ['approved', 'active', 'archived'])
+            ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
+            ->select('assigned_pic_id', DB::raw('count(*) as count'))
+            ->groupBy('assigned_pic_id')
+            ->pluck('count', 'assigned_pic_id');
+
         $userWorkloads = $this->getUserWorkloads(
             $user, $hasFullAccess, $isManager, $hasDepartmentAccess,
             $startOfMonth, $endOfMonth,
             $regionIds, $companyGroupIds, $companyIds, $departmentIds,
+            $activeCounts, $pendingCounts, $initiatedCounts,
+            $pendingThisMonth, $activeThisMonth, $completedApprovalsThisMonth, $completedContractsThisMonth
         );
-        $departmentWorkload = $this->getDepartmentWorkload();
+
+        $departmentWorkload = $this->getDepartmentWorkload($activeCounts, $pendingCounts);
         $categoryTraffic = $this->getCategoryTraffic($baseQuery);
         $departmentTraffic = $this->getDepartmentTraffic($baseQuery);
+
         $totalRenewed = (clone $baseQuery)->whereNotNull('parent_id')->count();
         $renewalCompletionRate = $expiredContracts > 0
             ? round(($totalRenewed / $expiredContracts) * 100, 1)
@@ -245,24 +296,24 @@ class ContractDashboardQuery
         array $regionIds,
         array $companyGroupIds,
         array $companyIds,
-    ): Builder {
-        $baseQuery = Contract::query()->select('t_contracts.*');
+    ): QueryBuilder {
+        $baseQuery = DB::table('mv_dashboard_contracts');
 
         // Role-based scope
         if ($isManager && $user->company_id) {
-            $baseQuery->where(function (Builder $q) use ($user): void {
-                $q->whereHas('initiator', fn (Builder $sq) => $sq->where('company_id', $user->company_id))
-                    ->orWhere(function (Builder $sq) use ($user): void {
+            $baseQuery->where(function (QueryBuilder $q) use ($user): void {
+                $q->where('initiator_company_id', $user->company_id)
+                    ->orWhere(function (QueryBuilder $sq) use ($user): void {
                         $sq->whereNull('initiated_by_id')
-                            ->whereHas('creator', fn (Builder $ssq) => $ssq->where('company_id', $user->company_id));
+                            ->where('creator_company_id', $user->company_id);
                     });
             });
         } elseif ($hasDepartmentAccess && $user->department_id) {
-            $baseQuery->where(function (Builder $q) use ($user): void {
-                $q->whereHas('initiator', fn (Builder $sq) => $sq->where('department_id', $user->department_id))
-                    ->orWhere(function (Builder $sq) use ($user): void {
+            $baseQuery->where(function (QueryBuilder $q) use ($user): void {
+                $q->where('initiator_department_id', $user->department_id)
+                    ->orWhere(function (QueryBuilder $sq) use ($user): void {
                         $sq->whereNull('initiated_by_id')
-                            ->whereHas('creator', fn (Builder $ssq) => $ssq->where('department_id', $user->department_id));
+                            ->where('creator_department_id', $user->department_id);
                     });
             });
         }
@@ -309,7 +360,7 @@ class ContractDashboardQuery
      * @param  array<string>  $companyIds
      */
     private function applyFullAccessFilters(
-        Builder $query,
+        QueryBuilder $query,
         array $departmentIds,
         array $regionIds,
         array $companyGroupIds,
@@ -319,42 +370,42 @@ class ContractDashboardQuery
             $this->applyDepartmentScopeFilter($query, $departmentIds);
         }
         if (! empty($regionIds)) {
-            $query->where(function (Builder $q) use ($regionIds): void {
-                $q->whereHas('initiator.company', fn (Builder $sq) => $sq->whereIn('region_id', $regionIds))
-                    ->orWhere(function (Builder $sq) use ($regionIds): void {
+            $query->where(function (QueryBuilder $q) use ($regionIds): void {
+                $q->whereIn('initiator_region_id', $regionIds)
+                    ->orWhere(function (QueryBuilder $sq) use ($regionIds): void {
                         $sq->whereNull('initiated_by_id')
-                            ->whereHas('creator.company', fn (Builder $ssq) => $ssq->whereIn('region_id', $regionIds));
+                            ->whereIn('creator_region_id', $regionIds);
                     });
             });
         }
         if (! empty($companyGroupIds)) {
-            $query->where(function (Builder $q) use ($companyGroupIds): void {
-                $q->whereHas('initiator.company', fn (Builder $sq) => $sq->whereIn('company_group_id', $companyGroupIds))
-                    ->orWhere(function (Builder $sq) use ($companyGroupIds): void {
+            $query->where(function (QueryBuilder $q) use ($companyGroupIds): void {
+                $q->whereIn('initiator_company_group_id', $companyGroupIds)
+                    ->orWhere(function (QueryBuilder $sq) use ($companyGroupIds): void {
                         $sq->whereNull('initiated_by_id')
-                            ->whereHas('creator.company', fn (Builder $ssq) => $ssq->whereIn('company_group_id', $companyGroupIds));
+                            ->whereIn('creator_company_group_id', $companyGroupIds);
                     });
             });
         }
         if (! empty($companyIds)) {
-            $query->where(function (Builder $q) use ($companyIds): void {
-                $q->whereHas('initiator', fn (Builder $sq) => $sq->whereIn('company_id', $companyIds))
-                    ->orWhere(function (Builder $sq) use ($companyIds): void {
+            $query->where(function (QueryBuilder $q) use ($companyIds): void {
+                $q->whereIn('initiator_company_id', $companyIds)
+                    ->orWhere(function (QueryBuilder $sq) use ($companyIds): void {
                         $sq->whereNull('initiated_by_id')
-                            ->whereHas('creator', fn (Builder $ssq) => $ssq->whereIn('company_id', $companyIds));
+                            ->whereIn('creator_company_id', $companyIds);
                     });
             });
         }
     }
 
     /** @param array<string> $departmentIds */
-    private function applyDepartmentScopeFilter(Builder $query, array $departmentIds): void
+    private function applyDepartmentScopeFilter(QueryBuilder $query, array $departmentIds): void
     {
-        $query->where(function (Builder $q) use ($departmentIds): void {
-            $q->whereHas('initiator', fn (Builder $sq) => $sq->whereIn('department_id', $departmentIds))
-                ->orWhere(function (Builder $sq) use ($departmentIds): void {
+        $query->where(function (QueryBuilder $q) use ($departmentIds): void {
+            $q->whereIn('initiator_department_id', $departmentIds)
+                ->orWhere(function (QueryBuilder $sq) use ($departmentIds): void {
                     $sq->whereNull('initiated_by_id')
-                        ->whereHas('creator', fn (Builder $ssq) => $ssq->whereIn('department_id', $departmentIds));
+                        ->whereIn('creator_department_id', $departmentIds);
                 });
         });
     }
@@ -396,11 +447,10 @@ class ContractDashboardQuery
     }
 
     /** @return array<array{label: string, count: int}> */
-    private function getSubmissionTypeDistribution(Builder $baseQuery): array
+    private function getSubmissionTypeDistribution(QueryBuilder $baseQuery): array
     {
-        $counts = DB::table('t_contracts')
+        $counts = (clone $baseQuery)
             ->select('submission_type_id', DB::raw('count(*) as count'))
-            ->whereIn('id', (clone $baseQuery)->pluck('id'))
             ->whereNotNull('submission_type_id')
             ->groupBy('submission_type_id')
             ->pluck('count', 'submission_type_id');
@@ -415,33 +465,51 @@ class ContractDashboardQuery
     }
 
     /** @return array<array{label: string, count: int}> */
-    private function getContractTypeDistribution(Builder $baseQuery): array
+    private function getContractTypeDistribution(QueryBuilder $baseQuery): array
     {
-        $counts = DB::table('t_contracts')
+        $counts = (clone $baseQuery)
             ->select('contract_type_id', DB::raw('count(*) as count'))
-            ->whereIn('id', (clone $baseQuery)->pluck('id'))
             ->whereNotNull('contract_type_id')
             ->groupBy('contract_type_id')
             ->pluck('count', 'contract_type_id');
 
-        return ContractType::whereNotNull('parent_id')
-            ->whereColumn('parent_id', '!=', 'id')
-            ->get()
-            ->map(fn ($type) => [
-                'label' => $type->name,
-                'count' => (int) $counts->get($type->id, 0),
-            ])
-            ->sortByDesc('count')
-            ->values()
-            ->all();
+        $allTypes = ContractType::all();
+
+        $buildTree = function ($parentId = null) use (&$buildTree, $allTypes, $counts) {
+            $branch = [];
+            foreach ($allTypes->where('parent_id', $parentId) as $type) {
+                // prevent infinite loop
+                if ($type->id === $parentId) {
+                    continue;
+                }
+
+                $children = $buildTree($type->id);
+                $nodeCount = (int) $counts->get($type->id, 0);
+
+                $childrenCount = collect($children)->sum('count');
+                $totalCount = $nodeCount + $childrenCount;
+
+                $branch[] = [
+                    'id' => $type->id,
+                    'label' => $type->name,
+                    'count' => $totalCount,
+                    'children' => $children,
+                ];
+            }
+            // Sort by count desc
+            usort($branch, fn ($a, $b) => $b['count'] <=> $a['count']);
+
+            return $branch;
+        };
+
+        return $buildTree(null);
     }
 
     /** @return array<array{status: string, count: int}> */
-    private function getStatusDistribution(Builder $baseQuery): array
+    private function getStatusDistribution(QueryBuilder $baseQuery): array
     {
-        return DB::table('t_contracts')
+        return (clone $baseQuery)
             ->select('status', DB::raw('count(*) as count'))
-            ->whereIn('id', (clone $baseQuery)->pluck('id'))
             ->groupBy('status')
             ->get()
             ->map(fn ($item) => [
@@ -453,7 +521,7 @@ class ContractDashboardQuery
     }
 
     /** @return array<string, int> */
-    private function getExpiryTimeline(Builder $baseQuery): array
+    private function getExpiryTimeline(QueryBuilder $baseQuery): array
     {
         $approved = ContractStatusEnum::Approved->value;
 
@@ -461,27 +529,26 @@ class ContractDashboardQuery
             'under30' => (clone $baseQuery)->where('status', $approved)->whereNotNull('end_date')->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<', now()->addDays(30)->toDateString())->count(),
             'under60' => (clone $baseQuery)->where('status', $approved)->whereNotNull('end_date')->whereDate('end_date', '>=', now()->addDays(30)->toDateString())->whereDate('end_date', '<', now()->addDays(60)->toDateString())->count(),
             'under90' => (clone $baseQuery)->where('status', $approved)->whereNotNull('end_date')->whereDate('end_date', '>=', now()->addDays(60)->toDateString())->whereDate('end_date', '<', now()->addDays(90)->toDateString())->count(),
-            'above90' => (clone $baseQuery)->where('status', $approved)->where(fn (Builder $q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->addDays(90)->toDateString()))->count(),
+            'above90' => (clone $baseQuery)->where('status', $approved)->where(fn (QueryBuilder $q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->addDays(90)->toDateString()))->count(),
         ];
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getRecentContracts(Builder $baseQuery): array
+    private function getRecentContracts(QueryBuilder $baseQuery): array
     {
         return (clone $baseQuery)
-            ->with(['creator', 'contractType', 'meta'])
             ->orderByDesc('created_at')
             ->limit(5)
-            ->get()
+            ->get(['id', 'form_no', 'contract_no', 'title', 'status', 'creator_name', 'contract_type_name', 'f2_price', 'created_at'])
             ->map(fn ($item) => [
                 'id' => $item->id,
                 'form_no' => $item->form_no,
                 'contract_no' => $item->contract_no,
                 'title' => $item->title,
                 'status' => $item->status,
-                'creator' => $item->creator?->name,
-                'type' => $item->contractType?->name,
-                'price' => $item->meta?->f2_price,
+                'creator' => $item->creator_name,
+                'type' => $item->contract_type_name,
+                'price' => $item->f2_price,
                 'created_at' => $item->created_at,
             ])
             ->values()
@@ -489,24 +556,23 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getUpcomingRenewals(Builder $baseQuery): array
+    private function getUpcomingRenewals(QueryBuilder $baseQuery): array
     {
         return (clone $baseQuery)
-            ->with(['vendor', 'creator'])
             ->where('status', ContractStatusEnum::Approved->value)
             ->whereNotNull('end_date')
             ->whereDate('end_date', '>=', now()->toDateString())
             ->orderBy('end_date', 'asc')
             ->limit(5)
-            ->get()
+            ->get(['id', 'form_no', 'contract_no', 'title', 'end_date', 'vendor_name', 'creator_name'])
             ->map(fn ($item) => [
                 'id' => $item->id,
                 'form_no' => $item->form_no,
                 'contract_no' => $item->contract_no,
                 'title' => $item->title,
                 'end_date' => $item->end_date,
-                'vendor_name' => $item->vendor?->name,
-                'creator' => $item->creator?->name,
+                'vendor_name' => $item->vendor_name,
+                'creator' => $item->creator_name,
             ])
             ->values()
             ->all();
@@ -572,17 +638,27 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getMonthlyTrend(Builder $baseQuery): array
+    private function getMonthlyTrend(QueryBuilder $baseQuery): array
     {
+        // ponytail: Query once and process in-memory to prevent multiple queries in loop
+        $contracts = (clone $baseQuery)
+            ->get(['created_at', 'f2_price'])
+            ->map(function ($c) {
+                $c->month_key = Carbon::parse($c->created_at)->startOfMonth()->toDateString();
+
+                return $c;
+            });
+
         $trend = [];
         for ($i = 5; $i >= 0; $i--) {
             $monthStart = now()->subMonths($i)->startOfMonth();
-            $monthEnd = now()->subMonths($i)->endOfMonth();
-            $contractsInMonth = (clone $baseQuery)->with('meta')->whereBetween('created_at', [$monthStart, $monthEnd])->get();
+            $monthKey = $monthStart->toDateString();
+            $contractsInMonth = $contracts->where('month_key', $monthKey);
+
             $trend[] = [
                 'month' => $monthStart->translatedFormat('M'),
                 'count' => $contractsInMonth->count(),
-                'value' => $contractsInMonth->sum(fn ($c) => ContractFormatter::parsePrice($c->meta?->f2_price)),
+                'value' => $contractsInMonth->sum(fn ($c) => ContractFormatter::parsePrice($c->f2_price)),
             ];
         }
 
@@ -590,16 +666,58 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getRenewalVsExpiredTrend(Builder $baseQuery): array
+    private function getRenewalVsExpiredTrend(QueryBuilder $baseQuery): array
     {
+        // ponytail: Query once and process in-memory to prevent multiple queries in loop
+        $contracts = (clone $baseQuery)
+            ->get(['created_at', 'end_date', 'status', 'parent_id'])
+            ->map(function ($c) {
+                $c->created_month_key = Carbon::parse($c->created_at)->startOfMonth()->toDateString();
+                $c->end_month_key = $c->end_date ? Carbon::parse($c->end_date)->startOfMonth()->toDateString() : null;
+
+                return $c;
+            });
+
+        $trend = [];
+        $approved = ContractStatusEnum::Approved->value;
+        for ($i = 5; $i >= 0; $i--) {
+            $monthStart = now()->subMonths($i)->startOfMonth();
+            $monthKey = $monthStart->toDateString();
+
+            $trend[] = [
+                'month' => $monthStart->translatedFormat('M'),
+                'expired' => $contracts->where('status', $approved)->where('end_month_key', $monthKey)->count(),
+                'renewed' => $contracts->whereNotNull('parent_id')->where('created_month_key', $monthKey)->count(),
+            ];
+        }
+
+        return $trend;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function getMonthlyApprovalTrend(QueryBuilder $baseQuery): array
+    {
+        // ponytail: Query once and process in-memory to prevent multiple queries in loop
+        $contracts = (clone $baseQuery)
+            ->get(['created_at', 'status'])
+            ->map(function ($c) {
+                $c->month_key = Carbon::parse($c->created_at)->startOfMonth()->toDateString();
+
+                return $c;
+            });
+
         $trend = [];
         for ($i = 5; $i >= 0; $i--) {
             $monthStart = now()->subMonths($i)->startOfMonth();
-            $monthEnd = now()->subMonths($i)->endOfMonth();
+            $monthKey = $monthStart->toDateString();
+            $monthContracts = $contracts->where('month_key', $monthKey);
+
             $trend[] = [
                 'month' => $monthStart->translatedFormat('M'),
-                'expired' => (clone $baseQuery)->where('status', ContractStatusEnum::Approved->value)->whereBetween('end_date', [$monthStart, $monthEnd])->count(),
-                'renewed' => (clone $baseQuery)->whereNotNull('parent_id')->whereBetween('created_at', [$monthStart, $monthEnd])->count(),
+                'approved' => $monthContracts->where('status', ContractStatusEnum::Approved->value)->count(),
+                'pending' => $monthContracts->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Locked->value])->count(),
+                'revision' => $monthContracts->where('status', ContractStatusEnum::Revision->value)->count(),
+                'rejected' => $monthContracts->where('status', ContractStatusEnum::Rejected->value)->count(),
             ];
         }
 
@@ -607,40 +725,17 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getMonthlyApprovalTrend(Builder $baseQuery): array
-    {
-        $trend = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $monthStart = now()->subMonths($i)->startOfMonth();
-            $monthEnd = now()->subMonths($i)->endOfMonth();
-            $contracts = (clone $baseQuery)->whereBetween('created_at', [$monthStart, $monthEnd])->get();
-            $trend[] = [
-                'month' => $monthStart->translatedFormat('M'),
-                'approved' => $contracts->where('status', ContractStatusEnum::Approved->value)->count(),
-                'pending' => $contracts->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Locked->value])->count(),
-                'revision' => $contracts->where('status', ContractStatusEnum::Revision->value)->count(),
-                'rejected' => $contracts->where('status', ContractStatusEnum::Rejected->value)->count(),
-            ];
-        }
-
-        return $trend;
-    }
-
-    /** @return array<int, array<string, mixed>> */
-    private function getTopVendors(Builder $baseQuery): array
+    private function getTopVendors(QueryBuilder $baseQuery): array
     {
         return (clone $baseQuery)
             ->whereNotNull('vendor_id')
-            ->with(['vendor', 'meta'])
-            ->get()
+            ->get(['vendor_name', 'vendor_id', 'f2_price'])
             ->groupBy('vendor_id')
             ->map(function ($group) {
-                $vendor = $group->first()->vendor;
-
                 return [
-                    'name' => $vendor->name ?? 'Unknown Vendor',
+                    'name' => $group->first()->vendor_name ?? 'Unknown Vendor',
                     'count' => $group->count(),
-                    'value' => $group->sum(fn ($c) => ContractFormatter::parsePrice($c->meta?->f2_price)),
+                    'value' => $group->sum(fn ($c) => ContractFormatter::parsePrice($c->f2_price)),
                 ];
             })
             ->sortByDesc('value')
@@ -650,16 +745,28 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getCategoryTrend(Builder $baseQuery): array
+    private function getCategoryTrend(QueryBuilder $baseQuery): array
     {
         $allCategories = ContractType::all();
+
+        // ponytail: Query once and process in-memory to prevent multiple queries in loop
+        $contracts = (clone $baseQuery)
+            ->get(['created_at', 'contract_type_id'])
+            ->map(function ($c) {
+                $c->month_key = Carbon::parse($c->created_at)->startOfMonth()->toDateString();
+
+                return $c;
+            });
+
         $trend = [];
         for ($i = 5; $i >= 0; $i--) {
             $monthStart = now()->subMonths($i)->startOfMonth();
-            $monthEnd = now()->subMonths($i)->endOfMonth();
+            $monthKey = $monthStart->toDateString();
+            $monthContracts = $contracts->where('month_key', $monthKey);
+
             $row = ['month' => $monthStart->translatedFormat('M')];
             foreach ($allCategories as $cat) {
-                $row[$cat->name] = (clone $baseQuery)->where('contract_type_id', $cat->id)->whereBetween('created_at', [$monthStart, $monthEnd])->count();
+                $row[$cat->name] = $monthContracts->where('contract_type_id', $cat->id)->count();
             }
             $trend[] = $row;
         }
@@ -668,13 +775,12 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getExpiryRiskHeatmap(Builder $baseQuery): array
+    private function getExpiryRiskHeatmap(QueryBuilder $baseQuery): array
     {
         return (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
-            ->with(['creator.department', 'initiator.department'])
-            ->get()
-            ->groupBy(fn ($c) => $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi')
+            ->get(['end_date', 'initiator_department_name', 'creator_department_name'])
+            ->groupBy(fn ($c) => $c->initiator_department_name ?? $c->creator_department_name ?? 'Tanpa Divisi')
             ->map(function ($group, $deptName) {
                 $highRisk = 0;
                 $medRisk = 0;
@@ -705,15 +811,14 @@ class ContractDashboardQuery
      * @param  array<string>  $renewedIds
      * @return array<int, array<string, mixed>>
      */
-    private function getRenewalFailureByCategory(Builder $baseQuery, array $renewedIds): array
+    private function getRenewalFailureByCategory(QueryBuilder $baseQuery, array $renewedIds): array
     {
         return (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
             ->whereNotNull('end_date')
             ->whereDate('end_date', '<', now()->toDateString())
-            ->with('contractType')
-            ->get()
-            ->groupBy(fn ($c) => $c->contractType?->name ?? 'Lainnya')
+            ->get(['id', 'contract_type_name'])
+            ->groupBy(fn ($c) => $c->contract_type_name ?? 'Lainnya')
             ->map(function ($group, $catName) use ($renewedIds) {
                 $renewed = 0;
                 $failed = 0;
@@ -735,15 +840,14 @@ class ContractDashboardQuery
      * @param  array<string>  $renewedIds
      * @return array<int, array<string, mixed>>
      */
-    private function getVendorPerformance(Builder $baseQuery, array $renewedIds): array
+    private function getVendorPerformance(QueryBuilder $baseQuery, array $renewedIds): array
     {
         return (clone $baseQuery)
             ->whereNotNull('vendor_id')
-            ->with('vendor')
-            ->get()
+            ->get(['id', 'vendor_name', 'vendor_id', 'parent_id', 'status', 'updated_at'])
             ->groupBy('vendor_id')
             ->map(function ($group) use ($renewedIds) {
-                $vendor = $group->first()->vendor;
+                $vendorName = $group->first()->vendor_name;
                 $total = $group->count();
                 $renewed = $group->filter(fn ($c) => in_array($c->id, $renewedIds) || $c->parent_id !== null)->count();
                 $approvedGroup = $group->where('status', ContractStatusEnum::Approved->value);
@@ -764,7 +868,7 @@ class ContractDashboardQuery
                 }
 
                 return [
-                    'name' => $vendor?->name ?? 'Unknown',
+                    'name' => $vendorName ?? 'Unknown',
                     'total' => $total,
                     'renewal_rate' => $total > 0 ? round(($renewed / $total) * 100, 1) : 0,
                     'avg_cycle_time' => $avgDays,
@@ -777,7 +881,7 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getValueDistribution(Builder $baseQuery): array
+    private function getValueDistribution(QueryBuilder $baseQuery): array
     {
         $distribution = [
             ['range' => '< Rp 50M', 'count' => 0],
@@ -785,9 +889,7 @@ class ContractDashboardQuery
             ['range' => '> Rp 500M', 'count' => 0],
         ];
         $prices = (clone $baseQuery)
-            ->join('t_contract_meta', 't_contracts.id', '=', 't_contract_meta.contract_id')
-            ->select('t_contract_meta.f2_price')
-            ->pluck('t_contract_meta.f2_price')
+            ->pluck('f2_price')
             ->map(fn ($price) => ContractFormatter::parsePrice($price));
         foreach ($prices as $price) {
             if ($price < 50000000) {
@@ -803,28 +905,26 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getBudgetAllocation(Builder $baseQuery): array
+    private function getBudgetAllocation(QueryBuilder $baseQuery): array
     {
         return (clone $baseQuery)
-            ->with(['contractType', 'meta'])
-            ->get()
-            ->groupBy(fn ($c) => $c->contractType?->name ?? 'Lainnya')
+            ->get(['contract_type_name', 'f2_price'])
+            ->groupBy(fn ($c) => $c->contract_type_name ?? 'Lainnya')
             ->map(fn ($group, $catName) => [
                 'name' => $catName,
-                'value' => $group->sum(fn ($c) => ContractFormatter::parsePrice($c->meta?->f2_price)),
+                'value' => $group->sum(fn ($c) => ContractFormatter::parsePrice($c->f2_price)),
             ])
             ->values()
             ->all();
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getApprovalDurationByDept(Builder $baseQuery): array
+    private function getApprovalDurationByDept(QueryBuilder $baseQuery): array
     {
         return (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
-            ->with(['creator.department', 'initiator.department'])
-            ->get()
-            ->groupBy(fn ($c) => $c->initiator?->department?->name ?? $c->creator?->department?->name ?? 'Tanpa Divisi')
+            ->get(['id', 'initiator_department_name', 'creator_department_name', 'updated_at'])
+            ->groupBy(fn ($c) => $c->initiator_department_name ?? $c->creator_department_name ?? 'Tanpa Divisi')
             ->map(function ($group, $deptName) {
                 $contractIds = $group->pluck('id');
                 $firstApprovals = Approval::whereIn('contract_id', $contractIds)
@@ -874,6 +974,13 @@ class ContractDashboardQuery
         array $companyGroupIds,
         array $companyIds,
         array $departmentIds,
+        mixed $activeCounts,
+        mixed $pendingCounts,
+        mixed $initiatedCounts,
+        mixed $pendingThisMonth,
+        mixed $activeThisMonth,
+        mixed $completedApprovalsThisMonth,
+        mixed $completedContractsThisMonth
     ): array {
         $userQuery = User::with('department');
 
@@ -901,17 +1008,13 @@ class ContractDashboardQuery
         }
 
         return $userQuery->get()
-            ->map(function ($u) use ($startOfMonth, $endOfMonth) {
-                $activeCount = Contract::where('assigned_pic_id', $u->id)
-                    ->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])
-                    ->count();
-                $pendingCount = Approval::where('user_id', $u->id)->where('status', 'pending')->count();
-                $initiatedCount = Contract::where(function ($query) use ($u): void {
-                    $query->where('initiated_by_id', $u->id)
-                        ->orWhere(function ($q) use ($u): void {
-                            $q->whereNull('initiated_by_id')->where('created_by', $u->id);
-                        });
-                })->count();
+            ->map(function ($u) use (
+                $activeCounts, $pendingCounts, $initiatedCounts,
+                $pendingThisMonth, $activeThisMonth, $completedApprovalsThisMonth, $completedContractsThisMonth
+            ) {
+                $activeCount = (int) $activeCounts->get($u->id, 0);
+                $pendingCount = (int) $pendingCounts->get($u->id, 0);
+                $initiatedCount = (int) $initiatedCounts->get($u->id, 0);
 
                 return [
                     'id' => $u->id,
@@ -926,9 +1029,9 @@ class ContractDashboardQuery
                     'initiated_contracts_count' => $initiatedCount,
                     'load_status' => $activeCount >= 10 ? 'Sibuk' : 'Ready',
                     'stats_this_month' => [
-                        'pending' => Approval::where('user_id', $u->id)->where('status', 'pending')->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count(),
-                        'active' => Contract::where('assigned_pic_id', $u->id)->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])->whereBetween('created_at', [$startOfMonth, $endOfMonth])->count(),
-                        'completed' => Approval::where('user_id', $u->id)->where('status', 'approved')->whereBetween('updated_at', [$startOfMonth, $endOfMonth])->count() + Contract::where('assigned_pic_id', $u->id)->whereIn('status', ['approved', 'active', 'archived'])->whereBetween('updated_at', [$startOfMonth, $endOfMonth])->count(),
+                        'pending' => (int) $pendingThisMonth->get($u->id, 0),
+                        'active' => (int) $activeThisMonth->get($u->id, 0),
+                        'completed' => ((int) $completedApprovalsThisMonth->get($u->id, 0)) + ((int) $completedContractsThisMonth->get($u->id, 0)),
                     ],
                 ];
             })
@@ -938,23 +1041,24 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getDepartmentWorkload(): array
+    private function getDepartmentWorkload($activeReviews, $pendingApprovals): array
     {
         return User::with('department')
             ->get()
             ->groupBy(fn ($u) => $u->department?->name ?? 'Tanpa Divisi')
-            ->map(function ($group, $deptName) {
-                $userIds = $group->pluck('id');
-                $activeReviews = Contract::whereIn('assigned_pic_id', $userIds)
-                    ->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])
-                    ->count();
-                $pendingApprovals = Approval::whereIn('user_id', $userIds)->where('status', 'pending')->count();
+            ->map(function ($group, $deptName) use ($activeReviews, $pendingApprovals) {
+                $totalActive = 0;
+                $totalPending = 0;
+                foreach ($group as $u) {
+                    $totalActive += (int) $activeReviews->get($u->id, 0);
+                    $totalPending += (int) $pendingApprovals->get($u->id, 0);
+                }
 
                 return [
                     'department' => $deptName,
-                    'active_reviews' => $activeReviews,
-                    'pending_approvals' => $pendingApprovals,
-                    'total' => $activeReviews + $pendingApprovals,
+                    'active_reviews' => $totalActive,
+                    'pending_approvals' => $totalPending,
+                    'total' => $totalActive + $totalPending,
                 ];
             })
             ->filter(fn ($item) => $item['total'] > 0)
@@ -964,15 +1068,28 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getCategoryTraffic(Builder $baseQuery): array
+    private function getCategoryTraffic(QueryBuilder $baseQuery): array
     {
+        // ponytail: Pre-aggregate counts in single database query to prevent N+1 in loop
+        $incomingCounts = (clone $baseQuery)
+            ->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])
+            ->select('contract_type_id', DB::raw('count(*) as count'))
+            ->groupBy('contract_type_id')
+            ->pluck('count', 'contract_type_id');
+
+        $outgoingCounts = (clone $baseQuery)
+            ->whereIn('status', [ContractStatusEnum::Approved->value, ContractStatusEnum::Locked->value, 'archived'])
+            ->select('contract_type_id', DB::raw('count(*) as count'))
+            ->groupBy('contract_type_id')
+            ->pluck('count', 'contract_type_id');
+
         return ContractType::orderBy('name')
             ->get()
-            ->map(function ($type) use ($baseQuery) {
+            ->map(function ($type) use ($incomingCounts, $outgoingCounts) {
                 return [
                     'category_name' => $type->name,
-                    'incoming_count' => (clone $baseQuery)->where('contract_type_id', $type->id)->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])->count(),
-                    'outgoing_count' => (clone $baseQuery)->where('contract_type_id', $type->id)->whereIn('status', [ContractStatusEnum::Approved->value, ContractStatusEnum::Locked->value, 'archived'])->count(),
+                    'incoming_count' => (int) $incomingCounts->get($type->id, 0),
+                    'outgoing_count' => (int) $outgoingCounts->get($type->id, 0),
                 ];
             })
             ->values()
@@ -980,24 +1097,29 @@ class ContractDashboardQuery
     }
 
     /** @return array<int, array<string, mixed>> */
-    private function getDepartmentTraffic(Builder $baseQuery): array
+    private function getDepartmentTraffic(QueryBuilder $baseQuery): array
     {
+        // ponytail: Pre-aggregate counts in single database query using COALESCE to prevent N+1 in loop
+        $incomingCounts = (clone $baseQuery)
+            ->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])
+            ->select(DB::raw('COALESCE(initiator_department_id, creator_department_id) as dept_id'), DB::raw('count(*) as count'))
+            ->groupBy('dept_id')
+            ->pluck('count', 'dept_id');
+
+        $outgoingCounts = (clone $baseQuery)
+            ->whereIn('status', [ContractStatusEnum::Approved->value, ContractStatusEnum::Locked->value, 'archived'])
+            ->select(DB::raw('COALESCE(initiator_department_id, creator_department_id) as dept_id'), DB::raw('count(*) as count'))
+            ->groupBy('dept_id')
+            ->pluck('count', 'dept_id');
+
         return Department::orderBy('name')
             ->get()
-            ->map(function ($dept) use ($baseQuery) {
-                $scopeFn = function (Builder $q) use ($dept): void {
-                    $q->whereHas('initiator', fn (Builder $sq) => $sq->where('department_id', $dept->id))
-                        ->orWhere(function (Builder $sq) use ($dept): void {
-                            $sq->whereNull('initiated_by_id')
-                                ->whereHas('creator', fn (Builder $ssq) => $ssq->where('department_id', $dept->id));
-                        });
-                };
-
+            ->map(function ($dept) use ($incomingCounts, $outgoingCounts) {
                 return [
                     'department_id' => $dept->id,
                     'department_name' => $dept->name,
-                    'incoming_count' => (clone $baseQuery)->where($scopeFn)->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])->count(),
-                    'outgoing_count' => (clone $baseQuery)->where($scopeFn)->whereIn('status', [ContractStatusEnum::Approved->value, ContractStatusEnum::Locked->value, 'archived'])->count(),
+                    'incoming_count' => (int) $incomingCounts->get($dept->id, 0),
+                    'outgoing_count' => (int) $outgoingCounts->get($dept->id, 0),
                     'member_count' => User::where('department_id', $dept->id)->count(),
                 ];
             })

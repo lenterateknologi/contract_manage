@@ -10,7 +10,16 @@ import { ToastProvider, useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { LayoutToggle, LayoutType } from '@/components/ui/navigation/LayoutToggle';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+    DropdownMenuSub,
+    DropdownMenuSubTrigger,
+    DropdownMenuSubContent,
+    DropdownMenuSeparator,
+} from '@/components/ui/selection/DropdownMenu';
 import { useDebounce } from '@/hooks/use-debounce';
 import { usePermissions } from '@/hooks/use-permissions';
 import { contractApi } from '@/pages/contracts/utils';
@@ -25,6 +34,7 @@ import {
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    ChevronDown,
     Clock,
     Download,
     Eye,
@@ -300,6 +310,62 @@ function ContractPage({
 
     const [layout, setLayout] = useState<'table' | 'grid'>('table');
     const [selectedRows, setSelectedRows] = useState<Contract[]>([]);
+
+    interface DBContractType extends ContractType {
+        parent_id?: string | null;
+        level?: number;
+    }
+
+    const isDescendantOrSelf = useCallback((targetId: string, parentId: string): boolean => {
+        if (targetId === parentId) return true;
+        const target = types.find(t => t.id === targetId) as DBContractType | undefined;
+        if (target && target.parent_id) {
+            return isDescendantOrSelf(target.parent_id, parentId);
+        }
+        return false;
+    }, [types]);
+
+    const rootTypes = useMemo(() => {
+        return (types as DBContractType[]).filter(t => !t.parent_id || t.level === 0);
+    }, [types]);
+
+    const renderDropdownItems = useCallback((parentId: string | null) => {
+        const children = (types as DBContractType[]).filter(t => t.parent_id === parentId);
+        if (children.length === 0) return null;
+
+        return children.map(child => {
+            const hasChildren = (types as DBContractType[]).some(t => t.parent_id === child.id);
+            if (hasChildren) {
+                return (
+                    <DropdownMenuSub key={child.id}>
+                        <DropdownMenuSubTrigger className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-xs px-3 py-2 flex items-center justify-between">
+                            {child.name}
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 shadow-lg rounded-md min-w-[180px]">
+                            <DropdownMenuItem
+                                onClick={() => handleFilterChange({ contract_type_id: child.id, page: 1 })}
+                                className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-xs px-3 py-2 font-semibold text-primary"
+                            >
+                                Semua {child.name}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                            {renderDropdownItems(child.id)}
+                        </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                );
+            }
+
+            return (
+                <DropdownMenuItem
+                    key={child.id}
+                    onClick={() => handleFilterChange({ contract_type_id: child.id, page: 1 })}
+                    className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-xs px-3 py-2"
+                >
+                    {child.name}
+                </DropdownMenuItem>
+            );
+        });
+    }, [types, handleFilterChange]);
 
     useEffect(() => {
         if (currentView && currentView !== view) setView(currentView);
@@ -685,26 +751,52 @@ function ContractPage({
 
                                     <div className="border-surface-border bg-surface-base/40 sticky top-[73px] z-10 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b px-5 py-2 backdrop-blur-md">
                                         <Button
-                                            onClick={() => handleFilterChange({ submission_type_id: undefined, page: 1 })}
-                                            variant={!filters.submission_type_id ? 'primary' : 'ghost'}
+                                            onClick={() => handleFilterChange({ contract_type_id: undefined, page: 1 })}
+                                            variant={!filters.contract_type_id ? 'primary' : 'ghost'}
                                             size="sm"
                                             fontSize="11px"
                                             className="whitespace-nowrap"
                                         >
                                             Semua Kontrak
                                         </Button>
-                                        {submissionTypes.map((type) => (
-                                            <Button
-                                                key={type.id}
-                                                onClick={() => handleFilterChange({ submission_type_id: type.id, page: 1 })}
-                                                variant={filters.submission_type_id === type.id ? 'primary' : 'ghost'}
-                                                size="sm"
-                                                fontSize="11px"
-                                                className="whitespace-nowrap"
-                                            >
-                                                {type.name}
-                                            </Button>
-                                        ))}
+                                        {rootTypes.map((type) => {
+                                            const isActive = filters.contract_type_id && isDescendantOrSelf(filters.contract_type_id, type.id);
+                                            return (
+                                                <div key={type.id} className="inline-flex items-center rounded-xl overflow-hidden border border-surface-border bg-surface-base/20 shrink-0">
+                                                    <button
+                                                        onClick={() => handleFilterChange({ contract_type_id: type.id, page: 1 })}
+                                                        className={cn(
+                                                            "h-8 px-3 text-[11px] font-medium transition-all cursor-pointer whitespace-nowrap outline-hidden",
+                                                            isActive ? "bg-primary text-primary-foreground dark:bg-white dark:text-black font-semibold" : "hover:bg-surface-muted text-text-main dark:text-white"
+                                                        )}
+                                                    >
+                                                        {type.name}
+                                                    </button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <button
+                                                                className={cn(
+                                                                    "h-8 px-2 border-l border-surface-border transition-all cursor-pointer outline-hidden flex items-center justify-center",
+                                                                    isActive ? "bg-primary text-primary-foreground dark:bg-white dark:text-black" : "hover:bg-surface-muted text-text-main dark:text-white"
+                                                                )}
+                                                            >
+                                                                <ChevronDown size={12} />
+                                                            </button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 shadow-lg rounded-md min-w-[200px]">
+                                                            <DropdownMenuItem
+                                                                onClick={() => handleFilterChange({ contract_type_id: type.id, page: 1 })}
+                                                                className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-xs px-3 py-2 font-semibold text-primary"
+                                                            >
+                                                                Semua {type.name}
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator className="my-1 border-t border-slate-100 dark:border-slate-800" />
+                                                            {renderDropdownItems(type.id)}
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
 
                                     <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
