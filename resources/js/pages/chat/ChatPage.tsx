@@ -53,22 +53,22 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                     {/* Sidebar: Daftar Kontrak */}
                     <div className="flex w-80 flex-col border-r border-surface-border bg-surface-base">
                         <div className="p-4 border-b border-surface-border">
-                            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-                                <MessageSquare className="h-4 w-4 text-slate-500" /> Percakapan
+                            <h2 className="text-sm font-normal text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                                <MessageSquare className="h-4 w-4 text-text-main" /> Percakapan
                             </h2>
                             <SearchInput
                                 placeholder="Cari kontrak..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="h-9 text-xs"
+                                className="h-9 text-xs font-normal"
                             />
                         </div>
 
                         <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {filteredContracts.length === 0 ? (
-                                <div className="p-8 text-center opacity-40">
-                                    <Search size={24} className="mx-auto mb-2" />
-                                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Tidak ada kontrak</p>
+                                <div className="p-8 text-center">
+                                    <Search size={24} className="mx-auto mb-2 text-text-main" />
+                                    <p className="text-sm font-normal text-text-main">Tidak ada kontrak</p>
                                 </div>
                             ) : (
                                 filteredContracts.map(c => (
@@ -89,17 +89,17 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                             <div className="flex flex-col h-full">
                                 <div className="p-4 border-b border-surface-border flex items-center justify-between bg-white dark:bg-zinc-900 shadow-sm z-10">
                                     <div className="flex flex-col">
-                                        <h3 className="text-sm font-semibold text-text-main leading-none mb-1">
+                                        <h3 className="text-sm font-normal text-text-main leading-none mb-1">
                                             {selectedContract.title}
                                         </h3>
-                                        <p className="text-xs text-text-soft">
+                                        <p className="text-xs text-text-main">
                                             Diskusi Kontrak {selectedContract.form_no || selectedContract.contract_no}
                                         </p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
-                                            className="px-3 py-1.5 rounded-lg border border-surface-border text-xs font-medium text-text-main hover:bg-surface-muted transition-all"
+                                            className="px-3 py-1.5 rounded-lg border border-surface-border text-xs font-normal text-text-main hover:bg-surface-muted transition-all"
                                         >
                                             Buka Kontrak
                                         </button>
@@ -115,13 +115,13 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-full gap-4 text-text-soft/60">
-                                <div className="bg-surface-muted p-6 rounded-full text-text-soft/40">
+                            <div className="flex flex-col items-center justify-center h-full gap-4 text-text-main">
+                                <div className="bg-primary/5 p-6 rounded-full text-text-main">
                                     <MessageSquare size={48} strokeWidth={1.5} />
                                 </div>
                                 <div className="text-center max-w-xs px-4">
-                                    <h3 className="text-base font-semibold text-text-main tracking-tight mb-1">Chat Center</h3>
-                                    <p className="text-xs text-text-soft leading-relaxed">
+                                    <h3 className="text-base font-normal text-text-main tracking-tight mb-1">Chat Center</h3>
+                                    <p className="text-xs text-text-main leading-relaxed">
                                         Pilih percakapan dari daftar kontrak untuk memulai diskusi dan kolaborasi.
                                     </p>
                                 </div>

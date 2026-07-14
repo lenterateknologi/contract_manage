@@ -86,21 +86,45 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
 
     const columns = [
         {
-            header: 'No. Pengajuan',
-            accessorKey: 'form_no',
-            cell: (row: any) => <span className="font-semibold text-text-main">{row.form_no || row.contract_no || '—'}</span>
+            header: 'Pengajuan / Kontrak',
+            accessorKey: 'title',
+            cell: (row: any) => (
+                <div className="flex flex-col gap-1 min-w-[200px]">
+                    <span className="text-[10px] text-text-muted font-normal uppercase tracking-wider">
+                        {row.form_no || row.contract_no || '—'}
+                    </span>
+                    <span className="text-text-main font-normal text-xs truncate max-w-[280px] block">
+                        {row.title}
+                    </span>
+                </div>
+            )
         },
         {
-            header: 'Judul',
-            accessorKey: 'title',
-            cell: (row: any) => <span className="font-semibold text-text-main truncate max-w-[300px] block">{row.title}</span>
+            header: 'Tipe Kontrak',
+            accessorKey: 'type',
+            cell: (row: any) => <span className="text-text-main font-normal text-xs">{row.type || '—'}</span>
+        },
+        {
+            header: 'Tipe Pengajuan',
+            accessorKey: 'submission_type',
+            cell: (row: any) => <span className="text-text-main font-normal text-xs">{row.submission_type || '—'}</span>
+        },
+        {
+            header: 'Pembuat',
+            accessorKey: 'creator',
+            cell: (row: any) => <span className="text-text-main font-normal text-xs">{row.creator || '—'}</span>
+        },
+        {
+            header: 'Tahap Saat Ini',
+            accessorKey: 'current_step',
+            cell: (row: any) => <span className="text-text-main font-normal text-xs">{row.current_step || '—'}</span>
         },
         {
             header: 'Status',
             accessorKey: 'status',
             cell: (row: any) => (
                 <span className={cn(
-                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-normal uppercase tracking-wider",
                     row.status === 'approved' ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
                     row.status === 'pending' ? "bg-amber-50 text-amber-700 border border-amber-200" :
                     row.status === 'rejected' ? "bg-rose-50 text-rose-700 border border-rose-200" :
@@ -121,7 +145,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
             header: 'Tanggal Registrasi',
             accessorKey: 'created_at',
             cell: (row: any) => (
-                <span className="text-text-main font-normal">
+                <span className="text-text-main font-normal text-xs">
                     {new Date(row.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </span>
             )

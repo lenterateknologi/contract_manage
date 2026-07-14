@@ -214,13 +214,13 @@ const SortableModuleItem = ({
                 isDragging && 'border-primary ring-primary/10 z-50 scale-[1.02] opacity-50 shadow-2xl ring-2',
             )}
         >
-            <div className="bg-primary/5 text-primary ring-primary/20 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-sm font-semibold  ring-1">
+            <div className="bg-primary/5 text-primary ring-primary/20 flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-sm font-normal  ring-1">
                 {index + 1}
             </div>
             <div
                 {...listeners}
                 {...attributes}
-                className="text-muted-foreground/40 hover:bg-muted hover:text-foreground cursor-grab rounded-lg p-1.5 transition-colors active:cursor-grabbing"
+                className="text-text-main hover:bg-primary/10 hover:text-primary cursor-grab rounded-lg p-1.5 transition-colors active:cursor-grabbing"
             >
                 <GripVertical size={16} />
             </div>
@@ -230,7 +230,7 @@ const SortableModuleItem = ({
                     type="button"
                     disabled={index === 0}
                     onClick={onMoveUp}
-                    className="text-muted-foreground/40 hover:text-primary hover:bg-muted rounded p-0.5 transition-all disabled:opacity-20"
+                    className="text-text-main hover:text-primary hover:bg-primary/10 rounded p-0.5 transition-all disabled:opacity-20"
                 >
                     <ArrowUp size={12} />
                 </button>
@@ -238,7 +238,7 @@ const SortableModuleItem = ({
                     type="button"
                     disabled={index === total - 1}
                     onClick={onMoveDown}
-                    className="text-muted-foreground/40 hover:text-primary hover:bg-muted rounded p-0.5 transition-all disabled:opacity-20"
+                    className="text-text-main hover:text-primary hover:bg-primary/10 rounded p-0.5 transition-all disabled:opacity-20"
                 >
                     <ArrowDown size={12} />
                 </button>
@@ -249,19 +249,19 @@ const SortableModuleItem = ({
                         SELECTABLE_ICONS[module.icon] &&
                         React.createElement(SELECTABLE_ICONS[module.icon], {
                             size: 14,
-                            className: 'text-muted-foreground/70 shrink-0',
+                            className: 'text-text-main shrink-0',
                         })}
-                    <p className="text-foreground truncate text-sm font-bold ">{module.name}</p>
+                    <p className="text-foreground truncate text-sm font-normal ">{module.name}</p>
                 </div>
-                <p className="text-muted-foreground mt-0.5 truncate text-xs font-semibold ">{module.route || 'SYSTEM_INTERNAL'}</p>
+                <p className="text-text-main mt-0.5 truncate text-xs font-normal ">{module.route || 'SYSTEM_INTERNAL'}</p>
                 {module.description && (
-                    <p className="text-muted-foreground/50 mt-1 text-sm leading-relaxed font-normal whitespace-pre-wrap">{module.description}</p>
+                    <p className="text-text-main mt-1 text-sm leading-relaxed font-normal whitespace-pre-wrap">{module.description}</p>
                 )}
             </div>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <button
-                        className="text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 transition-all active:scale-90"
+                        className="text-text-main hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 transition-all active:scale-90"
                         title="Pindahkan Modul"
                     >
                         <Move size={13} />
@@ -277,14 +277,14 @@ const SortableModuleItem = ({
             </DropdownMenu>
             <button
                 onClick={() => onEditModule(module)}
-                className="text-muted-foreground/40 hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 transition-all active:scale-90"
+                className="text-text-main hover:bg-primary/10 hover:text-primary rounded-lg p-1.5 transition-all active:scale-90"
                 title="Edit Nama/Path Modul"
             >
                 <Edit2 size={13} />
             </button>
             <button
                 onClick={() => onRemove(module.id)}
-                className="text-muted-foreground/40 rounded-lg p-1.5 transition-all hover:bg-rose-500/10 hover:text-rose-500 active:scale-90"
+                className="text-text-main rounded-lg p-1.5 transition-all hover:bg-rose-500/10 hover:text-rose-500 active:scale-90"
             >
                 <Trash2 size={14} />
             </button>
@@ -360,14 +360,14 @@ const SortableGroupItem = ({
                 onClick={() => !isDragging && setIsExpanded(!isExpanded)}
             >
                 <div className="flex items-center gap-3">
-                    <div className="bg-foreground text-background flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-sm font-semibold  shadow-sm">
+                    <div className="bg-foreground text-background flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-sm font-normal  shadow-sm">
                         {index + 1}
                     </div>
                     <div
                         {...listeners}
                         {...attributes}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-muted-foreground/40 hover:bg-muted hover:text-foreground cursor-grab rounded-xl p-2 active:cursor-grabbing"
+                        className="text-text-main hover:bg-primary/10 hover:text-primary cursor-grab rounded-xl p-2 active:cursor-grabbing"
                     >
                         <GripVertical size={16} />
                     </div>
@@ -377,7 +377,7 @@ const SortableGroupItem = ({
                             type="button"
                             disabled={index === 0}
                             onClick={onMoveGroupUp}
-                            className="text-muted-foreground/40 hover:text-primary hover:bg-muted flex items-center justify-center rounded p-0.5 transition-all disabled:opacity-20"
+                            className="text-text-main hover:text-primary hover:bg-primary/10 flex items-center justify-center rounded p-0.5 transition-all disabled:opacity-20"
                         >
                             <ArrowUp size={10} />
                         </button>
@@ -385,14 +385,14 @@ const SortableGroupItem = ({
                             type="button"
                             disabled={index === total - 1}
                             onClick={onMoveGroupDown}
-                            className="text-muted-foreground/40 hover:text-primary hover:bg-muted flex items-center justify-center rounded p-0.5 transition-all disabled:opacity-20"
+                            className="text-text-main hover:text-primary hover:bg-primary/10 flex items-center justify-center rounded p-0.5 transition-all disabled:opacity-20"
                         >
                             <ArrowDown size={10} />
                         </button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <h3 className="text-foreground text-sm font-bold ">{group.name}</h3>
-                        <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-xs font-bold shadow-sm">
+                        <h3 className="text-foreground text-sm font-normal ">{group.name}</h3>
+                        <span className="bg-primary/10 text-primary rounded-lg px-2 py-0.5 text-xs font-normal shadow-sm">
                             {group.modules.length} UNITS
                         </span>
                         {/* Order jump dropdown */}
@@ -403,8 +403,9 @@ const SortableGroupItem = ({
                             >
                                 <button
                                     type="button"
-                                    className="bg-surface-muted/60 hover:bg-primary/10 text-muted-foreground hover:text-primary border-surface-border/40 flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-sm font-bold  transition-all"
+                                    className="bg-primary/5 hover:bg-primary/10 text-text-main hover:text-primary border-surface-border/40 flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-sm font-normal  transition-all"
                                     title="Pindah ke urutan"
+                                    style={{ background: 'transparent' }}
                                 >
                                     #{index + 1}
                                     <ChevronDown size={9} />
@@ -418,15 +419,15 @@ const SortableGroupItem = ({
                                         onClick={() => onMoveGroupTo(targetIdx)}
                                         className={cn(
                                             'flex items-center gap-2 text-xs',
-                                            targetIdx === index && 'font-bold text-primary',
+                                            targetIdx === index && 'font-normal text-primary',
                                         )}
                                     >
-                                        <span className="bg-foreground/10 flex h-4 w-4 shrink-0 items-center justify-center rounded text-sm font-semibold ">
+                                        <span className="bg-foreground/10 flex h-4 w-4 shrink-0 items-center justify-center rounded text-sm font-normal ">
                                             {targetIdx + 1}
                                         </span>
                                         {groups[targetIdx]?.name ?? `Grup ${targetIdx + 1}`}
                                         {targetIdx === index && (
-                                            <span className="text-primary ml-auto text-sm font-semibold ">sekarang</span>
+                                            <span className="text-primary ml-auto text-sm font-normal ">sekarang</span>
                                         )}
                                     </DropdownMenuItem>
                                 ))}
@@ -434,13 +435,13 @@ const SortableGroupItem = ({
                         </DropdownMenu>
                         <ChevronDown 
                             size={14} 
-                            className={cn("text-muted-foreground/50 transition-transform duration-300 ml-1", isExpanded ? "rotate-180" : "rotate-0")} 
+                            className={cn("text-text-main transition-transform duration-300 ml-1", isExpanded ? "rotate-180" : "rotate-0")} 
                         />
                     </div>
                 </div>
                 <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => onEditGroup(group)}>
-                        <Edit2 size={12} className="text-muted-foreground" />
+                        <Edit2 size={12} className="text-text-main" />
                     </Button>
                     <Button
                         variant="ghost"
@@ -501,13 +502,13 @@ const AvailableListContainer = ({
     return (
         <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Repository Modul</h3>
+                <h3 className="text-xs font-normal uppercase tracking-wider text-text-main">Repository Modul</h3>
                 <div className="flex items-center gap-2">
-                    <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">{modules.length} Modul</span>
+                    <span className="bg-primary/5 text-primary text-[10px] font-normal px-2 py-0.5 rounded-md">{modules.length} Modul</span>
                     <button
                         type="button"
                         onClick={onAddModule}
-                        className="text-primary hover:bg-primary/10 border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-bold transition-all active:scale-95"
+                        className="text-primary hover:bg-primary/10 border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-normal transition-all active:scale-95"
                         title="Tambah Modul Baru"
                     >
                         <Plus size={12} />
@@ -528,8 +529,8 @@ const AvailableListContainer = ({
                 </SortableContext>
                 {modules.length === 0 && (
                     <div className="flex flex-col items-center justify-center px-4 py-12 text-center opacity-30 select-none">
-                        <Layers className="text-muted-foreground/40 mb-2" size={32} strokeWidth={1} />
-                        <p className="text-muted-foreground text-sm font-bold  ">Kosong</p>
+                        <Layers className="text-text-main mb-2" size={32} strokeWidth={1} />
+                        <p className="text-text-main text-sm font-normal  ">Kosong</p>
                     </div>
                 )}
             </div>
@@ -566,7 +567,7 @@ const AvailableModuleItem = ({
                 <div
                     {...listeners}
                     {...attributes}
-                    className="text-muted-foreground/40 hover:bg-muted hover:text-foreground shrink-0 cursor-grab rounded-lg p-2 transition-colors"
+                    className="text-text-main hover:bg-primary/10 hover:text-primary shrink-0 cursor-grab rounded-lg p-2 transition-colors"
                 >
                     <GripVertical size={16} />
                 </div>
@@ -576,15 +577,15 @@ const AvailableModuleItem = ({
                             SELECTABLE_ICONS[module.icon] &&
                             React.createElement(SELECTABLE_ICONS[module.icon], {
                                 size: 14,
-                                className: 'text-muted-foreground/70 shrink-0',
+                                className: 'text-text-main shrink-0',
                             })}
-                        <span className="text-foreground block truncate text-sm font-bold  ">{module.name}</span>
+                        <span className="text-foreground block truncate text-sm font-normal  ">{module.name}</span>
                     </div>
-                    <span className="text-muted-foreground/70 mt-0.5 block truncate text-xs font-semibold  ">
+                    <span className="text-text-main mt-0.5 block truncate text-xs font-normal  ">
                         {module.route || 'NO_PATH'}
                     </span>
                     {module.description && (
-                        <p className="text-muted-foreground/50 mt-1 text-sm leading-relaxed font-normal whitespace-pre-wrap">
+                        <p className="text-text-main mt-1 text-sm leading-relaxed font-normal whitespace-pre-wrap">
                             {module.description}
                         </p>
                     )}
@@ -593,21 +594,21 @@ const AvailableModuleItem = ({
             <div className="ml-2 flex shrink-0 items-center gap-1">
                 <button
                     onClick={() => onEditModule(module)}
-                    className="text-muted-foreground/40 hover:text-primary hover:bg-primary/10 rounded-lg p-1.5 active:scale-90"
+                    className="text-text-main hover:text-primary hover:bg-primary/10 rounded-lg p-1.5 active:scale-90"
                     title="Edit Nama/Path Modul"
                 >
                     <Edit2 size={13} />
                 </button>
                 <button
                     onClick={() => onDeleteModule(module.id)}
-                    className="text-muted-foreground/40 rounded-lg p-1.5 hover:bg-rose-500/10 hover:text-rose-500 active:scale-90"
+                    className="text-text-main rounded-lg p-1.5 hover:bg-rose-500/10 hover:text-rose-500 active:scale-90"
                     title="Hapus Modul Permanen"
                 >
                     <Trash2 size={14} />
                 </button>
                 <button
                     onClick={() => onQuickAdd(module)}
-                    className="text-muted-foreground/40 hover:text-primary hover:bg-primary/10 rounded-lg p-1.5 active:scale-90"
+                    className="text-text-main hover:text-primary hover:bg-primary/10 rounded-lg p-1.5 active:scale-90"
                     title="Tambahkan ke Grup Pertama"
                 >
                     <Plus size={14} />
@@ -1200,16 +1201,16 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => window.history.back()}
-                            className="p-2 border border-surface-border rounded-xl hover:bg-surface-muted transition-all text-text-soft"
+                            className="p-2 border border-surface-border rounded-xl hover:bg-surface-muted transition-all text-text-main"
                         >
                             <ArrowLeft size={16} />
                         </button>
                         <div>
-                            <h1 className="text-lg font-bold text-text-main">
+                            <h1 className="text-lg font-normal text-text-main">
                                  {activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'}
                             </h1>
-                            <p className="text-xs text-text-soft">
-                                Konfigurasi otoritas dan arsitektur untuk role <span className="font-bold">{role.name}</span>
+                            <p className="text-xs text-text-main">
+                                Konfigurasi otoritas dan arsitektur untuk role <span className="font-normal">{role.name}</span>
                             </p>
                         </div>
                     </div>
@@ -1226,10 +1227,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     }
                                 }}
                             >
-                                <SelectTrigger className="bg-transparent border-border/60 h-9 w-[200px] rounded-lg px-3 text-xs font-bold transition-all">
+                                <SelectTrigger className="bg-transparent border-border/60 h-9 w-[200px] rounded-lg px-3 text-xs font-normal transition-all">
                                     <div className="flex items-center gap-1.5">
                                         <ShieldAlert className="text-primary h-3.5 w-3.5 opacity-70" />
-                                        <span className="text-muted-foreground font-medium">Role:</span>
+                                        <span className="text-text-main font-normal">Role:</span>
                                         <SelectValue placeholder="Pilih Role" />
                                     </div>
                                 </SelectTrigger>
@@ -1238,7 +1239,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         <SelectItem
                                             key={r.id}
                                             value={r.id}
-                                            className="cursor-pointer rounded-lg pl-3 pr-2 py-1.5 text-xs font-bold [&>span:first-child]:hidden data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground focus:bg-muted focus:text-foreground data-[state=checked]:focus:bg-primary data-[state=checked]:focus:text-primary-foreground"
+                                            className="cursor-pointer rounded-lg pl-3 pr-2 py-1.5 text-xs font-normal [&>span:first-child]:hidden data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground focus:bg-muted focus:text-foreground data-[state=checked]:focus:bg-primary data-[state=checked]:focus:text-primary-foreground"
                                         >
                                             {r.name}
                                         </SelectItem>
@@ -1255,10 +1256,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         onClick={() => setActiveTab('access')}
                                         type="button"
                                         className={cn(
-                                            'flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-bold transition-all',
+                                            'flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-normal transition-all',
                                             activeTab === 'access'
                                                 ? 'bg-primary text-primary-foreground shadow-sm'
-                                                : 'text-muted-foreground hover:text-foreground',
+                                                : 'text-text-main hover:text-foreground',
                                         )}
                                     >
                                         <Key size={14} /> Hak Akses
@@ -1267,10 +1268,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         onClick={() => setActiveTab('navigation')}
                                         type="button"
                                         className={cn(
-                                            'flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-bold transition-all',
+                                            'flex items-center gap-2 rounded-lg px-4 py-1.5 text-xs font-normal transition-all',
                                             activeTab === 'navigation'
                                                 ? 'bg-primary text-primary-foreground shadow-sm'
-                                                : 'text-muted-foreground hover:text-foreground',
+                                                : 'text-text-main hover:text-foreground',
                                         )}
                                     >
                                         <LayoutGrid size={14} /> Navigasi
@@ -1286,7 +1287,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="hover:bg-card h-8 rounded-lg text-xs font-bold transition-all"
+                                        className="hover:bg-card h-8 rounded-lg text-xs font-normal transition-all"
                                         onClick={() => setAll(true)}
                                     >
                                         <CheckSquare className="mr-1.5 h-4 w-4" /> Pilih Semua
@@ -1294,7 +1295,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="hover:bg-card h-8 rounded-lg text-xs font-bold transition-all"
+                                        className="hover:bg-card h-8 rounded-lg text-xs font-normal transition-all"
                                         onClick={() => setAll(false)}
                                     >
                                         <Square className="mr-1.5 h-4 w-4" /> Bersihkan
@@ -1307,7 +1308,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             variant="primary"
                             onClick={activeTab === 'access' ? handleAccessSubmit : handleNavSave}
                             disabled={accessForm.processing || isSavingNav}
-                            className="h-9 rounded-xl px-5 text-sm font-semibold shadow-sm ml-2"
+                            className="h-9 rounded-xl px-5 text-sm font-normal shadow-sm ml-2"
                         >
                             {accessForm.processing || isSavingNav ? (
                                 <Loader2 size={14} className="animate-spin" />
@@ -1458,13 +1459,13 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             {/* COLUMN 1: Module Groups (col-span-3) */}
                             <div className="col-span-12 lg:col-span-3 flex flex-col gap-3">
                                 <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
-                                    <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Grup Menu</h3>
+                                    <h3 className="text-xs font-normal uppercase tracking-wider text-text-main">Grup Menu</h3>
                                     <div className="flex items-center gap-2">
-                                        <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">{navItems.length} Grup</span>
+                                        <span className="bg-primary/5 text-primary text-[10px] font-normal px-2 py-0.5 rounded-md">{navItems.length} Grup</span>
                                         <button
                                             type="button"
                                             onClick={() => openGroupModal()}
-                                            className="text-primary hover:bg-primary/10 border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-bold transition-all active:scale-95"
+                                            className="text-primary hover:bg-primary/10 border-primary/20 flex h-6 w-6 items-center justify-center rounded-lg border text-xs font-normal transition-all active:scale-95"
                                             title="Tambah Grup Menu"
                                         >
                                             <Plus size={12} />
@@ -1484,19 +1485,19 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                             )}
                                         >
                                             <div className="flex items-center gap-3 min-w-0">
-                                                <span className="font-bold text-xs shrink-0 opacity-55">{index + 1}</span>
+                                                <span className="font-normal text-xs shrink-0 opacity-55">{index + 1}</span>
                                                 <div className="flex flex-col min-w-0">
-                                                    <span className="text-xs font-bold truncate">{group.name}</span>
+                                                    <span className="text-xs font-normal truncate">{group.name}</span>
                                                     <span className={cn(
-                                                        "text-[10px] font-semibold mt-0.5",
-                                                        selectedGroupId === group.id ? "text-primary/75" : "text-text-soft"
+                                                        "text-[10px] font-normal mt-0.5",
+                                                        selectedGroupId === group.id ? "text-primary/75" : "text-text-main"
                                                     )}>
                                                         {group.modules.length} Modul Terdaftar
                                                     </span>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-2 shrink-0">
-                                                <span className="bg-foreground/5 text-text-soft text-[9px] font-bold px-1.5 py-0.5 rounded-md group-hover:bg-primary/10">
+                                                <span className="bg-foreground/5 text-text-main text-[9px] font-normal px-1.5 py-0.5 rounded-md group-hover:bg-primary/10">
                                                     {group.modules.length}
                                                 </span>
                                                 {/* Reorder actions and inline crud */}
@@ -1505,7 +1506,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                         type="button"
                                                         disabled={index === 0}
                                                         onClick={() => handleMoveGroup(index, 'up')}
-                                                        className="text-text-soft hover:text-primary disabled:opacity-10"
+                                                        className="text-text-main hover:text-primary disabled:opacity-10"
                                                         title="Pindahkan ke atas"
                                                     >
                                                         <ArrowUp size={12} />
@@ -1514,7 +1515,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                         type="button"
                                                         disabled={index === navItems.length - 1}
                                                         onClick={() => handleMoveGroup(index, 'down')}
-                                                        className="text-text-soft hover:text-primary disabled:opacity-10"
+                                                        className="text-text-main hover:text-primary disabled:opacity-10"
                                                         title="Pindahkan ke bawah"
                                                     >
                                                         <ArrowDown size={12} />
@@ -1522,7 +1523,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     <button
                                                         type="button"
                                                         onClick={() => openGroupModal(group)}
-                                                        className="text-text-soft hover:text-primary"
+                                                        className="text-text-main hover:text-primary"
                                                         title="Ubah Grup"
                                                     >
                                                         <Edit2 size={12} />
@@ -1540,7 +1541,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         </div>
                                     ))}
                                     {navItems.length === 0 && (
-                                        <div className="border border-dashed border-surface-border rounded-xl p-4 text-center text-text-soft text-xs">
+                                        <div className="border border-dashed border-surface-border rounded-xl p-4 text-center text-text-main text-xs">
                                             Belum ada grup menu
                                         </div>
                                     )}
@@ -1553,7 +1554,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     const selectedGroup = navItems.find((g) => g.id === selectedGroupId) || navItems[0];
                                     if (!selectedGroup) {
                                         return (
-                                            <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-soft text-xs">
+                                            <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-main text-xs">
                                                 Silakan pilih atau buat grup menu terlebih dahulu.
                                             </div>
                                         );
@@ -1561,10 +1562,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     return (
                                         <>
                                             <div className="flex items-center justify-between border-b pb-2 mb-2 min-h-[36px]">
-                                                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main truncate max-w-[280px]">
+                                                <h3 className="text-xs font-normal uppercase tracking-wider text-text-main truncate max-w-[280px]">
                                                     Modul di Formulir
                                                 </h3>
-                                                <span className="bg-primary/5 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md">
+                                                <span className="bg-primary/5 text-primary text-[10px] font-normal px-2 py-0.5 rounded-md">
                                                     {selectedGroup.modules.length} Modul
                                                 </span>
                                             </div>
@@ -1586,7 +1587,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                     ))}
                                                 </SortableContext>
                                                 {selectedGroup.modules.length === 0 && (
-                                                    <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-soft text-xs">
+                                                    <div className="border border-dashed border-surface-border rounded-xl p-8 text-center text-text-main text-xs">
                                                         Belum ada modul di grup ini.
                                                     </div>
                                                 )}
@@ -1627,10 +1628,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                 <Layers size={14} strokeWidth={2.5} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <h3 className="text-foreground text-sm font-bold  ">
+                                                <h3 className="text-foreground text-sm font-normal  ">
                                                     {navItems.find((g) => g.id === activeId)?.name}
                                                 </h3>
-                                                <span className="text-muted-foreground text-sm font-semibold  ">
+                                                <span className="text-text-main text-sm font-normal  ">
                                                     {navItems.find((g) => g.id === activeId)?.modules?.length || 0} MODUL TERDAFTAR
                                                 </span>
                                             </div>
@@ -1641,7 +1642,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 <div className="border-border bg-card flex w-[280px] scale-105 cursor-grabbing items-center gap-3 rounded-xl border p-3 opacity-95 shadow-2xl">
                                     <GripVertical size={14} className="text-primary" />
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-foreground text-sm font-bold">{allModules.find((m) => m.id === activeId)?.name}</p>
+                                        <p className="text-foreground text-sm font-normal">{allModules.find((m) => m.id === activeId)?.name}</p>
                                     </div>
                                 </div>
                             )
@@ -1654,32 +1655,32 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
                 <DialogContent className="rounded-2xl sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-semibold  ">
+                        <DialogTitle className="text-foreground text-base font-normal  ">
                             {editingGroup ? 'Ubah Grup Navigasi' : 'Tambah Grup Navigasi'}
                         </DialogTitle>
-                        <DialogDescription className="text-muted-foreground text-xs font-medium">
+                        <DialogDescription className="text-text-main text-xs font-normal">
                             {editingGroup ? 'Ganti nama grup navigasi yang sudah ada.' : 'Buat kontainer baru untuk mengelompokkan menu sidebar.'}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Nama Grup</label>
+                            <label className="text-text-main text-sm font-normal  ">Nama Grup</label>
                             <input
                                 value={groupName}
                                 onChange={(e) => setGroupName(e.target.value)}
                                 placeholder="Contoh: Manajemen Aset"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
                             />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsGroupModalOpen(false)} className="rounded-lg font-bold">
+                        <Button variant="ghost" onClick={() => setIsGroupModalOpen(false)} className="rounded-lg font-normal">
                             BATAL
                         </Button>
                         <Button
                             onClick={handleSaveGroup}
                             disabled={isProcessingGroup || !groupName.trim()}
-                            className="rounded-lg font-bold"
+                            className="rounded-lg font-normal"
                             variant="primary"
                         >
                             {isProcessingGroup ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}
@@ -1693,52 +1694,52 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             <Dialog open={isModuleModalOpen} onOpenChange={setIsModuleModalOpen}>
                 <DialogContent className="rounded-2xl sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle className="text-foreground text-base font-semibold  ">
+                        <DialogTitle className="text-foreground text-base font-normal  ">
                             {editingModuleItem ? 'Ubah Modul' : 'Tambah Modul Baru'}
                         </DialogTitle>
-                        <DialogDescription className="text-muted-foreground text-xs font-medium">
+                        <DialogDescription className="text-text-main text-xs font-normal">
                             {editingModuleItem ? 'Sesuaikan nama dan path rute untuk modul ini.' : 'Daftarkan modul baru ke dalam repository sistem.'}
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Nama Modul</label>
+                            <label className="text-text-main text-sm font-normal  ">Nama Modul</label>
                             <input
                                 value={moduleName}
                                 onChange={(e) => setModuleName(e.target.value)}
                                 placeholder="Contoh: Daftar Kontrak"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Identifier</label>
+                            <label className="text-text-main text-sm font-normal  ">Identifier</label>
                             <input
                                 value={moduleIdentifier}
                                 onChange={(e) => setModuleIdentifier(e.target.value)}
                                 placeholder="Contoh: contract.index"
                                 disabled={!!editingModuleItem}
                                 className={cn(
-                                    'border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2',
+                                    'border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2',
                                     editingModuleItem && 'cursor-not-allowed opacity-60',
                                 )}
                             />
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Path Rute / URL</label>
+                            <label className="text-text-main text-sm font-normal  ">Path Rute / URL</label>
                             <input
                                 value={moduleRoute}
                                 onChange={(e) => setModuleRoute(e.target.value)}
                                 placeholder="Contoh: /admin/contracts"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
                             />
                         </div>
                         {!editingModuleItem && (
                             <div className="flex flex-col gap-2">
-                                <label className="text-muted-foreground text-sm font-semibold  ">Grup Navigasi</label>
+                                <label className="text-text-main text-sm font-normal  ">Grup Navigasi</label>
                                 <select
                                     value={moduleGroupId}
                                     onChange={(e) => setModuleGroupId(e.target.value)}
-                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                    className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
                                 >
                                     <option value="" disabled>
                                         Pilih Grup Menu
@@ -1752,16 +1753,16 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             </div>
                         )}
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Icon Modul</label>
+                            <label className="text-text-main text-sm font-normal  ">Icon Modul</label>
                             <Select value={moduleIcon} onValueChange={setModuleIcon}>
-                                <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-bold outline-hidden transition-all focus:ring-2">
+                                <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
                                     {Object.keys(SELECTABLE_ICONS).map((iconName) => {
                                         const IconComponent = SELECTABLE_ICONS[iconName];
                                         return (
-                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-medium ">
+                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-normal ">
                                                 <div className="flex items-center gap-2">
                                                     {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
                                                     <span>{iconName}</span>
@@ -1773,23 +1774,23 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             </Select>
                         </div>
                         <div className="flex flex-col gap-2">
-                            <label className="text-muted-foreground text-sm font-semibold  ">Deskripsi Modul</label>
+                            <label className="text-text-main text-sm font-normal  ">Deskripsi Modul</label>
                             <textarea
                                 value={moduleDescription}
                                 onChange={(e) => setModuleDescription(e.target.value)}
                                 placeholder="Contoh: Modul untuk mengelola seluruh dokumen kontrak"
-                                className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground min-h-[80px] w-full resize-none rounded-xl border p-4 text-sm font-bold outline-hidden transition-all focus:ring-2"
+                                className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground min-h-[80px] w-full resize-none rounded-xl border p-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
                             />
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)} className="rounded-lg font-bold">
+                        <Button variant="ghost" onClick={() => setIsModuleModalOpen(false)} className="rounded-lg font-normal">
                             BATAL
                         </Button>
                         <Button
                             onClick={handleSaveModule}
                             disabled={isProcessingModule || !moduleName.trim() || (!editingModuleItem && !moduleIdentifier.trim())}
-                            className="rounded-lg font-bold"
+                            className="rounded-lg font-normal"
                             variant="primary"
                         >
                             {isProcessingModule ? <RefreshCw className="mr-1.5 h-4 w-4 animate-spin" /> : <Save className="mr-1.5 h-4 w-4" />}

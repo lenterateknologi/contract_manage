@@ -84,17 +84,17 @@ function AddOrganizationModal({ onClose, treeData }: { onClose: () => void, tree
                 <form onSubmit={handleSubmit} className="flex flex-col h-full">
                     <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center shrink-0">
                         <div>
-                            <h3 className="text-slate-900 dark:text-slate-100 text-base font-bold tracking-tight">
+                            <h3 className="text-slate-900 dark:text-slate-100 text-base font-normal tracking-tight">
                                 Tambah Data
                             </h3>
-                            <p className="text-slate-500 dark:text-slate-400 text-xs font-normal mt-0.5">
+                            <p className="text-text-main text-xs font-normal mt-0.5">
                                 Pilih tipe dan isi form untuk menambahkan data baru.
                             </p>
                         </div>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-text-soft/60 hover:text-text-main transition-all"
+                            className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-text-main hover:text-primary transition-all"
                         >
                             <X size={16} />
                         </button>
@@ -102,7 +102,7 @@ function AddOrganizationModal({ onClose, treeData }: { onClose: () => void, tree
 
                     <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4">
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-bold text-text-main uppercase tracking-wider">Tipe</label>
+                            <label className="text-[11px] font-normal text-text-main uppercase tracking-wider">Tipe</label>
                             <SearchableSelect
                                 value={data.type}
                                 onValueChange={(val) => setData('type', val)}
@@ -116,12 +116,12 @@ function AddOrganizationModal({ onClose, treeData }: { onClose: () => void, tree
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-bold text-text-main uppercase tracking-wider">Kode</label>
+                            <label className="text-[11px] font-normal text-text-main uppercase tracking-wider">Kode</label>
                             <input
                                 type="text"
                                 value={data.code}
                                 onChange={e => setData('code', e.target.value)}
-                                className="flex h-10 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
+                                className="flex h-10 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                                 placeholder="Masukkan kode..."
                                 required
                             />
@@ -129,12 +129,12 @@ function AddOrganizationModal({ onClose, treeData }: { onClose: () => void, tree
                         </div>
 
                         <div className="flex flex-col gap-1.5">
-                            <label className="text-[11px] font-bold text-text-main uppercase tracking-wider">Nama</label>
+                            <label className="text-[11px] font-normal text-text-main uppercase tracking-wider">Nama</label>
                             <input
                                 type="text"
                                 value={data.name}
                                 onChange={e => setData('name', e.target.value)}
-                                className="flex h-10 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
+                                className="flex h-10 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                                 placeholder="Masukkan nama..."
                                 required
                             />
@@ -144,7 +144,7 @@ function AddOrganizationModal({ onClose, treeData }: { onClose: () => void, tree
                         {data.type === 'Company' && (
                             <>
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-[11px] font-bold text-text-main uppercase tracking-wider">Group</label>
+                                    <label className="text-[11px] font-normal text-text-main uppercase tracking-wider">Group</label>
                                     <SearchableSelect
                                         value={data.company_group_id}
                                         onValueChange={(val) => setData('company_group_id', val)}
@@ -156,7 +156,7 @@ function AddOrganizationModal({ onClose, treeData }: { onClose: () => void, tree
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <label className="text-[11px] font-bold text-text-main uppercase tracking-wider">Region</label>
+                                    <label className="text-[11px] font-normal text-text-main uppercase tracking-wider">Region</label>
                                     <SearchableSelect
                                         value={data.region_id}
                                         onValueChange={(val) => setData('region_id', val)}
@@ -175,14 +175,14 @@ function AddOrganizationModal({ onClose, treeData }: { onClose: () => void, tree
                             type="button"
                             onClick={onClose}
                             disabled={processing}
-                            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all disabled:opacity-50"
+                            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-normal text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all disabled:opacity-50"
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             disabled={processing}
-                            className="flex-1 rounded-xl px-4 py-2.5 text-xs font-bold text-white transition-all bg-primary hover:bg-primary/95 disabled:opacity-50 shadow-md flex items-center justify-center gap-1.5"
+                            className="flex-1 rounded-xl px-4 py-2.5 text-xs font-normal text-white transition-all bg-primary hover:bg-primary/95 disabled:opacity-50 shadow-md flex items-center justify-center gap-1.5"
                         >
                             {processing ? 'Menyimpan...' : 'Simpan Data'}
                         </button>
@@ -263,22 +263,22 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
                 return (
                     <span 
                         style={{ paddingLeft: `${depth * 20}px` }} 
-                        className="flex items-center gap-1.5 font-semibold text-text-main"
+                        className="flex items-center gap-1.5 font-normal text-text-main"
                     >
                         {row._hasChildren ? (
                             <button 
                                 onClick={() => toggleRow(row.id)}
-                                className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500"
+                                className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-text-main"
                             >
                                 {isCollapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
                             </button>
                         ) : (
-                            <span className="w-5 h-5 flex items-center justify-center text-slate-300 dark:text-slate-600">
+                            <span className="w-5 h-5 flex items-center justify-center text-text-main">
                                 •
                             </span>
                         )}
                         {row.code && row.code !== '-' && (
-                            <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 text-text-main font-normal uppercase tracking-wider">
                                 {row.code}
                             </span>
                         )}
@@ -297,12 +297,12 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
                         case 'Group': return 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 border-blue-200 dark:border-blue-500/30';
                         case 'Region': return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30';
                         case 'Company': return 'bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300 border-orange-200 dark:border-orange-500/30';
-                        default: return 'bg-gray-100 text-gray-700';
+                        default: return 'bg-primary/10 text-text-main';
                     }
                 };
                 return (
                     <span className={cn(
-                        "text-[10px] px-2 py-0.5 rounded-full border font-medium uppercase tracking-wider",
+                        "text-[10px] px-2 py-0.5 rounded-full border font-normal uppercase tracking-wider",
                         getTypeColor()
                     )}>
                         {row.type}
@@ -317,7 +317,7 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
             cell: (row: any) => {
                 const count = row.children ? row.children.length : 0;
                 return (
-                    <span className="text-xs font-semibold text-text-soft">
+                    <span className="text-xs font-normal text-text-main">
                         {count > 0 ? `${count} items` : '—'}
                     </span>
                 );
@@ -360,7 +360,7 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
                         <Button 
                             variant="primary" 
                             onClick={() => setIsAddModalOpen(true)}
-                            className="gap-2 h-8 px-3 text-xs font-semibold rounded-lg shadow-sm"
+                            className="gap-2 h-8 px-3 text-xs font-normal rounded-lg shadow-sm"
                         >
                             <Plus size={14} /> Tambah Data
                         </Button>

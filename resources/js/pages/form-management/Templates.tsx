@@ -189,19 +189,19 @@ function ImportFormTemplateModal({ isOpen, onClose, showToast }: Readonly<Import
                         <Upload size={24} />
                     </div>
 
-                    <p className="text-foreground mb-1 text-sm font-semibold">{file ? file.name : 'Seret & letakkan berkas JSON template di sini'}</p>
-                    <p className="text-muted-foreground text-xs">atau klik untuk memilih berkas dari perangkat Anda</p>
+                    <p className="text-foreground mb-1 text-sm font-normal">{file ? file.name : 'Seret & letakkan berkas JSON template di sini'}</p>
+                    <p className="text-text-main text-xs">atau klik untuk memilih berkas dari perangkat Anda</p>
                 </div>
 
                 {error && (
-                    <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs leading-relaxed font-medium text-rose-500">
+                    <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-xs leading-relaxed font-normal text-rose-500">
                         {error}
                     </div>
                 )}
 
                 {parsedData && (
                     <div className="border-border/50 bg-muted/20 rounded-2xl border p-5">
-                        <h4 className="text-foreground mb-3 text-xs font-bold tracking-wide uppercase">
+                        <h4 className="text-foreground mb-3 text-xs font-normal tracking-wide uppercase">
                             Informasi Berkas ({parsedData.length} Template Terdeteksi)
                         </h4>
                         <div className="max-h-48 space-y-3 overflow-y-auto pr-1">
@@ -214,15 +214,15 @@ function ImportFormTemplateModal({ isOpen, onClose, showToast }: Readonly<Import
                                         <FileJson size={16} />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-foreground truncate text-[12px] font-bold">{item.name}</p>
-                                        <p className="text-muted-foreground mt-0.5 line-clamp-1 text-[10px]">
+                                        <p className="text-foreground truncate text-[12px] font-normal">{item.name}</p>
+                                        <p className="text-text-main mt-0.5 line-clamp-1 text-[10px]">
                                             {item.description || 'Tidak ada deskripsi'}
                                         </p>
                                         <div className="mt-2 flex items-center gap-2">
-                                            <span className="border-border/30 bg-muted text-muted-foreground rounded-xs border px-1.5 py-0.5 text-[8px] font-bold  uppercase">
+                                            <span className="border-border/30 bg-muted text-text-main rounded-xs border px-1.5 py-0.5 text-[8px] font-normal  uppercase">
                                                 {item.document_type || 'Custom'}
                                             </span>
-                                            <span className="bg-primary/10 text-primary rounded-xs px-1.5 py-0.5 text-[8px] font-bold  uppercase">
+                                            <span className="bg-primary/10 text-primary rounded-xs px-1.5 py-0.5 text-[8px] font-normal  uppercase">
                                                 {item.fields?.length || 0} Elemen
                                             </span>
                                         </div>
@@ -234,10 +234,10 @@ function ImportFormTemplateModal({ isOpen, onClose, showToast }: Readonly<Import
                 )}
 
                 <div className="border-border/30 flex items-center justify-end gap-3 border-t pt-5">
-                    <Button variant="outline" onClick={onClose} disabled={loading} className="h-10 rounded-xl px-5 text-xs font-semibold">
+                    <Button variant="outline" onClick={onClose} disabled={loading} className="h-10 rounded-xl px-5 text-xs font-normal">
                         Batal
                     </Button>
-                    <Button onClick={handleImport} disabled={!file || loading} className="h-10 gap-2 rounded-xl px-6 text-xs font-semibold shadow-md">
+                    <Button onClick={handleImport} disabled={!file || loading} className="h-10 gap-2 rounded-xl px-6 text-xs font-normal shadow-md">
                         {loading && <Loader2 size={12} className="animate-spin" />}
                         {loading ? 'Mengimpor...' : 'Mulai Impor'}
                     </Button>
@@ -304,8 +304,8 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             accessorKey: 'name',
             cell: (t) => (
                 <div className="flex flex-col">
-                    <span className="text-foreground text-[12px] font-semibold tracking-tight uppercase">{t.name}</span>
-                    <span className="text-muted-foreground max-w-[200px] truncate text-[10px] font-medium uppercase">
+                    <span className="text-foreground text-[12px] font-normal tracking-tight uppercase">{t.name}</span>
+                    <span className="text-text-main max-w-[200px] truncate text-[10px] font-normal uppercase">
                         {t.description || 'No description'}
                     </span>
                 </div>
@@ -315,7 +315,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             header: 'Classification',
             accessorKey: 'document_type',
             cell: (t) => (
-                <span className="border-border bg-muted text-foreground border px-2 py-0.5 text-[10px] font-semibold uppercase">
+                <span className="border-border bg-muted text-foreground border px-2 py-0.5 text-[10px] font-normal uppercase">
                     {t.document_type || 'Custom'}
                 </span>
             ),
@@ -325,9 +325,9 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             accessorKey: 'is_active',
             cell: (t) =>
                 t.is_active ? (
-                    <span className="text-muted-foreground text-[10px] font-semibold uppercase">Published</span>
+                    <span className="text-text-main text-[10px] font-normal uppercase">Published</span>
                 ) : (
-                    <span className="bg-red-100 px-2 py-0.5 text-[10px] font-semibold text-red-800 uppercase dark:bg-red-950/40 dark:text-red-300">
+                    <span className="bg-red-100 px-2 py-0.5 text-[10px] font-normal text-red-800 uppercase dark:bg-red-950/40 dark:text-red-300">
                         Draft
                     </span>
                 ),
@@ -336,15 +336,15 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             header: 'Fields',
             accessorKey: 'fields_count',
             cell: (t) => (
-                <span className="text-foreground text-[11px] font-semibold">
-                    {t.fields_count} <span className="text-muted-foreground/60">ITEMS</span>
+                <span className="text-foreground text-[11px] font-normal">
+                    {t.fields_count} <span className="text-text-main/60">ITEMS</span>
                 </span>
             ),
         },
         {
             header: 'Modified',
             accessorKey: 'updated_at',
-            cell: (t) => <span className="text-muted-foreground text-[11px] font-semibold">{new Date(t.updated_at).toLocaleDateString()}</span>,
+            cell: (t) => <span className="text-text-main text-[11px] font-normal">{new Date(t.updated_at).toLocaleDateString()}</span>,
         },
     ];
 
@@ -461,7 +461,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 {hasActiveFilters && (
                                     <span
                                         className={cn(
-                                            'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-bold',
+                                            'ml-1 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[9px] font-normal',
                                             hasActiveFilters ? 'text-primary bg-white' : 'bg-primary text-white',
                                         )}
                                     >
@@ -510,30 +510,30 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                                         target="_blank"
                                                         className="flex items-center"
                                                     >
-                                                        <Edit2 className="text-muted-foreground mr-3 h-4 w-4" />
-                                                        <span className="text-foreground text-[10px] font-semibold uppercase">Open Builder</span>
+                                                        <Edit2 className="text-text-main mr-3 h-4 w-4" />
+                                                        <span className="text-foreground text-[10px] font-normal uppercase">Open Builder</span>
                                                     </a>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     onClick={() => openEditModal(template)}
                                                     className="focus:bg-muted cursor-pointer rounded-lg py-2.5"
                                                 >
-                                                    <Settings className="text-muted-foreground mr-3 h-4 w-4" />
-                                                    <span className="text-foreground text-[10px] font-semibold uppercase">Metadata</span>
+                                                    <Settings className="text-text-main mr-3 h-4 w-4" />
+                                                    <span className="text-foreground text-[10px] font-normal uppercase">Metadata</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     onClick={() => handleDuplicate(template.id)}
                                                     className="focus:bg-muted cursor-pointer rounded-lg py-2.5"
                                                 >
-                                                    <Copy className="text-muted-foreground mr-3 h-4 w-4" />
-                                                    <span className="text-foreground text-[10px] font-semibold uppercase">Clone Asset</span>
+                                                    <Copy className="text-text-main mr-3 h-4 w-4" />
+                                                    <span className="text-foreground text-[10px] font-normal uppercase">Clone Asset</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     onClick={() => handleExport(template.id)}
                                                     className="focus:bg-muted cursor-pointer rounded-lg py-2.5"
                                                 >
-                                                    <Download className="text-muted-foreground mr-3 h-4 w-4" />
-                                                    <span className="text-foreground text-[10px] font-semibold uppercase">Export JSON</span>
+                                                    <Download className="text-text-main mr-3 h-4 w-4" />
+                                                    <span className="text-foreground text-[10px] font-normal uppercase">Export JSON</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator className="bg-border my-1" />
                                                 <DropdownMenuItem
@@ -544,14 +544,14 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                                     }}
                                                 >
                                                     <Trash2 className="mr-3 h-4 w-4" />
-                                                    <span className="text-[10px] font-semibold uppercase">Purge Asset</span>
+                                                    <span className="text-[10px] font-normal uppercase">Purge Asset</span>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
 
                                     <div className="flex items-start gap-4">
-                                        <div className="border-border bg-muted text-muted-foreground group-hover:text-foreground flex h-12 w-12 items-center justify-center rounded-xl border shadow-sm transition-all">
+                                        <div className="border-border bg-muted text-text-main group-hover:text-foreground flex h-12 w-12 items-center justify-center rounded-xl border shadow-sm transition-all">
                                             {template.document_type === 'f1' ? (
                                                 <FileText size={24} />
                                             ) : template.document_type === 'f2' ? (
@@ -564,36 +564,36 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                             <div className="mb-1.5 flex items-center gap-2">
                                                 <Badge
                                                     variant="outline"
-                                                    className="border-border bg-muted text-muted-foreground rounded-lg px-2 py-0.5 text-[8px] font-semibold uppercase"
+                                                    className="border-border bg-muted text-text-main rounded-lg px-2 py-0.5 text-[8px] font-normal uppercase"
                                                 >
                                                     {template.document_type || 'Custom'}
                                                 </Badge>
                                                 {!template.is_active && (
-                                                    <span className="rounded-lg bg-red-100 px-2 py-0.5 text-[8px] font-semibold text-red-800 uppercase dark:bg-red-950/40 dark:text-red-300">
+                                                    <span className="rounded-lg bg-red-100 px-2 py-0.5 text-[8px] font-normal text-red-800 uppercase dark:bg-red-950/40 dark:text-red-300">
                                                         DRAFT
                                                     </span>
                                                 )}
                                             </div>
-                                            <h3 className="text-foreground line-clamp-1 text-[14px] font-bold tracking-tight uppercase antialiased">
+                                            <h3 className="text-foreground line-clamp-1 text-[14px] font-normal tracking-tight uppercase antialiased">
                                                 {template.name}
                                             </h3>
                                         </div>
                                     </div>
 
-                                    <p className="text-muted-foreground mt-1 line-clamp-2 h-8 text-[11px] leading-relaxed font-bold tracking-tight uppercase antialiased">
+                                    <p className="text-text-main mt-1 line-clamp-2 h-8 text-[11px] leading-relaxed font-normal tracking-tight uppercase antialiased">
                                         {template.description || 'No asset description provided.'}
                                     </p>
 
                                     <div className="border-border/60 mt-auto grid grid-cols-2 gap-4 border-y py-4">
                                         <div className="flex flex-col">
-                                            <span className="text-muted-foreground mb-1 text-[8px] font-semibold uppercase">Elements</span>
-                                            <span className="text-foreground text-[11px] font-bold">
+                                            <span className="text-text-main mb-1 text-[8px] font-normal uppercase">Elements</span>
+                                            <span className="text-foreground text-[11px] font-normal">
                                                 {template.fields_count} <span className="text-[8px] opacity-40">FIELDS</span>
                                             </span>
                                         </div>
                                         <div className="flex flex-col items-end">
-                                            <span className="text-muted-foreground mb-1 text-[8px] font-semibold uppercase">Modified</span>
-                                            <span className="text-foreground text-[11px] font-bold tabular-nums">
+                                            <span className="text-text-main mb-1 text-[8px] font-normal uppercase">Modified</span>
+                                            <span className="text-foreground text-[11px] font-normal tabular-nums">
                                                 {new Date(template.updated_at).toLocaleDateString('id-ID')}
                                             </span>
                                         </div>
@@ -601,7 +601,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
 
                                     <div className="flex gap-2">
                                         <a href={route('admin.form-templates.builder', template.id)} target="_blank" className="flex-1">
-                                            <Button className="h-11 w-full text-[10px] font-semibold tracking-[0.2em] uppercase shadow-xl active:scale-95">
+                                            <Button className="h-11 w-full text-[10px] font-normal tracking-[0.2em] uppercase shadow-xl active:scale-95">
                                                 Open Builder
                                             </Button>
                                         </a>
@@ -640,7 +640,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <div className="mb-6 rounded-3xl border border-dashed border-black/[0.1] bg-black/[0.02] p-6 dark:border-white/[0.1] dark:bg-white/[0.02]">
                                 <FileJson size={64} className="text-black/20 dark:text-white/20" strokeWidth={1} />
                             </div>
-                            <span className="text-muted-foreground text-[11px] font-bold tracking-[0.4em] uppercase">No Assets Matching Filter</span>
+                            <span className="text-text-main text-[11px] font-normal tracking-[0.4em] uppercase">No Assets Matching Filter</span>
                         </div>
                     )}
                 </div>
@@ -654,16 +654,16 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                 <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-[420px]">
                     <form onSubmit={handleCreateTemplate}>
                         <div className="bg-muted text-foreground border-border relative border-b px-8 py-6">
-                            <DialogTitle className="mb-1 text-[14px] font-semibold tracking-[0.2em] uppercase">Asset Initialization</DialogTitle>
-                            <DialogDescription className="text-muted-foreground text-[10px] font-medium uppercase antialiased">
+                            <DialogTitle className="mb-1 text-[14px] font-normal tracking-[0.2em] uppercase">Asset Initialization</DialogTitle>
+                            <DialogDescription className="text-text-main text-[10px] font-normal uppercase antialiased">
                                 Form Builder Repository
                             </DialogDescription>
                         </div>
                         <div className="space-y-6 p-8">
                             <div className="grid gap-2">
-                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Template Name</Label>
+                                <Label className="text-text-main ml-1 text-[10px] font-normal uppercase">Template Name</Label>
                                 <Input
-                                    className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all"
+                                    className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-normal transition-all"
                                     placeholder="e.g., F1 General Inquiry"
                                     required
                                     value={createForm.data.name}
@@ -671,33 +671,34 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Document Category</Label>
+                                <Label className="text-text-main ml-1 text-[10px] font-normal uppercase">Document Category</Label>
                                 <Select value={createForm.data.document_type} onValueChange={(v) => createForm.setData('document_type', v)}>
-                                    <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all">
+                                    <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-normal transition-all">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="border-border bg-card text-card-foreground rounded-xl shadow-2xl">
-                                        <SelectItem value="f1" className="py-2.5 text-xs font-bold uppercase">
+                                        <SelectItem value="f1" className="py-2.5 text-xs font-normal uppercase">
                                             Form F1 (Request)
                                         </SelectItem>
-                                        <SelectItem value="f2" className="py-2.5 text-xs font-bold uppercase">
+                                        <SelectItem value="f2" className="py-2.5 text-xs font-normal uppercase">
                                             Form F2 (Resume)
                                         </SelectItem>
-                                        <SelectItem value="adhoc" className="py-2.5 text-xs font-bold uppercase">
+                                        <SelectItem value="adhoc" className="py-2.5 text-xs font-normal uppercase">
                                             Ad-hoc Form
                                         </SelectItem>
-                                        <SelectItem value="other" className="py-2.5 text-xs font-bold uppercase">
+                                        <SelectItem value="other" className="py-2.5 text-xs font-normal uppercase">
                                             Lainnya
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="grid gap-2">
-                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Description</Label>
+                                <Label className="text-text-main ml-1 text-[10px] font-normal uppercase">Description</Label>
                                 <Textarea
-                                    className="border-border bg-muted focus:border-primary h-24 resize-none rounded-xl text-xs leading-relaxed font-medium transition-all"
+                                    className="border-border bg-muted focus:border-primary h-24 resize-none rounded-xl text-xs leading-relaxed font-normal transition-all"
                                     value={createForm.data.description}
                                     onChange={(e) => createForm.setData('description', e.target.value)}
+                                    placeholder="Brief template explanation..."
                                 />
                             </div>
                         </div>
@@ -706,7 +707,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="text-muted-foreground hover:bg-muted h-10 rounded-xl px-6 text-[10px] font-semibold uppercase"
+                                className="text-text-main hover:bg-muted h-10 rounded-xl px-6 text-[10px] font-normal uppercase"
                                 onClick={() => setIsCreateModalOpen(false)}
                             >
                                 Cancel
@@ -714,7 +715,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <Button
                                 type="submit"
                                 size="sm"
-                                className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-8 text-[10px] font-semibold uppercase shadow-xl transition-all active:scale-95"
+                                className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-8 text-[10px] font-normal uppercase shadow-xl transition-all active:scale-95"
                                 disabled={createForm.processing}
                             >
                                 Initialize
@@ -733,8 +734,8 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 <Settings size={20} />
                             </div>
                             <div>
-                                <DialogTitle className="mb-1 text-[14px] font-semibold tracking-[0.2em] uppercase">Sync Configuration</DialogTitle>
-                                <DialogDescription className="text-muted-foreground text-[10px] font-medium uppercase antialiased">
+                                <DialogTitle className="mb-1 text-[14px] font-normal tracking-[0.2em] uppercase">Sync Configuration</DialogTitle>
+                                <DialogDescription className="text-text-main text-[10px] font-normal uppercase antialiased">
                                     Asset Profile Control
                                 </DialogDescription>
                             </div>
@@ -742,16 +743,16 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                         <div className="space-y-6 p-8">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="grid gap-2">
-                                    <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Metadata Name</Label>
+                                    <Label className="text-text-main ml-1 text-[10px] font-normal uppercase">Metadata Name</Label>
                                     <Input
                                         required
-                                        className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all"
+                                        className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-normal transition-all"
                                         value={editForm.data.name}
                                         onChange={(e) => editForm.setData('name', e.target.value)}
                                     />
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Status Asset</Label>
+                                    <Label className="text-text-main ml-1 text-[10px] font-normal uppercase">Status Asset</Label>
                                     <div className="border-border bg-muted flex h-11 items-center gap-3 rounded-xl border px-4">
                                         <input
                                             type="checkbox"
@@ -760,7 +761,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                             checked={editForm.data.is_active}
                                             onChange={(e) => editForm.setData('is_active', e.target.checked)}
                                         />
-                                        <Label htmlFor="is_active_check" className="cursor-pointer text-xs font-bold uppercase">
+                                        <Label htmlFor="is_active_check" className="cursor-pointer text-xs font-normal uppercase">
                                             {editForm.data.is_active ? 'Published / Aktif' : 'Draft / Inaktif'}
                                         </Label>
                                     </div>
@@ -769,29 +770,29 @@ export default function FormTemplates({ templates, contract_types }: Props) {
 
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="grid gap-2">
-                                    <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Classification</Label>
+                                    <Label className="text-text-main ml-1 text-[10px] font-normal uppercase">Classification</Label>
                                     <Select value={editForm.data.document_type || ''} onValueChange={(v) => editForm.setData('document_type', v)}>
-                                        <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all">
+                                        <SelectTrigger className="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-normal transition-all">
                                             <SelectValue placeholder="PILIH KLASIFIKASI" />
                                         </SelectTrigger>
                                         <SelectContent className="border-border bg-card text-card-foreground rounded-xl shadow-2xl">
-                                            <SelectItem value="f1" className="py-2.5 text-xs font-bold uppercase">
+                                            <SelectItem value="f1" className="py-2.5 text-xs font-normal uppercase">
                                                 Form F1 (Request)
                                             </SelectItem>
-                                            <SelectItem value="f2" className="py-2.5 text-xs font-bold uppercase">
+                                            <SelectItem value="f2" className="py-2.5 text-xs font-normal uppercase">
                                                 Form F2 (Resume)
                                             </SelectItem>
-                                            <SelectItem value="adhoc" className="py-2.5 text-xs font-bold uppercase">
+                                            <SelectItem value="adhoc" className="py-2.5 text-xs font-normal uppercase">
                                                 Ad-hoc Form
                                             </SelectItem>
-                                            <SelectItem value="other" className="py-2.5 text-xs font-bold uppercase">
+                                            <SelectItem value="other" className="py-2.5 text-xs font-normal uppercase">
                                                 Lainnya
                                             </SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                                 <div className="grid gap-2">
-                                    <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Workflow Related</Label>
+                                    <Label className="text-text-main ml-1 text-[10px] font-normal uppercase">Workflow Related</Label>
                                     <TreeSelect
                                         value={editForm.data.contract_type_id || ''}
                                         onValueChange={(val) => editForm.setData('contract_type_id', val)}
@@ -801,14 +802,14 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                             parent_id: (ct as any).parent_id,
                                         }))}
                                         placeholder="PILIH JENIS KONTRAK"
-                                        triggerClassName="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-bold transition-all shadow-none"
+                                        triggerClassName="border-border bg-muted focus:border-primary h-11 rounded-xl text-xs font-normal transition-all shadow-none"
                                     />
                                 </div>
                             </div>
                             <div className="grid gap-2">
-                                <Label className="text-muted-foreground ml-1 text-[10px] font-semibold uppercase">Narrative / Description</Label>
+                                <Label className="text-text-main ml-1 text-[10px] font-normal uppercase">Narrative / Description</Label>
                                 <Textarea
-                                    className="border-border bg-muted focus:border-primary h-24 resize-none rounded-xl text-xs leading-relaxed font-medium transition-all"
+                                    className="border-border bg-muted focus:border-primary h-24 resize-none rounded-xl text-xs leading-relaxed font-normal transition-all"
                                     value={editForm.data.description}
                                     onChange={(e) => editForm.setData('description', e.target.value)}
                                     placeholder="Tuliskan keterangan mengenai fungsi template ini..."
@@ -820,7 +821,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="text-muted-foreground hover:bg-muted h-10 px-6 text-[10px] font-semibold uppercase"
+                                className="text-text-main hover:bg-muted h-10 px-6 text-[10px] font-normal uppercase"
                                 onClick={() => setIsEditModalOpen(false)}
                             >
                                 Discard
@@ -828,7 +829,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <Button
                                 type="submit"
                                 size="sm"
-                                className="h-10 px-10 text-[10px] font-semibold uppercase shadow-xl transition-all active:scale-95"
+                                className="h-10 px-10 text-[10px] font-normal uppercase shadow-xl transition-all active:scale-95"
                                 disabled={editForm.processing}
                             >
                                 Save Profile
@@ -846,11 +847,11 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <Trash2 size={28} />
                         </div>
                         <DialogHeader className="p-0">
-                            <DialogTitle className="text-foreground mb-2 text-[16px] font-semibold tracking-tight uppercase">
+                            <DialogTitle className="text-foreground mb-2 text-[16px] font-normal tracking-tight uppercase">
                                 Delete Asset?
                             </DialogTitle>
-                            <DialogDescription className="text-muted-foreground max-w-[280px] text-[11px] leading-relaxed font-medium uppercase antialiased">
-                                Hapus permanen <span className="font-semibold text-red-500">"{selectedTemplate?.name}"</span>. <br />
+                            <DialogDescription className="text-text-main max-w-[280px] text-[11px] leading-relaxed font-normal uppercase antialiased">
+                                Hapus permanen <span className="font-normal text-red-500">"{selectedTemplate?.name}"</span>. <br />
                                 Proses ini irreversibel.
                             </DialogDescription>
                         </DialogHeader>
@@ -858,7 +859,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="border-border text-muted-foreground hover:bg-muted h-11 text-[10px] font-semibold uppercase"
+                                className="border-border text-text-main hover:bg-muted h-11 text-[10px] font-normal uppercase"
                                 onClick={() => setIsDeleteModalOpen(false)}
                             >
                                 Cancel
@@ -866,7 +867,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             <Button
                                 variant="destructive"
                                 size="sm"
-                                className="h-11 text-[10px] font-semibold uppercase shadow-xl transition-all active:scale-95"
+                                className="h-11 text-[10px] font-normal uppercase shadow-xl transition-all active:scale-95"
                                 onClick={handleDelete}
                             >
                                 Delete Asset

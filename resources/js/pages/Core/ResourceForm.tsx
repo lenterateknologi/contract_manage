@@ -45,15 +45,15 @@ function IconPicker({ value, onChange }: { value: string; onChange: (val: string
             <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex h-11 w-full items-center justify-between rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-sm font-semibold shadow-xs hover:bg-surface-muted/30 transition-all text-left"
+                className="flex h-11 w-full items-center justify-between rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-sm font-normal shadow-xs hover:bg-surface-muted/30 transition-all text-left"
             >
                 <div className="flex items-center gap-2">
                     {SelectedIcon ? (
                         <SelectedIcon className="h-4 w-4 text-primary" />
                     ) : (
-                        <div className="h-4 w-4 rounded-full border border-dashed border-muted-foreground/50" />
+                        <div className="h-4 w-4 rounded-full border border-dashed border-muted-foreground/55" />
                     )}
-                    <span className={value ? 'text-foreground font-semibold' : 'text-muted-foreground font-medium'}>
+                    <span className={value ? 'text-foreground font-normal' : 'text-text-main font-normal'}>
                         {value || 'Pilih Ikon...'}
                     </span>
                 </div>
@@ -64,13 +64,13 @@ function IconPicker({ value, onChange }: { value: string; onChange: (val: string
                                 e.stopPropagation();
                                 onChange('');
                             }}
-                            className="p-1 rounded-md hover:bg-rose-50 text-text-soft/60 hover:text-rose-500 transition-all cursor-pointer"
-                            title="Hapus Ikon"
+                            className="p-1 rounded-md hover:bg-rose-50 text-text-main hover:text-rose-500 transition-all cursor-pointer"
+                            title="Hapis Ikon"
                         >
                             <LucideIcons.X className="h-3.5 w-3.5" />
                         </span>
                     )}
-                    <LucideIcons.ChevronDown className="h-4 w-4 text-text-soft/60 animate-all duration-200" />
+                    <LucideIcons.ChevronDown className="h-4 w-4 text-text-main animate-all duration-200" />
                 </div>
             </button>
 
@@ -96,7 +96,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (val: string
                                         setIsOpen(false);
                                         setSearch('');
                                     }}
-                                    className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all gap-1 text-[10px] font-semibold text-center border border-transparent ${
+                                    className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all gap-1 text-[10px] font-normal text-center border border-transparent ${
                                         value === iconName ? 'bg-primary/10 text-primary border-primary/20' : 'text-text-main'
                                     }`}
                                 >
@@ -106,7 +106,7 @@ function IconPicker({ value, onChange }: { value: string; onChange: (val: string
                             );
                         })}
                         {filteredIcons.length === 0 && (
-                            <div className="col-span-full py-4 text-center text-xs font-semibold text-text-soft">
+                            <div className="col-span-full py-4 text-center text-xs font-normal text-text-main">
                                 Tidak ada ikon ditemukan
                             </div>
                         )}
@@ -232,7 +232,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 )}
                 {field.type === 'color' && (
                     <div className="flex flex-col gap-1.5 w-full">
-                        <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5">
+                        <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </Label>
                         <div className="flex items-center gap-2">
@@ -247,14 +247,14 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                 type="text"
                                 value={data[field.name] || ''}
                                 onChange={(e) => setData(field.name, e.target.value)}
-                                className="flex h-11 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-sm font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                                className="flex h-11 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-sm font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
                                 placeholder="#hexcode"
                             />
                             {data[field.name] && (
                                 <button
                                     type="button"
                                     onClick={() => setData(field.name, '')}
-                                    className="h-11 px-3 flex items-center justify-center rounded-lg border border-surface-border bg-surface-base hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 text-text-soft/60 transition-all shadow-xs"
+                                    className="h-11 px-3 flex items-center justify-center rounded-lg border border-surface-border bg-surface-base hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 text-text-main transition-all shadow-xs"
                                     title="Hapus Warna"
                                 >
                                     <LucideIcons.X className="h-4 w-4" />
@@ -262,7 +262,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                             )}
                         </div>
                         {errors[field.name] && (
-                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1">
+                            <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
                                 {errors[field.name]}
                             </span>
                         )}
@@ -270,7 +270,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 )}
                 {field.type === 'icon' && (
                     <div className="flex flex-col gap-1.5 w-full relative">
-                        <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5">
+                        <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </Label>
                         <IconPicker
@@ -278,7 +278,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                             onChange={(val) => setData(field.name, val)}
                         />
                         {errors[field.name] && (
-                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1">
+                            <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
                                 {errors[field.name]}
                             </span>
                         )}
@@ -286,14 +286,14 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 )}
                 {field.type === 'select' && (
                     <div className="flex flex-col gap-1.5 w-full">
-                        <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5">
+                        <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </Label>
                         <div className="relative w-full">
                             <select
                                 value={data[field.name]}
                                 onChange={(e) => setData(field.name, e.target.value)}
-                                className={`flex h-11 w-full appearance-none rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-sm font-sans font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-slate-50 disabled:border-slate-200 ${
+                                className={`flex h-11 w-full appearance-none rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-sm font-sans font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-primary/5 disabled:border-slate-200 ${
                                     data[field.name] ? 'text-foreground' : 'text-muted-foreground'
                                 }`}
                                 required={field.required}
@@ -313,11 +313,11 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                 })}
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                <LucideIcons.ChevronDown className="h-4 w-4 text-text-soft/60" />
+                                <LucideIcons.ChevronDown className="h-4 w-4 text-text-main" />
                             </div>
                         </div>
                         {errors[field.name] && (
-                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1">
+                            <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
                                 {errors[field.name]}
                             </span>
                         )}
@@ -325,7 +325,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 )}
                 {field.type === 'tree_select' && (
                     <div className="flex flex-col gap-1.5 w-full">
-                        <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5">
+                        <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </Label>
                         <TreeSelect
@@ -336,7 +336,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                             disabled={isFieldDisabled(field.name)}
                         />
                         {errors[field.name] && (
-                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1">
+                            <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
                                 {errors[field.name]}
                             </span>
                         )}
@@ -344,7 +344,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 )}
                 {field.type === 'switch' && (
                     <div className="flex flex-col gap-1.5 w-full">
-                        <Label className="text-[11px] font-bold text-muted-foreground uppercase px-0.5">
+                        <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
                             {field.label}
                         </Label>
                         <div className="flex items-center h-11">
@@ -378,15 +378,15 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 <div className="flex items-center gap-4">
                     <Link
                         href={`/admin/core/${resourceSlug}`}
-                        className="p-2 border border-surface-border rounded-xl hover:bg-surface-muted transition-all text-text-soft"
+                        className="p-2 border border-surface-border rounded-xl hover:bg-surface-muted transition-all text-text-main"
                     >
                         <ArrowLeft size={16} />
                     </Link>
                     <div>
-                        <h1 className="text-lg font-bold text-text-main">
+                        <h1 className="text-lg font-normal text-text-main">
                              {isEdit ? `Edit ${title}` : `Tambah ${title}`}
                         </h1>
-                        <p className="text-xs text-text-soft">
+                        <p className="text-xs text-text-main">
                             {isEdit ? 'Ubah informasi data yang sudah ada.' : 'Tambahkan data master baru ke sistem.'}
                         </p>
                     </div>
@@ -397,10 +397,10 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         <button
                             type="button"
                             onClick={() => setActiveTab('info')}
-                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-normal uppercase tracking-wider transition-all duration-200 cursor-pointer ${
                                 activeTab === 'info'
                                     ? 'border-primary text-primary'
-                                    : 'border-transparent text-text-soft hover:text-text-main'
+                                    : 'border-transparent text-text-main hover:text-foreground'
                             }`}
                         >
                             <LucideIcons.User size={14} />
@@ -409,10 +409,10 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         <button
                             type="button"
                             onClick={() => setActiveTab('docs')}
-                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer ${
+                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-normal uppercase tracking-wider transition-all duration-200 cursor-pointer ${
                                 activeTab === 'docs'
                                     ? 'border-primary text-primary'
-                                    : 'border-transparent text-text-soft hover:text-text-main'
+                                    : 'border-transparent text-text-main hover:text-foreground'
                             }`}
                         >
                             <LucideIcons.FileCheck size={14} />
@@ -435,9 +435,9 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                         <div className="flex items-center gap-2 pb-3 border-b border-surface-border">
                                             {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
                                             <div>
-                                                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">{field.label}</h3>
+                                                <h3 className="text-xs font-normal uppercase tracking-wider text-text-main">{field.label}</h3>
                                                 {field.description && (
-                                                    <p className="text-[11px] text-text-soft mt-0.5">{field.description}</p>
+                                                    <p className="text-[11px] text-text-main mt-0.5">{field.description}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -471,8 +471,8 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         <div className="flex items-center gap-2 pb-3 border-b border-surface-border">
                             <LucideIcons.FileCheck className="h-4 w-4 text-primary shrink-0 opacity-80" />
                             <div>
-                                <h3 className="text-xs font-bold uppercase tracking-wider text-text-main">Dokumen Legalitas Vendor</h3>
-                                <p className="text-[11px] text-text-soft mt-0.5">Kelola berkas legalitas dan lampiran wajib untuk vendor ini.</p>
+                                <h3 className="text-xs font-normal uppercase tracking-wider text-text-main">Dokumen Legalitas Vendor</h3>
+                                <p className="text-[11px] text-text-main mt-0.5">Kelola berkas legalitas dan lampiran wajib untuk vendor ini.</p>
                             </div>
                         </div>
 
@@ -489,12 +489,12 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
                                 return (
                                     <div key={docType.type} className="flex flex-col justify-between gap-2 p-4 border border-surface-border rounded-xl bg-surface-base min-h-[120px]">
-                                        <span className="text-[10px] font-bold text-text-soft uppercase tracking-wider">{docType.label}</span>
+                                        <span className="text-[10px] font-normal text-text-main uppercase tracking-wider">{docType.label}</span>
                                         {doc ? (
                                             <div className="flex items-center justify-between gap-3 mt-1">
                                                 <div className="flex items-center gap-2 min-w-0">
                                                     <LucideIcons.FileText className="h-5 w-5 text-emerald-500 shrink-0" />
-                                                    <span className="text-xs font-medium text-text-main truncate" title={doc.document_name}>
+                                                    <span className="text-xs font-normal text-text-main truncate" title={doc.document_name}>
                                                         {doc.document_name}
                                                     </span>
                                                 </div>
@@ -503,7 +503,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                                         href={doc.file_url}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="p-1.5 rounded-lg hover:bg-slate-50 text-text-soft/60 hover:text-text-main transition-all"
+                                                        className="p-1.5 rounded-lg hover:bg-slate-50 text-text-main hover:text-primary transition-all"
                                                         title="Lihat / Download"
                                                     >
                                                         <LucideIcons.Download className="h-4 w-4" />
@@ -514,10 +514,10 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                                             if (confirm(`Hapus dokumen ${docType.type}?`)) {
                                                                 router.delete(`/admin/vendors/${record.id}/documents/${doc.id}`, {
                                                                     preserveScroll: true
-                                                                });
+                                                                 });
                                                             }
                                                         }}
-                                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-text-soft/60 hover:text-rose-600 transition-all"
+                                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-text-main hover:text-rose-600 transition-all"
                                                         title="Hapus"
                                                     >
                                                         <LucideIcons.Trash2 className="h-4 w-4" />
@@ -526,7 +526,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                             </div>
                                         ) : (
                                             <div className="flex flex-col gap-2 mt-1">
-                                                <div className="flex items-center gap-1.5 text-rose-500 text-[10px] font-bold uppercase tracking-wider">
+                                                <div className="flex items-center gap-1.5 text-rose-500 text-[10px] font-normal uppercase tracking-wider">
                                                     <LucideIcons.AlertCircle className="h-3.5 w-3.5" />
                                                     <span>Belum Dilengkapi</span>
                                                 </div>
@@ -547,11 +547,11 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                                         }}
                                                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                                     />
-                                                    <div className="flex h-9 items-center justify-center gap-2 rounded-lg border border-dashed border-surface-border bg-surface-muted/20 text-xs font-semibold text-text-soft hover:bg-surface-muted/40 transition-all cursor-pointer">
+                                                    <div className="flex h-9 items-center justify-center gap-2 rounded-lg border border-dashed border-surface-border bg-primary/5 text-xs font-normal text-text-main hover:bg-primary/10 transition-all cursor-pointer">
                                                         <LucideIcons.Upload className="h-3.5 w-3.5" /> Upload File
                                                     </div>
                                                 </div>
-                                                <span className="text-[9px] text-text-soft/60 font-semibold tracking-wide mt-0.5">Format: PDF, DOCX, JPG, PNG (Maks. 5MB)</span>
+                                                <span className="text-[9px] text-text-main font-normal tracking-wide mt-0.5">Format: PDF, DOCX, JPG, PNG (Maks. 5MB)</span>
                                             </div>
                                         )}
                                     </div>

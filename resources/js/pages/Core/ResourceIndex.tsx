@@ -167,7 +167,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 const total = 6;
                 const isComplete = count === total;
                 return (
-                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[11px] font-bold ${
+                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[11px] font-normal ${
                         isComplete ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
                     }`}>
                         {count}/{total}
@@ -181,15 +181,15 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 return (
                     <span 
                         style={{ paddingLeft: `${depth * 20}px` }} 
-                        className="flex items-center gap-1.5 font-semibold text-text-main"
+                        className="flex items-center gap-1.5 font-normal text-text-main"
                     >
                         {depth > 0 && (
-                            <span className="text-text-soft/60 font-mono select-none">
+                            <span className="text-text-main font-mono select-none">
                                 └─
                             </span>
                         )}
                         {row.code && (
-                            <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">
+                            <span className="text-[10px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 text-text-main font-normal uppercase tracking-wider">
                                 {row.code}
                             </span>
                         )}
@@ -202,19 +202,19 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             if (resourceSlug === 'contract-types') {
                 if (col.name === 'f1_details') {
                     if (!row.f1_input_mechanism || row.f1_input_mechanism === 'none') {
-                        return <span className="text-text-soft/40">—</span>;
+                        return <span className="text-text-main">—</span>;
                     }
                     const isManual = row.f1_input_mechanism === 'manual';
                     const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
                     const templateName = row.f1_form_template?.name || row.f1FormTemplate?.name;
                     return (
                         <div className="flex flex-col gap-0.5 text-left">
-                            <span className="font-semibold text-xs text-text-main">{mech}</span>
+                            <span className="font-normal text-xs text-text-main">{mech}</span>
                             {isManual && (
                                 templateName ? (
-                                    <span className="text-[10px] text-text-soft/80 font-medium">{templateName}</span>
+                                    <span className="text-[10px] text-text-main font-normal">{templateName}</span>
                                 ) : (
-                                    <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">⚠️ Belum Pilih Template</span>
                                 )
                             )}
                         </div>
@@ -222,19 +222,19 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 }
                 if (col.name === 'f2_details') {
                     if (!row.f2_input_mechanism || row.f2_input_mechanism === 'none') {
-                        return <span className="text-text-soft/40">—</span>;
+                        return <span className="text-text-main">—</span>;
                     }
                     const isManual = row.f2_input_mechanism === 'manual';
                     const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
                     const templateName = row.f2_form_template?.name || row.f2FormTemplate?.name;
                     return (
                         <div className="flex flex-col gap-0.5 text-left">
-                            <span className="font-semibold text-xs text-text-main">{mech}</span>
+                            <span className="font-normal text-xs text-text-main">{mech}</span>
                             {isManual && (
                                 templateName ? (
-                                    <span className="text-[10px] text-text-soft/80 font-medium">{templateName}</span>
+                                    <span className="text-[10px] text-text-main font-normal">{templateName}</span>
                                 ) : (
-                                    <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">⚠️ Belum Pilih Template</span>
                                 )
                             )}
                         </div>
@@ -242,19 +242,19 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 }
                 if (col.name === 'agreement_details') {
                     if (!row.contract_input_mechanism || row.contract_input_mechanism === 'none') {
-                        return <span className="text-text-soft/40">—</span>;
+                        return <span className="text-text-main">—</span>;
                     }
                     const isManual = row.contract_input_mechanism === 'manual';
                     const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
                     const templateName = row.contract_form_template?.name || row.contractFormTemplate?.name;
                     return (
                         <div className="flex flex-col gap-0.5 text-left">
-                            <span className="font-semibold text-xs text-text-main">{mech}</span>
+                            <span className="font-normal text-xs text-text-main">{mech}</span>
                             {isManual && (
                                 templateName ? (
-                                    <span className="text-[10px] text-text-soft/80 font-medium">{templateName}</span>
+                                    <span className="text-[10px] text-text-main font-normal">{templateName}</span>
                                 ) : (
-                                    <span className="text-[10px] text-rose-500 font-bold uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">⚠️ Belum Pilih Template</span>
                                 )
                             )}
                         </div>
@@ -268,7 +268,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     : null;
                 return (
                     <span 
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-xs border"
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-normal uppercase tracking-wider shadow-xs border"
                         style={{ 
                             color: row.color || '#ffffff', 
                             backgroundColor: row.bg_color || '#4f46e5',
@@ -284,7 +284,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             if (col.name === 'color' || col.name === 'bg_color' || col.name === 'text_color') {
                 const colorVal = val || '#ffffff';
                 return (
-                    <span className="flex items-center gap-2 font-mono text-xs font-semibold">
+                    <span className="flex items-center gap-2 font-mono text-xs font-normal">
                         <span 
                             className="h-4.5 w-4.5 rounded-md border border-surface-border/80 shadow-xs shrink-0" 
                             style={{ backgroundColor: colorVal }}
@@ -296,7 +296,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
 
             if (col.type === 'boolean') {
                 return (
-                    <span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-full ${val ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                    <span className={`px-2 py-1 text-[10px] font-normal uppercase rounded-full ${val ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
                         {val ? 'Aktif' : 'Nonaktif'}
                     </span>
                 );
@@ -337,6 +337,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 bulkActions={(selected: any[]) => (
                     <div className="flex items-center gap-2">
                         <Button
+                            type="button"
                             variant="white"
                             size="sm"
                             onClick={() => {
@@ -348,15 +349,16 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     });
                                 }
                             }}
-                            className="text-xs py-1.5 px-3 h-8 hover:bg-rose-50 hover:border-rose-200 text-rose-500 rounded-xl flex items-center gap-1.5 font-bold uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
+                            className="text-xs py-1.5 px-3 h-8 hover:bg-rose-50 hover:border-rose-200 text-rose-500 rounded-xl flex items-center gap-1.5 font-normal uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
                         >
                             <Trash2 size={13} /> Hapus Terpilih
                         </Button>
                         <Button
+                            type="button"
                             variant="white"
                             size="sm"
                             onClick={() => setShowBulkEditModal(true)}
-                            className="text-xs py-1.5 px-3 h-8 hover:bg-slate-50 hover:border-slate-300 text-text-main rounded-xl flex items-center gap-1.5 font-bold uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
+                            className="text-xs py-1.5 px-3 h-8 hover:bg-slate-50 hover:border-slate-300 text-text-main rounded-xl flex items-center gap-1.5 font-normal uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
                         >
                             <LucideIcons.Edit2 size={13} /> Ubah Massal ({selected.length})
                         </Button>
@@ -410,16 +412,16 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                         {/* Header */}
                         <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
                             <div>
-                                <h3 className="text-slate-900 dark:text-slate-100 text-base font-bold tracking-tight">
+                                <h3 className="text-slate-900 dark:text-slate-100 text-base font-normal tracking-tight">
                                     Ubah Massal Data {title}
                                 </h3>
-                                <p className="text-slate-500 dark:text-slate-400 text-xs font-normal mt-0.5">
+                                <p className="text-text-main text-xs font-normal mt-0.5">
                                     Mengubah {selectedRows.length} data terpilih sekaligus. Centang field yang ingin diubah.
                                 </p>
                             </div>
                             <button
                                 onClick={() => setShowBulkEditModal(false)}
-                                className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-text-soft/60 hover:text-text-main transition-all"
+                                className="p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-text-main hover:text-primary transition-all"
                             >
                                 <LucideIcons.X size={16} />
                             </button>
@@ -449,7 +451,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                             />
                                         </div>
                                         <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                                            <label className="text-[11px] font-bold text-text-main uppercase tracking-wider">
+                                            <label className="text-[11px] font-normal text-text-main uppercase tracking-wider">
                                                 {field.label}
                                             </label>
                                             {isFieldChecked ? (
@@ -458,7 +460,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                         <select
                                                             value={bulkFieldValues[field.name] ?? ''}
                                                             onChange={(e) => setBulkFieldValues(prev => ({ ...prev, [field.name]: e.target.value }))}
-                                                            className="flex h-10 w-full appearance-none rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                                                            className="flex h-10 w-full appearance-none rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
                                                         >
                                                             <option value="">Pilih...</option>
                                                             {(Array.isArray(field.options) ? field.options : Object.entries(field.options || {})).map((option: any) => {
@@ -494,13 +496,13 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                             type="text"
                                                             value={bulkFieldValues[field.name] ?? ''}
                                                             onChange={(e) => setBulkFieldValues(prev => ({ ...prev, [field.name]: e.target.value }))}
-                                                            className="flex h-10 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
+                                                            className="flex h-10 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                                                             placeholder={`Masukkan ${field.label}...`}
                                                         />
                                                     )}
                                                 </div>
                                             ) : (
-                                                <span className="text-[10px] italic text-text-soft/60">Centang kotak di samping untuk mengubah field ini massal.</span>
+                                                <span className="text-[10px] italic text-text-main">Centang kotak di samping untuk mengubah field ini massal.</span>
                                             )}
                                         </div>
                                     </div>
@@ -513,14 +515,14 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                             <button
                                 onClick={() => setShowBulkEditModal(false)}
                                 disabled={bulkProcessing}
-                                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all disabled:opacity-50"
+                                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-normal text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all disabled:opacity-50"
                             >
                                 Batal
                             </button>
                             <button
                                 onClick={handleBulkSave}
                                 disabled={bulkProcessing}
-                                className="flex-1 rounded-xl px-4 py-2.5 text-xs font-bold text-white transition-all bg-primary hover:bg-primary/95 disabled:opacity-50 shadow-md flex items-center justify-center gap-1.5"
+                                className="flex-1 rounded-xl px-4 py-2.5 text-xs font-normal text-white transition-all bg-primary hover:bg-primary/95 disabled:opacity-50 shadow-md flex items-center justify-center gap-1.5"
                             >
                                 {bulkProcessing && <LucideIcons.Loader2 size={12} className="animate-spin" />}
                                 Simpan Perubahan

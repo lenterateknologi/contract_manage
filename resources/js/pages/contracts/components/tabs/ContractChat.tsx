@@ -46,7 +46,7 @@ function MsgBubble({
             const parts = text.split(new RegExp(`(${term})`, 'gi'));
             content = parts.map((part, i) =>
                 part.toLowerCase() === term.toLowerCase() ? (
-                    <span key={i} className="text-primary bg-primary/10 rounded px-0.5 font-bold">
+                    <span key={i} className="text-primary bg-primary/10 rounded px-0.5 font-normal">
                         {part}
                     </span>
                 ) : (
@@ -62,7 +62,7 @@ function MsgBubble({
                     return (
                         <span
                             key={i}
-                            className={cn('font-bold tracking-tight underline underline-offset-2', isMe ? 'text-primary-foreground' : 'text-primary')}
+                            className={cn('font-normal tracking-tight underline underline-offset-2', isMe ? 'text-primary-foreground' : 'text-primary')}
                         >
                             {part}
                         </span>
@@ -80,7 +80,7 @@ function MsgBubble({
                                 <span
                                     key={`${idx}-${i}`}
                                     className={cn(
-                                        'font-bold tracking-tight underline underline-offset-2',
+                                        'font-normal tracking-tight underline underline-offset-2',
                                         isMe ? 'text-primary-foreground' : 'text-primary',
                                     )}
                                 >
@@ -101,20 +101,20 @@ function MsgBubble({
     return (
         <div className={cn('animate-in slide-in-from-bottom-1 mb-4 flex flex-col gap-1.5 duration-300', isMe ? 'items-end' : 'items-start')}>
             <div className={cn('flex items-center gap-2 px-1', isMe ? 'flex-row-reverse' : 'flex-row')}>
-                <span className={cn('text-text-main text-[11px] font-bold', isMe ? '' : 'opacity-80')}>{isMe ? 'Anda' : name}</span>
+                <span className={cn('text-text-main text-[11px] font-normal', isMe ? '' : 'opacity-80')}>{isMe ? 'Anda' : name}</span>
                 {role && (
-                    <span className="bg-surface-muted text-text-desc rounded-full px-2.5 py-0.5 text-[9px] font-bold tracking-tight uppercase">
+                    <span className="bg-primary/10 text-text-main rounded-full px-2.5 py-0.5 text-[9px] font-normal tracking-tight uppercase">
                         {role}
                     </span>
                 )}
-                <span className="text-text-soft/60 text-[10px] tabular-nums">{time}</span>
+                <span className="text-text-main text-[10px] tabular-nums">{time}</span>
             </div>
 
             <div className={cn('group relative max-w-[82%] min-w-[65px]', isMe ? 'text-right' : 'text-left')}>
                 <div
                     className={cn(
                         'rounded-2xl shadow-sm transition-all duration-300',
-                        isMe ? 'bg-primary text-primary-foreground' : 'bg-surface-muted text-text-main',
+                        isMe ? 'bg-primary text-primary-foreground' : 'bg-primary/5 border border-primary/10 text-text-main',
                     )}
                 >
                     {attachmentUrl && isImage && (
@@ -124,7 +124,7 @@ function MsgBubble({
                                 e.preventDefault();
                                 onPreview(attachmentUrl, attachmentName);
                             }}
-                            className="group/img bg-surface-muted relative cursor-pointer overflow-hidden rounded-t-2xl border-b border-inherit"
+                            className="group/img bg-primary/5 relative cursor-pointer overflow-hidden rounded-t-2xl border-b border-inherit"
                         >
                             <img
                                 src={attachmentUrl}
@@ -168,16 +168,16 @@ function MsgBubble({
                                 <div
                                     className={cn(
                                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-transform group-hover/file:scale-110',
-                                        isMe ? 'border-white/10 bg-white/10 text-white' : 'border-surface-border bg-surface-base text-text-soft',
+                                        isMe ? 'border-white/10 bg-white/10 text-white' : 'border-surface-border bg-surface-base text-text-main',
                                     )}
                                 >
                                     <FileIcon size={14} />
                                 </div>
                                 <div className="min-w-0 flex-1 text-left">
-                                    <div className="mb-0.5 truncate text-[10px] leading-none font-bold tracking-tight uppercase">
+                                    <div className="mb-0.5 truncate text-[10px] leading-none font-normal tracking-tight uppercase">
                                         {attachmentName}
                                     </div>
-                                    <div className="text-[8px] font-bold uppercase opacity-40">PREVIEW</div>
+                                    <div className="text-[8px] font-normal uppercase opacity-40">PREVIEW</div>
                                 </div>
                                 <Download size={12} className="opacity-0 transition-opacity group-hover/file:opacity-40" />
                             </div>
@@ -336,12 +336,12 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
                 <div className="flex items-center gap-2">
                     <div className="border-surface-border hidden h-7 items-center border-r px-3 sm:flex">
-                        <span className="text-text-soft text-[8px] font-semibold tracking-[0.2em] uppercase tabular-nums">{msgs.length} LOGS</span>
+                        <span className="text-text-main text-[8px] font-normal tracking-[0.2em] uppercase tabular-nums">{msgs.length} LOGS</span>
                     </div>
                     <button
                         onClick={handleRefresh}
                         className={cn(
-                            'border-surface-border text-text-soft hover:bg-surface-muted hover:text-text-main flex h-7 w-7 items-center justify-center rounded-lg border shadow-sm transition-all active:scale-90',
+                            'border-surface-border text-text-main hover:bg-surface-muted hover:text-text-main flex h-7 w-7 items-center justify-center rounded-lg border shadow-sm transition-all active:scale-90',
                             refreshing && 'border-primary text-primary animate-spin shadow-lg',
                         )}
                     >
@@ -368,7 +368,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         Object.entries(groupedMessages).map(([day, dayMessages]) => (
                             <div key={day} className="flex flex-col">
                                 <div className="bg-surface-border my-2 h-px flex-1" />
-                                <span className="text-text-soft px-2 text-[10px]">{day}</span>
+                                <span className="text-text-main px-2 text-[10px]">{day}</span>
                                 {dayMessages.map((m) => (
                                     <MsgBubble
                                         key={m.id}
@@ -396,21 +396,21 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
             <div className="border-surface-border mt-auto border-t pt-3">
                 {selectedFile && (
-                    <div className="bg-surface-muted animate-in slide-in-from-bottom-1 mb-3 flex items-center justify-between rounded-lg p-2.5 duration-300">
+                    <div className="bg-primary/5 border border-primary/10 animate-in slide-in-from-bottom-1 mb-3 flex items-center justify-between rounded-lg p-2.5 duration-300">
                         <div className="flex items-center gap-2.5">
                             <FileIcon size={14} strokeWidth={2.5} />
                             <div className="flex flex-col">
-                                <span className="text-text-main mb-1 text-[9px] leading-none font-semibold tracking-tight uppercase">
+                                <span className="text-text-main mb-1 text-[9px] leading-none font-normal tracking-tight uppercase">
                                     {selectedFile?.name}
                                 </span>
-                                <span className="text-text-soft text-[7.5px] font-semibold uppercase tabular-nums opacity-40">
+                                <span className="text-text-main text-[7.5px] font-normal uppercase tabular-nums opacity-40">
                                     {((selectedFile?.size || 0) / 1024).toFixed(1)} KB
                                 </span>
                             </div>
                         </div>
                         <button
                             onClick={() => setSelectedFile(null)}
-                            className="hover:bg-surface-muted flex h-7 w-7 items-center justify-center rounded-lg transition-all active:scale-90"
+                            className="hover:bg-primary/10 flex h-7 w-7 items-center justify-center rounded-lg transition-all active:scale-90"
                         >
                             <X size={14} strokeWidth={2.5} />
                         </button>
@@ -426,11 +426,11 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         insertMention={insertMention}
                     />
 
-                    <div className="border-surface-border bg-surface-muted/30 focus-within:border-primary/30 focus-within:bg-surface-muted relative flex flex-1 items-end rounded-2xl border transition-all duration-300">
+                    <div className="border-surface-border bg-primary/5 focus-within:border-primary/30 focus-within:bg-primary/5 relative flex flex-1 items-end rounded-2xl border transition-all duration-300">
                         <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
                         <button
                             onClick={() => fileInputRef.current?.click()}
-                            className="text-text-soft hover:text-text-main flex h-10 w-10 shrink-0 items-center justify-center transition-colors"
+                            className="text-text-main hover:text-primary flex h-10 w-10 shrink-0 items-center justify-center transition-colors"
                         >
                             <Paperclip size={16} />
                         </button>
@@ -441,7 +441,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                             onKeyDown={handleKeyDown}
                             placeholder="Ketik pesan..."
                             rows={1}
-                            className="text-text-main placeholder:text-text-soft/30 max-h-[120px] min-h-[40px] flex-1 resize-none bg-transparent py-2.5 pr-4 text-[13px] leading-relaxed font-medium tracking-tight transition-all outline-none"
+                            className="text-text-main placeholder:text-text-main/30 max-h-[120px] min-h-[40px] flex-1 resize-none bg-transparent py-2.5 pr-4 text-[13px] leading-relaxed font-normal tracking-tight transition-all outline-none"
                         />
                     </div>
                     <button
@@ -449,7 +449,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                             'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all',
                             input.trim() || selectedFile
                                 ? 'bg-primary hover:bg-primary/90 text-white shadow-lg active:scale-95'
-                                : 'bg-surface-muted text-text-soft/40',
+                                : 'bg-primary/5 text-text-main/40',
                         )}
                         onClick={send}
                         disabled={(!input.trim() && !selectedFile) || sending}
