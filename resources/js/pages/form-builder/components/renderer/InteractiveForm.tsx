@@ -106,6 +106,10 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                 allFields={template.fields}
                 diffStatus={diffData[field.name] || diffData[field.id]}
                 comparisonValue={comparisonData[field.name]}
+                diffData={diffData}
+                comparisonData={comparisonData}
+                previewData={formData}
+                updateValue={onChange}
             />
         );
     };
