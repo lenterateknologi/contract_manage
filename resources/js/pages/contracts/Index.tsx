@@ -836,7 +836,7 @@ function ContractPage({
                                                                     {c.form_no || 'No Req'}
                                                                 </span>
                                                                 <div className="flex-shrink-0 origin-right scale-[0.75]">
-                                                                    <StatusBadge status={c.status} />
+                                                                    <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
                                                                 </div>
                                                             </div>
 

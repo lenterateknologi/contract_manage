@@ -199,6 +199,8 @@ export default function WorkflowEditor({
 
     const handleSubmit = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
+        if (form.processing) return;
+
         const options = {
             preserveScroll: true,
             preserveState: true,
@@ -449,9 +451,10 @@ export default function WorkflowEditor({
                                                             contractStatuses={contractStatuses}
                                                             allWorkflows={allWorkflows.filter(
                                                                 (w: any) =>
-                                                                    !form.data.contract_type_id ||
-                                                                    w.contract_type_id === form.data.contract_type_id ||
-                                                                    !w.contract_type_id,
+                                                                    !form.data.contract_type_ids ||
+                                                                    form.data.contract_type_ids.length === 0 ||
+                                                                    !w.contract_type_id ||
+                                                                    form.data.contract_type_ids.includes(String(w.contract_type_id)),
                                                             )}
                                                             allWorkflowSteps={form.data.steps}
                                                             duplicateLocalStep={(i: number) => {

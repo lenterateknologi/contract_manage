@@ -5,7 +5,7 @@ export interface UserProfile {
     email: string;
     initials: string;
     role: string;
-    department_id: string | null;
+    department_id?: string | null;
     department_name?: string;
     department?: {
         id: string;
@@ -228,6 +228,17 @@ export interface Contract {
             is_manager?: boolean;
             show_f2_contract_no?: boolean;
             show_tax_toggle?: boolean;
+            show_tab_f1?: boolean;
+            show_tab_f2?: boolean;
+            show_tab_agreement?: boolean;
+            show_tab_timeline?: boolean;
+            show_tab_attachments?: boolean;
+            show_tab_chat?: boolean;
+            show_tab_references?: boolean;
+            show_tab_members?: boolean;
+            show_document_detail?: boolean;
+            show_action_panel?: boolean;
+            show_info?: boolean;
         } | null;
         actions?: Array<{
             id: string;
@@ -242,6 +253,12 @@ export interface Contract {
     assigned_pic?: UserProfile | null;
     assigned_by?: UserProfile | null;
     unread_count?: number;
+    status_info?: {
+        code?: string;
+        label?: string;
+        color?: string;
+        bg_color?: string;
+    } | null;
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

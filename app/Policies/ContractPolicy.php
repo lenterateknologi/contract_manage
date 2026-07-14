@@ -114,11 +114,6 @@ class ContractPolicy
      */
     private function isActor(User $user, Contract $contract): bool
     {
-        // Admins are universal actors
-        if ($user->isAdmin()) {
-            return true;
-        }
-
         // Active pending approval for this specific user
         $hasPendingApproval = $contract->approvals()
             ->where('user_id', $user->id)

@@ -342,7 +342,7 @@ const ContractDetailView = ({
                                     {contract.title || <span className="italic text-text-soft">Tanpa Judul</span>}
                                 </h2>
                             )}
-                            <StatusBadge status={contract.status} />
+                             <StatusBadge status={contract.status} statusInfo={contract.status_info} />
                         </div>
                         <div className="mt-1.5 flex flex-wrap items-center gap-3">
                             <span className="text-text-soft text-[10px] font-semibold tracking-[0.2em] uppercase">

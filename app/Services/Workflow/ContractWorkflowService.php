@@ -102,16 +102,17 @@ class ContractWorkflowService
             throw new \Exception('Tidak ada tahapan alur kerja yang valid untuk permintaan ini.');
         }
 
+        $minStepVal = $workflow->steps->min('step') ?? 1;
         $statusStr = ($firstStep->meta && isset($firstStep->meta['target_status']) && ! empty($firstStep->meta['target_status']))
             ? $firstStep->meta['target_status']
-            : ($firstStep->step === 1 ? 'draft' : 'in_review');
+            : ($firstStep->step === $minStepVal ? 'draft' : 'in_review');
         $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
         $updateData = [
             'workflow_id' => $workflow->id,
             'workflow_step_id' => $firstStep->id,
             'status' => $nextStatus?->code ?: $statusStr,
-            'submitted_at' => $firstStep->step === 1 ? $contract->submitted_at : now(),
+            'submitted_at' => $firstStep->step === $minStepVal ? $contract->submitted_at : now(),
         ];
 
         if (empty($contract->origin_workflow_id)) {
@@ -801,7 +802,8 @@ class ContractWorkflowService
         }
 
         if ($nextStep) {
-            $statusStr = $nextStep->meta['target_status'] ?? ($nextStep->step_category === 'signing' ? 'locked' : ($nextStep->step === 1 ? 'draft' : 'in_review'));
+            $minStepVal = $contract->workflow ? $contract->workflow->steps->min('step') : 1;
+            $statusStr = $nextStep->meta['target_status'] ?? ($nextStep->step_category === 'signing' ? 'locked' : ($nextStep->step === $minStepVal ? 'draft' : 'in_review'));
             $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
             $contract->update([

@@ -20,7 +20,7 @@ class ContractFormatter
             'workflowStep.actions', 'histories.actor.department',
             'contractType', 'submissionType', 'vendor.documents', 'parent', 'workflow.steps',
             'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
-            'assignedPic.department', 'assignedBy.department',
+            'assignedPic.department', 'assignedBy.department', 'statusDetail',
         ]);
         $nextStep = self::getNextStep($c);
         $requiresPicAssignment = $nextStep && $nextStep->approver_type === 'assigned_pic';
@@ -59,6 +59,12 @@ class ContractFormatter
                 'documents' => $c->vendor->relationLoaded('documents') ? $c->vendor->documents : [],
             ] : null,
             'status' => $c->status,
+            'status_info' => $c->statusDetail ? [
+                'code' => data_get($c->statusDetail, 'code'),
+                'label' => data_get($c->statusDetail, 'label'),
+                'color' => data_get($c->statusDetail, 'color'),
+                'bg_color' => data_get($c->statusDetail, 'bg_color'),
+            ] : null,
             'metadata' => $c->metadata ?? [],
             'display_mode' => data_get($c->workflow?->meta, 'display_mode', 'pdf'),
             'f1_mode' => self::getEffectiveMode($c, 'f1', ($c->contractType?->getInheritedInputMechanism('f1_input_mechanism') === 'manual') ? 'interactive' : 'upload'),
@@ -206,7 +212,7 @@ class ContractFormatter
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]),
-            'can_approve' => Auth::user()?->isAdmin() || $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
                 if ($a->sub_step !== null) {
                     return true;
                 }

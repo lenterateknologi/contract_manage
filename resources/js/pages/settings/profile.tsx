@@ -377,7 +377,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
                                                         </p>
                                                     </div>
                                                     <div className="shrink-0">
-                                                        <StatusBadge status={c.status} />
+                                                         <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
                                                     </div>
                                                 </div>
                                                 <div className="mt-auto space-y-2">

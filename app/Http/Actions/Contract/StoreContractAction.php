@@ -78,7 +78,13 @@ class StoreContractAction
             ]);
 
             // AUTOMATION: Automatically assign workflow and set to Step 1 (Drafting)
-            $contract = $this->workflowService->sendForApproval($contract, $validated['workflow_id'] ?? null);
+            try {
+                $contract = $this->workflowService->sendForApproval($contract, $validated['workflow_id'] ?? null);
+            } catch (\Exception $e) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'workflow_id' => [$e->getMessage()]
+                ]);
+            }
 
             $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'contractType', 'workflowStep']);
 

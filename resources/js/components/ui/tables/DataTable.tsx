@@ -177,7 +177,7 @@ export function DataTable<T extends Record<string, any>>({
         <div className="flex flex-col  antialiased text-foreground select-none animate-in fade-in duration-200">
             {/* --- TOP HEADER SECTION --- */}
             {(title || onSearchChange || localSearch !== undefined || headerActions || filters.length > 0) && (
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 ">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 ">
                     {/* Left side: Search input & Filter */}
                     <div className="flex items-center gap-3">
                         {onSearchChange !== undefined && (

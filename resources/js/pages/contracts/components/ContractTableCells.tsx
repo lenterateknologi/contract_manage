@@ -199,7 +199,7 @@ export const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
     return (
         <div className="flex flex-col gap-1.5 py-0.5">
             <div className="flex items-center">
-                <StatusBadge status={c.status} />
+                <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
             </div>
             {!!stepDesc && <span className="text-text-desc truncate text-[10px] leading-tight font-medium">{stepDesc}</span>}
         </div>

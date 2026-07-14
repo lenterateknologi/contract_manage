@@ -15,6 +15,17 @@ class StoreContractRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $inputs = $this->all();
+        foreach ($inputs as $key => $value) {
+            if ($value === 'null' || $value === 'undefined') {
+                $inputs[$key] = null;
+            }
+        }
+        $this->replace($inputs);
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
