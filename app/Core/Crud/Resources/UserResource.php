@@ -94,12 +94,16 @@ class UserResource extends Resource
     {
         return [
             Filter::make('role_id', 'Role Akses')
+                ->type('searchable')
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('division_id', 'Divisi')
+                ->type('searchable')
                 ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('department_id', 'Departemen')
+                ->type('searchable')
                 ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Regional')
+                ->type('searchable')
                 ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('is_active', 'Status Aktif')
                 ->options([

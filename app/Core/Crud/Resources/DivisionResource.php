@@ -53,6 +53,7 @@ class DivisionResource extends Resource
     {
         return [
             Filter::make('department_id', 'Departemen')
+                ->type('searchable')
                 ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('is_active', 'Status Aktif')
                 ->options([

@@ -71,10 +71,12 @@ class CompanyResource extends Resource
     {
         return [
             Filter::make('company_group_id', 'Company Group')
+                ->type('searchable')
                 ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Region')
+                ->type('searchable')
                 ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
-            Filter::make('is_active', 'Status Aktif')
+            Filter::make('is_active', 'Status Status')
                 ->options([
                     '1' => 'Aktif',
                     '0' => 'Nonaktif',
