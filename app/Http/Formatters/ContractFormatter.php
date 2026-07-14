@@ -228,6 +228,7 @@ class ContractFormatter
 
                 return ! $hasUnapprovedSubSteps;
             })->first()?->id,
+            'unread_count' => (int) ($c->unread_count ?? 0),
         ];
     }
 

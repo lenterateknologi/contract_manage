@@ -241,6 +241,7 @@ export interface Contract {
     pending_approval_id?: string;
     assigned_pic?: UserProfile | null;
     assigned_by?: UserProfile | null;
+    unread_count?: number;
 }
 
 export type ContractStatus = 'draft' | 'in_review' | 'revision' | 'approved' | 'locked' | 'archived';

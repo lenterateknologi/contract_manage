@@ -6,6 +6,7 @@ import { ArrowDown, Download, FileIcon, MessageSquare, Paperclip, RefreshCw, Sen
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DocumentPreviewModal from '../modals/DocumentPreviewModal';
 import { MentionDropdown } from '../parts/MentionDropdown';
+import { useToast } from '@/components/ui/feedback/Toast';
 
 interface Props {
     contract: Contract;
@@ -38,6 +39,11 @@ function MsgBubble({
         attachmentName?.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ||
         (typeof attachmentName === 'string' &&
             ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif'].some((ext) => attachmentName.toLowerCase().includes(ext)));
+
+    const isPdf =
+        attachmentUrl?.match(/\.pdf$/i) ||
+        attachmentName?.match(/\.pdf$/i) ||
+        (typeof attachmentName === 'string' && attachmentName.toLowerCase().endsWith('.pdf'));
 
     const renderMessage = (text: string, term?: string) => {
         let content: any = text;
@@ -156,7 +162,16 @@ function MsgBubble({
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     e.preventDefault();
-                                    onPreview(attachmentUrl, attachmentName);
+                                    if (isPdf) {
+                                        onPreview(attachmentUrl, attachmentName);
+                                    } else {
+                                        const link = document.createElement('a');
+                                        link.href = attachmentUrl;
+                                        link.setAttribute('download', attachmentName);
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                    }
                                 }}
                                 className={cn(
                                     'group/file flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition-all',
@@ -177,7 +192,10 @@ function MsgBubble({
                                     <div className="mb-0.5 truncate text-[10px] leading-none font-normal tracking-tight uppercase">
                                         {attachmentName}
                                     </div>
-                                    <div className="text-[8px] font-normal uppercase opacity-40">PREVIEW</div>
+                                    {/* ponytail: dynamically label either preview or download based on type */}
+                                    <div className="text-[8px] font-normal uppercase opacity-40">
+                                        {isPdf ? 'PREVIEW' : 'DOWNLOAD'}
+                                    </div>
                                 </div>
                                 <Download size={12} className="opacity-0 transition-opacity group-hover/file:opacity-40" />
                             </div>
@@ -190,6 +208,7 @@ function MsgBubble({
 }
 
 export default function ContractChat({ contract, meId, users = [], onNewMessage }: Props) {
+    const { showToast } = useToast();
     const [input, setInput] = useState('');
     const [search, setSearch] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -232,8 +251,15 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files?.[0]) {
-            setSelectedFile(e.target.files[0]);
+        const file = e.target.files?.[0];
+        if (file) {
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                showToast('Ukuran berkas terlalu besar! Batas maksimum adalah 10MB.', 'error');
+                if (fileInputRef.current) fileInputRef.current.value = '';
+                return;
+            }
+            setSelectedFile(file);
         }
     };
 
@@ -284,6 +310,10 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             setInput('');
             setSelectedFile(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
+        } catch (err: any) {
+            console.error('Failed to send message:', err);
+            const errMsg = err.response?.data?.message || err.message || 'Gagal mengirim pesan.';
+            showToast(errMsg, 'error');
         } finally {
             setSending(false);
         }

@@ -17,14 +17,21 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
                 isSelected ? "bg-primary/5 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"
             )}
         >
-            <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-normal text-text-main">
-                        #{contract.form_no || 'NO-REQ'}
-                    </span>
-                    <span className="text-[9px] text-text-main tabular-nums">
-                        {contract.updated_at_formatted || ''}
-                    </span>
+        <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+                <span className="text-[10px] font-normal text-text-main">
+                    #{contract.form_no || 'NO-REQ'}
+                </span>
+                    <div className="flex items-center gap-1.5">
+                        {contract.unread_count !== undefined && contract.unread_count > 0 ? (
+                            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-medium text-white shadow-sm">
+                                {contract.unread_count}
+                            </span>
+                        ) : null}
+                        <span className="text-[9px] text-text-main tabular-nums">
+                            {contract.updated_at_formatted || ''}
+                        </span>
+                    </div>
                 </div>
                 <h3 className={cn(
                     "text-xs font-normal line-clamp-1",

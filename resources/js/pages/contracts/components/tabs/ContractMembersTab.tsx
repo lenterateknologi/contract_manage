@@ -1,6 +1,6 @@
 import { Avatar } from '@/pages/contracts/components/ui/ui';
 import { Contract, UserProfile } from '@/pages/contracts/types';
-import { Building2, Mail, ShieldCheck, User } from 'lucide-react';
+import { Building2, Mail, ShieldCheck } from 'lucide-react';
 import React from 'react';
 
 interface ContractMembersTabProps {
@@ -56,71 +56,54 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-1 flex-col p-6 duration-500">
             <div className="mb-6 flex flex-col gap-1 px-1">
-                <h3 className="text-text-main text-base font-semibold tracking-tight uppercase italic">Personil Terlibat</h3>
-                <p className="text-text-desc text-[10px] font-medium  uppercase">
+                <h3 className="text-text-main text-base font-semibold tracking-tight uppercase">Personil Terlibat</h3>
+                <p className="text-text-desc text-[10px] font-medium uppercase">
                     Daftar pemangku kepentingan dalam siklus hidup kontrak
                 </p>
             </div>
 
-            <div className="border-surface-border bg-surface-base/40 overflow-hidden rounded-2xl border shadow-sm backdrop-blur-sm">
-                <table className="w-full border-collapse text-left">
-                    <thead>
-                        <tr className="border-surface-border/60 bg-surface-muted/40 border-b select-none">
-                            <th className="text-text-desc px-4 py-3 text-[11px] font-semibold  uppercase">Identitas Personil</th>
-                            <th className="text-text-desc px-4 py-3 text-[11px] font-semibold  uppercase">Kontak & Departemen</th>
-                            <th className="text-text-desc px-4 py-3 text-right text-[11px] font-semibold  uppercase">
-                                Peran dalam Kontrak
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-surface-border/30 divide-y">
-                        {membersList.map(({ user, roles }) => (
-                            <tr key={user.id} className="group hover:bg-surface-muted/30 transition-colors">
-                                <td className="px-4 py-4 align-middle">
-                                    <div className="flex items-center gap-3">
-                                        <div className="relative">
-                                            <Avatar user={user} size="sm" className="ring-surface-border/40 ring-2" />
-                                            <div className="bg-primary absolute -right-0.5 -bottom-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full shadow-sm">
-                                                <User size={8} className="text-primary-foreground" />
-                                            </div>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-text-main text-sm leading-none font-semibold tracking-tight">{user.name}</span>
-                                            <span className="text-text-soft mt-1 text-[10px] font-medium  uppercase">{user.role}</span>
-                                        </div>
+            {/* ponytail: flat minimal list layout, uniform text styles without bold/gray */}
+            <div className="flex flex-col divide-y divide-surface-border/40">
+                {membersList.map(({ user, roles }) => (
+                    <div
+                        key={user.id}
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 first:pt-0 last:pb-0 gap-4"
+                    >
+                        <div className="flex items-center gap-3">
+                            <Avatar user={user} size="sm" className="ring-surface-border/20 ring-1" />
+                            <div className="flex flex-col">
+                                <div className="flex flex-wrap items-baseline gap-2">
+                                    <span className="text-text-main text-sm leading-tight">{user.name}</span>
+                                    <span className="text-text-main text-[9px] uppercase">{user.role}</span>
+                                </div>
+                                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-text-main text-[11px]">
+                                    <div className="flex items-center gap-1">
+                                        <Mail size={12} className="text-primary/40" />
+                                        <span>{user.email}</span>
                                     </div>
-                                </td>
-                                <td className="px-4 py-4 align-middle">
-                                    <div className="flex flex-col gap-1">
-                                        <div className="text-text-desc flex items-center gap-2 text-[11px] font-medium">
-                                            <Mail size={12} className="text-primary/40" />
-                                            {user.email}
+                                    {user.department_name && (
+                                        <div className="flex items-center gap-1">
+                                            <Building2 size={12} className="text-primary/40" />
+                                            <span>{user.department_name}</span>
                                         </div>
-                                        {user.department_name && (
-                                            <div className="text-text-desc flex items-center gap-2 text-[11px] font-medium">
-                                                <Building2 size={12} className="text-primary/40" />
-                                                {user.department_name}
-                                            </div>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="px-4 py-4 text-right align-middle">
-                                    <div className="flex flex-wrap justify-end gap-1.5">
-                                        {roles.map((role) => (
-                                            <div
-                                                key={role}
-                                                className="border-primary/20 bg-primary/[0.03] text-primary inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[9px] font-semibold  uppercase"
-                                            >
-                                                <ShieldCheck size={10} />
-                                                {role}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 sm:justify-end">
+                            {roles.map((role) => (
+                                <div
+                                    key={role}
+                                    className="border-primary/20 bg-primary/[0.03] text-primary inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[9px] uppercase"
+                                >
+                                    <ShieldCheck size={10} />
+                                    <span>{role}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
             </div>
 
             <div className="border-surface-border/60 bg-surface-muted/20 text-text-soft mt-6 rounded-xl border p-4 text-[10px] leading-relaxed font-medium uppercase">
@@ -129,3 +112,4 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
         </div>
     );
 };
+

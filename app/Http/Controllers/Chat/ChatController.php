@@ -23,12 +23,16 @@ class ChatController extends Controller
     {
         $user = Auth::user();
 
-        // Fetch contracts that the user is involved in
+        // Fetch contracts that the user is involved in (Creator, Initiator, PIC, Manager, Approver, or message participant)
         $contracts = Contract::query()
             ->where(function ($query) use ($user) {
                 $query->where('created_by', $user->id)
                     ->orWhere('initiated_by_id', $user->id)
                     ->orWhere('assigned_pic_id', $user->id)
+                    ->orWhere('assigned_by_id', $user->id)
+                    ->orWhereHas('approvals', function ($q) use ($user) {
+                        $q->where('user_id', $user->id);
+                    })
                     ->orWhereHas('messages', function ($q) use ($user) {
                         $q->where('user_id', $user->id);
                     });

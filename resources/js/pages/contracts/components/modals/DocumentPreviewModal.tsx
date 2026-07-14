@@ -1,8 +1,4 @@
 import { Dialog, DialogContent } from '@/components/ui/dialogs/Dialog';
-import axios from 'axios';
-import { renderAsync } from 'docx-preview';
-import { Download, Loader2, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
 
 interface Props {
     isOpen: boolean;
@@ -11,130 +7,50 @@ interface Props {
     fileName: string;
 }
 
-const DOCX_STYLES = `
-    .docx-container > div {
-        background: transparent !important;
-        box-shadow: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        width: 100% !important;
-    }
-    .docx-wrapper {
-        background: transparent !important;
-        padding: 0 !important;
-    }
-    section.docx {
-        margin-bottom: 0 !important;
-        box-shadow: none !important;
-        padding: 60px !important;
-        background: white !important;
-    }
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-`;
+const IMAGE_EXT = /\.(jpg|jpeg|png|gif|webp|svg)/i;
 
 export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }: Props) {
-    const [loading, setLoading] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const isDocx = fileName?.toLowerCase().endsWith('.docx');
-    const isImage = fileName?.match(/\.(jpg|jpeg|png|gif|webp|svg)/i);
-
-    useEffect(() => {
-        if (!isOpen || !isDocx) return;
-
-        const fetchAndRender = async () => {
-            setLoading(true);
-            try {
-                const res = await axios.get(url, { responseType: 'blob' });
-                if (containerRef.current) {
-                    containerRef.current.innerHTML = '';
-                    await renderAsync(res.data, containerRef.current);
-                }
-            } catch (err) {
-                console.error('Docx preview failed', err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchAndRender();
-    }, [isOpen, url, isDocx]);
+    // ponytail: check both fileName and url to handle cases where filename has no extension
+    const isImage = IMAGE_EXT.test(fileName ?? '') || IMAGE_EXT.test(url ?? '');
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="flex h-[95vh] w-full max-w-[95vw] flex-col gap-0 overflow-hidden border-none bg-white p-0 shadow-2xl dark:bg-black">
-                <style>{DOCX_STYLES}</style>
+            {/* ponytail: simplified full preview layout, removed unused docx styles/libraries */}
+            <DialogContent className="flex h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border border-surface-border bg-surface-base p-0 shadow-lg">
 
-                {/* HUD Header - Mirroring AgreementView */}
-                <div className="z-50 flex h-[72px] shrink-0 items-center justify-between border-b bg-white/80 px-8 backdrop-blur-md">
-                    <div className="flex items-center gap-4">
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                                <div className="h-4 w-1 rounded-full bg-black dark:bg-white" />
-                                <h3 className="text-[11px] font-semibold tracking-tighter text-black uppercase dark:text-white">{fileName}</h3>
-                                <span className="bg-background rounded px-1.5 py-0.5 text-[8px] font-semibold text-white uppercase dark:bg-white dark:text-black">
-                                    Preview
-                                </span>
-                            </div>
-                            <span className="mt-1.5 text-[9px] leading-none font-semibold tracking-[0.2em] text-black/40 uppercase dark:text-white/40">
-                                Documentation Inspection &bull; Format Preserved
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <a
-                            href={url}
-                            download={fileName}
-                            className="flex h-9 items-center gap-2 rounded-xl border border-black/10 bg-white px-5 text-[10px] font-semibold text-black uppercase shadow-sm transition-all hover:bg-black/5 active:scale-95 dark:border-white/10 dark:bg-black dark:text-white dark:hover:bg-white/5"
-                        >
-                            <Download size={14} className="text-black dark:text-white" /> Download
-                        </a>
-                        <div className="mx-1 h-6 w-px bg-slate-200" />
-                        <button
-                            onClick={onClose}
-                            className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-400 transition-all hover:bg-slate-200 hover:text-slate-900"
-                        >
-                            <X size={18} />
-                        </button>
-                    </div>
+                {/* Minimal Header */}
+                <div className="flex h-10 shrink-0 items-center border-b border-surface-border bg-surface-base px-4 pr-12">
+                    <span className="text-text-main text-xs truncate font-medium">
+                        {fileName}
+                    </span>
                 </div>
 
-                {/* Content Area - Mirroring AgreementView layout */}
-                <div className="custom-scrollbar flex flex-1 justify-center overflow-y-auto bg-slate-100/50 p-12">
-                    <div className="relative mb-12 min-h-full w-full max-w-[210mm] rounded-sm bg-white shadow-2xl ring-1 ring-slate-200">
-                        {loading && (
-                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm transition-all dark:bg-black/80">
-                                <Loader2 className="mb-4 h-10 w-10 animate-spin text-black dark:text-white" />
-                                <span className="animate-pulse text-[10px] font-semibold tracking-[0.3em] text-black uppercase dark:text-white">
-                                    Rendering Layout...
-                                </span>
-                            </div>
-                        )}
-
-                        {isDocx ? (
-                            <div ref={containerRef} className="docx-container w-full text-left" />
-                        ) : isImage ? (
-                            <div className="flex h-full min-h-[500px] w-full items-center justify-center rounded-sm bg-slate-50 p-4 dark:bg-slate-900">
-                                <img
-                                    src={url}
-                                    alt={fileName}
-                                    className="max-h-[75vh] max-w-full rounded border border-slate-200 object-contain shadow-md"
-                                />
-                            </div>
-                        ) : (
-                            <iframe
-                                src={`${url}#toolbar=0&navpanes=0&view=FitH`}
-                                className="h-[calc(95vh-72px-96px)] w-full rounded-sm border-none bg-white"
-                                title="PDF Preview"
-                            />
-                        )}
-                    </div>
+                {/* Preview Frame */}
+                <div className="flex-1 overflow-hidden bg-surface-muted/30 flex items-center justify-center p-4">
+                    {isImage ? (
+                        <img
+                            src={url}
+                            alt={fileName}
+                            className="max-h-full max-w-full object-contain"
+                            onError={(e) => {
+                                const target = e.currentTarget;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent && !parent.querySelector('.img-error')) {
+                                    const msg = document.createElement('p');
+                                    msg.className = 'img-error text-text-main text-xs opacity-60';
+                                    msg.textContent = 'Gagal memuat gambar.';
+                                    parent.appendChild(msg);
+                                }
+                            }}
+                        />
+                    ) : (
+                        <iframe
+                            src={url}
+                            className="h-full w-full border-none bg-surface-base"
+                            title="PDF Preview"
+                        />
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

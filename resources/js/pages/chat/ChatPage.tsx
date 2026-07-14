@@ -1,13 +1,15 @@
 import { AppSidebar } from '@/layouts/app/components/AppSidebar';
 import { AppSidebarHeader } from '@/layouts/app/components/AppSidebarHeader';
 import { SidebarInset, SidebarProvider } from '@/components/ui/navigation/Sidebar';
-import { Head, usePage } from '@inertiajs/react';
-import { useState, useMemo } from 'react';
+import { Head, usePage, usePoll } from '@inertiajs/react';
+import { useState, useMemo, useEffect } from 'react';
 import { MessageSquare, Search } from 'lucide-react';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import ContractChat from '@/pages/contracts/components/tabs/ContractChat';
 import { Contract } from '@/pages/contracts/types';
+import { contractApi } from '@/pages/contracts/utils';
 import { ContractListItem } from './ui/ContractListItem';
+import { ToastProvider } from '@/components/ui/feedback/Toast';
 
 interface Props {
     contracts: Contract[];
@@ -22,6 +24,24 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
 
     // Manage local contracts state to reflect new messages immediately
     const [contracts, setContracts] = useState(initialContracts);
+
+    // ponytail: usePoll to fetch real-time updates for the involved contracts every 4 seconds
+    usePoll(4000, { only: ['contracts'] });
+
+    // Sync local contracts state when initialContracts updates via polling
+    useEffect(() => {
+        setContracts(initialContracts);
+    }, [initialContracts]);
+
+    // ponytail: mark contract chat as read on select, and clear the unread badge immediately
+    useEffect(() => {
+        if (selectedContractId) {
+            contractApi.messages.markRead(selectedContractId).catch(console.error);
+            setContracts((prev) =>
+                prev.map((c) => (c.id === selectedContractId ? { ...c, unread_count: 0 } : c))
+            );
+        }
+    }, [selectedContractId]);
 
     // Memoize filtered contracts
     const filteredContracts = useMemo(() => {
@@ -43,9 +63,10 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
     };
 
     return (
-        <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset className="bg-surface-muted/30 font-sans">
+        <ToastProvider>
+            <SidebarProvider>
+                <AppSidebar />
+                <SidebarInset className="bg-surface-muted/30 font-sans">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 <Head title="Chat Center" />
 
@@ -131,6 +152,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                 </div>
             </SidebarInset>
         </SidebarProvider>
+        </ToastProvider>
     );
 }
 

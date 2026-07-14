@@ -27,7 +27,7 @@ class ContractMessage extends Model
 
     public function getAttachmentUrlAttribute()
     {
-        return $this->attachment_path ? route('contracts.message-attachment', ['messageId' => $this->id]) : null;
+        return $this->attachment_path ? asset('storage/'.$this->attachment_path) : null;
     }
 
     public function contract(): BelongsTo
