@@ -2,7 +2,7 @@ import { Avatar } from '@/pages/contracts/components/ui/ui';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { Check, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ContractInfoForm } from './ContractInfoForm';
+import { ContractInfoForm, MetaBadge } from './ContractInfoForm';
 import { TaxToggle } from './TaxToggle';
 
 export interface FormTemplateInfo {
@@ -234,7 +234,10 @@ export function DraftEditableInfoCard({
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Tgl Dibuat</div>
+                        <div className="flex items-center justify-between">
+                            <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Tgl Dibuat</div>
+                            <MetaBadge name="created_at" />
+                        </div>
                         <span className="text-text-main text-sm font-semibold">{selected.created_at}</span>
                     </div>
 

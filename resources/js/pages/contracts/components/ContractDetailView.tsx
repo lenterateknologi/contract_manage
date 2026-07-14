@@ -94,20 +94,13 @@ const ContractDetailView = ({
     users: any[];
 }) => {
     const params = new URLSearchParams(window.location.search);
-    const detailTab = (params.get('tab') as any) || 'form_template';
+    const [detailTab, setDetailTabState] = useState((params.get('tab') as any) || 'form_template');
 
     const setDetailTab = (tab: string) => {
+        setDetailTabState(tab);
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('tab', tab);
-        router.get(
-            `${window.location.pathname}?${newParams.toString()}`,
-            {},
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            },
-        );
+        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
     };
 
     const [processing, setProcessing] = useState(false);

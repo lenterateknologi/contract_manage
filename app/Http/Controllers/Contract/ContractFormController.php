@@ -399,7 +399,7 @@ class ContractFormController extends Controller
         $versions = [];
         if ($submission) {
             /** @var Collection<int, FormSubmissionHistory> $versionsCollection */
-            $versionsCollection = $submission->versions()->orderByDesc('version_no')->get();
+            $versionsCollection = $submission->versions()->with('createdBy')->orderByDesc('version_no')->get();
             $versions = $versionsCollection->map(fn ($v) => [
                 'id' => $v->id,
                 'version_no' => $v->version_no,

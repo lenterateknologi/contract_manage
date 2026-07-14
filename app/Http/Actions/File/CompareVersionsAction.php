@@ -5,7 +5,6 @@ namespace App\Http\Actions\File;
 use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractVersion;
-use App\Models\FormSubmission;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -17,40 +16,22 @@ class CompareVersionsAction
 
     public function execute(Contract $contract, string $type, Request $request): Response
     {
-        if (in_array($type, ['f1', 'f2'])) {
-            $submission = FormSubmission::where('contract_id', $contract->id)
-                ->where('document_type', $type)
-                ->first();
+        /** @var Collection<int, ContractVersion> $versionsCollection */
+        $versionsCollection = $contract->versions()
+            ->with('uploader')
+            ->where('document_type', $type)
+            ->orderByDesc('version_no')
+            ->get();
 
-            $versionsCollection = $submission ? $submission->versions()->with('createdBy')->get() : collect();
-
-            $versions = $versionsCollection->map(fn ($v) => [
-                'id' => $v->id,
-                'version_no' => $v->version_no,
-                'file_name' => $v->change_summary ?? 'Form Submission',
-                'created_at' => $v->created_at?->format('Y-m-d H:i') ?? '',
-                'uploader' => [
-                    'name' => $v->createdBy ? $v->createdBy->name : 'System',
-                ],
-            ]);
-        } else {
-            /** @var Collection<int, ContractVersion> $versionsCollection */
-            $versionsCollection = $contract->versions()
-                ->with('uploader')
-                ->where('document_type', $type)
-                ->orderByDesc('version_no')
-                ->get();
-
-            $versions = $versionsCollection->map(fn ($v) => [
-                'id' => $v->id,
-                'version_no' => $v->version_no,
-                'file_name' => $v->file_name,
-                'created_at' => $v->created_at?->format('Y-m-d H:i') ?? '',
-                'uploader' => [
-                    'name' => $v->uploader ? $v->uploader->name : 'System',
-                ],
-            ]);
-        }
+        $versions = $versionsCollection->map(fn ($v) => [
+            'id' => $v->id,
+            'version_no' => $v->version_no,
+            'file_name' => $v->file_name,
+            'created_at' => $v->created_at?->format('Y-m-d H:i') ?? '',
+            'uploader' => [
+                'name' => $v->uploader ? $v->uploader->name : 'System',
+            ],
+        ]);
 
         return Inertia::render('contracts/compare-agreements', [
             'contract' => $this->formatter->formatContract($contract),

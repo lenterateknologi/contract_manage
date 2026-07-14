@@ -29,6 +29,16 @@ interface ContractInfoFormProps {
     onTaxRequiredChange: (val: boolean) => void;
 }
 
+export const MetaBadge = ({ name }: { name: string }) => {
+    if (!SHOW_META_KEYS) return null;
+
+    return (
+        <span className="text-primary bg-primary/5 border-primary/10 rounded-sm border px-1.5 py-0.5 font-mono text-[8px] tracking-tighter uppercase opacity-70">
+            KEY: {name}
+        </span>
+    );
+};
+
 export function ContractInfoForm({
     isDraft,
     title,
@@ -49,16 +59,6 @@ export function ContractInfoForm({
     taxRequired,
     onTaxRequiredChange,
 }: ContractInfoFormProps) {
-    const MetaBadge = ({ name }: { name: string }) => {
-        if (!SHOW_META_KEYS) return null;
-
-        return (
-            <span className="text-primary bg-primary/5 border-primary/10 rounded-sm border px-1.5 py-0.5 font-mono text-[8px] tracking-tighter uppercase opacity-70">
-                KEY: {name}
-            </span>
-        );
-    };
-
     return (
         <>
             {selected.show_f2_contract_no !== false && (
@@ -129,8 +129,13 @@ export function ContractInfoForm({
             <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                     <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Kategori Kontrak</div>
+                    <MetaBadge name="contract_type" />
                 </div>
-                <div className="text-text-main text-sm font-semibold">{selected.contract_type || '—'}</div>
+                {isDraft ? (
+                    <TreeSelect value={typeId} onValueChange={(val) => setTypeId(val)} items={types} placeholder="Pilih Kategori Kontrak" />
+                ) : (
+                    <div className="text-text-main text-sm font-semibold">{selected.contract_type || '—'}</div>
+                )}
             </div>
         </>
     );

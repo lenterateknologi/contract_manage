@@ -64,6 +64,8 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
         selectedFieldIds = [],
         diffData = {},
         comparisonData = {},
+        diffStatus,
+        comparisonValue,
     } = props;
 
     const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
@@ -234,6 +236,10 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
                     !isDragging &&
                     ['group', 'grid_x', 'grid_y', 'grid_view'].includes(field.type) &&
                     `${ringColor} ring-dashed ${bgDashed} ring-2`,
+                // Audit mode styling for comparisons
+                diffStatus === 'added' && 'ring-2 ring-emerald-500 bg-emerald-50/50 rounded-md shadow-sm p-1.5',
+                diffStatus === 'modified' && 'ring-2 ring-amber-500 bg-amber-50/50 rounded-md shadow-sm p-1.5',
+                diffStatus === 'removed' && 'ring-2 ring-rose-500 bg-rose-50/50 rounded-md shadow-sm opacity-60 p-1.5',
             )}
             onClick={(e) => {
                 if (isBuilder) {

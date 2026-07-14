@@ -143,7 +143,23 @@ export default function CompareForms({ contract, docType, template, versions, in
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4 border-r border-slate-200 pr-6">
+                        <div className="flex items-center gap-1.5">
+                            <span className="h-3 w-3 rounded-full bg-emerald-500 shadow-sm" />
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">Ditambah</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="h-3 w-3 rounded-full bg-amber-500 shadow-sm" />
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">Diubah</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="h-3 w-3 rounded-full bg-rose-500 shadow-sm" />
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">Dihapus</span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
                     <div className="mr-2 flex items-center gap-3">
                         <span className="text-[10px] font-bold text-black">Sinkronisasi Scroll</span>
                         <button
@@ -167,6 +183,7 @@ export default function CompareForms({ contract, docType, template, versions, in
                     >
                         Tutup
                     </button>
+                </div>
                 </div>
             </div>
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Contract\ContractController;
 use App\Http\Controllers\Contract\ContractExportController;
 use App\Http\Controllers\Contract\ContractFileController;
+use App\Http\Controllers\Contract\ContractFormController;
 use Illuminate\Support\Facades\Route;
 
 // ── Public Signed Routes for PDF Rendering (Browsershot) ──
@@ -36,10 +37,8 @@ Route::controller(ContractController::class)->group(function () {
 });
 
 // Version Comparison
-Route::controller(ContractFileController::class)->group(function () {
-    Route::get('/admin/contracts/{id}/form-submissions/{type}/compare', 'compareFormVersions')->name('contracts.form-submissions.compare');
-    Route::get('/admin/contracts/{id}/agreement/compare', 'compareAgreementVersions')->name('contracts.agreement.compare');
-});
+Route::get('/admin/contracts/{id}/form-submissions/{type}/compare', [ContractFormController::class, 'compareFormVersions'])->name('contracts.form-submissions.compare');
+Route::get('/admin/contracts/{id}/agreement/compare', [ContractFileController::class, 'compareAgreementVersions'])->name('contracts.agreement.compare');
 
 Route::middleware(['admin'])->prefix('admin')->group(function () {
     Route::controller(ContractController::class)->group(function () {

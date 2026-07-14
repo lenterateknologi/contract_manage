@@ -42,7 +42,7 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
     if (name === 'meta_nomor_kontrak' || name === 'meta_no_kontrak' || name === 'meta_no_pengajuan')
         return contract.contract_no || contract.form_no || '';
     if (name === 'meta_judul' || name === 'meta_judul_kontrak' || name === 'meta_nama_kontrak') return contract.title || '';
-    if (name === 'meta_topik' || name === 'meta_jenis_kontrak') {
+    if (name === 'meta_topik' || name === 'meta_jenis_kontrak' || name === 'contract_type') {
         const type = (contract as any).contract_type;
         return type?.name || (typeof type === 'string' ? type : '');
     }
@@ -75,10 +75,18 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
     }
 
     // 2. Dates
-    if (name === 'meta_tgl_dibuat' || name === 'tanggal' || name === 'meta_tanggal') {
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
-        const timeStr = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    if (name === 'created_at' || name === 'meta_tgl_dibuat' || name === 'tanggal' || name === 'meta_tanggal') {
+        let dateObj = new Date();
+        
+        if (contract.created_at) {
+            const parsed = new Date(contract.created_at);
+            if (!isNaN(parsed.getTime())) {
+                dateObj = parsed;
+            }
+        }
+
+        const dateStr = dateObj.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
         const isDateField = field.type === 'date' || field.options?.value_type === 'date';
         return isDateField ? dateStr : `${dateStr} ${timeStr}`;
     }
