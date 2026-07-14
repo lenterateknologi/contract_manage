@@ -255,7 +255,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         if (file) {
             const maxSize = 10 * 1024 * 1024; // 10MB
             if (file.size > maxSize) {
-                showToast('Ukuran berkas terlalu besar! Batas maksimum adalah 10MB.', 'error');
+                showToast('Ukuran berkas terlalu besar! Batas maksimum adalah 10MB.', 'danger');
                 if (fileInputRef.current) fileInputRef.current.value = '';
                 return;
             }
@@ -311,7 +311,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             setSelectedFile(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
         } catch (err: any) {
-            console.error('Failed to send message:', err);
+            console.error(err);
             const errMsg = err.response?.data?.message || err.message || 'Gagal mengirim pesan.';
             showToast(errMsg, 'error');
         } finally {

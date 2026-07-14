@@ -27,6 +27,8 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
             Route::get('/{role}/config', 'roleConfig')->name('admin.roles.config');
             Route::post('/{role}/access', 'updateRoleAccess')->name('admin.roles.access.update');
             Route::post('/{role}/reorder', 'reorderRoleNavigation')->name('admin.roles.reorder');
+            Route::delete('/{role}/nav-group/{group}', 'removeNavGroup')->name('admin.roles.nav-group.remove');
+            Route::delete('/{role}/nav-module/{module}', 'removeNavModule')->name('admin.roles.nav-module.remove');
         });
 
         Route::get('/access-mapping/{role?}', 'accessMapping')->name('admin.access-mapping');

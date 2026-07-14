@@ -15,11 +15,13 @@ use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use App\Imports\UsersImport;
+use App\Models\AccessModule;
 use App\Models\Company;
 use App\Models\Department;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\Role;
+use App\Models\RoleModuleGroup;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -273,6 +275,56 @@ class AdminController extends Controller
         $action->reorderRoleNavigation($role, $request->validated()['groups']);
 
         return back();
+    }
+
+    /**
+     * Remove a group from a role's navigation mapping (not a global delete).
+     */
+    public function removeNavGroup(Role $role, ModuleGroup $group): RedirectResponse
+    {
+        // Disable permissions and group for all modules in this group for this role
+        AccessModule::where('role_id', $role->id)
+            ->where('module_group_id', $group->id)
+            ->update([
+                'can_read' => false,
+                'can_create' => false,
+                'can_update' => false,
+                'can_delete' => false,
+                'can_approve' => false,
+                'can_bulk_approve' => false,
+                'can_bulk_delete' => false,
+                'module_group_id' => null,
+                'sequence' => null,
+            ]);
+
+        // Remove the role-group sequence record
+        RoleModuleGroup::where('role_id', $role->id)
+            ->where('module_group_id', $group->id)
+            ->delete();
+
+        return back()->with('success', 'Grup berhasil dilepas dari navigasi role ini.');
+    }
+
+    /**
+     * Remove a module from a role's navigation mapping (not a global delete).
+     */
+    public function removeNavModule(Role $role, Module $module): RedirectResponse
+    {
+        AccessModule::where('role_id', $role->id)
+            ->where('module_id', $module->id)
+            ->update([
+                'can_read' => false,
+                'can_create' => false,
+                'can_update' => false,
+                'can_delete' => false,
+                'can_approve' => false,
+                'can_bulk_approve' => false,
+                'can_bulk_delete' => false,
+                'module_group_id' => null,
+                'sequence' => null,
+            ]);
+
+        return back()->with('success', 'Modul berhasil dilepas dari navigasi role ini.');
     }
 
     public function storeUser(StoreUserRequest $request)

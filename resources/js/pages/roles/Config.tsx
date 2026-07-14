@@ -710,12 +710,14 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         const groupId = deletingGroupId;
         const group = navItems.find((g) => g.id === groupId);
         if (group) {
+            // Move modules back to available pool
             setAvailableModules((prev) => [...prev, ...group.modules]);
             setNavItems((prev) => prev.filter((g) => g.id !== groupId));
         }
 
-        router.delete(`/admin/module-groups/${groupId}`, {
-            onSuccess: () => showToast('Grup navigasi berhasil dihapus', 'success'),
+        // Only remove from this role's nav, not global delete
+        router.delete(`/admin/roles/${role.id}/nav-group/${groupId}`, {
+            onSuccess: () => showToast('Grup dilepas dari navigasi role ini', 'success'),
             onFinish: () => {
                 setIsDeleteGroupModalOpen(false);
                 setDeletingGroupId(null);
@@ -809,11 +811,19 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         if (!deletingModuleId) return;
 
         const moduleId = deletingModuleId;
-        setAvailableModules((prev) => prev.filter((m) => m.id !== moduleId));
+        // Move module back to available pool
+        const module = navItems.flatMap((g) => g.modules).find((m) => m.id === moduleId);
+        if (module) {
+            setAvailableModules((prev) => [...prev, module]);
+            setNavItems((prev) =>
+                prev.map((g) => ({ ...g, modules: g.modules.filter((m) => m.id !== moduleId) }))
+            );
+        }
 
-        router.delete(`/admin/modules/${moduleId}`, {
-            onSuccess: () => showToast('Modul berhasil dihapus secara permanen', 'success'),
-            onError: () => showToast('Gagal menghapus modul', 'danger'),
+        // Only remove from this role's nav, not global delete
+        router.delete(`/admin/roles/${role.id}/nav-module/${moduleId}`, {
+            onSuccess: () => showToast('Modul dilepas dari navigasi role ini', 'success'),
+            onError: () => showToast('Gagal melepas modul', 'danger'),
             onFinish: () => {
                 setIsDeleteModuleModalOpen(false);
                 setDeletingModuleId(null);

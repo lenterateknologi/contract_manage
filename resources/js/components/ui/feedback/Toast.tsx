@@ -6,7 +6,7 @@ import { CheckCircle2, XCircle, Info } from 'lucide-react';
 interface ToastMsg {
     id: number;
     msg: string;
-    type: 'success' | 'danger' | 'info';
+    type: 'success' | 'danger' | 'info' | 'error';
 }
 
 interface ProgressToast {
@@ -48,6 +48,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         if (flash?.error) showToast(flash.error, 'danger');
         if (flash?.danger) showToast(flash.danger, 'danger');
         if (flash?.info) showToast(flash.info, 'info');
+        if (flash?.error) showToast(flash.error, 'error');
     }, [props.flash, showToast]);
 
     const showProgress = useCallback((id: string, msg: string, progress: number) => {
@@ -74,13 +75,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     const iconMap = {
         success: <CheckCircle2 className="h-5 w-5 text-emerald-600" />,
         danger: <XCircle className="h-5 w-5 text-rose-600" />,
-        info: <Info className="h-5 w-5 text-blue-600" />
+        info: <Info className="h-5 w-5 text-blue-600" />,
+        error: <XCircle className="h-5 w-5 text-rose-600" />,
     };
 
     const borderMap = {
         success: 'border-l-emerald-500',
         danger: 'border-l-rose-500',
-        info: 'border-l-blue-500'
+        info: 'border-l-blue-500',
+        error: 'border-l-rose-500',
     };
 
     return (
