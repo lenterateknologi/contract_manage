@@ -174,10 +174,10 @@ export function DataTable<T extends Record<string, any>>({
     }, [data, localSearch, searchKey, onSearchChange]);
 
     return (
-        <div className="flex flex-col gap-4 antialiased text-foreground select-none animate-in fade-in duration-200">
+        <div className="flex flex-col  antialiased text-foreground select-none animate-in fade-in duration-200">
             {/* --- TOP HEADER SECTION --- */}
             {(title || onSearchChange || localSearch !== undefined || headerActions || filters.length > 0) && (
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 px-1 pt-2 mb-1 ml-8 mr-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 ">
                     {/* Left side: Search input & Filter */}
                     <div className="flex items-center gap-3">
                         {onSearchChange !== undefined && (
@@ -248,7 +248,7 @@ export function DataTable<T extends Record<string, any>>({
                 "overflow-hidden bg-surface-base/40 backdrop-blur-sm",
 
             )}>
-                <div className="overflow-x-auto custom-scrollbar ml-8 mr-8 min-h-[calc(100vh-280px)]">
+                <div className="overflow-x-auto custom-scrollbar  min-h-[calc(100vh-280px)]">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
                             <tr className="border-b border-surface-border/60 bg-surface-muted/40 backdrop-blur-md select-none">
