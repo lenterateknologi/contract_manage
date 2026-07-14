@@ -192,7 +192,7 @@ const LibPreview = ({ type, cat }: { type: any, cat?: any }) => {
     return renderPreview();
 };
 
-const DraggableField = ({ type, cat }: { type: any, cat: any }) => {
+const DraggableField = ({ type, cat, onAddField }: { type: any, cat: any, onAddField: (type: string) => void }) => {
     const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
         id: `lib-${type.value}`,
         data: { type: type.value, fromLibrary: true },
@@ -203,17 +203,18 @@ const DraggableField = ({ type, cat }: { type: any, cat: any }) => {
             ref={setNodeRef}
             {...listeners}
             {...attributes}
+            onDoubleClick={() => onAddField(type.value)}
             className={cn(
-                'group flex cursor-grab flex-col rounded-none border p-2 transition-all active:cursor-grabbing border-l-4',
+                'group flex cursor-grab flex-col rounded-none border p-2 transition-all active:cursor-grabbing border-l-4 select-none',
                 cat?.borderColor || 'border-border hover:border-primary',
                 cat?.bgColor || 'bg-card hover:bg-muted/50',
                 isDragging && 'opacity-50 grayscale',
             )}
         >
-            <div className="flex h-12 w-full items-center justify-center rounded-sm bg-white/50 dark:bg-black/10">
+            <div className="flex h-12 w-full items-center justify-center rounded-sm bg-white/50 dark:bg-black/10 pointer-events-none">
                 <LibPreview type={type} cat={cat} />
             </div>
-            <div className="mt-2 flex flex-col px-1">
+            <div className="mt-2 flex flex-col px-1 pointer-events-none">
                 <span className={cn('font-sans text-[9px] leading-tight font-semibold tracking-tight uppercase transition-colors', cat?.textColor || 'text-foreground group-hover:text-primary')}>
                     {type.label}
                 </span>
@@ -268,7 +269,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({ onAddField }) => {
                         </h3>
                         <div className="grid grid-cols-2 gap-2">
                             {cat.items.map((type: any) => (
-                                <DraggableField key={type.value} type={type} cat={cat} />
+                                <DraggableField key={type.value} type={type} cat={cat} onAddField={onAddField} />
                             ))}
                         </div>
                     </div>

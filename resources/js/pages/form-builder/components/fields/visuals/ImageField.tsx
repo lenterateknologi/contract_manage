@@ -20,6 +20,23 @@ export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
                 : field.options.height
             : undefined;
 
+    const isFree = field.options?.position_type === 'free';
+    const top = field.options?.top !== undefined && field.options?.top !== '' ? `${field.options.top}px` : undefined;
+    const left = field.options?.left !== undefined && field.options?.left !== '' ? `${field.options.left}px` : undefined;
+    const right = field.options?.right !== undefined && field.options?.right !== '' ? `${field.options.right}px` : undefined;
+    const bottom = field.options?.bottom !== undefined && field.options?.bottom !== '' ? `${field.options.bottom}px` : undefined;
+
+    const wrapperStyle: React.CSSProperties = isFree
+        ? {
+              position: 'absolute',
+              top,
+              left,
+              right,
+              bottom,
+              zIndex: 50,
+          }
+        : {};
+
     if (!hasSource) {
         return (
             <div
@@ -27,6 +44,7 @@ export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
                     'flex w-full',
                     field.options?.alignment === 'center' ? 'justify-center' : field.options?.alignment === 'right' ? 'justify-end' : 'justify-start',
                 )}
+                style={wrapperStyle}
             >
                 <PlaceholderZone
                     icon={ImageIcon}
@@ -49,6 +67,7 @@ export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
                 field.options?.alignment === 'center' ? 'justify-center' : field.options?.alignment === 'right' ? 'justify-end' : 'justify-start',
                 field.options?.v_alignment === 'middle' ? 'items-center' : field.options?.v_alignment === 'bottom' ? 'items-end' : 'items-start',
             )}
+            style={wrapperStyle}
         >
             <img
                 src={field.options?.logo_url || field.options?.url || '/storage/app/public/fr_logo.png'}
