@@ -200,6 +200,7 @@ class MasterDataAdminController extends Controller
                         'legal_roles' => $w->legal_roles,
                         'legal_departments' => $w->legal_departments,
                         'legal_users' => $w->legal_users,
+                        'is_active' => $w->is_active,
                         'created_by' => $w->created_by,
                         'updated_by' => $w->updated_by,
                     ];
@@ -243,6 +244,19 @@ class MasterDataAdminController extends Controller
                         'division_id' => $a->division_id,
                         'user_id' => $a->user_id,
                         'user_email' => $a->user->email ?? null,
+                        'authority_type' => $a->authority_type,
+                        'is_additional' => $a->is_additional,
+                        'additional_type' => $a->additional_type,
+                        'workflow_step_action_id' => $a->workflow_step_action_id,
+                        'target_step_id' => $a->target_step_id,
+                        'company_group_id' => $a->company_group_id,
+                        'region_id' => $a->region_id,
+                        'role_use_initiator' => $a->role_use_initiator,
+                        'department_use_initiator' => $a->department_use_initiator,
+                        'division_use_initiator' => $a->division_use_initiator,
+                        'company_group_use_initiator' => $a->company_group_use_initiator,
+                        'region_use_initiator' => $a->region_use_initiator,
+                        'use_initiator_property' => $a->use_initiator_property,
                     ];
                 })->toArray();
 
@@ -255,6 +269,14 @@ class MasterDataAdminController extends Controller
                         'division_id' => $a->division_id,
                         'user_id' => $a->user_id,
                         'user_email' => $a->user->email ?? null,
+                        'authority_type' => $a->authority_type,
+                        'company_group_id' => $a->company_group_id,
+                        'region_id' => $a->region_id,
+                        'role_use_initiator' => $a->role_use_initiator,
+                        'department_use_initiator' => $a->department_use_initiator,
+                        'division_use_initiator' => $a->division_use_initiator,
+                        'company_group_use_initiator' => $a->company_group_use_initiator,
+                        'region_use_initiator' => $a->region_use_initiator,
                     ];
                 })->toArray();
 
@@ -262,7 +284,6 @@ class MasterDataAdminController extends Controller
                     return [
                         'id' => $a->id,
                         'workflow_step_id' => $a->workflow_step_id,
-
                         'action_code' => $a->action_code ? $a->action_code->value : null,
                         'next_step_id' => $a->next_step_id,
                         'next_workflow_id' => $a->next_workflow_id,
@@ -271,6 +292,7 @@ class MasterDataAdminController extends Controller
                         'autofilled_fields' => $a->autofilled_fields,
                         'signing_parties' => $a->signing_parties,
                         'assignee_config' => $a->assignee_config,
+                        'transition_config' => $a->transition_config,
                         'alias' => $a->alias,
                         'description' => $a->description,
                         'is_active' => $a->is_active,
@@ -394,10 +416,21 @@ class MasterDataAdminController extends Controller
             if (! $requestedEntities || in_array('contract_types', $requestedEntities)) {
                 $exportData['contract_types'] = ContractType::with(['workflow', 'parent'])->get()->map(function ($t) {
                     return [
-                        'code' => $t->code, 'name' => $t->name, 'parent_code' => $t->parent->code ?? null, 'workflow_name' => $t->workflow->name ?? null,
-                        'features' => $t->features, 'description' => $t->description, 'f1_input_mechanism' => $t->f1_input_mechanism,
-                        'f1_form_template_id' => $t->f1_form_template_id, 'f1_contract_template_id' => $t->f1_contract_template_id,
-                        'f2_input_mechanism' => $t->f2_input_mechanism, 'f2_form_template_id' => $t->f2_form_template_id, 'f2_contract_template_id' => $t->f2_contract_template_id,
+                        'code' => $t->code,
+                        'name' => $t->name,
+                        'parent_code' => $t->parent->code ?? null,
+                        'workflow_name' => $t->workflow->name ?? null,
+                        'features' => $t->features,
+                        'description' => $t->description,
+                        'level' => $t->level,
+                        'f1_input_mechanism' => $t->f1_input_mechanism,
+                        'f1_form_template_id' => $t->f1_form_template_id,
+                        'f1_contract_template_id' => $t->f1_contract_template_id,
+                        'f2_input_mechanism' => $t->f2_input_mechanism,
+                        'f2_form_template_id' => $t->f2_form_template_id,
+                        'f2_contract_template_id' => $t->f2_contract_template_id,
+                        'contract_input_mechanism' => $t->contract_input_mechanism,
+                        'contract_form_template_id' => $t->contract_form_template_id,
                     ];
                 })->toArray();
             }
@@ -454,7 +487,7 @@ class MasterDataAdminController extends Controller
             'workflow_steps' => 0,
             'workflow_step_authorities' => 0,
             'workflow_initiator_authorities' => 0,
-            'workflow_org_scopes' => 0,
+
             'workflow_step_actions' => 0,
             'roles' => 0,
             'access_mappings' => 0,
@@ -904,6 +937,9 @@ class MasterDataAdminController extends Controller
                     $deptId = ! empty($auth['department_id']) ? ($departmentIdMap[$auth['department_id']] ?? $auth['department_id']) : null;
                     $newUserId = ! empty($auth['user_email']) ? ($userEmailMap[$auth['user_email']] ?? $auth['user_id']) : $auth['user_id'];
 
+                    $cgId = ! empty($auth['company_group_id']) ? ($companyGroupIdMap[$auth['company_group_id']] ?? $auth['company_group_id']) : null;
+                    $rgId = ! empty($auth['region_id']) ? ($regionIdMap[$auth['region_id']] ?? $auth['region_id']) : null;
+
                     $model = WorkflowInitiatorAuthority::firstOrNew(['id' => $auth['id']]);
                     $model->forceFill([
                         'workflow_id' => $wfId,
@@ -911,6 +947,14 @@ class MasterDataAdminController extends Controller
                         'department_id' => $deptId,
                         'division_id' => $auth['division_id'] ?? null,
                         'user_id' => $newUserId,
+                        'authority_type' => $auth['authority_type'] ?? null,
+                        'company_group_id' => $cgId,
+                        'region_id' => $rgId,
+                        'role_use_initiator' => $auth['role_use_initiator'] ?? false,
+                        'department_use_initiator' => $auth['department_use_initiator'] ?? false,
+                        'division_use_initiator' => $auth['division_use_initiator'] ?? false,
+                        'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
+                        'region_use_initiator' => $auth['region_use_initiator'] ?? false,
                     ])->save();
                     $counts['workflow_initiator_authorities']++;
                 } catch (\Exception $e) {
@@ -1006,6 +1050,11 @@ class MasterDataAdminController extends Controller
                     $divId = ! empty($auth['division_id']) ? ($divisionIdMap[$auth['division_id']] ?? $auth['division_id']) : null;
                     $newUserId = ! empty($auth['user_email']) ? ($userEmailMap[$auth['user_email']] ?? $auth['user_id']) : $auth['user_id'];
 
+                    $wsCgId = ! empty($auth['company_group_id']) ? ($companyGroupIdMap[$auth['company_group_id']] ?? $auth['company_group_id']) : null;
+                    $wsRgId = ! empty($auth['region_id']) ? ($regionIdMap[$auth['region_id']] ?? $auth['region_id']) : null;
+                    $wsActionId = ! empty($auth['workflow_step_action_id']) ? ($workflowStepIdMap[$auth['workflow_step_action_id']] ?? $auth['workflow_step_action_id']) : null;
+                    $wsTargetId = ! empty($auth['target_step_id']) ? ($workflowStepIdMap[$auth['target_step_id']] ?? $auth['target_step_id']) : null;
+
                     $model = WorkflowStepAuthority::firstOrNew(['id' => $auth['id']]);
                     $model->forceFill([
                         'workflow_step_id' => $stepId,
@@ -1013,6 +1062,19 @@ class MasterDataAdminController extends Controller
                         'department_id' => $deptId,
                         'division_id' => $divId,
                         'user_id' => $newUserId,
+                        'authority_type' => $auth['authority_type'] ?? null,
+                        'is_additional' => $auth['is_additional'] ?? false,
+                        'additional_type' => $auth['additional_type'] ?? null,
+                        'workflow_step_action_id' => $wsActionId,
+                        'target_step_id' => $wsTargetId,
+                        'company_group_id' => $wsCgId,
+                        'region_id' => $wsRgId,
+                        'role_use_initiator' => $auth['role_use_initiator'] ?? false,
+                        'department_use_initiator' => $auth['department_use_initiator'] ?? false,
+                        'division_use_initiator' => $auth['division_use_initiator'] ?? false,
+                        'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
+                        'region_use_initiator' => $auth['region_use_initiator'] ?? false,
+                        'use_initiator_property' => $auth['use_initiator_property'] ?? false,
                     ])->save();
                     $counts['workflow_step_authorities']++;
                 } catch (\Exception $e) {
@@ -1047,10 +1109,10 @@ class MasterDataAdminController extends Controller
                         'autofilled_fields' => $a['autofilled_fields'] ?? null,
                         'signing_parties' => $a['signing_parties'] ?? null,
                         'assignee_config' => $a['assignee_config'] ?? null,
+                        'transition_config' => $a['transition_config'] ?? null,
                         'alias' => $a['alias'] ?? null,
                         'description' => $a['description'] ?? null,
                         'is_active' => $a['is_active'] ?? true,
-                        'deleted_at' => null,
                         'deleted_at' => null,
                         'created_by' => $admin,
                         'updated_by' => $admin,
@@ -1144,12 +1206,15 @@ class MasterDataAdminController extends Controller
                             'workflow_id' => $workflowId,
                             'features' => $t['features'] ?? null,
                             'description' => $t['description'] ?? null,
+                            'level' => $t['level'] ?? null,
                             'f1_input_mechanism' => $t['f1_input_mechanism'] ?? 'form',
                             'f1_form_template_id' => $t['f1_form_template_id'] ?? null,
                             'f1_contract_template_id' => $t['f1_contract_template_id'] ?? null,
                             'f2_input_mechanism' => $t['f2_input_mechanism'] ?? 'form',
                             'f2_form_template_id' => $t['f2_form_template_id'] ?? null,
                             'f2_contract_template_id' => $t['f2_contract_template_id'] ?? null,
+                            'contract_input_mechanism' => $t['contract_input_mechanism'] ?? null,
+                            'contract_form_template_id' => $t['contract_form_template_id'] ?? null,
                         ],
                     );
                     $counts['contract_types']++;
@@ -1319,8 +1384,8 @@ class MasterDataAdminController extends Controller
                             'email' => $email,
                             'password' => $password,
                             'phone_number' => $u['phone_number'] ?? null,
-                            'company_id' => $u['company_id'] ?? null,
-                            'company_group_id' => $u['company_group_id'] ?? null,
+                            'company_id' => ! empty($u['company_code']) ? ($companyMap[$u['company_code']] ?? null) : ($u['company_id'] ?? null),
+                            'company_group_id' => ! empty($u['company_group_code']) ? ($groupMap[$u['company_group_code']] ?? null) : ($u['company_group_id'] ?? null),
                             'department_id' => $deptId,
                             'division_id' => $u['division_id'] ?? null,
                             'region_id' => $u['region_id'] ?? null,
