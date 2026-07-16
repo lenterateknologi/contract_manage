@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { UploadCloud, File as FileIcon, X } from 'lucide-react';
-import { Button } from '../base/Button';
+import { Button } from '../buttons/Button';
 
 export interface FileUploadProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type' | 'value' | 'onChange'> {
     value?: File | File[] | null;

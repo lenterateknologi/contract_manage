@@ -54,11 +54,11 @@ trait EvaluatesWorkflowSteps
             $initiator = $contract->initiator;
             $roleName = strtolower($initiator->role ?: ($initiator->roleRelation()->first()->name ?? ''));
             $exemptRoles = [
-                strtolower(Role::MANAGER),
-                strtolower(Role::VP),
-                strtolower(Role::CEO),
-                strtolower(Role::DIRECTOR),
-                strtolower(Role::ADMIN),
+                strtolower(config('master.roles.manager')),
+                strtolower(config('master.roles.vp')),
+                strtolower(config('master.roles.ceo')),
+                strtolower(config('master.roles.director')),
+                strtolower(config('master.roles.admin')),
             ];
             if (in_array($roleName, $exemptRoles)) {
                 return false;
@@ -68,15 +68,15 @@ trait EvaluatesWorkflowSteps
         // Skip Department Manager Review if Initiator is Manager/Head
         $roles = (array) $step->role;
         $lowerRoles = array_map('strtolower', $roles);
-        if (in_array(strtolower(Role::MANAGER), $lowerRoles)) {
+        if (in_array(strtolower(config('master.roles.manager')), $lowerRoles)) {
             $initiator = $contract->initiator;
             $initiatorRole = strtolower($initiator->role ?: ($initiator->roleRelation()->first()->name ?? ''));
             $exemptRoles = [
-                strtolower(Role::MANAGER),
-                strtolower(Role::VP),
-                strtolower(Role::CEO),
-                strtolower(Role::DIRECTOR),
-                strtolower(Role::ADMIN),
+                strtolower(config('master.roles.manager')),
+                strtolower(config('master.roles.vp')),
+                strtolower(config('master.roles.ceo')),
+                strtolower(config('master.roles.director')),
+                strtolower(config('master.roles.admin')),
             ];
             if (in_array($initiatorRole, $exemptRoles)) {
                 $targetDeptIds = $step->department_ids;
@@ -227,14 +227,14 @@ trait EvaluatesWorkflowSteps
                 }
                 $creatorDeptCode = $creator->department?->code;
             }
-            $isLegal = $creator && ($creatorDeptCode === Division::CODE_LEGAL || $creator->role === Role::ADMIN);
+            $isLegal = $creator && ($creatorDeptCode === Division::CODE_LEGAL || $creator->role === config('master.roles.admin'));
             $isHelper = $contract->initiated_by_id && $contract->initiated_by_id !== $contract->created_by;
 
             if ($isLegal && $isHelper) {
                 return false; // Bypass departmental review
             }
 
-            return strtolower($roleName) === strtolower(Role::STAFF);
+            return strtolower($roleName) === strtolower(config('master.roles.staff'));
         }
 
         // Condition: Skip if initiator is Legal (used for Manager step)
@@ -252,9 +252,9 @@ trait EvaluatesWorkflowSteps
             $initiatorRoleName = $contract->initiator->getAttribute('role') ?: ($contract->initiator->roleRelation()->first()->name ?? '');
             $roleName = strtolower($initiatorRoleName);
             $exemptRoles = [
-                strtolower(Role::MANAGER),
-                strtolower(Role::DIRECTOR),
-                strtolower(Role::ADMIN),
+                strtolower(config('master.roles.manager')),
+                strtolower(config('master.roles.director')),
+                strtolower(config('master.roles.admin')),
             ];
 
             return ! in_array($roleName, $exemptRoles);
@@ -279,6 +279,6 @@ trait EvaluatesWorkflowSteps
     private function handleAutoApproval(Contract $contract, ?User $user): void
     {
         // Feature disabled as requested
-        return;
+
     }
 }

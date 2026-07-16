@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Workflow;
 
+use App\Rules\FileValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ImportWorkflowRequest extends FormRequest
@@ -14,7 +15,7 @@ class ImportWorkflowRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:json',
+            'file' => [new FileValidationRule('import_json')],
         ];
     }
 }

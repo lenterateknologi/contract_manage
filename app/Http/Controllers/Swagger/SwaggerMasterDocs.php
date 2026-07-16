@@ -1019,4 +1019,93 @@ class SwaggerMasterDocs
         ],
     )]
     public function bulkDeleteRoles() {}
+
+    // ==========================================
+    // MASTER DATA SYNC ENDPOINTS
+    // ==========================================
+
+    #[OA\Get(
+        path: '/api/admin/master-data-sync',
+        summary: 'Get master data sync dashboard with entity counts',
+        tags: ['Admin - Master Data Sync'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dashboard with entity counts retrieved successfully'),
+        ],
+    )]
+    public function masterDataSyncIndex() {}
+
+    #[OA\Get(
+        path: '/api/admin/master-data-sync/export',
+        summary: 'Export selected master data entities to JSON',
+        tags: ['Admin - Master Data Sync'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'entities',
+                in: 'query',
+                required: false,
+                description: 'Comma-separated list of entities to export (e.g. company_groups,regions,workflows). Exports all if omitted.',
+                schema: new OA\Schema(type: 'string'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'JSON file download with master data'),
+            new OA\Response(response: 500, description: 'Export failed'),
+        ],
+    )]
+    public function masterDataSyncExport() {}
+
+    #[OA\Post(
+        path: '/api/admin/master-data-sync/import',
+        summary: 'Import master data from a JSON file',
+        tags: ['Admin - Master Data Sync'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['file'],
+                    properties: [
+                        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'JSON export file'),
+                    ],
+                ),
+            ),
+        ),
+        responses: [
+            new OA\Response(response: 302, description: 'Redirect with import summary on success'),
+            new OA\Response(response: 422, description: 'Invalid JSON file'),
+            new OA\Response(response: 500, description: 'Import failed'),
+        ],
+    )]
+    public function masterDataSyncImport() {}
+
+    #[OA\Post(
+        path: '/api/admin/master-data-sync/clean',
+        summary: 'Permanently delete selected master data entities',
+        tags: ['Admin - Master Data Sync'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['entities'],
+                properties: [
+                    new OA\Property(
+                        property: 'entities',
+                        type: 'array',
+                        items: new OA\Items(type: 'string'),
+                        description: 'List of entity keys to clean (e.g. ["company_groups", "workflows"])',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Data cleaned successfully'),
+            new OA\Response(response: 422, description: 'Invalid entity key'),
+            new OA\Response(response: 500, description: 'Clean operation failed'),
+        ],
+    )]
+    public function masterDataSyncClean() {}
 }
+

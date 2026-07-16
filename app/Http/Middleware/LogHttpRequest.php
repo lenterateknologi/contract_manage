@@ -51,7 +51,7 @@ class LogHttpRequest
                 $body = substr($body, 0, 60000).'... [TRUNCATED]';
             }
 
-            Log::info("HTTP Request: " . $request->method() . " " . $url, [
+            Log::info('HTTP Request: '.$request->method().' '.$url, [
                 'ip' => $request->ip(),
                 'user_id' => Auth::id(),
                 'body' => $body ? 'Has Body' : 'No Body',

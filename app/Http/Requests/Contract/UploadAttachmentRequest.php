@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Contract;
 
+use App\Rules\FileValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UploadAttachmentRequest extends FormRequest
@@ -13,14 +14,10 @@ class UploadAttachmentRequest extends FormRequest
 
     public function rules(): array
     {
-        $config = config('uploads.categories.contract_attachment');
-        $mimes = implode(',', $config['allowed_mimes']);
-        $maxSize = $config['max_size'];
-
         return [
             'label' => 'required|string|max:255',
             'category' => 'nullable|string|max:255',
-            'file' => "required|file|mimes:{$mimes}|max:{$maxSize}",
+            'file' => [new FileValidationRule('contract_attachment')],
         ];
     }
 }

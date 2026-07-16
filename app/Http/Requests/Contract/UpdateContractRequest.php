@@ -32,7 +32,7 @@ class UpdateContractRequest extends FormRequest
             'contract_date' => 'nullable|date',
             'end_date' => 'nullable|date',
             'contract_no' => 'nullable|string|max:255',
-            'transaction_type' => 'nullable|string|in:Perjanjian Baru,Addendum,Amandement,Perubahan Perjanjian,General',
+            'transaction_type' => 'nullable|string',
             'tax_required' => 'nullable|boolean',
             'initiated_by_id' => 'nullable|uuid|exists:m_users,id',
             'vendor_id' => 'nullable|uuid|exists:m_vendors,id',

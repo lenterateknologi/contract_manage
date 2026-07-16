@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Contract;
 
+use App\Rules\FileValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UploadAgreementRequest extends FormRequest
@@ -14,7 +15,7 @@ class UploadAgreementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|extensions:docx|max:10240',
+            'file' => [new FileValidationRule('contract_agreement')],
             'change_log' => 'nullable|string',
         ];
     }

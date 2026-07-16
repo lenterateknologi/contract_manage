@@ -34,12 +34,22 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use OpenApi\Attributes as OA;
 
 class MasterDataAdminController extends Controller
 {
     /**
      * Display the index view with statistics.
      */
+    #[OA\Get(
+        path: '/api/admin/master-data-sync',
+        summary: 'Get master data sync dashboard with entity counts',
+        tags: ['Admin - Master Data Sync'],
+        security: [['bearerAuth' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dashboard with entity counts'),
+        ],
+    )]
     public function index()
     {
         return Inertia::render('admin/Index', [
@@ -72,6 +82,25 @@ class MasterDataAdminController extends Controller
     /**
      * Export all master data to JSON format.
      */
+    #[OA\Get(
+        path: '/api/admin/master-data-sync/export',
+        summary: 'Export selected master data entities to JSON',
+        tags: ['Admin - Master Data Sync'],
+        security: [['bearerAuth' => []]],
+        parameters: [
+            new OA\Parameter(
+                name: 'entities',
+                in: 'query',
+                required: false,
+                description: 'Comma-separated list of entities to export (e.g. company_groups,regions,workflows). Exports all if omitted.',
+                schema: new OA\Schema(type: 'string'),
+            ),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'JSON file download with master data'),
+            new OA\Response(response: 500, description: 'Export failed'),
+        ],
+    )]
     public function export(Request $request)
     {
         try {
@@ -544,7 +573,7 @@ class MasterDataAdminController extends Controller
                     $existingGroup = ModuleGroup::withTrashed()->where('name', $mg['name'])->first();
                     if ($existingGroup) {
                         $existingGroup->update([
-                            'icon' => $mg['icon'] ?? 'LayoutGrid',
+                            'icon' => $mg['icon'] ?? config('master.module_group.default_icon'),
                             'updated_by' => $admin,
                             'deleted_at' => null,
                         ]);
@@ -552,7 +581,7 @@ class MasterDataAdminController extends Controller
                         ModuleGroup::create([
                             'id' => $mg['id'] ?? (string) Str::uuid(),
                             'name' => $mg['name'],
-                            'icon' => $mg['icon'] ?? 'LayoutGrid',
+                            'icon' => $mg['icon'] ?? config('master.module_group.default_icon'),
                             'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
@@ -610,7 +639,6 @@ class MasterDataAdminController extends Controller
                             'description' => $g['description'] ?? null,
                             'is_active' => $g['is_active'] ?? true,
                             'deleted_at' => null,
-                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -647,7 +675,6 @@ class MasterDataAdminController extends Controller
                             'alias' => $r['alias'] ?? null,
                             'description' => $r['description'] ?? null,
                             'is_active' => $r['is_active'] ?? true,
-                            'deleted_at' => null,
                             'id_portal_master' => $r['id_portal_master'] ?? null,
                             'deleted_at' => null,
                             'created_by' => $admin,
@@ -692,7 +719,6 @@ class MasterDataAdminController extends Controller
                             'region_id' => $regionId,
                             'is_active' => $c['is_active'] ?? true,
                             'deleted_at' => null,
-                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -731,7 +757,6 @@ class MasterDataAdminController extends Controller
                             'description' => $d['description'] ?? null,
                             'company_id' => $companyId,
                             'is_active' => $d['is_active'] ?? true,
-                            'deleted_at' => null,
                             'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
@@ -772,8 +797,6 @@ class MasterDataAdminController extends Controller
                             'id_portal_master' => $d['id_portal_master'] ?? null,
                             'is_active' => $d['is_active'] ?? true,
                             'deleted_at' => null,
-                            'deleted_at' => null,
-                            'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
                         ],
@@ -812,7 +835,6 @@ class MasterDataAdminController extends Controller
                             'icon' => $s['icon'] ?? null,
                             'description' => $s['description'] ?? null,
                             'is_active' => $s['is_active'] ?? true,
-                            'deleted_at' => null,
                             'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
@@ -896,19 +918,18 @@ class MasterDataAdminController extends Controller
                             'is_default' => $w['is_default'] ?? false,
                             'is_template' => $w['is_template'] ?? false,
                             'is_tax_involved' => $w['is_tax_involved'] ?? false,
-                            'initiator_type' => $w['initiator_type'] ?? 'all',
-                            'sla_drafting_hours' => $w['sla_drafting_hours'] ?? 72,
-                            'sla_total_hours' => $w['sla_total_hours'] ?? 240,
-                            'sla_cutoff_hour' => $w['sla_cutoff_hour'] ?? 16,
-                            'scope' => $w['scope'] ?? 'HO',
-                            'workflow_category' => $w['workflow_category'] ?? 'unified',
+                            'initiator_type' => $w['initiator_type'] ?? config('master.workflow.initiator_type'),
+                            'sla_drafting_hours' => $w['sla_drafting_hours'] ?? config('master.workflow.sla_drafting_hours'),
+                            'sla_total_hours' => $w['sla_total_hours'] ?? config('master.workflow.sla_total_hours'),
+                            'sla_cutoff_hour' => $w['sla_cutoff_hour'] ?? config('master.workflow.sla_cutoff_hour'),
+                            'scope' => $w['scope'] ?? config('master.workflow.scope'),
+                            'workflow_category' => $w['workflow_category'] ?? config('master.workflow.category'),
                             'company_group_ids' => $w['company_group_ids'] ?? null,
                             'region_ids' => $w['region_ids'] ?? null,
                             'company_ids' => $w['company_ids'] ?? null,
                             'department_id' => $w['department_id'] ?? null,
                             // 'contract_type_id' => $w['contract_type_id'] ?? null, // deferred
                             'is_active' => $w['is_active'] ?? true,
-                            'deleted_at' => null,
                             'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
@@ -1007,12 +1028,12 @@ class MasterDataAdminController extends Controller
                             'workflow_id' => $workflowId,
                             'step' => $s['step'],
                             'step_category' => $s['step_category'] ?? null,
-                            'approver_type' => $s['approver_type'] ?? 'role',
+                            'approver_type' => $s['approver_type'] ?? config('master.workflow_step.approver_type'),
                             'is_optional' => $s['is_optional'] ?? false,
                             'optional_label' => $s['optional_label'] ?? null,
                             'condition_expression' => $s['condition_expression'] ?? null,
                             'description' => $s['description'] ?? null,
-                            'phase' => $s['phase'] ?? 'f1_request',
+                            'phase' => $s['phase'] ?? config('master.workflow_step.phase'),
                             'uploader_type' => $s['uploader_type'] ?? null,
                             'hierarchy_level' => $s['hierarchy_level'] ?? null,
                             'role_id' => $roleId,
@@ -1023,7 +1044,6 @@ class MasterDataAdminController extends Controller
                             'allowed_actions' => $s['allowed_actions'] ?? null,
                             'is_mandatory' => $s['is_mandatory'] ?? true,
                             'is_active' => $s['is_active'] ?? true,
-                            'deleted_at' => null,
                             'meta' => $s['meta'] ?? null,
                             'deleted_at' => null,
                             'created_by' => $admin,
@@ -1140,11 +1160,10 @@ class MasterDataAdminController extends Controller
                             'name' => $ft['name'],
                             'description' => $ft['description'] ?? null,
                             'contract_type_id' => $typeId,
-                            'document_type' => $ft['document_type'] ?? 'f1',
+                            'document_type' => $ft['document_type'] ?? config('master.form_template.document_type'),
                             'has_letterhead' => $ft['has_letterhead'] ?? false,
                             'letterhead_json' => $ft['letterhead_json'] ?? null,
                             'is_active' => $ft['is_active'] ?? true,
-                            'deleted_at' => null,
                             'deleted_at' => null,
                             'created_by' => $admin,
                             'updated_by' => $admin,
@@ -1207,10 +1226,10 @@ class MasterDataAdminController extends Controller
                             'features' => $t['features'] ?? null,
                             'description' => $t['description'] ?? null,
                             'level' => $t['level'] ?? null,
-                            'f1_input_mechanism' => $t['f1_input_mechanism'] ?? 'form',
+                            'f1_input_mechanism' => $t['f1_input_mechanism'] ?? config('master.contract_type.input_mechanism'),
                             'f1_form_template_id' => $t['f1_form_template_id'] ?? null,
                             'f1_contract_template_id' => $t['f1_contract_template_id'] ?? null,
-                            'f2_input_mechanism' => $t['f2_input_mechanism'] ?? 'form',
+                            'f2_input_mechanism' => $t['f2_input_mechanism'] ?? config('master.contract_type.input_mechanism'),
                             'f2_form_template_id' => $t['f2_form_template_id'] ?? null,
                             'f2_contract_template_id' => $t['f2_contract_template_id'] ?? null,
                             'contract_input_mechanism' => $t['contract_input_mechanism'] ?? null,
@@ -1341,7 +1360,7 @@ class MasterDataAdminController extends Controller
         if (! empty($usersData) && is_array($usersData)) {
             $validDepartments = array_flip(DB::table('m_departments')->pluck('id')->toArray());
             $validRoles = array_flip(DB::table('m_roles')->pluck('id')->toArray());
-            $defaultRole = Role::whereRaw('lower(name) = ?', ['staff'])->first();
+            $defaultRole = Role::whereRaw('lower(name) = ?', [strtolower(config('app.default_user_role', 'staff'))])->first();
 
             foreach ($usersData as $u) {
                 try {
@@ -1350,12 +1369,12 @@ class MasterDataAdminController extends Controller
                     }
 
                     // Skip system admin to prevent lockout/overwrite
-                    if (($u['email'] ?? '') === 'admin@example.com' || ($u['username'] ?? '') === 'admin') {
+                    if (($u['email'] ?? '') === config('app.admin_email') || ($u['username'] ?? '') === config('app.admin_username')) {
                         continue;
                     }
 
                     $email = filter_var($u['email'] ?? '', FILTER_VALIDATE_EMAIL) ? $u['email'] : '-';
-                    $password = $u['password'] ?? bcrypt('Karyawan123!');
+                    $password = $u['password'] ?? bcrypt(config('app.default_user_password'));
 
                     $roleId = null;
                     if (! empty($u['role_name'])) {
@@ -1408,6 +1427,29 @@ class MasterDataAdminController extends Controller
     /**
      * Import master data from JSON.
      */
+    #[OA\Post(
+        path: '/api/admin/master-data-sync/import',
+        summary: 'Import master data from a JSON file',
+        tags: ['Admin - Master Data Sync'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['file'],
+                    properties: [
+                        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'JSON export file'),
+                    ],
+                ),
+            ),
+        ),
+        responses: [
+            new OA\Response(response: 302, description: 'Redirect with import summary on success'),
+            new OA\Response(response: 422, description: 'Invalid JSON file'),
+            new OA\Response(response: 500, description: 'Import failed'),
+        ],
+    )]
     public function import(ImportMasterDataRequest $request)
     {
         try {
@@ -1449,6 +1491,31 @@ class MasterDataAdminController extends Controller
     /**
      * Clean selected master and contract transactional data.
      */
+    #[OA\Post(
+        path: '/api/admin/master-data-sync/clean',
+        summary: 'Permanently delete selected master data entities',
+        tags: ['Admin - Master Data Sync'],
+        security: [['bearerAuth' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['entities'],
+                properties: [
+                    new OA\Property(
+                        property: 'entities',
+                        type: 'array',
+                        items: new OA\Items(type: 'string'),
+                        description: 'List of entity keys to clean (e.g. ["company_groups", "workflows"])',
+                    ),
+                ],
+            ),
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Data cleaned successfully'),
+            new OA\Response(response: 422, description: 'Invalid entity key'),
+            new OA\Response(response: 500, description: 'Clean operation failed'),
+        ],
+    )]
     public function clean(CleanMasterDataRequest $request)
     {
         $entities = $request->validated()['entities'];
@@ -1553,7 +1620,7 @@ class MasterDataAdminController extends Controller
 
                 // 12. Users
                 if (in_array('users', $entities)) {
-                    DB::table('m_users')->where('email', '!=', 'admin@example.com')->delete();
+                    DB::table('m_users')->where('email', '!=', config('app.admin_email'))->delete();
                 }
             });
 

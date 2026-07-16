@@ -198,7 +198,7 @@ class Contract extends Model
     public function progressData(): array
     {
         if ($this->workflow_id) {
-            $steps = $this->workflow->steps ?? collect();
+            $steps = $this->workflow ? $this->workflow->loadMissing('steps')->steps : collect();
             $total = $steps->count();
 
             $doneCount = 0;

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class StoreContractAction
 {
@@ -81,8 +82,8 @@ class StoreContractAction
             try {
                 $contract = $this->workflowService->sendForApproval($contract, $validated['workflow_id'] ?? null);
             } catch (\Exception $e) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'workflow_id' => [$e->getMessage()]
+                throw ValidationException::withMessages([
+                    'workflow_id' => [$e->getMessage()],
                 ]);
             }
 

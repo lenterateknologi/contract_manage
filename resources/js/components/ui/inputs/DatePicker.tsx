@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Calendar } from 'lucide-react';
-import { inputVariants } from '../base/Input';
+import { inputVariants } from './Input';
 
 export interface DatePickerProps extends React.InputHTMLAttributes<HTMLInputElement> {
     /** Optional custom styling variant passed to inputVariants */

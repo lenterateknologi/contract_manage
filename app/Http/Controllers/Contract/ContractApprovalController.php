@@ -184,7 +184,7 @@ class ContractApprovalController extends Controller
                 return response()->json(['message' => 'Tahap alur kerja tidak aktif saat ini.'], 422);
             }
 
-            $role = $request->input('role', Role::ADHOC_APPROVER);
+            $role = $request->input('role', config('master.roles.adhoc_approver'));
             $userIds = $request->input('user_ids', []);
             $singleUserId = $request->input('user_id');
             if (empty($userIds) && $singleUserId) {
@@ -315,7 +315,7 @@ class ContractApprovalController extends Controller
 
                 if ($hasActiveAdhoc) {
                     // Logic for blocking main approvers should only apply for ADHOC_APPROVER role
-                    if ($role === Role::ADHOC_APPROVER) {
+                    if ($role === config('master.roles.adhoc_approver')) {
                         Approval::where('contract_id', $contract->id)
                             ->where('workflow_step_id', $targetStepId)
                             ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
@@ -324,7 +324,7 @@ class ContractApprovalController extends Controller
                     }
                 } else {
                     // Restore status logic
-                    if ($role === Role::ADHOC_APPROVER) {
+                    if ($role === config('master.roles.adhoc_approver')) {
                         Approval::where('contract_id', $contract->id)
                             ->where('workflow_step_id', $targetStepId)
                             ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
@@ -359,7 +359,7 @@ class ContractApprovalController extends Controller
             // Activate any inactive (draft/staged) ad-hoc approvals for the current step
             Approval::where('contract_id', $contract->id)
                 ->where('workflow_step_id', $contract->workflow_step_id)
-                ->where('role', Role::ADHOC_APPROVER)
+                ->where('role', config('master.roles.adhoc_approver'))
                 ->where('is_active', false)
                 ->update(['is_active' => true, 'status' => 'pending']);
 
@@ -384,7 +384,7 @@ class ContractApprovalController extends Controller
                 return response()->json(['message' => 'Persetujuan tidak ditemukan pada kontrak ini.'], 404);
             }
 
-            if ($approval->role !== Role::ADHOC_APPROVER && $approval->role !== 'Penandatangan') {
+            if ($approval->role !== config('master.roles.adhoc_approver') && $approval->role !== 'Penandatangan') {
                 return response()->json(['message' => 'Hanya persetujuan tambahan atau penandatangan yang dapat dihapus.'], 403);
             }
 

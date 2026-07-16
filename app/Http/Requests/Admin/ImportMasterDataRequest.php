@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Rules\FileValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ImportMasterDataRequest extends FormRequest
@@ -14,7 +15,7 @@ class ImportMasterDataRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|extensions:json',
+            'file' => [new FileValidationRule('import_json')],
         ];
     }
 }

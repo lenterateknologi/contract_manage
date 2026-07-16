@@ -10,23 +10,6 @@ class Role extends Model
 {
     protected $table = 'm_roles';
 
-    // Role Constants
-    const ADMIN = 'Admin';
-
-    const SUPER_ADMIN = 'Super Admin';
-
-    const MANAGER = 'Manager';
-
-    const STAFF = 'Staff';
-
-    const DIRECTOR = 'Director';
-
-    const VP = 'VP';
-
-    const CEO = 'CEO';
-
-    const ADHOC_APPROVER = 'Persetujuan Tambahan';
-
     use SoftDeletes;
 
     public $incrementing = false;

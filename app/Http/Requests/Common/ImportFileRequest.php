@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Common;
 
+use App\Rules\FileValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class ImportFileRequest extends FormRequest
@@ -14,7 +15,7 @@ class ImportFileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => 'required|file|mimes:xlsx,xls,csv',
+            'file' => [new FileValidationRule('import_excel')],
         ];
     }
 }

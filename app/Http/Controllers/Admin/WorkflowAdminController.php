@@ -90,8 +90,6 @@ class WorkflowAdminController extends Controller
 
         $workflowData = $workflow->toArray();
 
-
-
         $workflowData['initiator_authorities'] = $workflow->initiatorAuthorities->toArray();
 
         $workflowData['steps'] = $workflow->steps->map(function ($s) {

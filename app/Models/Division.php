@@ -8,19 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * @property string $id
- * @property string|null $code
- * @property string|null $id_portal_master
- * @property string $name
- * @property string|null $department_id
- * @property bool $is_active
- * @property string|null $created_by
- * @property string|null $updated_by
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property Carbon|null $deleted_at
- */
 class Division extends Model
 {
     use HasUuids, SoftDeletes;

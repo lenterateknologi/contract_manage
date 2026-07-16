@@ -32,7 +32,6 @@ class DuplicateWorkflowAction
             $newWorkflow->updated_by = Auth::id();
             $newWorkflow->save();
 
-
             // Duplicate Initiator Authorities
             foreach ($workflow->initiatorAuthorities as $auth) {
                 $newWorkflow->initiatorAuthorities()->create([

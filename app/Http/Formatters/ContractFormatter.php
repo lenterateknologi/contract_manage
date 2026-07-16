@@ -83,8 +83,8 @@ class ContractFormatter
             'show_tax_toggle' => (bool) data_get($effectiveStep?->meta, 'show_tax_toggle', true),
 
             // Specialized permissions
-            'can_fill_contract_no' => Auth::user()?->role === Role::ADMIN || Auth::user()?->role === 'Legal Staff' || Auth::user()?->role === 'PIC Legal',
-            'can_set_digital_signature' => Auth::user()?->role === Role::ADMIN || Auth::user()?->role === 'PIC Legal',
+            'can_fill_contract_no' => Auth::user()?->role === config('master.roles.admin') || Auth::user()?->role === 'Legal Staff' || Auth::user()?->role === 'PIC Legal',
+            'can_set_digital_signature' => Auth::user()?->role === config('master.roles.admin') || Auth::user()?->role === 'PIC Legal',
 
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->format('d/m/Y'),
@@ -337,8 +337,8 @@ class ContractFormatter
         foreach ($workflowSteps as $step) {
             $isStepSkipped = ! $workflowService->shouldExecuteStep($c, $step);
 
-            $regularApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role !== Role::ADHOC_APPROVER && $a->role !== 'Penandatangan');
-            $adhocApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role === Role::ADHOC_APPROVER || $a->role === 'Penandatangan');
+            $regularApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role !== config('master.roles.adhoc_approver') && $a->role !== 'Penandatangan');
+            $adhocApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role === config('master.roles.adhoc_approver') || $a->role === 'Penandatangan');
 
             $deptNames = (array) $step->department_names;
             $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
@@ -393,7 +393,7 @@ class ContractFormatter
                     'created_at' => $a->created_at?->toIso8601String(),
                     'is_active' => $a->is_active,
                     'step_type' => 'APPROVAL',
-                    'step_name' => $isSigner ? $a->role : Role::ADHOC_APPROVER,
+                    'step_name' => $isSigner ? $a->role : config('master.roles.adhoc_approver'),
                     'step_description' => $isSigner ? 'Proses penandatanganan dokumen' : 'Persetujuan tambahan di luar alur kerja template',
                     'step_category' => $isSigner ? 'signing' : null,
                     'approver' => self::formatUser($a->approver),

@@ -123,4 +123,14 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Master Data Sync Defaults
+    |--------------------------------------------------------------------------
+    */
+    'admin_email' => env('ADMIN_EMAIL', 'admin@example.com'),
+    'admin_username' => env('ADMIN_USERNAME', 'admin'),
+    'default_user_password' => env('DEFAULT_USER_PASSWORD', 'Karyawan123!'),
+    'default_user_role' => env('DEFAULT_USER_ROLE', 'staff'),
+
 ];

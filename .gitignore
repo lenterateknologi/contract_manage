@@ -36,3 +36,13 @@ impeccable.config.ts
 PRODUCT.md
 GEMINI.MD
 phpstan-errors.json
+
+# React Cosmos (Local Dev Only)
+cosmos.config.json
+vite.cosmos.config.js
+cosmos-export/
+*.fixture.tsx
+*.fixture.ts
+resources/js/cosmos.decorator.tsx
+index.html
+

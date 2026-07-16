@@ -40,8 +40,6 @@ class StoreWorkflowAction
                     ->update(['is_default' => false]);
             }
 
-
-
             // Sync Initiator Authorities
             if (! empty($data['initiator_authorities'])) {
                 foreach ((array) $data['initiator_authorities'] as $auth) {

@@ -1,3 +1,0 @@
-setuju
-reject
-approval tambahan

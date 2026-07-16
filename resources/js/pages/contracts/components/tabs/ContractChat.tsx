@@ -3,6 +3,7 @@ import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract, ContractMessage } from '@/pages/contracts/types';
 import { ArrowDown, Download, FileIcon, MessageSquare, Paperclip, RefreshCw, Send, X } from 'lucide-react';
+import { usePage } from '@inertiajs/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DocumentPreviewModal from '../modals/DocumentPreviewModal';
 import { MentionDropdown } from '../parts/MentionDropdown';
@@ -34,16 +35,26 @@ function MsgBubble({
         attachmentUrl = `/storage/${attachmentUrl}`;
     }
     const attachmentName = (msg as any).attachment_name || (msg as any).file_name || 'Berkas';
-    const isImage =
-        attachmentUrl?.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ||
-        attachmentName?.match(/\.(jpg|jpeg|png|gif|webp|svg)/i) ||
-        (typeof attachmentName === 'string' &&
-            ['.png', '.jpg', '.jpeg', '.svg', '.webp', '.gif'].some((ext) => attachmentName.toLowerCase().includes(ext)));
+    
+    let upload_configs: any = null;
+    try {
+        upload_configs = usePage().props;
+    } catch (e) {
+        // Safe fallback for standalone previews (like Cosmos)
+        upload_configs = null;
+    }
 
-    const isPdf =
-        attachmentUrl?.match(/\.pdf$/i) ||
-        attachmentName?.match(/\.pdf$/i) ||
-        (typeof attachmentName === 'string' && attachmentName.toLowerCase().endsWith('.pdf'));
+    const imageMimes = upload_configs?.upload_configs?.user_avatar?.allowed_mimes ?? ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+
+    const getExtension = (path: string) => {
+        if (!path) return '';
+        const parts = path.split('.');
+        return parts.length > 1 ? parts.pop()?.toLowerCase() ?? '' : '';
+    };
+
+    const ext = getExtension(attachmentUrl);
+    const isImage = imageMimes.includes(ext);
+    const isPdf = ext === 'pdf';
 
     const renderMessage = (text: string, term?: string) => {
         let content: any = text;

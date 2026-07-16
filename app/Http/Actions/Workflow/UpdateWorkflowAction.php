@@ -40,7 +40,6 @@ class UpdateWorkflowAction
                     ->update(['is_default' => false]);
             }
 
-
             // Sync Initiator Authorities
             $workflow->initiatorAuthorities()->delete();
 
@@ -163,7 +162,7 @@ class UpdateWorkflowAction
             }
 
             // Sync Workflow Steps (Upsert Logic)
-            $existingStepIds = $workflow->steps->pluck('id')->toArray();
+            $existingStepIds = $workflow->loadMissing('steps')->steps->pluck('id')->toArray();
             $incomingStepIds = [];
 
             if (! empty($data['steps'])) {

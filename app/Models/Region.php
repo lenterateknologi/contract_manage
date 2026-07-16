@@ -10,21 +10,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * @property string $id
- * @property string $name
- * @property string $code
- * @property string|null $alias
- * @property string|null $id_portal_master
- * @property string|null $description
- * @property bool $is_active
- * @property string|null $created_by
- * @property string|null $updated_by
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property Carbon|null $deleted_at
- * @property-read Collection<int, Company> $companies
- */
 class Region extends Model
 {
     use HasFactory, HasUuids, SoftDeletes;

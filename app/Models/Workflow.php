@@ -10,47 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * @property string $id
- * @property string|null $contract_type_id
- * @property string|null $department_id
- * @property string $name
- * @property string|null $description
- * @property bool $is_default
- * @property bool $is_template
- * @property bool $is_tax_involved
- * @property bool $is_selectable
- * @property string|null $initiator_type
- * @property int|null $sla_drafting_hours
- * @property int|null $sla_total_hours
- * @property int|null $sla_cutoff_hour
- * @property string|null $scope
- * @property string|null $workflow_category
- * @property array|null $company_group_ids
- * @property array|null $region_ids
- * @property array|null $company_ids
- * @property array|null $approver_roles
- * @property array|null $approver_departments
- * @property array|null $approver_users
- * @property array|null $legal_roles
- * @property array|null $legal_departments
- * @property array|null $legal_users
- * @property string|null $created_by
- * @property string|null $updated_by
- * @property array|null $meta
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property Carbon|null $deleted_at
- * @property-read array $initiator_roles
- * @property-read array $initiator_users
- * @property-read array $initiator_departments
- * @property-read string|null $contract_type_name
- * @property-read ContractType|null $contractType
- * @property-read Department|null $department
- * @property-read Collection<int, WorkflowStep> $steps
- * @property-read Collection<int, Contract> $contracts
- * @property-read Collection<int, WorkflowInitiatorAuthority> $initiatorAuthorities
- */
 class Workflow extends Model
 {
     protected $table = 'm_workflows';

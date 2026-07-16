@@ -51,6 +51,24 @@ return [
             'disk' => 'public',
             'directory' => 'avatars',
         ],
+
+        // Import master data/users via Excel/CSV
+        'import_excel' => [
+            'allowed_mimes' => ['xlsx', 'xls', 'csv'],
+            'max_size' => 10240, // 10MB
+        ],
+
+        // Import master data/workflows via JSON
+        'import_json' => [
+            'allowed_mimes' => ['json'],
+            'max_size' => 20480, // 20MB
+        ],
+
+        // Main agreement documents (F1 template, generated draft)
+        'contract_agreement' => [
+            'allowed_mimes' => ['docx'],
+            'max_size' => 10240, // 10MB
+        ],
     ],
 
     /*

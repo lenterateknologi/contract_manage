@@ -75,6 +75,7 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $this->getUserPermissions($request),
             ],
             'sidebarNavGroups' => $this->getSidebarNavGroups($request),
+            'upload_configs' => config('uploads.categories'),
             'flash' => [
                 'success' => $request->session()->get('success'),
                 'error' => $request->session()->get('error') ?? ($request->session()->get('errors') ? collect($request->session()->get('errors')->getBag('default')->get('error'))->first() : null),

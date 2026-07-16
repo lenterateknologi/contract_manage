@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 const buttonThemes = {
     primary: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary-hover dark:bg-transparent dark:border dark:border-white dark:text-white dark:shadow-none dark:hover:bg-white dark:hover:text-black',
-    outline: 'border border-surface-border bg-surface-base/20 text-text-main shadow-sm hover:bg-surface-muted dark:bg-transparent dark:border dark:border-white dark:text-white dark:hover:bg-white/10',
+    outline: 'border border-primary bg-transparent text-primary shadow-sm hover:bg-primary/5 dark:bg-transparent dark:border dark:border-white dark:text-white dark:hover:bg-white/10',
     ghost: 'hover:bg-surface-muted text-text-main dark:text-white dark:hover:bg-white/10',
     link: 'text-primary underline-offset-4 hover:underline lowercase dark:text-white',
     destructive: 'bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm dark:bg-transparent dark:border dark:border-danger dark:text-danger dark:shadow-none dark:hover:bg-danger dark:hover:text-white',

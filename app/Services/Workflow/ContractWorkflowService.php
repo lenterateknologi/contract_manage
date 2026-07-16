@@ -63,6 +63,8 @@ class ContractWorkflowService
             throw new \Exception('Alur kerja tidak ditemukan dan tidak ada alur default untuk tipe kontrak ini.');
         }
 
+        $workflow->loadMissing('steps');
+
         $draftingHours = $workflow->sla_drafting_hours ?: 72;
         $totalHours = $workflow->sla_total_hours ?: 240;
         $cutoffHour = $workflow->sla_cutoff_hour ?: 16;
@@ -802,7 +804,7 @@ class ContractWorkflowService
         }
 
         if ($nextStep) {
-            $minStepVal = $contract->workflow ? $contract->workflow->steps->min('step') : 1;
+            $minStepVal = $contract->workflow ? $contract->workflow->loadMissing('steps')->steps->min('step') : 1;
             $statusStr = $nextStep->meta['target_status'] ?? ($nextStep->step_category === 'signing' ? 'locked' : ($nextStep->step === $minStepVal ? 'draft' : 'in_review'));
             $nextStatus = ContractStatus::where('code', $statusStr)->first();
 

@@ -14,28 +14,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-/**
- * @property string $id
- * @property string $name
- * @property string $email
- * @property string|null $email_verified_at
- * @property string $password
- * @property string|null $phone_number
- * @property string|null $username
- * @property string|null $role_id
- * @property string|null $department_id
- * @property string|null $company_id
- * @property bool $is_active
- * @property-read bool $is_admin
- * @property string|null $remember_token
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property Carbon|null $deleted_at
- * @property-read Role|null $roleRelation
- * @property-read Department|null $department
- * @property-read Company|null $company
- * @property-read Collection<int, WorkflowStep> $workflowSteps
- */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
