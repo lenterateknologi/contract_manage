@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AccessModule;
+use App\Models\Role;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,8 +18,32 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && (Auth::user()->role === 'Admin' || Auth::user()->role === 'Super Admin' || Auth::user()->is_admin)) {
+        if (! Auth::check()) {
+            return redirect('/login');
+        }
+
+        $user = Auth::user();
+
+        // Admin/Super Admin/is_admin always has access
+        if ($user->role === 'Admin' || $user->role === 'Super Admin' || $user->is_admin) {
             return $next($request);
+        }
+
+        // For other roles, check database module access dynamically
+        $role = Role::firstWhere('name', $user->role);
+        if ($role) {
+            $currentPath = '/'.ltrim($request->path(), '/');
+            $hasAccess = AccessModule::where('role_id', $role->id)
+                ->where('can_read', true)
+                ->whereHas('module', function ($q) use ($currentPath) {
+                    $q->where('route', $currentPath)
+                        ->orWhere('route', ltrim($currentPath, '/'));
+                })
+                ->exists();
+
+            if ($hasAccess) {
+                return $next($request);
+            }
         }
 
         return redirect('/dashboard');

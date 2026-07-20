@@ -8,6 +8,7 @@ use App\Models\CompanyGroup;
 use App\Models\ContractStatus;
 use App\Models\ContractType;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\FormTemplate;
 use App\Models\Region;
 use App\Models\Role;
@@ -15,43 +16,87 @@ use App\Models\SubmissionType;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\Workflow;
+use App\Services\ContractFilterScopeService;
 use Illuminate\Support\Facades\Auth;
 
 class ContractOptionsQuery
 {
+    public function __construct(
+        private readonly ContractFilterScopeService $scope = new ContractFilterScopeService
+    ) {}
+
     /**
      * Get dynamic loaders for contract-related options based on user role.
      */
     public function getLoaders(): array
     {
         $user = Auth::user();
-        $roleName = $user->role;
-        $hasFullAccess = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
-        $isManager = $roleName === 'Manager';
-        $userCompany = $user->company;
+        $hasFullAccess = $user ? in_array($user->role, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']) : false;
+        $isManager = $user?->role === 'Manager';
+        $userCompany = $user?->company;
+        $settings = $user ? $user->getContractFilterSettings() : [];
+
+        // Bangun whitelist per dimensi — satu aturan via service
+        $allowedGroups = $user ? $this->scope->buildAllowed($user->company_group_id, $settings['allowed_company_groups'] ?? [], $hasFullAccess) : null;
+        $allowedRegions = $user ? $this->scope->buildAllowed($user->region_id ?? $userCompany?->region_id, $settings['allowed_regions'] ?? [], $hasFullAccess) : null;
+        $allowedCompanies = $user ? $this->scope->buildAllowed($user->company_id, $settings['allowed_companies'] ?? [], $hasFullAccess) : null;
+        $allowedDivisions = $user ? $this->scope->buildAllowed($user->division_id, $settings['allowed_divisions'] ?? [], $hasFullAccess) : null;
+        $allowedDepts = $user ? $this->scope->buildAllowed($user->department_id, $settings['allowed_departments'] ?? [], $hasFullAccess) : null;
 
         return [
-            'departments' => fn () => Department::query()
-                ->when($isManager, fn ($q) => $q->where('company_id', $user->company_id))
-                ->when(! $hasFullAccess && ! $isManager, fn ($q) => $q->where('id', $user->division_id))
-                ->orderBy('name')
-                ->get(),
 
-            'regions' => fn () => Region::query()
-                ->when(! $hasFullAccess && $userCompany, fn ($q) => $q->where('id', $userCompany->region_id))
-                ->orderBy('name')
-                ->get(),
+            // ── Organisasi ──────────────────────────────────────────────────
 
-            'companyGroups' => fn () => CompanyGroup::query()
-                ->when(! $hasFullAccess && $userCompany, fn ($q) => $q->where('id', $userCompany->company_group_id))
-                ->orderBy('name')
-                ->get(),
+            'companyGroups' => function () use ($allowedGroups) {
+                $q = CompanyGroup::query();
+                if ($allowedGroups !== null) {
+                    $q->whereIn('id', $allowedGroups);
+                }
 
-            'companies' => fn () => Company::query()
-                ->when($isManager && $userCompany, fn ($q) => $q->where('company_group_id', $userCompany->company_group_id))
-                ->when(! $hasFullAccess && ! $isManager && $userCompany, fn ($q) => $q->where('id', $user->company_id))
-                ->orderBy('name')
-                ->get(),
+                return $q->orderBy('name')->get();
+            },
+
+            'regions' => function () use ($allowedRegions) {
+                $q = Region::query();
+                if ($allowedRegions !== null) {
+                    $q->whereIn('id', $allowedRegions);
+                }
+
+                return $q->orderBy('name')->get();
+            },
+
+            'companies' => function () use ($allowedCompanies, $isManager, $userCompany) {
+                $q = Company::query();
+                if ($allowedCompanies !== null) {
+                    $q->whereIn('id', $allowedCompanies);
+                } elseif ($isManager && $userCompany) {
+                    $q->where('company_group_id', $userCompany->company_group_id);
+                }
+
+                return $q->orderBy('name')->get();
+            },
+
+            'divisions' => function () use ($allowedDivisions) {
+                $q = Division::query();
+                if ($allowedDivisions !== null) {
+                    $q->whereIn('id', $allowedDivisions);
+                }
+
+                return $q->orderBy('name')->get();
+            },
+
+            'departments' => function () use ($allowedDepts, $isManager, $user) {
+                $q = Department::query();
+                if ($allowedDepts !== null) {
+                    $q->whereIn('id', $allowedDepts);
+                } elseif ($isManager) {
+                    $q->where('company_id', $user->company_id);
+                }
+
+                return $q->orderBy('name')->get();
+            },
+
+            // ── Users & Vendors ──────────────────────────────────────────────
 
             'users' => fn () => User::with(['department', 'roleRelation'])
                 ->when($isManager && ! request()->boolean('all'), fn ($q) => $q->where('division_id', $user->division_id))
@@ -78,30 +123,33 @@ class ContractOptionsQuery
                 ])
                 ->toArray(),
 
+            // ── Templates & Meta ─────────────────────────────────────────────
+
             'formTemplates' => fn () => FormTemplate::where('is_active', true)
                 ->with('contractType')
                 ->withCount('fields')
                 ->get()
-                ->map(function ($ft) {
-                    return [
-                        'id' => $ft->id,
-                        'name' => $ft->name,
-                        'description' => $ft->description,
-                        'document_type' => $ft->document_type,
-                        'contract_type_id' => $ft->contract_type_id,
-                        'contract_type_name' => $ft->contractType?->name,
-                        'fields_count' => $ft->fields_count,
-                    ];
-                })
+                ->map(fn ($ft) => [
+                    'id' => $ft->id,
+                    'name' => $ft->name,
+                    'description' => $ft->description,
+                    'document_type' => $ft->document_type,
+                    'contract_type_id' => $ft->contract_type_id,
+                    'contract_type_name' => $ft->contractType?->name,
+                    'fields_count' => $ft->fields_count,
+                ])
                 ->toArray(),
 
             'roles' => fn () => Role::orderBy('name')->get(),
             'contractStatuses' => fn () => ContractStatus::all(),
+
             'types' => function () {
                 $workflows = Workflow::where('is_active', true)->where('is_selectable', true)->get();
-                $globalWorkflowExists = $workflows->contains(fn ($w) => empty($w->contract_type_id) && empty($w->meta['contract_type_ids']));
+                $globalExists = $workflows->contains(
+                    fn ($w) => empty($w->contract_type_id) && empty($w->meta['contract_type_ids'])
+                );
 
-                if ($globalWorkflowExists) {
+                if ($globalExists) {
                     return ContractType::all();
                 }
 
@@ -117,17 +165,17 @@ class ContractOptionsQuery
                     }
                 }
 
-                $uniqueIds = $allowedTypeIds->unique()->filter()->values()->toArray();
+                $ids = $allowedTypeIds->unique()->filter()->values()->toArray();
 
-                return ContractType::whereIn('id', $uniqueIds)
-                    ->orWhereIn('id', function ($q) use ($uniqueIds) {
-                        $q->select('parent_id')
-                            ->from('m_contract_types')
-                            ->whereIn('id', $uniqueIds)
-                            ->whereNotNull('parent_id');
-                    })
+                return ContractType::whereIn('id', $ids)
+                    ->orWhereIn('id', fn ($q) => $q->select('parent_id')
+                        ->from('m_contract_types')
+                        ->whereIn('id', $ids)
+                        ->whereNotNull('parent_id')
+                    )
                     ->get();
             },
+
             'submissionTypes' => fn () => SubmissionType::where('is_active', true)->get(),
         ];
     }

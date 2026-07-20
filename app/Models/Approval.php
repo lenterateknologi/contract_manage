@@ -49,6 +49,11 @@ class Approval extends Model
         return $this->approver_name;
     }
 
+    public function getDepartmentNameAttribute(): ?string
+    {
+        return $this->approver?->department?->name ?? $this->approver?->division?->name;
+    }
+
     public function contract(): BelongsTo
     {
         return $this->belongsTo(Contract::class);

@@ -3,19 +3,20 @@
 namespace App\Rules;
 
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Translation\PotentiallyTranslatedString;
 
 class FileValidationRule implements ValidationRule
 {
     protected string $category;
+
     protected bool $required;
 
     /**
      * Create a new rule instance.
      *
-     * @param string $category Kategori upload dari config/uploads.php (misal: 'import_json', 'vendor_document')
-     * @param bool $required Menentukan apakah berkas wajib diunggah (default: true)
+     * @param  string  $category  Kategori upload dari config/uploads.php (misal: 'import_json', 'vendor_document')
+     * @param  bool  $required  Menentukan apakah berkas wajib diunggah (default: true)
      */
     public function __construct(string $category, bool $required = true)
     {
@@ -26,14 +27,15 @@ class FileValidationRule implements ValidationRule
     /**
      * Run the validation rule.
      *
-     * @param  \Closure(string): \Illuminate\Translation\PotentiallyTranslatedString  $fail
+     * @param  \Closure(string): PotentiallyTranslatedString  $fail
      */
     public function validate(string $attribute, mixed $value, \Closure $fail): void
     {
         $config = config("uploads.categories.{$this->category}");
 
-        if (!$config) {
+        if (! $config) {
             $fail("Kategori upload '{$this->category}' tidak dikonfigurasi.");
+
             return;
         }
 

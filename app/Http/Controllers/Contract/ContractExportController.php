@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Contract;
 
 use App\Http\Actions\Contract\GetAuditTrailAction;
-use App\Http\Actions\Export\ExportApprovalTimelinePdfQueueAction;
+use App\Http\Actions\Export\ExportApprovalTimelinePdfAction;
 use App\Http\Actions\Export\ExportAuditExcelAction;
 use App\Http\Actions\Export\ExportAuditPdfAction;
 use App\Http\Actions\Export\ExportAuditPdfQueueAction;
@@ -18,7 +18,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ContractExportController extends Controller
 {
@@ -26,7 +25,7 @@ class ContractExportController extends Controller
         protected ContractDetailQuery $contractDetailQuery
     ) {}
 
-    public function exportAuditExcel(string $id, Request $request, ExportAuditExcelAction $action): StreamedResponse
+    public function exportAuditExcel(string $id, Request $request, ExportAuditExcelAction $action): mixed
     {
         $contract = $this->contractDetailQuery->find($id);
 
@@ -37,7 +36,7 @@ class ContractExportController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        $query = $contract->approvals()->orderBy('sequence');
+        $query = $contract->approvals()->with(['approver.department', 'approver.division'])->orderBy('sequence');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -46,7 +45,13 @@ class ContractExportController extends Controller
             $query->where('role', 'like', '%'.$request->role.'%');
         }
         if ($request->filled('department')) {
-            $query->where('department_name', 'like', '%'.$request->department.'%');
+            $query->where(function ($q) use ($request) {
+                $q->whereHas('approver.department', function ($qq) use ($request) {
+                    $qq->where('name', 'like', '%'.$request->department.'%');
+                })->orWhereHas('approver.division', function ($qq) use ($request) {
+                    $qq->where('name', 'like', '%'.$request->department.'%');
+                });
+            });
         }
 
         $approvals = $query->get();
@@ -59,7 +64,7 @@ class ContractExportController extends Controller
         ]);
     }
 
-    public function exportApprovalTimelinePdfQueue(string $id, Request $request, ExportApprovalTimelinePdfQueueAction $action)
+    public function exportApprovalTimelinePdf(string $id, Request $request, ExportApprovalTimelinePdfAction $action)
     {
         $contract = $this->contractDetailQuery->find($id);
 

@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { Head, router, Link } from '@inertiajs/react';
+import { Head, router, Link, useForm } from '@inertiajs/react';
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { Button } from '@/components/ui/buttons/Button';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { PageTable } from '@/components/ui/navigation/PageTable';
+import { Plus, Edit2, Trash2, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { ExcelActions } from '@/components/ui/tables/ExcelActions';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { Label } from '@/components/ui/forms/Label';
+import { Input } from '@/components/ui/inputs/Input';
+import { Textarea } from '@/components/ui/inputs/Textarea';
 
 interface Props {
     resourceSlug: string;
@@ -69,6 +74,8 @@ function flattenTreeFromParents(parents: any[], depth = 0): any[] {
     return result;
 }
 
+const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies'];
+
 export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [selectedRows, setSelectedRows] = useState<any[]>([]);
@@ -76,6 +83,45 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     const [bulkSelectedFields, setBulkSelectedFields] = useState<Record<string, boolean>>({});
     const [bulkFieldValues, setBulkFieldValues] = useState<Record<string, any>>({});
     const [bulkProcessing, setBulkProcessing] = useState(false);
+
+    const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
+    const [editDataId, setEditDataId] = useState<string | null>(null);
+
+    // Dynamic initial form fields from formSchema
+    const initialFormData = React.useMemo(() => {
+        const initial: Record<string, any> = {};
+        formSchema.forEach((field) => {
+            if (field.isGroup && Array.isArray(field.schema)) {
+                field.schema.forEach((subField: any) => {
+                    initial[subField.name] = subField.default ?? '';
+                });
+            } else {
+                initial[field.name] = field.default ?? '';
+            }
+        });
+        return initial;
+    }, [formSchema]);
+
+    const deptForm = useForm(initialFormData);
+
+    const handleDeptSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (editDataId) {
+            deptForm.put(`/admin/core/${resourceSlug}/${editDataId}`, {
+                onSuccess: () => {
+                    setIsDeptDialogOpen(false);
+                    deptForm.reset();
+                }
+            });
+        } else {
+            deptForm.post(`/admin/core/${resourceSlug}`, {
+                onSuccess: () => {
+                    setIsDeptDialogOpen(false);
+                    deptForm.reset();
+                }
+            });
+        }
+    };
 
     React.useEffect(() => {
         setSelectedRows([]);
@@ -305,66 +351,39 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         }
     }));
 
+    const resourceIcons: Record<string, React.ComponentType<any>> = {
+        departments: Building2,
+        'company-groups': Layers,
+        divisions: GitBranch,
+        regions: MapPin,
+        companies: Building,
+        users: Users,
+        vendors: Handshake,
+        'contract-types': FileText,
+    };
+    const HeaderIcon = resourceIcons[resourceSlug] || Database;
+
     return (
         <>
             <Head title={title} />
-
-            <DataTable
+            <PageTable
                 title={title}
-                columns={columns}
-                borderless={true}
-                data={processedData}
-                pagination={{
-                    currentPage: data.current_page,
-                    lastPage: data.last_page,
-                    total: data.total,
-                    perPage: data.per_page,
-                    onPageChange: (page) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, page }, { preserveState: true }),
-                    onPerPageChange: (perPage) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, page: 1, per_page: perPage }, { preserveState: true })
-                }}
-                searchPlaceholder="Cari data..."
+                subtitle={`Kelola daftar data master ${title.toLowerCase()} dalam sistem`}
+                icon={HeaderIcon}
                 searchValue={activeFilters.search || ''}
                 onSearchChange={(v) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, search: v, page: 1 }, { preserveState: true, replace: true })}
                 filters={filters}
                 activeFilters={activeFilters}
-                onFilterChange={(newFilters) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, ...newFilters, page: 1 }, { preserveState: true, replace: true })}
-                sortBy={activeFilters.sort_by}
-                sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
-                onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}
-                isRowSelectable={(row) => true}
-                onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
-                selectedRows={selectedRows}
-                bulkActions={(selected: any[]) => (
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            variant="white"
-                            size="sm"
-                            onClick={() => {
-                                if (confirm(`Hapus ${selected.length} data terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
-                                    router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
-                                        ids: selected.map((r: any) => r.id)
-                                    }, {
-                                        onSuccess: () => setSelectedRows([])
-                                    });
-                                }
-                            }}
-                            className="text-xs py-1.5 px-3 h-8 hover:bg-rose-50 hover:border-rose-200 text-rose-500 rounded-xl flex items-center gap-1.5 font-normal uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
-                        >
-                            <Trash2 size={13} /> Hapus Terpilih
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="white"
-                            size="sm"
-                            onClick={() => setShowBulkEditModal(true)}
-                            className="text-xs py-1.5 px-3 h-8 hover:bg-slate-50 hover:border-slate-300 text-text-main rounded-xl flex items-center gap-1.5 font-normal uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
-                        >
-                            <LucideIcons.Edit2 size={13} /> Ubah Massal ({selected.length})
-                        </Button>
-                    </div>
-                )}
-                headerActions={
+                onFilterChange={(key, val) => {
+                    const nextFilters = { ...activeFilters, [key]: val, page: 1 };
+                    router.get(`/admin/core/${resourceSlug}`, nextFilters, { preserveState: true, replace: true });
+                }}
+                onResetFilters={() => {
+                    const clear = Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {});
+                    router.get(`/admin/core/${resourceSlug}`, { ...clear, page: 1 }, { preserveState: true, replace: true });
+                }}
+                totalResults={data.total}
+                actions={
                     <div className="flex items-center gap-2">
                         {(hasExport || hasImport) && (
                             <ExcelActions
@@ -373,26 +392,117 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                 label={title}
                             />
                         )}
-                        <Link href={`/admin/core/${resourceSlug}/create`}>
-                            <Button variant="primary" className="gap-2">
+                        {DIALOG_RESOURCES.includes(resourceSlug) ? (
+                            <Button 
+                                variant="primary" 
+                                className="gap-2"
+                                onClick={() => {
+                                    deptForm.reset();
+                                    setEditDataId(null);
+                                    setIsDeptDialogOpen(true);
+                                }}
+                            >
                                 <Plus size={16} /> Tambah Baru
                             </Button>
-                        </Link>
+                        ) : (
+                            <Link href={`/admin/core/${resourceSlug}/create`}>
+                                <Button variant="primary" className="gap-2">
+                                    <Plus size={16} /> Tambah Baru
+                                </Button>
+                            </Link>
+                        )}
                     </div>
                 }
-                rowActions={(row) => (
-                    <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/core/${resourceSlug}/${row.id}/edit`}>
-                            <Button variant="white" size="icon" className="h-8 w-8">
-                                <Edit2 size={14} className="text-text-main" />
+                pagination={{
+                    currentPage: data.current_page || 1,
+                    lastPage: data.last_page || 1,
+                    total: data.total || 0,
+                    from: data.from,
+                    to: data.to,
+                    perPage: data.per_page,
+                    onPageChange: (page) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, page }, { preserveState: true }),
+                    onPerPageChange: (perPage) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, page: 1, per_page: perPage }, { preserveState: true })
+                }}
+            >
+                <DataTable
+                    columns={columns}
+                    borderless={true}
+                    data={processedData}
+                    sortBy={activeFilters.sort_by}
+                    sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
+                    onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}
+                    isRowSelectable={(row) => true}
+                    onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
+                    selectedRows={selectedRows}
+                    bulkActions={(selected: any[]) => (
+                        <div className="flex items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="white"
+                                size="sm"
+                                onClick={() => {
+                                    if (confirm(`Hapus ${selected.length} data terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
+                                        router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
+                                            ids: selected.map((r: any) => r.id)
+                                        }, {
+                                            onSuccess: () => setSelectedRows([])
+                                        });
+                                    }
+                                }}
+                                className="text-xs py-1.5 px-3 h-8 hover:bg-rose-50 hover:border-rose-200 text-rose-500 rounded-xl flex items-center gap-1.5 font-normal uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
+                            >
+                                <Trash2 size={13} /> Hapus Terpilih
                             </Button>
-                        </Link>
-                        <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
-                            <Trash2 size={14} className="text-rose-500" />
-                        </Button>
-                    </div>
-                )}
-            />
+                            <Button
+                                type="button"
+                                variant="white"
+                                size="sm"
+                                onClick={() => setShowBulkEditModal(true)}
+                                className="text-xs py-1.5 px-3 h-8 hover:bg-slate-50 hover:border-slate-300 text-text-main rounded-xl flex items-center gap-1.5 font-normal uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
+                            >
+                                <LucideIcons.Edit2 size={13} /> Ubah Massal ({selected.length})
+                            </Button>
+                        </div>
+                    )}
+                    rowActions={(row) => (
+                        <div className="flex items-center justify-end gap-2">
+                            {DIALOG_RESOURCES.includes(resourceSlug) ? (
+                                <Button 
+                                    variant="white" 
+                                    size="icon" 
+                                    className="h-8 w-8"
+                                    onClick={() => {
+                                        const editValues: Record<string, any> = {};
+                                        formSchema.forEach((field) => {
+                                            if (field.isGroup && Array.isArray(field.schema)) {
+                                                field.schema.forEach((subField: any) => {
+                                                    editValues[subField.name] = row[subField.name] ?? (subField.type === 'switch' ? false : '');
+                                                });
+                                            } else {
+                                                editValues[field.name] = row[field.name] ?? (field.type === 'switch' ? false : '');
+                                            }
+                                        });
+                                        deptForm.setData(editValues);
+                                        setEditDataId(row.id);
+                                        setIsDeptDialogOpen(true);
+                                    }}
+                                >
+                                    <Edit2 size={14} className="text-text-main" />
+                                </Button>
+                            ) : (
+                                <Link href={`/admin/core/${resourceSlug}/${row.id}/edit`}>
+                                    <Button variant="white" size="icon" className="h-8 w-8">
+                                        <Edit2 size={14} className="text-text-main" />
+                                    </Button>
+                                </Link>
+                            )}
+                            <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
+                                <Trash2 size={14} className="text-rose-500" />
+                            </Button>
+                        </div>
+                    )}
+                />
+            </PageTable>
 
             <ConfirmationModal
                 open={!!deleteId}
@@ -530,6 +640,118 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                         </div>
                     </div>
                 </div>
+            )}
+
+            {/* Reusable Form Dialog */}
+            {DIALOG_RESOURCES.includes(resourceSlug) && (
+                <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
+                    <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-xl sm:max-w-[600px]">
+                        <form onSubmit={handleDeptSubmit}>
+                            <div className="px-6 pt-6 pb-4 flex flex-col gap-1 border-b border-border/40">
+                                <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
+                                    {editDataId ? `Ubah ${title}` : `Tambah ${title}`}
+                                </DialogTitle>
+                                <DialogDescription className="text-xs text-muted-foreground">
+                                    {editDataId ? `Ubah informasi ${title.toLowerCase()} Anda` : `Buat data ${title.toLowerCase()} baru`}
+                                </DialogDescription>
+                            </div>
+                            <div className="space-y-4 p-6">
+                                {formSchema.map((field) => {
+                                    if (field.type === 'switch') {
+                                        return (
+                                            <div key={field.name} className="grid gap-1.5">
+                                                <Label className="text-xs font-medium text-foreground">{field.label}</Label>
+                                                <div className="border-border bg-muted/40 flex h-10 items-center gap-2.5 rounded-lg border px-3">
+                                                    <input
+                                                        type="checkbox"
+                                                        id={`dept_${field.name}_check`}
+                                                        className="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
+                                                        checked={!!deptForm.data[field.name]}
+                                                        onChange={(e) => deptForm.setData(field.name as any, e.target.checked)}
+                                                    />
+                                                    <Label htmlFor={`dept_${field.name}_check`} className="cursor-pointer text-xs font-medium text-muted-foreground">
+                                                        {deptForm.data[field.name] ? 'Aktif' : 'Nonaktif'}
+                                                    </Label>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
+                                    if (field.type === 'textarea') {
+                                        return (
+                                            <div key={field.name} className="grid gap-1.5">
+                                                <Label className="text-xs font-medium text-foreground">{field.label}</Label>
+                                                <Textarea
+                                                    required={field.required}
+                                                    className="border-border bg-background focus:ring-primary h-20 resize-none rounded-lg text-xs leading-relaxed font-normal"
+                                                    placeholder={field.placeholder || `Masukkan ${field.label}...`}
+                                                    value={deptForm.data[field.name] ?? ''}
+                                                    onChange={(e) => deptForm.setData(field.name as any, e.target.value)}
+                                                />
+                                            </div>
+                                        );
+                                    }
+
+                                    if (field.type === 'select') {
+                                        return (
+                                            <div key={field.name} className="grid gap-1.5">
+                                                <Label className="text-xs font-medium text-foreground">{field.label}</Label>
+                                                <select
+                                                    required={field.required}
+                                                    value={deptForm.data[field.name] ?? ''}
+                                                    onChange={(e) => deptForm.setData(field.name as any, e.target.value)}
+                                                    className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
+                                                >
+                                                    <option value="">Pilih...</option>
+                                                    {(Array.isArray(field.options) ? field.options : Object.entries(field.options || {})).map((option: any) => {
+                                                        const val = Array.isArray(field.options) ? option : option[0];
+                                                        const label = Array.isArray(field.options) ? option : option[1];
+                                                        return (
+                                                            <option key={val} value={val}>{label}</option>
+                                                        );
+                                                    })}
+                                                </select>
+                                            </div>
+                                        );
+                                    }
+
+                                    // Default (text/number/etc.)
+                                    return (
+                                        <div key={field.name} className="grid gap-1.5">
+                                            <Label className="text-xs font-medium text-foreground">{field.label}</Label>
+                                            <Input
+                                                type={field.type || 'text'}
+                                                required={field.required}
+                                                className="border-border bg-background focus:ring-primary h-10 rounded-lg text-xs font-normal"
+                                                placeholder={field.placeholder || `Masukkan ${field.label}...`}
+                                                value={deptForm.data[field.name] ?? ''}
+                                                onChange={(e) => deptForm.setData(field.name as any, e.target.value)}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            <div className="flex justify-end gap-2 px-6 pb-6 border-t border-border/40 pt-4 bg-muted/20">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="h-9 rounded-lg px-4 text-xs font-medium"
+                                    onClick={() => setIsDeptDialogOpen(false)}
+                                >
+                                    Batal
+                                </Button>
+                                <Button
+                                    type="submit"
+                                    variant="primary"
+                                    className="h-9 rounded-lg px-5 text-xs font-medium shadow-sm"
+                                    disabled={deptForm.processing}
+                                >
+                                    {editDataId ? 'Simpan' : 'Tambah'}
+                                </Button>
+                            </div>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             )}
         </>
     );

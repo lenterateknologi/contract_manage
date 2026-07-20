@@ -21,6 +21,7 @@ class StoreModuleRequest extends FormRequest
             'icon' => 'nullable|string|max:50',
             'showed_as_menu' => 'boolean',
             'description' => 'nullable|string',
+            'role_id' => 'nullable|uuid|exists:m_roles,id',
         ];
     }
 }

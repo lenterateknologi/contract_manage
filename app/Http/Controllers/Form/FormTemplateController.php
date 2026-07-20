@@ -213,6 +213,8 @@ class FormTemplateController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'document_type' => 'nullable|string|max:50',
+            'contract_type_id' => 'nullable|exists:m_contract_types,id',
+            'is_active' => 'boolean',
             'fields' => 'sometimes|array',
             'fields.*.label' => 'nullable|string|max:255',
             'fields.*.type' => 'required|string',
@@ -229,6 +231,16 @@ class FormTemplateController extends Controller
             $template->description = $request->description;
             if ($request->has('document_type')) {
                 $template->document_type = $request->document_type;
+            }
+            if ($request->has('contract_type_id')) {
+                $contractTypeId = $request->contract_type_id;
+                if ($contractTypeId === 'null' || $contractTypeId === 'none' || empty($contractTypeId)) {
+                    $contractTypeId = null;
+                }
+                $template->contract_type_id = $contractTypeId;
+            }
+            if ($request->has('is_active')) {
+                $template->is_active = $request->is_active;
             }
             $template->has_letterhead = $request->has_letterhead ?? false;
             $template->letterhead_json = $request->letterhead_json ?? null;

@@ -91,6 +91,21 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
 
     const [activeTab, setActiveTab] = useState<TabId>('general');
 
+    const joinedDate = useMemo(() => {
+        if (!user.created_at) return '—';
+        try {
+            const date = new Date(user.created_at);
+            if (isNaN(date.getTime())) return user.created_at;
+            return date.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+            });
+        } catch {
+            return user.created_at;
+        }
+    }, [user.created_at]);
+
     const profileForm = useForm({
         name: user.name,
         email: user.email,
@@ -175,7 +190,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
                                                 <Mail size={13} /> {user.email}
                                             </span>
                                             <span className="flex items-center gap-1.5">
-                                                <Calendar size={13} /> Bergabung {user.created_at}
+                                                <Calendar size={13} /> Bergabung {joinedDate}
                                             </span>
                                         </div>
                                     </div>
@@ -183,9 +198,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
 
                                 {/* Actions */}
                                 <div className="flex items-center gap-2 shrink-0">
-                                    <Button variant="white" size="sm" className="h-9 rounded-lg px-4 text-sm">
-                                        <ArrowUpRight size={14} className="mr-1.5" /> Lihat Profil
-                                    </Button>
+
                                     <Button
                                         variant="primary"
                                         size="sm"
@@ -377,7 +390,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
                                                         </p>
                                                     </div>
                                                     <div className="shrink-0">
-                                                         <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
+                                                        <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
                                                     </div>
                                                 </div>
                                                 <div className="mt-auto space-y-2">

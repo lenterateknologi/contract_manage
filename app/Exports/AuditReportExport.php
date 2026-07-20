@@ -2,22 +2,28 @@
 
 namespace App\Exports;
 
+use App\Models\Contract;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AuditReportExport implements FromCollection, ShouldAutoSize, WithHeadings, WithMapping, WithStyles
+class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, WithHeadings, WithMapping, WithStyles
 {
     protected $histories;
 
-    public function __construct(Collection $histories)
+    protected $contract;
+
+    public function __construct(Collection $histories, Contract $contract)
     {
         $this->histories = $histories;
+        $this->contract = $contract;
     }
 
     public function collection()
@@ -29,7 +35,7 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithHeadings,
     {
         return [
             'Waktu',
-            'No. Kontrak',
+            'No. Pengajuan',
             'Judul Kontrak',
             'Aksi',
             'Deskripsi',
@@ -40,9 +46,9 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithHeadings,
     public function map($history): array
     {
         return [
-            $history->created_at->toDateTimeString(),
-            $history->contract->contract_no,
-            $history->contract->title,
+            $history->created_at ? $history->created_at->toDateTimeString() : '—',
+            $this->contract->form_no ?? '—',
+            $this->contract->title ?? '—',
             strtoupper($history->action),
             $history->description,
             $history->actor->name ?? '—',
@@ -59,6 +65,16 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithHeadings,
                     'startColor' => ['argb' => 'FF4F46E5'], // Indigo color
                 ],
             ],
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $sheet->setAutoFilter($sheet->calculateWorksheetDimension());
+            },
         ];
     }
 }

@@ -1,6 +1,7 @@
 import { ProfileView } from '@/pages/contracts/components/parts/ProfileView';
 import { DashboardMetrics } from '@/pages/dashboard/components/DashboardMetrics';
 import { Button } from '@/components/ui/buttons/Button';
+import { PageTable } from '@/components/ui/navigation/PageTable';
 import { Column, DataTable as TableContract } from '@/components/ui/tables/DataTable';
 import { FilterPopover } from '@/components/ui/selection/FilterPopover';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
@@ -52,9 +53,15 @@ import {
     UserPlus,
     Calendar,
     Zap,
+    X,
+    Search,
+    History,
+    LayoutGrid,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, memo } from 'react';
 import ContractDetailView from './components/ContractDetailView';
+import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
+import { PageFilter } from './components/PageFilter';
 
 // Lazy loaded modals for performance
 const CreateContractModal = lazy(() => import('@/pages/contracts/components/modals/CreateContractModal'));
@@ -230,6 +237,99 @@ const RowActions = memo(({
 
 RowActions.displayName = 'RowActions';
 
+// ─── Multi Select Filter Dropdown (Divisi / Departemen) ─────────────────────
+function MultiSelectFilterDropdown({
+    label, hasActive, options, activeIds, onToggle, onReset
+}: {
+    label: string;
+    hasActive: boolean;
+    options: { id: string; name: string }[];
+    activeIds: string[];
+    onToggle: (id: string) => void;
+    onReset: () => void;
+}) {
+    const [search, setSearch] = useState('');
+    const filtered = options.filter(opt => 
+        opt.name.toLowerCase().includes(search.toLowerCase())
+    );
+
+    const Cb = ({ checked }: { checked: boolean }) => (
+        <span className={cn(
+            'w-[14px] h-[14px] rounded border flex items-center justify-center shrink-0 transition-all',
+            checked
+                ? 'bg-primary border-primary'
+                : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
+        )}>
+            {checked && <Check size={8} strokeWidth={4} className="text-white" />}
+        </span>
+    );
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant={hasActive ? 'primary' : 'white'}
+                    className="relative flex h-9 items-center justify-center gap-1.5 rounded-xl px-3 text-[11px] font-semibold border"
+                >
+                    <span>{label}</span>
+                    <ChevronDown size={12} className="opacity-60" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl p-3 w-[260px] flex flex-col gap-2 max-h-[380px]">
+                {/* Search */}
+                <div className="relative">
+                    <Search size={11} className="absolute left-2.5 top-2.5 text-text-desc" />
+                    <input
+                        type="text"
+                        placeholder="Cari..."
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-7 pr-2 py-1.5 text-[10px] outline-none focus:border-primary text-text-main"
+                    />
+                </div>
+
+                <div className="h-px bg-surface-border my-0.5" />
+
+                {/* Items List */}
+                <div className="flex-1 overflow-y-auto max-h-[220px] pr-1 flex flex-col gap-0.5">
+                    {filtered.map(opt => {
+                        const isChecked = activeIds.includes(String(opt.id));
+                        return (
+                            <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => onToggle(String(opt.id))}
+                                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] text-left text-text-desc hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-text-main transition-all cursor-pointer font-medium"
+                            >
+                                <Cb checked={isChecked} />
+                                <span className="truncate">{opt.name}</span>
+                            </button>
+                        );
+                    })}
+                    {filtered.length === 0 && (
+                        <span className="text-[10px] text-text-desc text-center py-4">Tidak ada data</span>
+                    )}
+                </div>
+
+                {hasActive && (
+                    <>
+                        <div className="h-px bg-surface-border my-0.5" />
+                        <button
+                            type="button"
+                            onClick={onReset}
+                            className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] text-danger hover:bg-danger/10 transition-all font-semibold cursor-pointer"
+                        >
+                            Reset Filter
+                        </button>
+                    </>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+
+
 function ContractPage({
     contracts: contractsPaged,
     meId,
@@ -245,6 +345,11 @@ function ContractPage({
     vendors = [],
     departments = [],
     roles = [],
+    companyGroups = [],
+    companies = [],
+    regions = [],
+    divisions = [],
+    organizationTree = [],
 }: Readonly<{
     contracts: PaginatedData<Contract>;
     meId: string;
@@ -264,27 +369,78 @@ function ContractPage({
         department_id?: string;
         created_from?: string;
         created_to?: string;
+        company_group_id?: any;
+        region_id?: any;
+        company_id?: any;
+        division_id?: any;
     };
     formTemplates?: any[];
     users?: any[];
     vendors?: any[];
     departments?: any[];
     roles?: any[];
+    companyGroups?: any[];
+    companies?: any[];
+    regions?: any[];
+    divisions?: any[];
+    organizationTree?: any[];
 }>) {
     const { showToast } = useToast();
     const { canUpdate } = usePermissions('CONTRACTS');
     const [view, setView] = useState<View>(currentView);
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
+    const viewTitleMap: Record<string, string> = {
+        dashboard: 'Dashboard Kontrak',
+        contracts: 'Daftar Kontrak',
+        mine: 'Kontrak Saya',
+        pending: 'Persetujuan Tertunda',
+        expiry: 'Masa Berlaku Kontrak',
+        f1: 'Dokumen Formulir F1',
+        f2: 'Dokumen Formulir F2',
+        profile: 'Profil Saya',
+    };
+    const viewDescMap: Record<string, string> = {
+        dashboard: 'Statistik dan ringkasan aktivitas kontrak.',
+        contracts: 'Daftar seluruh kontrak dalam sistem.',
+        mine: 'Daftar kontrak yang Anda buat.',
+        pending: 'Kontrak yang menunggu persetujuan Anda.',
+        expiry: 'Kontrak yang akan atau telah berakhir.',
+        f1: 'Daftar kontrak dengan dokumen F1.',
+        f2: 'Daftar kontrak dengan dokumen F2.',
+        profile: 'Informasi akun dan pengaturan profil.',
+    };
+    const viewIconMap: Record<string, any> = {
+        dashboard: LayoutGrid,
+        contracts: FileText,
+        mine: FileEdit,
+        pending: Clock,
+        expiry: History,
+        f1: FileText,
+        f2: FileText,
+        profile: User,
+    };
     const [search, setSearch] = useState(filters?.search || '');
     const debouncedSearch = useDebounce(search, 500);
 
     const handleFilterChange = useCallback(
         (newFilters: any) => {
             const merged = { ...filters, ...newFilters };
-            const query = Object.fromEntries(
-                Object.entries(merged).filter(([_, v]) => v !== undefined && v !== '' && (Array.isArray(v) ? v.length > 0 : true)),
+            const cleaned = Object.fromEntries(
+                Object.entries(merged)
+                    .map(([k, v]) => {
+                        if (Array.isArray(v)) {
+                            return [k, v.filter((item) => item !== undefined && item !== null && item !== '')];
+                        }
+                        return [k, v];
+                    })
+                    .filter(([k, v]) => {
+                        if ((['company_group_id', 'region_id', 'company_id', 'division_id', 'department_id'] as string[]).includes(k as string)) {
+                            return v !== undefined && v !== null;
+                        }
+                        return v !== undefined && v !== null && v !== '' && (Array.isArray(v) ? v.length > 0 : true);
+                    })
             ) as any;
-            router.get(globalThis.location.pathname, query, { preserveState: true, preserveScroll: true, replace: true });
+            router.get(globalThis.location.pathname, cleaned, { preserveState: true, preserveScroll: true, replace: true });
         },
         [filters],
     );
@@ -316,7 +472,11 @@ function ContractPage({
         level?: number;
     }
 
-    const isDescendantOrSelf = useCallback((targetId: string, parentId: string): boolean => {
+    const isDescendantOrSelf = useCallback((targetId: string | string[] | undefined, parentId: string): boolean => {
+        if (!targetId) return false;
+        if (Array.isArray(targetId)) {
+            return targetId.some(id => isDescendantOrSelf(id, parentId));
+        }
         if (targetId === parentId) return true;
         const target = types.find(t => t.id === targetId) as DBContractType | undefined;
         if (target && target.parent_id) {
@@ -396,13 +556,64 @@ function ContractPage({
         router.get(route('contracts'), {}, { preserveState: true, preserveScroll: true });
     }, []);
 
+    const canChangeCompanyGroup = useMemo(() => {
+        const settings = meUser?.filter_settings;
+        if (settings && typeof settings.can_change_company_group !== 'undefined') {
+            return !!settings.can_change_company_group;
+        }
+        const role = meUser?.role;
+        return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
+    }, [meUser]);
+
+    const canChangeRegion = useMemo(() => {
+        const settings = meUser?.filter_settings;
+        if (settings && typeof settings.can_change_region !== 'undefined') {
+            return !!settings.can_change_region;
+        }
+        const role = meUser?.role;
+        return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
+    }, [meUser]);
+
+    const canChangeCompany = useMemo(() => {
+        const settings = meUser?.filter_settings;
+        if (settings && typeof settings.can_change_company !== 'undefined') {
+            return !!settings.can_change_company;
+        }
+        const role = meUser?.role;
+        return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
+    }, [meUser]);
+
+    const canChangeDivision = useMemo(() => {
+        const settings = meUser?.filter_settings;
+        if (settings && typeof settings.can_change_division !== 'undefined') {
+            return !!settings.can_change_division;
+        }
+        const role = meUser?.role;
+        return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
+    }, [meUser]);
+
+    const filterCategories = useMemo(() => {
+        const list: any[] = [
+            {
+                label: 'Departemen',
+                key: 'department_id',
+                type: 'searchable',
+                options: (departments ?? []).map((d: any) => ({
+                    label: d.name,
+                    value: d.id,
+                })),
+            },
+        ];
+        return list;
+    }, [departments]);
+
     const activeFiltersCount = useMemo(() => {
         const getCount = (val: any) => {
             if (Array.isArray(val)) return val.length;
             return val ? 1 : 0;
         };
-        return getCount(filters.status) + getCount(filters.contract_type_id);
-    }, [filters.status, filters.contract_type_id]);
+        return getCount(filters.department_id);
+    }, [filters]);
 
     const handleCreate = async (data: any) => {
         setProcessing(true);
@@ -500,6 +711,11 @@ function ContractPage({
     }, [showToast]);
 
     const handleSingleFilterToggle = (key: string, value: any) => {
+        if (key === 'created_from' || key === 'created_to') {
+            handleFilterChange({ [key]: value || '' });
+            return;
+        }
+
         const f = filters as any;
         const currentValues = ensureArray(f[key]);
         let newValues: any[];
@@ -511,11 +727,22 @@ function ContractPage({
                 ? currentValues.filter((v: any) => String(v) !== stringValue)
                 : [...currentValues, stringValue];
         }
+
         handleFilterChange({ [key]: newValues });
     };
 
     const handleClearAllFilters = () => {
-        handleFilterChange({ status: [], contract_type_id: [], department_id: [], created_from: '', created_to: '' });
+        handleFilterChange({
+            status: [],
+            contract_type_id: [],
+            department_id: [],
+            created_from: '',
+            created_to: '',
+            company_group_id: [],
+            region_id: [],
+            company_id: [],
+            division_id: [],
+        });
     };
 
     const renderBulkActions = useCallback(
@@ -636,8 +863,37 @@ function ContractPage({
                         />
                     </div>
                 ) : (
-                    <div className="animate-in fade-in slide-in-from-top-3 flex w-full flex-1 flex-col duration-300 ease-in-out">
-                        <div className="flex flex-col gap-4">
+                    <PageTable
+                        title={viewTitleMap[view] || 'Manajemen Kontrak'}
+                        subtitle={viewDescMap[view] || 'Daftar seluruh kontrak dalam sistem.'}
+                        icon={viewIconMap[view] || FileText}
+                        {...(view !== 'profile' && view !== 'dashboard' ? {
+                            searchValue: search,
+                            onSearchChange: setSearch,
+                            searchPlaceholder: "Cari kontrak...",
+                            actions: (
+                                <>
+                                    <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
+                                    <Button variant="white" fontSize="11px" onClick={() => setCreateOpen(true)}>
+                                        <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
+                                    </Button>
+                                </>
+                            )
+                        } : {})}
+                        pagination={view !== 'profile' && view !== 'dashboard' ? {
+                            currentPage: contractsPaged.current_page,
+                            lastPage: contractsPaged.last_page,
+                            total: contractsPaged.total,
+                            from: contractsPaged.from,
+                            to: contractsPaged.to,
+                            perPage: contractsPaged.per_page,
+                            onPageChange: (page: number) =>
+                                router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
+                            onPerPageChange: (perPage: number) =>
+                                router.get(globalThis.location.pathname, { ...filters, page: 1, per_page: perPage }, { preserveState: true }),
+                        } : undefined}
+                    >
+                        <div className="flex-1 overflow-auto">
                             {view === 'dashboard' && (
                                 <div className="p-5">
                                     <DashboardMetrics metrics={metrics} />
@@ -645,161 +901,18 @@ function ContractPage({
                             )}
                             {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                             {view !== 'profile' && view !== 'dashboard' && (
-                                <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden">
-                                    <div className="border-surface-border bg-surface-base/80 sticky top-0 z-[50] flex items-center gap-6 border-b px-5 py-4 backdrop-blur-md">
-                                        <div className="flex max-w-sm flex-1 items-center gap-2">
-                                            <SearchInput
-                                                containerClassName="flex-1"
-                                                placeholder="Cari kontrak..."
-                                                value={search}
-                                                onChange={(e) => setSearch(e.target.value)}
-                                            />
-                                            <FilterPopover
-                                                totalResults={contractsPaged.total}
-                                                activeFilters={{
-                                                    status: ensureArray(filters.status),
-                                                    contract_type_id: ensureArray(filters.contract_type_id),
-                                                    department_id: ensureArray(filters.department_id),
-                                                    created_from: filters.created_from || '',
-                                                    created_to: filters.created_to || '',
-                                                }}
-                                                onFilterChange={handleSingleFilterToggle}
-                                                onReset={handleClearAllFilters}
-                                                categories={[
-                                                    {
-                                                        label: 'Status Dokumen',
-                                                        key: 'status',
-                                                        type: 'searchable',
-                                                        options: [
-                                                            {
-                                                                label: 'Draft',
-                                                                value: 'draft',
-                                                                icon: Layers,
-                                                                color: 'bg-surface-muted text-text-soft',
-                                                            },
-                                                            { label: 'Pending', value: 'pending', icon: Clock, color: 'bg-warning/10 text-warning' },
-                                                            {
-                                                                label: 'In Review',
-                                                                value: 'in_review',
-                                                                icon: Zap,
-                                                                color: 'bg-warning/10 text-warning',
-                                                            },
-                                                            {
-                                                                label: 'Revision',
-                                                                value: 'revision',
-                                                                icon: AlertTriangle,
-                                                                color: 'bg-danger/10 text-danger',
-                                                            },
-                                                            {
-                                                                label: 'Approved',
-                                                                value: 'approved',
-                                                                icon: CheckCircle2,
-                                                                color: 'bg-primary text-primary-foreground',
-                                                            },
-                                                            {
-                                                                label: 'Rejected',
-                                                                value: 'rejected',
-                                                                icon: AlertCircle,
-                                                                color: 'bg-danger/10 text-danger',
-                                                            },
-                                                        ],
-                                                    },
-                                                    {
-                                                        label: 'Departemen',
-                                                        key: 'department_id',
-                                                        type: 'searchable',
-                                                        options: departments.map((d) => ({
-                                                            label: d.name,
-                                                            value: d.id,
-                                                        })),
-                                                    },
-                                                    {
-                                                        label: 'Kategori Kontrak',
-                                                        key: 'contract_type_id',
-                                                        type: 'searchable',
-                                                        options: types.map((t) => ({
-                                                            label: t.name,
-                                                            value: t.id,
-                                                            icon: FileType,
-                                                        })),
-                                                    },
-                                                    {
-                                                        label: 'Rentang Tanggal Dibuat',
-                                                        key: 'created',
-                                                        type: 'date-range',
-                                                    },
-                                                ]}
-                                            >
-                                                <Button
-                                                    variant={activeFiltersCount > 0 ? 'primary' : 'white'}
-                                                    className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-0"
-                                                >
-                                                    <Filter size={14} strokeWidth={2.5} />
-                                                    {activeFiltersCount > 0 && (
-                                                        <span className="bg-primary absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-md border border-white px-1 text-[9px] font-semibold text-white shadow-sm dark:border-black">
-                                                            {activeFiltersCount}
-                                                        </span>
-                                                    )}
-                                                </Button>
-                                            </FilterPopover>
-                                        </div>
-                                        <div className="ml-auto flex items-center gap-2">
-                                            <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
-                                            <Button variant="white" fontSize="11px" onClick={() => setCreateOpen(true)}>
-                                                <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-surface-border bg-surface-base/40 sticky top-[73px] z-10 flex scrollbar-none items-center gap-1.5 overflow-x-auto border-b px-5 py-2 backdrop-blur-md">
-                                        <Button
-                                            onClick={() => handleFilterChange({ contract_type_id: undefined, page: 1 })}
-                                            variant={!filters.contract_type_id ? 'primary' : 'ghost'}
-                                            size="sm"
-                                            fontSize="11px"
-                                            className="whitespace-nowrap"
-                                        >
-                                            Semua Kontrak
-                                        </Button>
-                                        {rootTypes.map((type) => {
-                                            const isActive = filters.contract_type_id && isDescendantOrSelf(filters.contract_type_id, type.id);
-                                            return (
-                                                <div key={type.id} className="inline-flex items-center rounded-xl overflow-hidden border border-surface-border bg-surface-base/20 shrink-0">
-                                                    <button
-                                                        onClick={() => handleFilterChange({ contract_type_id: type.id, page: 1 })}
-                                                        className={cn(
-                                                            "h-8 px-3 text-[11px] font-medium transition-all cursor-pointer whitespace-nowrap outline-hidden",
-                                                            isActive ? "bg-primary text-primary-foreground dark:bg-white dark:text-black font-semibold" : "hover:bg-surface-muted text-text-main dark:text-white"
-                                                        )}
-                                                    >
-                                                        {type.name}
-                                                    </button>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <button
-                                                                className={cn(
-                                                                    "h-8 px-2 border-l border-surface-border transition-all cursor-pointer outline-hidden flex items-center justify-center",
-                                                                    isActive ? "bg-primary text-primary-foreground dark:bg-white dark:text-black" : "hover:bg-surface-muted text-text-main dark:text-white"
-                                                                )}
-                                                            >
-                                                                <ChevronDown size={12} />
-                                                            </button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1 shadow-lg rounded-md min-w-[200px]">
-                                                            <DropdownMenuItem
-                                                                onClick={() => handleFilterChange({ contract_type_id: type.id, page: 1 })}
-                                                                className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 text-xs px-3 py-2 font-semibold text-primary"
-                                                            >
-                                                                Semua {type.name}
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuSeparator className="my-1 border-t border-slate-100 dark:border-slate-800" />
-                                                            {renderDropdownItems(type.id)}
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                                <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden h-full">
+                                    <PageFilter
+                                        filters={filters}
+                                        types={types}
+                                        departments={departments}
+                                        divisions={divisions}
+                                        regions={regions}
+                                        companies={companies}
+                                        companyGroups={companyGroups}
+                                        meUser={meUser}
+                                        handleFilterChange={handleFilterChange}
+                                    />
 
                                     <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
                                         {layout === 'table' ? (
@@ -812,16 +925,9 @@ function ContractPage({
                                                 onSelectionChange={setSelectedRows}
                                                 selectedRows={selectedRows}
                                                 bulkActions={renderBulkActions(selectedRows)}
-                                                pagination={{
-                                                    currentPage: contractsPaged.current_page,
-                                                    lastPage: contractsPaged.last_page,
-                                                    total: contractsPaged.total,
-                                                    onPageChange: (page: number) =>
-                                                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
-                                                }}
                                             />
                                         ) : processing ? (
-                            <ContractCardSkeleton />
+                                            <ContractCardSkeleton />
                                         ) : (
                                             <div className="flex flex-col gap-8">
                                                 <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -867,59 +973,13 @@ function ContractPage({
                                                         </button>
                                                     ))}
                                                 </div>
-
-                                                <div className="mt-8 mb-10 flex w-full items-center justify-between px-2 text-xs select-none">
-                                                    <span className="text-text-soft">
-                                                        Menampilkan <span className="font-semibold text-text-main">{contractsPaged.from || 0} - {contractsPaged.to || 0}</span> dari <span className="font-semibold text-text-main">{contractsPaged.total || 0}</span> kontrak
-                                                    </span>
-
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Button
-                                                            variant="white"
-                                                            size="icon"
-                                                            disabled={contractsPaged.current_page === 1}
-                                                            onClick={() =>
-                                                                router.get(
-                                                                    globalThis.location.pathname,
-                                                                    { ...filters, page: contractsPaged.current_page - 1 },
-                                                                    { preserveState: true },
-                                                                )
-                                                            }
-                                                            className="h-8 w-8 rounded-lg border border-surface-border bg-surface-base"
-                                                        >
-                                                            <ChevronLeft className="text-text-main h-4 w-4" />
-                                                        </Button>
-                                                        <div className="flex h-8 items-center gap-1 rounded-lg border border-surface-border bg-surface-base px-3 text-[11px] font-semibold">
-                                                            <span className="text-primary font-bold">{contractsPaged.current_page}</span>
-                                                            <span className="text-text-soft/60">/</span>
-                                                            <span className="text-text-main">
-                                                                {contractsPaged.last_page || 1}
-                                                            </span>
-                                                        </div>
-                                                        <Button
-                                                            variant="white"
-                                                            size="icon"
-                                                            disabled={contractsPaged.current_page === contractsPaged.last_page}
-                                                            onClick={() =>
-                                                                router.get(
-                                                                    globalThis.location.pathname,
-                                                                    { ...filters, page: contractsPaged.current_page + 1 },
-                                                                    { preserveState: true },
-                                                                )
-                                                            }
-                                                            className="h-8 w-8 rounded-lg border border-surface-border bg-surface-base"
-                                                        >
-                                                            <ChevronRight className="text-text-main h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                </div>
                                             </div>
                                         )}
                                     </div>
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </PageTable>
                 )}
             </div>
 
@@ -1017,6 +1077,10 @@ export default function ContractsIndex({
     vendors = [],
     departments = [],
     roles = [],
+    companyGroups = [],
+    regions = [],
+    companies = [],
+    organizationTree = [],
 }: Readonly<{
     currentView?: View;
     contracts?: PaginatedData<Contract>;
@@ -1030,6 +1094,10 @@ export default function ContractsIndex({
     vendors?: any[];
     departments?: any[];
     roles?: any[];
+    companyGroups?: any[];
+    regions?: any[];
+    companies?: any[];
+    organizationTree?: any[];
 }>) {
     const { auth } = usePage<{ auth: { user: any } }>().props;
     const meId = auth?.user?.id ?? '';
@@ -1125,6 +1193,10 @@ export default function ContractsIndex({
                         users={users}
                         departments={departments}
                         roles={roles}
+                        companyGroups={companyGroups}
+                        regions={regions}
+                        companies={companies}
+                        organizationTree={organizationTree}
                     />
                 )}
             </ToastProvider>

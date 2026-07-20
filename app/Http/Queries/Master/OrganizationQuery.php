@@ -29,8 +29,12 @@ class OrganizationQuery
                 });
             })
             ->when($request->region_id, function ($q, $regionId) {
-                $q->whereHas('companies', function ($sq) use ($regionId) {
-                    $sq->whereIn('region_id', (array) $regionId);
+                $cleanRegionIds = collect((array) $regionId)
+                    ->map(fn ($id) => str_contains($id, '|') ? last(explode('|', $id)) : $id)
+                    ->filter(fn ($id) => $id !== 'null')
+                    ->toArray();
+                $q->whereHas('companies', function ($sq) use ($cleanRegionIds) {
+                    $sq->whereIn('region_id', $cleanRegionIds);
                 });
             });
     }
@@ -58,10 +62,17 @@ class OrganizationQuery
                 });
             })
             ->when($request->region_id, function ($q, $regionId) {
-                $q->whereIn('region_id', (array) $regionId);
+                $cleanRegionIds = collect((array) $regionId)
+                    ->map(fn ($id) => str_contains($id, '|') ? last(explode('|', $id)) : $id)
+                    ->filter(fn ($id) => $id !== 'null')
+                    ->toArray();
+                $q->whereIn('region_id', $cleanRegionIds);
             })
             ->when($request->company_group_id, function ($q, $companyGroupId) {
-                $q->whereIn('company_group_id', (array) $companyGroupId);
+                $cleanCompanyGroupIds = collect((array) $companyGroupId)
+                    ->map(fn ($id) => str_contains($id, '|') ? head(explode('|', $id)) : $id)
+                    ->toArray();
+                $q->whereIn('company_group_id', $cleanCompanyGroupIds);
             });
     }
 

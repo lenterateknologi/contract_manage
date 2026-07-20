@@ -759,7 +759,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                     {
                         name: moduleName,
                         identifier: editingModuleItem.identifier,
-                        module_group_id: editingModuleItem.module_group_id || navItems[0]?.id,
+                        module_group_id: moduleGroupId || navItems[0]?.id,
                         route: moduleRoute,
                         icon: moduleIcon,
                         showed_as_menu: editingModuleItem.showed_as_menu !== undefined ? editingModuleItem.showed_as_menu : true,
@@ -786,6 +786,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                         icon: moduleIcon,
                         showed_as_menu: true,
                         description: moduleDescription,
+                        role_id: role.id,
                     },
                     {
                         onSuccess: () => {

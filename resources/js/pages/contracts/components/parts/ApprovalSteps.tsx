@@ -5,8 +5,7 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
-import axios from 'axios';
-import { Download, ListFilter, Loader2 } from 'lucide-react';
+import { Download, ListFilter } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
@@ -22,14 +21,12 @@ interface Props {
 }
 
 export default function ApprovalSteps({ contract, approvals, creator, submittedAt, meId, onApprove }: Props) {
-    const { showToast, showProgress, hideProgress } = useToast();
+    const { showToast } = useToast();
     const [statusFilter, setStatusFilter] = useState<string>('');
     const [roleFilter, setRoleFilter] = useState<string>('');
     const [deptFilter, setDeptFilter] = useState<string>('');
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);
-    const [isExporting, setIsExporting] = useState(false);
-    const [jobStatus, setJobStatus] = useState<any>(null);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
     const roles = useMemo(
@@ -137,52 +134,13 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
     const showProjectedManager = approvals.length === 0 && creator.role?.toLowerCase() === 'staff';
 
-    const handleExportPdf = async () => {
-        setIsExporting(true);
-        setJobStatus({ progress: 0, status: 'pending' });
-
-        const win = window.open('about:blank', '_blank');
-        try {
-            if (win) {
-                win.document.write(
-                    '<html><head><title>Mempersiapkan PDF...</title><style>body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #fff; color: #000; } .card { padding: 40px; border: 1px solid #ddd; text-align: center; } .loader { border: 2px solid #eee; border-top: 2px solid #000; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto 15px; } @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } } h2 { font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }</style></head><body><div class="card"><div class="loader"></div><h2>Mempersiapkan Dokumen</h2><p style="font-size: 11px; color: #666;">Data sedang diproses...</p></div></body></html>',
-                );
-                win.document.close();
-            }
-
-            const res = await axios.get(`/api/contracts/${contract.id}/approval/pdf/queue`, {
-                params: {
-                    status: statusFilter || undefined,
-                    role: roleFilter || undefined,
-                    department: deptFilter || undefined,
-                },
-            });
-
-            const jobId = res.data.job_id;
-            const interval = setInterval(async () => {
-                const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`);
-                const data = statusRes.data;
-                setJobStatus(data);
-                showProgress(jobId, 'Mempersiapkan PDF...', data.progress || 0);
-
-                if (data.status === 'completed') {
-                    clearInterval(interval);
-                    if (win) win.location.href = data.url;
-                    setIsExporting(false);
-                    hideProgress(jobId);
-                } else if (data.status === 'failed') {
-                    clearInterval(interval);
-                    if (win) win.close();
-                    setIsExporting(false);
-                    hideProgress(jobId);
-                    showToast('Gagal ekspor PDF', 'danger');
-                }
-            }, 2000);
-        } catch (err) {
-            if (win) win.close();
-            setIsExporting(false);
-            showToast('Gagal ekspor PDF', 'danger');
-        }
+    const handleExportPdf = () => {
+        const params = new URLSearchParams({
+            status: statusFilter || '',
+            role: roleFilter || '',
+            department: deptFilter || '',
+        }).toString();
+        window.open(`/api/contracts/${contract.id}/approval/pdf?${params}`, '_blank');
     };
 
     const filterCategories: FilterCategory[] = [
@@ -267,10 +225,9 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         variant="outline"
                         size="sm"
                         onClick={handleExportPdf}
-                        disabled={isExporting}
-                        className="dark:bg-sidebar border-surface-border bg-surface-base text-text-desc hover:text-text-main animate-in fade-in h-8.5 w-8.5 p-0 transition-all disabled:opacity-20"
+                        className="dark:bg-sidebar border-surface-border bg-surface-base text-text-desc hover:text-text-main animate-in fade-in h-8.5 w-8.5 p-0 transition-all"
                     >
-                        {isExporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} strokeWidth={2.5} />}
+                        <Download size={14} strokeWidth={2.5} />
                     </Button>
                 </div>
             </div>

@@ -269,30 +269,7 @@ export function DraftEditableInfoCard({
                         </div>
                     </div>
 
-                    {selected.workflow_step && (
-                        <div className="border-surface-border col-span-full border-t pt-4">
-                            <div className="text-text-desc mb-2 text-xs font-semibold">Hasil Analisis Workflow</div>
-                            <div className="animate-in fade-in flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 shadow-sm">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
-                                    <Check size={16} strokeWidth={3} />
-                                </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="text-xs font-bold text-emerald-700">Langkah Aktif: {selected.workflow_step.description}</span>
-                                    <span className="text-[10px] font-semibold  text-emerald-600/70 uppercase">
-                                        PIC/Role: {selected.workflow_step.role}
-                                    </span>
-                                    {selected.workflow_step.target_approvers && (
-                                        <div className="mt-1 flex items-center gap-1.5 rounded-md bg-white/50 px-2 py-0.5 dark:bg-black/20">
-                                            <span className="text-[9px] font-semibold tracking-tighter text-emerald-600 uppercase">Target:</span>
-                                            <span className="truncate text-[9px] font-bold text-emerald-700">
-                                                {selected.workflow_step.target_approvers}
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
+
                 </div>
             )}
         </div>

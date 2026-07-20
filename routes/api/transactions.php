@@ -75,7 +75,7 @@ Route::prefix('contracts')->group(function () {
         Route::get('/audit-trail/document', 'renderAuditDocument')->name('api.contracts.audit.document');
         Route::get('/audit-trail/pdf', 'exportAuditPdf')->name('api.contracts.audit.pdf');
         Route::get('/audit-trail/pdf/queue', 'exportAuditPdfQueue')->name('api.contracts.audit.pdf.queue');
-        Route::get('/approval/pdf/queue', 'exportApprovalTimelinePdfQueue')->name('api.contracts.approval.pdf.queue');
+        Route::get('/approval/pdf', 'exportApprovalTimelinePdf')->name('api.contracts.approval.pdf');
         Route::get('/audit-trail/excel', 'exportAuditExcel')->name('api.contracts.audit.excel');
     });
 });

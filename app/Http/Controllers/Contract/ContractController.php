@@ -18,6 +18,7 @@ use App\Models\AccessModule;
 use App\Models\Contract;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\ContractFilterScopeService;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -109,17 +110,26 @@ class ContractController extends Controller
             'users' => Inertia::defer($loaders['users']),
             'vendors' => Inertia::defer($loaders['vendors']),
             'formTemplates' => Inertia::defer($loaders['formTemplates']),
-            'departments' => Inertia::defer($loaders['departments']),
+            'departments' => $loaders['departments'](),
+            'divisions' => $loaders['divisions'](),
             'roles' => Inertia::defer($loaders['roles']),
-            'regions' => Inertia::defer($loaders['regions']),
-            'companyGroups' => Inertia::defer($loaders['companyGroups']),
-            'companies' => Inertia::defer($loaders['companies']),
+            'regions' => $loaders['regions'](),
+            'companyGroups' => $loaders['companyGroups'](),
+            'companies' => $loaders['companies'](),
+            'organizationTree' => function () use ($loaders) {
+                return ContractFilterScopeService::buildOrganizationTree(
+                    $loaders['companyGroups'](),
+                    $loaders['regions'](),
+                    $loaders['companies']()
+                );
+            },
             'contractStatuses' => Inertia::defer($loaders['contractStatuses']),
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
                 'contract_type_ids', 'pic_ids', 'department_ids', 'submission_type_id',
                 'period', 'company_group_ids', 'company_ids',
+                'company_group_id', 'region_id', 'company_id', 'division_id',
             ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),

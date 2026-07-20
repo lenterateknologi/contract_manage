@@ -51,7 +51,13 @@ function SearchableCategoryOptions({
     onToggle: (val: any) => void;
 }) {
     const [query, setQuery] = useState('');
+    const [pageSize, setPageSize] = useState(5);
     const options = category.options || [];
+
+    // Reset pagination size when search query changes
+    React.useEffect(() => {
+        setPageSize(5);
+    }, [query]);
 
     const filteredOptions = useMemo(() => {
         if (!query) return options;
@@ -60,114 +66,118 @@ function SearchableCategoryOptions({
         );
     }, [options, query]);
 
-    return (
-        <Combobox
-            multiple
-            value={activeValues}
-            onChange={(newValues: string[]) => onToggle(newValues)}
-            onClose={() => setQuery('')}
-        >
-            <div className="space-y-2">
-                {/* Label + count */}
-                <div className="flex items-center justify-between">
-                    <Label className="text-[10px] font-bold text-text-desc uppercase ">
-                        {category.label}
-                    </Label>
-                    {activeValues.length > 0 && (
-                        <span className="text-[9px] font-bold text-primary bg-primary-muted px-1.5 py-0.5 rounded-md">
-                            {activeValues.length} Terpilih
-                        </span>
-                    )}
-                </div>
+    const paginatedOptions = useMemo(() => {
+        return filteredOptions.slice(0, pageSize);
+    }, [filteredOptions, pageSize]);
 
-                {/* Selected chips — always visible */}
+    return (
+        <div className="space-y-2">
+            {/* Label + count */}
+            <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-bold text-text-desc uppercase ">
+                    {category.label}
+                </Label>
                 {activeValues.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                        {activeValues.map((val) => {
-                            const opt = options.find((o) => String(o.value) === val);
-                            return (
-                                <button
-                                    key={val}
-                                    type="button"
-                                    onClick={() =>
-                                        onToggle(activeValues.filter((v) => v !== val))
-                                    }
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-semibold hover:bg-primary/80 transition-colors"
-                                >
-                                    {opt?.label ?? val}
-                                    <X size={9} strokeWidth={3} />
-                                </button>
-                            );
-                        })}
+                    <span className="text-[9px] font-bold text-primary bg-primary-muted px-1.5 py-0.5 rounded-md">
+                        {activeValues.length} Terpilih
+                    </span>
+                )}
+            </div>
+
+            {/* Selected chips — always visible */}
+            {activeValues.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                    {activeValues.map((val) => {
+                        const opt = options.find((o) => String(o.value) === val);
+                        return (
+                            <button
+                                key={val}
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    onToggle(activeValues.filter((v) => v !== val));
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-semibold hover:bg-primary/80 transition-colors cursor-pointer"
+                            >
+                                {opt?.label ?? val}
+                                <X size={9} strokeWidth={3} />
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Search input */}
+            <div className="relative">
+                <Search
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft pointer-events-none"
+                    size={13}
+                />
+                <input
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={`Cari & pilih ${category.label.toLowerCase()}...`}
+                    className="w-full h-8 pl-8 pr-3 text-xs bg-surface-muted/50 border border-surface-border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none"
+                />
+            </div>
+
+            {/* Options List - Rendered Inline (Always Visible) */}
+            <div className="border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5 max-h-36 overflow-y-auto space-y-0.5 custom-scrollbar flex flex-col">
+                {filteredOptions.length === 0 && (
+                    <div className="py-4 text-center">
+                        <p className="text-[10px] text-text-soft font-bold uppercase">
+                            Tidak ditemukan
+                        </p>
                     </div>
                 )}
-
-                {/* Search input — Headless UI opens options automatically on focus */}
-                <div className="relative">
-                    <Search
-                        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft pointer-events-none"
-                        size={13}
-                    />
-                    <ComboboxInput
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder={`Cari & pilih ${category.label.toLowerCase()}...`}
-                        className="w-full h-8 pl-8 pr-3 text-xs bg-surface-muted/50 border border-surface-border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none"
-                    />
-                </div>
-
-                {/* Dropdown — shown automatically by Headless UI when input is focused */}
-                <ComboboxOptions
-                    anchor={{ to: 'bottom start', gap: 4 }}
-                    className={cn(
-                        'z-[99999] w-[var(--input-width)] min-w-[14rem]',
-                        'border border-surface-border/60 rounded-lg bg-surface-base shadow-xl overflow-hidden empty:hidden',
-                        'transition data-[leave]:data-[closed]:opacity-0 data-[leave]:duration-100'
-                    )}
-                >
-                    <div className="p-1 space-y-0.5 max-h-52 overflow-auto">
-                        {filteredOptions.length === 0 && (
-                            <div className="py-5 text-center">
-                                <p className="text-[10px] text-text-soft font-bold uppercase">
-                                    Tidak ditemukan
-                                </p>
+                {paginatedOptions.map((opt) => {
+                    const isSelected = activeValues.includes(String(opt.value));
+                    return (
+                        <button
+                            key={String(opt.value)}
+                            type="button"
+                            onClick={() => {
+                                const valStr = String(opt.value);
+                                const next = activeValues.includes(valStr)
+                                    ? activeValues.filter((v) => v !== valStr)
+                                    : [...activeValues, valStr];
+                                onToggle(next);
+                            }}
+                            className={cn(
+                                "w-full flex items-center justify-between p-1.5 rounded-md text-left transition-all text-xs font-semibold uppercase tracking-wide cursor-pointer",
+                                isSelected
+                                    ? "bg-primary-muted text-primary"
+                                    : "text-text-main hover:bg-surface-muted"
+                            )}
+                        >
+                            <span className="truncate">{opt.label}</span>
+                            <div className={cn(
+                                "h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0",
+                                isSelected
+                                    ? "border-primary bg-primary text-white"
+                                    : "border-surface-border bg-white"
+                            )}>
+                                {isSelected && <Check size={10} strokeWidth={3} />}
                             </div>
-                        )}
-                        {filteredOptions.map((opt) => (
-                            <ComboboxOption
-                                key={String(opt.value)}
-                                value={String(opt.value)}
-                                className={({ focus, selected }) =>
-                                    cn(
-                                        'flex items-center justify-between p-1.5 rounded-md cursor-pointer transition-all text-xs font-semibold uppercase tracking-wide',
-                                        selected
-                                            ? 'bg-primary-muted text-primary'
-                                            : 'text-text-main',
-                                        focus && !selected && 'bg-surface-muted'
-                                    )
-                                }
-                            >
-                                {({ selected }) => (
-                                    <>
-                                        <span className="truncate">{opt.label}</span>
-                                        <div
-                                            className={cn(
-                                                'h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0',
-                                                selected
-                                                    ? 'border-primary bg-primary text-white'
-                                                    : 'border-surface-border bg-white'
-                                            )}
-                                        >
-                                            {selected && <Check size={10} strokeWidth={3} />}
-                                        </div>
-                                    </>
-                                )}
-                            </ComboboxOption>
-                        ))}
-                    </div>
-                </ComboboxOptions>
+                        </button>
+                    );
+                })}
+                {filteredOptions.length > pageSize && (
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setPageSize(prev => prev + 10);
+                        }}
+                        className="text-[9px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-1 mt-1 cursor-pointer bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-md shrink-0"
+                    >
+                        Tampilkan Lebih Banyak... (+{filteredOptions.length - pageSize} Data)
+                    </button>
+                )}
             </div>
-        </Combobox>
+        </div>
     );
 }
 
@@ -196,7 +206,14 @@ function DateRangeCategoryOptions({
                     <input
                         type="date"
                         value={fromVal}
-                        onChange={(e) => onFilterChange(fromKey, e.target.value)}
+                        max={toVal || undefined}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            onFilterChange(fromKey, val);
+                            if (toVal && val && new Date(val) > new Date(toVal)) {
+                                onFilterChange(toKey, val);
+                            }
+                        }}
                         className="w-full h-8 px-2 text-[10px] font-bold bg-surface-muted/30 border border-surface-border rounded-lg text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm"
                     />
                 </div>
@@ -205,7 +222,14 @@ function DateRangeCategoryOptions({
                     <input
                         type="date"
                         value={toVal}
-                        onChange={(e) => onFilterChange(toKey, e.target.value)}
+                        min={fromVal || undefined}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            onFilterChange(toKey, val);
+                            if (fromVal && val && new Date(val) < new Date(fromVal)) {
+                                onFilterChange(fromKey, val);
+                            }
+                        }}
                         className="w-full h-8 px-2 text-[10px] font-bold bg-surface-muted/30 border border-surface-border rounded-lg text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm"
                     />
                 </div>
@@ -226,6 +250,11 @@ export function FilterPopover({
         const keys = categories.map(c => c.key);
         let count = 0;
         keys.forEach(key => {
+            if (key === 'created') {
+                if (activeFilters['created_from']) count += 1;
+                if (activeFilters['created_to']) count += 1;
+                return;
+            }
             const val = activeFilters[key];
             if (Array.isArray(val)) {
                 count += val.filter(v => v !== '' && v !== null).length;
@@ -276,6 +305,10 @@ export function FilterPopover({
                         {/* Body - Filter Categories */}
                         <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
                             {categories.map((category) => {
+                                if (category.type === 'searchable' && (!category.options || category.options.length === 0)) {
+                                    return null;
+                                }
+
                                 const currentVals = Array.isArray(activeFilters[category.key])
                                     ? activeFilters[category.key]
                                     : activeFilters[category.key]
@@ -288,13 +321,7 @@ export function FilterPopover({
                                             <SearchableCategoryOptions
                                                 category={category}
                                                 activeValues={currentVals.map(String)}
-                                                onToggle={(val) => {
-                                                    const valStr = String(val);
-                                                    const next = currentVals.map(String).includes(valStr)
-                                                        ? currentVals.filter((v: any) => String(v) !== valStr)
-                                                        : [...currentVals, valStr];
-                                                    onFilterChange(category.key, next);
-                                                }}
+                                                onToggle={(next) => onFilterChange(category.key, next)}
                                             />
                                         ) : category.type === 'date-range' ? (
                                             <DateRangeCategoryOptions

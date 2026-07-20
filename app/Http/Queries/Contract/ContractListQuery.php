@@ -3,6 +3,7 @@
 namespace App\Http\Queries\Contract;
 
 use App\Models\Contract;
+use App\Services\ContractFilterScopeService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -65,6 +66,12 @@ class ContractListQuery
      */
     public function build(Request $request, string $view = 'contracts'): Builder
     {
+        $user = Auth::user();
+        if ($user) {
+            // Delegasikan semua scope organisasi ke service — satu tempat, satu aturan.
+            (new ContractFilterScopeService)->applyToRequest($request, $user);
+        }
+
         $query = Contract::query()
             ->select(self::SELECT)
             ->with(self::WITH)
@@ -77,6 +84,7 @@ class ContractListQuery
         $this->applyDepartmentFilter($query, $request);
         $this->applyDateRangeFilter($query, $request);
         $this->applySubmissionTypeFilter($query, $request);
+        $this->applyOrgFilters($query, $request);
 
         return $query;
     }
@@ -184,8 +192,10 @@ class ContractListQuery
 
         $allIds = [];
         foreach ($typeIds as $id) {
-            $allIds[] = $id;
-            $allIds = array_merge($allIds, $this->getDescendantTypeIds($id));
+            if ($id) {
+                $allIds[] = $id;
+                $allIds = array_merge($allIds, $this->getDescendantTypeIds($id));
+            }
         }
         $allIds = array_unique(array_filter($allIds));
 
@@ -197,8 +207,11 @@ class ContractListQuery
      *
      * @return array<string>
      */
-    private function getDescendantTypeIds(string $parentId): array
+    private function getDescendantTypeIds(?string $parentId): array
     {
+        if (! $parentId) {
+            return [];
+        }
         $childIds = DB::table('m_contract_types')
             ->where('parent_id', $parentId)
             ->pluck('id')
@@ -218,11 +231,25 @@ class ContractListQuery
      */
     private function applyDepartmentFilter(Builder $query, Request $request): void
     {
-        if (! $request->filled('department_id')) {
+        $user = Auth::user();
+        $settings = $user ? $user->getContractFilterSettings() : [];
+        $roleName = $user ? $user->role : null;
+        $hasFullAccess = $user ? in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']) : false;
+
+        $allowedDeps = ! empty($settings['allowed_departments'])
+            ? collect($settings['allowed_departments'])->map(fn ($id) => $id === '[USER_LOGIN]' ? strval($user->department_id) : $id)->filter(fn ($id) => ! empty($id) && $id !== 'null' && $id !== '[USER_LOGIN]')->unique()->toArray()
+            : [];
+
+        $departmentId = $request->department_id;
+
+        if (empty($departmentId) && ! $hasFullAccess && ! empty($allowedDeps)) {
+            $departmentId = $allowedDeps;
+        }
+
+        if (empty($departmentId)) {
             return;
         }
 
-        $departmentId = $request->department_id;
         $isArray = is_array($departmentId);
 
         $query->where(function (Builder $q) use ($departmentId, $isArray): void {
@@ -272,6 +299,139 @@ class ContractListQuery
             $query->whereIn('submission_type_id', $request->submission_type_id);
         } else {
             $query->where('submission_type_id', $request->submission_type_id);
+        }
+    }
+
+    private function applyOrgFilters(Builder $query, Request $request): void
+    {
+        // Request sudah di-scope oleh ContractFilterScopeService di build().
+        // Method ini hanya menerjemahkan nilai yang ada di request ke kondisi WHERE.
+        // ponytail: hapus prefix g_, r_, c_ untuk kompatibilitas tipe UUID di DB
+        $cleanFn = fn ($id) => preg_replace('/^(g|r|c)_/', '', trim($id));
+
+        // 1. Company Group
+        $groupIds = $request->company_group_id;
+        if (! empty($groupIds)) {
+            $groupIds = is_array($groupIds) ? $groupIds : [$groupIds];
+            $cleanGroupIds = collect($groupIds)
+                ->map(fn ($id) => $cleanFn(head(explode('|', $id))))
+                ->filter(fn ($id) => ! empty($id) && $id !== 'null')
+                ->unique()
+                ->toArray();
+
+            if (! empty($cleanGroupIds)) {
+                $query->where(function (Builder $q) use ($cleanGroupIds) {
+                    $q->whereHas('initiator', fn ($sq) => $sq->whereIn('company_group_id', $cleanGroupIds))
+                        ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->whereIn('company_group_id', $cleanGroupIds)));
+                });
+            }
+        }
+
+        // 2. Region
+        $regionIds = $request->region_id;
+        if (! empty($regionIds)) {
+            $regionIds = is_array($regionIds) ? $regionIds : [$regionIds];
+            $cleanRegionIds = collect($regionIds)
+                ->map(fn ($id) => $cleanFn($id))
+                ->filter(fn ($id) => ! empty($id) && $id !== 'null')
+                ->unique()
+                ->toArray();
+
+            if (! empty($cleanRegionIds)) {
+                $query->where(function (Builder $q) use ($cleanRegionIds, $cleanFn) {
+                    $q->where(function (Builder $sub) use ($cleanRegionIds, $cleanFn) {
+                        foreach ($cleanRegionIds as $rId) {
+                            if (str_contains($rId, '|')) {
+                                $parts = explode('|', $rId);
+                                $gId = $cleanFn($parts[0]);
+                                $realRegionId = $cleanFn($parts[1]);
+
+                                $sub->orWhere(function (Builder $inner) use ($gId, $realRegionId) {
+                                    $inner->whereHas('initiator', function ($sq) use ($gId, $realRegionId) {
+                                        $sq->where('company_group_id', $gId);
+                                        if ($realRegionId === 'null') {
+                                            $sq->whereNull('region_id');
+                                        } else {
+                                            $sq->where('region_id', $realRegionId);
+                                        }
+                                    })->orWhere(function ($sq) use ($gId, $realRegionId) {
+                                        $sq->whereNull('initiated_by_id')->whereHas('creator', function ($ssq) use ($gId, $realRegionId) {
+                                            $ssq->where('company_group_id', $gId);
+                                            if ($realRegionId === 'null') {
+                                                $ssq->whereNull('region_id');
+                                            } else {
+                                                $ssq->where('region_id', $realRegionId);
+                                            }
+                                        });
+                                    });
+                                });
+                            } else {
+                                $sub->orWhere(function (Builder $inner) use ($rId) {
+                                    $inner->whereHas('initiator', fn ($sq) => $sq->where('region_id', $rId))
+                                        ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->where('region_id', $rId)));
+                                });
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        // 3. Company
+        $companyIds = $request->company_id;
+        if (! empty($companyIds)) {
+            $companyIds = is_array($companyIds) ? $companyIds : [$companyIds];
+            $cleanCompanyIds = collect($companyIds)
+                ->map(fn ($id) => $cleanFn($id))
+                ->filter(fn ($id) => ! empty($id) && $id !== 'null')
+                ->unique()
+                ->toArray();
+
+            if (! empty($cleanCompanyIds)) {
+                $query->where(function (Builder $q) use ($cleanCompanyIds, $cleanFn) {
+                    $q->where(function (Builder $sub) use ($cleanCompanyIds, $cleanFn) {
+                        foreach ($cleanCompanyIds as $cId) {
+                            if (str_contains($cId, '|')) {
+                                $parts = explode('|', $cId);
+                                $gId = $cleanFn($parts[0]);
+                                $realCompanyId = $cleanFn(end($parts));
+
+                                $sub->orWhere(function (Builder $inner) use ($gId, $realCompanyId) {
+                                    $inner->whereHas('initiator', function ($sq) use ($gId, $realCompanyId) {
+                                        $sq->where('company_group_id', $gId)->where('company_id', $realCompanyId);
+                                    })->orWhere(function ($sq) use ($gId, $realCompanyId) {
+                                        $sq->whereNull('initiated_by_id')->whereHas('creator', function ($ssq) use ($gId, $realCompanyId) {
+                                            $ssq->where('company_group_id', $gId)->where('company_id', $realCompanyId);
+                                        });
+                                    });
+                                });
+                            } else {
+                                $sub->orWhere(function (Builder $inner) use ($cId) {
+                                    $inner->whereHas('initiator', fn ($sq) => $sq->where('company_id', $cId))
+                                        ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->where('company_id', $cId)));
+                                });
+                            }
+                        }
+                    });
+                });
+            }
+        }
+
+        // 4. Division
+        $divisionIds = $request->division_id;
+        if (! empty($divisionIds)) {
+            $divisionIds = is_array($divisionIds) ? $divisionIds : [$divisionIds];
+            $cleanDivisionIds = collect($divisionIds)
+                ->filter(fn ($id) => ! empty($id) && $id !== 'null')
+                ->unique()
+                ->toArray();
+
+            if (! empty($cleanDivisionIds)) {
+                $query->where(function (Builder $q) use ($cleanDivisionIds) {
+                    $q->whereHas('initiator', fn ($sq) => $sq->whereIn('division_id', $cleanDivisionIds))
+                        ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->whereIn('division_id', $cleanDivisionIds)));
+                });
+            }
         }
     }
 }

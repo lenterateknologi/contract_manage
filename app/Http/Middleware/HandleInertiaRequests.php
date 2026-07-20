@@ -112,22 +112,6 @@ class HandleInertiaRequests extends Middleware
             ])
             ->all();
 
-        // Inject full permissions for system menus if the user is an admin
-        if ($request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin) {
-            $systemCodes = ['ADMIN_USERS', 'ADMIN_ROLES', 'ADMIN_NAV_MAPPING', 'ADMIN_ACCESS_MAPPING', 'ADMIN_MEMBERS', 'master_data_sync'];
-            foreach ($systemCodes as $code) {
-                $permissions[$code] = [
-                    'read' => true,
-                    'create' => true,
-                    'update' => true,
-                    'delete' => true,
-                    'approve' => true,
-                    'bulk_approve' => true,
-                    'bulk_delete' => true,
-                ];
-            }
-        }
-
         return $permissions;
     }
 

@@ -93,6 +93,11 @@ class RoleAccessAction
                                 'sequence' => $mIdx + 1,
                             ],
                         );
+
+                        // ponytail: Sync group ID ke m_modules agar form edit konsisten
+                        Module::where('id', $moduleData['id'])->update([
+                            'module_group_id' => $groupData['id'],
+                        ]);
                     }
                 }
             }

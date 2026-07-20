@@ -106,7 +106,7 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                                 checked={data.remember}
                                 onCheckedChange={(checked) => setData('remember', !!checked)}
                             />
-                            <Label htmlFor="remember" className="cursor-pointer text-sm font-medium text-slate-600 select-none">
+                            <Label htmlFor="remember" className="cursor-pointer text-sm font-medium text-text-desc select-none">
                                 Ingat saya
                             </Label>
                         </div>
@@ -127,7 +127,7 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                     </Button>
                 </div>
 
-                <div className="text-center text-sm font-medium text-slate-600">
+                <div className="text-center text-sm font-medium text-text-desc">
                     Belum punya akun?{' '}
                     <TextLink href={route('register')} className="text-primary hover:text-primary/80 font-bold hover:underline">
                         Daftar gratis

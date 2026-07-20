@@ -1,0 +1,280 @@
+import React, { useState, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+interface DateRangeCalendarProps {
+    from: string;   // 'YYYY-MM-DD' or ''
+    to: string;     // 'YYYY-MM-DD' or ''
+    onChange: (from: string, to: string) => void;
+}
+
+const DAYS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+const MONTHS = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+function fmt(d: Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function parseDate(s: string): Date | null {
+    if (!s) return null;
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
+function isSameDay(a: Date, b: Date) {
+    return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+}
+
+interface MonthGridProps {
+    year: number;
+    month: number;  // 0-indexed
+    from: Date | null;
+    to: Date | null;
+    hovered: Date | null;
+    selecting: boolean;
+    onDayClick: (d: Date) => void;
+    onDayHover: (d: Date | null) => void;
+}
+
+function MonthGrid({ year, month, from, to, hovered, selecting, onDayClick, onDayHover }: MonthGridProps) {
+    const firstDay = new Date(year, month, 1);
+    const startOffset = (firstDay.getDay() + 6) % 7; // Mon=0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const cells: (Date | null)[] = [
+        ...Array(startOffset).fill(null),
+        ...Array.from({ length: daysInMonth }, (_, i) => new Date(year, month, i + 1)),
+    ];
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    const rangeEnd = selecting && hovered ? hovered : to;
+
+    const getRangeBounds = () => {
+        if (!from || !rangeEnd) return { lo: null, hi: null };
+        return from <= rangeEnd
+            ? { lo: from, hi: rangeEnd }
+            : { lo: rangeEnd, hi: from };
+    };
+
+    const { lo, hi } = getRangeBounds();
+
+    const isInRange = (d: Date) => !!lo && !!hi && d > lo && d < hi;
+    const isStart = (d: Date) => !!from && isSameDay(d, from);
+    const isEnd = (d: Date) => !!rangeEnd && !isSameDay(d, from ?? new Date(0)) && isSameDay(d, rangeEnd);
+    const isToday = (d: Date) => isSameDay(d, new Date());
+
+    return (
+        <div className="select-none w-full">
+            {/* Day headers */}
+            <div className="grid grid-cols-7 mb-1">
+                {DAYS.map(day => (
+                    <div key={day} className="text-center text-[10px] font-bold text-text-desc py-1 uppercase">
+                        {day}
+                    </div>
+                ))}
+            </div>
+
+            {/* Day cells */}
+            <div className="grid grid-cols-7">
+                {cells.map((d, idx) => {
+                    if (!d) return <div key={`e-${idx}`} className="h-9" />;
+
+                    const inRange = isInRange(d);
+                    const start = isStart(d);
+                    const end = isEnd(d);
+                    const today = isToday(d);
+                    const highlighted = start || end;
+                    const colIdx = idx % 7; // 0=Mon..6=Sun
+
+                    // Determine whether range bg should be capped on edges
+                    const rangeCapLeft = (start && rangeEnd && !isSameDay(d, rangeEnd ?? new Date(0))) || (inRange && colIdx === 0);
+                    const rangeCapRight = (end) || (inRange && colIdx === 6);
+                    const isSingleDay = start && end;
+
+                    return (
+                        <div
+                            key={`d-${idx}`}
+                            className={cn(
+                                'relative h-9 flex items-center justify-center',
+                                // Range fill strip
+                                (inRange) && 'bg-primary/10 dark:bg-primary/15',
+                                (start && hi && !isSameDay(d, hi)) && 'bg-primary/10 dark:bg-primary/15 rounded-l-full',
+                                (end) && 'bg-primary/10 dark:bg-primary/15 rounded-r-full',
+                                (inRange && colIdx === 0) && 'rounded-l-full',
+                                (inRange && colIdx === 6) && 'rounded-r-full',
+                                isSingleDay && 'rounded-full',
+                            )}
+                            onMouseEnter={() => onDayHover(d)}
+                            onMouseLeave={() => onDayHover(null)}
+                        >
+                            <button
+                                onClick={() => onDayClick(d)}
+                                className={cn(
+                                    'relative z-10 w-8 h-8 rounded-full text-[12px] font-medium transition-all duration-150 cursor-pointer flex items-center justify-center',
+                                    highlighted
+                                        ? 'bg-primary text-white font-bold shadow-lg scale-105'
+                                        : 'text-text-main hover:bg-primary/15 dark:hover:bg-primary/25',
+                                    today && !highlighted && 'ring-2 ring-primary/40 font-semibold text-primary',
+                                )}
+                            >
+                                {d.getDate()}
+                            </button>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+export function DateRangeCalendar({ from, to, onChange }: DateRangeCalendarProps) {
+    const today = new Date();
+    const [leftMonth, setLeftMonth] = useState({ year: today.getFullYear(), month: today.getMonth() });
+    const [hovered, setHovered] = useState<Date | null>(null);
+    const [pendingFrom, setPendingFrom] = useState<Date | null>(null);
+
+    const fromDate = parseDate(from);
+    const toDate = parseDate(to);
+
+    const rightMonth = leftMonth.month === 11
+        ? { year: leftMonth.year + 1, month: 0 }
+        : { year: leftMonth.year, month: leftMonth.month + 1 };
+
+    const goLeft = () => {
+        setLeftMonth(prev =>
+            prev.month === 0
+                ? { year: prev.year - 1, month: 11 }
+                : { year: prev.year, month: prev.month - 1 }
+        );
+    };
+
+    const goRight = () => {
+        setLeftMonth(prev =>
+            prev.month === 11
+                ? { year: prev.year + 1, month: 0 }
+                : { year: prev.year, month: prev.month + 1 }
+        );
+    };
+
+    const handleDayClick = useCallback((d: Date) => {
+        if (!pendingFrom) {
+            setPendingFrom(d);
+            onChange(fmt(d), '');
+        } else {
+            const lo = pendingFrom <= d ? pendingFrom : d;
+            const hi = pendingFrom <= d ? d : pendingFrom;
+            onChange(fmt(lo), fmt(hi));
+            setPendingFrom(null);
+        }
+    }, [pendingFrom, onChange]);
+
+    const selecting = !!pendingFrom;
+    const displayFrom = pendingFrom ?? fromDate;
+
+    const formatDisplay = (d: Date | null) => {
+        if (!d) return '—';
+        return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+    };
+
+    return (
+        <div className="flex flex-col gap-3 w-full">
+            {/* Sticky Month Navigator */}
+            <div className="flex items-center justify-between">
+                <button
+                    onClick={goLeft}
+                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-surface-border hover:bg-surface-muted transition-all cursor-pointer text-text-desc"
+                >
+                    <ChevronLeft size={13} />
+                </button>
+                <div className="flex gap-4 flex-1 justify-around px-2">
+                    <span className="text-[11px] font-bold text-text-main text-center min-w-[100px]">
+                        {MONTHS[leftMonth.month]} {leftMonth.year}
+                    </span>
+                    <span className="text-[11px] font-bold text-text-main text-center min-w-[100px]">
+                        {MONTHS[rightMonth.month]} {rightMonth.year}
+                    </span>
+                </div>
+                <button
+                    onClick={goRight}
+                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-surface-border hover:bg-surface-muted transition-all cursor-pointer text-text-desc"
+                >
+                    <ChevronRight size={13} />
+                </button>
+            </div>
+
+            {/* Two Month Grids */}
+            <div className="flex gap-3">
+                <div className="flex-1 min-w-0">
+                    <MonthGrid
+                        year={leftMonth.year}
+                        month={leftMonth.month}
+                        from={displayFrom}
+                        to={toDate}
+                        hovered={hovered}
+                        selecting={selecting}
+                        onDayClick={handleDayClick}
+                        onDayHover={setHovered}
+                    />
+                </div>
+                <div className="w-px bg-surface-border shrink-0 self-stretch" />
+                <div className="flex-1 min-w-0">
+                    <MonthGrid
+                        year={rightMonth.year}
+                        month={rightMonth.month}
+                        from={displayFrom}
+                        to={toDate}
+                        hovered={hovered}
+                        selecting={selecting}
+                        onDayClick={handleDayClick}
+                        onDayHover={setHovered}
+                    />
+                </div>
+            </div>
+
+            {/* Status bar */}
+            <div className="border-t border-surface-border pt-2 mt-1">
+                <div className="flex items-stretch gap-0 rounded-xl overflow-hidden border border-surface-border">
+                    <div className={cn(
+                        'flex-1 flex flex-col px-3 py-2 transition-colors',
+                        selecting ? 'bg-primary/5' : 'bg-surface-base',
+                    )}>
+                        <span className="text-[9px] font-bold uppercase tracking-wider mb-0.5"
+                            style={{ color: 'var(--color-primary)' }}>
+                            Mulai
+                        </span>
+                        <span className={cn(
+                            'text-[12px] font-semibold',
+                            displayFrom ? 'text-text-main' : 'text-text-desc'
+                        )}>
+                            {formatDisplay(displayFrom)}
+                        </span>
+                    </div>
+                    <div className="w-px bg-surface-border" />
+                    <div className={cn(
+                        'flex-1 flex flex-col px-3 py-2 transition-colors',
+                        !selecting && toDate ? 'bg-primary/5' : 'bg-surface-base',
+                    )}>
+                        <span className="text-[9px] font-bold uppercase tracking-wider mb-0.5"
+                            style={{ color: 'var(--color-primary)' }}>
+                            Sampai
+                        </span>
+                        <span className={cn(
+                            'text-[12px] font-semibold',
+                            toDate && !selecting ? 'text-text-main' : 'text-text-desc'
+                        )}>
+                            {toDate && !selecting ? formatDisplay(toDate) : selecting ? 'Pilih tanggal…' : '—'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

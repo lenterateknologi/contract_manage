@@ -2,6 +2,7 @@
 
 namespace Database\Seeders\Business;
 
+use App\Models\Company;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\Role;
@@ -95,6 +96,27 @@ class UserSeeder extends Seeder
                     }
                 }
 
+                // Dapatkan detail company secara dinamis untuk konsistensi group & region
+                $companyId = $u['company_id'] ?? null;
+                $companyGroupId = $u['company_group_id'] ?? null;
+                $regionId = $u['region_id'] ?? null;
+
+                if ($companyId) {
+                    $company = Company::find($companyId);
+                    if ($company) {
+                        $companyGroupId = $company->company_group_id;
+                        $regionId = $company->region_id;
+                    }
+                }
+
+                // Resolusi relasi department dari division jika department_id kosong
+                if (! $deptId && $divisionId) {
+                    $divObj = Division::find($divisionId);
+                    if ($divObj) {
+                        $deptId = $divObj->department_id;
+                    }
+                }
+
                 User::updateOrCreate(
                     ! empty($u['id']) ? ['id' => $u['id']] : ['username' => $u['username']],
                     [
@@ -104,11 +126,11 @@ class UserSeeder extends Seeder
                         'email' => $email,
                         'password' => $password,
                         'phone_number' => $u['phone_number'] ?? null,
-                        'company_id' => $u['company_id'] ?? null,
-                        'company_group_id' => $u['company_group_id'] ?? null,
-                        'department_id' => $deptId ?? $divisionId,
-                        'division_id' => $divisionId ?? $deptId,
-                        'region_id' => $u['region_id'] ?? null,
+                        'company_id' => $companyId,
+                        'company_group_id' => $companyGroupId,
+                        'department_id' => $deptId,
+                        'division_id' => $divisionId,
+                        'region_id' => $regionId,
                         'role_id' => $roleId,
                         'is_active' => $u['is_active'] ?? true,
                         'is_employee' => $u['is_employee'] ?? true,

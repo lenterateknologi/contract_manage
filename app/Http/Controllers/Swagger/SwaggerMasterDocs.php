@@ -1108,4 +1108,3 @@ class SwaggerMasterDocs
     )]
     public function masterDataSyncClean() {}
 }
-

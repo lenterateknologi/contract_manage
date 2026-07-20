@@ -107,7 +107,7 @@
     --popover: #0f172a;
     --popover-foreground: #f8fafc;
     --muted: #1e293b; /* Slate 800 */
-    --muted-foreground: #94a3b8;
+    --muted-foreground: #cbd5e1;
 
     /* Accents & Status */
     --accent: #1e293b;
@@ -139,9 +139,9 @@
     --surface-border: #1e293b;
 
     /* Text Semantic */
-    --text-main: #f8fafc;
-    --text-desc: #94a3b8;
-    --text-soft: #64748b;
+    --text-main: #ffffff;
+    --text-desc: #e2e8f0;
+    --text-soft: #cbd5e1;
 
     /* Role & Status Palette (Dark Semantic) */
     --role-admin-bg: rgba(139, 92, 246, 0.2);

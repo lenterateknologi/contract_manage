@@ -174,10 +174,10 @@ export function DataTable<T extends Record<string, any>>({
     }, [data, localSearch, searchKey, onSearchChange]);
 
     return (
-        <div className="flex flex-col  antialiased text-foreground select-none animate-in fade-in duration-200">
+        <div className="flex flex-col flex-1 min-h-0 h-full antialiased text-foreground select-none animate-in fade-in duration-200">
             {/* --- TOP HEADER SECTION --- */}
             {(title || onSearchChange || localSearch !== undefined || headerActions || filters.length > 0) && (
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 ">
+                <div>
                     {/* Left side: Search input & Filter */}
                     <div className="flex items-center gap-3">
                         {onSearchChange !== undefined && (
@@ -245,15 +245,14 @@ export function DataTable<T extends Record<string, any>>({
 
             {/* --- TABLE CONTENT AREA --- */}
             <div className={cn(
-                "overflow-hidden bg-surface-base/40 backdrop-blur-sm",
-
+                "flex-1 min-h-0 bg-surface-base/40 backdrop-blur-sm flex flex-col overflow-hidden",
             )}>
-                <div className="overflow-x-auto custom-scrollbar  min-h-[calc(100vh-280px)]">
+                <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead>
-                            <tr className="border-b border-surface-border/60 bg-surface-muted/40 backdrop-blur-md select-none">
+                            <tr className="border-b border-surface-border/60 select-none">
                                 {onSelectionChange && (
-                                    <th className="py-3.5 px-4 w-10">
+                                    <th className="py-3.5 px-4 w-10 sticky top-0 z-10 bg-surface-muted/90 backdrop-blur-md">
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
@@ -268,7 +267,7 @@ export function DataTable<T extends Record<string, any>>({
                                         <th
                                             key={idx}
                                             className={cn(
-                                                "py-3.5 px-4 text-[11px] font-medium uppercase  text-text-desc select-none",
+                                                "py-3.5 px-4 text-[11px] font-medium uppercase text-text-desc select-none sticky top-0 z-10 bg-surface-muted/90 backdrop-blur-md",
                                                 isSortable && "cursor-pointer hover:text-text-main transition-colors",
                                                 col.className
                                             )}
@@ -291,7 +290,7 @@ export function DataTable<T extends Record<string, any>>({
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-semibold uppercase  text-text-desc select-none">Aksi</th>}
+                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-semibold uppercase text-text-desc select-none sticky top-0 z-10 bg-surface-muted/90 backdrop-blur-md">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">
@@ -320,40 +319,58 @@ export function DataTable<T extends Record<string, any>>({
                                     </td>
                                 </tr>
                             ) : (
-                                displayData.map((row, rowIdx) => (
-                                    <tr
-                                        key={row.id || rowIdx}
-                                        onClick={() => onRowClick?.(row)}
-                                        className={cn(
-                                            "border-b border-surface-border/30 transition-all hover:bg-surface-muted/30 cursor-pointer group select-none",
-                                            activeSelectedRows.some(r => r.id === row.id) ? "bg-surface-muted/50" : ""
-                                        )}
-                                    >
-                                        {onSelectionChange && (
-                                            <td className="py-3.5 px-4 w-10" onClick={(e) => e.stopPropagation()}>
-                                                {(!isRowSelectable || isRowSelectable(row)) ? (
-                                                    <Checkbox
-                                                        checked={activeSelectedRows.some(r => r.id === row.id)}
-                                                        onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
-                                                        className="border-surface-border"
-                                                    />
-                                                ) : (
-                                                    <span className="text-text-soft/20 text-xs select-none flex items-center justify-center font-bold">—</span>
-                                                )}
-                                            </td>
-                                        )}
-                                        {columns.map((col, colIdx) => (
-                                            <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-normal text-text-main", col.className)}>
-                                                {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
-                                            </td>
-                                        ))}
-                                        {rowActions && (
-                                            <td className="py-3.5 px-4 text-right align-middle" onClick={(e) => e.stopPropagation()}>
-                                                {rowActions(row)}
-                                            </td>
-                                        )}
-                                    </tr>
-                                ))
+                                displayData.map((row, rowIdx) => {
+                                    if (row.isParent) {
+                                        return (
+                                            <tr
+                                                key={row.id || rowIdx}
+                                                onClick={() => onRowClick?.(row)}
+                                                className="border-y border-surface-border/40 transition-all hover:bg-surface-muted/30 cursor-pointer group select-none bg-surface-muted/20"
+                                            >
+                                                <td
+                                                    colSpan={columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0)}
+                                                    className="py-2 px-4 align-middle text-sm font-semibold text-text-main"
+                                                >
+                                                    {columns[0].cell ? columns[0].cell(row) : (row.name || '')}
+                                                </td>
+                                            </tr>
+                                        );
+                                    }
+                                    return (
+                                        <tr
+                                            key={row.id || rowIdx}
+                                            onClick={() => onRowClick?.(row)}
+                                            className={cn(
+                                                "border-b border-surface-border/30 transition-all hover:bg-surface-muted/30 cursor-pointer group select-none",
+                                                activeSelectedRows.some(r => r.id === row.id) ? "bg-surface-muted/50" : ""
+                                            )}
+                                        >
+                                            {onSelectionChange && (
+                                                <td className="py-3.5 px-4 w-10" onClick={(e) => e.stopPropagation()}>
+                                                    {(!isRowSelectable || isRowSelectable(row)) ? (
+                                                        <Checkbox
+                                                            checked={activeSelectedRows.some(r => r.id === row.id)}
+                                                            onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
+                                                            className="border-surface-border"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-text-soft/20 text-xs select-none flex items-center justify-center font-bold">—</span>
+                                                    )}
+                                                </td>
+                                            )}
+                                            {columns.map((col, colIdx) => (
+                                                <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-normal text-text-main", col.className)}>
+                                                    {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
+                                                </td>
+                                            ))}
+                                            {rowActions && (
+                                                <td className="py-3.5 px-4 text-right align-middle" onClick={(e) => e.stopPropagation()}>
+                                                    {rowActions(row)}
+                                                </td>
+                                            )}
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>

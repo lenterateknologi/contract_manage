@@ -51,21 +51,21 @@ export default function AuthSplitLayout({ children, title, description, isSucces
     const rightTransform = isMoving ? 'translate-x-full' : 'translate-x-0';
 
     return (
-        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-slate-50 text-slate-900">
+        <div className="relative flex min-h-svh w-full items-center justify-center overflow-hidden bg-surface-muted dark:bg-background text-text-main">
             {/* Split Screen Container */}
             <div className="flex min-h-svh w-full overflow-hidden">
                 {/* Left Panel: Form Content - Using Theme Colors */}
                 <div
                     className={cn(
-                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 left-0 z-40 flex w-full flex-col items-center justify-center border-r border-slate-200 bg-white shadow-xl transition-all duration-[800ms] md:w-1/2',
+                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 left-0 z-40 flex w-full flex-col items-center justify-center border-r border-surface-border bg-surface-base shadow-xl transition-all duration-[800ms] md:w-1/2',
                         leftTransform,
                     )}
                 >
                     {/* Main Content Area - Vertically Centered and High-Density */}
                     <div className="w-full max-w-[380px] p-6 md:max-w-[480px] lg:p-8">
                         <div className="mb-8 space-y-1.5 text-center md:text-left">
-                            <h1 className="text-2xl leading-tight font-bold tracking-tight text-slate-900">{title || 'Selamat Datang!'}</h1>
-                            <p className="text-sm leading-normal font-medium text-slate-500">
+                            <h1 className="text-2xl leading-tight font-bold tracking-tight text-text-main">{title || 'Selamat Datang!'}</h1>
+                            <p className="text-sm leading-normal font-medium text-text-desc">
                                 {description || 'Silakan lengkapi data Anda untuk melanjutkan.'}
                             </p>
                         </div>
@@ -93,7 +93,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
 
             {/* Success/Navigation Overlay - High Contrast */}
             {(isSuccess || isExiting) && (
-                <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-white/40 backdrop-blur-[4px]">
+                <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-background/40 backdrop-blur-[4px]">
                     <div className="animate-in zoom-in fade-in flex flex-col items-center gap-6 transition-all duration-300">
                         {/* Lottie Animation Player */}
                         <div className="relative flex h-32 w-32 items-center justify-center">
@@ -103,7 +103,7 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                                 }}
                             />
                         </div>
-                        <span className="text-sm font-bold tracking-[0.4em] text-slate-900 uppercase">{isSuccess ? 'BERHASIL MASUK' : 'MEMUAT'}</span>
+                        <span className="text-sm font-bold tracking-[0.4em] text-text-main uppercase">{isSuccess ? 'BERHASIL MASUK' : 'MEMUAT'}</span>
                     </div>
                 </div>
             )}

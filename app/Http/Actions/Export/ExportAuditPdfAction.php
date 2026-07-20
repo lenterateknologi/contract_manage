@@ -4,9 +4,9 @@ namespace App\Http\Actions\Export;
 
 use App\Models\Contract;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Spatie\Browsershot\Browsershot;
 
@@ -17,17 +17,34 @@ class ExportAuditPdfAction
         set_time_limit(180);
 
         try {
-            $printUrl = URL::temporarySignedRoute(
-                'contracts.audit.document.print',
-                now()->addMinutes(15),
-                ['id' => $contract->id, 'search' => $request->search, 'actor_id' => $request->actor_id, 'date_from' => $request->date_from, 'date_to' => $request->date_to],
-            );
+            $query = $contract->histories()->with('actor');
 
-            if (app()->environment('local')) {
-                $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
+            if ($request->filled('search')) {
+                $query->where('description', 'like', '%'.$request->search.'%');
             }
 
-            $pdfContent = Browsershot::url($printUrl)
+            if ($request->filled('actor_id')) {
+                $query->where('actor_id', $request->actor_id);
+            }
+
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            $histories = $query->orderBy('created_at', 'asc')->get();
+
+            $html = view('pdf.contract-audit', [
+                'contract' => $contract,
+                'histories' => $histories,
+                'generated_at' => now()->format('d/m/Y H:i'),
+                'generated_by' => $request->generated_by ?? (Auth::user() ? Auth::user()->name : 'System'),
+            ])->render();
+
+            $pdfContent = Browsershot::html($html)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
                 ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
@@ -48,7 +65,7 @@ class ExportAuditPdfAction
                 ->setDelay(500);
 
             $pdfDir = 'contracts/'.$contract->id.'/pdfs';
-            $pdfFileName = 'Audit_Trail_'.Str::slug($contract->contract_no).'_'.md5($printUrl).'.pdf';
+            $pdfFileName = 'Audit_Trail_'.Str::slug($contract->contract_no ?: 'contract').'_'.time().'.pdf';
             $pdfPath = $pdfDir.'/'.$pdfFileName;
             $disposition = 'attachment';
 

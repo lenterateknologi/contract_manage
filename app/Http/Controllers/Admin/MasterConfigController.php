@@ -29,6 +29,7 @@ use App\Models\FormTemplate;
 use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\NumberingFormat;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -323,8 +324,32 @@ class MasterConfigController extends Controller
     public function storeModule(StoreModuleRequest $request)
     {
         $data = $request->validated();
+        $roleId = $data['role_id'] ?? null;
+        unset($data['role_id']);
+
         $data['created_by'] = $data['updated_by'] = Auth::id();
-        Module::create($data);
+        $module = Module::create($data);
+
+        // ponytail: Secara otomatis buat record AccessModule untuk setiap role
+        $roles = Role::all();
+        foreach ($roles as $role) {
+            $isTargetRole = ($roleId && $role->id === $roleId);
+            $isAdmin = in_array($role->name, ['Admin', 'Super Admin']);
+
+            AccessModule::create([
+                'role_id' => $role->id,
+                'module_id' => $module->id,
+                'module_group_id' => $module->module_group_id,
+                'can_read' => $isTargetRole || $isAdmin,
+                'can_create' => $isTargetRole || $isAdmin,
+                'can_update' => $isTargetRole || $isAdmin,
+                'can_delete' => $isTargetRole || $isAdmin,
+                'can_approve' => $isTargetRole || $isAdmin,
+                'can_bulk_approve' => $isTargetRole || $isAdmin,
+                'can_bulk_delete' => $isTargetRole || $isAdmin,
+                'created_by' => Auth::id(),
+            ]);
+        }
 
         return back()->with('success', 'Module berhasil dibuat.');
     }
@@ -334,6 +359,13 @@ class MasterConfigController extends Controller
         $data = $request->validated();
         $data['updated_by'] = Auth::id();
         $module->update($data);
+
+        // ponytail: Sync group ID ke access modules
+        if (isset($data['module_group_id'])) {
+            AccessModule::where('module_id', $module->id)->update([
+                'module_group_id' => $data['module_group_id'],
+            ]);
+        }
 
         return back()->with('success', 'Module berhasil diperbarui.');
     }

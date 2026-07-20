@@ -1,10 +1,10 @@
 import { DataTable } from '@/components/ui/tables/DataTable';
-import { Button } from '@/components/ui/buttons/Button';
+import { PageTable } from '@/components/ui/navigation/PageTable';
 import { cn } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
-import { Download } from 'lucide-react';
+import { Download, Loader2, History } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
 interface AuditLog {
@@ -25,6 +25,7 @@ interface AuditData {
 export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem[] }) {
     const [data, setData] = useState<AuditData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [exportLoading, setExportLoading] = useState(false);
     const [filters, setFilters] = useState({
         date_from: '',
         date_to: '',
@@ -62,11 +63,12 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
     }, []);
 
     const handleExport = () => {
+        setExportLoading(true);
         const params = new URLSearchParams();
         if (filters.date_from) params.append('date_from', filters.date_from);
         if (filters.date_to) params.append('date_to', filters.date_to);
         filters.creator_ids.forEach((id: string) => params.append('creator_ids[]', id));
-
+        setTimeout(() => setExportLoading(false), 2000);
         window.location.href = `/admin/reports/api/audit/export?${params.toString()}`;
     };
 
@@ -135,41 +137,73 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
     return (
         <>
             <Head title="Jejak Audit Sistem" />
-            <div className="bg-background flex flex-1 flex-col">
+            <PageTable
+                title="Jejak Audit Sistem"
+                subtitle="Daftar rekam jejak aktivitas transaksi dan perubahan data sistem"
+                icon={History}
+                filters={filterCategories}
+                activeFilters={filters}
+                onFilterChange={(key, val) => {
+                    const nextFilters = { ...filters, [key]: val, audit_page: 1 };
+                    setFilters(nextFilters);
+                    fetchData(nextFilters);
+                }}
+                onResetFilters={() => {
+                    const clear = {
+                        date_from: '',
+                        date_to: '',
+                        creator_ids: [],
+                        audit_page: 1,
+                    };
+                    setFilters(clear);
+                    fetchData(clear);
+                }}
+                totalResults={pagination.total}
+                actions={
+                    <button
+                        onClick={handleExport}
+                        disabled={exportLoading}
+                        className={cn(
+                            "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-150 shadow-sm",
+                            "border-border bg-white text-foreground hover:bg-muted/50 hover:border-border/80",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                            "disabled:opacity-60 disabled:cursor-not-allowed"
+                        )}
+                    >
+                        {exportLoading
+                            ? <Loader2 size={13} className="animate-spin text-muted-foreground" />
+                            : <Download size={13} className="text-muted-foreground" />
+                        }
+                        <span>Export</span>
+                        <span className="text-muted-foreground font-normal">Excel / CSV</span>
+                    </button>
+                }
+                pagination={{
+                    currentPage: pagination.current_page || 1,
+                    lastPage: pagination.last_page || 1,
+                    total: pagination.total || 0,
+                    from: (pagination.current_page - 1) * (pagination.per_page || 10) + 1,
+                    to: Math.min(pagination.current_page * (pagination.per_page || 10), pagination.total || 0),
+                    perPage: pagination.per_page || 10,
+                    onPageChange: (page) => {
+                        const nextFilters = { ...filters, audit_page: page };
+                        setFilters(nextFilters);
+                        fetchData(nextFilters);
+                    },
+                    onPerPageChange: (perPage) => {
+                        const nextFilters = { ...filters, audit_page: 1, per_page: perPage };
+                        setFilters(nextFilters);
+                        fetchData(nextFilters);
+                    }
+                }}
+            >
                 <DataTable
-                    title="Jejak Audit Sistem"
                     columns={columns}
                     data={data?.histories || []}
                     loading={loading}
                     borderless={true}
-                    pagination={{
-                        currentPage: pagination.current_page,
-                        lastPage: pagination.last_page,
-                        total: pagination.total,
-                        onPageChange: (page) => {
-                            const nextFilters = { ...filters, audit_page: page };
-                            setFilters(nextFilters);
-                            fetchData(nextFilters);
-                        }
-                    }}
-                    filters={filterCategories}
-                    activeFilters={filters}
-                    onFilterChange={(newFilters) => {
-                        const nextFilters = { ...filters, ...newFilters, audit_page: 1 };
-                        setFilters(nextFilters);
-                        fetchData(nextFilters);
-                    }}
-                    headerActions={
-                        <Button
-                            variant="white"
-                            onClick={handleExport}
-                            className="text-xs py-1.5 px-3 h-8 hover:bg-surface-muted text-text-main rounded-xl flex items-center gap-1.5 font-bold uppercase tracking-wider bg-white border border-surface-border shadow-xs"
-                        >
-                            <Download size={13} /> Export Excel / CSV
-                        </Button>
-                    }
                 />
-            </div>
+            </PageTable>
         </>
     );
 }
