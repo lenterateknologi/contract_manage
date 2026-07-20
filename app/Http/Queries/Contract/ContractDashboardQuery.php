@@ -218,6 +218,20 @@ class ContractDashboardQuery
             ? round(($totalRenewed / $expiredContracts) * 100, 1)
             : 100;
 
+        $todayStr = now()->toDateString();
+        $todayContracts = (clone $baseQuery)->whereDate('created_at', $todayStr)->get(['status']);
+        $todayUpdatedContracts = (clone $baseQuery)->whereDate('updated_at', $todayStr)->get(['status']);
+
+        $todayTotal = $todayContracts->count();
+        $todayInProcess = $todayContracts->whereIn('status', [
+            'draft', 'in_review', 'pending', 'revision'
+        ])->count();
+        $todayCompleted = $todayUpdatedContracts->whereIn('status', [
+            'approved', 'locked'
+        ])->count();
+        $todayRejected = $todayUpdatedContracts->where('status', 'rejected')->count();
+        $todayApproved = $todayUpdatedContracts->where('status', 'approved')->count();
+
         return [
             'metrics' => [
                 'totalContracts' => $totalContracts,
@@ -231,10 +245,11 @@ class ContractDashboardQuery
                 'avgCycleTime' => $avgDays,
             ],
             'summary' => [
-                'total' => $totalContracts,
+                'total' => $todayTotal,
                 'in_process' => $inProcessContracts,
-                'active' => $activeContracts,
-                'expiring_soon' => $expiringSoonContracts,
+                'completed' => $todayCompleted,
+                'rejected' => $todayRejected,
+                'approved' => $todayApproved,
             ],
             'activePeriod' => $period,
             'submissionTypeDistribution' => $submissionTypeDistribution,
@@ -262,7 +277,72 @@ class ContractDashboardQuery
             'categoryTraffic' => $categoryTraffic,
             'renewalCompletionRate' => $renewalCompletionRate,
             'departmentTraffic' => $departmentTraffic,
+            'dailyTrend' => $this->getDailyTrend($baseQuery),
+            'overviewDailyTrend' => $this->getOverviewDailyTrend($baseQuery),
+            'masterDataCounts' => [
+                'users' => \App\Models\User::count(),
+                'companyGroups' => \App\Models\CompanyGroup::count(),
+                'companies' => \App\Models\Company::count(),
+                'departments' => \App\Models\Department::count(),
+                'divisions' => \App\Models\Division::count(),
+                'vendors' => \App\Models\Vendor::count(),
+                'organizationTree' => $this->getOrganizationTree(),
+            ],
         ];
+    }
+
+    private function getOrganizationTree()
+    {
+        $groups = \App\Models\CompanyGroup::with(['companies.region'])->get();
+
+        $tree = [];
+        foreach ($groups as $group) {
+            $groupNode = [
+                'id' => 'g_'.$group->id,
+                'name' => $group->name,
+                'code' => $group->code,
+                'type' => 'Group',
+                'children' => [],
+            ];
+
+            $companiesByRegion = $group->companies->groupBy('region_id');
+            foreach ($companiesByRegion as $regionId => $companies) {
+                if (! $regionId) {
+                    $regionName = 'No Region';
+                    $regionCode = '-';
+                    $rId = 'null';
+                } else {
+                    $region = $companies->first()->region;
+                    $regionName = $region ? $region->name : 'Unknown Region';
+                    $regionCode = $region ? $region->code : '-';
+                    $rId = $regionId;
+                }
+
+                $regionNode = [
+                    'id' => 'r_'.$rId.'_g_'.$group->id,
+                    'name' => $regionName,
+                    'code' => $regionCode,
+                    'type' => 'Region',
+                    'children' => [],
+                ];
+
+                foreach ($companies as $company) {
+                    $regionNode['children'][] = [
+                        'id' => 'c_'.$company->id,
+                        'name' => $company->name,
+                        'code' => $company->code,
+                        'type' => 'Company',
+                        'children' => [],
+                    ];
+                }
+
+                $groupNode['children'][] = $regionNode;
+            }
+
+            $tree[] = $groupNode;
+        }
+
+        return $tree;
     }
 
     // -------------------------------------------------------------------------
@@ -635,6 +715,119 @@ class ContractDashboardQuery
             ])
             ->values()
             ->all();
+    }
+
+    private function getOverviewDailyTrend(QueryBuilder $baseQuery): array
+    {
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $allContracts = (clone $baseQuery)->get(['created_at', 'updated_at', 'status']);
+
+        $trend = [];
+        $daysInMonth = now()->daysInMonth;
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $date = now()->startOfMonth()->day($day);
+            if ($date->isFuture()) {
+                continue;
+            }
+            $dateKey = $date->toDateString();
+
+            // 1. Pengajuan Per Hari (contracts created on this day)
+            $total = $allContracts->filter(function($c) use ($dateKey) {
+                return \Carbon\Carbon::parse($c->created_at)->toDateString() === $dateKey;
+            })->count();
+
+            // 2. Sedang Diproses (created on or before D, not yet resolved by D)
+            $inProcess = $allContracts->filter(function($c) use ($dateKey) {
+                $createdDate = \Carbon\Carbon::parse($c->created_at)->toDateString();
+                if ($createdDate > $dateKey) {
+                    return false;
+                }
+                $isResolved = in_array($c->status, ['approved', 'rejected', 'locked']);
+                if (!$isResolved) {
+                    return true;
+                }
+                $resolvedDate = \Carbon\Carbon::parse($c->updated_at)->toDateString();
+                return $resolvedDate > $dateKey;
+            })->count();
+
+            // 3. Diselesaikan Hari Ini (resolved on D)
+            $completed = $allContracts->filter(function($c) use ($dateKey) {
+                $updatedDate = \Carbon\Carbon::parse($c->updated_at)->toDateString();
+                return $updatedDate === $dateKey && in_array($c->status, ['approved', 'locked']);
+            })->count();
+
+            // 4. Ditolak Hari Ini (rejected on D)
+            $rejected = $allContracts->filter(function($c) use ($dateKey) {
+                $updatedDate = \Carbon\Carbon::parse($c->updated_at)->toDateString();
+                return $updatedDate === $dateKey && $c->status === 'rejected';
+            })->count();
+
+            // 5. Approved Hari Ini (approved on D)
+            $approved = $allContracts->filter(function($c) use ($dateKey) {
+                $updatedDate = \Carbon\Carbon::parse($c->updated_at)->toDateString();
+                return $updatedDate === $dateKey && $c->status === 'approved';
+            })->count();
+
+            $trend[] = [
+                'date' => $date->format('d'),
+                'full_date' => $date->translatedFormat('d M Y'),
+                'Total Pengajuan' => $total,
+                'Sedang Diproses' => $inProcess,
+                'Diselesaikan' => $completed,
+                'Ditolak' => $rejected,
+                'Approved' => $approved,
+            ];
+        }
+
+        return $trend;
+    }
+
+    private function getDailyTrend(QueryBuilder $baseQuery): array
+    {
+        $contracts = (clone $baseQuery)
+            ->get(['created_at', 'contract_type_id'])
+            ->map(function ($c) {
+                $c->date_key = \Carbon\Carbon::parse($c->created_at)->toDateString();
+                return $c;
+            });
+
+        $allTypes = \App\Models\ContractType::all();
+
+        $trend = [];
+        $daysInMonth = now()->daysInMonth;
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $date = now()->startOfMonth()->day($day);
+            if ($date->isFuture()) {
+                continue;
+            }
+            $dateKey = $date->toDateString();
+            
+            // Cumulative contracts created on or before D
+            $contractsUpToDay = $contracts->filter(function ($c) use ($dateKey) {
+                return $c->date_key <= $dateKey;
+            });
+
+            $dayData = [
+                'date' => $date->format('d'),
+                'full_date' => $date->translatedFormat('d M Y'),
+            ];
+
+            foreach ($allTypes as $type) {
+                $dayData['type_' . $type->id] = 0;
+            }
+            $dayData['type_null'] = 0;
+
+            foreach ($contractsUpToDay as $contract) {
+                $typeKey = $contract->contract_type_id ? 'type_' . $contract->contract_type_id : 'type_null';
+                $dayData[$typeKey] = ($dayData[$typeKey] ?? 0) + 1;
+            }
+
+            $trend[] = $dayData;
+        }
+
+        return $trend;
     }
 
     /** @return array<int, array<string, mixed>> */

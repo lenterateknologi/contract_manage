@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Core;
 use App\Core\Crud\Fields\Section;
 use App\Core\Crud\Resources\CompanyGroupResource;
 use App\Core\Crud\Resources\CompanyResource;
+use App\Core\Crud\Resources\ContractFilterTemplateResource;
 use App\Core\Crud\Resources\ContractStatusResource;
 use App\Core\Crud\Resources\ContractTypeResource;
 use App\Core\Crud\Resources\DepartmentResource;
@@ -41,6 +42,7 @@ class ResourceController extends Controller
         'companies' => CompanyResource::class,
         'vendors' => VendorResource::class,
         'divisions' => DivisionResource::class,
+        'contract-filter-templates' => ContractFilterTemplateResource::class,
     ];
 
     /**

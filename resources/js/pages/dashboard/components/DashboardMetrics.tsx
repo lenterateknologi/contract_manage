@@ -9,6 +9,7 @@ import React, { useMemo, useState, lazy, Suspense } from 'react';
 // Lazy load heavy dashboard tabs
 const OverviewTab = lazy(() => import('@/pages/dashboard/components/OverviewTab').then(m => ({ default: m.OverviewTab })));
 const WorkloadTab = lazy(() => import('@/pages/dashboard/components/WorkloadTab').then(m => ({ default: m.WorkloadTab })));
+const MasterDataTab = lazy(() => import('@/pages/dashboard/components/MasterDataTab').then(m => ({ default: m.MasterDataTab })));
 
 const TabLoading = () => (
     <div className="flex h-[400px] w-full items-center justify-center">
@@ -135,52 +136,9 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
     );
 }
 
-export function DashboardMetrics({ metrics }: { metrics: any }) {
+export function DashboardMetrics({ metrics, activeTab }: { metrics: any; activeTab: 'overview' | 'workload' | 'master_data' }) {
     if (!metrics) return null;
 
-    const {
-        filters = {},
-        regions = [],
-        vendors = [],
-        departments = [],
-        types = [],
-        users = [],
-        companyGroups = [],
-        companies = [],
-        auth,
-    } = usePage<any>().props;
-
-    const roleName = auth?.user?.role || 'Staff';
-    const hasFullAccess = ['Admin', 'Super Admin', 'Director', 'CEO', 'VP'].includes(roleName);
-    const isManager = roleName === 'Manager';
-    const hasDepartmentAccess = !hasFullAccess && !isManager;
-
-    const isAdmin = hasFullAccess;
-
-    // Filter values mapped from Inertia props
-    const activeFilters = useMemo(
-        () => ({
-            region_ids: ensureArrayFilter(filters.region_ids),
-            company_group_ids: ensureArrayFilter(filters.company_group_ids),
-            company_ids: ensureArrayFilter(filters.company_ids),
-            department_ids: ensureArrayFilter(filters.department_ids),
-        }),
-        [filters],
-    );
-
-    const handleFilterChange = (key: string, value: any) => {
-        const newParams: any = { ...filters, view: 'dashboard' };
-
-        if (Array.isArray(value)) {
-            newParams[key] = value.join(',');
-        } else {
-            newParams[key] = value;
-        }
-
-        router.get('/contracts', newParams, { preserveState: true, preserveScroll: true });
-    };
-
-    const [activeTab, setActiveTab] = useState<'overview' | 'workload'>('overview');
     const handleNavigate = (targetView: string, params?: any) => {
         if (targetView === 'pending') {
             router.get('/contracts/pending', params);
@@ -195,21 +153,6 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
 
     return (
         <div className="animate-in fade-in slide-in-from-top-4 space-y-6 duration-500 select-none">
-            {/* Premium Chip Navigation */}
-            <div className="flex flex-col justify-between gap-4 pb-2 md:flex-row md:items-center">
-                <div className="flex scrollbar-none items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-                    <DashboardTab
-                        active={activeTab === 'overview'}
-                        onClick={() => setActiveTab('overview')}
-                        label="Ringkasan"
-                        icon={LayoutDashboard}
-                    />
-                    <DashboardTab active={activeTab === 'workload'} onClick={() => setActiveTab('workload')} label="Beban Kerja" icon={Briefcase} />
-                </div>
-
-
-            </div>
-
             {/* Tab Contents with Premium Transitions */}
             <div className="transition-all duration-300">
                 <Suspense fallback={<TabLoading />}>
@@ -224,13 +167,19 @@ export function DashboardMetrics({ metrics }: { metrics: any }) {
                             <WorkloadTab data={metrics} />
                         </div>
                     )}
+
+                    {activeTab === 'master_data' && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <MasterDataTab data={metrics} />
+                        </div>
+                    )}
                 </Suspense>
             </div>
         </div>
     );
 }
 
-function DashboardTab({ active, onClick, label, icon: Icon }: { active: boolean; onClick: () => void; label: string; icon: any }) {
+export function DashboardTab({ active, onClick, label, icon: Icon }: { active: boolean; onClick: () => void; label: string; icon: any }) {
     return (
         <button
             onClick={onClick}
@@ -249,3 +198,5 @@ function DashboardTab({ active, onClick, label, icon: Icon }: { active: boolean;
         </button>
     );
 }
+
+

@@ -75,25 +75,21 @@ class UserSeeder extends Seeder
                     $roleId = $defaultRole->id;
                 }
 
+                // Di database ini:
+                // - Tabel `m_departments` berisi data divisi dari `department.json` (select * from m_division).
+                // - Tabel `m_division` berisi data kloningan dari `m_departments`.
+                // Jadi, kolom `department_id` di user diisi dengan $u['division_id'] (dari JSON helpdesk).
+                // Dan kolom `division_id` di user diisi dengan ID dari tabel `m_division` yang ber-relasi ke department_id tersebut.
                 $deptId = null;
-                if (! empty($u['department_name'])) {
-                    $deptId = Department::whereRaw('lower(name) = ?', [strtolower($u['department_name'])])->value('id');
-                } elseif (! empty($u['department_id'])) {
-                    $deptId = isset($validDepartments[$u['department_id']]) ? $u['department_id'] : null;
+                if (! empty($u['division_id'])) {
+                    $deptId = isset($validDepartments[$u['division_id']]) ? $u['division_id'] : null;
+                } elseif (! empty($u['division_name'])) {
+                    $deptId = Department::whereRaw('lower(name) = ?', [strtolower($u['division_name'])])->value('id');
                 }
 
                 $divisionId = null;
-                if (! empty($u['division_name'])) {
-                    $divisionId = Division::whereRaw('lower(name) = ?', [strtolower($u['division_name'])])->value('id');
-                } elseif (! empty($u['division_id'])) {
-                    $divisionId = DB::table('m_division')->where('id', $u['division_id'])->exists() ? $u['division_id'] : null;
-                }
-
-                // Fallback: if division_id is empty, check if deptId exists in m_division
-                if (! $divisionId && $deptId) {
-                    if (DB::table('m_division')->where('id', $deptId)->exists()) {
-                        $divisionId = $deptId;
-                    }
+                if ($deptId) {
+                    $divisionId = DB::table('m_division')->where('department_id', $deptId)->value('id');
                 }
 
                 // Dapatkan detail company secara dinamis untuk konsistensi group & region
@@ -106,14 +102,6 @@ class UserSeeder extends Seeder
                     if ($company) {
                         $companyGroupId = $company->company_group_id;
                         $regionId = $company->region_id;
-                    }
-                }
-
-                // Resolusi relasi department dari division jika department_id kosong
-                if (! $deptId && $divisionId) {
-                    $divObj = Division::find($divisionId);
-                    if ($divObj) {
-                        $deptId = $divObj->department_id;
                     }
                 }
 

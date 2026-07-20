@@ -89,38 +89,9 @@ class UserResource extends Resource
             ])->icon('Building2'),
 
             Section::make('Konfigurasi Filter Kontrak', [
-                ToggleInput::make('use_role_filter', 'Gunakan Whitelist Filter Dari Role')
-                    ->default(true),
-
-                ToggleInput::make('can_change_company_group', 'Dapat Mengubah Grup Perusahaan')
-                    ->default(false),
-                SelectInput::make('allowed_company_groups', 'Grup Perusahaan yang Diizinkan')
-                    ->multiple(true)
-                    ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
-
-                ToggleInput::make('can_change_region', 'Dapat Mengubah Wilayah (Region)')
-                    ->default(false),
-                SelectInput::make('allowed_regions', 'Wilayah (Region) yang Diizinkan')
-                    ->multiple(true)
-                    ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
-
-                ToggleInput::make('can_change_company', 'Dapat Mengubah Perusahaan (Company)')
-                    ->default(false),
-                SelectInput::make('allowed_companies', 'Perusahaan (Company) yang Diizinkan')
-                    ->multiple(true)
-                    ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray()),
-
-                ToggleInput::make('can_change_division', 'Dapat Mengubah Divisi')
-                    ->default(false),
-                SelectInput::make('allowed_divisions', 'Divisi yang Diizinkan')
-                    ->multiple(true)
-                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray()),
-
-                ToggleInput::make('can_change_department', 'Dapat Mengubah Departemen')
-                    ->default(false),
-                SelectInput::make('allowed_departments', 'Departemen yang Diizinkan')
-                    ->multiple(true)
-                    ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
+                SelectInput::make('contract_filter_template_id', 'Template Filter Kontrak')
+                    ->options(fn () => \App\Models\ContractFilterTemplate::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->placeholder('Pilih Template Filter...'),
             ])->icon('Settings2'),
         ];
     }

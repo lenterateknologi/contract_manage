@@ -3,7 +3,7 @@ import { Head, router, Link, useForm } from '@inertiajs/react';
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
-import { Plus, Edit2, Trash2, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText } from 'lucide-react';
+import { Plus, Edit2, Trash2, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { ExcelActions } from '@/components/ui/tables/ExcelActions';
@@ -11,6 +11,9 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { Label } from '@/components/ui/forms/Label';
 import { Input } from '@/components/ui/inputs/Input';
 import { Textarea } from '@/components/ui/inputs/Textarea';
+import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 
 interface Props {
     resourceSlug: string;
@@ -74,7 +77,7 @@ function flattenTreeFromParents(parents: any[], depth = 0): any[] {
     return result;
 }
 
-const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles'];
+const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates'];
 
 export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -86,6 +89,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
 
     const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
     const [editDataId, setEditDataId] = useState<string | null>(null);
+    const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
 
     // Dynamic initial form fields from formSchema
     const initialFormData = React.useMemo(() => {
@@ -93,10 +97,12 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         formSchema.forEach((field) => {
             if (field.isGroup && Array.isArray(field.schema)) {
                 field.schema.forEach((subField: any) => {
-                    initial[subField.name] = subField.default ?? '';
+                    const isBool = subField.type === 'switch' || subField.type === 'toggle' || subField.name.startsWith('can_change_');
+                    initial[subField.name] = subField.defaultValue ?? (isBool ? false : '');
                 });
             } else {
-                initial[field.name] = field.default ?? '';
+                const isBool = field.type === 'switch' || field.type === 'toggle' || field.name.startsWith('can_change_');
+                initial[field.name] = field.defaultValue ?? (isBool ? false : '');
             }
         });
         return initial;
@@ -340,6 +346,49 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 );
             }
 
+            if (col.name.endsWith('_status') && resourceSlug === 'contract-filter-templates') {
+                // null = Sesuai Data User, [] = Semua (full access), [...names] = custom list
+                if (val === null || val === undefined || val === 'Sesuai Data User') {
+                    return (
+                        <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 border border-slate-200/20 uppercase tracking-wider">
+                            Sesuai User
+                        </span>
+                    );
+                }
+                if (Array.isArray(val) && val.length === 0) {
+                    return (
+                        <span className="inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+                            Semua
+                        </span>
+                    );
+                }
+                if (Array.isArray(val) && val.length > 0) {
+                    const MAX_SHOW = 2;
+                    const visible = val.slice(0, MAX_SHOW);
+                    const overflow = val.length - MAX_SHOW;
+                    return (
+                        <div className="flex flex-wrap gap-1">
+                            {visible.map((name: string) => (
+                                <span key={name} className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary border border-primary/20">
+                                    {name}
+                                </span>
+                            ))}
+                            {overflow > 0 && (
+                                <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200/20">
+                                    +{overflow} lainnya
+                                </span>
+                            )}
+                        </div>
+                    );
+                }
+                // fallback: string (legacy)
+                return (
+                    <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary border border-primary/20">
+                        {val}
+                    </span>
+                );
+            }
+
             if (col.type === 'boolean') {
                 return (
                     <span className={`px-2 py-1 text-[10px] font-normal uppercase rounded-full ${val ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
@@ -397,7 +446,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                 variant="primary" 
                                 className="gap-2"
                                 onClick={() => {
-                                    deptForm.reset();
+                                    setLocalAccessTypes({});
+                                    deptForm.setData(initialFormData);
                                     setEditDataId(null);
                                     setIsDeptDialogOpen(true);
                                 }}
@@ -482,6 +532,24 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                 editValues[field.name] = row[field.name] ?? (field.type === 'switch' ? false : '');
                                             }
                                         });
+                                         const initialTypes: Record<string, string> = {};
+                                         const DIMENSIONS = [
+                                             { key: 'company_group', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
+                                             { key: 'region', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
+                                             { key: 'company', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
+                                             { key: 'division', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
+                                             { key: 'department', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
+                                         ];
+                                         DIMENSIONS.forEach(dim => {
+                                             const canChange = row[dim.toggleName] === true || row[dim.toggleName] === 1 || String(row[dim.toggleName]) === 'true';
+                                             const allowed = row[dim.allowedName] || [];
+                                             if (!canChange) {
+                                                 initialTypes[dim.key] = 'user_data';
+                                             } else {
+                                                 initialTypes[dim.key] = allowed.length > 0 ? 'custom' : 'full_access';
+                                             }
+                                         });
+                                         setLocalAccessTypes(initialTypes);
                                         deptForm.setData(editValues);
                                         setEditDataId(row.id);
                                         setIsDeptDialogOpen(true);
@@ -645,7 +713,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             {/* Reusable Form Dialog */}
             {DIALOG_RESOURCES.includes(resourceSlug) && (
                 <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
-                    <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-xl sm:max-w-[600px]">
+                    <DialogContent className={`border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[780px]' : 'sm:max-w-[600px]'}`}>
                         <form onSubmit={handleDeptSubmit}>
                             <div className="px-6 pt-6 pb-4 flex flex-col gap-1 border-b border-border/40">
                                 <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
@@ -655,8 +723,154 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     {editDataId ? `Ubah informasi ${title.toLowerCase()} Anda` : `Buat data ${title.toLowerCase()} baru`}
                                 </DialogDescription>
                             </div>
-                            <div className="space-y-4 p-6">
+                            <div className="space-y-4 p-6 max-h-[70vh] overflow-y-auto">
                                 {formSchema.map((field) => {
+                                    if (field.isGroup) {
+                                        if (field.label === 'Konfigurasi Filter Kontrak') {
+                                            const DIMENSIONS = [
+                                                { key: 'company_group', label: 'Grup Perusahaan (Holding)', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
+                                                { key: 'region', label: 'Wilayah (Region)', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
+                                                { key: 'company', label: 'Perusahaan (Company)', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
+                                                { key: 'division', label: 'Divisi', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
+                                                { key: 'department', label: 'Departemen', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
+                                            ];
+
+                                            const getFormattedOptions = (fieldOptions: any) => {
+                                                if (!fieldOptions) return [];
+                                                if (Array.isArray(fieldOptions)) {
+                                                    return fieldOptions.map(opt => ({ value: String(opt), label: String(opt) }));
+                                                }
+                                                return Object.entries(fieldOptions).map(([k, v]) => ({ value: String(k), label: String(v) }));
+                                            };
+
+                                            const nameField = field.schema.find((s: any) => s.name === 'name');
+
+                                            return (
+                                                <div key={field.label} className="space-y-4 w-full animate-in fade-in duration-200">
+                                                    {nameField && (
+                                                        <div className="grid gap-1.5">
+                                                            <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{nameField.label}</Label>
+                                                            <Input
+                                                                type="text"
+                                                                required={nameField.required}
+                                                                className="border-border bg-background focus:ring-primary h-10 rounded-lg text-xs font-normal"
+                                                                placeholder={nameField.placeholder || `Masukkan ${nameField.label}...`}
+                                                                value={deptForm.data.name ?? ''}
+                                                                onChange={(e) => deptForm.setData('name', e.target.value)}
+                                                            />
+                                                        </div>
+                                                    )}
+
+                                                    <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800 pt-2">
+                                                        <Shield size={14} className="text-primary mr-1" />
+                                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                                                            Pengaturan Dimensi Organisasi
+                                                        </h3>
+                                                    </div>
+
+                                                    <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                                                        {DIMENSIONS.map(dim => {
+                                                            const dimField = field.schema.find((s: any) => s.name === dim.allowedName);
+                                                            if (!dimField) return null;
+                                                            
+                                                            const isAllowedToChange = deptForm.data[dim.toggleName] === true || deptForm.data[dim.toggleName] === 1 || String(deptForm.data[dim.toggleName]) === 'true';
+                                                            const currentValues = deptForm.data[dim.allowedName] || [];
+                                                             
+                                                            const accessType = localAccessTypes[dim.key] || (isAllowedToChange ? (currentValues.length > 0 ? 'custom' : 'full_access') : 'user_data');
+
+                                                            return (
+                                                                <div key={dim.key} className="grid grid-cols-[180px_160px_1fr] items-center gap-4 py-2.5 first:pt-0 last:pb-0">
+                                                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dim.label}</label>
+                                                                    
+                                                                    <div>
+                                                                        <select
+                                                                            value={accessType}
+                                                                            onChange={(e) => {
+                                                                                const type = e.target.value;
+                                                                                setLocalAccessTypes(prev => ({
+                                                                                    ...prev,
+                                                                                    [dim.key]: type
+                                                                                }));
+                                                                                if (type === 'user_data') {
+                                                                                    deptForm.setData((prev: any) => ({
+                                                                                        ...prev,
+                                                                                        [dim.toggleName]: false,
+                                                                                        [dim.allowedName]: []
+                                                                                    }));
+                                                                                } else if (type === 'full_access') {
+                                                                                    deptForm.setData((prev: any) => ({
+                                                                                        ...prev,
+                                                                                        [dim.toggleName]: true,
+                                                                                        [dim.allowedName]: []
+                                                                                    }));
+                                                                                } else if (type === 'custom') {
+                                                                                    deptForm.setData((prev: any) => ({
+                                                                                        ...prev,
+                                                                                        [dim.toggleName]: true,
+                                                                                        [dim.allowedName]: []
+                                                                                    }));
+                                                                                }
+                                                                            }}
+                                                                            className="flex h-9 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary cursor-pointer"
+                                                                        >
+                                                                            <option value="user_data">Sesuai User</option>
+                                                                            <option value="full_access">Buka Semua</option>
+                                                                            <option value="custom">Pilih Data</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    
+                                                                    {accessType === 'custom' ? (
+                                                                        <div>
+                                                                            <SearchableMultiSelect
+                                                                                values={currentValues}
+                                                                                onValuesChange={(vals) => {
+                                                                                    deptForm.setData(dim.allowedName as any, vals);
+                                                                                }}
+                                                                                options={getFormattedOptions(dimField.options)}
+                                                                                placeholder={`Pilih ${dim.label}...`}
+                                                                                disabled={false}
+                                                                            />
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="opacity-50 pointer-events-none">
+                                                                            <SearchableMultiSelect
+                                                                                values={[]}
+                                                                                onValuesChange={() => {}}
+                                                                                options={[]}
+                                                                                placeholder={accessType === 'user_data' ? 'Filter Terkunci' : 'Seluruh Data Diizinkan'}
+                                                                                disabled={true}
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <div key={field.label} className="space-y-3">
+                                                <h4 className="text-xs font-bold text-foreground uppercase tracking-wider border-b pb-1">{field.label}</h4>
+                                                <div className="grid grid-cols-1 gap-3">
+                                                    {field.schema.map((subField: any) => (
+                                                        <div key={subField.name} className="grid gap-1.5">
+                                                            <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
+                                                            <Input
+                                                                type={subField.type || 'text'}
+                                                                required={subField.required}
+                                                                className="border-border bg-background focus:ring-primary h-10 rounded-lg text-xs font-normal"
+                                                                value={deptForm.data[subField.name] ?? ''}
+                                                                onChange={(e) => deptForm.setData(subField.name as any, e.target.value)}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+
                                     if (field.type === 'switch') {
                                         return (
                                             <div key={field.name} className="grid gap-1.5">

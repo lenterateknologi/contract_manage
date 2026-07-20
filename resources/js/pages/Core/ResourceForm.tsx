@@ -4,10 +4,14 @@ import { FormInput } from '@/components/ui/inputs/FormInput';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Shield, Plus, Pencil, Trash2 } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialogs/Dialog';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
 
 const COMMON_ICONS = [
     'Clock', 'CheckCircle2', 'XCircle', 'AlertCircle', 'AlertTriangle',
@@ -861,6 +865,45 @@ interface Props {
 export default function ResourceForm({ resourceSlug, title, formSchema, formColumns = 1, record, organizationTree }: Props) {
     const isEdit = !!record;
     const [activeTab, setActiveTab] = useState<'info' | 'docs'>('info');
+    const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
+
+    // States for custom contract filter table manager dialog
+    const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [localFilterData, setLocalFilterData] = useState({
+        can_change_company_group: false,
+        allowed_company_groups: [] as string[],
+        can_change_region: false,
+        allowed_regions: [] as string[],
+        can_change_company: false,
+        allowed_companies: [] as string[],
+        can_change_division: false,
+        allowed_divisions: [] as string[],
+        can_change_department: false,
+        allowed_departments: [] as string[],
+    });
+
+    const openFilterModal = () => {
+        setLocalFilterData({
+            can_change_company_group: data.can_change_company_group === true || data.can_change_company_group === 1 || String(data.can_change_company_group) === 'true',
+            allowed_company_groups: Array.isArray(data.allowed_company_groups) ? [...data.allowed_company_groups] : [],
+            can_change_region: data.can_change_region === true || data.can_change_region === 1 || String(data.can_change_region) === 'true',
+            allowed_regions: Array.isArray(data.allowed_regions) ? [...data.allowed_regions] : [],
+            can_change_company: data.can_change_company === true || data.can_change_company === 1 || String(data.can_change_company) === 'true',
+            allowed_companies: Array.isArray(data.allowed_companies) ? [...data.allowed_companies] : [],
+            can_change_division: data.can_change_division === true || data.can_change_division === 1 || String(data.can_change_division) === 'true',
+            allowed_divisions: Array.isArray(data.allowed_divisions) ? [...data.allowed_divisions] : [],
+            can_change_department: data.can_change_department === true || data.can_change_department === 1 || String(data.can_change_department) === 'true',
+            allowed_departments: Array.isArray(data.allowed_departments) ? [...data.allowed_departments] : [],
+        });
+        setIsFilterModalOpen(true);
+    };
+
+    const saveFilterData = () => {
+        Object.entries(localFilterData).forEach(([key, val]) => {
+            setData(key, val);
+        });
+        setIsFilterModalOpen(false);
+    };
 
     // Helper to get flattened fields for initial state and validation
     const getFlattenedFields = (schema: any[]): any[] => {
@@ -879,7 +922,8 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
     // Initial form state based on schema and existing record values
     const initialFormState = flattenedFields.reduce((acc: any, field: any) => {
-        acc[field.name] = isEdit ? (record[field.name] ?? '') : (field.defaultValue ?? '');
+        const isBool = field.type === 'switch' || field.type === 'toggle' || field.name.startsWith('can_change_');
+        acc[field.name] = isEdit ? (record[field.name] ?? (isBool ? false : '')) : (field.defaultValue ?? (isBool ? false : ''));
         return acc;
     }, {});
 
@@ -891,15 +935,6 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         if (fieldName === 'f2_form_template_id') return data.f2_input_mechanism === 'digital' || data.f2_input_mechanism === 'none';
         if (fieldName === 'contract_form_template_id') return data.contract_input_mechanism === 'digital' || data.contract_input_mechanism === 'none';
         
-        if (resourceSlug === 'users' && (data.use_role_filter === true || data.use_role_filter === 1 || data.use_role_filter === '1' || data.use_role_filter === 'true')) {
-            const filterFields = [
-                'allowed_company_groups', 'allowed_regions', 'allowed_companies',
-                'allowed_divisions', 'allowed_departments',
-                'can_change_company_group', 'can_change_region', 'can_change_company',
-                'can_change_division', 'can_change_department'
-            ];
-            if (filterFields.includes(fieldName)) return true;
-        }
         return false;
     };
 
@@ -1184,103 +1219,121 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                                     )}
                                                 </div>
                                             </div>
-                                            
-                                            {resourceSlug === 'users' && field.label === 'Konfigurasi Filter Kontrak' && (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] text-text-main font-semibold uppercase tracking-wider">
-                                                        Gunakan Whitelist Filter Dari Role
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        role="switch"
-                                                        aria-checked={data.use_role_filter === true || data.use_role_filter === 1 || String(data.use_role_filter) === 'true'}
-                                                        onClick={() => setData('use_role_filter', !(data.use_role_filter === true || data.use_role_filter === 1 || String(data.use_role_filter) === 'true'))}
-                                                        className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden active:scale-95 ${
-                                                            (data.use_role_filter === true || data.use_role_filter === 1 || String(data.use_role_filter) === 'true')
-                                                                ? 'bg-primary dark:bg-white' 
-                                                                : 'bg-slate-200 dark:bg-slate-800'
-                                                        }`}
-                                                    >
-                                                        <span
-                                                            className={`pointer-events-none block h-3 w-3 rounded-full shadow-lg transition-transform duration-300 ring-0 ${
-                                                                (data.use_role_filter === true || data.use_role_filter === 1 || String(data.use_role_filter) === 'true')
-                                                                    ? 'translate-x-5 bg-white dark:bg-primary' 
-                                                                    : 'translate-x-1 bg-white dark:bg-white/50'
-                                                            }`}
-                                                        />
-                                                    </button>
-                                                </div>
-                                            )}
                                         </div>
-                                        {field.label === 'Konfigurasi Filter Kontrak' ? (
-                                            // ponytail: tampilkan semua whitelist filter dalam 1 table
-                                            <div className="overflow-x-auto w-full">
-                                                <table className="w-full text-left border-collapse">
-                                                    <thead>
-                                                        <tr className="bg-surface-muted/50 border-b border-surface-border">
-                                                            <th className="p-4 text-xs font-semibold uppercase tracking-wider text-text-main w-[30%]">Dimensi Organisasi</th>
-                                                            <th className="p-4 text-xs font-semibold uppercase tracking-wider text-text-main w-[70%]">Whitelist Pilihan Yang Diizinkan</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-surface-border">
-                                                        {(() => {
-                                                            const rows = [
-                                                                {
-                                                                    label: 'Grup Perusahaan (Holding)',
-                                                                    selectField: field.schema.find((s: any) => s.name === 'allowed_company_groups'),
-                                                                    toggleName: 'can_change_company_group',
-                                                                },
-                                                                {
-                                                                    label: 'Wilayah (Region)',
-                                                                    selectField: field.schema.find((s: any) => s.name === 'allowed_regions'),
-                                                                    toggleName: 'can_change_region',
-                                                                },
-                                                                {
-                                                                    label: 'Perusahaan (Company)',
-                                                                    selectField: field.schema.find((s: any) => s.name === 'allowed_companies'),
-                                                                    toggleName: 'can_change_company',
-                                                                },
-                                                                {
-                                                                    label: 'Divisi',
-                                                                    selectField: field.schema.find((s: any) => s.name === 'allowed_divisions'),
-                                                                    toggleName: 'can_change_division',
-                                                                },
-                                                                {
-                                                                    label: 'Departemen',
-                                                                    selectField: field.schema.find((s: any) => s.name === 'allowed_departments'),
-                                                                    toggleName: 'can_change_department',
-                                                                }
-                                                            ];
+                                         {field.label === 'Konfigurasi Filter Kontrak' ? (
+                                             <div className="space-y-5 w-full animate-in fade-in duration-200">
+                                                 {field.schema && field.schema.some((s: any) => !['can_change_company_group', 'allowed_company_groups', 'can_change_region', 'allowed_regions', 'can_change_company', 'allowed_companies', 'can_change_division', 'allowed_divisions', 'can_change_department', 'allowed_departments', 'use_role_filter'].includes(s.name)) && (
+                                                     <div className="grid grid-cols-1 gap-4 pb-2">
+                                                         {field.schema
+                                                             .filter((s: any) => !['can_change_company_group', 'allowed_company_groups', 'can_change_region', 'allowed_regions', 'can_change_company', 'allowed_companies', 'can_change_division', 'allowed_divisions', 'can_change_department', 'allowed_departments', 'use_role_filter'].includes(s.name))
+                                                             .map((s: any) => renderField(s))}
+                                                     </div>
+                                                 )}
 
-                                                            return rows.map((row) => {
-                                                                if (!row.selectField) return null;
-                                                                const disabled = isFieldDisabled(row.selectField.name);
+                                                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
+                                                     <Shield size={14} className="text-primary" />
+                                                     <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                                                         Pengaturan Dimensi Organisasi
+                                                     </h3>
+                                                 </div>
 
-                                                                return (
-                                                                    <tr key={row.selectField.name} className="hover:bg-surface-muted/20 transition-all">
-                                                                        <td className="p-4 align-middle">
-                                                                            <span className="text-xs font-semibold text-text-main">{row.label}</span>
-                                                                        </td>
-                                                                        <td className="p-4 align-middle">
-                                                                            <MultiSelectField
-                                                                                field={row.selectField}
-                                                                                value={Array.isArray(data[row.selectField.name]) ? data[row.selectField.name] : []}
-                                                                                onChange={(val) => {
-                                                                                    setData(row.selectField.name, val);
-                                                                                    // ponytail: auto-set can_change toggle to true when whitelist is modified
-                                                                                    setData(row.toggleName, true);
-                                                                                }}
-                                                                                error={errors[row.selectField.name]}
-                                                                                disabled={disabled}
-                                                                            />
-                                                                        </td>
-                                                                    </tr>
-                                                                );
-                                                            });
-                                                        })()}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                                 <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
+                                                     {(() => {
+                                                         const DIMENSIONS = [
+                                                             { key: 'company_group', label: 'Grup Perusahaan (Holding)', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
+                                                             { key: 'region', label: 'Wilayah (Region)', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
+                                                             { key: 'company', label: 'Perusahaan (Company)', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
+                                                             { key: 'division', label: 'Divisi', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
+                                                             { key: 'department', label: 'Departemen', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
+                                                         ];
+
+                                                         const getFormattedOptions = (fieldOptions: any) => {
+                                                             if (!fieldOptions) return [];
+                                                             if (Array.isArray(fieldOptions)) {
+                                                                 return fieldOptions.map(opt => ({ value: String(opt), label: String(opt) }));
+                                                             }
+                                                             return Object.entries(fieldOptions).map(([k, v]) => ({ value: String(k), label: String(v) }));
+                                                         };
+
+                                                         return DIMENSIONS.map(dim => {
+                                                             const dimField = field.schema.find((s: any) => s.name === dim.allowedName);
+                                                             if (!dimField) return null;
+                                                             
+                                                             const isAllowedToChange = data[dim.toggleName] === true || data[dim.toggleName] === 1 || String(data[dim.toggleName]) === 'true';
+                                                             const currentValues = data[dim.allowedName] || [];
+                                                             
+                                                             const accessType = localAccessTypes[dim.key] || (isAllowedToChange ? (currentValues.length > 0 ? 'custom' : 'full_access') : 'user_data');
+
+                                                             return (
+                                                                 <div key={dim.key} className="grid grid-cols-[200px_180px_1fr] items-center gap-4 py-3 first:pt-0 last:pb-0">
+                                                                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dim.label}</label>
+                                                                     
+                                                                     <div>
+                                                                         <select
+                                                                             value={accessType}
+                                                                             onChange={(e) => {
+                                                                                 const type = e.target.value;
+                                                                                 setLocalAccessTypes(prev => ({
+                                                                                     ...prev,
+                                                                                     [dim.key]: type
+                                                                                 }));
+                                                                                 if (type === 'user_data') {
+                                                                                     setData(prev => ({
+                                                                                         ...prev,
+                                                                                         [dim.toggleName]: false,
+                                                                                         [dim.allowedName]: []
+                                                                                     }));
+                                                                                 } else if (type === 'full_access') {
+                                                                                     setData(prev => ({
+                                                                                         ...prev,
+                                                                                         [dim.toggleName]: true,
+                                                                                         [dim.allowedName]: []
+                                                                                     }));
+                                                                                 } else if (type === 'custom') {
+                                                                                     setData(prev => ({
+                                                                                         ...prev,
+                                                                                         [dim.toggleName]: true,
+                                                                                         [dim.allowedName]: []
+                                                                                     }));
+                                                                                 }
+                                                                             }}
+                                                                             className="flex h-9 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary cursor-pointer"
+                                                                         >
+                                                                             <option value="user_data">Sesuai Data User</option>
+                                                                             <option value="full_access">Buka Semua (Full Access)</option>
+                                                                             <option value="custom">Pilih Data Tertentu</option>
+                                                                         </select>
+                                                                     </div>
+                                                                     
+                                                                     {accessType === 'custom' ? (
+                                                                         <div>
+                                                                             <SearchableMultiSelect
+                                                                                 values={currentValues}
+                                                                                 onValuesChange={(vals) => {
+                                                                                     setData(dim.allowedName, vals);
+                                                                                 }}
+                                                                                 options={getFormattedOptions(dimField.options)}
+                                                                                 placeholder={`Pilih ${dim.label}...`}
+                                                                                 disabled={false}
+                                                                             />
+                                                                         </div>
+                                                                     ) : (
+                                                                         <div className="opacity-50 pointer-events-none">
+                                                                             <SearchableMultiSelect
+                                                                                 values={[]}
+                                                                                 onValuesChange={() => {}}
+                                                                                 options={[]}
+                                                                                 placeholder={accessType === 'user_data' ? 'Filter Terkunci (Mengikuti Filter Bawaan Role)' : 'Seluruh Data Diizinkan (Akses Terbuka)'}
+                                                                                 disabled={true}
+                                                                             />
+                                                                         </div>
+                                                                     )}
+                                                                 </div>
+                                                             );
+                                                         });
+                                                     })()}
+                                                 </div>
+                                             </div>
                                         ) : (
                                             <div className={getGridClass()}>
                                                 {field.schema

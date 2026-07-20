@@ -223,12 +223,11 @@ class AdminController extends Controller
 
         // 2. Get Navigation Structure for the Drag & Drop Tab
         $groups = ModuleGroup::select('m_module_groups.*')
-            ->leftJoin('m_role_module_groups', function ($join) use ($role) {
+            ->join('m_role_module_groups', function ($join) use ($role) {
                 $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
                     ->where('m_role_module_groups.role_id', '=', $role->id);
             })
-            ->orderByRaw('COALESCE(m_role_module_groups.sequence, 9999) ASC')
-            ->orderBy('m_module_groups.name')
+            ->orderBy('m_role_module_groups.sequence', 'asc')
             ->get()
             ->map(function ($group) use ($role) {
                 $group->modules = Module::select('m_modules.*')

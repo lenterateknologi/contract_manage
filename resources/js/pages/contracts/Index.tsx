@@ -1,5 +1,5 @@
 import { ProfileView } from '@/pages/contracts/components/parts/ProfileView';
-import { DashboardMetrics } from '@/pages/dashboard/components/DashboardMetrics';
+import { DashboardMetrics, DashboardTab } from '@/pages/dashboard/components/DashboardMetrics';
 import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { Column, DataTable as TableContract } from '@/components/ui/tables/DataTable';
@@ -57,6 +57,8 @@ import {
     Search,
     History,
     LayoutGrid,
+    LayoutDashboard,
+    Briefcase,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, memo } from 'react';
 import ContractDetailView from './components/ContractDetailView';
@@ -388,6 +390,7 @@ function ContractPage({
     const { showToast } = useToast();
     const { canUpdate } = usePermissions('CONTRACTS');
     const [view, setView] = useState<View>(currentView);
+    const [dashboardTab, setDashboardTab] = useState<'overview' | 'workload' | 'master_data'>('overview');
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const viewTitleMap: Record<string, string> = {
         dashboard: 'Dashboard Kontrak',
@@ -867,7 +870,54 @@ function ContractPage({
                         title={viewTitleMap[view] || 'Manajemen Kontrak'}
                         subtitle={viewDescMap[view] || 'Daftar seluruh kontrak dalam sistem.'}
                         icon={viewIconMap[view] || FileText}
-                        {...(view !== 'profile' && view !== 'dashboard' ? {
+                        {...(view === 'dashboard' ? {
+                            filters: [
+                                { key: 'company_group_ids', label: 'Grup Perusahaan', options: (companyGroups || []).map((cg: any) => ({ value: String(cg.id), label: cg.name })) },
+                                { key: 'region_ids', label: 'Wilayah (Region)', options: (regions || []).map((r: any) => ({ value: String(r.id), label: r.name })) },
+                                { key: 'company_ids', label: 'Perusahaan (Company)', options: (companies || []).map((c: any) => ({ value: String(c.id), label: c.name })) },
+                                { key: 'department_ids', label: 'Departemen', options: (departments || []).map((d: any) => ({ value: String(d.id), label: d.name })) },
+                            ],
+                            activeFilters: {
+                                company_group_ids: filters.company_group_ids ? String(filters.company_group_ids).split(',').filter(Boolean) : [],
+                                region_ids: filters.region_ids ? String(filters.region_ids).split(',').filter(Boolean) : [],
+                                company_ids: filters.company_ids ? String(filters.company_ids).split(',').filter(Boolean) : [],
+                                department_ids: filters.department_ids ? String(filters.department_ids).split(',').filter(Boolean) : [],
+                            },
+                            onFilterChange: (key: string, val: any) => {
+                                const newParams: any = { ...filters, view: 'dashboard' };
+                                if (Array.isArray(val)) {
+                                    newParams[key] = val.join(',');
+                                } else {
+                                    newParams[key] = val;
+                                }
+                                router.get('/contracts', newParams, { preserveState: true, preserveScroll: true });
+                            },
+                            onResetFilters: () => {
+                                router.get('/contracts', { view: 'dashboard' }, { preserveState: true, preserveScroll: true });
+                            },
+                            actions: (
+                                <div className="flex items-center gap-2">
+                                    <DashboardTab
+                                        active={dashboardTab === 'overview'}
+                                        onClick={() => setDashboardTab('overview')}
+                                        label="Ringkasan"
+                                        icon={LayoutDashboard}
+                                    />
+                                    <DashboardTab
+                                        active={dashboardTab === 'workload'}
+                                        onClick={() => setDashboardTab('workload')}
+                                        label="Beban Kerja"
+                                        icon={Briefcase}
+                                    />
+                                    <DashboardTab
+                                        active={dashboardTab === 'master_data'}
+                                        onClick={() => setDashboardTab('master_data')}
+                                        label="Master Data"
+                                        icon={Layers}
+                                    />
+                                </div>
+                            )
+                        } : (view !== 'profile' ? {
                             searchValue: search,
                             onSearchChange: setSearch,
                             searchPlaceholder: "Cari kontrak...",
@@ -879,7 +929,7 @@ function ContractPage({
                                     </Button>
                                 </>
                             )
-                        } : {})}
+                        } : {}))}
                         pagination={view !== 'profile' && view !== 'dashboard' ? {
                             currentPage: contractsPaged.current_page,
                             lastPage: contractsPaged.last_page,
@@ -896,7 +946,7 @@ function ContractPage({
                         <div className="flex-1 overflow-auto">
                             {view === 'dashboard' && (
                                 <div className="p-5">
-                                    <DashboardMetrics metrics={metrics} />
+                                    <DashboardMetrics metrics={metrics} activeTab={dashboardTab} />
                                 </div>
                             )}
                             {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}

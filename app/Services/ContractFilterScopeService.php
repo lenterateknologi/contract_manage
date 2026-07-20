@@ -14,9 +14,8 @@ use Illuminate\Http\Request;
  *
  * Prinsip utama:
  *   - Nilai milik user sendiri SELALU menjadi basis akses (tidak perlu konfigurasi).
- *   - `allowed_*` di ContractFilterSetting hanya berisi UUID *tambahan*
- *     organisasi lain yang sengaja diberi akses oleh admin.
- *   - Whitelist efektif  = user's_own_id  ∪  allowed_* dari setting.
+ *   - `allowed_*` di ContractFilterTemplate berisi UUID organisasi yang diberi akses oleh admin.
+ *   - Whitelist efektif  = user's_own_id  ∪  allowed_* dari template.
  *   - Full-access roles (Admin, Super Admin, Director, CEO, VP) tidak dibatasi
  *     kecuali admin secara eksplisit menetapkan allowed_* untuk mereka.
  */
@@ -30,18 +29,26 @@ class ContractFilterScopeService
     {
         $settings = $user->getContractFilterSettings();
         $isAdmin = in_array($user->role, ['Admin', 'Super Admin']) || $user->is_admin;
-        $hasFullAccess = $isAdmin || in_array($user->role, ['Director', 'CEO', 'VP']);
+        $globalFullAccess = $isAdmin || in_array($user->role, ['Director', 'CEO', 'VP']);
 
         // Resolusi region_id user dari company jika tidak tersimpan langsung di user
         $userCompany = $user->company;
         $userRegionId = $user->region_id ?? $userCompany?->region_id;
 
+        // Tentukan full access per dimensi berdasarkan status admin global atau toggle pengaturan user/role
+        // ponytail: Gunakan permission spesifik per dimensi untuk mendukung 3 level scope (Full, Group-only, Division-only)
+        $groupFull = $globalFullAccess || ($settings['can_change_company_group'] ?? false);
+        $regionFull = $globalFullAccess || ($settings['can_change_region'] ?? false);
+        $companyFull = $globalFullAccess || ($settings['can_change_company'] ?? false);
+        $divisionFull = $globalFullAccess || ($settings['can_change_division'] ?? false);
+        $departmentFull = $globalFullAccess || ($settings['can_change_department'] ?? false);
+
         // Bangun whitelist efektif per dimensi
-        $groups = $this->buildAllowed($user->company_group_id, $settings['allowed_company_groups'] ?? [], $hasFullAccess);
-        $regions = $this->buildAllowed($userRegionId, $settings['allowed_regions'] ?? [], $hasFullAccess);
-        $companies = $this->buildAllowed($user->company_id, $settings['allowed_companies'] ?? [], $hasFullAccess);
-        $divisions = $this->buildAllowed($user->division_id, $settings['allowed_divisions'] ?? [], $hasFullAccess);
-        $departments = $this->buildAllowed($user->department_id, $settings['allowed_departments'] ?? [], $hasFullAccess);
+        $groups = $this->buildAllowed($user->company_group_id, $settings['allowed_company_groups'] ?? [], $groupFull);
+        $regions = $this->buildAllowed($userRegionId, $settings['allowed_regions'] ?? [], $regionFull);
+        $companies = $this->buildAllowed($user->company_id, $settings['allowed_companies'] ?? [], $companyFull);
+        $divisions = $this->buildAllowed($user->division_id, $settings['allowed_divisions'] ?? [], $divisionFull);
+        $departments = $this->buildAllowed($user->department_id, $settings['allowed_departments'] ?? [], $departmentFull);
 
         $this->scopeField($request, 'company_group_id', $groups);
         $this->scopeField($request, 'region_id', $regions);

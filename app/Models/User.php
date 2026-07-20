@@ -19,11 +19,6 @@ class User extends Authenticatable
 
     protected $table = 'm_users';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -54,44 +49,18 @@ class User extends Authenticatable
         'image_src',
         'location_id',
         'region_id',
+        'contract_filter_template_id',
         'is_employee',
         'id_employee_portal_master',
-        'filter_settings',
-        'use_role_filter',
-        'can_change_company_group',
-        'allowed_company_groups',
-        'can_change_region',
-        'allowed_regions',
-        'can_change_company',
-        'allowed_companies',
-        'can_change_division',
-        'allowed_divisions',
-        'can_change_department',
-        'allowed_departments',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $with = ['roleRelation', 'contractFilter'];
+    protected $with = ['roleRelation'];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The accessors to append to the model's array form.
-     *
-     * @var list<string>
-     */
     protected $appends = [
         'initials',
         'role',
@@ -109,25 +78,15 @@ class User extends Authenticatable
         'allowed_departments',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_active' => 'boolean',
-            'use_role_filter' => 'boolean',
-            'filter_settings' => 'array',
+            'password'          => 'hashed',
+            'is_active'         => 'boolean',
         ];
     }
 
-    /**
-     * @return BelongsTo<Role, User>
-     */
     public function roleRelation(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
@@ -138,15 +97,11 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'department_id');
     }
 
-    /**
-     * Get the user's role name.
-     */
     public function getRoleAttribute(): ?string
     {
         if (! array_key_exists('role_id', $this->attributes)) {
             return null;
         }
-
         return $this->roleRelation?->name;
     }
 
@@ -155,7 +110,6 @@ class User extends Authenticatable
         if (! $this->relationLoaded('division')) {
             return null;
         }
-
         return $this->division?->name;
     }
 
@@ -164,45 +118,29 @@ class User extends Authenticatable
         if (! $this->relationLoaded('department')) {
             return null;
         }
-
         return $this->department?->name;
     }
 
-    /**
-     * @return BelongsTo<Company, User>
-     */
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class, 'company_id');
     }
 
-    /**
-     * @return BelongsTo<CompanyGroup, User>
-     */
     public function companyGroup(): BelongsTo
     {
         return $this->belongsTo(CompanyGroup::class, 'company_group_id');
     }
 
-    /**
-     * @return BelongsTo<Division, User>
-     */
     public function division(): BelongsTo
     {
         return $this->belongsTo(Division::class, 'division_id');
     }
 
-    /**
-     * @return BelongsTo<Region, User>
-     */
     public function region(): BelongsTo
     {
         return $this->belongsTo(Region::class, 'region_id');
     }
 
-    /**
-     * @return BelongsToMany<WorkflowStep, User>
-     */
     public function workflowSteps(): BelongsToMany
     {
         return $this->belongsToMany(WorkflowStep::class, 't_workflow_step_users')->withTimestamps();
@@ -225,211 +163,106 @@ class User extends Authenticatable
 
     public function getInitialsAttribute(): string
     {
-        $name = $this->name ?? '';
+        $name  = $this->name ?? '';
         $words = explode(' ', trim($name));
         if (count($words) >= 2) {
-            return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
+            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
         }
-
         return strtoupper(substr($name, 0, 2));
     }
 
-    public function contractFilter()
+    public function contractFilterTemplate()
     {
-        return $this->hasOne(ContractFilterSetting::class, 'reference_id')->where('type', 'user');
+        return $this->belongsTo(ContractFilterTemplate::class, 'contract_filter_template_id');
     }
+
+    private ?array $contractFilterSettingsCache = null;
 
     public function getContractFilterSettings(): array
     {
-        // 1. Cek apakah memakai filter dari role
-        if ($this->use_role_filter) {
-            $roleFilter = $this->roleRelation ? $this->roleRelation->contractFilter : null;
-            if ($roleFilter) {
-                return [
-                    'can_change_company_group' => (bool) $roleFilter->can_change_company_group,
-                    'allowed_company_groups' => $roleFilter->getItemValues('company_group'),
-                    'can_change_region' => (bool) $roleFilter->can_change_region,
-                    'allowed_regions' => $roleFilter->getItemValues('region'),
-                    'can_change_company' => (bool) $roleFilter->can_change_company,
-                    'allowed_companies' => $roleFilter->getItemValues('company'),
-                    'can_change_division' => (bool) $roleFilter->can_change_division,
-                    'allowed_divisions' => $roleFilter->getItemValues('division'),
-                    'can_change_department' => (bool) $roleFilter->can_change_department,
-                    'allowed_departments' => $roleFilter->getItemValues('department'),
+        if ($this->contractFilterSettingsCache !== null) {
+            return $this->contractFilterSettingsCache;
+        }
+
+        // Coba ambil dari template — aman saat user di-load sebagai partial relation
+        $templateId = null;
+        if (array_key_exists('contract_filter_template_id', $this->attributes)) {
+            $templateId = $this->attributes['contract_filter_template_id'];
+        } elseif ($this->relationLoaded('contractFilterTemplate')) {
+            $templateId = $this->contractFilterTemplate?->id;
+        } elseif (isset($this->id)) {
+            $templateId = \DB::table('m_users')
+                ->where('id', $this->id)
+                ->value('contract_filter_template_id');
+        }
+
+        if ($templateId) {
+            $template = ContractFilterTemplate::find($templateId);
+            if ($template) {
+                $this->contractFilterSettingsCache = [
+                    'can_change_company_group' => (bool) $template->can_change_company_group,
+                    'allowed_company_groups'   => (array) ($template->allowed_company_groups ?? []),
+                    'can_change_region'        => (bool) $template->can_change_region,
+                    'allowed_regions'          => (array) ($template->allowed_regions ?? []),
+                    'can_change_company'       => (bool) $template->can_change_company,
+                    'allowed_companies'        => (array) ($template->allowed_companies ?? []),
+                    'can_change_division'      => (bool) $template->can_change_division,
+                    'allowed_divisions'        => (array) ($template->allowed_divisions ?? []),
+                    'can_change_department'    => (bool) $template->can_change_department,
+                    'allowed_departments'      => (array) ($template->allowed_departments ?? []),
                 ];
+                return $this->contractFilterSettingsCache;
             }
-
-            // Fallback hardcoded bila role belum punya contractFilter
-            $roleName = $this->role;
-            $isHighLevel = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
-
-            return [
-                'can_change_company_group' => $isHighLevel,
-                'allowed_company_groups' => [],
-                'can_change_region' => $isHighLevel,
-                'allowed_regions' => [],
-                'can_change_company' => $isHighLevel,
-                'allowed_companies' => [],
-                'can_change_division' => $isHighLevel || in_array($roleName, ['Manager']),
-                'allowed_divisions' => [],
-                'can_change_department' => $isHighLevel || in_array($roleName, ['Manager']),
-                'allowed_departments' => [],
-            ];
         }
 
-        // 2. Ambil dari user filter setting di m_contract_filter
-        $userFilter = $this->contractFilter;
-        if ($userFilter) {
-            return [
-                'can_change_company_group' => (bool) $userFilter->can_change_company_group,
-                'allowed_company_groups' => $userFilter->getItemValues('company_group'),
-                'can_change_region' => (bool) $userFilter->can_change_region,
-                'allowed_regions' => $userFilter->getItemValues('region'),
-                'can_change_company' => (bool) $userFilter->can_change_company,
-                'allowed_companies' => $userFilter->getItemValues('company'),
-                'can_change_division' => (bool) $userFilter->can_change_division,
-                'allowed_divisions' => $userFilter->getItemValues('division'),
-                'can_change_department' => (bool) $userFilter->can_change_department,
-                'allowed_departments' => $userFilter->getItemValues('department'),
-            ];
-        }
+        // Fallback default berdasarkan nama role
+        $roleName    = $this->role;
+        $isHighLevel = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
 
-        // Default fallback
-        return [
-            'can_change_company_group' => false,
-            'allowed_company_groups' => [],
-            'can_change_region' => false,
-            'allowed_regions' => [],
-            'can_change_company' => false,
-            'allowed_companies' => [],
-            'can_change_division' => false,
-            'allowed_divisions' => [],
-            'can_change_department' => false,
-            'allowed_departments' => [],
+        $this->contractFilterSettingsCache = [
+            'can_change_company_group' => $isHighLevel,
+            'allowed_company_groups'   => [],
+            'can_change_region'        => $isHighLevel,
+            'allowed_regions'          => [],
+            'can_change_company'       => $isHighLevel,
+            'allowed_companies'        => [],
+            'can_change_division'      => $isHighLevel || in_array($roleName, ['Manager']),
+            'allowed_divisions'        => [],
+            'can_change_department'    => $isHighLevel || in_array($roleName, ['Manager']),
+            'allowed_departments'      => [],
         ];
+
+        return $this->contractFilterSettingsCache;
     }
 
-    protected function getOrCreateContractFilter(): ContractFilterSetting
-    {
-        return ContractFilterSetting::firstOrCreate([
-            'type' => 'user',
-            'reference_id' => $this->id,
-        ]);
-    }
+    // Getters delegasi ke getContractFilterSettings()
+    public function getCanChangeCompanyGroupAttribute() { return $this->getContractFilterSettings()['can_change_company_group'] ?? false; }
+    public function setCanChangeCompanyGroupAttribute($v) { /* no-op — dikelola via template */ }
 
-    protected function updateContractFilterFlag(string $key, bool $value): void
-    {
-        if (empty($this->id)) {
-            return;
-        }
-        $this->getOrCreateContractFilter()->update([$key => $value]);
-    }
+    public function getAllowedCompanyGroupsAttribute() { return $this->getContractFilterSettings()['allowed_company_groups'] ?? []; }
+    public function setAllowedCompanyGroupsAttribute($v) { /* no-op */ }
 
-    protected function updateContractFilterItems(string $type, array $values): void
-    {
-        if (empty($this->id)) {
-            return;
-        }
-        $this->getOrCreateContractFilter()->syncItems($type, $values);
-    }
+    public function getCanChangeRegionAttribute() { return $this->getContractFilterSettings()['can_change_region'] ?? false; }
+    public function setCanChangeRegionAttribute($v) { /* no-op */ }
 
-    public function getCanChangeCompanyGroupAttribute()
-    {
-        return $this->getContractFilterSettings()['can_change_company_group'] ?? false;
-    }
+    public function getAllowedRegionsAttribute() { return $this->getContractFilterSettings()['allowed_regions'] ?? []; }
+    public function setAllowedRegionsAttribute($v) { /* no-op */ }
 
-    public function setCanChangeCompanyGroupAttribute($value)
-    {
-        $this->updateContractFilterFlag('can_change_company_group', (bool) $value);
-    }
+    public function getCanChangeCompanyAttribute() { return $this->getContractFilterSettings()['can_change_company'] ?? false; }
+    public function setCanChangeCompanyAttribute($v) { /* no-op */ }
 
-    public function getAllowedCompanyGroupsAttribute()
-    {
-        return $this->getContractFilterSettings()['allowed_company_groups'] ?? [];
-    }
+    public function getAllowedCompaniesAttribute() { return $this->getContractFilterSettings()['allowed_companies'] ?? []; }
+    public function setAllowedCompaniesAttribute($v) { /* no-op */ }
 
-    public function setAllowedCompanyGroupsAttribute($value)
-    {
-        $this->updateContractFilterItems('company_group', is_array($value) ? $value : []);
-    }
+    public function getCanChangeDivisionAttribute() { return $this->getContractFilterSettings()['can_change_division'] ?? false; }
+    public function setCanChangeDivisionAttribute($v) { /* no-op */ }
 
-    public function getCanChangeRegionAttribute()
-    {
-        return $this->getContractFilterSettings()['can_change_region'] ?? false;
-    }
+    public function getAllowedDivisionsAttribute() { return $this->getContractFilterSettings()['allowed_divisions'] ?? []; }
+    public function setAllowedDivisionsAttribute($v) { /* no-op */ }
 
-    public function setCanChangeRegionAttribute($value)
-    {
-        $this->updateContractFilterFlag('can_change_region', (bool) $value);
-    }
+    public function getCanChangeDepartmentAttribute() { return $this->getContractFilterSettings()['can_change_department'] ?? false; }
+    public function setCanChangeDepartmentAttribute($v) { /* no-op */ }
 
-    public function getAllowedRegionsAttribute()
-    {
-        return $this->getContractFilterSettings()['allowed_regions'] ?? [];
-    }
-
-    public function setAllowedRegionsAttribute($value)
-    {
-        $this->updateContractFilterItems('region', is_array($value) ? $value : []);
-    }
-
-    public function getCanChangeCompanyAttribute()
-    {
-        return $this->getContractFilterSettings()['can_change_company'] ?? false;
-    }
-
-    public function setCanChangeCompanyAttribute($value)
-    {
-        $this->updateContractFilterFlag('can_change_company', (bool) $value);
-    }
-
-    public function getAllowedCompaniesAttribute()
-    {
-        return $this->getContractFilterSettings()['allowed_companies'] ?? [];
-    }
-
-    public function setAllowedCompaniesAttribute($value)
-    {
-        $this->updateContractFilterItems('company', is_array($value) ? $value : []);
-    }
-
-    public function getCanChangeDivisionAttribute()
-    {
-        return $this->getContractFilterSettings()['can_change_division'] ?? false;
-    }
-
-    public function setCanChangeDivisionAttribute($value)
-    {
-        $this->updateContractFilterFlag('can_change_division', (bool) $value);
-    }
-
-    public function getAllowedDivisionsAttribute()
-    {
-        return $this->getContractFilterSettings()['allowed_divisions'] ?? [];
-    }
-
-    public function setAllowedDivisionsAttribute($value)
-    {
-        $this->updateContractFilterItems('division', is_array($value) ? $value : []);
-    }
-
-    public function getCanChangeDepartmentAttribute()
-    {
-        return $this->getContractFilterSettings()['can_change_department'] ?? false;
-    }
-
-    public function setCanChangeDepartmentAttribute($value)
-    {
-        $this->updateContractFilterFlag('can_change_department', (bool) $value);
-    }
-
-    public function getAllowedDepartmentsAttribute()
-    {
-        return $this->getContractFilterSettings()['allowed_departments'] ?? [];
-    }
-
-    public function setAllowedDepartmentsAttribute($value)
-    {
-        $this->updateContractFilterItems('department', is_array($value) ? $value : []);
-    }
+    public function getAllowedDepartmentsAttribute() { return $this->getContractFilterSettings()['allowed_departments'] ?? []; }
+    public function setAllowedDepartmentsAttribute($v) { /* no-op */ }
 }
