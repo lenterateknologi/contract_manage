@@ -74,7 +74,7 @@ function flattenTreeFromParents(parents: any[], depth = 0): any[] {
     return result;
 }
 
-const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies'];
+const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles'];
 
 export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);

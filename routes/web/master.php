@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\OrganizationController;
 use App\Http\Controllers\Admin\VendorAdminController;
 use App\Http\Controllers\Admin\WorkflowAdminController;
 use App\Http\Controllers\Core\ResourceController;
+use App\Http\Controllers\Admin\BackupController;
 use App\Http\Controllers\Master\OrganizationTreeController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\System\EmailTestController;
@@ -170,5 +171,13 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('{resource}/{id}/edit', [ResourceController::class, 'edit'])->name('core.edit');
         Route::put('{resource}/{id}', [ResourceController::class, 'update'])->name('core.update');
         Route::delete('{resource}/{id}', [ResourceController::class, 'destroy'])->name('core.destroy');
+    });
+
+    Route::controller(BackupController::class)->prefix('backups')->group(function () {
+        Route::get('/', 'index')->name('admin.backups.index');
+        Route::post('/run', 'runScript')->name('admin.backups.run');
+        Route::get('/download/{filename}', 'download')->name('admin.backups.download');
+        Route::delete('/delete/{filename}', 'destroy')->name('admin.backups.destroy');
+        Route::post('/restore', 'restore')->name('admin.backups.restore');
     });
 });

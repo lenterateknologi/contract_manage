@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Head, useForm } from '@inertiajs/react';
-import { ChevronDown, ChevronRight, Maximize2, Minimize2, Plus, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, Maximize2, Minimize2, Plus, X, Network } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { Button } from '@/components/ui/buttons/Button';
 import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
+import { PageTable } from '@/components/ui/navigation/PageTable';
 
 interface TreeNode {
     id: string;
@@ -325,19 +326,19 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
         }
     ];
 
+    // ponytail: Wrap DataTable inside PageTable to add consistent page header, search, and action layout
     return (
         <>
             <Head title="Organization Tree" />
 
-            <DataTable
+            <PageTable
                 title="Organization Tree"
-                columns={columns}
-                borderless={true}
-                data={flattenedData}
-                searchPlaceholder="Search group, region, or company..."
+                subtitle="Hierarchical view of Group > Region > Company"
+                icon={Network}
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
-                headerActions={
+                searchPlaceholder="Search group, region, or company..."
+                actions={
                     <div className="flex items-center gap-2">
                         <Button 
                             variant="white" 
@@ -366,7 +367,15 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
                         </Button>
                     </div>
                 }
-            />
+            >
+                <div className="flex-1 overflow-auto">
+                    <DataTable
+                        columns={columns}
+                        borderless={true}
+                        data={flattenedData}
+                    />
+                </div>
+            </PageTable>
 
             {isAddModalOpen && (
                 <AddOrganizationModal 

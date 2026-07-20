@@ -1,4 +1,5 @@
 #!/bin/bash
+export PATH="/opt/homebrew/opt/postgresql@17/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 # Baca file .env Laravel
 if [ -f .env ]; then
@@ -14,11 +15,22 @@ DB_DATABASE=${DB_DATABASE:-contract_manage}
 DB_USERNAME=${DB_USERNAME:-postgres}
 DB_PASSWORD=${DB_PASSWORD:-}
 
-INPUT_FILE="database_dump.sql"
+# Periksa apakah argumen nama file telah diberikan
+if [ -z "$1" ]; then
+    echo "Gunakan: ./import.sh <nama_file_dump>"
+    echo "Contoh: ./import.sh database_dump_20260720_085654.sql"
+    exit 1
+fi
+
+INPUT_FILE="$1"
 
 if [ ! -f "$INPUT_FILE" ]; then
-    echo "File dump database '$INPUT_FILE' tidak ditemukan!"
-    exit 1
+    if [ -f "database_dumps/$INPUT_FILE" ]; then
+        INPUT_FILE="database_dumps/$INPUT_FILE"
+    else
+        echo "File dump database '$INPUT_FILE' tidak ditemukan!"
+        exit 1
+    fi
 fi
 
 echo "=== Memulai Import Database PostgreSQL ==="

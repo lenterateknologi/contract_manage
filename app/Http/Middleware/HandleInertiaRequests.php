@@ -188,6 +188,7 @@ class HandleInertiaRequests extends Middleware
         if ($isAdmin) {
             $hasSync = false;
             $hasOrgTree = false;
+            $hasBackup = false;
             foreach ($groups as $group) {
                 foreach ($group['items'] as $item) {
                     if ($item['url'] === '/admin/master-data-sync') {
@@ -196,10 +197,13 @@ class HandleInertiaRequests extends Middleware
                     if ($item['url'] === '/admin/organization-tree') {
                         $hasOrgTree = true;
                     }
+                    if ($item['url'] === '/admin/backups') {
+                        $hasBackup = true;
+                    }
                 }
             }
 
-            if (! $hasSync || ! $hasOrgTree) {
+            if (! $hasSync || ! $hasOrgTree || ! $hasBackup) {
                 $foundSystemGroup = false;
                 foreach ($groups as &$group) {
                     if (trim($group['title']) === 'Pengaturan Sistem') {
@@ -217,6 +221,14 @@ class HandleInertiaRequests extends Middleware
                                 'url' => '/admin/organization-tree',
                                 'icon' => 'Building2',
                                 'sequence' => 100,
+                            ];
+                        }
+                        if (! $hasBackup) {
+                            $group['items'][] = [
+                                'title' => 'Backup & Restore',
+                                'url' => '/admin/backups',
+                                'icon' => 'Database',
+                                'sequence' => 101,
                             ];
                         }
                         // Sort items of this group after appending
@@ -251,6 +263,14 @@ class HandleInertiaRequests extends Middleware
                             'url' => '/admin/organization-tree',
                             'icon' => 'Building2',
                             'sequence' => 100,
+                        ];
+                    }
+                    if (! $hasBackup) {
+                        $newItems[] = [
+                            'title' => 'Backup & Restore',
+                            'url' => '/admin/backups',
+                            'icon' => 'Database',
+                            'sequence' => 101,
                         ];
                     }
                     $groups[] = [
