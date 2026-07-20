@@ -41,7 +41,6 @@ class DuplicateWorkflowAction
                     'user_id' => $auth->user_id,
                     'company_group_id' => $auth->company_group_id,
                     'region_id' => $auth->region_id,
-                    'use_initiator_property' => $auth->use_initiator_property,
                     'authority_type' => $auth->authority_type,
                 ]);
             }
@@ -73,7 +72,6 @@ class DuplicateWorkflowAction
                         'user_id' => $auth->user_id,
                         'company_group_id' => $auth->company_group_id,
                         'region_id' => $auth->region_id,
-                        'use_initiator_property' => $auth->use_initiator_property,
                         'authority_type' => $auth->authority_type,
                     ]);
                 }

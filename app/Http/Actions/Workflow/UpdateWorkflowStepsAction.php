@@ -67,7 +67,6 @@ class UpdateWorkflowStepsAction
                                 'user_id' => ($auth['authority_type'] ?? null) === 'custom' ? null : (! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null),
                                 'company_group_id' => $auth['company_group_id'] ?? null,
                                 'region_id' => $auth['region_id'] ?? null,
-                                'use_initiator_property' => (bool) ($auth['use_initiator_property'] ?? false),
                             ]);
                         }
                     } else {

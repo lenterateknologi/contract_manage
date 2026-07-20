@@ -47,7 +47,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 return false;
             }
 
-            if (auth.authority_type === 'user' && !auth.use_initiator_property) {
+            if (auth.authority_type === 'user') {
                 return String(user.id) === String(auth.user_id);
             }
 
@@ -61,7 +61,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             if (auth.role_id) {
                 matchesRole = String(auth.role_id) === String(user.role_id) || auth.role?.name?.toLowerCase() === user.role?.toLowerCase();
                 hasFilters = true;
-            } else if (auth.role_use_initiator || (auth.authority_type === 'role' && auth.use_initiator_property)) {
+            } else if (auth.role_use_initiator) {
                 matchesRole = String(contract?.initiator?.role_id) === String(user.role_id) || contract?.initiator?.role?.toLowerCase() === user.role?.toLowerCase();
                 hasFilters = true;
             }
@@ -70,7 +70,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 const userDeptId = user.department_id || user.department?.id;
                 matchesDept = String(auth.department_id) === String(userDeptId);
                 hasFilters = true;
-            } else if (auth.department_use_initiator || (auth.authority_type === 'department' && auth.use_initiator_property)) {
+            } else if (auth.department_use_initiator) {
                 const initDeptId = contract?.initiator?.department_id || contract?.initiator?.department?.id;
                 const userDeptId = user.department_id || user.department?.id;
                 matchesDept = String(initDeptId) === String(userDeptId);
@@ -81,7 +81,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 const userDivId = user.division_id || user.division?.id;
                 matchesDiv = String(auth.division_id) === String(userDivId);
                 hasFilters = true;
-            } else if (auth.division_use_initiator || (auth.authority_type === 'division' && auth.use_initiator_property)) {
+            } else if (auth.division_use_initiator) {
                 const initDivId = contract?.initiator?.division_id || contract?.initiator?.division?.id;
                 const userDivId = user.division_id || user.division?.id;
                 matchesDiv = String(initDivId) === String(userDivId);
@@ -91,7 +91,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             if (auth.company_group_id) {
                 matchesGroup = String(auth.company_group_id) === String(user.company_group_id);
                 hasFilters = true;
-            } else if (auth.company_group_use_initiator || (auth.authority_type === 'company_group' && auth.use_initiator_property)) {
+            } else if (auth.company_group_use_initiator) {
                 const initCG = contract?.initiator?.company_group_id || contract?.initiator?.company_group?.id;
                 matchesGroup = String(initCG) === String(user.company_group_id);
                 hasFilters = true;
@@ -100,7 +100,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             if (auth.region_id) {
                 matchesRegion = String(auth.region_id) === String(user.region_id);
                 hasFilters = true;
-            } else if (auth.region_use_initiator || (auth.authority_type === 'region' && auth.use_initiator_property)) {
+            } else if (auth.region_use_initiator) {
                 const initRegion = contract?.initiator?.region_id || contract?.initiator?.region?.id;
                 matchesRegion = String(initRegion) === String(user.region_id);
                 hasFilters = true;

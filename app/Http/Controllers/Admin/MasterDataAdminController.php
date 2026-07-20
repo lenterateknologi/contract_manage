@@ -285,7 +285,6 @@ class MasterDataAdminController extends Controller
                         'division_use_initiator' => $a->division_use_initiator,
                         'company_group_use_initiator' => $a->company_group_use_initiator,
                         'region_use_initiator' => $a->region_use_initiator,
-                        'use_initiator_property' => $a->use_initiator_property,
                     ];
                 })->toArray();
 
@@ -1094,7 +1093,6 @@ class MasterDataAdminController extends Controller
                         'division_use_initiator' => $auth['division_use_initiator'] ?? false,
                         'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
                         'region_use_initiator' => $auth['region_use_initiator'] ?? false,
-                        'use_initiator_property' => $auth['use_initiator_property'] ?? false,
                     ])->save();
                     $counts['workflow_step_authorities']++;
                 } catch (\Exception $e) {

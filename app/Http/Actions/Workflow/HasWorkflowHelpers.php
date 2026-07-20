@@ -274,7 +274,7 @@ trait HasWorkflowHelpers
                 'is_additional' => true,
                 'additional_type' => $type,
                 'target_step_id' => $targetStepId,
-                'use_initiator_property' => true,
+                'role_use_initiator' => true,
                 'authority_type' => 'role',
             ]);
         }
@@ -285,7 +285,7 @@ trait HasWorkflowHelpers
                 'is_additional' => true,
                 'additional_type' => $type,
                 'target_step_id' => $targetStepId,
-                'use_initiator_property' => true,
+                'department_use_initiator' => true,
                 'authority_type' => 'department',
             ]);
         }
@@ -296,8 +296,7 @@ trait HasWorkflowHelpers
                 'is_additional' => true,
                 'additional_type' => $type,
                 'target_step_id' => $targetStepId,
-                'use_initiator_property' => true,
-                'authority_type' => 'user',
+                'authority_type' => 'initiator',
             ]);
         }
     }

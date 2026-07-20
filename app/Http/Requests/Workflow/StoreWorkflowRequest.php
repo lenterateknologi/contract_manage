@@ -51,7 +51,6 @@ class StoreWorkflowRequest extends FormRequest
             'initiator_authorities.*.user_id' => 'nullable|string',
             'initiator_authorities.*.company_group_id' => 'nullable|string',
             'initiator_authorities.*.region_id' => 'nullable|string',
-            'initiator_authorities.*.use_initiator_property' => 'nullable|boolean',
             'meta' => 'nullable|array',
             'steps' => 'nullable|array',
             'steps.*.id' => 'nullable|string',

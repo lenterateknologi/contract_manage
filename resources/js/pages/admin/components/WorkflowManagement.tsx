@@ -41,11 +41,13 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
 
     const rows: any[] = workflows.data || [];
 
-    // Group workflows by contract_type_name
+    // Group workflows by contract_type_name (parent/first item only)
     const grouped = useMemo(() => {
         const map = new Map<string, any[]>();
         rows.forEach((w) => {
-            const key = w.contract_type_name || 'Global / Semua Tipe';
+            const key = w.contract_type_name
+                ? w.contract_type_name.split(',')[0].trim()
+                : 'Global / Semua Tipe';
             if (!map.has(key)) map.set(key, []);
             map.get(key)!.push(w);
         });
@@ -287,9 +289,34 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
 
                                         {/* Submission type */}
                                         <td className="px-4 py-3">
-                                            <span className="inline-flex items-center rounded-md border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground">
-                                                {row.submission_type || '—'}
-                                            </span>
+                                            {(() => {
+                                                const types = row.contract_type_name
+                                                    ? row.contract_type_name.split(',').map((s: string) => s.trim())
+                                                    : [];
+                                                if (types.length === 0) {
+                                                    return (
+                                                        <span className="inline-flex items-center rounded-md border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                                            —
+                                                        </span>
+                                                    );
+                                                }
+                                                const visibleTypes = types.slice(0, 2);
+                                                const hasMore = types.length > 2;
+                                                return (
+                                                    <div className="flex flex-wrap gap-1 items-center">
+                                                        {visibleTypes.map((t: string, idx: number) => (
+                                                            <span key={idx} className="inline-flex items-center rounded-md border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                                                {t}
+                                                            </span>
+                                                        ))}
+                                                        {hasMore && (
+                                                            <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                                                                +{types.length - 2}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
 
                                         {/* Tampil (is_active) */}

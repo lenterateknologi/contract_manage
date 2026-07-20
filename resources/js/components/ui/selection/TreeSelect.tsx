@@ -284,7 +284,7 @@ export function TreeSelect({
                 <div key={nId} className="flex flex-col">
                     <div 
                         className="group flex w-full items-center gap-1 rounded-md hover:bg-sidebar-accent/40 pr-2"
-                        style={{ paddingLeft: `${depth * 12}px` }}
+                        style={{ paddingLeft: depth === 0 ? '0px' : '6px' }}
                     >
                         <button
                             type="button"

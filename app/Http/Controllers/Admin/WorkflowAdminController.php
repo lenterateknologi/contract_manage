@@ -94,10 +94,10 @@ class WorkflowAdminController extends Controller
 
         $workflowData['steps'] = $workflow->steps->map(function ($s) {
             $sd = $s->toArray();
-            $sd['role'] = $s->approverAuthorities->filter(fn ($a) => ! $a->use_initiator_property)->pluck('role.name')->filter()->values()->toArray();
-            $sd['user_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->use_initiator_property)->pluck('user_id')->filter()->values()->toArray();
-            $sd['department_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->use_initiator_property)->pluck('department_id')->filter()->values()->toArray();
-            $sd['division_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->use_initiator_property)->pluck('division_id')->filter()->values()->toArray();
+            $sd['role'] = $s->approverAuthorities->filter(fn ($a) => ! $a->role_use_initiator)->pluck('role.name')->filter()->values()->toArray();
+            $sd['user_ids'] = $s->approverAuthorities->pluck('user_id')->filter()->values()->toArray();
+            $sd['department_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->department_use_initiator)->pluck('department_id')->filter()->values()->toArray();
+            $sd['division_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->division_use_initiator)->pluck('division_id')->filter()->values()->toArray();
             $sd['approver_authorities'] = $s->approverAuthorities->map(function ($a) {
                 $arr = $a->toArray();
                 if (in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator'])) {

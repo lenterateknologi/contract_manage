@@ -104,11 +104,16 @@ class Workflow extends Model
 
     public function getContractTypeNameAttribute()
     {
-        if (! array_key_exists('contract_type_id', $this->attributes)) {
-            return null;
+        if (!empty($this->attributes['contract_type_id'])) {
+            return $this->contractType?->name;
         }
 
-        return $this->contractType?->name;
+        $ids = $this->contract_type_ids;
+        if (!empty($ids)) {
+            return ContractType::whereIn('id', $ids)->pluck('name')->implode(', ');
+        }
+
+        return 'Global / Semua Tipe';
     }
 
     public function getContractTypeIdsAttribute()
