@@ -677,7 +677,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             } else {
                 router.post(
                     `/admin/module-groups`,
-                    { name: groupName, icon: 'LayoutGrid' },
+                    { name: groupName, icon: 'LayoutGrid', role_id: role.id },
                     {
                         onSuccess: () => showToast('Grup navigasi berhasil dibuat', 'success'),
                         onFinish: () => setIsGroupProcessing(false),

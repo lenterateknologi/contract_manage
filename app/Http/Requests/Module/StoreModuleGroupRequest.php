@@ -16,6 +16,7 @@ class StoreModuleGroupRequest extends FormRequest
         return [
             'name' => 'required|string|max:255|unique:m_module_groups,name',
             'icon' => 'nullable|string|max:50',
+            'role_id' => 'nullable|exists:m_roles,id',
         ];
     }
 }
