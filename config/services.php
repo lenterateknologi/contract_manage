@@ -39,4 +39,10 @@ return [
         'path' => env('LIBREOFFICE_PATH', '/usr/bin/soffice'),
     ],
 
+    'coma' => [
+        'base_url' => env('COMA_API_BASE_URL'),
+        'username' => env('COMA_API_USERNAME'),
+        'password' => env('COMA_API_PASSWORD'),
+    ],
+
 ];

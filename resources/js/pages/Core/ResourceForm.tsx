@@ -864,7 +864,7 @@ interface Props {
 
 export default function ResourceForm({ resourceSlug, title, formSchema, formColumns = 1, record, organizationTree }: Props) {
     const isEdit = !!record;
-    const [activeTab, setActiveTab] = useState<'info' | 'docs'>('info');
+    const [activeTab, setActiveTab] = useState<'info'>('info');
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
 
     // States for custom contract filter table manager dialog
@@ -1000,6 +1000,16 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         placeholder={field.placeholder}
                         icon={IconComponent}
                     />
+                )}
+                {field.type === 'readonly' && (
+                    <div className="flex flex-col gap-1.5 w-full">
+                        <label className="text-[11px] font-normal text-text-main uppercase px-0.5 tracking-wider">
+                            {field.label}
+                        </label>
+                        <div className="flex h-10 w-full items-center rounded-lg border border-surface-border/60 bg-surface-muted/30 px-3 text-xs font-normal text-text-main select-all cursor-default">
+                            {data[field.name] ?? <span className="italic opacity-40">{field.placeholder || '—'}</span>}
+                        </div>
+                    </div>
                 )}
                 {field.type === 'textarea' && (
                     <FormTextarea
@@ -1169,36 +1179,8 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     </div>
                 </div>
 
-                {resourceSlug === 'vendors' && isEdit && (
-                    <div className="flex border-b border-surface-border -mb-2">
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('info')}
-                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-normal uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                                activeTab === 'info'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-text-main hover:text-foreground'
-                            }`}
-                        >
-                            <LucideIcons.User size={14} />
-                            Informasi Vendor
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveTab('docs')}
-                            className={`flex items-center gap-2 border-b-2 px-4 py-3 text-xs font-normal uppercase tracking-wider transition-all duration-200 cursor-pointer ${
-                                activeTab === 'docs'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-text-main hover:text-foreground'
-                            }`}
-                        >
-                            <LucideIcons.FileCheck size={14} />
-                            Dokumen Legalitas
-                        </button>
-                    </div>
-                )}
 
-                {(!isEdit || resourceSlug !== 'vendors' || activeTab === 'info') && (
+                {(!isEdit || resourceSlug !== 'vendors') && (
                     <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full animate-in fade-in duration-200">
                         <div className={getGridClass()}>
                         {formSchema.map((field: any) => {
@@ -1278,23 +1260,11 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                                                                      [dim.key]: type
                                                                                  }));
                                                                                  if (type === 'user_data') {
-                                                                                     setData(prev => ({
-                                                                                         ...prev,
-                                                                                         [dim.toggleName]: false,
-                                                                                         [dim.allowedName]: []
-                                                                                     }));
+                                                                                     setData({ ...data, [dim.toggleName]: false, [dim.allowedName]: [] });
                                                                                  } else if (type === 'full_access') {
-                                                                                     setData(prev => ({
-                                                                                         ...prev,
-                                                                                         [dim.toggleName]: true,
-                                                                                         [dim.allowedName]: []
-                                                                                     }));
+                                                                                     setData({ ...data, [dim.toggleName]: true, [dim.allowedName]: [] });
                                                                                  } else if (type === 'custom') {
-                                                                                     setData(prev => ({
-                                                                                         ...prev,
-                                                                                         [dim.toggleName]: true,
-                                                                                         [dim.allowedName]: []
-                                                                                     }));
+                                                                                     setData({ ...data, [dim.toggleName]: true, [dim.allowedName]: [] });
                                                                                  }
                                                                              }}
                                                                              className="flex h-9 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary cursor-pointer"
@@ -1362,101 +1332,158 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 </form>
                 )}
 
-                {/* ponytail: Vendor Documents Section */}
-                {resourceSlug === 'vendors' && isEdit && activeTab === 'docs' && (
-                    <div className="border border-surface-border bg-surface-base rounded-2xl p-6 flex flex-col gap-5 animate-in fade-in duration-200">
-                        <div className="flex items-center gap-2 pb-3 border-b border-surface-border">
-                            <LucideIcons.FileCheck className="h-4 w-4 text-primary shrink-0 opacity-80" />
-                            <div>
-                                <h3 className="text-xs font-normal uppercase tracking-wider text-text-main">Dokumen Legalitas Vendor</h3>
-                                <p className="text-[11px] text-text-main mt-0.5">Kelola berkas legalitas dan lampiran wajib untuk vendor ini.</p>
+                {/* Unified read-only detail view — vendor edit, tab info */}
+                {resourceSlug === 'vendors' && isEdit && activeTab === 'info' && (() => {
+                    const r = record as Record<string, any>;
+
+                    const renderDetailField = (label: string, value: any, isFile = false) => {
+                        let stringVal = '';
+                        let isLink = false;
+                        let fileUrl = '';
+
+                        if (value === null || value === undefined || value === '') {
+                            stringVal = '-';
+                        } else if (isFile || (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/storage/')))) {
+                            isLink = true;
+                            fileUrl = value;
+                            stringVal = 'Lampiran Tersedia';
+                        } else if (typeof value === 'boolean') {
+                            stringVal = value ? 'Ya' : 'Tidak';
+                        } else if (Array.isArray(value)) {
+                            stringVal = value.length > 0 ? value.join(', ') : '-';
+                        } else {
+                            stringVal = String(value);
+                        }
+
+                        return (
+                            <div key={label} className="w-full">
+                                <FormInput
+                                    label={label}
+                                    value={stringVal}
+                                    disabled
+                                    readOnly
+                                />
+                                {isLink && fileUrl && (
+                                    <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 mt-1 text-primary text-[11px] font-semibold hover:underline"
+                                    >
+                                        <LucideIcons.Eye className="h-3 w-3" />
+                                        Lihat Berkas Lampiran
+                                    </a>
+                                )}
                             </div>
-                        </div>
+                        );
+                    };
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {[
-                                { type: 'NIB', label: 'Nomor Induk Berusaha (NIB)' },
-                                { type: 'SIUP', label: 'Surat Izin Usaha Perdagangan (SIUP)' },
-                                { type: 'NPWP', label: 'Nomor Pokok Wajib Pajak (NPWP)' },
-                                { type: 'Akta Pendirian', label: 'Akta Pendirian Perusahaan' },
-                                { type: 'KTP Direktur', label: 'KTP Direktur / PIC' },
-                                { type: 'SPPKP', label: 'Surat Pengukuhan Pengusaha Kena Pajak (SPPKP)' },
-                            ].map((docType) => {
-                                const doc = record?.documents?.find((d: any) => d.document_type === docType.type);
-
-                                return (
-                                    <div key={docType.type} className="flex flex-col justify-between gap-2 p-4 border border-surface-border rounded-xl bg-surface-base min-h-[120px]">
-                                        <span className="text-[10px] font-normal text-text-main uppercase tracking-wider">{docType.label}</span>
-                                        {doc ? (
-                                            <div className="flex items-center justify-between gap-3 mt-1">
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <LucideIcons.FileText className="h-5 w-5 text-emerald-500 shrink-0" />
-                                                    <span className="text-xs font-normal text-text-main truncate" title={doc.document_name}>
-                                                        {doc.document_name}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-1 shrink-0">
-                                                    <a
-                                                        href={doc.file_url}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="p-1.5 rounded-lg hover:bg-slate-50 text-text-main hover:text-primary transition-all"
-                                                        title="Lihat / Download"
-                                                    >
-                                                        <LucideIcons.Download className="h-4 w-4" />
-                                                    </a>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (confirm(`Hapus dokumen ${docType.type}?`)) {
-                                                                router.delete(`/admin/vendors/${record.id}/documents/${doc.id}`, {
-                                                                    preserveScroll: true
-                                                                 });
-                                                            }
-                                                        }}
-                                                        className="p-1.5 rounded-lg hover:bg-rose-50 text-text-main hover:text-rose-600 transition-all"
-                                                        title="Hapus"
-                                                    >
-                                                        <LucideIcons.Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col gap-2 mt-1">
-                                                <div className="flex items-center gap-1.5 text-rose-500 text-[10px] font-normal uppercase tracking-wider">
-                                                    <LucideIcons.AlertCircle className="h-3.5 w-3.5" />
-                                                    <span>Belum Dilengkapi</span>
-                                                </div>
-                                                <div className="relative">
-                                                    <input
-                                                        type="file"
-                                                        accept=".pdf,.docx,.jpg,.jpeg,.png"
-                                                        onChange={(e) => {
-                                                            const file = e.target.files?.[0];
-                                                            if (file) {
-                                                                const fd = new FormData();
-                                                                fd.append('document_file', file);
-                                                                fd.append('document_type', docType.type);
-                                                                router.post(`/admin/vendors/${record.id}/documents`, fd, {
-                                                                    preserveScroll: true
-                                                                });
-                                                            }
-                                                        }}
-                                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                                    />
-                                                    <div className="flex h-9 items-center justify-center gap-2 rounded-lg border border-dashed border-surface-border bg-primary/5 text-xs font-normal text-text-main hover:bg-primary/10 transition-all cursor-pointer">
-                                                        <LucideIcons.Upload className="h-3.5 w-3.5" /> Upload File
-                                                    </div>
-                                                </div>
-                                                <span className="text-[9px] text-text-main font-normal tracking-wide mt-0.5">Format: PDF, DOCX, JPG, PNG (Maks. 5MB)</span>
-                                            </div>
-                                        )}
+                    const renderDetailSection = (title: string, Icon: React.ElementType, fields: React.ReactNode[]) => (
+                        <div key={title} className="col-span-full border border-surface-border bg-surface-muted/5 dark:bg-surface-muted/10 rounded-2xl p-6 flex flex-col gap-5">
+                            <div className="flex items-center justify-between pb-3 border-b border-surface-border gap-4">
+                                <div className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4 text-primary shrink-0 opacity-80" />
+                                    <div>
+                                        <h3 className="text-xs font-normal uppercase tracking-wider text-text-main">{title}</h3>
                                     </div>
-                                );
-                            })}
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">{fields}</div>
                         </div>
-                    </div>
-                )}
+                    );
+
+                    return (
+                        <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+                            {renderDetailSection('Identitas Perusahaan', LucideIcons.Building2, [
+                                renderDetailField('Kode COMA', r.external_code),
+                                renderDetailField('Kode Lokal', r.code),
+                                renderDetailField('Tipe Bisnis', r.company_type),
+                                renderDetailField('Nama', r.name),
+                                renderDetailField('Cabang', r.branch_name),
+                                renderDetailField('No. Registrasi', r.registration_number),
+                                renderDetailField('No. Perjanjian', r.agreement_number),
+                                renderDetailField('Tgl. Perjanjian', r.agreement_date),
+                                renderDetailField('Tgl. Disetujui', r.approved_date),
+                                renderDetailField('Status', r.vendor_status),
+                                renderDetailField('Upload Agreement', r.is_upload_agreement),
+                                renderDetailField('Master Agreement', r.master_agreement),
+                                renderDetailField('Integrity Pact', r.integrity_pact),
+                                renderDetailField('Single Vendor', r.is_single_vendor),
+                                renderDetailField('Single Vendor Expired', r.single_vendor_expired),
+                                renderDetailField('Total Karyawan', r.total_employees),
+                                renderDetailField('Coverage Area', r.coverage_area),
+                                renderDetailField('Compliance Level', r.compliance_level),
+                                renderDetailField('No. KTP', r.id_card_number),
+                                renderDetailField('Status Aktif', r.is_active),
+                            ])}
+                            {renderDetailSection('Alamat', LucideIcons.MapPin, [
+                                renderDetailField('Alamat', r.address),
+                                renderDetailField('Negara', r.country),
+                                renderDetailField('Provinsi', r.region),
+                                renderDetailField('Kota', r.city),
+                                renderDetailField('Kode Pos', r.postal_code),
+                                renderDetailField('Kode Negara (API)', r.vendor_country),
+                                renderDetailField('Alamat Surat', r.mailing_address),
+                                renderDetailField('Negara Surat', r.mailing_country),
+                                renderDetailField('Provinsi Surat', r.mailing_region),
+                                renderDetailField('Kota Surat', r.mailing_city),
+                                renderDetailField('Kode Pos Surat', r.mailing_postal_code),
+                            ])}
+                            {renderDetailSection('Kontak & PIC', LucideIcons.Phone, [
+                                renderDetailField('Email Perusahaan', r.email),
+                                renderDetailField('Telepon', r.phone),
+                                renderDetailField('Fax', r.fax),
+                                renderDetailField('Email Keuangan', r.finance_email),
+                                renderDetailField('Email Pajak', r.tax_email),
+                                renderDetailField('Nama PIC', r.pic_name),
+                                renderDetailField('Email PIC', r.pic_email),
+                                renderDetailField('Telepon PIC', r.pic_phone),
+                            ])}
+                            {renderDetailSection('Informasi Pajak', LucideIcons.Receipt, [
+                                renderDetailField('Tipe NPWP', r.tax?.type_npwp),
+                                renderDetailField('NPWP', r.tax?.npwp),
+                                renderDetailField('Tipe PKP', r.tax?.type_pkp),
+                                renderDetailField('PKP', r.tax?.pkp),
+                                renderDetailField('Tipe BKP', r.tax?.type_bkp),
+                                renderDetailField('PPN', r.tax?.ppn ? `${r.tax.ppn}%` : null),
+                                renderDetailField('Keterangan BKP', r.tax?.bkp_desc),
+                                renderDetailField('Keterangan JKP', r.tax?.jkp_desc),
+                                renderDetailField('Is Organisasi', r.tax?.is_organization),
+                                renderDetailField('Is SIUJK', r.tax?.is_siujk),
+                                renderDetailField('No. PP23', r.tax?.pp23_number),
+                                renderDetailField('PP23 Expired', r.tax?.pp23_expired_date),
+                            ])}
+                            {(r.business_fields?.length > 0 || r.business_fields_foreign) && renderDetailSection('Bidang Usaha', LucideIcons.Briefcase, [
+                                <div key="bf-l" className="col-span-full">{renderDetailField('Bidang Usaha Lokal', r.business_fields?.map((bf: any) => bf.business_field))}</div>,
+                                <div key="bf-f" className="col-span-full">{renderDetailField('Bidang Usaha Asing', r.business_fields_foreign)}</div>,
+                            ])}
+                            {(r.banks?.length > 0 || r.payment_methods?.length > 0) && renderDetailSection('Bank & Pembayaran', LucideIcons.CreditCard, [
+                                <div key="bk" className="col-span-full">{renderDetailField('Data Bank', r.banks?.map((b: any) => `${b.bank_name} - ${b.account_number} (${b.account_name})`))}</div>,
+                                <div key="pm" className="col-span-full">{renderDetailField('Metode Pembayaran', r.payment_methods?.map((p: any) => p.method_name))}</div>,
+                            ])}
+                            {r.legalities?.length > 0 && renderDetailSection('Legalitas', LucideIcons.ShieldCheck, [
+                                ...r.legalities.map((leg: any) => (
+                                    <div key={leg.id ?? leg.legality_type} className="col-span-full border border-surface-border rounded-xl p-3 flex flex-col gap-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-normal uppercase tracking-wider text-text-main opacity-70">{leg.legality_type}</span>
+                                            {leg.is_verified && (
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-normal text-emerald-600 uppercase">
+                                                    <LucideIcons.Check className="h-2.5 w-2.5" /> Verified
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            {renderDetailField('Nomor', leg.number)}
+                                            {renderDetailField('Tgl. Terbit', leg.issued_date)}
+                                            {renderDetailField('Tgl. Berlaku s/d', leg.expired_date)}
+                                            {leg.file ? renderDetailField('File', leg.file, true) : renderDetailField('File', null)}
+                                        </div>
+                                    </div>
+                                ))
+                            ])}
+                        </div>
+                    );
+                })()}
             </div>
         </>
     );

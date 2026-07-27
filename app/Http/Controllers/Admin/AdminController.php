@@ -54,7 +54,7 @@ class AdminController extends Controller
 
         if ($request->wantsJson()) {
             return response()->json([
-                'users' => $query->orderBy('name')->paginate($request->input('per_page', 10)),
+                'users' => $query->orderBy('name')->paginate($request->input('per_page', 15)),
                 'roles' => Role::orderBy('name')->get(),
                 'departments' => Department::orderBy('name')->get(),
                 'companies' => Company::with(['group', 'region'])->orderBy('name')->get(),
@@ -63,7 +63,7 @@ class AdminController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'users',
-            'users' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'users' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
             'roles' => Role::orderBy('name')->get(),
             'departments' => Department::orderBy('name')->get(),
             'companies' => Company::with(['group', 'region'])->orderBy('name')->get(),
@@ -120,12 +120,12 @@ class AdminController extends Controller
             });
 
         if ($request->wantsJson()) {
-            return response()->json($query->orderBy('name')->paginate($request->input('per_page', 10)));
+            return response()->json($query->orderBy('name')->paginate($request->input('per_page', 15)));
         }
 
         return Inertia::render('admin/Index', [
             'currentView' => 'roles',
-            'roles' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'roles' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
             'filters' => $request->only(['search', 'created_from', 'created_to']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],

@@ -64,7 +64,15 @@ import {
     CheckSquare,
     Square,
     Minus,
-    ChevronRight
+    ChevronRight,
+    // Vendor COMA section icons
+    MapPin,
+    Phone,
+    UserCircle,
+    Receipt,
+    Briefcase,
+    CreditCard,
+    CloudOff,
 } from 'lucide-react';
 
 const LucideIcons: Record<string, any> = {
@@ -133,7 +141,15 @@ const LucideIcons: Record<string, any> = {
     CheckSquare,
     Square,
     Minus,
-    ChevronRight
+    ChevronRight,
+    // Vendor COMA section icons
+    MapPin,
+    Phone,
+    UserCircle,
+    Receipt,
+    Briefcase,
+    CreditCard,
+    CloudOff,
 };
 
 export default LucideIcons;

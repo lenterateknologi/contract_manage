@@ -66,7 +66,7 @@ class ResourceController extends Controller
         $query = $modelClass::with($resourceClass::$with ?? []);
 
         if ($resourceSlug === 'vendors') {
-            $query->with('documents');
+            // vendor data fully from COMA, no m_vendor_documents needed
         }
 
         if ($resourceSlug === 'contract-types' && ! $request->filled('search')) {
@@ -119,7 +119,7 @@ class ResourceController extends Controller
             $query->orderBy($sortBy, $sortDir);
         }
 
-        $defaultLimit = $resourceSlug === 'contract-types' ? 100 : 10;
+        $defaultLimit = $resourceSlug === 'contract-types' ? 100 : 15;
         $perPage = $request->integer('per_page', $defaultLimit);
         $data = $query->paginate($perPage)->withQueryString();
 
@@ -178,7 +178,7 @@ class ResourceController extends Controller
         $record = $modelClass::findOrFail($id);
 
         if ($resourceSlug === 'vendors') {
-            $record->load('documents');
+            $record->load(['tax', 'legalities', 'banks', 'paymentMethods', 'businessFields']);
         }
 
         return Inertia::render('Core/ResourceForm', [

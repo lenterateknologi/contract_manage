@@ -3,7 +3,7 @@ import { Head, router, Link, useForm } from '@inertiajs/react';
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
-import { Plus, Edit2, Trash2, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { ExcelActions } from '@/components/ui/tables/ExcelActions';
@@ -213,20 +213,6 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         cell: (row: any) => {
             const val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
             
-            // Custom render for documents count
-            if (col.name === 'documents_count' && resourceSlug === 'vendors') {
-                const count = Array.isArray(row.documents) ? row.documents.length : 0;
-                const total = 6;
-                const isComplete = count === total;
-                return (
-                    <span className={`inline-flex items-center justify-center px-2 py-1 rounded-md text-[11px] font-normal ${
-                        isComplete ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'
-                    }`}>
-                        {count}/{total}
-                    </span>
-                );
-            }
-
             // Custom render for name column if resource is contract-types (showing tree structure)
             if (col.name === 'name' && resourceSlug === 'contract-types') {
                 const depth = row._depth || 0;
@@ -454,13 +440,13 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                             >
                                 <Plus size={16} /> Tambah Baru
                             </Button>
-                        ) : (
+                        ) : resourceSlug !== 'vendors' ? (
                             <Link href={`/admin/core/${resourceSlug}/create`}>
                                 <Button variant="primary" className="gap-2">
                                     <Plus size={16} /> Tambah Baru
                                 </Button>
                             </Link>
-                        )}
+                        ) : null}
                     </div>
                 }
                 pagination={{
@@ -484,7 +470,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     isRowSelectable={(row) => true}
                     onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
                     selectedRows={selectedRows}
-                    bulkActions={(selected: any[]) => (
+                    bulkActions={(selected: any[]) => resourceSlug === 'vendors' ? null : (
                         <div className="flex items-center gap-2">
                             <Button
                                 type="button"
@@ -516,7 +502,14 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     )}
                     rowActions={(row) => (
                         <div className="flex items-center justify-end gap-2">
-                            {DIALOG_RESOURCES.includes(resourceSlug) ? (
+                            {resourceSlug === 'vendors' ? (
+                                <Link href={`/admin/core/${resourceSlug}/${row.id}/edit`}>
+                                    <Button variant="white" size="sm" className="h-8 gap-1.5 px-3 text-[11px] font-normal uppercase tracking-wider">
+                                        <Eye size={13} className="text-primary" />
+                                        Lihat Detail
+                                    </Button>
+                                </Link>
+                            ) : DIALOG_RESOURCES.includes(resourceSlug) ? (
                                 <Button 
                                     variant="white" 
                                     size="icon" 
@@ -564,9 +557,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     </Button>
                                 </Link>
                             )}
-                            <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
-                                <Trash2 size={14} className="text-rose-500" />
-                            </Button>
+                            {resourceSlug !== 'vendors' && (
+                                <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
+                                    <Trash2 size={14} className="text-rose-500" />
+                                </Button>
+                            )}
                         </div>
                     )}
                 />
