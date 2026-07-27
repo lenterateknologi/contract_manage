@@ -40,7 +40,7 @@ export const Page: React.FC<PageProps> = ({
                 className={cn(
                     'bg-card text-foreground relative mx-auto flex flex-col transition-all print:m-0 print:shadow-none print:ring-0 print:border-none w-[210mm]',
                     'border-border border shadow-sm my-4 rounded-none shrink-0',
-                    'h-[297mm] max-h-[297mm] overflow-hidden',
+                    isBuilder ? 'h-[297mm] max-h-[297mm] overflow-hidden' : 'min-h-[297mm]',
                     className,
                 )}
                 style={{

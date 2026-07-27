@@ -11,11 +11,20 @@ interface LayoutProps {
 export const GridXLayout: React.FC<LayoutProps> = ({ field, children, isBuilder }) => {
     const cols = Number(field.options?.grid_cols) || 1;
     const colSizes = field.options?.col_sizes || [];
-    const childrenArray = React.Children.toArray(children);
+    // Unwrap children jika dibungkus SortableContext
+    let actualChildren: React.ReactNode[] = [];
+    React.Children.forEach(children, (child) => {
+        if (React.isValidElement(child) && child.props && child.props.children) {
+            actualChildren = actualChildren.concat(React.Children.toArray(child.props.children));
+        } else if (child) {
+            actualChildren.push(child);
+        }
+    });
 
     if (isBuilder) {
-        const remainder = childrenArray.length % cols;
-        const emptyCount = childrenArray.length === 0 ? cols : (cols - remainder) % cols;
+        const count = actualChildren.length;
+        const remainder = count % cols;
+        const emptyCount = count === 0 ? cols : (cols - remainder) % cols;
 
         let gridTemplate = `repeat(${cols}, 1fr)`;
         if (colSizes.length > 0) {
@@ -27,6 +36,7 @@ export const GridXLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
                 className="grid w-full min-w-0 overflow-hidden"
                 style={{
                     gridTemplateColumns: gridTemplate,
+                    justifyItems: field.options?.justify_content || undefined,
                     justifyContent: field.options?.justify_content || undefined,
                     alignItems: field.options?.align_items || undefined,
                     gap: field.options?.gap !== undefined ? `${field.options.gap}px` : '16px',
@@ -37,17 +47,18 @@ export const GridXLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
                     minHeight: field.options?.height ? `${field.options.height}px` : undefined,
                 }}
             >
-                {childrenArray}
+                {children}
                 {Array.from({ length: emptyCount }).map((_, index) => {
-                    const colIndex = (childrenArray.length + index) % cols;
+                    const colIndex = (actualChildren.length + index) % cols;
+                    const sizeLabel = colSizes[colIndex] ? colSizes[colIndex] : '1fr';
                     return (
                         <PlaceholderZone
                             key={`placeholder-${field.id}-${index}`}
                             id={`placeholder:${field.id}:${colIndex}`}
                             icon={Columns}
-                            label={`Kolom ${colIndex + 1}`}
+                            label={`Kolom ${colIndex + 1} (${sizeLabel})`}
                             description="Tarik elemen ke sini"
-                            className="min-h-[80px] py-6"
+                            className="min-h-[80px] py-6 border border-dashed border-primary/20 hover:border-primary/40"
                         />
                     );
                 })}
@@ -56,13 +67,14 @@ export const GridXLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
     }
 
     const actualGridTemplate =
-        childrenArray.length === 1 ? '1fr' : (field.options?.col_sizes || []).filter((s: string) => s).join(' ') || `repeat(${cols}, 1fr)`;
+        actualChildren.length === 1 ? '1fr' : (field.options?.col_sizes || []).filter((s: string) => s).join(' ') || `repeat(${cols}, 1fr)`;
 
     return (
         <div
             className="grid w-full min-w-0 overflow-hidden"
             style={{
                 gridTemplateColumns: actualGridTemplate,
+                justifyItems: field.options?.justify_content || undefined,
                 justifyContent: field.options?.justify_content || undefined,
                 alignItems: field.options?.align_items || undefined,
                 gap: field.options?.gap !== undefined ? `${field.options.gap}px` : '16px',

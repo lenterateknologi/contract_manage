@@ -80,6 +80,7 @@ export const UnifiedFormViewer: React.FC<UnifiedFormViewerProps> = ({
                 onDuplicate={onDuplicate}
                 isBuilder={isBuilder}
                 readOnly={isReadOnly}
+                mode={mode}
             />
         </div>
     );

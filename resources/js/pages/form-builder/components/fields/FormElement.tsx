@@ -186,7 +186,7 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
                 );
             case 'image':
             case 'f1_header':
-                return <ImageField field={field} />;
+                return <ImageField field={field} previewData={previewData} />;
             case 'static_text':
                 return <StaticTextField field={field} previewData={previewData} />;
             case 'textfield':

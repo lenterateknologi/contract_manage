@@ -44,19 +44,24 @@ class ExportApprovalTimelinePdfAction
                 'generated_by' => $request->generated_by ?? (Auth::user() ? Auth::user()->name : 'System'),
             ])->render();
 
+            $chromePaths = [
+                base_path('chrome/mac_arm-151.0.7922.47/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing'),
+                '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+                '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+            ];
+            $chromePath = collect($chromePaths)->first(fn ($path) => file_exists($path)) ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+
             $pdfContent = Browsershot::html($html)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+                ->setChromePath($chromePath)
                 ->noSandbox()
                 ->addChromiumArguments([
-                    '--disable-gpu',
-                    '--disable-dev-shm-usage',
-                    '--disable-setuid-sandbox',
-                    '--no-first-run',
-                    '--no-zygote',
-                    '--single-process',
-                    '--disable-extensions',
+                    'disable-gpu',
+                    'disable-dev-shm-usage',
+                    'disable-setuid-sandbox',
+                    'no-first-run',
+                    'disable-extensions',
                 ])
                 ->timeout(180)
                 ->format('A4')

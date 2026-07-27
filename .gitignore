@@ -45,4 +45,5 @@ cosmos-export/
 *.fixture.ts
 resources/js/cosmos.decorator.tsx
 index.html
+chrome
 

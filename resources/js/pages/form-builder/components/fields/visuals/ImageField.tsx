@@ -8,8 +8,19 @@ interface VisualFieldProps {
     previewData?: any;
 }
 
-export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
-    const hasSource = !!(field.options?.logo_url || field.options?.url);
+export const ImageField: React.FC<VisualFieldProps> = ({ field, previewData }) => {
+    // Priority order for image src:
+    // 1. Dynamic value from previewData (e.g. meta_ / field.name)
+    // 2. field.value (if set)
+    // 3. field.options?.logo_url or field.options?.url
+    const dynamicSrc =
+        (field.name && previewData?.[field.name]) ||
+        (field.name && previewData?.[field.name.replace(/^meta_/, '')]) ||
+        field.value ||
+        field.options?.logo_url ||
+        field.options?.url;
+
+    const hasSource = !!dynamicSrc;
     const width = field.options?.width || field.options?.size || field.options?.logo_size || 120;
     const widthStyle = typeof width === 'number' ? `${width}px` : width;
 
@@ -70,7 +81,7 @@ export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
             style={wrapperStyle}
         >
             <img
-                src={field.options?.logo_url || field.options?.url || '/storage/app/public/fr_logo.png'}
+                src={dynamicSrc}
                 width={width}
                 height={field.options?.height || undefined}
                 style={{
@@ -79,7 +90,7 @@ export const ImageField: React.FC<VisualFieldProps> = ({ field }) => {
                     aspectRatio: field.options?.aspect_ratio && field.options?.aspect_ratio !== 'auto' ? field.options?.aspect_ratio : undefined,
                     objectFit: (field.options?.object_fit as any) || 'contain',
                 }}
-                alt="document logo"
+                alt={field.label || 'document logo'}
             />
         </div>
     );

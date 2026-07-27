@@ -101,6 +101,47 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Align Horizontal (X)</Label>
+                            <select
+                                value={selectedField.options?.justify_content || 'stretch'}
+                                onChange={(e) =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        justify_content: e.target.value,
+                                    })
+                                }
+                                className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            >
+                                <option value="stretch">Penuh (Stretch)</option>
+                                <option value="start">Kiri (Start)</option>
+                                <option value="center">Tengah (Center)</option>
+                                <option value="end">Kanan (End)</option>
+                                <option value="space-between">Space Between</option>
+                                <option value="space-around">Space Around</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Align Vertical (Y)</Label>
+                            <select
+                                value={selectedField.options?.align_items || 'stretch'}
+                                onChange={(e) =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        align_items: e.target.value,
+                                    })
+                                }
+                                className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            >
+                                <option value="stretch">Penuh (Stretch)</option>
+                                <option value="start">Atas (Top)</option>
+                                <option value="center">Tengah (Center)</option>
+                                <option value="end">Bawah (Bottom)</option>
+                                <option value="baseline">Baseline</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
                             <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Grid Gap (px)</Label>
                             <Input
                                 type="number"
@@ -459,7 +500,7 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
             </div>
 
             {/* Borders & Styling */}
-            {['group', 'grid_x', 'grid_y', 'static_text'].includes(selectedField.type) && (
+            {['group', 'grid_x', 'grid_y', 'static_text', 'labeled_value'].includes(selectedField.type) && (
                 <div className="border-border space-y-4 border-t pt-4">
                     <div className="flex items-center gap-2">
                         <Layout size={12} className="text-muted-foreground" />

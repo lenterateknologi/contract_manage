@@ -23,6 +23,7 @@ interface InteractiveFormProps {
     onChange?: (name: string, value: any) => void;
     readOnly?: boolean;
     isBuilder?: boolean;
+    mode?: string;
     className?: string;
     onRemove?: (id: string) => void;
     onDuplicate?: (id: string) => void;
@@ -39,6 +40,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
     onChange,
     readOnly = false,
     isBuilder = false,
+    mode,
     className,
     onRemove,
     onDuplicate,
@@ -129,7 +131,6 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
             <SortableContext items={allFieldIds} strategy={verticalListSortingStrategy}>
                 {/* --- RENDER PAGES --- */}
                 {pages.map((pageFields, idx) => {
-                    if (!isBuilder && idx !== activePageIdx) return null;
                     return (
                         <Page
                             key={idx}
@@ -137,7 +138,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                             margins={margins}
                             showMargins={isBuilder}
                             isBuilder={isBuilder}
-                            className={cn(isBuilder ? 'hover:ring-primary/20 hover:ring-2' : '', 'relative overflow-hidden')}
+                            className={cn(isBuilder ? 'hover:ring-primary/20 hover:ring-2' : '', 'relative overflow-hidden mb-6')}
                         >
                             {/* Page Content */}
                             {pageFields.map(renderField)}
@@ -168,45 +169,18 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
 
             {/* Permanent Canvas Drop Zone (OUTSIDE OF PAGE) */}
             {isBuilder && (
-                <div 
+                <div
                     ref={setBottomDropRef}
                     className={cn(
                         "mt-8 flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed transition-all",
-                        isBottomOver 
-                            ? "border-primary bg-primary/10 ring-2 ring-primary/20" 
+                        isBottomOver
+                            ? "border-primary bg-primary/10 ring-2 ring-primary/20"
                             : "border-border bg-muted/10 hover:border-primary/50 hover:bg-primary/5"
                     )}
                 >
                     <span className="text-muted-foreground/30 font-sans text-xs font-semibold tracking-widest uppercase">
                         Lepas di sini untuk keluar dari grid
                     </span>
-                </div>
-            )}
-
-            {/* --- PAGINATION FOOTER --- */}
-            {!isBuilder && pages.length > 1 && (
-                <div className="flex items-center justify-between mt-6 p-4 border-t border-surface-border bg-surface-base rounded-xl shadow-xs select-none">
-                    <Button
-                        variant="white"
-                        size="sm"
-                        disabled={activePageIdx === 0}
-                        onClick={() => setActivePageIdx(prev => Math.max(0, prev - 1))}
-                        className="h-9 px-4 rounded-xl border border-surface-border text-xs font-bold uppercase tracking-wider transition-all"
-                    >
-                        Sebelumnya
-                    </Button>
-                    <span className="text-xs font-bold text-text-soft uppercase tracking-wider">
-                        Halaman <span className="text-primary font-extrabold">{activePageIdx + 1}</span> dari <span className="text-text-main font-extrabold">{pages.length}</span>
-                    </span>
-                    <Button
-                        variant="primary"
-                        size="sm"
-                        disabled={activePageIdx === pages.length - 1}
-                        onClick={() => setActivePageIdx(prev => Math.min(pages.length - 1, prev + 1))}
-                        className="h-9 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
-                    >
-                        Selanjutnya
-                    </Button>
                 </div>
             )}
         </div>

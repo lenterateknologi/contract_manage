@@ -31,12 +31,12 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
             {!isBulk && (
                 <div className="space-y-1.5">
                     <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Label Content</Label>
-                    {selectedField.type === 'static_text' ? (
+                    {selectedField.type === 'static_text' || selectedField.type === 'labeled_value' ? (
                         <Textarea
                             value={selectedField.label || ''}
                             onChange={(e) => updateField(selectedField.id, 'label', e.target.value)}
-                            className="min-h-[100px] font-sans text-[10px] font-medium"
-                            placeholder="Masukkan teks statis di sini..."
+                            className="min-h-[60px] font-sans text-[10px] font-medium resize-y"
+                            placeholder="Masukkan label di sini..."
                         />
                     ) : (
                         <Input
@@ -85,8 +85,10 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                             className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
                         >
                             <option value="dashed_bottom">Garis Bawah Putus-putus</option>
+                            <option value="solid_bottom">Garis Bawah Solid</option>
                             <option value="none">Tanpa Garis (Plain Text)</option>
                             <option value="box">Kotak / Box</option>
+                            <option value="bordered">Kotak Bergaris (Bordered)</option>
                         </select>
                     </div>
 
@@ -166,22 +168,33 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                         </select>
                     </div>
 
-                    {/* Max lines for textarea type */}
-                    {selectedField.options?.value_type === 'textarea' && (
+                    {/* Placeholder */}
+                    <div className="space-y-1.5">
+                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Placeholder Teks Nilai</Label>
+                        <Input
+                            value={selectedField.placeholder || ''}
+                            onChange={(e) => updateField(selectedField.id, 'placeholder', e.target.value)}
+                            className="h-8 font-sans text-[10px] font-medium"
+                            placeholder="Contoh: Masukkan nilai di sini..."
+                        />
+                    </div>
+
+                    {/* Max lines / jumlah baris garis */}
+                    {(selectedField.options?.value_type === 'textarea' || ['dashed_bottom', 'solid_bottom'].includes(selectedField.options?.field_style || 'dashed_bottom')) && (
                         <div className="space-y-1.5 border-t border-border/50 pt-3">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Tinggi Baris (Max/Default Lines)</Label>
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Jumlah Baris Garis (Max/Default Lines)</Label>
                             <input
                                 type="number"
                                 min={1}
                                 max={20}
-                                value={selectedField.options?.max_lines ?? 3}
+                                value={selectedField.options?.max_lines ?? 1}
                                 onChange={(e) =>
                                     bulkUpdateOptions(selectedIds, {
-                                        max_lines: parseNumber(e.target.value, 3),
+                                        max_lines: parseNumber(e.target.value, 1),
                                     })
                                 }
                                 className="border-input bg-background focus:ring-1 focus:ring-primary h-8 w-full rounded border px-2 font-sans text-[10px] outline-none shadow-xs"
-                                placeholder="3"
+                                placeholder="1"
                             />
                         </div>
                     )}
@@ -207,6 +220,32 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                     )}
 
                     {/* Options list for select type */}
+                    {(selectedField.options?.value_type === 'select' || selectedField.options?.value_type === 'date') && (
+                        <div className="space-y-3 border-t border-border/50 pt-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex flex-col">
+                                    <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Bisa Diketik (Direct Edit)</Label>
+                                    <span className="text-[7px] text-muted-foreground">Izinkan ketik manual selain dari picker/dropdown</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        bulkUpdateOptions(selectedIds, {
+                                            allow_direct_edit: selectedField.options?.allow_direct_edit === false ? true : false,
+                                        })
+                                    }
+                                    className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${selectedField.options?.allow_direct_edit !== false ? 'bg-primary' : 'bg-muted-foreground/30'
+                                        }`}
+                                >
+                                    <span
+                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${selectedField.options?.allow_direct_edit !== false ? 'translate-x-4' : 'translate-x-0'
+                                            }`}
+                                    />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {selectedField.options?.value_type === 'select' && (
                         <div className="space-y-3 border-t border-border/50 pt-3">
                             {/* Multiselect Toggle */}

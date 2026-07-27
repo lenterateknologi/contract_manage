@@ -69,19 +69,21 @@ class ExportFormSubmissionPdfAction
                 $printUrl = str_replace('localhost', '127.0.0.1', $printUrl);
             }
 
+            $chromePath = file_exists('/Applications/Brave Browser.app/Contents/MacOS/Brave Browser')
+                ? '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'
+                : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+
             $finalPdf = Browsershot::url($printUrl)
                 ->setNodeBinary('/opt/homebrew/bin/node')
                 ->setNpmBinary('/opt/homebrew/bin/npm')
-                ->setChromePath('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
+                ->setChromePath($chromePath)
                 ->noSandbox()
                 ->addChromiumArguments([
-                    '--disable-gpu',
-                    '--disable-dev-shm-usage',
-                    '--disable-setuid-sandbox',
-                    '--no-first-run',
-                    '--no-zygote',
-                    '--single-process',
-                    '--disable-extensions',
+                    'disable-gpu',
+                    'disable-dev-shm-usage',
+                    'disable-setuid-sandbox',
+                    'no-first-run',
+                    'disable-extensions',
                 ])
                 ->timeout(180)
                 ->paperSize(210, 297, 'mm')
