@@ -1332,155 +1332,218 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 </form>
                 )}
 
-                {/* Unified read-only detail view — vendor edit, tab info */}
+                {/* Document-style read-only detail view for vendor (flat clean text, no shadow/card effects) */}
                 {resourceSlug === 'vendors' && isEdit && activeTab === 'info' && (() => {
                     const r = record as Record<string, any>;
+                    const detail = (r.vendor_detail || {}) as Record<string, any>;
+                    const tax = (detail.tax || {}) as Record<string, any>;
+                    const legality = (detail.legality || {}) as Record<string, any>;
+                    const bankList = (Array.isArray(detail.bank) ? detail.bank : []) as Record<string, any>[];
+                    const paymentMethods = (Array.isArray(detail.paymentMethod) ? detail.paymentMethod : []) as Record<string, any>[];
+                    const businessFields = (Array.isArray(detail.businessFields) ? detail.businessFields : []) as Record<string, any>[];
 
-                    const renderDetailField = (label: string, value: any, isFile = false) => {
-                        let stringVal = '';
-                        let isLink = false;
-                        let fileUrl = '';
-
-                        if (value === null || value === undefined || value === '') {
-                            stringVal = '-';
-                        } else if (isFile || (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/storage/')))) {
-                            isLink = true;
-                            fileUrl = value;
-                            stringVal = 'Lampiran Tersedia';
-                        } else if (typeof value === 'boolean') {
-                            stringVal = value ? 'Ya' : 'Tidak';
-                        } else if (Array.isArray(value)) {
-                            stringVal = value.length > 0 ? value.join(', ') : '-';
-                        } else {
-                            stringVal = String(value);
+                    const renderDocRow = (label: string, value: any) => {
+                        let display = '-';
+                        if (value !== null && value !== undefined && value !== '') {
+                            if (typeof value === 'boolean') display = value ? 'Ya' : 'Tidak';
+                            else if (Array.isArray(value)) display = value.length > 0 ? value.join(', ') : '-';
+                            else display = String(value);
                         }
 
                         return (
-                            <div key={label} className="w-full">
-                                <FormInput
-                                    label={label}
-                                    value={stringVal}
-                                    disabled
-                                    readOnly
-                                />
-                                {isLink && fileUrl && (
-                                    <a
-                                        href={fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 mt-1 text-primary text-[11px] font-semibold hover:underline"
-                                    >
-                                        <LucideIcons.Eye className="h-3 w-3" />
-                                        Lihat Berkas Lampiran
-                                    </a>
-                                )}
+                            <div key={label} className="py-2 grid grid-cols-3 gap-4 border-b border-slate-100 dark:border-slate-800/60 last:border-none text-xs">
+                                <span className="font-medium text-slate-500 dark:text-slate-400">{label}</span>
+                                <span className="col-span-2 font-normal text-slate-900 dark:text-slate-100 break-words">{display}</span>
                             </div>
                         );
                     };
 
-                    const renderDetailSection = (title: string, Icon: React.ElementType, fields: React.ReactNode[]) => (
-                        <div key={title} className="col-span-full border border-surface-border bg-surface-muted/5 dark:bg-surface-muted/10 rounded-2xl p-6 flex flex-col gap-5">
-                            <div className="flex items-center justify-between pb-3 border-b border-surface-border gap-4">
-                                <div className="flex items-center gap-2">
-                                    <Icon className="h-4 w-4 text-primary shrink-0 opacity-80" />
+                    return (
+                        <div className="w-full py-2 animate-in fade-in duration-200">
+                            {/* Document Paper Container - Flat & Clean without shadow/borders */}
+                            <div className="w-full space-y-8">
+                                
+                                {/* Document Header / Kop */}
+                                <div className="border-b-2 border-slate-900 dark:border-slate-100 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                                     <div>
-                                        <h3 className="text-xs font-normal uppercase tracking-wider text-text-main">{title}</h3>
+                                        <div className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">
+                                            <LucideIcons.Building2 className="w-4 h-4" /> Dokumen Rekanan Master
+                                        </div>
+                                        <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+                                            {r.vendor_name || detail.name || 'Nama Vendor Tidak Tersedia'}
+                                        </h2>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                            Kode Vendor: <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">{r.vendor_code || detail.registrationNumber || '-'}</span>
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col md:items-end gap-1">
+                                        <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                                            Status: {r.is_active !== false ? 'Aktif' : 'Nonaktif'}
+                                        </span>
+                                        {detail.status && (
+                                            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                                Status Rekanan: <strong className="text-slate-700 dark:text-slate-300">{detail.status}</strong>
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">{fields}</div>
-                        </div>
-                    );
 
-                    return (
-                        <div className="flex flex-col gap-4 animate-in fade-in duration-200">
-                            {renderDetailSection('Identitas Perusahaan', LucideIcons.Building2, [
-                                renderDetailField('Kode COMA', r.external_code),
-                                renderDetailField('Kode Lokal', r.code),
-                                renderDetailField('Tipe Bisnis', r.company_type),
-                                renderDetailField('Nama', r.name),
-                                renderDetailField('Cabang', r.branch_name),
-                                renderDetailField('No. Registrasi', r.registration_number),
-                                renderDetailField('No. Perjanjian', r.agreement_number),
-                                renderDetailField('Tgl. Perjanjian', r.agreement_date),
-                                renderDetailField('Tgl. Disetujui', r.approved_date),
-                                renderDetailField('Status', r.vendor_status),
-                                renderDetailField('Upload Agreement', r.is_upload_agreement),
-                                renderDetailField('Master Agreement', r.master_agreement),
-                                renderDetailField('Integrity Pact', r.integrity_pact),
-                                renderDetailField('Single Vendor', r.is_single_vendor),
-                                renderDetailField('Single Vendor Expired', r.single_vendor_expired),
-                                renderDetailField('Total Karyawan', r.total_employees),
-                                renderDetailField('Coverage Area', r.coverage_area),
-                                renderDetailField('Compliance Level', r.compliance_level),
-                                renderDetailField('No. KTP', r.id_card_number),
-                                renderDetailField('Status Aktif', r.is_active),
-                            ])}
-                            {renderDetailSection('Alamat', LucideIcons.MapPin, [
-                                renderDetailField('Alamat', r.address),
-                                renderDetailField('Negara', r.country),
-                                renderDetailField('Provinsi', r.region),
-                                renderDetailField('Kota', r.city),
-                                renderDetailField('Kode Pos', r.postal_code),
-                                renderDetailField('Kode Negara (API)', r.vendor_country),
-                                renderDetailField('Alamat Surat', r.mailing_address),
-                                renderDetailField('Negara Surat', r.mailing_country),
-                                renderDetailField('Provinsi Surat', r.mailing_region),
-                                renderDetailField('Kota Surat', r.mailing_city),
-                                renderDetailField('Kode Pos Surat', r.mailing_postal_code),
-                            ])}
-                            {renderDetailSection('Kontak & PIC', LucideIcons.Phone, [
-                                renderDetailField('Email Perusahaan', r.email),
-                                renderDetailField('Telepon', r.phone),
-                                renderDetailField('Fax', r.fax),
-                                renderDetailField('Email Keuangan', r.finance_email),
-                                renderDetailField('Email Pajak', r.tax_email),
-                                renderDetailField('Nama PIC', r.pic_name),
-                                renderDetailField('Email PIC', r.pic_email),
-                                renderDetailField('Telepon PIC', r.pic_phone),
-                            ])}
-                            {renderDetailSection('Informasi Pajak', LucideIcons.Receipt, [
-                                renderDetailField('Tipe NPWP', r.tax?.type_npwp),
-                                renderDetailField('NPWP', r.tax?.npwp),
-                                renderDetailField('Tipe PKP', r.tax?.type_pkp),
-                                renderDetailField('PKP', r.tax?.pkp),
-                                renderDetailField('Tipe BKP', r.tax?.type_bkp),
-                                renderDetailField('PPN', r.tax?.ppn ? `${r.tax.ppn}%` : null),
-                                renderDetailField('Keterangan BKP', r.tax?.bkp_desc),
-                                renderDetailField('Keterangan JKP', r.tax?.jkp_desc),
-                                renderDetailField('Is Organisasi', r.tax?.is_organization),
-                                renderDetailField('Is SIUJK', r.tax?.is_siujk),
-                                renderDetailField('No. PP23', r.tax?.pp23_number),
-                                renderDetailField('PP23 Expired', r.tax?.pp23_expired_date),
-                            ])}
-                            {(r.business_fields?.length > 0 || r.business_fields_foreign) && renderDetailSection('Bidang Usaha', LucideIcons.Briefcase, [
-                                <div key="bf-l" className="col-span-full">{renderDetailField('Bidang Usaha Lokal', r.business_fields?.map((bf: any) => bf.business_field))}</div>,
-                                <div key="bf-f" className="col-span-full">{renderDetailField('Bidang Usaha Asing', r.business_fields_foreign)}</div>,
-                            ])}
-                            {(r.banks?.length > 0 || r.payment_methods?.length > 0) && renderDetailSection('Bank & Pembayaran', LucideIcons.CreditCard, [
-                                <div key="bk" className="col-span-full">{renderDetailField('Data Bank', r.banks?.map((b: any) => `${b.bank_name} - ${b.account_number} (${b.account_name})`))}</div>,
-                                <div key="pm" className="col-span-full">{renderDetailField('Metode Pembayaran', r.payment_methods?.map((p: any) => p.method_name))}</div>,
-                            ])}
-                            {r.legalities?.length > 0 && renderDetailSection('Legalitas', LucideIcons.ShieldCheck, [
-                                ...r.legalities.map((leg: any) => (
-                                    <div key={leg.id ?? leg.legality_type} className="col-span-full border border-surface-border rounded-xl p-3 flex flex-col gap-2">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[10px] font-normal uppercase tracking-wider text-text-main opacity-70">{leg.legality_type}</span>
-                                            {leg.is_verified && (
-                                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-normal text-emerald-600 uppercase">
-                                                    <LucideIcons.Check className="h-2.5 w-2.5" /> Verified
-                                                </span>
-                                            )}
+                                {/* Section 1: Profil & Identitas Perusahaan */}
+                                <div className="space-y-2">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
+                                        I. Profil & Identitas Rekanan
+                                    </h3>
+                                    <div>
+                                        {renderDocRow('Nama Resmi', detail.name || r.vendor_name)}
+                                        {renderDocRow('Tipe Bentuk Usaha', detail.businessTypeName)}
+                                        {renderDocRow('Nama Cabang', detail.branchName)}
+                                        {renderDocRow('Nomor Registrasi', detail.registrationNumber)}
+                                        {renderDocRow('Nomor Perjanjian', detail.agreementNumber)}
+                                        {renderDocRow('Tanggal Perjanjian', detail.agreementDate)}
+                                        {renderDocRow('Tanggal Disetujui', detail.approvedDate)}
+                                        {renderDocRow('Total Karyawan', detail.totalEmployees)}
+                                        {renderDocRow('Cakupan Wilayah (Coverage Area)', detail.coverageArea)}
+                                        {renderDocRow('Compliance Level', detail.complianceLevel)}
+                                        {renderDocRow('Integrity Pact', detail.integrityPact)}
+                                        {renderDocRow('Master Agreement', detail.masterAgreement)}
+                                        {renderDocRow('Single Vendor', detail.isSingleVendor)}
+                                    </div>
+                                </div>
+
+                                {/* Section 2: Alamat & Lokasi Operasional */}
+                                <div className="space-y-2">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
+                                        II. Alamat & Kontak Resmi
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Alamat Utama</h4>
+                                            {renderDocRow('Alamat', detail.address)}
+                                            {renderDocRow('Kota', detail.city)}
+                                            {renderDocRow('Provinsi', detail.region)}
+                                            {renderDocRow('Negara', detail.country)}
+                                            {renderDocRow('Kode Pos', detail.postalCode)}
                                         </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                            {renderDetailField('Nomor', leg.number)}
-                                            {renderDetailField('Tgl. Terbit', leg.issued_date)}
-                                            {renderDetailField('Tgl. Berlaku s/d', leg.expired_date)}
-                                            {leg.file ? renderDetailField('File', leg.file, true) : renderDetailField('File', null)}
+                                        <div>
+                                            <h4 className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Alamat Surat Menyurat</h4>
+                                            {renderDocRow('Alamat Surat', detail.mailingAddress)}
+                                            {renderDocRow('Kota Surat', detail.mailingCity)}
+                                            {renderDocRow('Provinsi Surat', detail.mailingRegion)}
+                                            {renderDocRow('Negara Surat', detail.mailingCountry)}
+                                            {renderDocRow('Kode Pos Surat', detail.mailingPostalCode)}
                                         </div>
                                     </div>
-                                ))
-                            ])}
+                                </div>
+
+                                {/* Section 3: Kontak & Penanggung Jawab (PIC) */}
+                                <div className="space-y-2">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
+                                        III. Informasi Kontak & Person in Charge (PIC)
+                                    </h3>
+                                    <div>
+                                        {renderDocRow('Email Perusahaan', detail.companyEmail)}
+                                        {renderDocRow('No. Telepon Perusahaan', detail.companyPhone)}
+                                        {renderDocRow('Fax Perusahaan', detail.companyFax)}
+                                        {renderDocRow('Email Bagian Keuangan', detail.financeEmail)}
+                                        {renderDocRow('Email Bagian Perpajakan', detail.taxEmail)}
+                                        {renderDocRow('Nama PIC', detail.pic)}
+                                        {renderDocRow('Email PIC', detail.picemail)}
+                                        {renderDocRow('No. HP / Telepon PIC', detail.picphone)}
+                                    </div>
+                                </div>
+
+                                {/* Section 4: Perpajakan */}
+                                <div className="space-y-2">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
+                                        IV. Data Perpajakan
+                                    </h3>
+                                    <div>
+                                        {renderDocRow('Status NPWP', tax.typeNpwp)}
+                                        {renderDocRow('Nomor NPWP', tax.npwp)}
+                                        {renderDocRow('Status PKP', tax.typePkp)}
+                                        {renderDocRow('Nomor PKP', tax.pkp)}
+                                        {renderDocRow('Kategori BKP', tax.typeBkp)}
+                                        {renderDocRow('Tarif PPN', tax.ppn ? `${tax.ppn}%` : null)}
+                                        {renderDocRow('Deskripsi BKP', tax.bkpDesc)}
+                                        {renderDocRow('Deskripsi JKP', tax.jkpDesc)}
+                                        {renderDocRow('Organisasi', tax.isOrganization)}
+                                        {renderDocRow('SIUJK', tax.isSiujk)}
+                                        {renderDocRow('Nomor PP23', tax.pp23number)}
+                                        {renderDocRow('Masa Berlaku PP23', tax.pp23expiredDate)}
+                                    </div>
+                                </div>
+
+                                {/* Section 5: Bidang Usaha & Bank */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
+                                            V. Bidang Usaha
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <p className="text-xs font-medium text-slate-500">Lokal:</p>
+                                            <ul className="list-disc list-inside text-xs text-slate-800 dark:text-slate-200 space-y-1">
+                                                {businessFields.length > 0 ? businessFields.map((bf, idx) => (
+                                                    <li key={idx}>{bf.businessField}</li>
+                                                )) : <li>-</li>}
+                                            </ul>
+                                            {detail.businessFieldsForeign && (
+                                                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                                                    <p className="text-xs font-medium text-slate-500">Asing:</p>
+                                                    <p className="text-xs text-slate-800 dark:text-slate-200">{detail.businessFieldsForeign}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
+                                            VI. Perbankan & Pembayaran
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <div>
+                                                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Rekening Bank</p>
+                                                {bankList.length > 0 ? bankList.map((b, idx) => (
+                                                    <div key={idx} className="text-xs border-b border-slate-200/60 dark:border-slate-800/60 py-1 last:border-none">
+                                                        <p className="font-semibold text-slate-900 dark:text-slate-100">{b.bankName}</p>
+                                                        <p className="text-slate-600 dark:text-slate-400">No. Rek: <span className="font-mono font-semibold">{b.accountNumber}</span> a/n {b.accountName}</p>
+                                                    </div>
+                                                )) : <p className="text-xs text-slate-500">-</p>}
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Metode Pembayaran</p>
+                                                {paymentMethods.length > 0 ? paymentMethods.map((p, idx) => (
+                                                    <p key={idx} className="text-xs text-slate-700 dark:text-slate-300">
+                                                        TOP: <strong>{p.top ?? '-'} hari</strong> | Full Payment: <strong>{p.fullPayment ?? '-'}%</strong>
+                                                    </p>
+                                                )) : <p className="text-xs text-slate-500">-</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 6: Legalitas & Berkas */}
+                                <div className="space-y-2">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
+                                        VII. Perizinan Legalitas & Dokumen
+                                    </h3>
+                                    <div>
+                                        {renderDocRow('Nomor Induk Berusaha (NIB)', legality.nib)}
+                                        {renderDocRow('SIUP', legality.siup)}
+                                        {renderDocRow('TDP', legality.tdp)}
+                                        {renderDocRow('Penandatangan Resmi', legality.signing)}
+                                        {renderDocRow('Jabatan Penandatangan', legality.jobTitle)}
+                                        {renderDocRow('Akta Pendirian', legality.memorandumOfAssociation)}
+                                        {renderDocRow('Surat Keputusan Menkumham', legality.decissionLetterMenkumham)}
+                                    </div>
+                                </div>
+
+                                {/* Document Footer */}
+                                <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center text-[11px] text-slate-400">
+                                    <span>Dicetak dari Sistem Manajemen Kontrak</span>
+                                    <span>Master Data Synchronized from COMA</span>
+                                </div>
+
+                            </div>
                         </div>
                     );
                 })()}

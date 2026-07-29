@@ -177,9 +177,7 @@ class ResourceController extends Controller
         $modelClass = $resourceClass::$model;
         $record = $modelClass::findOrFail($id);
 
-        if ($resourceSlug === 'vendors') {
-            $record->load(['tax', 'legalities', 'banks', 'paymentMethods', 'businessFields']);
-        }
+
 
         return Inertia::render('Core/ResourceForm', [
             'resourceSlug' => $resourceSlug,

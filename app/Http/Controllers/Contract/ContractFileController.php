@@ -15,8 +15,6 @@ use App\Http\Actions\File\PdfPreviewAction;
 use App\Http\Actions\File\UploadAgreementAction;
 use App\Http\Actions\File\UploadAttachmentAction;
 use App\Http\Actions\File\UploadRevisionAction;
-use App\Http\Actions\File\VendorDocumentFileAction;
-use App\Http\Actions\File\VendorDocumentPdfPreviewAction;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Contract\ContractDetailQuery;
 use App\Http\Requests\Contract\UploadAgreementRequest;
@@ -88,19 +86,7 @@ class ContractFileController extends Controller
         return $action->execute($contract, $atId);
     }
 
-    public function vendorDocumentFile(string $id, string $docId, VendorDocumentFileAction $action): mixed
-    {
-        $contract = $this->contractDetailQuery->find($id);
 
-        return $action->execute($contract, $docId);
-    }
-
-    public function vendorDocumentPdfPreview(string $id, string $docId, VendorDocumentPdfPreviewAction $action): mixed
-    {
-        $contract = $this->contractDetailQuery->find($id);
-
-        return $action->execute($contract, $docId);
-    }
 
     public function uploadAttachment(UploadAttachmentRequest $request, string $id, UploadAttachmentAction $action): JsonResponse
     {

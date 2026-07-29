@@ -30,13 +30,8 @@ class VendorResource extends Resource
     public static function table(): array
     {
         return [
-            TextColumn::make('external_code', 'Kode COMA')->sortable()->searchable(),
-            TextColumn::make('code', 'Kode Lokal')->sortable()->searchable(),
-            TextColumn::make('name', 'Nama Vendor')->sortable()->searchable(),
-            TextColumn::make('company_type', 'Tipe Perusahaan')->sortable()->searchable(),
-            TextColumn::make('email', 'Email')->sortable()->searchable(),
-            TextColumn::make('city', 'Kota')->sortable()->searchable(),
-            TextColumn::make('vendor_status', 'Status Rekanan')->sortable()->searchable(),
+            TextColumn::make('vendor_code', 'Kode Vendor')->sortable()->searchable(),
+            TextColumn::make('vendor_name', 'Nama Vendor')->sortable()->searchable(),
             BooleanColumn::make('is_active', 'Status Aktif'),
         ];
     }
@@ -44,29 +39,12 @@ class VendorResource extends Resource
     public static function form(): array
     {
         return [
-            // ponytail: external_code readonly — diisi otomatis dari sync COMA
-            TextInput::make('external_code', 'Kode COMA')
-                ->type('readonly')
-                ->placeholder('Diisi otomatis dari sync COMA'),
-            TextInput::make('code', 'Kode Lokal')
+            TextInput::make('vendor_code', 'Kode Vendor')
                 ->required()
                 ->rules(['string', 'max:50']),
-            TextInput::make('name', 'Nama Vendor')
+            TextInput::make('vendor_name', 'Nama Vendor')
                 ->required()
                 ->rules(['string', 'max:255']),
-            TextInput::make('company_type', 'Tipe Perusahaan')
-                ->rules(['nullable', 'string', 'max:100']),
-            TextInput::make('email', 'Email')
-                ->rules(['nullable', 'email', 'max:255']),
-            TextInput::make('phone', 'No. Telepon')
-                ->rules(['nullable', 'string', 'max:50']),
-            TextInput::make('pic_name', 'Nama PIC')
-                ->rules(['nullable', 'string', 'max:255']),
-            TextInput::make('npwp', 'NPWP')
-                ->rules(['nullable', 'string', 'max:50']),
-            TextareaInput::make('address', 'Alamat')
-                ->rules(['nullable', 'string'])
-                ->columnSpan(2),
             ToggleInput::make('is_active', 'Status Aktif')
                 ->default(true),
         ];
@@ -75,24 +53,6 @@ class VendorResource extends Resource
     public static function filters(): array
     {
         return [
-            Filter::make('company_type', 'Tipe Perusahaan')
-                ->options(function () {
-                    return \App\Models\Vendor::query()
-                        ->whereNotNull('company_type')
-                        ->where('company_type', '!=', '')
-                        ->distinct()
-                        ->pluck('company_type', 'company_type')
-                        ->toArray();
-                }),
-            Filter::make('vendor_status', 'Status Rekanan')
-                ->options(function () {
-                    return \App\Models\Vendor::query()
-                        ->whereNotNull('vendor_status')
-                        ->where('vendor_status', '!=', '')
-                        ->distinct()
-                        ->pluck('vendor_status', 'vendor_status')
-                        ->toArray();
-                }),
             Filter::make('is_active', 'Status Aktif')
                 ->options([
                     '1' => 'Aktif',

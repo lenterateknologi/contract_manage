@@ -52,11 +52,9 @@ class ContractFormatter
             'vendor_id' => $c->vendor_id,
             'vendor' => $c->vendor ? [
                 'id' => $c->vendor->id,
-                'name' => $c->vendor->name,
-                'pic_name' => $c->vendor->pic_name,
-                'pic_position' => $c->vendor->pic_position,
-                'address' => $c->vendor->address,
-                'documents' => $c->vendor->relationLoaded('documents') ? $c->vendor->documents : [],
+                'code' => $c->vendor->vendor_code,
+                'name' => $c->vendor->vendor_name,
+                'detail' => $c->vendor->vendor_detail,
             ] : null,
             'status' => $c->status,
             'status_info' => $c->statusDetail ? [

@@ -8,10 +8,7 @@ use App\Http\Queries\Master\VendorQuery;
 use App\Http\Requests\Common\ImportFileRequest;
 use App\Http\Requests\Vendor\StoreVendorRequest;
 use App\Http\Requests\Vendor\UpdateVendorRequest;
-use App\Http\Requests\Vendor\UploadVendorDocumentRequest;
-use App\Imports\VendorsImport;
 use App\Models\Vendor;
-use App\Models\VendorDocument;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -29,7 +26,7 @@ class VendorAdminController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'vendors',
-            'vendors' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
+            'vendors' => $query->orderBy('vendor_name')->paginate($request->input('per_page', 15))->withQueryString(),
             'filters' => $request->only(['search', 'category', 'is_active']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -83,34 +80,6 @@ class VendorAdminController extends Controller
         $vendor->update($data);
 
         return back()->with('success', 'Vendor berhasil diperbarui.');
-    }
-
-    public function uploadDocument(UploadVendorDocumentRequest $request, Vendor $vendor)
-    {
-        $file = $request->file('document_file');
-        $originalName = $file->getClientOriginalName();
-        $path = $file->storeAs("vendor_documents/{$vendor->id}", time()."_{$originalName}", 'public');
-
-        $vendor->documents()->create([
-            'document_name' => $originalName,
-            'document_type' => $request->document_type,
-            'file_url' => '/storage/'.$path,
-            'expires_at' => $request->filled('expires_at') && $request->expires_at !== '' ? $request->expires_at : null,
-            'is_verified' => true,
-        ]);
-
-        return back()->with('success', 'Dokumen berhasil diunggah.');
-    }
-
-    public function destroyDocument(Vendor $vendor, VendorDocument $document)
-    {
-        if ($document->vendor_id !== $vendor->id) {
-            abort(403);
-        }
-
-        $document->delete();
-
-        return back()->with('success', 'Dokumen berhasil dihapus.');
     }
 
     public function destroy(Vendor $vendor)

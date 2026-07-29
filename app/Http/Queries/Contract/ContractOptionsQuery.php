@@ -105,21 +105,14 @@ class ContractOptionsQuery
                 ->map(fn ($u) => ContractFormatter::formatUser($u))
                 ->toArray(),
 
-            'vendors' => fn () => Vendor::with('documents')
-                ->where('is_active', true)
-                ->orderBy('name')
+            'vendors' => fn () => Vendor::where('is_active', true)
+                ->orderBy('vendor_name')
                 ->get()
                 ->map(fn ($v) => [
                     'id' => $v->id,
-                    'name' => $v->name,
-                    'pic_name' => $v->pic_name,
-                    'pic_position' => $v->pic_position,
-                    'address' => $v->address,
-                    'documents' => $v->documents->map(fn ($d) => [
-                        'id' => $d->id,
-                        'name' => $d->document_name,
-                        'type' => $d->document_type,
-                    ])->toArray(),
+                    'name' => $v->vendor_name,
+                    'code' => $v->vendor_code,
+                    'detail' => $v->vendor_detail,
                 ])
                 ->toArray(),
 
