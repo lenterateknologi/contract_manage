@@ -9,6 +9,7 @@ import {
     ChevronUp,
     Code,
     Download,
+    Eye,
     FileIcon,
     Heading1,
     Heading2,
@@ -81,62 +82,37 @@ function MsgBubble({
     const isPdf = ext === 'pdf';
 
     const renderMessage = (text: string, term?: string) => {
-        let content: any = text;
+        // ponytail: Clean HTML/Markdown parsing with native list support
+        let formatted = text
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>');
 
+        // Ensure raw markdown list symbols are parsed to HTML tags
+        formatted = formatted.replace(/(?:^|\n)[-*]\s+(.*)/g, '<ul><li>$1</li></ul>');
+        formatted = formatted.replace(/(?:^|\n)\d+\.\s+(.*)/g, '<ol><li>$1</li></ol>');
+
+        // Basic formatting
+        formatted = formatted
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/~~(.*?)~~/g, '<del>$1</del>')
+            .replace(/`(.*?)`/g, '<code class="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-xs">$1</code>');
+
+        // Mentions
+        formatted = formatted.replace(/(@[\w\s.-]+(?:\s|$))/g, `<span class="${isMe ? 'text-primary-foreground font-semibold underline' : 'text-primary font-semibold underline'}">$1</span>`);
+
+        // Highlight
         if (term && term.trim()) {
-            const parts = text.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
-            content = parts.map((part, i) =>
-                part.toLowerCase() === term.toLowerCase() ? (
-                    <mark key={i} className="bg-yellow-300 text-slate-900 font-semibold px-1 rounded shadow-xs">
-                        {part}
-                    </mark>
-                ) : (
-                    part
-                ),
-            );
+            const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            formatted = formatted.replace(new RegExp(`(${escapedTerm})`, 'gi'), '<mark class="bg-yellow-300 text-slate-900 font-semibold px-1 rounded shadow-xs">$1</mark>');
         }
 
-        if (typeof content === 'string') {
-            const mentionParts = content.split(/(@[\w\s.-]+(?:\s|$))/g);
-            return mentionParts.map((part, i) => {
-                if (part.startsWith('@')) {
-                    return (
-                        <span
-                            key={i}
-                            className={cn('font-normal tracking-tight underline underline-offset-2', isMe ? 'text-primary-foreground' : 'text-primary')}
-                        >
-                            {part}
-                        </span>
-                    );
-                }
-                return part;
-            });
-        } else if (Array.isArray(content)) {
-            return content.map((item, idx) => {
-                if (typeof item === 'string') {
-                    const subParts = item.split(/(@[\w\s.-]+(?:\s|$))/g);
-                    return subParts.map((sp, i) => {
-                        if (sp.startsWith('@')) {
-                            return (
-                                <span
-                                    key={`${idx}-${i}`}
-                                    className={cn(
-                                        'font-normal tracking-tight underline underline-offset-2',
-                                        isMe ? 'text-primary-foreground' : 'text-primary',
-                                    )}
-                                >
-                                    {sp}
-                                </span>
-                            );
-                        }
-                        return sp;
-                    });
-                }
-                return item;
-            });
-        }
-
-        return content;
+        return (
+            <div 
+                className="prose dark:prose-invert max-w-none break-words text-[13px] leading-relaxed [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-1 [&_li]:my-0.5"
+                dangerouslySetInnerHTML={{ __html: formatted }}
+            />
+        );
     };
 
     return (
@@ -256,8 +232,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const [mentionIndex, setMentionIndex] = useState(0);
     const [allUsers, setAllUsers] = useState<any[]>([]);
     const [showScrollDown, setShowScrollDown] = useState(false);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+    const editorRef = useRef<HTMLDivElement>(null);
     const endRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const msgs = contract.messages ?? [];
@@ -345,16 +320,47 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         return allUsers.filter((u) => u.name.toLowerCase().includes(s));
     }, [allUsers, mentionSearch]);
 
+    const [activeFormats, setActiveFormats] = useState<Record<string, boolean>>({});
+
+    const updateActiveFormats = () => {
+        if (!editorRef.current) return;
+        setActiveFormats({
+            bold: document.queryCommandState('bold'),
+            italic: document.queryCommandState('italic'),
+            strikethrough: document.queryCommandState('strikeThrough'),
+            unorderedList: document.queryCommandState('insertUnorderedList'),
+            orderedList: document.queryCommandState('insertOrderedList'),
+            h1: document.queryCommandValue('formatBlock') === 'h1',
+            h2: document.queryCommandValue('formatBlock') === 'h2',
+            blockquote: document.queryCommandValue('formatBlock') === 'blockquote',
+            code: document.queryCommandValue('formatBlock') === 'pre',
+        });
+    };
+
+    const handleContentEditableInput = () => {
+        if (editorRef.current) {
+            setInput(editorRef.current.innerHTML);
+            updateActiveFormats();
+        }
+    };
+
+    // ponytail: Rich Text Formatting helper for contentEditable (WYSIWYG)
+    const execFormat = (command: string, value: string | undefined = undefined) => {
+        if (!editorRef.current) return;
+        editorRef.current.focus();
+        document.execCommand(command, false, value);
+        setInput(editorRef.current.innerHTML);
+        updateActiveFormats();
+    };
+
     const insertMention = (user: any) => {
-        const parts = input.split(' ');
-        const lastPart = parts[parts.length - 1];
-        if (lastPart.startsWith('@')) {
-            parts[parts.length - 1] = `@${user.name} `;
-            setInput(parts.join(' '));
+        if (editorRef.current) {
+            editorRef.current.focus();
+            document.execCommand('insertText', false, `@${user.name} `);
+            setInput(editorRef.current.innerHTML);
         }
         setShowMentions(false);
         setMentionSearch('');
-        textareaRef.current?.focus();
     };
 
     // LocalStorage draft key for this contract
@@ -423,6 +429,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             const updated = await contractApi.get(contract.id);
             onNewMessage(updated);
             setInput('');
+            if (editorRef.current) editorRef.current.innerHTML = '';
             setSelectedFile(null);
             localStorage.removeItem(draftKey);
             setDraftSavedTime(null);
@@ -605,153 +612,81 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
                     <div className="border-surface-border bg-white dark:bg-slate-900 focus-within:border-primary/50 relative flex flex-col flex-1 rounded-2xl border shadow-xs transition-all duration-300 overflow-hidden">
                         {/* Formatting Toolbar (Summernote Style) */}
-                        <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-800/60">
+                        <div className="flex flex-wrap items-center justify-between gap-1 px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-800/60">
+                            <div className="flex flex-wrap items-center gap-1">
                             {/* Text Formatting Group */}
                             <div className="flex items-center gap-0.5 border-r border-slate-300 dark:border-slate-700 pr-1.5 mr-0.5">
                                 <button
                                     type="button"
                                     title="Tebal (Bold)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '**teks**');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                    onClick={() => execFormat('bold')}
+                                    className={cn(
+                                        "p-1.5 rounded transition-colors",
+                                        activeFormats.bold ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                    )}
                                 >
                                     <Bold size={14} />
                                 </button>
                                 <button
                                     type="button"
                                     title="Miring (Italic)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '*teks*');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                    onClick={() => execFormat('italic')}
+                                    className={cn(
+                                        "p-1.5 rounded transition-colors",
+                                        activeFormats.italic ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                    )}
                                 >
                                     <Italic size={14} />
                                 </button>
                                 <button
                                     type="button"
                                     title="Coret (Strikethrough)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '~~teks~~');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                    onClick={() => execFormat('strikeThrough')}
+                                    className={cn(
+                                        "p-1.5 rounded transition-colors",
+                                        activeFormats.strikethrough ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                    )}
                                 >
                                     <Strikethrough size={14} />
                                 </button>
                                 <button
                                     type="button"
                                     title="Kode (Inline Code)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '`kode`');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                    onClick={() => execFormat('formatBlock', 'pre')}
+                                    className={cn(
+                                        "p-1.5 rounded transition-colors",
+                                        activeFormats.code ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                    )}
                                 >
                                     <Code size={14} />
                                 </button>
                             </div>
 
-                            {/* Heading & Paragraph Group */}
-                            <div className="flex items-center gap-0.5 border-r border-slate-300 dark:border-slate-700 pr-1.5 mr-0.5">
-                                <button
-                                    type="button"
-                                    title="Judul Utama (H1)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '\n# Judul Utama\n');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-                                >
-                                    <Heading1 size={14} />
-                                </button>
-                                <button
-                                    type="button"
-                                    title="Sub Judul (H2)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '\n## Sub Judul\n');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-                                >
-                                    <Heading2 size={14} />
-                                </button>
-                                <button
-                                    type="button"
-                                    title="Kutipan (Blockquote)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '\n> Kutipan\n');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-                                >
-                                    <Quote size={14} />
-                                </button>
-                            </div>
-
                             {/* Lists Group */}
-                            <div className="flex items-center gap-0.5 border-r border-slate-300 dark:border-slate-700 pr-1.5 mr-0.5">
+                            <div className="flex items-center gap-0.5">
                                 <button
                                     type="button"
                                     title="Daftar Poin (Bullet List)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '\n- ');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                    onClick={() => execFormat('insertUnorderedList')}
+                                    className={cn(
+                                        "p-1.5 rounded transition-colors",
+                                        activeFormats.unorderedList ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                    )}
                                 >
                                     <List size={14} />
                                 </button>
                                 <button
                                     type="button"
                                     title="Daftar Angka (Numbered List)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '\n1. ');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                    onClick={() => execFormat('insertOrderedList')}
+                                    className={cn(
+                                        "p-1.5 rounded transition-colors",
+                                        activeFormats.orderedList ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                    )}
                                 >
                                     <ListOrdered size={14} />
                                 </button>
                             </div>
-
-                            {/* Insert Group */}
-                            <div className="flex items-center gap-0.5">
-                                <button
-                                    type="button"
-                                    title="Tautan (Link)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '[Teks Tautan](https://example.com)');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-                                >
-                                    <Link size={14} />
-                                </button>
-                                <button
-                                    type="button"
-                                    title="Tabel (Table)"
-                                    onClick={() => {
-                                        setInput((prev) => prev + '\n| Kolom 1 | Kolom 2 |\n| --- | --- |\n| Data 1 | Data 2 |\n');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
-                                >
-                                    <Table size={14} />
-                                </button>
-                                <button
-                                    type="button"
-                                    title="Emoji"
-                                    onClick={() => {
-                                        setInput((prev) => prev + ' 😊 ');
-                                        textareaRef.current?.focus();
-                                    }}
-                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-amber-500 hover:text-amber-600 transition-colors"
-                                >
-                                    <Smile size={14} />
-                                </button>
                             </div>
 
                             {/* Draft Group */}
@@ -772,7 +707,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                             </div>
                         </div>
 
-                        <div className="flex items-end">
+                        <div className="flex items-end min-h-[50px] max-h-[160px]">
                             <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
                             <button
                                 onClick={() => fileInputRef.current?.click()}
@@ -780,14 +715,13 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                             >
                                 <Paperclip size={16} />
                             </button>
-                            <textarea
-                                ref={textareaRef}
-                                value={input}
-                                onChange={handleInputChange}
+                            <div
+                                ref={editorRef}
+                                contentEditable
+                                onInput={handleContentEditableInput}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Ketik pesan..."
-                                rows={2}
-                                className="text-text-main placeholder:text-text-main/30 max-h-[140px] min-h-[50px] flex-1 resize-none bg-transparent py-2.5 pr-4 text-[13px] leading-relaxed font-normal tracking-tight transition-all outline-none"
+                                data-placeholder="Ketik pesan..."
+                                className="text-text-main flex-1 overflow-y-auto py-2.5 pr-4 text-[13px] leading-relaxed font-normal tracking-tight outline-none empty:before:text-text-main/30 empty:before:content-[attr(data-placeholder)] empty:before:pointer-events-none min-h-[50px] max-h-[140px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:ml-1"
                             />
                         </div>
                     </div>
