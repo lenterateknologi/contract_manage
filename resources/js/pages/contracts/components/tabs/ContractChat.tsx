@@ -2,7 +2,31 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract, ContractMessage } from '@/pages/contracts/types';
-import { ArrowDown, Download, FileIcon, MessageSquare, Paperclip, RefreshCw, Send, X } from 'lucide-react';
+import {
+    ArrowDown,
+    Bold,
+    ChevronDown,
+    ChevronUp,
+    Code,
+    Download,
+    FileIcon,
+    Heading1,
+    Heading2,
+    Italic,
+    Link,
+    List,
+    ListOrdered,
+    MessageSquare,
+    Paperclip,
+    Quote,
+    RefreshCw,
+    Save,
+    Send,
+    Smile,
+    Strikethrough,
+    Table,
+    X,
+} from 'lucide-react';
 import { usePage } from '@inertiajs/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DocumentPreviewModal from '../modals/DocumentPreviewModal';
@@ -60,12 +84,12 @@ function MsgBubble({
         let content: any = text;
 
         if (term && term.trim()) {
-            const parts = text.split(new RegExp(`(${term})`, 'gi'));
+            const parts = text.split(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
             content = parts.map((part, i) =>
                 part.toLowerCase() === term.toLowerCase() ? (
-                    <span key={i} className="text-primary bg-primary/10 rounded px-0.5 font-normal">
+                    <mark key={i} className="bg-yellow-300 text-slate-900 font-semibold px-1 rounded shadow-xs">
                         {part}
-                    </span>
+                    </mark>
                 ) : (
                     part
                 ),
@@ -251,6 +275,47 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         return () => clearTimeout(timer);
     }, [msgs.length]);
 
+    const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(0);
+    const matchRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+    const matchingMessages = useMemo(() => {
+        if (!search.trim()) return [];
+        const s = search.toLowerCase();
+        return msgs.filter((m) => {
+            const name = (m.user?.name ?? '').toLowerCase();
+            const role = (m.user?.role ?? '').toLowerCase();
+            const text = (m.message ?? '').toLowerCase();
+            return name.includes(s) || role.includes(s) || text.includes(s);
+        });
+    }, [msgs, search]);
+
+    useEffect(() => {
+        setCurrentMatchIndex(0);
+    }, [search]);
+
+    const scrollToMatch = (index: number) => {
+        if (matchingMessages.length === 0) return;
+        const targetMsg = matchingMessages[index];
+        if (targetMsg) {
+            const el = document.getElementById(`chat-msg-${targetMsg.id}`);
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    };
+
+    const handleNextMatch = () => {
+        if (matchingMessages.length === 0) return;
+        const nextIdx = (currentMatchIndex + 1) % matchingMessages.length;
+        setCurrentMatchIndex(nextIdx);
+        scrollToMatch(nextIdx);
+    };
+
+    const handlePrevMatch = () => {
+        if (matchingMessages.length === 0) return;
+        const prevIdx = (currentMatchIndex - 1 + matchingMessages.length) % matchingMessages.length;
+        setCurrentMatchIndex(prevIdx);
+        scrollToMatch(prevIdx);
+    };
+
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
@@ -292,9 +357,48 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         textareaRef.current?.focus();
     };
 
+    // LocalStorage draft key for this contract
+    const draftKey = `chat_draft_${contract.id}`;
+    const [draftSavedTime, setDraftSavedTime] = useState<string | null>(null);
+
+    // Load draft on mount or contract change
+    useEffect(() => {
+        const savedDraft = localStorage.getItem(draftKey);
+        if (savedDraft) {
+            setInput(savedDraft);
+            setDraftSavedTime('Draf tersimpan');
+        } else {
+            setInput('');
+            setDraftSavedTime(null);
+        }
+    }, [contract.id]);
+
+    // Manual Save Draft function
+    const saveDraft = () => {
+        if (!input.trim()) {
+            localStorage.removeItem(draftKey);
+            setDraftSavedTime(null);
+            showToast('Draf kosong dihapus.', 'info');
+            return;
+        }
+        localStorage.setItem(draftKey, input);
+        const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        setDraftSavedTime(`Tersimpan ${timeStr}`);
+        showToast('Draf pesan berhasil disimpan.', 'success');
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const val = e.target.value;
         setInput(val);
+
+        // Auto save to localStorage
+        if (val.trim()) {
+            localStorage.setItem(draftKey, val);
+            setDraftSavedTime('Tersimpan otomatis');
+        } else {
+            localStorage.removeItem(draftKey);
+            setDraftSavedTime(null);
+        }
 
         const parts = val.split(' ');
         const lastPart = parts[parts.length - 1];
@@ -320,6 +424,8 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             onNewMessage(updated);
             setInput('');
             setSelectedFile(null);
+            localStorage.removeItem(draftKey);
+            setDraftSavedTime(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
         } catch (err: any) {
             console.error(err);
@@ -365,14 +471,43 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
     return (
         <div className="animate-in fade-in relative flex h-full flex-col p-5 duration-500">
-            <div className="border-surface-border mb-1 flex items-center justify-between border-b pb-3">
-                <div className="flex-1">
-                    <SearchInput
-                        placeholder="CARI NAMA / ROLE..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="h-9 text-[10px]"
-                    />
+            <div className="border-surface-border mb-1 flex items-center justify-between gap-3 border-b pb-3">
+                <div className="flex flex-1 items-center gap-2">
+                    <div className="relative flex-1">
+                        <SearchInput
+                            placeholder="CARI NAMA / ROLE / PESAN..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="h-9 text-[10px]"
+                        />
+                    </div>
+                    {search.trim() !== '' && (
+                        <div className="flex items-center gap-1.5 bg-surface-muted/60 dark:bg-surface-muted/20 border border-surface-border rounded-lg px-2 py-1">
+                            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 tabular-nums">
+                                {matchingMessages.length > 0 ? `${currentMatchIndex + 1}/${matchingMessages.length}` : '0/0'}
+                            </span>
+                            <div className="flex items-center gap-0.5">
+                                <button
+                                    type="button"
+                                    onClick={handlePrevMatch}
+                                    disabled={matchingMessages.length === 0}
+                                    title="Pesan Sebelumnya (Up)"
+                                    className="p-1 rounded hover:bg-surface-border text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                >
+                                    <ChevronUp size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleNextMatch}
+                                    disabled={matchingMessages.length === 0}
+                                    title="Pesan Selanjutnya (Down)"
+                                    className="p-1 rounded hover:bg-surface-border text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                >
+                                    <ChevronDown size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -411,13 +546,14 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                                 <div className="bg-surface-border my-2 h-px flex-1" />
                                 <span className="text-text-main px-2 text-[10px]">{day}</span>
                                 {dayMessages.map((m) => (
-                                    <MsgBubble
-                                        key={m.id}
-                                        msg={m}
-                                        isMe={m.user_id === meId}
-                                        highlight={search}
-                                        onPreview={(url, name) => setPreviewTarget({ url, name })}
-                                    />
+                                    <div key={m.id} id={`chat-msg-${m.id}`}>
+                                        <MsgBubble
+                                            msg={m}
+                                            isMe={m.user_id === meId}
+                                            highlight={search}
+                                            onPreview={(url, name) => setPreviewTarget({ url, name })}
+                                        />
+                                    </div>
                                 ))}
                             </div>
                         ))
@@ -467,23 +603,193 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         insertMention={insertMention}
                     />
 
-                    <div className="border-surface-border bg-primary/5 focus-within:border-primary/30 focus-within:bg-primary/5 relative flex flex-1 items-end rounded-2xl border transition-all duration-300">
-                        <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            className="text-text-main hover:text-primary flex h-10 w-10 shrink-0 items-center justify-center transition-colors"
-                        >
-                            <Paperclip size={16} />
-                        </button>
-                        <textarea
-                            ref={textareaRef}
-                            value={input}
-                            onChange={handleInputChange}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Ketik pesan..."
-                            rows={1}
-                            className="text-text-main placeholder:text-text-main/30 max-h-[120px] min-h-[40px] flex-1 resize-none bg-transparent py-2.5 pr-4 text-[13px] leading-relaxed font-normal tracking-tight transition-all outline-none"
-                        />
+                    <div className="border-surface-border bg-white dark:bg-slate-900 focus-within:border-primary/50 relative flex flex-col flex-1 rounded-2xl border shadow-xs transition-all duration-300 overflow-hidden">
+                        {/* Formatting Toolbar (Summernote Style) */}
+                        <div className="flex flex-wrap items-center gap-1 px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-800/60">
+                            {/* Text Formatting Group */}
+                            <div className="flex items-center gap-0.5 border-r border-slate-300 dark:border-slate-700 pr-1.5 mr-0.5">
+                                <button
+                                    type="button"
+                                    title="Tebal (Bold)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '**teks**');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Bold size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Miring (Italic)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '*teks*');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Italic size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Coret (Strikethrough)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '~~teks~~');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Strikethrough size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Kode (Inline Code)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '`kode`');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Code size={14} />
+                                </button>
+                            </div>
+
+                            {/* Heading & Paragraph Group */}
+                            <div className="flex items-center gap-0.5 border-r border-slate-300 dark:border-slate-700 pr-1.5 mr-0.5">
+                                <button
+                                    type="button"
+                                    title="Judul Utama (H1)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '\n# Judul Utama\n');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Heading1 size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Sub Judul (H2)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '\n## Sub Judul\n');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Heading2 size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Kutipan (Blockquote)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '\n> Kutipan\n');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Quote size={14} />
+                                </button>
+                            </div>
+
+                            {/* Lists Group */}
+                            <div className="flex items-center gap-0.5 border-r border-slate-300 dark:border-slate-700 pr-1.5 mr-0.5">
+                                <button
+                                    type="button"
+                                    title="Daftar Poin (Bullet List)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '\n- ');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <List size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Daftar Angka (Numbered List)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '\n1. ');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <ListOrdered size={14} />
+                                </button>
+                            </div>
+
+                            {/* Insert Group */}
+                            <div className="flex items-center gap-0.5">
+                                <button
+                                    type="button"
+                                    title="Tautan (Link)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '[Teks Tautan](https://example.com)');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Link size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Tabel (Table)"
+                                    onClick={() => {
+                                        setInput((prev) => prev + '\n| Kolom 1 | Kolom 2 |\n| --- | --- |\n| Data 1 | Data 2 |\n');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors"
+                                >
+                                    <Table size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Emoji"
+                                    onClick={() => {
+                                        setInput((prev) => prev + ' 😊 ');
+                                        textareaRef.current?.focus();
+                                    }}
+                                    className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-amber-500 hover:text-amber-600 transition-colors"
+                                >
+                                    <Smile size={14} />
+                                </button>
+                            </div>
+
+                            {/* Draft Group */}
+                            <div className="ml-auto flex items-center gap-2 border-l border-slate-300 dark:border-slate-700 pl-2">
+                                {draftSavedTime && (
+                                    <span className="text-[10px] italic text-slate-400 dark:text-slate-500">
+                                        {draftSavedTime}
+                                    </span>
+                                )}
+                                <button
+                                    type="button"
+                                    title="Simpan Draf Pesan"
+                                    onClick={saveDraft}
+                                    className="flex items-center gap-1 px-2 py-1 rounded bg-slate-200/80 dark:bg-slate-700 hover:bg-primary/10 hover:text-primary text-slate-700 dark:text-slate-200 text-[10px] font-medium transition-colors"
+                                >
+                                    <Save size={12} /> Draf
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex items-end">
+                            <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
+                            <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="text-text-main hover:text-primary flex h-10 w-10 shrink-0 items-center justify-center transition-colors"
+                            >
+                                <Paperclip size={16} />
+                            </button>
+                            <textarea
+                                ref={textareaRef}
+                                value={input}
+                                onChange={handleInputChange}
+                                onKeyDown={handleKeyDown}
+                                placeholder="Ketik pesan..."
+                                rows={2}
+                                className="text-text-main placeholder:text-text-main/30 max-h-[140px] min-h-[50px] flex-1 resize-none bg-transparent py-2.5 pr-4 text-[13px] leading-relaxed font-normal tracking-tight transition-all outline-none"
+                            />
+                        </div>
                     </div>
                     <button
                         className={cn(

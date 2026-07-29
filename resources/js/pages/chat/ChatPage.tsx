@@ -3,7 +3,7 @@ import { AppSidebarHeader } from '@/layouts/app/components/AppSidebarHeader';
 import { SidebarInset, SidebarProvider } from '@/components/ui/navigation/Sidebar';
 import { Head, usePage, usePoll } from '@inertiajs/react';
 import { useState, useMemo, useEffect } from 'react';
-import { MessageSquare, Search } from 'lucide-react';
+import { Building2, ExternalLink, FileText, MessageSquare, Search } from 'lucide-react';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import ContractChat from '@/pages/contracts/components/tabs/ContractChat';
 import { Contract } from '@/pages/contracts/types';
@@ -62,6 +62,38 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
         setContracts(prev => prev.map(c => c.id === updatedContract.id ? updatedContract : c));
     };
 
+    // Group contracts by day based on updated_at or created_at
+    const groupedContracts = useMemo(() => {
+        const groups: Record<string, Contract[]> = {};
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+
+        filteredContracts.forEach((c) => {
+            const rawDate = c.updated_at || c.created_at;
+            let groupLabel = 'Lainnya';
+            if (rawDate) {
+                const dateObj = new Date(rawDate);
+                const dateStr = dateObj.toDateString();
+                if (dateStr === today) {
+                    groupLabel = 'Hari Ini';
+                } else if (dateStr === yesterday) {
+                    groupLabel = 'Kemarin';
+                } else {
+                    groupLabel = dateObj.toLocaleDateString('id-ID', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                    });
+                }
+            }
+
+            if (!groups[groupLabel]) groups[groupLabel] = [];
+            groups[groupLabel].push(c);
+        });
+
+        return groups;
+    }, [filteredContracts]);
+
     return (
         <ToastProvider>
             <SidebarProvider>
@@ -92,13 +124,22 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                     <p className="text-sm font-normal text-text-main">Tidak ada kontrak</p>
                                 </div>
                             ) : (
-                                filteredContracts.map(c => (
-                                    <ContractListItem
-                                        key={c.id}
-                                        contract={c}
-                                        isSelected={selectedContractId === c.id}
-                                        onClick={() => setSelectedContractId(c.id)}
-                                    />
+                                Object.entries(groupedContracts).map(([groupLabel, items]) => (
+                                    <div key={groupLabel}>
+                                        <div className="bg-slate-100/70 dark:bg-slate-800/40 px-4 py-1.5 border-y border-surface-border/60">
+                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                                {groupLabel}
+                                            </span>
+                                        </div>
+                                        {items.map((c) => (
+                                            <ContractListItem
+                                                key={c.id}
+                                                contract={c}
+                                                isSelected={selectedContractId === c.id}
+                                                onClick={() => setSelectedContractId(c.id)}
+                                            />
+                                        ))}
+                                    </div>
                                 ))
                             )}
                         </div>
@@ -108,21 +149,37 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                     <div className="flex-1 flex flex-col bg-surface-base">
                         {selectedContract ? (
                             <div className="flex flex-col h-full">
-                                <div className="p-4 border-b border-surface-border flex items-center justify-between bg-white dark:bg-zinc-900 shadow-sm z-10">
-                                    <div className="flex flex-col">
-                                        <h3 className="text-sm font-normal text-text-main leading-none mb-1">
-                                            {selectedContract.title}
-                                        </h3>
-                                        <p className="text-xs text-text-main">
-                                            Diskusi Kontrak {selectedContract.form_no || selectedContract.contract_no}
-                                        </p>
+                                <div className="px-6 py-3.5 border-b border-surface-border flex items-center justify-between bg-white dark:bg-zinc-900 shadow-xs z-10">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-semibold border border-primary/20">
+                                            <FileText className="w-5 h-5 text-primary" />
+                                        </div>
+                                        <div className="flex flex-col">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight leading-none">
+                                                    {selectedContract.title}
+                                                </h3>
+                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-mono font-medium border border-slate-200 dark:border-slate-700">
+                                                    #{selectedContract.form_no || selectedContract.contract_no || 'DRAFT'}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                                                <span className="flex items-center gap-1">
+                                                    <Building2 size={12} className="text-slate-400" />
+                                                    {selectedContract.contract_type || 'General Contract'}
+                                                </span>
+                                                <span className="text-slate-300 dark:text-slate-700">•</span>
+                                                <span>Dibuat oleh: <strong className="font-medium text-slate-700 dark:text-slate-300">{selectedContract.creator?.name || 'System'}</strong></span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
-                                            className="px-3 py-1.5 rounded-lg border border-surface-border text-xs font-normal text-text-main hover:bg-surface-muted transition-all"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 shadow-2xs transition-all active:scale-95"
                                         >
-                                            Buka Kontrak
+                                            <span>Buka Kontrak</span>
+                                            <ExternalLink size={12} className="opacity-70" />
                                         </button>
                                     </div>
                                 </div>
