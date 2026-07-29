@@ -18,7 +18,7 @@ class ContractFormatter
             'creator.department', 'creator.company',
             'approvals.approver.department', 'approvals.workflowStep',
             'workflowStep.actions', 'histories.actor.department',
-            'contractType', 'submissionType', 'vendor.documents', 'parent', 'workflow.steps',
+            'contractType', 'submissionType', 'vendor', 'parent', 'workflow.steps',
             'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
             'assignedPic.department', 'assignedBy.department', 'statusDetail',
         ]);
