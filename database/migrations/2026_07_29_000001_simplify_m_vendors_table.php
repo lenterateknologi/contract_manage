@@ -8,6 +8,31 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            Schema::dropIfExists('m_vendor_taxes');
+            Schema::dropIfExists('m_vendor_legalities');
+            Schema::dropIfExists('m_vendor_payment_methods');
+            Schema::dropIfExists('m_vendor_banks');
+            Schema::dropIfExists('m_vendor_business_fields');
+            Schema::dropIfExists('m_vendor_documents');
+
+            Schema::dropIfExists('m_vendors');
+
+            Schema::create('m_vendors', function (Blueprint $table) {
+                $table->uuid('id')->primary();
+                $table->string('vendor_code')->unique();
+                $table->string('vendor_name');
+                $table->json('vendor_detail')->nullable();
+                $table->boolean('is_active')->default(true);
+                $table->uuid('created_by')->nullable();
+                $table->uuid('updated_by')->nullable();
+                $table->timestamps();
+                $table->softDeletes();
+            });
+
+            return;
+        }
+
         // 1. Drop materialized view & legacy vendor tables
         DB::statement("DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_contracts");
 

@@ -25,6 +25,7 @@ class ChatController extends Controller
 
         // Fetch contracts that the user is involved in (Creator, Initiator, PIC, Manager, Approver, or message participant)
         $contracts = Contract::query()
+            ->select(['id', 'form_no', 'contract_no', 'title', 'contract_type_id', 'created_by', 'updated_at'])
             ->where(function ($query) use ($user) {
                 $query->where('created_by', $user->id)
                     ->orWhere('initiated_by_id', $user->id)
@@ -37,12 +38,25 @@ class ChatController extends Controller
                         $q->where('user_id', $user->id);
                     });
             })
+            ->with([
+                'creator:id,name,role_id',
+                'contractType:id,name',
+            ])
             ->withCount(['messages as unread_count' => function ($q) use ($user) {
                 $q->whereJsonDoesntContain('read_by', $user->id);
             }])
             ->latest('updated_at')
             ->get()
-            ->map(fn ($c) => ContractFormatter::formatContract($c, false));
+            ->map(fn ($c) => [
+                'id' => $c->id,
+                'form_no' => $c->form_no,
+                'contract_no' => $c->contract_no,
+                'title' => $c->title,
+                'contract_type' => $c->contractType?->name ?? '—',
+                'unread_count' => $c->unread_count ?? 0,
+                'updated_at_formatted' => $c->updated_at?->diffForHumans() ?? '',
+                'creator' => $c->creator ? ['id' => $c->creator->id, 'name' => $c->creator->name] : null,
+            ]);
 
         return Inertia::render('chat/ChatPage', [
             'contracts' => $contracts,
@@ -57,10 +71,18 @@ class ChatController extends Controller
     /**
      * Get messages for a specific contract.
      */
-    public function getMessages(string $contractId): JsonResponse
+    public function getMessages(string $contractId, Request $request): JsonResponse
     {
         $contract = Contract::findOrFail($contractId);
-        $messages = $contract->messages()->with('user')->orderBy('created_at')->get();
+        $limit = $request->integer('limit', 100);
+
+        $messages = $contract->messages()
+            ->with(['user:id,name,role'])
+            ->orderBy('created_at', 'desc')
+            ->take($limit)
+            ->get()
+            ->reverse()
+            ->values();
 
         return response()->json($messages->map(fn ($m) => [
             'id' => $m->id,

@@ -139,6 +139,23 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
 export function DashboardMetrics({ metrics, activeTab }: { metrics: any; activeTab: 'overview' | 'workload' | 'master_data' }) {
     if (!metrics) return null;
 
+    const config = metrics.dashboardConfig;
+    const hasAnyTab = config ? (config.show_overview || config.show_workload || config.show_master_data) : false;
+
+    if (!hasAnyTab) {
+        return (
+            <div className="flex h-[320px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-surface-border bg-surface-base/50 p-8 text-center animate-in fade-in duration-300">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 mb-3">
+                    <Briefcase size={24} />
+                </div>
+                <h3 className="text-sm font-semibold text-text-main">Tidak Ada Dashboard yang Dikonfigurasi</h3>
+                <p className="text-xs text-text-desc max-w-sm mt-1">
+                    Role atau departemen Anda saat ini belum diatur untuk menampilkan tab dashboard manapun.
+                </p>
+            </div>
+        );
+    }
+
     const handleNavigate = (targetView: string, params?: any) => {
         if (targetView === 'pending') {
             router.get('/contracts/pending', params);
@@ -156,19 +173,19 @@ export function DashboardMetrics({ metrics, activeTab }: { metrics: any; activeT
             {/* Tab Contents with Premium Transitions */}
             <div className="transition-all duration-300">
                 <Suspense fallback={<TabLoading />}>
-                    {activeTab === 'overview' && (
+                    {activeTab === 'overview' && config?.show_overview && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <OverviewTab data={metrics} onNavigate={handleNavigate} />
                         </div>
                     )}
 
-                    {activeTab === 'workload' && (
+                    {activeTab === 'workload' && config?.show_workload && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <WorkloadTab data={metrics} />
                         </div>
                     )}
 
-                    {activeTab === 'master_data' && (
+                    {activeTab === 'master_data' && config?.show_master_data && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <MasterDataTab data={metrics} />
                         </div>

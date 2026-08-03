@@ -56,28 +56,43 @@ class ReportController extends Controller
         }
 
         // Metrics calculation (based on filtered set)
-        $approvedContracts = (clone $query)->where('status', 'approved')->get();
+        $contractIds = (clone $query)->pluck('t_contracts.id');
+
+        $approvedStats = DB::table('t_contracts')
+            ->leftJoin('t_approvals', 't_contracts.id', '=', 't_approvals.contract_id')
+            ->whereIn('t_contracts.id', $contractIds)
+            ->where('t_contracts.status', 'approved')
+            ->whereNull('t_contracts.deleted_at')
+            ->select('t_contracts.id', 't_contracts.updated_at', DB::raw('MIN(t_approvals.created_at) as first_sent_at'))
+            ->groupBy('t_contracts.id', 't_contracts.updated_at')
+            ->get();
+
         $avgDays = 0;
-        if ($approvedContracts->count() > 0) {
-            $totalDays = $approvedContracts->sum(function ($c) {
-                $firstSentAt = Approval::where('contract_id', $c->id)->oldest()->value('created_at');
-                if (! $firstSentAt) {
+        if ($approvedStats->count() > 0) {
+            $totalDays = $approvedStats->sum(function ($c) {
+                if (! $c->first_sent_at) {
                     return 0;
                 }
 
-                return $firstSentAt->diffInHours($c->updated_at) / 24;
+                $firstSent = \Carbon\Carbon::parse($c->first_sent_at);
+                $updatedAt = \Carbon\Carbon::parse($c->updated_at);
+
+                return $firstSent->diffInHours($updatedAt) / 24;
             });
-            $avgDays = round($totalDays / $approvedContracts->count(), 1);
+            $avgDays = round($totalDays / $approvedStats->count(), 1);
         }
 
-        $contractIds = (clone $query)->pluck('id');
-        $bottlenecks = Approval::whereIn('contract_id', $contractIds)
+        $bottlenecks = DB::table('t_approvals')
+            ->whereIn('contract_id', $contractIds)
             ->where('status', 'pending')
+            ->whereNull('deleted_at')
             ->select('role', DB::raw('count(*) as count'))
             ->groupBy('role')
             ->get();
 
-        $statusDistribution = (clone $query)->withoutEagerLoads()
+        $statusDistribution = DB::table('t_contracts')
+            ->whereIn('id', $contractIds)
+            ->whereNull('deleted_at')
             ->select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->get();
@@ -86,7 +101,13 @@ class ReportController extends Controller
         $contractsPage = $request->input('contracts_page', 1);
         $contractsPerPage = $request->input('per_page', 10);
 
-        $contractsList = (clone $query)->with(['creator', 'contractType', 'submissionType', 'approvals.approver'])
+        $contractsList = (clone $query)
+            ->with([
+                'creator:id,name,role_id',
+                'contractType:id,name',
+                'submissionType:id,name',
+                'approvals' => fn ($q) => $q->where('status', 'pending')->select('id', 'contract_id', 'role', 'status'),
+            ])
             ->orderByDesc('created_at')
             ->paginate($contractsPerPage, ['*'], 'contracts_page', $contractsPage);
 
@@ -102,23 +123,26 @@ class ReportController extends Controller
                 'creator' => $c->creator?->name,
                 'created_at' => $c->created_at->toIso8601String(),
                 'age_days' => $c->created_at->diffInDays(now()),
-                'current_step' => $c->approvals->where('status', 'pending')->first()?->role ?? '—',
+                'current_step' => $c->approvals->first()?->role ?? '—',
             ];
         });
 
         // Audit Trail (Histories)
         $auditPage = $request->input('audit_page', 1);
         $histories = ContractHistory::whereIn('contract_id', $contractIds)
-            ->with(['contract', 'actor'])
+            ->with([
+                'contract:id,form_no,contract_no,title',
+                'actor:id,name,role_id',
+            ])
             ->orderByDesc('created_at')
             ->paginate($contractsPerPage, ['*'], 'audit_page', $auditPage);
 
         $histories->getCollection()->transform(function ($h) {
             return [
                 'id' => $h->id,
-                'form_no' => $h->contract->form_no,
-                'contract_no' => $h->contract->contract_no,
-                'contract_title' => $h->contract->title,
+                'form_no' => $h->contract?->form_no,
+                'contract_no' => $h->contract?->contract_no,
+                'contract_title' => $h->contract?->title,
                 'action' => $h->action,
                 'description' => $h->description,
                 'actor' => $h->actor?->name,
@@ -131,14 +155,16 @@ class ReportController extends Controller
             ? "strftime('%Y-%m', t_contracts.created_at) as month"
             : "to_char(t_contracts.created_at, 'YYYY-MM') as month";
 
-        $monthlyTrend = (clone $query)->withoutEagerLoads()
+        $monthlyTrend = DB::table('t_contracts')
             ->leftJoin('m_contract_types', 't_contracts.contract_type_id', '=', 'm_contract_types.id')
+            ->whereIn('t_contracts.id', $contractIds)
+            ->where('t_contracts.created_at', '>=', now()->subMonths(6))
+            ->whereNull('t_contracts.deleted_at')
             ->select(
                 DB::raw($monthExpression),
                 'm_contract_types.name as type_name',
-                DB::raw('count(*) as count'),
+                DB::raw('count(*) as count')
             )
-            ->where('t_contracts.created_at', '>=', now()->subMonths(6))
             ->groupBy('month', 'type_name')
             ->orderBy('month')
             ->get()
@@ -157,11 +183,9 @@ class ReportController extends Controller
         return response()->json([
             'metrics' => [
                 'avgCycleTime' => $avgDays,
-                'totalContracts' => (clone $query)->count(),
-                'pendingApprovals' => Approval::whereIn('contract_id', $contractIds)->where('status', 'pending')->count(),
-                'approvedThisMonth' => (clone $query)->where('status', 'approved')
-                    ->where('updated_at', '>=', now()->startOfMonth())
-                    ->count(),
+                'totalContracts' => $contractIds->count(),
+                'pendingApprovals' => DB::table('t_approvals')->whereIn('contract_id', $contractIds)->where('status', 'pending')->whereNull('deleted_at')->count(),
+                'approvedThisMonth' => DB::table('t_contracts')->whereIn('id', $contractIds)->where('status', 'approved')->where('updated_at', '>=', now()->startOfMonth())->whereNull('deleted_at')->count(),
             ],
             'contracts' => $contractsList,
             'histories' => $histories,

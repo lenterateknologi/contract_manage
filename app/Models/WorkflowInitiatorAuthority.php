@@ -60,4 +60,14 @@ class WorkflowInitiatorAuthority extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
+    public function companyGroup(): BelongsTo
+    {
+        return $this->belongsTo(CompanyGroup::class, 'company_group_id');
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class, 'region_id');
+    }
 }

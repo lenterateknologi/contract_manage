@@ -107,8 +107,6 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::delete('/{workflow}', 'destroy')->name('admin.workflows.destroy');
         Route::post('/bulk-delete', 'bulkDestroy')->name('admin.workflows.bulk-destroy');
         Route::post('/{workflow}/duplicate', 'duplicate')->name('admin.workflows.duplicate');
-        Route::get('/{workflow}/steps', 'steps')->name('admin.workflows.steps');
-        Route::post('/{workflow}/steps', 'updateSteps')->name('admin.workflows.steps.update');
     });
 
     Route::controller(MasterDataAdminController::class)->prefix('master-data-sync')->group(function () {

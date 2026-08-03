@@ -44,15 +44,6 @@ class WorkflowAdminController extends Controller
         return Inertia::render('admin/Index', [
             'currentView' => 'workflows',
             'workflows' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
-            'contractTypes' => ContractType::all(),
-            'departments' => Department::all(),
-            'divisions' => Division::all(),
-            'roles' => Role::all(),
-            'users' => User::all(),
-            'companyGroups' => CompanyGroup::all(),
-            'regions' => Region::all(),
-            'companies' => Company::all(),
-            'contractStatuses' => ContractStatus::orderBy('label')->get(),
             'filters' => $request->only(['search', 'contract_type_id', 'company_group_id', 'region_id', 'company_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -238,31 +229,6 @@ class WorkflowAdminController extends Controller
         }
     }
 
-    public function steps(Workflow $workflow)
-    {
-        $workflow->load('steps');
-        $roles = Role::orderBy('name')->get();
-        $users = $this->userQuery->options()->get();
-
-        return Inertia::render('workflows/Steps', [
-            'workflow' => $workflow,
-            'roles' => $roles,
-            'users' => $users,
-        ]);
-    }
-
-    public function updateSteps(UpdateWorkflowStepsRequest $request, Workflow $workflow, UpdateWorkflowStepsAction $action)
-    {
-        try {
-            $action->execute($workflow, $request->validated());
-
-            return back()->with('success', 'Tahapan alur kerja berhasil diperbarui.');
-        } catch (\Exception $e) {
-            Log::error('Workflow Steps Update Error: '.$e->getMessage());
-
-            return back()->withErrors(['error' => 'Gagal memperbarui tahapan: '.$e->getMessage()]);
-        }
-    }
 
     public function bulkDestroy(Request $request)
     {

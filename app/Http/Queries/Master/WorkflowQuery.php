@@ -17,9 +17,13 @@ class WorkflowQuery
         return Workflow::query()
             ->withCount('steps')
             ->with([
-                'contractType',
-                'steps.approverAuthorities',
-                'initiatorAuthorities',
+                'contractType:id,name',
+                'initiatorAuthorities.role:id,name',
+                'initiatorAuthorities.department:id,name',
+                'initiatorAuthorities.division:id,name',
+                'initiatorAuthorities.user:id,name',
+                'initiatorAuthorities.companyGroup:id,name',
+                'initiatorAuthorities.region:id,name',
             ])
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);

@@ -258,7 +258,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                                     <UserCircle size={12} className="text-muted-foreground" />
                                                 </div>
                                                 <span className="text-[11px] text-foreground">
-                                                    {INITIATOR_LABELS[row.initiator_type] || row.initiator_type}
+                                                    {row.initiator_summary || INITIATOR_LABELS[row.initiator_type] || row.initiator_type || 'Seluruh Staff'}
                                                 </span>
                                             </div>
                                         </td>

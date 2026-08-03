@@ -105,24 +105,24 @@ class ContractController extends Controller
         $data = [
             'currentView' => $view,
             'contracts' => $contracts,
-            'types' => $loaders['types'](),
-            'submissionTypes' => $loaders['submissionTypes'](),
+            'types' => Inertia::defer($loaders['types']),
+            'submissionTypes' => Inertia::defer($loaders['submissionTypes']),
             'users' => Inertia::defer($loaders['users']),
             'vendors' => Inertia::defer($loaders['vendors']),
             'formTemplates' => Inertia::defer($loaders['formTemplates']),
-            'departments' => $loaders['departments'](),
-            'divisions' => $loaders['divisions'](),
+            'departments' => Inertia::defer($loaders['departments']),
+            'divisions' => Inertia::defer($loaders['divisions']),
             'roles' => Inertia::defer($loaders['roles']),
-            'regions' => $loaders['regions'](),
-            'companyGroups' => $loaders['companyGroups'](),
-            'companies' => $loaders['companies'](),
-            'organizationTree' => function () use ($loaders) {
+            'regions' => Inertia::defer($loaders['regions']),
+            'companyGroups' => Inertia::defer($loaders['companyGroups']),
+            'companies' => Inertia::defer($loaders['companies']),
+            'organizationTree' => Inertia::defer(function () use ($loaders) {
                 return ContractFilterScopeService::buildOrganizationTree(
                     $loaders['companyGroups'](),
                     $loaders['regions'](),
                     $loaders['companies']()
                 );
-            },
+            }),
             'contractStatuses' => Inertia::defer($loaders['contractStatuses']),
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
@@ -269,7 +269,7 @@ class ContractController extends Controller
         $user = $request->user();
         $targetUserId = $request->query('user_id');
 
-        if ($targetUserId && ($user->role === 'Admin' || ($user->department && str_contains(strtolower($user->department->name), 'legal')) || str_contains(strtolower($user->role), 'legal'))) {
+        if ($targetUserId) {
             $targetUser = User::find($targetUserId);
             if ($targetUser) {
                 $user = $targetUser;

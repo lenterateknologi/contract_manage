@@ -87,11 +87,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         }
     };
 
-    const isLegalOrAdmin =
-        auth?.user?.role === 'Admin' ||
-        auth?.user?.department?.name?.toLowerCase().includes('legal') ||
-        auth?.user?.role?.toLowerCase().includes('legal');
-
     const handleSubmit = async () => {
         const validationErrors = validateContractForm(
             { title, contract_type_id: typeId, workflow_id: workflowId },
@@ -179,22 +174,20 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
             }
         >
             <div className="space-y-6">
-                {isLegalOrAdmin && (
-                    <div className="border-primary/10 bg-primary/5 space-y-3 rounded-2xl border p-5">
-                        <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
-                            <ShieldCheck size={14} /> Dibuat Untuk (Initiator)
-                        </label>
-                        <PortalSelect
-                            value={initiatedById}
-                            onValueChange={(val) => setInitiatedById(val)}
-                            options={initiatorOptions}
-                            placeholder="Pilih Initiator"
-                        />
-                        <p className="text-muted-foreground text-[10px] leading-relaxed font-medium italic">
-                            Legal Helper: Workflow akan disesuaikan dengan departemen initiator yang dipilih.
-                        </p>
-                    </div>
-                )}
+                <div className="border-primary/10 bg-primary/5 space-y-3 rounded-2xl border p-5">
+                    <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
+                        <ShieldCheck size={14} /> Dibuat Untuk (Initiator)
+                    </label>
+                    <PortalSelect
+                        value={initiatedById}
+                        onValueChange={(val) => setInitiatedById(val)}
+                        options={initiatorOptions}
+                        placeholder="Pilih Initiator"
+                    />
+                    <p className="text-muted-foreground text-[10px] leading-relaxed font-medium italic">
+                        Workflow akan disesuaikan dengan departemen dan otoritas initiator yang dipilih.
+                    </p>
+                </div>
 
                 <div className="grid grid-cols-2 gap-6 items-start">
                     <div className="col-span-1 space-y-1.5">

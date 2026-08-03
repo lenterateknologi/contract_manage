@@ -232,7 +232,30 @@ class ContractDashboardQuery
         $todayRejected = $todayUpdatedContracts->where('status', 'rejected')->count();
         $todayApproved = $todayUpdatedContracts->where('status', 'approved')->count();
 
+        // Resolve matching dashboard type configuration based on role and department
+        $dashboardConfig = \App\Models\DashboardType::where(function ($q) use ($user) {
+            $q->where('role_id', $user->role_id)
+              ->where('department_id', $user->department_id);
+        })->orWhere(function ($q) use ($user) {
+            $q->where('role_id', $user->role_id)
+              ->whereNull('department_id');
+        })->orWhere(function ($q) use ($user) {
+            $q->whereNull('role_id')
+              ->where('department_id', $user->department_id);
+        })->orWhere(function ($q) {
+            $q->whereNull('role_id')
+              ->whereNull('department_id');
+        })->orderByRaw('role_id IS NOT NULL DESC, department_id IS NOT NULL DESC')
+          ->first();
+
         return [
+            'dashboardConfig' => [
+                'has_setting' => (bool) $dashboardConfig,
+                'name' => $dashboardConfig ? $dashboardConfig->name : null,
+                'show_overview' => $dashboardConfig ? (bool) $dashboardConfig->show_overview : false,
+                'show_workload' => $dashboardConfig ? (bool) $dashboardConfig->show_workload : false,
+                'show_master_data' => $dashboardConfig ? (bool) $dashboardConfig->show_master_data : false,
+            ],
             'metrics' => [
                 'totalContracts' => $totalContracts,
                 'activeContracts' => $activeContracts,

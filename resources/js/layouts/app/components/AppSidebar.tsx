@@ -28,6 +28,7 @@ import {
     History,
     KeyRound,
     LayoutGrid,
+    LayoutDashboard,
     ScanLine,
     Search,
     Settings2,
@@ -70,6 +71,7 @@ const iconMap: Record<string, LucideIcon> = {
     KeyRound,
     ShieldAlert,
     MessageSquare,
+    LayoutDashboard,
 };
 
 const footerNavItems: NavItem[] = [];

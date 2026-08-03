@@ -15,19 +15,15 @@ return new class extends Migration
                 $table->uuid('contract_filter_template_id')->nullable()->after('id');
             }
 
-            // Add FK only if it doesn't already exist
-            $fks = collect(\DB::select(
-                "SELECT constraint_name FROM information_schema.table_constraints
-                 WHERE table_name = 'm_users'
-                   AND constraint_type = 'FOREIGN KEY'
-                   AND constraint_name = 'm_users_contract_filter_template_id_foreign'"
-            ));
-
-            if ($fks->isEmpty()) {
-                $table->foreign('contract_filter_template_id')
-                      ->references('id')
-                      ->on('m_contract_filter_templates')
-                      ->nullOnDelete();
+            if (DB::getDriverName() !== 'sqlite') {
+                try {
+                    $table->foreign('contract_filter_template_id')
+                          ->references('id')
+                          ->on('m_contract_filter_templates')
+                          ->nullOnDelete();
+                } catch (\Throwable $e) {
+                    // Ignore if constraint already exists
+                }
             }
         });
     }

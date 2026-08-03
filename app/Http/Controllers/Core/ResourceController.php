@@ -43,6 +43,7 @@ class ResourceController extends Controller
         'vendors' => VendorResource::class,
         'divisions' => DivisionResource::class,
         'contract-filter-templates' => ContractFilterTemplateResource::class,
+        'dashboard-types' => \App\Core\Crud\Resources\DashboardTypeResource::class,
     ];
 
     /**
@@ -116,7 +117,26 @@ class ResourceController extends Controller
         $sortBy = $request->input('sort_by');
         $sortDir = $request->input('sort_dir', 'asc');
         if ($sortBy) {
-            $query->orderBy($sortBy, $sortDir);
+            if (str_contains($sortBy, '.')) {
+                [$relation, $relColumn] = explode('.', $sortBy, 2);
+                $modelInstance = new $modelClass;
+                $method = method_exists($modelInstance, $relation) ? $relation : \Illuminate\Support\Str::camel($relation);
+                if (method_exists($modelInstance, $method)) {
+                    $relationInstance = $modelInstance->{$method}();
+                    if ($relationInstance instanceof \Illuminate\Database\Eloquent\Relations\BelongsTo) {
+                        $relatedTable = $relationInstance->getRelated()->getTable();
+                        $foreignKey = $relationInstance->getForeignKeyName();
+                        $ownerKey = $relationInstance->getOwnerKeyName();
+                        $parentTable = $modelInstance->getTable();
+
+                        $query->join($relatedTable, "{$parentTable}.{$foreignKey}", '=', "{$relatedTable}.{$ownerKey}")
+                            ->select("{$parentTable}.*")
+                            ->orderBy("{$relatedTable}.{$relColumn}", $sortDir);
+                    }
+                }
+            } else {
+                $query->orderBy($sortBy, $sortDir);
+            }
         }
 
         $defaultLimit = $resourceSlug === 'contract-types' ? 100 : 15;

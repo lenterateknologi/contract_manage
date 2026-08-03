@@ -190,10 +190,6 @@ class User extends Authenticatable
             $templateId = $this->attributes['contract_filter_template_id'];
         } elseif ($this->relationLoaded('contractFilterTemplate')) {
             $templateId = $this->contractFilterTemplate?->id;
-        } elseif (isset($this->id)) {
-            $templateId = \DB::table('m_users')
-                ->where('id', $this->id)
-                ->value('contract_filter_template_id');
         }
 
         if ($templateId) {

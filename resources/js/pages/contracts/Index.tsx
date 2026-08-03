@@ -375,6 +375,10 @@ function ContractPage({
         region_id?: any;
         company_id?: any;
         division_id?: any;
+        company_group_ids?: any;
+        region_ids?: any;
+        company_ids?: any;
+        department_ids?: any;
     };
     formTemplates?: any[];
     users?: any[];
@@ -391,6 +395,22 @@ function ContractPage({
     const { canUpdate } = usePermissions('CONTRACTS');
     const [view, setView] = useState<View>(currentView);
     const [dashboardTab, setDashboardTab] = useState<'overview' | 'workload' | 'master_data'>('overview');
+
+    useEffect(() => {
+        const config = metrics?.dashboardConfig;
+        if (config) {
+            if (dashboardTab === 'overview' && !config.show_overview) {
+                if (config.show_workload) setDashboardTab('workload');
+                else if (config.show_master_data) setDashboardTab('master_data');
+            } else if (dashboardTab === 'workload' && !config.show_workload) {
+                if (config.show_overview) setDashboardTab('overview');
+                else if (config.show_master_data) setDashboardTab('master_data');
+            } else if (dashboardTab === 'master_data' && !config.show_master_data) {
+                if (config.show_overview) setDashboardTab('overview');
+                else if (config.show_workload) setDashboardTab('workload');
+            }
+        }
+    }, [metrics?.dashboardConfig, dashboardTab]);
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const viewTitleMap: Record<string, string> = {
         dashboard: 'Dashboard Kontrak',
@@ -895,28 +915,43 @@ function ContractPage({
                             onResetFilters: () => {
                                 router.get('/contracts', { view: 'dashboard' }, { preserveState: true, preserveScroll: true });
                             },
-                            actions: (
-                                <div className="flex items-center gap-2">
-                                    <DashboardTab
-                                        active={dashboardTab === 'overview'}
-                                        onClick={() => setDashboardTab('overview')}
-                                        label="Ringkasan"
-                                        icon={LayoutDashboard}
-                                    />
-                                    <DashboardTab
-                                        active={dashboardTab === 'workload'}
-                                        onClick={() => setDashboardTab('workload')}
-                                        label="Beban Kerja"
-                                        icon={Briefcase}
-                                    />
-                                    <DashboardTab
-                                        active={dashboardTab === 'master_data'}
-                                        onClick={() => setDashboardTab('master_data')}
-                                        label="Master Data"
-                                        icon={Layers}
-                                    />
-                                </div>
-                            )
+                            actions: (() => {
+                                const config = metrics?.dashboardConfig;
+                                const showOverview = config ? !!config.show_overview : false;
+                                const showWorkload = config ? !!config.show_workload : false;
+                                const showMasterData = config ? !!config.show_master_data : false;
+
+                                if (!showOverview && !showWorkload && !showMasterData) return null;
+
+                                return (
+                                    <div className="flex items-center gap-2">
+                                        {showOverview && (
+                                            <DashboardTab
+                                                active={dashboardTab === 'overview'}
+                                                onClick={() => setDashboardTab('overview')}
+                                                label="Ringkasan"
+                                                icon={LayoutDashboard}
+                                            />
+                                        )}
+                                        {showWorkload && (
+                                            <DashboardTab
+                                                active={dashboardTab === 'workload'}
+                                                onClick={() => setDashboardTab('workload')}
+                                                label="Beban Kerja"
+                                                icon={Briefcase}
+                                            />
+                                        )}
+                                        {showMasterData && (
+                                            <DashboardTab
+                                                active={dashboardTab === 'master_data'}
+                                                onClick={() => setDashboardTab('master_data')}
+                                                label="Master Data"
+                                                icon={Layers}
+                                            />
+                                        )}
+                                    </div>
+                                );
+                            })()
                         } : (view !== 'profile' ? {
                             searchValue: search,
                             onSearchChange: setSearch,

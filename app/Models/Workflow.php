@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Workflow extends Model
 {
@@ -66,9 +67,8 @@ class Workflow extends Model
         'meta' => 'array',
     ];
 
-    protected $with = ['contractType', 'initiatorAuthorities.role'];
-
     protected $appends = [
+        'initiator_summary',
         'initiator_roles',
         'initiator_users',
         'initiator_departments',
@@ -77,6 +77,60 @@ class Workflow extends Model
         'contract_type_ids',
     ];
 
+    public function getInitiatorSummaryAttribute(): string
+    {
+        if (! $this->relationLoaded('initiatorAuthorities')) {
+            return match ($this->initiator_type) {
+                'department' => 'Per Departemen',
+                'role' => 'Per Jabatan',
+                'user' => 'Spesifik User',
+                default => 'Seluruh Staff',
+            };
+        }
+
+        $items = [];
+        foreach ($this->initiatorAuthorities as $auth) {
+            $parts = [];
+            if ($auth->relationLoaded('role') && $auth->role) {
+                $parts[] = "Role: {$auth->role->name}";
+            }
+            if ($auth->relationLoaded('user') && $auth->user) {
+                $parts[] = "User: {$auth->user->name}";
+            }
+            if ($auth->relationLoaded('department') && $auth->department) {
+                $parts[] = "Dept: {$auth->department->name}";
+            }
+            if ($auth->relationLoaded('division') && $auth->division) {
+                $parts[] = "Div: {$auth->division->name}";
+            }
+            if ($auth->relationLoaded('companyGroup') && $auth->companyGroup) {
+                $parts[] = "Group: {$auth->companyGroup->name}";
+            }
+            if ($auth->relationLoaded('region') && $auth->region) {
+                $parts[] = "Wilayah: {$auth->region->name}";
+            }
+            if (empty($parts) && $auth->authority_type) {
+                $parts[] = Str::headline($auth->authority_type);
+            }
+            if (! empty($parts)) {
+                $items[] = implode(', ', $parts);
+            }
+        }
+
+        $items = array_values(array_unique(array_filter($items)));
+
+        if (! empty($items)) {
+            return implode(' | ', $items);
+        }
+
+        return match ($this->initiator_type) {
+            'department' => 'Per Departemen',
+            'role' => 'Per Jabatan',
+            'user' => 'Spesifik User',
+            default => 'Seluruh Staff',
+        };
+    }
+
     public function initiatorAuthorities(): HasMany
     {
         return $this->hasMany(WorkflowInitiatorAuthority::class, 'workflow_id');
@@ -84,21 +138,33 @@ class Workflow extends Model
 
     public function getInitiatorRolesAttribute()
     {
+        if (! $this->relationLoaded('initiatorAuthorities')) {
+            return [];
+        }
         return $this->initiatorAuthorities->pluck('role.name')->filter()->unique()->values()->toArray();
     }
 
     public function getInitiatorDepartmentsAttribute()
     {
+        if (! $this->relationLoaded('initiatorAuthorities')) {
+            return [];
+        }
         return $this->initiatorAuthorities->pluck('department_id')->filter()->unique()->values()->toArray();
     }
 
     public function getInitiatorUsersAttribute()
     {
+        if (! $this->relationLoaded('initiatorAuthorities')) {
+            return [];
+        }
         return $this->initiatorAuthorities->pluck('user_id')->filter()->unique()->values()->toArray();
     }
 
     public function getInitiatorDivisionsAttribute()
     {
+        if (! $this->relationLoaded('initiatorAuthorities')) {
+            return [];
+        }
         return $this->initiatorAuthorities->pluck('division_id')->filter()->unique()->values()->toArray();
     }
 

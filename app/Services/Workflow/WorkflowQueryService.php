@@ -47,105 +47,94 @@ class WorkflowQueryService
 
         if ($contractType) {
             $isUuid = preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $contractType);
-            $query->where(function ($q) use ($contractType, $isUuid) {
-                if ($isUuid) {
-                    $q->where('contract_type_id', $contractType)
-                        ->orWhereJsonContains('meta->contract_type_ids', $contractType)
-                        ->orWhere('is_default', true);
-                } else {
-                    $typeId = ContractType::where('code', $contractType)
-                        ->orWhere('name', $contractType)
-                        ->value('id');
-                    if ($typeId) {
-                        $q->where('contract_type_id', $typeId)
-                            ->orWhereJsonContains('meta->contract_type_ids', $typeId);
-                    } else {
-                        // No matching type, return only defaults or none
-                        $q->whereRaw('1 = 0');
-                    }
-                    $q->orWhere('is_default', true);
-                }
-            });
+            $typeId = $isUuid ? $contractType : ContractType::where('code', $contractType)->orWhere('name', $contractType)->value('id');
+
+            if ($typeId) {
+                $query->where(function ($q) use ($typeId) {
+                    $q->where('contract_type_id', $typeId)
+                      ->orWhereJsonContains('meta->contract_type_ids', $typeId)
+                      ->orWhere(function ($dq) {
+                          $dq->whereNull('contract_type_id')
+                             ->where(fn ($sub) => $sub->whereNull('meta->contract_type_ids')->orWhereJsonLength('meta->contract_type_ids', 0));
+                      });
+                });
+            }
         }
 
         return $query->where(function ($q) use ($user) {
-            // Include workflows available to all
-            $q->where('initiator_type', 'all');
+            // Workflows that have NO initiatorAuthorities records are available to all (when initiator_type is 'all')
+            $q->where(function ($allQ) {
+                $allQ->where('initiator_type', 'all')
+                     ->whereDoesntHave('initiatorAuthorities');
+            });
 
             if ($user) {
                 $roleId = $this->getUserField($user, 'role_id');
                 $deptId = $this->getUserField($user, 'department_id');
                 $divId = $this->getUserField($user, 'division_id');
 
-                // Include workflows restricted by initiator_type != 'all' AND matched by user/role/dept/div
                 $q->orWhere(function ($sq) use ($user, $roleId, $deptId, $divId) {
-                    $sq->where('initiator_type', '!=', 'all')
+                    $sq->whereHas('initiatorAuthorities')
                         ->where(function ($ssq) use ($user, $roleId, $deptId, $divId) {
+                            // 1. Role match: user's role_id matches role_id in initiatorAuthorities
                             $ssq->where(function ($q1) use ($roleId, $deptId, $divId) {
-                                // 1. Role match: role_id = user.role_id
-                                // AND (if workflow has department authorities, one of them must have department_id = user.department_id)
-                                // AND (if workflow has division authorities, one of them must have division_id = user.division_id)
                                 $q1->whereHas('initiatorAuthorities', function ($roleQuery) use ($roleId) {
-                                    $roleQuery->where('role_id', $roleId)
-                                        ->where(fn ($sub) => $sub->where('authority_type', 'role')->orWhere(fn ($ss) => $ss->whereNull('authority_type')->whereNotNull('role_id')));
+                                    if ($roleId) {
+                                        $roleQuery->where('role_id', $roleId);
+                                    } else {
+                                        $roleQuery->whereRaw('1 = 0');
+                                    }
                                 })
                                     ->where(function ($deptCheckQuery) use ($deptId) {
                                         $deptCheckQuery->whereDoesntHave('initiatorAuthorities', function ($q) {
-                                            $q->where('authority_type', 'department')
-                                                ->orWhere(fn ($sub) => $sub->whereNull('authority_type')->whereNotNull('department_id'));
+                                            $q->whereNotNull('department_id');
                                         })
                                             ->orWhereHas('initiatorAuthorities', function ($q) use ($deptId) {
                                                 if (empty($deptId)) {
-                                                    $q->whereRaw('1 = 0'); // force false if user has no department
+                                                    $q->whereRaw('1 = 0');
                                                 } else {
-                                                    $q->where('department_id', $deptId)
-                                                        ->where(fn ($sub) => $sub->where('authority_type', 'department')->orWhere(fn ($ss) => $ss->whereNull('authority_type')->whereNotNull('department_id')));
+                                                    $q->where('department_id', $deptId);
                                                 }
                                             });
                                     })
                                     ->where(function ($divCheckQuery) use ($divId) {
                                         $divCheckQuery->whereDoesntHave('initiatorAuthorities', function ($q) {
-                                            $q->where('authority_type', 'division')
-                                                ->orWhere(fn ($sub) => $sub->whereNull('authority_type')->whereNotNull('division_id'));
+                                            $q->whereNotNull('division_id');
                                         })
                                             ->orWhereHas('initiatorAuthorities', function ($q) use ($divId) {
                                                 if (empty($divId)) {
-                                                    $q->whereRaw('1 = 0'); // force false if user has no division
+                                                    $q->whereRaw('1 = 0');
                                                 } else {
-                                                    $q->where('division_id', $divId)
-                                                        ->where(fn ($sub) => $sub->where('authority_type', 'division')->orWhere(fn ($ss) => $ss->whereNull('authority_type')->whereNotNull('division_id')));
+                                                    $q->where('division_id', $divId);
                                                 }
                                             });
                                     });
                             })
-                            // OR 2. Department match
+                            // 2. Department match
                                 ->orWhereHas('initiatorAuthorities', function ($q) use ($deptId) {
                                     if (empty($deptId)) {
                                         $q->whereRaw('1 = 0');
                                     } else {
-                                        $q->where('department_id', $deptId)
-                                            ->where(fn ($sub) => $sub->where('authority_type', 'department')->orWhere(fn ($ss) => $ss->whereNull('authority_type')->whereNotNull('department_id')));
+                                        $q->where('department_id', $deptId);
                                     }
                                 })
-                            // OR 3. Division match
+                            // 3. Division match
                                 ->orWhereHas('initiatorAuthorities', function ($q) use ($divId) {
                                     if (empty($divId)) {
                                         $q->whereRaw('1 = 0');
                                     } else {
-                                        $q->where('division_id', $divId)
-                                            ->where(fn ($sub) => $sub->where('authority_type', 'division')->orWhere(fn ($ss) => $ss->whereNull('authority_type')->whereNotNull('division_id')));
+                                        $q->where('division_id', $divId);
                                     }
                                 })
-                            // OR 4. User match
+                            // 4. User match
                                 ->orWhereHas('initiatorAuthorities', function ($q) use ($user) {
-                                    $q->where('user_id', $user->id)
-                                        ->where(fn ($sub) => $sub->where('authority_type', 'user')->orWhere(fn ($ss) => $ss->whereNull('authority_type')->whereNotNull('user_id')));
+                                    $q->where('user_id', $user->id);
                                 });
                         });
                 });
             }
         })
-            ->with(['steps', 'initiatorAuthorities'])
+            ->with(['steps', 'contractType', 'initiatorAuthorities.role', 'initiatorAuthorities.department', 'initiatorAuthorities.division', 'initiatorAuthorities.user', 'initiatorAuthorities.companyGroup', 'initiatorAuthorities.region'])
             ->get();
     }
 
