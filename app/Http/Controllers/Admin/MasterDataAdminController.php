@@ -1358,7 +1358,6 @@ class MasterDataAdminController extends Controller
         if (! empty($usersData) && is_array($usersData)) {
             $validDepartments = array_flip(DB::table('m_departments')->pluck('id')->toArray());
             $validRoles = array_flip(DB::table('m_roles')->pluck('id')->toArray());
-            $defaultRole = Role::whereRaw('lower(name) = ?', [strtolower(config('app.default_user_role', 'staff'))])->first();
 
             foreach ($usersData as $u) {
                 try {
@@ -1366,23 +1365,14 @@ class MasterDataAdminController extends Controller
                         continue;
                     }
 
-                    // Skip system admin to prevent lockout/overwrite
-                    if (($u['email'] ?? '') === config('app.admin_email') || ($u['username'] ?? '') === config('app.admin_username')) {
-                        continue;
-                    }
-
                     $email = filter_var($u['email'] ?? '', FILTER_VALIDATE_EMAIL) ? $u['email'] : '-';
-                    $password = $u['password'] ?? bcrypt(config('app.default_user_password'));
+                    $password = $u['password'] ?? bcrypt('Karyawan123!');
 
                     $roleId = null;
                     if (! empty($u['role_name'])) {
                         $roleId = Role::whereRaw('lower(name) = ?', [strtolower($u['role_name'])])->value('id');
                     } elseif (! empty($u['role_id'])) {
                         $roleId = isset($validRoles[$u['role_id']]) ? $u['role_id'] : null;
-                    }
-
-                    if (! $roleId && $defaultRole) {
-                        $roleId = $defaultRole->id;
                     }
 
                     $deptId = null;
@@ -1618,7 +1608,7 @@ class MasterDataAdminController extends Controller
 
                 // 12. Users
                 if (in_array('users', $entities)) {
-                    DB::table('m_users')->where('email', '!=', config('app.admin_email'))->delete();
+                    DB::table('m_users')->delete();
                 }
             });
 

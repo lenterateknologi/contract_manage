@@ -10,6 +10,8 @@ class SelectInput extends Field
 
     protected bool $multiple = false;
 
+    protected bool $searchable = false;
+
     public function options(array|callable $options): static
     {
         if (is_callable($options)) {
@@ -17,6 +19,13 @@ class SelectInput extends Field
         } else {
             $this->options = $options;
         }
+
+        return $this;
+    }
+
+    public function searchable(bool $searchable = true): static
+    {
+        $this->searchable = $searchable;
 
         return $this;
     }
@@ -33,6 +42,7 @@ class SelectInput extends Field
         return array_merge(parent::toArray(), [
             'options' => $this->options,
             'multiple' => $this->multiple,
+            'searchable' => $this->searchable,
         ]);
     }
 }

@@ -88,12 +88,49 @@ class ResourceController extends Controller
                 ->map(fn ($column) => $column->getName());
 
             if ($searchableColumns->isNotEmpty()) {
-                $query->where(function ($q) use ($searchableColumns, $search) {
+                if ($resourceSlug === 'contract-types') {
+                    // Tree-aware search: find matching IDs then expand to include ancestors + descendants
                     $lowerSearch = strtolower($search);
-                    foreach ($searchableColumns as $column) {
-                        $q->orWhere(DB::raw("LOWER({$column})"), 'like', "%{$lowerSearch}%");
+                    $matchingIds = $modelClass::where(function ($q) use ($searchableColumns, $lowerSearch) {
+                        foreach ($searchableColumns as $column) {
+                            $q->orWhere(DB::raw("LOWER({$column})"), 'like', "%{$lowerSearch}%");
+                        }
+                    })->pluck('id')->toArray();
+
+                    if (!empty($matchingIds)) {
+                        // Collect all ancestor IDs (walk up parent_id chain)
+                        $ancestorIds = [];
+                        $toCheck = $matchingIds;
+                        while (!empty($toCheck)) {
+                            $parents = $modelClass::whereIn('id', $toCheck)->whereNotNull('parent_id')->pluck('parent_id')->toArray();
+                            $newParents = array_diff($parents, $ancestorIds, $matchingIds);
+                            $ancestorIds = array_merge($ancestorIds, $newParents);
+                            $toCheck = $newParents;
+                        }
+
+                        // Collect all descendant IDs (walk down children)
+                        $descendantIds = [];
+                        $toCheck = $matchingIds;
+                        while (!empty($toCheck)) {
+                            $children = $modelClass::whereIn('parent_id', $toCheck)->pluck('id')->toArray();
+                            $newChildren = array_diff($children, $descendantIds, $matchingIds);
+                            $descendantIds = array_merge($descendantIds, $newChildren);
+                            $toCheck = $newChildren;
+                        }
+
+                        $allIds = array_unique(array_merge($matchingIds, $ancestorIds, $descendantIds));
+                        $query->whereIn('id', $allIds);
+                    } else {
+                        $query->whereRaw('1 = 0'); // no results
                     }
-                });
+                } else {
+                    $query->where(function ($q) use ($searchableColumns, $search) {
+                        $lowerSearch = strtolower($search);
+                        foreach ($searchableColumns as $column) {
+                            $q->orWhere(DB::raw("LOWER({$column})"), 'like', "%{$lowerSearch}%");
+                        }
+                    });
+                }
             }
         }
 

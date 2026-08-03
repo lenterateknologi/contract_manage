@@ -69,7 +69,7 @@ Route::prefix('contracts')->group(function () {
     });
 
     Route::controller(ContractExportController::class)->prefix('{id}')->group(function () {
-        Route::get('/form-submissions/{type}/pdf/queue', 'exportFormSubmissionPdfQueue')->name('api.contracts.form-submissions.pdf.queue');
+        Route::post('/form-submissions/{type}/pdf/queue', 'exportFormSubmissionPdfQueue')->name('api.contracts.form-submissions.pdf.queue');
         Route::get('/form-submissions/{type}/pdf', 'exportFormSubmissionPdf')->name('api.contracts.form-submissions.pdf');
         Route::get('/audit-trail', 'getAuditTrail');
         Route::get('/audit-trail/document', 'renderAuditDocument')->name('api.contracts.audit.document');

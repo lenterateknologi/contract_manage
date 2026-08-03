@@ -18,7 +18,7 @@ class ContractFormatter
             'creator.department', 'creator.company',
             'approvals.approver.department', 'approvals.workflowStep',
             'workflowStep.actions', 'histories.actor.department',
-            'contractType', 'submissionType', 'vendor', 'parent', 'workflow.steps',
+            'contractType', 'submissionType', 'vendor', 'parent', 'workflow.steps', 'workflow.contractType',
             'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
             'assignedPic.department', 'assignedBy.department', 'statusDetail',
         ]);
@@ -111,7 +111,7 @@ class ContractFormatter
             'workflow' => $c->workflow ? [
                 'id' => $c->workflow->id,
                 'name' => $c->workflow->name,
-                'contract_type' => $c->workflow->contractType,
+                'contract_type' => $c->workflow->relationLoaded('contractType') ? $c->workflow->contractType : null,
                 'meta' => $c->workflow->meta ?? [],
                 'steps' => $c->workflow->relationLoaded('steps') ? $c->workflow->steps->map(fn ($s) => [
                     'id' => $s->id,

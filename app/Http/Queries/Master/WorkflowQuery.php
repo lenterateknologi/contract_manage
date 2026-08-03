@@ -43,6 +43,7 @@ class WorkflowQuery
     public function findForEdit(string $id): Workflow
     {
         return Workflow::with([
+            'contractType',
             'steps.approverAuthorities',
             'steps.actions.additionalAuthorities',
             'initiatorAuthorities',

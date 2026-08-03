@@ -849,34 +849,90 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                             <div key={field.label} className="space-y-3">
                                                 <h4 className="text-xs font-bold text-foreground uppercase tracking-wider border-b pb-1">{field.label}</h4>
                                                 <div className="grid grid-cols-1 gap-3">
-                                                    {field.schema.map((subField: any) => (
-                                                        <div key={subField.name} className="grid gap-1.5">
-                                                            <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
-                                                            <Input
-                                                                type={subField.type || 'text'}
-                                                                required={subField.required}
-                                                                className="border-border bg-background focus:ring-primary h-10 rounded-lg text-xs font-normal"
-                                                                value={deptForm.data[subField.name] ?? ''}
-                                                                onChange={(e) => deptForm.setData(subField.name as any, e.target.value)}
-                                                            />
-                                                        </div>
-                                                    ))}
+                                                    {field.schema.map((subField: any) => {
+                                                        if (subField.type === 'switch' || subField.type === 'toggle') {
+                                                            return (
+                                                                <div key={subField.name} className="grid gap-1.5">
+                                                                    <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
+                                                                    <div className="border-border bg-muted/40 flex h-10 items-center gap-2.5 rounded-lg border px-3">
+                                                                        <Checkbox
+                                                                            id={`dept_${subField.name}_check`}
+                                                                            checked={!!deptForm.data[subField.name]}
+                                                                            onCheckedChange={(checked) => deptForm.setData(subField.name as any, !!checked)}
+                                                                        />
+                                                                        <Label htmlFor={`dept_${subField.name}_check`} className="cursor-pointer text-xs font-medium text-muted-foreground">
+                                                                            {deptForm.data[subField.name] ? 'Aktif' : 'Nonaktif'}
+                                                                        </Label>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        if (subField.type === 'select') {
+                                                            const rawOptions = Array.isArray(subField.options) 
+                                                                ? subField.options.map((opt: any) => ({ value: String(opt), label: String(opt) }))
+                                                                : Object.entries(subField.options || {}).map(([val, label]) => ({ value: String(val), label: String(label) }));
+
+                                                            if (subField.searchable) {
+                                                                return (
+                                                                    <div key={subField.name} className="grid gap-1.5">
+                                                                        <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
+                                                                        <SearchableSelect
+                                                                            value={deptForm.data[subField.name] ? String(deptForm.data[subField.name]) : ''}
+                                                                            onValueChange={(val) => deptForm.setData(subField.name as any, val)}
+                                                                            options={rawOptions}
+                                                                            placeholder={subField.placeholder || `Pilih ${subField.label}...`}
+                                                                            allowClear={!subField.required}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            return (
+                                                                <div key={subField.name} className="grid gap-1.5">
+                                                                    <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
+                                                                    <select
+                                                                        required={subField.required}
+                                                                        value={deptForm.data[subField.name] ?? ''}
+                                                                        onChange={(e) => deptForm.setData(subField.name as any, e.target.value)}
+                                                                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
+                                                                    >
+                                                                        <option value="">{subField.placeholder || 'Pilih...'}</option>
+                                                                        {rawOptions.map((option: any) => (
+                                                                            <option key={option.value} value={option.value}>{option.label}</option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        return (
+                                                            <div key={subField.name} className="grid gap-1.5">
+                                                                <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
+                                                                <Input
+                                                                    type={subField.type || 'text'}
+                                                                    required={subField.required}
+                                                                    className="border-border bg-background focus:ring-primary h-10 rounded-lg text-xs font-normal"
+                                                                    value={deptForm.data[subField.name] ?? ''}
+                                                                    onChange={(e) => deptForm.setData(subField.name as any, e.target.value)}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             </div>
                                         );
                                     }
 
-                                    if (field.type === 'switch') {
+                                    if (field.type === 'switch' || field.type === 'toggle') {
                                         return (
                                             <div key={field.name} className="grid gap-1.5">
                                                 <Label className="text-xs font-medium text-foreground">{field.label}</Label>
                                                 <div className="border-border bg-muted/40 flex h-10 items-center gap-2.5 rounded-lg border px-3">
-                                                    <input
-                                                        type="checkbox"
+                                                    <Checkbox
                                                         id={`dept_${field.name}_check`}
-                                                        className="text-primary focus:ring-primary h-4 w-4 rounded border-gray-300"
                                                         checked={!!deptForm.data[field.name]}
-                                                        onChange={(e) => deptForm.setData(field.name as any, e.target.checked)}
+                                                        onCheckedChange={(checked) => deptForm.setData(field.name as any, !!checked)}
                                                     />
                                                     <Label htmlFor={`dept_${field.name}_check`} className="cursor-pointer text-xs font-medium text-muted-foreground">
                                                         {deptForm.data[field.name] ? 'Aktif' : 'Nonaktif'}
@@ -902,6 +958,25 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     }
 
                                     if (field.type === 'select') {
+                                        const rawOptions = Array.isArray(field.options) 
+                                            ? field.options.map((opt: any) => ({ value: String(opt), label: String(opt) }))
+                                            : Object.entries(field.options || {}).map(([val, label]) => ({ value: String(val), label: String(label) }));
+
+                                        if (field.searchable) {
+                                            return (
+                                                <div key={field.name} className="grid gap-1.5">
+                                                    <Label className="text-xs font-medium text-foreground">{field.label}</Label>
+                                                    <SearchableSelect
+                                                        value={deptForm.data[field.name] ? String(deptForm.data[field.name]) : ''}
+                                                        onValueChange={(val) => deptForm.setData(field.name as any, val)}
+                                                        options={rawOptions}
+                                                        placeholder={field.placeholder || `Pilih ${field.label}...`}
+                                                        allowClear={!field.required}
+                                                    />
+                                                </div>
+                                            );
+                                        }
+
                                         return (
                                             <div key={field.name} className="grid gap-1.5">
                                                 <Label className="text-xs font-medium text-foreground">{field.label}</Label>
@@ -911,14 +986,10 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                     onChange={(e) => deptForm.setData(field.name as any, e.target.value)}
                                                     className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                                                 >
-                                                    <option value="">Pilih...</option>
-                                                    {(Array.isArray(field.options) ? field.options : Object.entries(field.options || {})).map((option: any) => {
-                                                        const val = Array.isArray(field.options) ? option : option[0];
-                                                        const label = Array.isArray(field.options) ? option : option[1];
-                                                        return (
-                                                            <option key={val} value={val}>{label}</option>
-                                                        );
-                                                    })}
+                                                    <option value="">{field.placeholder || 'Pilih...'}</option>
+                                                    {rawOptions.map((option: any) => (
+                                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                                    ))}
                                                 </select>
                                             </div>
                                         );

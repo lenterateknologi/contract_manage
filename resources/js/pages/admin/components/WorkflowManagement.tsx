@@ -18,7 +18,7 @@ import {
     XCircle,
 } from 'lucide-react';
 import { PageTable } from '@/components/ui/navigation/PageTable';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 
 interface WorkflowManagementProps {
     readonly workflows: any;
@@ -192,9 +192,9 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                         </tr>
                     ) : (
                         [...grouped.entries()].map(([typeName, items]) => (
-                            <>
+                            <React.Fragment key={`group-${typeName}`}>
                                 {/* Category sub-header row */}
-                                <tr key={`group-${typeName}`} className="bg-muted/20 border-t border-border/50">
+                                <tr className="bg-muted/20 border-t border-border/50">
                                     <td colSpan={7} className="px-4 py-2">
                                         <div className="flex items-center gap-2">
                                             <div className="h-1.5 w-1.5 rounded-full bg-primary/50" />
@@ -379,7 +379,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                         </td>
                                     </tr>
                                 ))}
-                            </>
+                            </React.Fragment>
                         ))
                     )}
                 </tbody>

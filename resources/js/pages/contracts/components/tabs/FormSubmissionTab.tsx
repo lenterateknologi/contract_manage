@@ -401,7 +401,7 @@ function GenericFormTab({
 
         try {
             const res = await axios.post(
-                `/admin/contracts/${selected.id}/form-submissions/${docType}/export-queue`,
+                `/api/contracts/${selected.id}/form-submissions/${docType}/pdf/queue`,
                 {
                     data: JSON.stringify(formData),
                     form_template_id: matchingTemplate.id,

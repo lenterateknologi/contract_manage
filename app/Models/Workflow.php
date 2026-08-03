@@ -171,6 +171,9 @@ class Workflow extends Model
     public function getContractTypeNameAttribute()
     {
         if (!empty($this->attributes['contract_type_id'])) {
+            if (! $this->relationLoaded('contractType')) {
+                return null;
+            }
             return $this->contractType?->name;
         }
 

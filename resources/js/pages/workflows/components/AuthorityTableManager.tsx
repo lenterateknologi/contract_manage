@@ -36,14 +36,14 @@ interface AuthorityTableManagerProps {
 }
 
 export default function AuthorityTableManager({
-    authorities,
+    authorities = [],
     onChange,
-    users,
-    roles,
-    departments,
-    divisions,
-    companyGroups,
-    regions,
+    users = [],
+    roles = [],
+    departments = [],
+    divisions = [],
+    companyGroups = [],
+    regions = [],
     title = 'Otoritas Akses',
     showCustom = false,
     showCombinations = true,
@@ -387,7 +387,7 @@ export default function AuthorityTableManager({
                                     <SearchableMultiSelect
                                         values={modalUserIds}
                                         onValuesChange={(val) => handleIndividualChange('user', val)}
-                                        options={users.map(u => ({ value: String(u.id), label: `${u.name} (${u.role})` }))}
+                                        options={(users || []).map(u => ({ value: String(u.id), label: `${u.name}${u.role ? ` (${u.role})` : ''}` }))}
                                         placeholder="Pilih User..."
                                     />
                                 </div>

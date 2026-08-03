@@ -49,10 +49,12 @@ class DashboardTypeResource extends Resource
                     ->rules(['nullable', 'string']),
                 SelectInput::make('role_id', 'Role Akses')
                     ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Semua Role (Opsional)'),
+                    ->placeholder('Semua Role (Opsional)')
+                    ->searchable(),
                 SelectInput::make('department_id', 'Departemen')
                     ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Semua Departemen (Opsional)'),
+                    ->placeholder('Semua Departemen (Opsional)')
+                    ->searchable(),
             ])->icon('LayoutDashboard'),
 
             Section::make('Konfigurasi Visibility Tab', [

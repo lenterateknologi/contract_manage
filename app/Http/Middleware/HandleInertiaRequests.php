@@ -3,8 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Models\AccessModule;
-use App\Models\Approval;
-use App\Models\Contract;
 use App\Models\Module;
 use App\Models\Role;
 use Illuminate\Foundation\Inspiring;
@@ -61,16 +59,6 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? array_merge($request->user()->toArray(), [
                     'initials' => $request->user()->initials,
                     'role' => $request->user()->role,
-                    'stats' => [
-                        'total_created' => Contract::where('created_by', $request->user()->id)->count(),
-                        'pending_approvals' => Approval::where('user_id', $request->user()->id)
-                            ->where('status', 'pending')
-                            ->whereHas('contract', fn ($q) => $q->whereNull('deleted_at'))
-                            ->count(),
-                        'assigned_active' => Contract::where('assigned_pic_id', $request->user()->id)
-                            ->where('status', 'active')
-                            ->count(),
-                    ],
                 ]) : null,
                 'permissions' => $this->getUserPermissions($request),
             ],
