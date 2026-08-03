@@ -102,6 +102,9 @@ class UserResource extends Resource
             Filter::make('role_id', 'Role Akses')
                 ->type('searchable')
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('company_group_id', 'Holding / Group')
+                ->type('searchable')
+                ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('division_id', 'Divisi')
                 ->type('searchable')
                 ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray()),

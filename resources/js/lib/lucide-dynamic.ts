@@ -73,9 +73,11 @@ import {
     Briefcase,
     CreditCard,
     CloudOff,
+    ExternalLink,
 } from 'lucide-react';
 
 const LucideIcons: Record<string, any> = {
+    ExternalLink,
     BarChart3,
     Building2,
     ClipboardList,

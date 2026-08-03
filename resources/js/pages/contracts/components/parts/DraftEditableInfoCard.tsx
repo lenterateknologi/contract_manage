@@ -226,10 +226,10 @@ export function DraftEditableInfoCard({
                     />
 
                     <div className="flex flex-col gap-1">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Dibuat Oleh</div>
+                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Diajukan Oleh</div>
                         <div className="flex items-center gap-2">
-                            <Avatar user={selected.creator} size="sm" />
-                            <span className="text-text-main text-sm font-semibold">{selected.creator?.name}</span>
+                            <Avatar user={selected.initiator || selected.creator} size="sm" />
+                            <span className="text-text-main text-sm font-semibold">{(selected.initiator || selected.creator)?.name || '-'}</span>
                         </div>
                     </div>
 

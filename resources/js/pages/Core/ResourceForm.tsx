@@ -4,7 +4,7 @@ import { FormInput } from '@/components/ui/inputs/FormInput';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
-import { ArrowLeft, Shield, Plus, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Shield, Plus, Pencil, Trash2, ExternalLink } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { cn } from '@/lib/utils';
@@ -1342,12 +1342,37 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     const paymentMethods = (Array.isArray(detail.paymentMethod) ? detail.paymentMethod : []) as Record<string, any>[];
                     const businessFields = (Array.isArray(detail.businessFields) ? detail.businessFields : []) as Record<string, any>[];
 
-                    const renderDocRow = (label: string, value: any) => {
-                        let display = '-';
-                        if (value !== null && value !== undefined && value !== '') {
-                            if (typeof value === 'boolean') display = value ? 'Ya' : 'Tidak';
-                            else if (Array.isArray(value)) display = value.length > 0 ? value.join(', ') : '-';
-                            else display = String(value);
+                    const renderDocRow = (label: string, value: any, isFile = false) => {
+                        let display: React.ReactNode = '-';
+                        const hasValue = value !== null && value !== undefined && value !== '';
+
+                        if (hasValue) {
+                            if (typeof value === 'boolean') {
+                                display = value ? 'Ya' : 'Tidak';
+                            } else if (Array.isArray(value)) {
+                                display = value.length > 0 ? value.join(', ') : '-';
+                            } else if (isFile || (typeof value === 'string' && (value.includes('.pdf') || value.includes('.doc') || value.includes('.png') || value.includes('.jpg') || value.includes('.jpeg')))) {
+                                const valStr = String(value);
+                                display = (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const fileUrl = valStr.startsWith('http') || valStr.startsWith('/') 
+                                                ? valStr 
+                                                : `/storage/${valStr}`;
+                                            window.open(fileUrl, '_blank');
+                                        }}
+                                        className="inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline hover:no-underline transition-all cursor-pointer text-left"
+                                        title="Klik untuk membuka/preview dokumen"
+                                    >
+                                        <LucideIcons.FileText className="w-3.5 h-3.5 shrink-0" />
+                                        <span>{valStr}</span>
+                                        <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
+                                    </button>
+                                );
+                            } else {
+                                display = String(value);
+                            }
                         }
 
                         return (
@@ -1524,16 +1549,58 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                 {/* Section 6: Legalitas & Berkas */}
                                 <div className="space-y-2">
                                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
-                                        VII. Perizinan Legalitas & Dokumen
+                                        VII. Perizinan Legalitas
                                     </h3>
                                     <div>
                                         {renderDocRow('Nomor Induk Berusaha (NIB)', legality.nib)}
+                                        {renderDocRow('Tgl Kadaluarsa NIB', legality.nibexpiredDate)}
+                                        {renderDocRow('Izin Usaha (Business Permit)', legality.businessPermit)}
                                         {renderDocRow('SIUP', legality.siup)}
+                                        {renderDocRow('Tgl Kadaluarsa SIUP', legality.siupexpiredDate)}
                                         {renderDocRow('TDP', legality.tdp)}
+                                        {renderDocRow('Tgl Kadaluarsa TDP', legality.tdpexpiredDate)}
                                         {renderDocRow('Penandatangan Resmi', legality.signing)}
                                         {renderDocRow('Jabatan Penandatangan', legality.jobTitle)}
                                         {renderDocRow('Akta Pendirian', legality.memorandumOfAssociation)}
                                         {renderDocRow('Surat Keputusan Menkumham', legality.decissionLetterMenkumham)}
+                                    </div>
+                                </div>
+
+                                {/* Section 7: File Lampiran & Berkas Dokumen */}
+                                <div className="space-y-2">
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1">
+                                        VIII. Berkas & Lampiran Dokumen
+                                    </h3>
+                                    <div>
+                                        {/* Lampiran Umum */}
+                                        {renderDocRow('File KTP (ID Card File)', detail.idCardFile)}
+                                        {renderDocRow('File Master Agreement', detail.masterAgreementAttachment)}
+                                        {renderDocRow('File Profile Perusahaan', detail.companyProfileAttachment)}
+                                        {renderDocRow('File Single Vendor', detail.singleVendorFile)}
+                                        {renderDocRow('File Compliance', detail.complianceFile)}
+                                        
+                                        {/* Lampiran Legalitas */}
+                                        {renderDocRow('Lampiran NIB', legality.nibattachment)}
+                                        {renderDocRow('Lampiran Izin Usaha', legality.businessPermitAttachment)}
+                                        {renderDocRow('Lampiran SIUP', legality.siupattachment)}
+                                        {renderDocRow('Lampiran TDP', legality.tdpattachment)}
+                                        {renderDocRow('Lampiran Akta Pendirian', legality.memorandumOfAssociationAttachment)}
+                                        {renderDocRow('Lampiran SK Menkumham', legality.decissionLetterMenkumhamAttachment)}
+                                        {renderDocRow('Lampiran Akta Perubahan', legality.memorandumOfAssociationChangingAttachment)}
+                                        {renderDocRow('Lampiran SK Menkumham Perubahan', legality.decissionLetterMenkumhamChangingAttachment)}
+                                        {renderDocRow('Lampiran Spesimen Tanda Tangan', legality.signingAttachment)}
+                                        {renderDocRow('Lampiran Pendaftaran Perusahaan', legality.companyRegistrationAttachment)}
+                                        {renderDocRow('Lampiran Surat Domisili', legality.domicileAttachment)}
+                                        {renderDocRow('Lampiran Lisensi Usaha', legality.businessLicenceFile)}
+                                        {renderDocRow('Lampiran BKPM', legality.investmentCoorBoardFile)}
+                                        {renderDocRow('Lampiran Surat Keagenan', legality.agencyLetterFile)}
+                                        {renderDocRow('Lampiran Dokumen Lainnya', legality.otherAttachment)}
+
+                                        {/* Lampiran Pajak */}
+                                        {renderDocRow('Lampiran NPWP', tax.npwpfile)}
+                                        {renderDocRow('Lampiran SK PKP', tax.skpkpfile)}
+                                        {renderDocRow('Lampiran JKP', tax.jkpfile)}
+                                        {renderDocRow('Lampiran PP23', tax.pp23attachment)}
                                     </div>
                                 </div>
 
