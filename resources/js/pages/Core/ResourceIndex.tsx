@@ -195,8 +195,15 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     // Flatten data if it is contract-types to show a tree list
     const processedData = React.useMemo(() => {
         const rawItems = data?.data || [];
+        if (resourceSlug === 'contract-types') {
+            const hasChildrenArray = rawItems.some((item: any) => item.children && item.children.length > 0);
+            if (hasChildrenArray) {
+                return flattenTreeFromParents(rawItems);
+            }
+            return buildTreeFlattened(rawItems);
+        }
         return rawItems;
-    }, [data?.data]);
+    }, [data?.data, resourceSlug]);
 
     // Map schema to DataTable columns
     const columns = tableSchema.map((col: any) => ({
@@ -205,6 +212,29 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         sortable: col.sortable,
         cell: (row: any) => {
             const val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
+
+            // Custom render for name column if resource is contract-types (showing tree structure)
+            if (col.name === 'name' && resourceSlug === 'contract-types') {
+                const depth = row._depth || 0;
+                return (
+                    <span 
+                        style={{ paddingLeft: `${depth * 20}px` }} 
+                        className="flex items-center gap-1.5 font-normal text-text-main"
+                    >
+                        {depth > 0 && (
+                            <span className="text-text-main font-mono select-none">
+                                └─
+                            </span>
+                        )}
+                        {row.code && (
+                            <span className="text-[10px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 text-text-main font-normal uppercase tracking-wider">
+                                {row.code}
+                            </span>
+                        )}
+                        <span>{val}</span>
+                    </span>
+                );
+            }
 
             // ponytail: custom render for merged mechanism and template details in contract-types
             if (resourceSlug === 'contract-types') {
