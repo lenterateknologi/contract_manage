@@ -6,6 +6,7 @@ use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\Section;
 use App\Core\Crud\Fields\SelectInput;
+use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Fields\TreeSelectInput;
@@ -52,7 +53,7 @@ class ContractTypeResource extends Resource
                     ->options(fn () => ContractType::orderBy('name')->get(['id', 'name', 'parent_id'])->toArray()),
                 ToggleInput::make('is_active', 'Status Aktif')
                     ->default(true),
-                TextInput::make('description', 'Deskripsi')
+                TextareaInput::make('description', 'Deskripsi')
                     ->rules(['nullable', 'string'])
                     ->columnSpan(2),
             ])->icon('FolderClosed'),

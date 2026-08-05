@@ -13,13 +13,10 @@ interface ConfirmationModalProps {
     variant?: 'danger' | 'warning' | 'info';
     processing?: boolean;
     icon?: React.ReactNode;
+    className?: string;
+    children?: React.ReactNode;
 }
 
-/**
- * Standard Professional Confirmation Modal
- * Used for critical actions like Deletion or Important Changes.
- * Style: Modern, Clean White, Circular Icons, Soft Rounded Buttons.
- */
 export function ConfirmationModal({
     open,
     onClose,
@@ -30,13 +27,15 @@ export function ConfirmationModal({
     cancelText = 'Batal',
     variant = 'danger',
     processing = false,
-    icon
+    icon,
+    className,
+    children,
 }: ConfirmationModalProps) {
     if (!open) return null;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 dark:bg-black/80 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="relative mx-auto my-auto bg-white dark:bg-slate-900 w-full max-w-sm overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className={cn("relative mx-auto my-auto bg-white dark:bg-slate-900 w-full max-w-sm overflow-hidden rounded-3xl border border-slate-100 dark:border-slate-800/80 shadow-2xl animate-in zoom-in-95 duration-200", className)}>
                 {/* Content Section */}
                 <div className="p-6 text-center">
                     <div className={cn(
@@ -60,17 +59,20 @@ export function ConfirmationModal({
                     <p className="text-slate-500 dark:text-slate-400 text-xs font-medium leading-relaxed">
                         {description}
                     </p>
+                    {children}
                 </div>
 
                 {/* Actions Section */}
                 <div className="flex items-center justify-end gap-3 px-6 pb-6 pt-2">
-                    <button
-                        onClick={onClose}
-                        disabled={processing}
-                        className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all active:scale-[0.98] disabled:opacity-50"
-                    >
-                        {cancelText}
-                    </button>
+                    {cancelText !== "" && (
+                        <button
+                            onClick={onClose}
+                            disabled={processing}
+                            className="flex-1 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all active:scale-[0.98] disabled:opacity-50"
+                        >
+                            {cancelText}
+                        </button>
+                    )}
                     <button
                         onClick={onConfirm}
                         disabled={processing}

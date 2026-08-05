@@ -7,6 +7,10 @@ export interface UserProfile {
     role: string;
     department_id?: string | null;
     department_name?: string;
+    division_name?: string;
+    company_name?: string;
+    company_group_name?: string;
+    region_name?: string;
     department?: {
         id: string;
         name: string;

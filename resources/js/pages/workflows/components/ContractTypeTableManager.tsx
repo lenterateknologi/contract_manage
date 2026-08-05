@@ -42,68 +42,97 @@ export default function ContractTypeTableManager({
             .filter(Boolean);
     }, [contractTypeIds, contractTypes]);
 
+    const handleSelectAll = () => {
+        const allIds = contractTypes.map((t) => String(t.id));
+        onChange(Array.from(new Set([...contractTypeIds, ...allIds])));
+    };
+
+    const handleClearAll = () => {
+        onChange([]);
+    };
+
     return (
-        <div className="space-y-4 w-full">
-            <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800 gap-2">
+        <div className="space-y-3 w-full">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-2 dark:border-zinc-800 gap-3">
                 <div 
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center gap-2 cursor-pointer select-none hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-2 cursor-pointer select-none group"
                 >
                     <button
                         type="button"
-                        className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md transition-colors"
+                        className="p-1 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 rounded-md transition-colors"
                         title={isExpanded ? "Minimize" : "Expand"}
                     >
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
                     <LayoutTemplate size={14} className="text-primary" />
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                        {title}
-                    </h3>
-                    <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {contractTypeIds.length} Terpilih
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                            {title}
+                        </h3>
+                        <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border-0">
+                            {contractTypeIds.length} Terpilih
+                        </Badge>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2">
                     {isExpanded && (
-                        <div className="flex bg-slate-100 dark:bg-slate-900 p-0.5 rounded-lg border border-slate-200/50 dark:border-slate-800 text-[11px] font-medium">
+                        <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                onClick={() => setFilterMode('all')}
-                                className={cn(
-                                    "px-2.5 py-1 rounded-md transition-all",
-                                    filterMode === 'all'
-                                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                        : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                                )}
+                                onClick={handleSelectAll}
+                                className="px-2 py-0.5 text-[10px] font-bold uppercase rounded text-primary hover:underline transition-all cursor-pointer"
                             >
-                                Semua ({contractTypes.length})
+                                Pilih Semua
                             </button>
+                            <span className="text-slate-300 dark:text-slate-700">•</span>
                             <button
                                 type="button"
-                                onClick={() => setFilterMode('selected')}
-                                className={cn(
-                                    "px-2.5 py-1 rounded-md transition-all",
-                                    filterMode === 'selected'
-                                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                        : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                                )}
+                                onClick={handleClearAll}
+                                className="px-2 py-0.5 text-[10px] font-bold uppercase rounded text-rose-500 hover:underline transition-all cursor-pointer"
                             >
-                                Terpilih ({contractTypeIds.length})
+                                Bersihkan
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => setFilterMode('unselected')}
-                                className={cn(
-                                    "px-2.5 py-1 rounded-md transition-all",
-                                    filterMode === 'unselected'
-                                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                        : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                                )}
-                            >
-                                Belum Terpilih ({Math.max(0, contractTypes.length - contractTypeIds.length)})
-                            </button>
+
+                            <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-[11px] font-medium">
+                                <button
+                                    type="button"
+                                    onClick={() => setFilterMode('all')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
+                                        filterMode === 'all'
+                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
+                                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    )}
+                                >
+                                    Semua ({contractTypes.length})
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFilterMode('selected')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
+                                        filterMode === 'selected'
+                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
+                                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    )}
+                                >
+                                    Terpilih ({contractTypeIds.length})
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setFilterMode('unselected')}
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
+                                        filterMode === 'unselected'
+                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
+                                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    )}
+                                >
+                                    Belum Terpilih ({Math.max(0, contractTypes.length - contractTypeIds.length)})
+                                </button>
+                            </div>
                         </div>
                     )}
 
@@ -128,21 +157,23 @@ export default function ContractTypeTableManager({
             </div>
 
             {isExpanded && (
-                <TreeSelect
-                    value={contractTypeIds}
-                    onValueChange={(newIds) => onChange(Array.from(new Set(newIds)))}
-                    items={filteredContractTypes.map((t: any) => ({
-                        id: t.id,
-                        name: t.name,
-                        parent_id: t.parent_id
-                    }))}
-                    placeholder="Pilih Kategori Kontrak..."
-                    searchPlaceholder="Cari kategori kontrak..."
-                    multiple={true}
-                    inline={true}
-                    defaultExpandAll={true}
-                    triggerClassName="min-h-10 rounded-xl"
-                />
+                <div className="pt-1">
+                    <TreeSelect
+                        value={contractTypeIds}
+                        onValueChange={(newIds) => onChange(Array.from(new Set(newIds)))}
+                        items={filteredContractTypes.map((t: any) => ({
+                            id: t.id,
+                            name: t.name,
+                            parent_id: t.parent_id
+                        }))}
+                        placeholder="Pilih Kategori Kontrak..."
+                        searchPlaceholder="Cari kategori kontrak..."
+                        multiple={true}
+                        inline={true}
+                        defaultExpandAll={true}
+                        triggerClassName="min-h-10 rounded-xl"
+                    />
+                </div>
             )}
         </div>
     );

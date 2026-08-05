@@ -105,7 +105,7 @@ export function PageHeader({
                             totalResults={totalResults}
                         >
                             <Button
-                                variant={activeCount > 0 ? "primary" : "white"}
+                                variant={activeCount > 0 ? "primary" : "secondary"}
                                 size="icon"
                                 className="relative h-9 w-9 rounded-xl transition-all duration-200"
                                 title="Filter Data"

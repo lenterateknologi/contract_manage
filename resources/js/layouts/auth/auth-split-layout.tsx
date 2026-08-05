@@ -75,9 +75,10 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                 </div>
 
                 {/* Right Panel: Fullscreen Visual Mockup */}
+                {/* ponytail: neutral charcoal dark background overlay */}
                 <div
                     className={cn(
-                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 right-0 z-40 hidden flex-col items-center justify-center overflow-hidden border-l border-slate-900 bg-slate-900 transition-transform duration-[1000ms] md:flex md:w-1/2',
+                        'cubic-bezier(0.23, 1, 0.32, 1) fixed inset-y-0 right-0 z-40 hidden flex-col items-center justify-center overflow-hidden border-l border-zinc-800 bg-zinc-950 transition-transform duration-[1000ms] md:flex md:w-1/2',
                         rightTransform,
                     )}
                 >
@@ -86,8 +87,8 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                         alt="CMS Dashboard"
                         className="h-full w-full object-cover object-left opacity-90 transition-opacity duration-700 hover:opacity-100"
                     />
-                    {/* Professional Blue Gradient Overlay */}
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-900/50 to-transparent" />
+                    {/* Dark Charcoal Gradient Overlay */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-zinc-950/70 to-transparent" />
                 </div>
             </div>
 

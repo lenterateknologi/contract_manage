@@ -742,19 +742,15 @@ class ContractDashboardQuery
 
     private function getOverviewDailyTrend(QueryBuilder $baseQuery): array
     {
-        $startOfMonth = now()->startOfMonth();
-        $endOfMonth = now()->endOfMonth();
+        $startDate = now()->subMonth()->startOfMonth();
+        $endDate = now();
 
         $allContracts = (clone $baseQuery)->get(['created_at', 'updated_at', 'status']);
 
         $trend = [];
-        $daysInMonth = now()->daysInMonth;
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $date = now()->startOfMonth()->day($day);
-            if ($date->isFuture()) {
-                continue;
-            }
-            $dateKey = $date->toDateString();
+        $current = $startDate->copy();
+        while ($current->lte($endDate)) {
+            $dateKey = $current->toDateString();
 
             // 1. Pengajuan Per Hari (contracts created on this day)
             $total = $allContracts->filter(function($c) use ($dateKey) {
@@ -794,14 +790,18 @@ class ContractDashboardQuery
             })->count();
 
             $trend[] = [
-                'date' => $date->format('d'),
-                'full_date' => $date->translatedFormat('d M Y'),
+                'date' => $current->format('d M'),
+                'raw_date' => $dateKey,
+                'full_date' => $current->translatedFormat('d M Y'),
+                'month_key' => $current->format('Y-m'),
                 'Total Pengajuan' => $total,
                 'Sedang Diproses' => $inProcess,
                 'Diselesaikan' => $completed,
                 'Ditolak' => $rejected,
                 'Approved' => $approved,
             ];
+
+            $current->addDay();
         }
 
         return $trend;
@@ -809,6 +809,10 @@ class ContractDashboardQuery
 
     private function getDailyTrend(QueryBuilder $baseQuery): array
     {
+        // ponytail: Generate daily trend from last month start to now for date filtering
+        $startDate = now()->subMonth()->startOfMonth();
+        $endDate = now();
+
         $contracts = (clone $baseQuery)
             ->get(['created_at', 'contract_type_id'])
             ->map(function ($c) {
@@ -819,22 +823,20 @@ class ContractDashboardQuery
         $allTypes = \App\Models\ContractType::all();
 
         $trend = [];
-        $daysInMonth = now()->daysInMonth;
-        for ($day = 1; $day <= $daysInMonth; $day++) {
-            $date = now()->startOfMonth()->day($day);
-            if ($date->isFuture()) {
-                continue;
-            }
-            $dateKey = $date->toDateString();
-            
+        $current = $startDate->copy();
+        while ($current->lte($endDate)) {
+            $dateKey = $current->toDateString();
+
             // Cumulative contracts created on or before D
             $contractsUpToDay = $contracts->filter(function ($c) use ($dateKey) {
                 return $c->date_key <= $dateKey;
             });
 
             $dayData = [
-                'date' => $date->format('d'),
-                'full_date' => $date->translatedFormat('d M Y'),
+                'date' => $current->format('d M'),
+                'raw_date' => $dateKey,
+                'full_date' => $current->translatedFormat('d M Y'),
+                'month_key' => $current->format('Y-m'),
             ];
 
             foreach ($allTypes as $type) {
@@ -848,6 +850,7 @@ class ContractDashboardQuery
             }
 
             $trend[] = $dayData;
+            $current->addDay();
         }
 
         return $trend;
@@ -1198,7 +1201,7 @@ class ContractDashboardQuery
         mixed $completedApprovalsThisMonth,
         mixed $completedContractsThisMonth
     ): array {
-        $userQuery = User::with('department');
+        $userQuery = User::with(['department', 'company']);
 
         if ($isManager && $user->company_id) {
             $userQuery->where('company_id', $user->company_id);
@@ -1240,6 +1243,9 @@ class ContractDashboardQuery
                     'role' => $u->role,
                     'department_name' => $u->department?->name,
                     'department_id' => $u->department_id,
+                    'company_id' => $u->company_id,
+                    'company_group_id' => $u->company_group_id ?? $u->company?->company_group_id,
+                    'region_id' => $u->region_id ?? $u->company?->region_id,
                     'active_contracts_count' => $activeCount,
                     'pending_tasks_count' => $pendingCount,
                     'initiated_contracts_count' => $initiatedCount,

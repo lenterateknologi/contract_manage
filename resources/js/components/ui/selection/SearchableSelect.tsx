@@ -42,7 +42,6 @@ export function SearchableSelect({
         return options.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
     }, [options, search]);
 
-    // Close on outside click
     React.useEffect(() => {
         function handler(e: MouseEvent) {
             if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -55,43 +54,46 @@ export function SearchableSelect({
     }, [open]);
 
     return (
-        <div ref={containerRef} className={cn("relative w-full", open && "z-50", className)}>
+        <div ref={containerRef} className={cn('relative w-full', open && 'z-[999999]', className)}>
+            {/* Shadcn-style trigger */}
             <button
                 type="button"
                 disabled={disabled}
                 onClick={() => { if (!disabled) { setOpen(o => !o); setSearch(''); } }}
                 className={cn(
-                    'flex min-h-[44px] w-full items-center justify-between rounded-lg border border-border bg-surface-base px-4 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
-                    !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
-                    disabled && 'bg-slate-50 border-slate-200 text-slate-500 opacity-50 cursor-not-allowed shadow-none',
-                    open && 'border-primary ring-1 ring-primary',
+                    'flex h-9 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background transition-all outline-none',
+                    'placeholder:text-muted-foreground',
+                    !disabled && 'cursor-pointer hover:border-primary/60 focus:ring-2 focus:ring-primary/20',
+                    disabled && 'cursor-not-allowed opacity-50 bg-muted',
+                    open && 'border-primary ring-2 ring-primary/20',
                     triggerClassName
                 )}
             >
-                <span className={cn('block truncate', !selected && 'text-slate-400 font-medium')}>
+                <span className={cn('block truncate text-sm', selected ? 'text-foreground' : 'text-muted-foreground')}>
                     {selected ? selected.label : placeholder}
                 </span>
-                <ChevronsUpDown size={13} className="text-slate-400 shrink-0 ml-2" />
+                <ChevronsUpDown size={14} className="text-muted-foreground shrink-0 ml-2" />
             </button>
 
+            {/* Shadcn-style dropdown */}
             {open && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-1 border border-slate-200 bg-white shadow-xl rounded-xl overflow-hidden dark:border-slate-800 dark:bg-slate-950">
-                    {/* Search input */}
-                    <div className="relative border-b border-slate-100 dark:border-slate-800">
-                        <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <div className="absolute left-0 right-0 top-full z-[999999] mt-1 overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
+                    {/* Search */}
+                    <div className="flex items-center border-b border-border px-3">
+                        <Search size={13} className="mr-2 shrink-0 text-muted-foreground" />
                         <input
                             autoFocus
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder={searchPlaceholder}
-                            className="h-9 w-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pl-8 pr-3 text-[10px] font-bold uppercase tracking-tight outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                            className="flex h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
                         />
                     </div>
 
-                    {/* Option list */}
-                    <div className="max-h-52 overflow-y-auto bg-white dark:bg-slate-950">
+                    {/* Items */}
+                    <div className="max-h-52 overflow-y-auto p-1">
                         {filtered.length === 0 ? (
-                            <div className="py-6 text-center text-[9px] font-semibold uppercase text-slate-300 dark:text-slate-700 italic">{emptyText}</div>
+                            <div className="py-6 text-center text-sm text-muted-foreground">{emptyText}</div>
                         ) : (
                             filtered.map(opt => {
                                 const isSelected = opt.value === value;
@@ -101,15 +103,16 @@ export function SearchableSelect({
                                         type="button"
                                         onClick={() => { onValueChange(opt.value); setOpen(false); setSearch(''); }}
                                         className={cn(
-                                            'flex w-full items-center justify-between px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50',
-                                            isSelected
-                                                ? 'bg-primary text-white hover:bg-primary/90'
-                                                : 'text-slate-700 dark:text-slate-300',
-                                            opt.italic && 'italic text-slate-400 dark:text-slate-600'
+                                            'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors',
+                                            'hover:bg-accent hover:text-accent-foreground',
+                                            isSelected && 'bg-accent text-accent-foreground',
+                                            opt.italic && 'italic text-muted-foreground'
                                         )}
                                     >
+                                        <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                                            {isSelected && <Check size={14} />}
+                                        </span>
                                         {opt.label}
-                                        {isSelected && <Check size={11} className="shrink-0" />}
                                     </button>
                                 );
                             })

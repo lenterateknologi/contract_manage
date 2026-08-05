@@ -229,11 +229,12 @@ export function DataTable<T extends Record<string, any>>({
             )}
 
             {/* --- BULK ACTIONS HUD --- */}
+            {/* ponytail: neutral charcoal dark floating HUD instead of navy */}
             {activeSelectedRows.length > 0 && bulkActions && (
-                <div className="flex items-center justify-between p-3 bg-primary rounded-2xl shadow-lg border border-primary/20 animate-in slide-in-from-top-2 duration-300 mx-1">
+                <div className="flex items-center justify-between p-3 bg-zinc-900 dark:bg-zinc-900 text-zinc-100 rounded-2xl shadow-xl border border-zinc-800 animate-in slide-in-from-top-2 duration-300 mx-1">
                     <div className="flex items-center gap-3 pl-2">
-                        <div className="h-2 w-2 rounded-full bg-primary-foreground animate-pulse" />
-                        <span className="text-xs font-semibold text-primary-foreground uppercase tracking-wide">
+                        <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="text-xs font-semibold text-zinc-100 uppercase tracking-wide">
                             {activeSelectedRows.length} Terpilih
                         </span>
                     </div>
@@ -256,7 +257,7 @@ export function DataTable<T extends Record<string, any>>({
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
-                                            className="border-surface-border data-[state=checked]:bg-primary"
+                                            className="border-surface-border"
                                         />
                                     </th>
                                 )}

@@ -173,9 +173,9 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                 </div>
             }
         >
-            <div className="space-y-6">
-                <div className="border-primary/10 bg-primary/5 space-y-3 rounded-2xl border p-5">
-                    <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
+            <div className="space-y-5">
+                <div className="border-primary/20 bg-primary/5 dark:bg-primary/10 space-y-2.5 rounded-xl border p-3.5">
+                    <label className="text-primary flex items-center gap-2 text-[11px] font-extrabold uppercase">
                         <ShieldCheck size={14} /> Dibuat Untuk (Initiator)
                     </label>
                     <PortalSelect
@@ -184,15 +184,15 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                         options={initiatorOptions}
                         placeholder="Pilih Initiator"
                     />
-                    <p className="text-muted-foreground text-[10px] leading-relaxed font-medium italic">
+                    <p className="text-slate-500 dark:text-zinc-400 text-[10.5px] leading-relaxed font-normal mt-0.5">
                         Workflow akan disesuaikan dengan departemen dan otoritas initiator yang dipilih.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 items-start">
+                <div className="grid grid-cols-2 gap-5 items-start">
                     <div className="col-span-1 space-y-1.5">
-                        <label className="text-muted-foreground text-[11px] font-bold  uppercase">
-                            Klasifikasi & Jenis Dokument <span className="text-rose-500">*</span>
+                        <label className="text-slate-700 dark:text-zinc-200 text-[11px] font-extrabold uppercase">
+                            Klasifikasi & Jenis Dokumen <span className="text-rose-500">*</span>
                         </label>
                         <TreeSelect
                             value={typeId}
@@ -226,7 +226,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     </div>
 
                     <div className="col-span-1 animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                        <label className="text-primary flex items-center gap-2 text-[11px] font-bold  uppercase">
+                        <label className="text-primary flex items-center gap-2 text-[11px] font-extrabold uppercase">
                             <ShieldCheck size={14} /> Pilih Alur Kerja <span className="text-rose-500">*</span>
                         </label>
                         <PortalSelect
@@ -236,7 +236,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                             placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
                             disabled={!typeId || fetchingWorkflows}
                         />
-                        <p className="text-muted-foreground text-[9px] leading-relaxed font-medium italic mt-1">
+                        <p className="text-slate-500 dark:text-zinc-400 text-[10.5px] leading-relaxed font-normal mt-1">
                             Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
                         </p>
                         {errors.workflow_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}

@@ -3,6 +3,7 @@
 namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\TextColumn;
+use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Resource;
 use App\Exports\RegionsExport;
@@ -42,7 +43,7 @@ class RegionResource extends Resource
                 ->rules(['string', 'max:255']),
             TextInput::make('alias', 'Alias')
                 ->rules(['nullable', 'string', 'max:50']),
-            TextInput::make('description', 'Deskripsi')
+            TextareaInput::make('description', 'Deskripsi')
                 ->rules(['nullable', 'string']),
         ];
     }

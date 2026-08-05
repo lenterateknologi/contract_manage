@@ -13,7 +13,7 @@ import { closestCenter, DndContext, DragEndEvent, DragOverlay, KeyboardSensor, P
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Head, Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowLeft, Download, FileText, Grid, Layout, List, Loader2, Plus, Redo, Save, Undo } from 'lucide-react';
+import { ArrowLeft, Check, Clock, Command, Download, Edit3, Eye, FileText, GitBranch, GitCommit, Grid, HelpCircle, History, Layout, List, Loader2, Play, Plus, Redo, RotateCcw, Save, Sparkles, Undo, User } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TrashZone } from './components/TrashZone';
 
@@ -637,10 +637,6 @@ const generatePresetFields = (
             order: startingOrder,
             options: {
                 gap: 0,
-                border_style: 'none',
-                border_width: 0,
-                border_color: '#9ca3af',
-                align_items: 'center',
                 justify_content: 'center',
             },
         } as FormField);
@@ -844,6 +840,248 @@ const generatePresetFields = (
                 },
             } as FormField);
         });
+    } else if (presetType === 'preset_grouped_01') {
+        const rootGridId = Math.random().toString(36).substr(2, 9);
+        const logoId = Math.random().toString(36).substr(2, 9);
+        const verticalGridId = Math.random().toString(36).substr(2, 9);
+
+        // Root Container: grid_x (#019fb708-8ba5-70d6-9af0-bf0d54f728fb)
+        fields.push({
+            id: rootGridId,
+            parent_id: parentId,
+            label: 'Kop Header & Info Surat (GRID)',
+            name: `field_1_${currentFieldCount + 1}`,
+            type: 'grid_x',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder,
+            options: {
+                grid_cols: 2,
+                col_sizes: ['1fr', '1fr'],
+                border_style: 'solid',
+                border_width: 1,
+                border_color: '#0f172a',
+                font_family: "'Montserrat', sans-serif",
+                font_size: 11,
+                font_weight: 'bold',
+            },
+        } as FormField);
+
+        // Child 1: Logo Image (#019fb708-8ba8-73a4-ad8b-921b78bfb1f5)
+        fields.push({
+            id: logoId,
+            parent_id: rootGridId,
+            label: 'Logo',
+            name: `field_2_${currentFieldCount + 2}`,
+            type: 'image',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.01,
+            options: {
+                logo_size: 150,
+                alignment: 'left',
+                font_family: "'Inter', sans-serif",
+                width: '30mm',
+                height: '43mm',
+                padding_x: 0,
+                margin_x: 2,
+                margin_y: 2,
+                logo_url: 'https://ap-south-1.linodeobjects.com/anj-web/assets/images/fr_logo.png',
+                url: 'https://ap-south-1.linodeobjects.com/anj-web/assets/images/fr_logo.png',
+                font_size: 11,
+                font_weight: 'bold',
+            },
+        } as FormField);
+
+        // Child 2: GRID VERTICAL Sub-container (#019fb708-8bb6-7186-9b89-57b08a8e2b34)
+        fields.push({
+            id: verticalGridId,
+            parent_id: rootGridId,
+            label: 'GRID VERTICAL',
+            name: `field_3_${currentFieldCount + 3}`,
+            type: 'grid_y',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.02,
+            options: {
+                gap: 0,
+                padding_x: 1,
+                padding_y: 1,
+                height: null,
+                width: '140mm',
+                font_family: "'Montserrat', sans-serif",
+                font_size: 11,
+                font_weight: 'bold',
+            },
+        } as FormField);
+
+        // Sub-children of GRID VERTICAL (Nomor, Ex SOP NO, TOPIK, SUB TOPIK, LAMPIRAN)
+        const items = [
+            { label: 'Nomor', name: 'field_4' },
+            { label: 'Ex SOP NO', name: 'field_5' },
+            { label: 'TOPIK', name: 'field_6' },
+            { label: 'SUB TOPIK', name: 'field_8' },
+            { label: 'LAMPIRAN', name: 'field_7' },
+        ];
+
+        items.forEach((item, idx) => {
+            fields.push({
+                id: Math.random().toString(36).substr(2, 9),
+                parent_id: verticalGridId,
+                label: item.label,
+                name: `${item.name}_${currentFieldCount + idx + 4}`,
+                type: 'labeled_value',
+                placeholder: '...',
+                is_required: false,
+                width: '100',
+                order: startingOrder + 0.03 + idx * 0.01,
+                options: {
+                    value_type: 'textfield',
+                    label_width: '80',
+                    show_colon: true,
+                    field_style: 'bordered',
+                    font_size: 12,
+                    font_family: "'Times New Roman', serif",
+                    height: null,
+                    padding_x: 0,
+                    padding_y: 0,
+                    margin_x: 0,
+                    margin_y: 0,
+                    font_weight: 'normal',
+                },
+            } as FormField);
+        });
+    } else if (presetType === 'preset_grouped_02') {
+        const wrapId = Math.random().toString(36).substr(2, 9);
+        // Container Group (#019fb708-8bbd-7245-8628-b393ca0295e7)
+        fields.push({
+            id: wrapId,
+            parent_id: parentId,
+            label: 'Data Penjual/Supplier (Container)',
+            name: `grouped_supplier_block_${currentFieldCount + 1}`,
+            type: 'group',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder,
+            options: {
+                border_style: 'solid',
+                border_width: 1,
+                padding_all: 0,
+                padding_x: 0,
+                padding_y: 0,
+                margin_y: 0,
+                margin_x: 0,
+                font_family: "'Montserrat', sans-serif",
+                font_size: 11,
+                font_weight: 'bold',
+                width: '100%',
+            },
+        } as FormField);
+
+        // Header text inside group
+        fields.push({
+            id: Math.random().toString(36).substr(2, 9),
+            parent_id: wrapId,
+            label: 'Data Penjual/Supplier:',
+            name: `field_17_${currentFieldCount + 2}`,
+            type: 'static_text',
+            placeholder: '',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.01,
+            options: {
+                font_size: 12,
+                font_weight: 'bold',
+                font_family: "'Times New Roman', serif",
+                padding_all: 0,
+            },
+        } as FormField);
+
+        // Labeled Value 1: Nama Penjual/Supplier
+        fields.push({
+            id: Math.random().toString(36).substr(2, 9),
+            parent_id: wrapId,
+            label: 'Nama Penjual/Supplier',
+            name: `field_15_${currentFieldCount + 3}`,
+            type: 'labeled_value',
+            placeholder: '...',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.02,
+            options: {
+                value_type: 'textfield',
+                label_width: '120',
+                show_colon: true,
+                field_style: 'bordered',
+                font_size: 12,
+                font_family: "'Times New Roman', serif",
+                font_weight: 'normal',
+                margin_y: 0,
+                items: [
+                    { label: 'PT', value: '1' },
+                    { label: 'Perorangan', value: '2' },
+                ],
+            },
+        } as FormField);
+
+        // Labeled Value 2: Nama Wakil
+        fields.push({
+            id: Math.random().toString(36).substr(2, 9),
+            parent_id: wrapId,
+            label: 'Nama Wakil',
+            name: `field_15_copy_${currentFieldCount + 4}`,
+            type: 'labeled_value',
+            placeholder: '...',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.03,
+            options: {
+                value_type: 'textfield',
+                label_width: '120',
+                show_colon: true,
+                field_style: 'bordered',
+                font_size: 12,
+                font_family: "'Times New Roman', serif",
+                font_weight: 'normal',
+                margin_y: 0,
+                items: [
+                    { label: 'PT', value: '1' },
+                    { label: 'Perorangan', value: '2' },
+                ],
+            },
+        } as FormField);
+
+        // Labeled Value 3: Alamat Penjual
+        fields.push({
+            id: Math.random().toString(36).substr(2, 9),
+            parent_id: wrapId,
+            label: 'Alamat Penjual',
+            name: `field_15_copy_alamat_${currentFieldCount + 5}`,
+            type: 'labeled_value',
+            placeholder: '...',
+            is_required: false,
+            width: '100',
+            order: startingOrder + 0.04,
+            options: {
+                value_type: 'textarea',
+                label_width: '120',
+                show_colon: true,
+                field_style: 'bordered',
+                font_size: 12,
+                font_family: "'Times New Roman', serif",
+                font_weight: 'normal',
+                max_lines: 2,
+                margin_y: 0,
+                items: [
+                    { label: 'PT', value: '1' },
+                    { label: 'Perorangan', value: '2' },
+                ],
+            },
+        } as FormField);
     }
 
     return fields;
@@ -903,6 +1141,102 @@ function FormBuilder({ template }: Props) {
     );
 
     const [selectedFieldIds, setSelectedFieldIds] = useState<string[]>([]);
+    const [zoom, setZoom] = useState(100);
+    const [showShortcutsModal, setShowShortcutsModal] = useState(false);
+    const [showVersionModal, setShowVersionModal] = useState(false);
+    // Custom Presets State (Loaded from LocalStorage)
+    const [customPresets, setCustomPresets] = useState<{
+        value: string;
+        label: string;
+        fields: FormField[];
+    }[]>(() => {
+        try {
+            const saved = localStorage.getItem('form_builder_custom_presets');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
+
+    const saveAsCustomPreset = (fieldId: string) => {
+        const targetField = data.fields.find((f) => f.id === fieldId);
+        if (!targetField) return;
+
+        // Get target field and all descendants
+        const getBranchFields = (rootId: string): FormField[] => {
+            const result: FormField[] = [];
+            const collect = (id: string) => {
+                const f = data.fields.find((field) => field.id === id);
+                if (f) {
+                    result.push(f);
+                    data.fields.filter((child) => child.parent_id === id).forEach((child) => collect(child.id));
+                }
+            };
+            collect(rootId);
+            return result;
+        };
+
+        const branchFields = getBranchFields(fieldId);
+        const presetName = prompt('Masukkan nama Custom Element Preset:', targetField.label || 'Custom Group Element');
+        if (!presetName) return;
+
+        const newPreset = {
+            value: `custom_preset_${Date.now()}`,
+            label: presetName,
+            fields: branchFields,
+        };
+
+        const updatedPresets = [...customPresets, newPreset];
+        setCustomPresets(updatedPresets);
+        try {
+            localStorage.setItem('form_builder_custom_presets', JSON.stringify(updatedPresets));
+        } catch (e) {
+            console.error('Failed to save custom preset:', e);
+        }
+    };
+
+    const removeCustomPreset = (presetValue: string) => {
+        openDialog({
+            title: 'Hapus Preset Kustom',
+            description: 'Apakah Anda yakin ingin menghapus preset kustom ini dari daftar?',
+            variant: 'danger',
+            confirmText: 'Ya, Hapus',
+            onConfirm: () => {
+                const updated = customPresets.filter((p) => p.value !== presetValue);
+                setCustomPresets(updated);
+                try {
+                    localStorage.setItem('form_builder_custom_presets', JSON.stringify(updated));
+                } catch (e) {
+                    console.error('Failed to delete custom preset:', e);
+                }
+                closeDialog();
+            },
+        });
+    };
+
+    // Save Commit Dialog State
+    const [showSaveCommitModal, setShowSaveCommitModal] = useState(false);
+    const [saveCommitNote, setSaveCommitNote] = useState('');
+
+    // Git Commit Log Versioning State
+    const [commitMessageInput, setCommitMessageInput] = useState('');
+    const [commitLogs, setCommitLogs] = useState<{
+        hash: string;
+        message: string;
+        author: string;
+        timestamp: string;
+        fieldsCount: number;
+        fields: FormField[];
+    }>([
+        {
+            hash: 'init-01',
+            message: 'Initial commit: Template schema created',
+            author: 'Wahyudi Ramadhan',
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            fieldsCount: (template?.fields || []).length,
+            fields: (template?.fields || []),
+        }
+    ]);
     const [viewMode, setViewMode] = useState<'visual-editor' | 'interactive-form' | 'pdf-preview'>('visual-editor');
     const [previewData, setPreviewData] = useState<Record<string, any>>({});
 
@@ -913,8 +1247,8 @@ function FormBuilder({ template }: Props) {
 
     const selectedFieldId = useMemo(() => selectedFieldIds[selectedFieldIds.length - 1] || null, [selectedFieldIds]);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; fieldId?: string } | null>(null);
-    const [leftWidth, setLeftWidth] = useState(420);
-    const [rightWidth, setRightWidth] = useState(320);
+    const [leftWidth, setLeftWidth] = useState(300);
+    const [rightWidth, setRightWidth] = useState(280);
     const [isResizingLeft, setIsResizingLeft] = useState(false);
     const [isResizingRight, setIsResizingRight] = useState(false);
 
@@ -1396,6 +1730,27 @@ function FormBuilder({ template }: Props) {
     };
 
     const addField = (typeValue: string) => {
+        if (typeValue.startsWith('custom_preset_')) {
+            const preset = customPresets.find((p) => p.value === typeValue);
+            if (preset) {
+                // Re-id fields to prevent ID collisions
+                const idMap = new Map<string, string>();
+                preset.fields.forEach((f) => idMap.set(f.id, Math.random().toString(36).substr(2, 9)));
+
+                const newPresetFields: FormField[] = preset.fields.map((f, idx) => ({
+                    ...f,
+                    id: idMap.get(f.id) || f.id,
+                    parent_id: f.parent_id ? idMap.get(f.parent_id) || null : null,
+                    order: data.fields.length + idx,
+                }));
+
+                const newFields = [...data.fields, ...newPresetFields].map((f, i) => ({ ...f, order: i }));
+                setData('fields', newFields);
+                setSelectedFieldIds([newPresetFields[0].id]);
+            }
+            return;
+        }
+
         if (typeValue.startsWith('preset_')) {
             const presetFields = generatePresetFields(typeValue, data.fields.length, null, data.fields.length);
             const newFields = [...data.fields, ...presetFields].map((f, i) => ({ ...f, order: i }));
@@ -1674,6 +2029,27 @@ function FormBuilder({ template }: Props) {
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
+        setShowSaveCommitModal(true);
+    };
+
+    const executeSaveCommit = (customNote?: string) => {
+        const commitMsg = (customNote || saveCommitNote).trim() || `Update template: ${data.fields.length} elements`;
+        const randomHash = Math.random().toString(36).substring(2, 9);
+
+        setCommitLogs((prev) => [
+            {
+                hash: randomHash,
+                message: commitMsg,
+                author: 'Wahyudi Ramadhan',
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                fieldsCount: data.fields.length,
+                fields: [...data.fields],
+            },
+            ...prev,
+        ]);
+
+        setSaveCommitNote('');
+        setShowSaveCommitModal(false);
         post(route('admin.form-templates.save', template.id));
     };
 
@@ -1776,34 +2152,57 @@ function FormBuilder({ template }: Props) {
                 confirmText={dialog.confirmText}
             />
 
-            <form onSubmit={handleSave} className="flex h-full flex-col overflow-hidden">
-                <header className="border-border bg-card z-50 flex h-14 shrink-0 border-b">
-                    <div
-                        style={{ width: `${leftWidth}px` }}
-                        className="border-border flex shrink-0 items-center gap-3 border-r px-4 lg:gap-4 lg:px-6 min-w-0"
-                    >
-                        <Button variant="ghost" size="icon" asChild className="h-9 w-9 rounded-none hover:bg-muted/50 transition-colors">
-                            <Link href={route('admin.form-templates.index')}>
-                                <ArrowLeft size={16} />
-                            </Link>
-                        </Button>
+            <form onSubmit={handleSave} className="flex h-full flex-col overflow-hidden bg-slate-100/60 dark:bg-zinc-950">
+                {/* Header Bar */}
+                <header className="border-b border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 z-50 flex h-16 shrink-0 items-center justify-between px-5 backdrop-blur-md">
+                    {/* Left Brand & Title + Auto-Save Status */}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                        <Link
+                            href={route('admin.form-templates.index')}
+                            className="p-2 border border-slate-200 dark:border-zinc-800 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors text-slate-700 dark:text-slate-300 shrink-0"
+                            title="Kembali ke Daftar Template"
+                        >
+                            <ArrowLeft size={16} />
+                        </Link>
                         <div className="flex flex-col min-w-0">
-                            <h1 className="text-foreground font-sans text-xs lg:text-sm font-semibold tracking-tight uppercase truncate">{data.name}</h1>
-                            <div className="flex items-center gap-1.5 opacity-60">
-                                <span className="text-[8px] lg:text-[9px] font-semibold tracking-[0.2em] uppercase text-primary">Form Builder</span>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-slate-900 dark:text-white font-sans text-xs lg:text-sm font-bold tracking-tight uppercase truncate max-w-[180px] lg:max-w-[280px]">
+                                    {data.name}
+                                </h1>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowVersionModal(true)}
+                                    className="flex items-center gap-1 text-[9px] font-bold tracking-wider uppercase text-primary hover:underline"
+                                    title="Buka Git Commit History"
+                                >
+                                    <GitCommit size={11} />
+                                    <span>main ({commitLogs.length} Commits)</span>
+                                </button>
+                                <span className="text-slate-300 dark:text-zinc-700">•</span>
+                                <div className="flex items-center gap-1.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                    <span className="relative flex h-1.5 w-1.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                    </span>
+                                    <span>Tersimpan</span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex flex-1 items-center px-4 lg:px-6">
-                        <div className="flex items-center gap-1">
+                    {/* Center Mode Tabs & History Controls */}
+                    <div className="flex items-center gap-3">
+                        {/* Undo / Redo */}
+                        <div className="flex items-center gap-0.5 bg-slate-100/80 dark:bg-zinc-800/60 p-1 rounded-xl border border-slate-200/50 dark:border-zinc-700/50">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="icon"
                                 onClick={undo}
                                 disabled={historyIndex <= 0}
-                                className="h-8 w-8 rounded-none transition-all active:scale-95"
+                                className="h-7 w-7 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-all active:scale-95 disabled:opacity-30"
                                 title="Undo (Ctrl+Z)"
                             >
                                 <Undo size={14} />
@@ -1814,73 +2213,151 @@ function FormBuilder({ template }: Props) {
                                 size="icon"
                                 onClick={redo}
                                 disabled={historyIndex >= history.length - 1}
-                                className="h-8 w-8 rounded-none transition-all active:scale-95"
+                                className="h-7 w-7 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-zinc-700 transition-all active:scale-95 disabled:opacity-30"
                                 title="Redo (Ctrl+Y)"
                             >
                                 <Redo size={14} />
                             </Button>
                         </div>
+
+                        {/* View Mode Tabs */}
+                        <div className="flex bg-slate-200/60 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/60 shadow-inner">
+                            {[
+                                { id: 'visual-editor', label: 'Visual Editor', icon: Edit3 },
+                                { id: 'interactive-form', label: 'Interactive Form', icon: Play },
+                                { id: 'pdf-preview', label: 'PDF Preview', icon: Eye },
+                            ].map((mode) => (
+                                <button
+                                    key={mode.id}
+                                    type="button"
+                                    onClick={() => setViewMode(mode.id as any)}
+                                    className={cn(
+                                        'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all uppercase',
+                                        viewMode === mode.id
+                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                                            : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
+                                    )}
+                                >
+                                    <mode.icon size={13} strokeWidth={2.2} />
+                                    <span className="hidden md:inline-block font-sans tracking-tight">
+                                        {mode.label}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Zoom Controls */}
+                        <div className="hidden lg:flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/60 p-1 rounded-xl border border-slate-200/50 dark:border-zinc-700/50 text-xs font-semibold">
+                            <button
+                                type="button"
+                                onClick={() => setZoom((z) => Math.max(50, z - 10))}
+                                className="h-7 w-6 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all"
+                                title="Zoom Out"
+                            >
+                                -
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setZoom(100)}
+                                className="h-7 px-1.5 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all font-mono text-[11px]"
+                                title="Reset Zoom"
+                            >
+                                {zoom}%
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setZoom((z) => Math.min(150, z + 10))}
+                                className="h-7 w-6 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all"
+                                title="Zoom In"
+                            >
+                                +
+                            </button>
+                        </div>
                     </div>
 
-                    <div
-                        style={{ width: `${rightWidth}px` }}
-                        className="border-border flex shrink-0 items-center justify-end gap-2 border-l px-4 lg:gap-3 lg:px-6"
-                    >
+                    {/* Right Actions & Shortcuts Button */}
+                    <div className="flex items-center gap-2">
+                        {/* Keyboard Shortcuts Helper Modal Trigger */}
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowShortcutsModal(true)}
+                            className="h-9 w-9 rounded-xl border border-slate-200/80 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                            title="Panduan Keyboard Shortcuts"
+                        >
+                            <HelpCircle size={16} />
+                        </Button>
+
                         <Button
                             type="button"
                             variant="outline"
                             onClick={handleTestDownload}
                             disabled={saving}
-                            className="h-8 px-3 lg:px-4 text-[10px] rounded-none active:scale-95 border-border/50 hover:bg-muted/50"
+                            className="h-9 px-3.5 text-xs font-semibold rounded-xl border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all"
                         >
                             {saving ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
-                            <span className="hidden lg:inline">{saving ? 'Exporting...' : 'Download PDF'}</span>
-                            <span className="inline lg:hidden">{saving ? '...' : 'PDF'}</span>
+                            <span className="hidden sm:inline">{saving ? 'Exporting...' : 'PDF'}</span>
                         </Button>
 
-                        <Button type="submit" variant="primary" className="h-8 px-4 lg:px-6 text-[10px] active:scale-95 rounded-none" disabled={processing}>
+                        <Button type="submit" variant="primary" className="h-9 px-4.5 text-xs font-semibold rounded-xl shadow-xs transition-all" disabled={processing}>
                             <Save size={14} className="mr-1.5" />
-                            <span className="hidden lg:inline">{processing ? 'Saving...' : 'Simpan Form'}</span>
-                            <span className="inline lg:hidden">{processing ? 'Save' : 'Simpan'}</span>
+                            <span>{processing ? 'Saving...' : 'Simpan'}</span>
                         </Button>
                     </div>
                 </header>
 
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                    <main className="bg-muted/5 relative flex flex-1 overflow-hidden">
-                        {/* LEFT: WORKSPACE SIDEBAR */}
+                    <main className="bg-slate-100/40 dark:bg-zinc-950 relative flex flex-1 overflow-hidden">
+                        {/* CENTER: LIVE CANVAS (Takes full area background) */}
+                        <CanvasArea
+                            viewMode={viewMode}
+                            setViewMode={setViewMode}
+                            data={data}
+                            previewData={previewData}
+                            updatePreviewData={updatePreviewData}
+                            selectedFieldIds={selectedFieldIds}
+                            handleSelectField={handleSelectField}
+                            moveField={moveField}
+                            removeField={removeField}
+                            duplicateField={duplicateField}
+                            zoom={zoom}
+                        />
+
+                        {/* LEFT: FLOATING WORKSPACE SIDEBAR */}
                         <aside
                             style={{ width: `${leftWidth}px` }}
-                            className="border-border bg-card z-20 flex shrink-0 flex-col overflow-hidden border-r"
+                            className={cn(
+                                "absolute top-4 left-4 bottom-4 z-30 flex flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 shadow-2xl backdrop-blur-md overflow-hidden",
+                                isResizingLeft ? "select-none" : "transition-all"
+                            )}
                         >
-                            <div className="border-border bg-muted/20 border-b p-4">
-                                <div className="mb-4 flex items-center justify-between">
-                                    <h2 className="text-muted-foreground/60 font-sans text-[10px] font-semibold tracking-[0.2em] uppercase">
+                            <div className="border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/50 p-3 space-y-2.5">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-slate-400 dark:text-zinc-500 font-sans text-[10px] font-bold tracking-wider uppercase">
                                         Workspace
                                     </h2>
-                                    <div className="bg-primary/10 rounded-lg px-2 py-0.5">
-                                        <span className="text-primary font-sans text-[8px] font-semibold uppercase">v2.0</span>
-                                    </div>
+                                    <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[9px] font-bold uppercase text-primary">v2.0</span>
                                 </div>
 
-                                <div className="bg-muted/80 ring-border/50 flex gap-1 rounded-xl p-1 ring-1">
+                                <div className="flex bg-slate-200/60 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/60">
                                     {[
                                         { id: 'library', label: 'Library', icon: Grid },
                                         { id: 'structure', label: 'Structure', icon: List },
-                                        { id: 'json', label: 'JSON', icon: FileText },
                                     ].map((tab) => (
                                         <button
                                             key={tab.id}
+                                            type="button"
                                             onClick={() => setLeftPanelTab(tab.id as any)}
                                             className={cn(
-                                                'flex flex-1 items-center justify-center gap-1.5 rounded-none py-2 transition-all duration-200',
+                                                'flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all',
                                                 leftPanelTab === tab.id
-                                                    ? 'bg-card text-primary border-border border-b-2'
-                                                    : 'text-muted-foreground/40 hover:text-foreground',
+                                                    ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
                                             )}
                                         >
-                                            <tab.icon size={12} strokeWidth={3} />
-                                            <span className="hidden font-sans text-[10px] font-semibold tracking-tight uppercase sm:inline-block">
+                                            <tab.icon size={13} />
+                                            <span className="hidden font-sans text-[11px] font-semibold tracking-tight uppercase sm:inline-block">
                                                 {tab.label}
                                             </span>
                                         </button>
@@ -1889,8 +2366,14 @@ function FormBuilder({ template }: Props) {
                             </div>
 
                             <ScrollArea className="flex-1">
-                                <div className="overflow-hidden p-4">
-                                    {leftPanelTab === 'library' && <LibraryPanel onAddField={addField} />}
+                                <div className="overflow-hidden p-3.5">
+                                    {leftPanelTab === 'library' && (
+                                        <LibraryPanel
+                                            onAddField={addField}
+                                            customPresets={customPresets}
+                                            onRemoveCustomPreset={removeCustomPreset}
+                                        />
+                                    )}
 
                                     {leftPanelTab === 'structure' && (
                                         <StructurePanel
@@ -1903,50 +2386,31 @@ function FormBuilder({ template }: Props) {
                                             onRemoveSelected={() => removeField(selectedFieldIds)}
                                         />
                                     )}
-
-                                    {leftPanelTab === 'json' && (
-                                        <JSONEditorPanel
-                                            localJsonStr={localJsonStr}
-                                            onChange={setLocalJsonStr}
-                                            onApply={handleApplyJson}
-                                            jsonError={jsonError}
-                                        />
-                                    )}
                                 </div>
                             </ScrollArea>
                             {/* Resizer */}
                             <div
                                 onMouseDown={() => setIsResizingLeft(true)}
-                                className="hover:bg-primary/30 absolute top-0 right-0 h-full w-1 cursor-col-resize transition-colors"
+                                className="hover:bg-primary/50 absolute top-0 right-0 h-full w-2 cursor-col-resize transition-colors hover:w-2 z-40"
                             />
                         </aside>
-                        {/* CENTER: LIVE CANVAS */}
-                        <CanvasArea
-                            viewMode={viewMode}
-                            setViewMode={setViewMode}
-                            data={data}
-                            previewData={previewData}
-                            updatePreviewData={updatePreviewData}
-                            selectedFieldIds={selectedFieldIds}
-                            handleSelectField={handleSelectField}
-                            moveField={moveField}
-                            removeField={removeField}
-                            duplicateField={duplicateField}
-                        />
 
-                        {/* RIGHT: PROPERTY EDITOR */}
+                        {/* RIGHT: FLOATING PROPERTY EDITOR */}
                         <aside
                             style={{ width: `${rightWidth}px` }}
-                            className="border-border bg-card z-20 flex shrink-0 flex-col overflow-hidden border-l"
+                            className={cn(
+                                "absolute top-4 right-4 bottom-4 z-30 flex flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/90 dark:bg-zinc-900/90 shadow-2xl backdrop-blur-md overflow-hidden",
+                                isResizingRight ? "select-none" : "transition-all"
+                            )}
                         >
-                            <div className="border-border bg-muted/20 flex items-center justify-between border-b px-4 py-3">
-                                <h1 className="text-muted-foreground font-sans text-[10px] font-semibold tracking-[0.2em] uppercase">
+                            <div className="border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/50 flex items-center justify-between px-3.5 py-3">
+                                <h1 className="text-slate-400 dark:text-zinc-500 font-sans text-[10px] font-bold tracking-wider uppercase">
                                     {selectedFieldIds.length > 0 ? 'Block Properties' : 'Template Settings'}
                                 </h1>
-                                <Layout size={12} className="text-primary opacity-50" />
+                                <Layout size={14} className="text-primary opacity-60" />
                             </div>
                             <ScrollArea className="flex-1">
-                                <div className="p-5">
+                                <div className="p-3.5">
                                     <PropertiesPanel
                                         selectedFields={selectedFields}
                                         updateField={updateField}
@@ -1954,6 +2418,14 @@ function FormBuilder({ template }: Props) {
                                         templateData={data}
                                         setTemplateData={setData}
                                         onRemoveField={removeField}
+                                        onDuplicateField={(ids) => {
+                                            if (Array.isArray(ids)) {
+                                                ids.forEach((id) => duplicateField(id));
+                                            } else {
+                                                duplicateField(ids);
+                                            }
+                                        }}
+                                        onSaveAsCustomPreset={saveAsCustomPreset}
                                     />
                                 </div>
                             </ScrollArea>
@@ -1961,7 +2433,7 @@ function FormBuilder({ template }: Props) {
                             {/* Resizer */}
                             <div
                                 onMouseDown={() => setIsResizingRight(true)}
-                                className="hover:bg-primary/30 absolute top-0 left-0 h-full w-1 cursor-col-resize transition-colors"
+                                className="hover:bg-primary/50 absolute top-0 left-0 h-full w-2 cursor-col-resize transition-colors z-40"
                             />
                         </aside>
                     </main>
@@ -2027,6 +2499,244 @@ function FormBuilder({ template }: Props) {
                         })()}
                     </DragOverlay>
                 </DndContext>
+
+                {/* Keyboard Shortcuts Helper Modal */}
+                <ConfirmationModal
+                    open={showShortcutsModal}
+                    onClose={() => setShowShortcutsModal(false)}
+                    onConfirm={() => setShowShortcutsModal(false)}
+                    title="Keyboard Shortcuts"
+                    description="Panduan tombol cepat untuk mempercepat pembuatan form."
+                    confirmText="Tutup"
+                    cancelText=""
+                    variant="info"
+                >
+                    <div className="space-y-2 py-2 font-sans text-xs">
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="flex items-center justify-between border-b pb-1">
+                                <span className="text-muted-foreground">Undo:</span>
+                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Ctrl + Z</kbd>
+                            </div>
+                            <div className="flex items-center justify-between border-b pb-1">
+                                <span className="text-muted-foreground">Redo:</span>
+                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Ctrl + Y</kbd>
+                            </div>
+                            <div className="flex items-center justify-between border-b pb-1">
+                                <span className="text-muted-foreground">Geser Ke Atas:</span>
+                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Arrow Up</kbd>
+                            </div>
+                            <div className="flex items-center justify-between border-b pb-1">
+                                <span className="text-muted-foreground">Geser Ke Bawah:</span>
+                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Arrow Down</kbd>
+                            </div>
+                            <div className="flex items-center justify-between border-b pb-1">
+                                <span className="text-muted-foreground">Hapus Elemen:</span>
+                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Delete / Backspace</kbd>
+                            </div>
+                            <div className="flex items-center justify-between border-b pb-1">
+                                <span className="text-muted-foreground">Batalkan Pilihan:</span>
+                                <kbd className="bg-muted px-1.5 py-0.5 rounded font-mono text-[10px] font-bold">Escape</kbd>
+                            </div>
+                        </div>
+                    </div>
+                </ConfirmationModal>
+
+                {/* Git Commit History Modal */}
+                <ConfirmationModal
+                    open={showVersionModal}
+                    onClose={() => setShowVersionModal(false)}
+                    onConfirm={() => setShowVersionModal(false)}
+                    title="Git Commit History"
+                    description="Histori revisi versi draf berbasis Git commit log."
+                    confirmText="Selesai"
+                    cancelText=""
+                    variant="info"
+                    className="max-w-3xl"
+                    icon={<GitBranch size={22} />}
+                >
+                    <div className="space-y-3 py-1 font-sans text-xs max-h-[420px] overflow-y-auto pr-1">
+                        {/* New Commit Input Box */}
+                        <div className="bg-slate-100/80 dark:bg-zinc-800/80 border border-slate-200 dark:border-zinc-700/60 p-2.5 rounded-xl space-y-2 text-left">
+                            <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 text-[11px]">
+                                    <GitCommit size={13} className="text-primary" /> Commit State Saat Ini
+                                </span>
+                                <span className="font-mono text-[10px] text-muted-foreground bg-slate-200/60 dark:bg-zinc-700 px-1.5 py-0.5 rounded">branch: main</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    placeholder="Tulis pesan commit (mis: Tambah input NIK & TTD)..."
+                                    value={commitMessageInput}
+                                    onChange={(e) => setCommitMessageInput(e.target.value)}
+                                    className="flex-1 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1 text-xs focus:ring-1 focus:ring-primary focus:outline-none"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            if (!commitMessageInput.trim()) return;
+                                            const randomHash = Math.random().toString(36).substring(2, 9);
+                                            setCommitLogs((prev) => [
+                                                {
+                                                    hash: randomHash,
+                                                    message: commitMessageInput.trim(),
+                                                    author: 'Wahyudi Ramadhan',
+                                                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                                    fieldsCount: data.fields.length,
+                                                    fields: [...data.fields],
+                                                },
+                                                ...prev,
+                                            ]);
+                                            setCommitMessageInput('');
+                                        }
+                                    }}
+                                />
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="primary"
+                                    disabled={!commitMessageInput.trim()}
+                                    onClick={() => {
+                                        if (!commitMessageInput.trim()) return;
+                                        const randomHash = Math.random().toString(36).substring(2, 9);
+                                        setCommitLogs((prev) => [
+                                            {
+                                                hash: randomHash,
+                                                message: commitMessageInput.trim(),
+                                                author: 'Wahyudi Ramadhan',
+                                                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                                fieldsCount: data.fields.length,
+                                                fields: [...data.fields],
+                                            },
+                                            ...prev,
+                                        ]);
+                                        setCommitMessageInput('');
+                                    }}
+                                    className="h-7 text-[10px] px-3 font-semibold rounded-lg shrink-0"
+                                >
+                                    Commit
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Compact Timeline List */}
+                        <div className="relative border-l-2 border-slate-200 dark:border-zinc-800 ml-3 space-y-2 pt-1 pb-1 text-left">
+                            {commitLogs.map((commit, idx) => (
+                                <div key={commit.hash} className="relative pl-4">
+                                    {/* Commit Dot */}
+                                    <div
+                                        className={cn(
+                                            'absolute -left-[5px] top-2.5 h-2.5 w-2.5 rounded-full border-2 bg-white dark:bg-zinc-950',
+                                            idx === 0
+                                                ? 'border-emerald-500 bg-emerald-500 ring-2 ring-emerald-500/20'
+                                                : 'border-slate-300 dark:border-zinc-700',
+                                        )}
+                                    />
+
+                                    <div className="flex items-center justify-between border border-slate-200/80 dark:border-zinc-800 p-2.5 rounded-xl bg-white dark:bg-zinc-900/60 hover:border-slate-300 dark:hover:border-zinc-700 transition-colors">
+                                        <div className="space-y-1 min-w-0 pr-3 flex-1">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-primary shrink-0">
+                                                    {commit.hash}
+                                                </span>
+                                                {idx === 0 && (
+                                                    <span className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider shrink-0">
+                                                        HEAD
+                                                    </span>
+                                                )}
+                                                <h4 className="font-semibold text-slate-900 dark:text-white text-xs leading-none truncate">
+                                                    {commit.message}
+                                                </h4>
+                                            </div>
+
+                                            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-0.5">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="flex items-center gap-1 font-medium"><User size={10} /> {commit.author}</span>
+                                                    <span>•</span>
+                                                    <span className="flex items-center gap-1"><Clock size={10} /> {commit.timestamp}</span>
+                                                    <span>•</span>
+                                                    <span className="font-semibold text-slate-700 dark:text-slate-300">{commit.fieldsCount} Elements</span>
+                                                </div>
+
+                                                {/* Compact Inline Change Badges */}
+                                                <div className="hidden sm:flex items-center gap-1">
+                                                    {commit.fields.slice(0, 3).map((f) => (
+                                                        <span key={f.id} className="bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.2 rounded text-[9px] font-mono truncate max-w-[80px]">
+                                                            {f.label || f.name}
+                                                        </span>
+                                                    ))}
+                                                    {commit.fields.length > 3 && (
+                                                        <span className="text-slate-400 text-[9px] italic">+{commit.fields.length - 3}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant={idx === 0 ? "ghost" : "outline"}
+                                            disabled={idx === 0}
+                                            onClick={() => {
+                                                const selectedCommit = commit;
+                                                const newHeadCommit = {
+                                                    hash: Math.random().toString(36).substring(2, 9),
+                                                    message: `Checkout to ${selectedCommit.hash}: ${selectedCommit.message}`,
+                                                    author: 'Wahyudi Ramadhan',
+                                                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                                    fieldsCount: selectedCommit.fields.length,
+                                                    fields: [...selectedCommit.fields],
+                                                };
+                                                setData('fields', selectedCommit.fields);
+                                                setSelectedFieldIds([]);
+                                                setCommitLogs((prev) => [newHeadCommit, ...prev]);
+                                                setShowVersionModal(false);
+                                            }}
+                                            className="h-7 text-[10px] px-2.5 font-semibold rounded-lg shrink-0"
+                                        >
+                                            <RotateCcw size={11} className="mr-1" /> Checkout
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </ConfirmationModal>
+
+                {/* Save Form & Create Commit Note Modal */}
+                <ConfirmationModal
+                    open={showSaveCommitModal}
+                    onClose={() => setShowSaveCommitModal(false)}
+                    onConfirm={() => executeSaveCommit()}
+                    title="Simpan Form & Commit Snapshot"
+                    description="Tambahkan catatan perubahan untuk commit snapshot versi baru ini."
+                    confirmText={processing ? 'Menyimpan...' : 'Simpan & Commit'}
+                    cancelText="Batal"
+                    variant="info"
+                    className="max-w-md"
+                    icon={<GitCommit size={22} />}
+                >
+                    <div className="space-y-3 py-2 text-left font-sans text-xs">
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            Catatan Perubahan (Commit Message):
+                        </label>
+                        <textarea
+                            rows={3}
+                            placeholder="Contoh: Menambahkan field NIK, TTD, dan menyesuaikan margin halaman..."
+                            value={saveCommitNote}
+                            onChange={(e) => setSaveCommitNote(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2.5 text-xs text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:outline-none"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                                    e.preventDefault();
+                                    executeSaveCommit();
+                                }
+                            }}
+                        />
+                        <span className="text-[10px] text-muted-foreground block italic">
+                            Tekan <kbd className="font-mono bg-muted px-1 py-0.5 rounded text-[9px]">Ctrl+Enter</kbd> atau klik Simpan & Commit untuk menyimpan.
+                        </span>
+                    </div>
+                </ConfirmationModal>
             </form>
         </div>
     );

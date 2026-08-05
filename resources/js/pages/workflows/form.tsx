@@ -216,167 +216,153 @@ export default function WorkflowEditor({
         <>
             <Head title={workflow ? 'Edit Workflow' : 'Registrasi Workflow Baru'} />
 
-            <div className="flex h-[calc(100vh-4rem)] flex-col bg-white dark:bg-black">
-                <ManagementForm
-                    title={workflow ? 'Parameter Alur' : 'Registrasi Alur'}
-                    subtitle={workflow ? `Konfigurasi tahapan untuk ${form.data.name}` : 'Mendefinisikan alur approval baru'}
-                    onClose={() => router.visit(route('admin.workflows'))}
-                    onSave={handleSubmit}
-                    processing={form.processing}
-                    isDirty={form.isDirty}
-                    isEdit={!!workflow}
-                    onCollapseAll={() => setExpandedStepIds({})}
-                    flat={true}
-                    tabs={
-                        <div className="flex bg-slate-100/80 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200/40 dark:border-slate-800/40">
-                            <button
-                                type="button"
-                                onClick={() => handleTabChange('settings')}
-                                className={cn(
-                                    'px-4 py-1.5 text-xs font-semibold rounded-lg transition-all',
-                                    mainTab === 'settings'
-                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+            <div className="flex flex-col h-[calc(100svh-76px)] overflow-hidden bg-slate-100/60 dark:bg-zinc-950 w-full p-4">
+                <div className="flex flex-col flex-1 min-h-0 w-full rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
+                    <ManagementForm
+                        title={workflow ? 'Parameter Alur' : 'Registrasi Alur'}
+                        subtitle={workflow ? `Konfigurasi tahapan untuk ${form.data.name}` : 'Mendefinisikan alur approval baru'}
+                        onClose={() => router.visit(route('admin.workflows'))}
+                        onSave={handleSubmit}
+                        processing={form.processing}
+                        isDirty={form.isDirty}
+                        isEdit={!!workflow}
+                        onCollapseAll={() => setExpandedStepIds({})}
+                        flat={true}
+                        tabs={
+                            <div className="flex bg-slate-200/60 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                                <button
+                                    type="button"
+                                    onClick={() => handleTabChange('settings')}
+                                    className={cn(
+                                        'px-4 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                                        mainTab === 'settings'
+                                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+                                    )}
+                                >
+                                    Pengaturan Workflow
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleTabChange('steps')}
+                                    className={cn(
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all',
+                                        mainTab === 'steps'
+                                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
+                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+                                    )}
+                                >
+                                    Tahapan Workflow
+                                    <span className={cn(
+                                        'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
+                                        mainTab === 'steps'
+                                            ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                    )}>
+                                        {form.data.steps.length}
+                                    </span>
+                                </button>
+                            </div>
+                        }
+                        headerActions={
+                            <div className="flex items-center gap-2">
+                                {mainTab === 'steps' && form.data.steps.length > 0 && (
+                                    <>
+                                        <Button
+                                            type="button"
+                                            onClick={() => {
+                                                const allExpanded = form.data.steps.reduce((acc: any, s: any) => {
+                                                    acc[s.id] = true;
+                                                    return acc;
+                                                }, {});
+                                                setExpandedStepIds(allExpanded);
+                                            }}
+                                            variant="ghost"
+                                            className="h-9 rounded-lg border border-slate-200 dark:border-slate-800 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+                                        >
+                                            Expand Semua
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={() => setExpandedStepIds({})}
+                                            variant="ghost"
+                                            className="h-9 rounded-lg border border-slate-200 dark:border-slate-800 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
+                                        >
+                                            Collapse Semua
+                                        </Button>
+                                    </>
                                 )}
-                            >
-                                Pengaturan Workflow
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleTabChange('steps')}
-                                className={cn(
-                                    'flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all',
-                                    mainTab === 'steps'
-                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
-                                )}
-                            >
-                                Tahapan Workflow
-                                <span className={cn(
-                                    'rounded-full px-1.5 py-0.2 text-[10px] font-bold',
-                                    mainTab === 'steps'
-                                        ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                                )}>
-                                    {form.data.steps.length}
-                                </span>
-                            </button>
-                        </div>
-                    }
-                    headerActions={
-                        <div className="flex items-center gap-2">
-                            {mainTab === 'steps' && form.data.steps.length > 0 && (
-                                <>
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            const allExpanded = form.data.steps.reduce((acc: any, s: any) => {
-                                                acc[s.id] = true;
-                                                return acc;
-                                            }, {});
-                                            setExpandedStepIds(allExpanded);
-                                        }}
-                                        variant="ghost"
-                                        className="h-9 rounded-lg border border-slate-200 dark:border-slate-800 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
-                                    >
-                                        Expand Semua
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        onClick={() => setExpandedStepIds({})}
-                                        variant="ghost"
-                                        className="h-9 rounded-lg border border-slate-200 dark:border-slate-800 px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer"
-                                    >
-                                        Collapse Semua
-                                    </Button>
-                                </>
-                            )}
-                            <Button
-                                type="button"
-                                onClick={addLocalStep}
-                                variant="ghost"
-                                className="border-primary/20 hover:bg-primary/5 h-9 rounded-lg border px-4 text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                            >
-                                <PlusCircle size={14} className="mr-1.5" /> Tambah Tahap
-                            </Button>
-                        </div>
-                    }
-                >
+                                <Button
+                                    type="button"
+                                    onClick={addLocalStep}
+                                    variant="ghost"
+                                    className="border-primary/20 hover:bg-primary/5 h-9 rounded-lg border px-4 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                                >
+                                    <PlusCircle size={14} className="mr-1.5" /> Tambah Tahap
+                                </Button>
+                            </div>
+                        }
+                    >
 
-                    <div className="space-y-8">
-                        {mainTab === 'settings' && (
-                            <FormSection>
-                                <div className="space-y-10">
-                                    {/* --- Section 1: Informasi Dasar --- */}
+                        <div>
+                            {mainTab === 'settings' && (
+                                <FormSection className="space-y-8 p-3">
+                                    {/* Section 1: Informasi Utama Alur Kerja */}
                                     <div className="space-y-4">
-                                        <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
-                                            <Edit3 size={14} className="text-primary" />
-                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Informasi Dasar</h3>
+                                        <div className="flex items-center gap-2 border-b border-slate-100 pb-3 dark:border-zinc-800">
+                                            <Edit3 size={15} className="text-primary" />
+                                            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                                                Informasi Utama Alur Kerja
+                                            </h3>
                                         </div>
-                                        <div className="space-y-4">
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {/* Row 1: Nama Alur Kerja */}
-                                            <div>
+                                            <div className="col-span-full">
                                                 <FormInput
-                                                    label={
-                                                        <>
-                                                            <Edit3 size={10} /> Nama Alur Kerja
-                                                        </>
-                                                    }
+                                                    label="Nama Alur Kerja"
                                                     type="text"
                                                     autoFocus
                                                     value={form.data.name}
                                                     onChange={(e) => form.setData('name', e.target.value)}
                                                     error={form.errors.name}
                                                     placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
-                                                    variant="filled"
-                                                    size="sm"
+                                                    variant="outline"
+                                                    inputSize="compact"
                                                 />
                                             </div>
-                                            {/* Row 2: Status Alur, Dapat Dipilih */}
-                                            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                                                <div className="space-y-2">
-                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                        Status Alur
-                                                    </label>
-                                                    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-4 dark:border-slate-800 dark:bg-card /50">
-                                                        <Checkbox
-                                                            id="is_default"
-                                                            checked={form.data.is_default}
-                                                            onCheckedChange={(c) => form.setData('is_default', !!c)}
-                                                            className="h-4 w-4"
-                                                        />
-                                                        <label
-                                                            htmlFor="is_default"
-                                                            className="text-primary cursor-pointer text-xs font-medium dark:text-white"
-                                                        >
-                                                            Alur Default
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <label className="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-                                                        Tampil sebagai pilihan
-                                                    </label>
-                                                    <div className="flex h-10 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/50 px-4 dark:border-slate-800 dark:bg-card /50">
-                                                        <Checkbox
-                                                            id="is_selectable"
-                                                            checked={form.data.is_selectable}
-                                                            onCheckedChange={(c) => form.setData('is_selectable', !!c)}
-                                                            className="h-4 w-4"
-                                                        />
-                                                        <label
-                                                            htmlFor="is_selectable"
-                                                            className="text-primary cursor-pointer text-xs font-medium dark:text-white"
-                                                        >
-                                                            Dapat dipilih
-                                                        </label>
-                                                    </div>
-                                                </div>
+
+                                            {/* Row 2: Checkboxes */}
+                                            <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border border-slate-200/60 dark:border-zinc-800/80 bg-slate-50/40 dark:bg-zinc-900/30">
+                                                <Checkbox
+                                                    id="is_default"
+                                                    checked={form.data.is_default}
+                                                    onCheckedChange={(c) => form.setData('is_default', !!c)}
+                                                    className="h-4 w-4 rounded"
+                                                />
+                                                <label htmlFor="is_default" className="text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">
+                                                    Alur Utama (Default)
+                                                </label>
+                                            </div>
+
+                                            <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border border-slate-200/60 dark:border-zinc-800/80 bg-slate-50/40 dark:bg-zinc-900/30">
+                                                <Checkbox
+                                                    id="is_selectable"
+                                                    checked={form.data.is_selectable}
+                                                    onCheckedChange={(c) => form.setData('is_selectable', !!c)}
+                                                    className="h-4 w-4 rounded"
+                                                />
+                                                <label htmlFor="is_selectable" className="text-xs font-semibold text-slate-800 dark:text-slate-200 cursor-pointer">
+                                                    Tampil Sebagai Pilihan Opsi
+                                                </label>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-4">
+                                    <div className="h-px bg-slate-100 dark:bg-zinc-800/80 my-4" />
+
+                                    {/* Section 2: Kategori Kontrak */}
+                                    <div>
                                         <ContractTypeTableManager
                                             contractTypeIds={form.data.contract_type_ids || []}
                                             onChange={(vals) => form.setData('contract_type_ids', vals)}
@@ -384,7 +370,10 @@ export default function WorkflowEditor({
                                         />
                                     </div>
 
-                                    <div className="space-y-4 mt-6">
+                                    <div className="h-px bg-slate-100 dark:bg-zinc-800/80 my-4" />
+
+                                    {/* Section 3: Otoritas Inisiator */}
+                                    <div>
                                         <AuthorityTableManager
                                             title="Otoritas Inisiator"
                                             authorities={form.data.initiator_authorities || []}
@@ -397,9 +386,8 @@ export default function WorkflowEditor({
                                             regions={regions}
                                         />
                                     </div>
-                                </div>
-                            </FormSection>
-                        )}
+                                </FormSection>
+                            )}
                         {mainTab === 'steps' && (
                             <>
                                 {/* --- Workflow Steps & Visualization Section --- */}
@@ -529,8 +517,9 @@ export default function WorkflowEditor({
                             </>
                         )}
                     </div>
-                </ManagementForm >
-            </div >
-        </>
-    );
+                </ManagementForm>
+            </div>
+        </div>
+    </>
+);
 }

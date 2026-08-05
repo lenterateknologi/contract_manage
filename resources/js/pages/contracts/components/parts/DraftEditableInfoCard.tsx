@@ -1,6 +1,6 @@
 import { Avatar } from '@/pages/contracts/components/ui/ui';
 import { Contract, ContractType } from '@/pages/contracts/types';
-import { Check, ChevronDown, ChevronUp, Info, Loader2 } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Info, Loader2, User } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContractInfoForm, MetaBadge } from './ContractInfoForm';
 import { TaxToggle } from './TaxToggle';
@@ -157,119 +157,185 @@ export function DraftEditableInfoCard({
     );
 
     return (
-        <div className="bg-surface-base text-text-main border-surface-border overflow-hidden rounded-xl border shadow-sm">
-            <div className="bg-primary flex h-12 items-center justify-between border-b px-4">
-                <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                    <Info size={16} className="text-white/70" /> Informasi Kontrak
-                    {isDraft && <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-semibold text-white">Dapat Diedit</span>}
+        <div className="flex flex-col gap-4">
+            {/* Card 1: Informasi Kontrak */}
+            <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
+                <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-tight text-primary-foreground">
+                        <Info size={16} className="text-primary-foreground/80" /> Informasi Kontrak
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {isDraft && (
+                            <div className="flex items-center gap-2 px-1">
+                                {localSaving ? (
+                                    <>
+                                        <Loader2 size={12} className="animate-spin text-primary-foreground" />
+                                        <span className="text-xs text-primary-foreground font-medium">Menyimpan...</span>
+                                    </>
+                                ) : hasChanges ? (
+                                    <>
+                                        <div className="bg-amber-400 h-1.5 w-1.5 animate-pulse rounded-full ring-2 ring-amber-400/30" />
+                                        <span className="text-xs text-amber-300 font-medium">Berubah</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check size={12} className="text-emerald-300" />
+                                        <span className="text-xs text-primary-foreground/80 font-medium">Tersimpan</span>
+                                    </>
+                                )}
+                            </div>
+                        )}
+                        <button onClick={() => setMinimized(!minimized)} className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5">
+                            {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+                        </button>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                    {isDraft && (
-                        <div className="flex items-center gap-2 px-2">
-                            {localSaving ? (
-                                <>
-                                    <Loader2 size={12} className="animate-spin text-white/70" />
-                                    <span className="text-xs text-white/70">Menyimpan...</span>
-                                </>
-                            ) : hasChanges ? (
-                                <>
-                                    <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full ring-2 ring-white/50" />
-                                    <span className="text-xs text-white/70">Berubah</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Check size={12} className="text-emerald-300" />
-                                    <span className="text-xs text-white/70">Tersimpan</span>
-                                </>
-                            )}
-                        </div>
-                    )}
-                    <button onClick={() => setMinimized(!minimized)} className="text-white/70 transition-all hover:text-white active:scale-95">
-                        {minimized ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-                    </button>
+
+                {!minimized && (
+                    <div className="p-3.5">
+                        <ContractInfoForm
+                            isDraft={isDraft}
+                            title={title}
+                            setTitle={setTitle}
+                            contractNo={contractNo}
+                            setContractNo={setContractNo}
+                            typeId={typeId}
+                            setTypeId={setTypeId}
+                            submissionTypeId={submissionTypeId}
+                            setSubmissionTypeId={setSubmissionTypeId}
+                            vendorId={vendorId}
+                            setVendorId={setVendorId}
+                            types={types}
+                            submissionTypes={submissionTypes}
+                            vendors={vendors}
+                            selected={selected}
+                            inputCls={inputCls}
+                            taxRequired={taxRequired}
+                            onTaxRequiredChange={(newVal) => {
+                                setTaxRequired(newVal);
+                                if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+                                setLocalSaving(true);
+                                Promise.resolve(
+                                    onUpdate({
+                                        metadata: {
+                                            ...selected.metadata,
+                                            tax_required: newVal,
+                                        },
+                                    }),
+                                ).finally(() => setLocalSaving(false));
+                            }}
+                        />
+                    </div>
+                )}
+            </div>
+
+            {/* Card 2: Informasi Pengaju */}
+            <RequesterInfoCard selected={selected} />
+        </div>
+    );
+}
+
+export function RequesterInfoCard({ selected }: { selected: Contract }) {
+    const [minimized, setMinimized] = useState(false);
+    const user = selected.initiator || selected.creator;
+
+    return (
+        <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
+            <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-tight text-primary-foreground">
+                    <User size={16} className="text-primary-foreground/80" /> Informasi Pengaju
                 </div>
+                <button
+                    onClick={() => setMinimized(!minimized)}
+                    className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5"
+                >
+                    {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+                </button>
             </div>
 
             {!minimized && (
-                <div className="grid grid-cols-1 gap-5 p-5">
-                    <ContractInfoForm
-                        isDraft={isDraft}
-                        title={title}
-                        setTitle={setTitle}
-                        contractNo={contractNo}
-                        setContractNo={setContractNo}
-                        typeId={typeId}
-                        setTypeId={setTypeId}
-                        submissionTypeId={submissionTypeId}
-                        setSubmissionTypeId={setSubmissionTypeId}
-                        vendorId={vendorId}
-                        setVendorId={setVendorId}
-                        types={types}
-                        submissionTypes={submissionTypes}
-                        vendors={vendors}
-                        selected={selected}
-                        inputCls={inputCls}
-                        taxRequired={taxRequired}
-                        onTaxRequiredChange={(newVal) => {
-                            setTaxRequired(newVal);
-                            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-                            setLocalSaving(true);
-                            Promise.resolve(
-                                onUpdate({
-                                    metadata: {
-                                        ...selected.metadata,
-                                        tax_required: newVal,
-                                    },
-                                }),
-                            ).finally(() => setLocalSaving(false));
-                        }}
-                    />
+                <div className="grid grid-cols-1 gap-3.5 p-3.5">
+                    {/* Data Pengaju / Creator Detail */}
+                    <div className="flex flex-col gap-2 border-b border-surface-border/60 pb-3">
+                        <div className="text-foreground text-[10.5px] font-extrabold tracking-wider uppercase">
+                            Diajukan Oleh
+                        </div>
+                        <div className="flex items-start gap-2.5">
+                            <Avatar user={user} size="sm" className="mt-0.5 shrink-0" />
+                            <div className="flex flex-col overflow-hidden min-w-0 flex-1">
+                                <span className="text-text-main text-xs font-bold truncate">
+                                    {user?.name || '-'}
+                                </span>
+                                {user?.email && (
+                                    <span className="text-text-soft text-[11px] font-medium truncate">
+                                        {user.email}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
 
-                    <div className="flex flex-col gap-1">
-                        <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Diajukan Oleh</div>
-                        <div className="flex items-center gap-2">
-                            <Avatar user={selected.initiator || selected.creator} size="sm" />
-                            <span className="text-text-main text-sm font-semibold">{(selected.initiator || selected.creator)?.name || '-'}</span>
+                        {/* Hierarki Organisasi Pengaju */}
+                        <div className="mt-1 flex flex-col gap-1.5 rounded-lg bg-surface-muted/40 p-2.5 border border-surface-border/50 text-[11px]">
+                            <div className="flex items-center justify-between gap-2 border-b border-surface-border/40 pb-1.5">
+                                <span className="text-foreground font-semibold uppercase text-[9.5px]">Departemen</span>
+                                <span className="text-text-main font-bold truncate">{user?.department_name || '—'}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 border-b border-surface-border/40 pb-1.5">
+                                <span className="text-foreground font-semibold uppercase text-[9.5px]">Divisi</span>
+                                <span className="text-text-main font-bold truncate">{user?.division_name || '—'}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 border-b border-surface-border/40 pb-1.5">
+                                <span className="text-foreground font-semibold uppercase text-[9.5px]">Perusahaan (PT)</span>
+                                <span className="text-text-main font-bold truncate">{user?.company_name || '—'}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="text-foreground font-semibold uppercase text-[9.5px]">Company Group</span>
+                                <span className="text-text-main font-bold truncate">{user?.company_group_name || '—'}</span>
+                            </div>
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center justify-between">
-                            <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Tgl Dibuat</div>
+                            <div className="text-foreground text-[10.5px] font-extrabold tracking-wider uppercase">
+                                Tgl Dibuat
+                            </div>
                             <MetaBadge name="created_at" />
                         </div>
-                        <span className="text-text-main text-sm font-semibold">{selected.created_at}</span>
+                        <span className="text-text-main text-xs font-bold">{selected.created_at}</span>
                     </div>
 
-                    <div className="border-surface-border mt-2 border-t pt-5">
-                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                            <div className="flex flex-col gap-1.5">
-                                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Disetujui Oleh</div>
+                    <div className="border-surface-border mt-1 border-t pt-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div className="flex flex-col gap-1">
+                                <div className="text-foreground text-[10.5px] font-extrabold tracking-wider uppercase">
+                                    Disetujui Oleh
+                                </div>
                                 {selected.assigned_by ? (
                                     <div className="flex items-center gap-2">
                                         <Avatar user={selected.assigned_by} size="sm" />
-                                        <span className="text-text-main text-sm font-bold">{selected.assigned_by.name}</span>
+                                        <span className="text-text-main text-xs font-bold">{selected.assigned_by.name}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-text-soft text-xs italic opacity-50">Belum disetujui manager</span>
+                                    <span className="text-text-soft text-[11px] font-medium italic opacity-60">Belum disetujui manager</span>
                                 )}
                             </div>
 
-                            <div className="flex flex-col gap-1.5">
-                                <div className="text-text-desc text-[10px] font-bold tracking-widest uppercase">Ditugaskan</div>
+                            <div className="flex flex-col gap-1">
+                                <div className="text-foreground text-[10.5px] font-extrabold tracking-wider uppercase">
+                                    Ditugaskan
+                                </div>
                                 {selected.assigned_pic ? (
                                     <div className="flex items-center gap-2">
                                         <Avatar user={selected.assigned_pic} size="sm" />
-                                        <span className="text-text-main text-sm font-bold">{selected.assigned_pic.name}</span>
+                                        <span className="text-text-main text-xs font-bold">{selected.assigned_pic.name}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-text-soft text-xs italic opacity-50">Belum ditugaskan</span>
+                                    <span className="text-text-soft text-[11px] font-medium italic opacity-60">Belum ditugaskan</span>
                                 )}
                             </div>
                         </div>
                     </div>
-
-
                 </div>
             )}
         </div>

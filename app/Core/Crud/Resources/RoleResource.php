@@ -3,6 +3,7 @@
 namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\TextColumn;
+use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Resource;
 use App\Exports\RolesExport;
@@ -34,7 +35,7 @@ class RoleResource extends Resource
         // ponytail: Removed "Konfigurasi Filter Kontrak" Section and its imports as they are no longer used
         return [
             TextInput::make('name', 'Nama Role')->required()->rules(['string', 'max:255']),
-            TextInput::make('description', 'Deskripsi')->rules(['nullable', 'string', 'max:500']),
+            TextareaInput::make('description', 'Deskripsi')->rules(['nullable', 'string', 'max:500']),
         ];
     }
 }

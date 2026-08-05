@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth'])->group(function () {
     // Global Chat Center
-    Route::get('/admin/chat', [ChatController::class, 'index'])->name('admin.chat.index');
+    Route::get('/admin/chat/{contractId?}', [ChatController::class, 'index'])->name('admin.chat.index');
 
     // Legacy/Alternative path if needed
     Route::get('/discussions', function () {

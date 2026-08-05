@@ -115,6 +115,15 @@ class Field implements JsonSerializable
         return null;
     }
 
+    protected ?string $helperText = null;
+
+    public function helperText(string $text): static
+    {
+        $this->helperText = $text;
+
+        return $this;
+    }
+
     public function toArray(): array
     {
         return [
@@ -126,6 +135,7 @@ class Field implements JsonSerializable
             'columnSpan' => $this->columnSpan,
             'placeholder' => $this->getPlaceholder(),
             'icon' => $this->icon,
+            'helperText' => $this->helperText,
         ];
     }
 

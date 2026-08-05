@@ -238,25 +238,26 @@ export const BulkActions = ({
     canBulkDelete: boolean;
     handleBulkDelete: (rows: Contract[]) => void;
 }>) => (
+    /* ponytail: dark charcoal action buttons */
     <div className="flex items-center gap-2">
         {canBulkApprove && (
             <Button
                 variant="white"
                 size="sm"
-                className="border-surface-border/40 bg-surface-base text-primary h-8 px-4 text-[10px] font-semibold uppercase shadow-sm"
+                className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 h-8 px-4 text-[10px] font-semibold uppercase shadow-sm"
                 onClick={() => handleBulkApprove(selectedRows)}
             >
-                <Check className="mr-1.5 h-3 w-3" /> Approve
+                <Check className="mr-1.5 h-3 w-3 text-emerald-400" /> Approve
             </Button>
         )}
         {canBulkDelete && (
             <Button
                 variant="white"
                 size="sm"
-                className="border-surface-border/40 bg-surface-base text-danger h-8 px-4 text-[10px] font-semibold uppercase shadow-sm"
+                className="border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-rose-400 h-8 px-4 text-[10px] font-semibold uppercase shadow-sm"
                 onClick={() => handleBulkDelete(selectedRows)}
             >
-                <Trash2 className="mr-1.5 h-3 w-3" /> Hapus
+                <Trash2 className="mr-1.5 h-3 w-3 text-rose-400" /> Hapus
             </Button>
         )}
     </div>

@@ -56,42 +56,55 @@ class UserResource extends Resource
             Section::make('Informasi Akun', [
                 TextInput::make('name', 'Nama')
                     ->required()
-                    ->rules(['string', 'max:255']),
+                    ->rules(['string', 'max:255'])
+                    ->helperText('Nama lengkap pengguna sesuai identitas.'),
                 TextInput::make('email', 'Email')
                     ->required()
-                    ->rules(['email']),
+                    ->rules(['email'])
+                    ->helperText('Alamat email aktif untuk autentikasi dan notifikasi.'),
                 TextInput::make('username', 'Username')
                     ->required()
-                    ->rules(['string', 'max:50']),
+                    ->rules(['string', 'max:50'])
+                    ->helperText('Username unik untuk login ke aplikasi.'),
                 TextInput::make('password', 'Password')
                     ->rules(['nullable', 'string', 'min:8'])
-                    ->placeholder('Kosongkan jika tidak ingin mengubah password'),
+                    ->placeholder('Kosongkan jika tidak ingin mengubah password')
+                    ->helperText('Minimal 8 karakter. Kosongkan jika tidak ingin mengubah password.'),
                 TextInput::make('phone_number', 'No. Telepon')
-                    ->rules(['nullable', 'string']),
+                    ->rules(['nullable', 'string'])
+                    ->helperText('Nomor telepon / WhatsApp penggunan (opsional).'),
                 ToggleInput::make('is_active', 'Status Aktif')
-                    ->default(true),
+                    ->default(true)
+                    ->helperText('Pengguna aktif dapat mengakses sistem sesuai perannya.'),
             ])->icon('User'),
 
             Section::make('Struktur Organisasi', [
                 SelectInput::make('role_id', 'Role Akses')
                     ->required()
-                    ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->helperText('Peran utama yang menentukan kewenangan hak akses pengguna.'),
                 SelectInput::make('division_id', 'Divisi')
-                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->helperText('Divisi tempat pengguna bertugas.'),
                 SelectInput::make('department_id', 'Departemen')
-                    ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->helperText('Departemen spesifik pengguna.'),
                 SelectInput::make('company_id', 'Perusahaan PT')
-                    ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->helperText('Entitas perusahaan / PT utama tempat pengguna terdaftar.'),
                 SelectInput::make('company_group_id', 'Holding / Group')
-                    ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->helperText('Grup perusahaan / Holding yang menaungi.'),
                 SelectInput::make('region_id', 'Regional')
-                    ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->helperText('Wilayah operasional kerja pengguna.'),
             ])->icon('Building2'),
 
             Section::make('Konfigurasi Filter Kontrak', [
                 SelectInput::make('contract_filter_template_id', 'Template Filter Kontrak')
                     ->options(fn () => \App\Models\ContractFilterTemplate::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih Template Filter...'),
+                    ->placeholder('Pilih Template Filter...')
+                    ->helperText('Pilih template aturan filter akses dokumen kontrak jika ada.'),
             ])->icon('Settings2'),
         ];
     }

@@ -105,6 +105,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                 onSelect={onSelect}
                 onMove={onMove}
                 isSelected={selectedFieldIds.includes(field.id)}
+                selectedFieldIds={selectedFieldIds}
                 allFields={template.fields}
                 diffStatus={diffData[field.name] || diffData[field.id]}
                 comparisonValue={comparisonData[field.name]}

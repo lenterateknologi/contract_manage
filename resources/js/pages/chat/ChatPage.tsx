@@ -33,13 +33,22 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
         setContracts(initialContracts);
     }, [initialContracts]);
 
-    // ponytail: mark contract chat as read on select, and clear the unread badge immediately
+    // ponytail: mark contract chat as read on select, update URL state without full page reload
     useEffect(() => {
         if (selectedContractId) {
             contractApi.messages.markRead(selectedContractId).catch(console.error);
             setContracts((prev) =>
                 prev.map((c) => (c.id === selectedContractId ? { ...c, unread_count: 0 } : c))
             );
+            const newUrl = `/admin/chat/${selectedContractId}`;
+            if (window.location.pathname !== newUrl) {
+                window.history.pushState({}, '', newUrl);
+            }
+        } else {
+            const defaultUrl = '/admin/chat';
+            if (window.location.pathname !== defaultUrl) {
+                window.history.pushState({}, '', defaultUrl);
+            }
         }
     }, [selectedContractId]);
 
@@ -102,32 +111,40 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 <Head title="Chat Center" />
 
-                <div className="flex h-[calc(100vh-84px)] overflow-hidden font-sans">
-                    {/* Sidebar: Daftar Kontrak */}
-                    <div className="flex w-80 flex-col border-r border-surface-border bg-surface-base">
-                        <div className="p-4 border-b border-surface-border">
-                            <h2 className="text-sm font-normal text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-                                <MessageSquare className="h-4 w-4 text-text-main" /> Percakapan
+                <div className="flex h-[calc(100vh-76px)] overflow-hidden font-sans p-4 gap-4 bg-slate-100/60 dark:bg-zinc-950">
+                    {/* Sidebar: Floating Card Daftar Kontrak */}
+                    <div className="flex w-80 flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
+                        {/* Search & Header */}
+                        <div className="p-3.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/50">
+                            <h2 className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2.5 flex items-center justify-between">
+                                <span className="flex items-center gap-1.5">
+                                    <MessageSquare className="h-4 w-4 text-primary" />
+                                    <span>Percakapan</span>
+                                </span>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                                    {contracts.length}
+                                </span>
                             </h2>
                             <SearchInput
                                 placeholder="Cari kontrak..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="h-9 text-xs font-normal"
+                                className="h-8.5 text-xs font-normal bg-white dark:bg-zinc-800 border-slate-200/80 dark:border-zinc-700/80 rounded-xl"
                             />
                         </div>
 
-                        <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {/* List items */}
+                        <div className="flex-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden p-1.5 space-y-1">
                             {filteredContracts.length === 0 ? (
                                 <div className="p-8 text-center">
-                                    <Search size={24} className="mx-auto mb-2 text-text-main" />
-                                    <p className="text-sm font-normal text-text-main">Tidak ada kontrak</p>
+                                    <Search size={20} className="mx-auto mb-2 text-slate-400" />
+                                    <p className="text-xs font-medium text-slate-500">Tidak ada kontrak</p>
                                 </div>
                             ) : (
                                 Object.entries(groupedContracts).map(([groupLabel, items]) => (
-                                    <div key={groupLabel}>
-                                        <div className="bg-slate-100/70 dark:bg-slate-800/40 px-4 py-1.5 border-y border-surface-border/60">
-                                            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                    <div key={groupLabel} className="space-y-1">
+                                        <div className="px-2.5 py-1">
+                                            <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                                                 {groupLabel}
                                             </span>
                                         </div>
@@ -145,38 +162,38 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                         </div>
                     </div>
 
-                    {/* Main: Chat Area */}
-                    <div className="flex-1 flex flex-col bg-surface-base">
+                    {/* Main: Floating Chat Area Card */}
+                    <div className="flex-1 flex flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
                         {selectedContract ? (
                             <div className="flex flex-col h-full">
-                                <div className="px-6 py-3.5 border-b border-surface-border flex items-center justify-between bg-white dark:bg-zinc-900 shadow-xs z-10">
+                                <div className="px-5 py-3 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between bg-slate-50/40 dark:bg-zinc-900/40 shadow-2xs z-10">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-semibold border border-primary/20">
-                                            <FileText className="w-5 h-5 text-primary" />
+                                        <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-semibold border border-primary/20">
+                                            <FileText className="w-4 h-4 text-primary" />
                                         </div>
                                         <div className="flex flex-col">
                                             <div className="flex items-center gap-2 mb-0.5">
-                                                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight leading-none">
+                                                <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 tracking-tight leading-none">
                                                     {selectedContract.title}
                                                 </h3>
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-mono font-medium border border-slate-200 dark:border-slate-700">
+                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9.5px] font-mono font-medium border border-slate-200 dark:border-slate-700">
                                                     #{selectedContract.form_no || selectedContract.contract_no || 'DRAFT'}
                                                 </span>
                                             </div>
-                                            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                                            <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400">
                                                 <span className="flex items-center gap-1">
-                                                    <Building2 size={12} className="text-slate-400" />
+                                                    <Building2 size={11} className="text-slate-400" />
                                                     {selectedContract.contract_type || 'General Contract'}
                                                 </span>
                                                 <span className="text-slate-300 dark:text-slate-700">•</span>
-                                                <span>Dibuat oleh: <strong className="font-medium text-slate-700 dark:text-slate-300">{selectedContract.creator?.name || 'System'}</strong></span>
+                                                <span>Dibuat: <strong className="font-medium text-slate-700 dark:text-slate-300">{selectedContract.creator?.name || 'System'}</strong></span>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
                                             onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 shadow-2xs transition-all active:scale-95"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-xs font-medium text-slate-700 dark:text-slate-200 shadow-2xs transition-all active:scale-95 cursor-pointer"
                                         >
                                             <span>Buka Kontrak</span>
                                             <ExternalLink size={12} className="opacity-70" />
@@ -193,14 +210,14 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                 </div>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-full gap-4 text-text-main">
-                                <div className="bg-primary/5 p-6 rounded-full text-text-main">
-                                    <MessageSquare size={48} strokeWidth={1.5} />
+                            <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
+                                <div className="bg-primary/10 p-5 rounded-2xl text-primary border border-primary/20">
+                                    <MessageSquare size={36} strokeWidth={1.5} />
                                 </div>
                                 <div className="text-center max-w-xs px-4">
-                                    <h3 className="text-base font-normal text-text-main tracking-tight mb-1">Chat Center</h3>
-                                    <p className="text-xs text-text-main leading-relaxed">
-                                        Pilih percakapan dari daftar kontrak untuk memulai diskusi dan kolaborasi.
+                                    <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 tracking-tight mb-1">Chat Center</h3>
+                                    <p className="text-xs text-slate-500 leading-relaxed">
+                                        Pilih percakapan dari daftar kontrak di sebelah kiri untuk memulai diskusi.
                                     </p>
                                 </div>
                             </div>

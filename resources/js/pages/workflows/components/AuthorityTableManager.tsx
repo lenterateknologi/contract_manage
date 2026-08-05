@@ -249,14 +249,16 @@ export default function AuthorityTableManager({
 
     return (
         <div className="space-y-4 w-full">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2 dark:border-slate-800">
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-2 dark:border-zinc-800 gap-3">
                 <div className="flex items-center gap-2">
                     <Shield size={14} className="text-primary" />
-                    <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                        {title}
-                    </h3>
+                    <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                            {title}
+                        </h3>
+                    </div>
                 </div>
-                <Button variant="primary" size="sm" onClick={openModal} className="h-8 text-xs">
+                <Button variant="primary" size="sm" onClick={openModal} className="h-8 text-xs rounded-lg px-3 shadow-none">
                     <Plus size={14} className="mr-1" /> Tambah Otoritas
                 </Button>
             </div>

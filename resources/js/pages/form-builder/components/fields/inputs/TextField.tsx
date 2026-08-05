@@ -69,7 +69,7 @@ export const TextField: React.FC<FieldProps> = ({ field, value, onChange, readOn
                         'placeholder:text-muted-foreground/50 flex min-h-[32px] w-full text-[11px] font-semibold transition-all placeholder:italic',
                         field.options?.field_style === 'dashed_bottom'
                             ? 'border-border focus:border-primary rounded-none border-t-0 border-r-0 border-b border-l-0 border-dashed bg-transparent px-0 font-semibold shadow-none ring-0 outline-none focus:ring-0'
-                            : 'border-border bg-surface-base focus:ring-primary/20 focus:border-primary rounded-lg border px-3 focus:ring-1',
+                            : 'border-slate-300 bg-white text-slate-900 focus:ring-primary/20 focus:border-primary rounded-lg border px-3 focus:ring-1 shadow-2xs',
                     )}
                     style={getTypographyStyle(field)}
                 />

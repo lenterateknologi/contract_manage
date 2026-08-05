@@ -287,229 +287,72 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                 </div>
             </div>
 
-            {/* Spacing & Padding */}
-            <div className="border-border space-y-4 border-t pt-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Maximize2 size={12} className="text-muted-foreground" />
-                        <h4 className="font-sans text-[9px] font-semibold uppercase">Spacing & Padding</h4>
-                    </div>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowIndividualPadding(!showIndividualPadding)}
-                        className="flex h-6 items-center gap-1 px-2 text-[8px] font-semibold uppercase"
-                    >
-                        {showIndividualPadding ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                        Individual Sides
-                    </Button>
+            {/* Combined Spacing & Border Section */}
+            <div className="border-border space-y-3 border-t pt-3">
+                <div className="flex items-center gap-2">
+                    <Ruler size={12} className="text-muted-foreground" />
+                    <h4 className="font-sans text-[9px] font-semibold uppercase">Spacing & Border</h4>
                 </div>
 
-                {!showIndividualPadding ? (
-                    <div className="animate-in fade-in zoom-in-95 grid grid-cols-2 gap-4 duration-200">
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Padding X (mm)</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.padding_x ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        padding_x: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Padding Y (mm)</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.padding_y ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        padding_y: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
+                {/* Padding LRTB */}
+                <div className="space-y-1">
+                    <Label className="text-muted-foreground font-sans text-[7px] font-medium uppercase">Padding (mm)</Label>
+                    <div className="grid grid-cols-4 gap-1">
+                        {[
+                            { key: 'padding_top', label: 'Top' },
+                            { key: 'padding_bottom', label: 'Bottom' },
+                            { key: 'padding_left', label: 'Left' },
+                            { key: 'padding_right', label: 'Right' },
+                        ].map((p) => (
+                            <div key={p.key} className="space-y-0.5">
+                                <span className="text-muted-foreground block text-center font-sans text-[7px] uppercase">{p.label}</span>
+                                <Input
+                                    type="number"
+                                    value={selectedField.options?.[p.key] ?? 0}
+                                    onChange={(e) =>
+                                        bulkUpdateOptions(selectedIds, {
+                                            [p.key]: parseNumber(e.target.value, 0),
+                                        })
+                                    }
+                                    className="h-6 text-center font-sans text-[10px] px-1"
+                                />
+                            </div>
+                        ))}
                     </div>
-                ) : (
-                    <div className="animate-in fade-in slide-in-from-top-2 grid grid-cols-2 gap-x-4 gap-y-3 duration-200">
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Padding Top</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.padding_top ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        padding_top: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Padding Bottom</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.padding_bottom ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        padding_bottom: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Padding Left</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.padding_left ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        padding_left: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Padding Right</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.padding_right ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        padding_right: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Spacing & Margin */}
-            <div className="border-border space-y-4 border-t pt-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Layout size={12} className="text-muted-foreground" />
-                        <h4 className="font-sans text-[9px] font-semibold uppercase">Spacing & Margin (mm)</h4>
-                    </div>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowIndividualMargin(!showIndividualMargin)}
-                        className="flex h-6 items-center gap-1 px-2 text-[8px] font-semibold uppercase"
-                    >
-                        {showIndividualMargin ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-                        Individual Sides
-                    </Button>
                 </div>
 
-                {!showIndividualMargin ? (
-                    <div className="animate-in fade-in zoom-in-95 grid grid-cols-2 gap-4 duration-200">
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Margin X</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.margin_x ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        margin_x: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Margin Y</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.margin_y ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        margin_y: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
+                {/* Margin LRTB */}
+                <div className="space-y-1">
+                    <Label className="text-muted-foreground font-sans text-[7px] font-medium uppercase">Margin (mm)</Label>
+                    <div className="grid grid-cols-4 gap-1">
+                        {[
+                            { key: 'margin_top', label: 'Top' },
+                            { key: 'margin_bottom', label: 'Bottom' },
+                            { key: 'margin_left', label: 'Left' },
+                            { key: 'margin_right', label: 'Right' },
+                        ].map((m) => (
+                            <div key={m.key} className="space-y-0.5">
+                                <span className="text-muted-foreground block text-center font-sans text-[7px] uppercase">{m.label}</span>
+                                <Input
+                                    type="number"
+                                    value={selectedField.options?.[m.key] ?? 0}
+                                    onChange={(e) =>
+                                        bulkUpdateOptions(selectedIds, {
+                                            [m.key]: parseNumber(e.target.value, 0),
+                                        })
+                                    }
+                                    className="h-6 text-center font-sans text-[10px] px-1"
+                                />
+                            </div>
+                        ))}
                     </div>
-                ) : (
-                    <div className="animate-in fade-in slide-in-from-top-2 grid grid-cols-2 gap-x-4 gap-y-3 duration-200">
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Margin Top</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.margin_top ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        margin_top: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Margin Bottom</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.margin_bottom ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        margin_bottom: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Margin Left</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.margin_left ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        margin_left: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Margin Right</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.margin_right ?? ''}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        margin_right: parseNumber(e.target.value, 0),
-                                    })
-                                }
-                                className="h-8 font-sans text-[11px]"
-                            />
-                        </div>
-                    </div>
-                )}
-            </div>
+                </div>
 
-            {/* Borders & Styling */}
-            {['group', 'grid_x', 'grid_y', 'static_text', 'labeled_value'].includes(selectedField.type) && (
-                <div className="border-border space-y-4 border-t pt-4">
-                    <div className="flex items-center gap-2">
-                        <Layout size={12} className="text-muted-foreground" />
-                        <h4 className="font-sans text-[9px] font-semibold uppercase">Borders & Style</h4>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Border Style</Label>
+                {/* Border Options */}
+                {['group', 'grid_x', 'grid_y', 'static_text', 'labeled_value'].includes(selectedField.type) && (
+                    <div className="space-y-1.5 pt-1">
+                        <Label className="text-muted-foreground font-sans text-[7px] font-medium uppercase">Border Style & Color</Label>
+                        <div className="grid grid-cols-3 gap-1.5 items-center">
                             <select
                                 value={selectedField.options?.border_style || 'none'}
                                 onChange={(e) =>
@@ -517,72 +360,39 @@ export const LayoutSettings: React.FC<LayoutSettingsProps> = ({ selectedField, s
                                         border_style: e.target.value,
                                     })
                                 }
-                                className="border-input bg-background h-8 w-full rounded-md border px-2 font-sans text-[10px] font-medium"
+                                className="border-input bg-background h-7 rounded-md border px-1.5 font-sans text-[10px] outline-none"
                             >
                                 <option value="none">None</option>
                                 <option value="solid">Solid</option>
                                 <option value="dashed">Dashed</option>
                                 <option value="dotted">Dotted</option>
                             </select>
-                        </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Border Width (px)</Label>
                             <Input
                                 type="number"
-                                value={selectedField.options?.border_width ?? ''}
+                                value={selectedField.options?.border_width ?? 1}
                                 onChange={(e) =>
                                     bulkUpdateOptions(selectedIds, {
                                         border_width: parseNumber(e.target.value, 0),
                                     })
                                 }
-                                className="h-8 font-sans text-[11px]"
+                                className="h-7 text-center font-sans text-[10px] px-1"
+                                placeholder="Width px"
+                            />
+                            <Input
+                                type="color"
+                                value={selectedField.options?.border_color || '#000000'}
+                                onChange={(e) =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        border_color: e.target.value,
+                                    })
+                                }
+                                className="h-7 w-full p-0.5 cursor-pointer rounded-md border"
+                                title="Border Color"
                             />
                         </div>
                     </div>
-
-                    <div className="space-y-1.5">
-                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Border Color</Label>
-                        <div className="flex flex-col gap-2">
-                            <div className="flex items-center gap-2">
-                                <div
-                                    className="border-border h-8 w-8 rounded-md border"
-                                    style={{
-                                        backgroundColor: selectedField.options?.border_color || '#000000',
-                                    }}
-                                />
-                                <Input
-                                    type="color"
-                                    value={selectedField.options?.border_color || '#000000'}
-                                    onChange={(e) =>
-                                        bulkUpdateOptions(selectedIds, {
-                                            border_color: e.target.value,
-                                        })
-                                    }
-                                    className="h-8 w-full p-0.5"
-                                />
-                            </div>
-                            <div className="flex items-center gap-1">
-                                {[
-                                    { label: 'P', color: templateData.letterhead_json?.palette?.primary || '#0f172a', title: 'Primary' },
-                                    { label: 'S', color: templateData.letterhead_json?.palette?.secondary || '#475569', title: 'Secondary' },
-                                    { label: 'A', color: templateData.letterhead_json?.palette?.accent || '#3b82f6', title: 'Accent' },
-                                ].map((p) => (
-                                    <button
-                                        key={p.label}
-                                        type="button"
-                                        onClick={() => bulkUpdateOptions(selectedIds, { border_color: p.color })}
-                                        className="border-border flex h-5 w-5 items-center justify-center rounded border text-[8px] font-semibold transition-transform hover:scale-110"
-                                        style={{ backgroundColor: p.color, color: '#fff', textShadow: '0 0 2px rgba(0,0,0,0.5)' }}
-                                        title={`Gunakan ${p.title}`}
-                                    >
-                                        {p.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

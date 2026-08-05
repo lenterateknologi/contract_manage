@@ -230,7 +230,11 @@ export const FormElement: React.FC<FormElementProps> = (props) => {
                     'border border-dashed rounded-md transition-all',
                     ['group', 'grid_x', 'grid_y'].includes(field.type) ? 'p-4' : 'p-2'
                 ),
-                isBuilder && isSelected && `ring-primary bg-primary/5 z-30 ring-2 ring-offset-1 border-transparent shadow-sm`,
+                // ponytail: dynamic category color highlight for selected builder element
+                isBuilder && isSelected && cn(
+                    cat ? `${ringColor} ${cat.bgColor} ${cat.borderColor}` : 'ring-primary bg-primary/10 border-primary',
+                    'ring-1 ring-offset-1 ring-offset-background shadow-sm font-medium z-40 !border-solid'
+                ),
                 isBuilder &&
                     isOver &&
                     !isDragging &&

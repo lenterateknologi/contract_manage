@@ -4,6 +4,7 @@ namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
+use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Filters\Filter;
@@ -29,6 +30,8 @@ class ContractStatusResource extends Resource
         ];
     }
 
+    public static int $formColumns = 2;
+
     public static function form(): array
     {
         return [
@@ -51,10 +54,11 @@ class ContractStatusResource extends Resource
             TextInput::make('icon', 'Ikon')
                 ->type('icon')
                 ->rules(['nullable', 'string', 'max:50']),
-            TextInput::make('description', 'Deskripsi')
-                ->rules(['nullable', 'string']),
-            ToggleInput::make('is_active', 'Aktif')
+            ToggleInput::make('is_active', 'Status Aktif')
                 ->default(true),
+            TextareaInput::make('description', 'Deskripsi')
+                ->rules(['nullable', 'string'])
+                ->columnSpan(2),
         ];
     }
 

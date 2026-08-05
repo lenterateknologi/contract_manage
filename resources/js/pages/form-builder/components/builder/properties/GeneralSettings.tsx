@@ -67,35 +67,35 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
 
 
             {selectedField.type === 'labeled_value' && (
-                <div className="border-border/50 bg-muted/10 space-y-3 rounded-lg border p-3">
-                    <Label className="text-muted-foreground font-sans text-[8px] font-semibold  uppercase">
-                        Pengaturan Label : Nilai
+                <div className="space-y-2.5">
+                    <Label className="text-slate-500 dark:text-zinc-400 font-sans text-[8px] font-bold uppercase tracking-wider block border-b border-border/50 pb-1">
+                        Pengaturan Labeled Value
                     </Label>
 
-                    {/* Field Style */}
-                    <div className="space-y-1.5">
-                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Gaya Garis (Field Style)</Label>
-                        <select
-                            value={selectedField.options?.field_style || 'dashed_bottom'}
-                            onChange={(e) =>
-                                bulkUpdateOptions(selectedIds, {
-                                    field_style: e.target.value,
-                                })
-                            }
-                            className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                        >
-                            <option value="dashed_bottom">Garis Bawah Putus-putus</option>
-                            <option value="solid_bottom">Garis Bawah Solid</option>
-                            <option value="none">Tanpa Garis (Plain Text)</option>
-                            <option value="box">Kotak / Box</option>
-                            <option value="bordered">Kotak Bergaris (Bordered)</option>
-                        </select>
-                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                        {/* Field Style */}
+                        <div className="space-y-1">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Gaya Garis</Label>
+                            <select
+                                value={selectedField.options?.field_style || 'dashed_bottom'}
+                                onChange={(e) =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        field_style: e.target.value,
+                                    })
+                                }
+                                className="border-input bg-background h-7 w-full rounded-md border px-2 py-0.5 font-sans text-[10px] font-medium shadow-xs focus:ring-1 focus:ring-primary outline-none"
+                            >
+                                <option value="dashed_bottom">Putus-putus Bawah</option>
+                                <option value="solid_bottom">Garis Bawah Solid</option>
+                                <option value="none">Tanpa Garis</option>
+                                <option value="box">Kotak (Box)</option>
+                                <option value="bordered">Kotak Bergaris</option>
+                            </select>
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-3">
                         {/* Label Width */}
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Lebar Label (px)</Label>
+                        <div className="space-y-1">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Lebar Label</Label>
                             <Input
                                 type="text"
                                 value={selectedField.options?.label_width ?? ''}
@@ -104,85 +104,74 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         label_width: e.target.value,
                                     })
                                 }
-                                className="h-8 font-sans text-[11px]"
-                                placeholder="e.g. 90, 120px"
+                                className="h-7 font-sans text-[10px] px-2"
+                                placeholder="150px"
                             />
                         </div>
+                    </div>
 
-                        {/* Indent */}
-                        <div className="space-y-1.5">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Indent Kiri (px)</Label>
-                            <Input
-                                type="number"
-                                value={selectedField.options?.margin_left ?? ''}
+                    <div className="grid grid-cols-2 gap-2 items-end">
+                        {/* Value Input Type */}
+                        <div className="space-y-1">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Tipe Input Nilai</Label>
+                            <select
+                                value={selectedField.options?.value_type || 'textfield'}
                                 onChange={(e) =>
                                     bulkUpdateOptions(selectedIds, {
-                                        margin_left: parseNumber(e.target.value, 0),
+                                        value_type: e.target.value,
                                     })
                                 }
-                                className="h-8 font-sans text-[11px]"
-                                placeholder="0"
-                            />
+                                className="border-input bg-background h-7 w-full rounded-md border px-2 py-0.5 font-sans text-[10px] font-medium shadow-xs focus:ring-1 focus:ring-primary outline-none"
+                            >
+                                <option value="textfield">Teks Singkat</option>
+                                <option value="textarea">Textarea (Multi Baris)</option>
+                                <option value="number">Angka (Number Delimiter)</option>
+                                <option value="date">Tanggal</option>
+                                <option value="select">Dropdown</option>
+                                <option value="checkbox">Checkbox</option>
+                            </select>
                         </div>
-                    </div>
 
-                    {/* Show Colon toggle */}
-                    <div className="flex items-center justify-between">
-                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Tampilkan Titik Dua (:)</Label>
-                        <button
-                            type="button"
-                            onClick={() =>
+                        {/* Show Colon toggle */}
+                        <div className="flex items-center justify-between h-7 px-1.5 bg-background rounded-md border border-input">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase cursor-pointer" onClick={() =>
                                 bulkUpdateOptions(selectedIds, {
-                                    show_colon: !selectedField.options?.show_colon,
+                                    show_colon: selectedField.options?.show_colon === false ? true : false,
                                 })
-                            }
-                            className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${selectedField.options?.show_colon !== false ? 'bg-primary' : 'bg-muted-foreground/30'
-                                }`}
-                        >
-                            <span
-                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${selectedField.options?.show_colon !== false ? 'translate-x-4' : 'translate-x-0'
+                            }>Titik Dua (:)</Label>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        show_colon: selectedField.options?.show_colon === false ? true : false,
+                                    })
+                                }
+                                className={`relative inline-flex h-4 w-7 cursor-pointer rounded-full border border-transparent transition-colors focus:outline-none ${selectedField.options?.show_colon !== false ? 'bg-primary' : 'bg-muted-foreground/30'
                                     }`}
-                            />
-                        </button>
-                    </div>
-
-                    {/* Value Input Type */}
-                    <div className="space-y-1.5">
-                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Tipe Input Nilai</Label>
-                        <select
-                            value={selectedField.options?.value_type || 'textfield'}
-                            onChange={(e) =>
-                                bulkUpdateOptions(selectedIds, {
-                                    value_type: e.target.value,
-                                })
-                            }
-                            className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                        >
-                            <option value="textfield">Text (Satu Baris)</option>
-                            <option value="textarea">Textarea (Multi Baris)</option>
-                            <option value="number">Number</option>
-                            <option value="date">Date</option>
-                            <option value="select">Dropdown</option>
-                            <option value="checkbox">Checkbox</option>
-                            <option value="currency">Currency (Rp)</option>
-                        </select>
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow-xs transition duration-200 ease-in-out ${selectedField.options?.show_colon !== false ? 'translate-x-3' : 'translate-x-0'
+                                        }`}
+                                />
+                            </button>
+                        </div>
                     </div>
 
                     {/* Placeholder */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                         <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Placeholder Teks Nilai</Label>
                         <Input
                             value={selectedField.placeholder || ''}
                             onChange={(e) => updateField(selectedField.id, 'placeholder', e.target.value)}
-                            className="h-8 font-sans text-[10px] font-medium"
+                            className="h-7 font-sans text-[10px] px-2"
                             placeholder="Contoh: Masukkan nilai di sini..."
                         />
                     </div>
 
                     {/* Max lines / jumlah baris garis */}
                     {(selectedField.options?.value_type === 'textarea' || ['dashed_bottom', 'solid_bottom'].includes(selectedField.options?.field_style || 'dashed_bottom')) && (
-                        <div className="space-y-1.5 border-t border-border/50 pt-3">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Jumlah Baris Garis (Max/Default Lines)</Label>
+                        <div className="space-y-1 border-t border-border/50 pt-2">
+                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Jumlah Baris Garis (Max Lines)</Label>
                             <input
                                 type="number"
                                 min={1}
@@ -193,29 +182,9 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                         max_lines: parseNumber(e.target.value, 1),
                                     })
                                 }
-                                className="border-input bg-background focus:ring-1 focus:ring-primary h-8 w-full rounded border px-2 font-sans text-[10px] outline-none shadow-xs"
+                                className="border-input bg-background h-7 w-full rounded-md border px-2 font-sans text-[10px] outline-none shadow-xs focus:ring-1 focus:ring-primary"
                                 placeholder="1"
                             />
-                        </div>
-                    )}
-
-                    {/* Currency configuration for currency type */}
-                    {selectedField.options?.value_type === 'currency' && (
-                        <div className="space-y-1.5 border-t border-border/50 pt-3">
-                            <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Mata Uang (Currency)</Label>
-                            <select
-                                value={selectedField.options?.currency_type || 'IDR'}
-                                onChange={(e) =>
-                                    bulkUpdateOptions(selectedIds, {
-                                        currency_type: e.target.value,
-                                    })
-                                }
-                                className="border-input bg-background focus-visible:ring-ring h-8 w-full rounded-md border px-2 py-1 font-sans text-[10px] font-medium shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                            >
-                                <option value="IDR">IDR (Rupiah - Rp)</option>
-                                <option value="SGD">SGD (Singapore Dollar - S$)</option>
-                                <option value="USD">USD (US Dollar - $)</option>
-                            </select>
                         </div>
                     )}
 

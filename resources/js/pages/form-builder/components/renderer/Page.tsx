@@ -38,8 +38,8 @@ export const Page: React.FC<PageProps> = ({
             {/* The A4 Paper Container */}
             <div
                 className={cn(
-                    'bg-card text-foreground relative mx-auto flex flex-col transition-all print:m-0 print:shadow-none print:ring-0 print:border-none w-[210mm]',
-                    'border-border border shadow-sm my-4 rounded-none shrink-0',
+                    'bg-white text-slate-900 force-light relative mx-auto flex flex-col transition-all print:m-0 print:shadow-none print:ring-0 print:border-none w-[210mm]',
+                    'border-slate-300 border shadow-md my-4 rounded-none shrink-0',
                     isBuilder ? 'h-[297mm] max-h-[297mm] overflow-hidden' : 'min-h-[297mm]',
                     className,
                 )}

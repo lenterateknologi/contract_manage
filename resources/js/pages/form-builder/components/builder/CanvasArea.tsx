@@ -15,6 +15,7 @@ interface CanvasAreaProps {
     moveField: (id: string, dir: 'up' | 'down') => void;
     removeField: (id: string) => void;
     duplicateField: (id: string) => void;
+    zoom?: number;
 }
 
 export const CanvasArea: React.FC<CanvasAreaProps> = ({
@@ -28,41 +29,17 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     moveField,
     removeField,
     duplicateField,
+    zoom = 100,
 }) => {
     return (
         <section className="bg-muted/10 relative flex flex-1 flex-col overflow-hidden">
-            {/* STICKY VIEW TABS */}
-            <div className="border-border bg-card/80 sticky top-0 z-30 flex h-[60px] w-full shrink-0 items-center justify-center border-b backdrop-blur-md">
-                <div className="bg-muted/30 ring-border/20 flex gap-1.5 rounded-2xl p-1.5 ring-1">
-                    {[
-                        { id: 'visual-editor', label: 'Visual Editor', icon: Edit3 },
-                        { id: 'interactive-form', label: 'Interactive Form', icon: Play },
-                        { id: 'pdf-preview', label: 'PDF Preview', icon: Eye },
-                    ].map((mode) => (
-                        <button
-                            key={mode.id}
-                            type="button"
-                            onClick={() => setViewMode(mode.id as any)}
-                            className={cn(
-                                'flex items-center gap-2.5 rounded-xl px-5 py-2 transition-all duration-300',
-                                viewMode === mode.id
-                                    ? 'bg-card ring-border/50 text-foreground z-10 scale-105 ring-1'
-                                    : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground',
-                            )}
-                        >
-                            <mode.icon size={14} strokeWidth={2.5} />
-                            <span className="font-sans text-[10px] font-semibold tracking-[0.1em] uppercase">{mode.label}</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-
             <ScrollArea className="bg-muted/30 flex-1">
                 <div
-                    className="flex min-h-full cursor-default items-start justify-center px-12 py-16"
+                    className="flex min-h-full cursor-default items-start justify-center px-12 py-16 transition-transform duration-200 origin-top"
                     style={{
                         backgroundImage: 'radial-gradient(hsl(var(--border)) 1px, transparent 1px)',
                         backgroundSize: '30px 30px',
+                        transform: `scale(${zoom / 100})`,
                     }}
                     onClick={(e) => {
                         if (e.target === e.currentTarget) {

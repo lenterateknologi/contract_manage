@@ -891,30 +891,6 @@ function ContractPage({
                         subtitle={viewDescMap[view] || 'Daftar seluruh kontrak dalam sistem.'}
                         icon={viewIconMap[view] || FileText}
                         {...(view === 'dashboard' ? {
-                            filters: [
-                                { key: 'company_group_ids', label: 'Grup Perusahaan', options: (companyGroups || []).map((cg: any) => ({ value: String(cg.id), label: cg.name })) },
-                                { key: 'region_ids', label: 'Wilayah (Region)', options: (regions || []).map((r: any) => ({ value: String(r.id), label: r.name })) },
-                                { key: 'company_ids', label: 'Perusahaan (Company)', options: (companies || []).map((c: any) => ({ value: String(c.id), label: c.name })) },
-                                { key: 'department_ids', label: 'Departemen', options: (departments || []).map((d: any) => ({ value: String(d.id), label: d.name })) },
-                            ],
-                            activeFilters: {
-                                company_group_ids: filters.company_group_ids ? String(filters.company_group_ids).split(',').filter(Boolean) : [],
-                                region_ids: filters.region_ids ? String(filters.region_ids).split(',').filter(Boolean) : [],
-                                company_ids: filters.company_ids ? String(filters.company_ids).split(',').filter(Boolean) : [],
-                                department_ids: filters.department_ids ? String(filters.department_ids).split(',').filter(Boolean) : [],
-                            },
-                            onFilterChange: (key: string, val: any) => {
-                                const newParams: any = { ...filters, view: 'dashboard' };
-                                if (Array.isArray(val)) {
-                                    newParams[key] = val.join(',');
-                                } else {
-                                    newParams[key] = val;
-                                }
-                                router.get('/contracts', newParams, { preserveState: true, preserveScroll: true });
-                            },
-                            onResetFilters: () => {
-                                router.get('/contracts', { view: 'dashboard' }, { preserveState: true, preserveScroll: true });
-                            },
                             actions: (() => {
                                 const config = metrics?.dashboardConfig;
                                 const showOverview = config ? !!config.show_overview : false;

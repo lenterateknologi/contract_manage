@@ -85,79 +85,80 @@
 }
 
 /* --- Dark Mode Configuration --- */
+/* ponytail: soft eye-friendly warm charcoal dark palette to reduce eye strain */
 .dark {
-    /* Base Colors (Deep Midnight) */
-    --background: #020617; /* Slate 950 - More deep than before */
-    --foreground: #f8fafc;
+    /* Base Colors (Soft Eye-Friendly Charcoal) */
+    --background: #141518;
+    --foreground: #e3e5ec;
 
-    /* Primary (Professional Indigo-Blue) */
-    --primary: #4f46e5;
-    --primary-foreground: #ffffff;
-    --primary-hover: #6366f1;
-    --primary-active: #4338ca;
-    --primary-muted: #1e1b4b;
+    /* Primary (Soft Matte Silver-White) */
+    --primary: #e3e5ec;
+    --primary-foreground: #141518;
+    --primary-hover: #d2d5e1;
+    --primary-active: #c1c5d5;
+    --primary-muted: #25272e;
 
-    /* Secondary (Darker Surfaces) */
-    --secondary: #0f172a; /* Slate 900 */
-    --secondary-foreground: #f8fafc;
+    /* Secondary (Soft Surface) */
+    --secondary: #1e2026;
+    --secondary-foreground: #e3e5ec;
 
     /* Surfaces */
-    --card: #0f172a;
-    --card-foreground: #f8fafc;
-    --popover: #0f172a;
-    --popover-foreground: #f8fafc;
-    --muted: #1e293b; /* Slate 800 */
-    --muted-foreground: #cbd5e1;
+    --card: #1a1c21;
+    --card-foreground: #e3e5ec;
+    --popover: #1a1c21;
+    --popover-foreground: #e3e5ec;
+    --muted: #25272e;
+    --muted-foreground: #9ba0b0;
 
     /* Accents & Status */
-    --accent: #1e293b;
-    --accent-foreground: #f8fafc;
+    --accent: #25272e;
+    --accent-foreground: #e3e5ec;
 
-    --success: #059669;
-    --warning: #d97706;
-    --danger: #e11d48;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #f43f5e;
     --info: #38bdf8;
 
     /* Border & Inputs */
-    --border: #1e293b;
-    --input: #0f172a;
-    --ring: #4f46e5;
+    --border: #282b33;
+    --input: #1a1c21;
+    --ring: #d2d5e1;
 
-    /* Sidebar - Dark (Deep Navy) */
-    --sidebar-background: #020617;
-    --sidebar-foreground: #f1f5f9;
-    --sidebar-primary: #4f46e5;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #0f172a;
+    /* Sidebar - Dark (Soft Charcoal) */
+    --sidebar-background: #141518;
+    --sidebar-foreground: #e3e5ec;
+    --sidebar-primary: #e3e5ec;
+    --sidebar-primary-foreground: #141518;
+    --sidebar-accent: #1e2026;
     --sidebar-accent-foreground: #ffffff;
-    --sidebar-border: #1e293b;
-    --sidebar-ring: #4f46e5;
+    --sidebar-border: #282b33;
+    --sidebar-ring: #d2d5e1;
 
     /* Semantic Surface Colors for Dark Mode */
-    --surface-base: #0f172a;
-    --surface-muted: #020617;
-    --surface-border: #1e293b;
+    --surface-base: #1a1c21;
+    --surface-muted: #141518;
+    --surface-border: #282b33;
 
     /* Text Semantic */
-    --text-main: #ffffff;
-    --text-desc: #e2e8f0;
-    --text-soft: #cbd5e1;
+    --text-main: #e3e5ec;
+    --text-desc: #9ba0b0;
+    --text-soft: #6e7385;
 
     /* Role & Status Palette (Dark Semantic) */
-    --role-admin-bg: rgba(139, 92, 246, 0.2);
+    --role-admin-bg: rgba(139, 92, 246, 0.18);
     --role-admin-text: #a78bfa;
-    --role-manager-bg: rgba(59, 130, 246, 0.2);
+    --role-manager-bg: rgba(59, 130, 246, 0.18);
     --role-manager-text: #60a5fa;
-    --role-staff-bg: rgba(148, 163, 184, 0.2);
-    --role-staff-text: #cbd5e1;
-    --role-reviewer-bg: rgba(245, 158, 11, 0.2);
+    --role-staff-bg: rgba(155, 160, 176, 0.18);
+    --role-staff-text: #d2d5e1;
+    --role-reviewer-bg: rgba(245, 158, 11, 0.18);
     --role-reviewer-text: #fbbf24;
-    --role-approver-bg: rgba(16, 185, 129, 0.2);
+    --role-approver-bg: rgba(16, 185, 129, 0.18);
     --role-approver-text: #34d399;
 
     /* Vendor & Category Palette (Dark) */
-    --vendor-service-bg: rgba(59, 130, 246, 0.2);
+    --vendor-service-bg: rgba(59, 130, 246, 0.18);
     --vendor-service-text: #60a5fa;
-    --vendor-supplier-bg: rgba(148, 163, 184, 0.2);
-    --vendor-supplier-text: #cbd5e1;
+    --vendor-supplier-bg: rgba(155, 160, 176, 0.18);
+    --vendor-supplier-text: #d2d5e1;
 }

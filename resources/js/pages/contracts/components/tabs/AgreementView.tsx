@@ -420,9 +420,9 @@ export default function AgreementView({
             </div>
 
             {/* Main Preview Area - PDF Iframe */}
-            <div className="border-surface-border bg-surface-base relative flex min-h-[1000px] flex-1 flex-col overflow-hidden border-t dark:bg-transparent">
+            <div className="border-surface-border bg-slate-100/80 dark:bg-zinc-950 relative flex min-h-[1000px] flex-1 flex-col items-center overflow-y-auto border-t py-8 px-4">
                 {loading ? (
-                    <div className="flex h-full flex-col items-center justify-center gap-4">
+                    <div className="flex h-full flex-col items-center justify-center gap-4 py-20">
                         <LoadingLottie width={120} height={120} />
                         <span className="text-[10px] font-semibold tracking-[0.2em] text-[#172554] uppercase dark:text-white">Memuat Dokumen...</span>
                     </div>
@@ -440,9 +440,11 @@ export default function AgreementView({
                 ) : (
                     <>
                         {pdfUrl ? (
-                            <iframe src={pdfUrl} className="min-h-[1000px] w-full flex-1 border-none bg-white" title="Agreement Preview" />
+                            <div className="w-[210mm] max-w-full min-h-[1000px] h-full shadow-xl border border-slate-300 bg-white force-light rounded-none overflow-hidden my-2">
+                                <iframe src={pdfUrl} className="min-h-[1000px] w-full h-full border-none bg-white" title="Agreement Preview" />
+                            </div>
                         ) : (
-                            <div className="flex flex-1 items-center justify-center">
+                            <div className="flex flex-1 items-center justify-center py-20">
                                 <LoadingLottie width={120} height={120} />
                             </div>
                         )}

@@ -69,16 +69,10 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                 const selected = items.find((item: any) => String(item.value) === String(value));
                 displayValue = selected ? selected.label : value || '';
             }
-        } else if (valueType === 'currency') {
-            const currencyType = field.options?.currency_type || 'IDR';
+        } else if (valueType === 'number') {
             if (value !== undefined && value !== null && value !== '') {
-                if (currencyType === 'SGD') {
-                    displayValue = 'S$ ' + new Intl.NumberFormat('en-SG').format(Number(value));
-                } else if (currencyType === 'USD') {
-                    displayValue = '$ ' + new Intl.NumberFormat('en-US').format(Number(value));
-                } else {
-                    displayValue = 'Rp ' + new Intl.NumberFormat('id-ID').format(Number(value));
-                }
+                const numeric = String(value).replace(/\D/g, '');
+                displayValue = numeric ? new Intl.NumberFormat('id-ID').format(Number(numeric)) : '';
             } else {
                 displayValue = '';
             }
@@ -146,12 +140,12 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
 
     const renderInteractiveInput = () => {
         const baseClass = cn(
-            'w-full min-w-0 transition-all font-sans text-xs',
+            'w-full min-w-0 transition-all font-sans text-xs text-slate-900',
             isNoBorder
                 ? 'border-none bg-transparent px-0 shadow-none outline-none'
                 : !isBox
-                  ? 'focus:border-primary border-t-0 border-r-0 border-b border-l-0 bg-transparent px-0 shadow-none outline-none'
-                  : 'bg-surface-base focus:border-primary rounded-lg border border-solid px-3 py-1',
+                  ? 'focus:border-primary border-t-0 border-r-0 border-b border-l-0 border-slate-300 bg-transparent px-0 shadow-none outline-none'
+                  : 'bg-white text-slate-900 border-slate-300 focus:border-primary rounded-lg border border-solid px-3 py-1 shadow-2xs',
         );
 
         const allowDirectEdit = field.options?.allow_direct_edit !== false;
@@ -172,7 +166,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                     <div className="relative shrink-0 flex items-center justify-center">
                         <button
                             type="button"
-                            className={cn(baseClass, 'w-7 h-7 p-0 flex items-center justify-center cursor-pointer shrink-0')}
+                            className={cn(baseClass, 'w-7 h-7 p-0 flex items-center justify-center cursor-pointer shrink-0 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 shadow-2xs rounded-lg')}
                             style={{
                                 ...lineStyle,
                                 width: '28px',
@@ -181,7 +175,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                             }}
                             title="Pilih Kalender"
                         >
-                            <Calendar className="h-3.5 w-3.5 opacity-70" />
+                            <Calendar className="h-3.5 w-3.5 text-slate-600" />
                         </button>
                         <input
                             type="date"
@@ -195,145 +189,28 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
         }
 
         if (valueType === 'number') {
-            return (
-                <input
-                    type="number"
-                    value={value ?? ''}
-                    onChange={(e) => onChange?.(e.target.value !== '' ? Number(e.target.value) : '')}
-                    placeholder={customPlaceholder || ''}
-                    className={baseClass}
-                    style={lineStyle}
-                />
-            );
-        }
-
-        if (valueType === 'textarea') {
-            const maxLines = field.options?.max_lines ? Number(field.options.max_lines) : 3;
-            const backgroundStyle = getRepeatingBackground();
-
-            return (
-                <textarea
-                    rows={maxLines}
-                    value={value || ''}
-                    onChange={(e) => onChange?.(e.target.value)}
-                    placeholder={customPlaceholder || ''}
-                    className={cn(
-                        baseClass,
-                        'resize-none leading-6 py-0 block w-full outline-none ring-0 focus:ring-0',
-                        !isBox ? 'border-none' : '',
-                    )}
-                    style={{
-                        ...lineStyle,
-                        lineHeight: '24px',
-                        background: backgroundStyle,
-                    }}
-                />
-            );
-        }
-
-        if (valueType === 'select' || valueType === 'searchable_select') {
-            const items = field.options?.items || [];
-
-            const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-                const selectedVal = e.target.value;
-                if (selectedVal !== '') {
-                    const selectedItem = items.find((item: any) => String(item.value) === String(selectedVal));
-                    onChange?.(selectedItem ? selectedItem.label : selectedVal);
-                }
-            };
-
-            return (
-                <div className="flex w-full min-w-0 items-center gap-1.5">
-                    <input
-                        type="text"
-                        value={value || ''}
-                        onChange={(e) => onChange?.(e.target.value)}
-                        placeholder={customPlaceholder || (allowDirectEdit ? "Ketik atau pilih opsi..." : "Pilih dari dropdown...")}
-                        readOnly={!allowDirectEdit}
-                        className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent')}
-                        style={lineStyle}
-                    />
-                    {items.length > 0 && (
-                        <div className="relative shrink-0 flex items-center justify-center">
-                            <div
-                                className={cn(baseClass, 'w-7 h-7 p-0 flex items-center justify-center pointer-events-none shrink-0')}
-                                style={{
-                                    ...lineStyle,
-                                    width: '28px',
-                                    height: '28px',
-                                    padding: 0,
-                                }}
-                            >
-                                <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-                            </div>
-                            <select
-                                value=""
-                                onChange={handleSelectChange}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                                title="Pilih Opsi Cepat"
-                            >
-                                <option value="" disabled></option>
-                                {items.map((opt: any) => (
-                                    <option key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        if (valueType === 'checkbox') {
-            return (
-                <div className="flex h-7 items-center">
-                    <input
-                        type="checkbox"
-                        checked={!!value}
-                        onChange={(e) => onChange?.(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                    />
-                </div>
-            );
-        }
-
-        if (valueType === 'currency') {
-            const currencyType = field.options?.currency_type || 'IDR';
-            const symbol = currencyType === 'SGD' ? 'S$' : currencyType === 'USD' ? '$' : 'Rp';
-            const plClass = currencyType === 'SGD' ? 'pl-6' : currencyType === 'USD' ? 'pl-4' : 'pl-6';
-
-            const formatCurrency = (val: string) => {
+            const formatNumber = (val: string) => {
                 const numeric = val.replace(/\D/g, '');
                 if (!numeric) return '';
-                if (currencyType === 'SGD') {
-                    return new Intl.NumberFormat('en-SG').format(Number(numeric));
-                } else if (currencyType === 'USD') {
-                    return new Intl.NumberFormat('en-US').format(Number(numeric));
-                } else {
-                    return new Intl.NumberFormat('id-ID').format(Number(numeric));
-                }
+                return new Intl.NumberFormat('id-ID').format(Number(numeric));
             };
 
-            const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                 const rawValue = e.target.value.replace(/\D/g, '');
                 onChange?.(rawValue !== '' ? Number(rawValue) : '');
             };
 
-            const formattedVal = value !== undefined && value !== null && value !== '' ? formatCurrency(String(value)) : '';
+            const formattedVal = value !== undefined && value !== null && value !== '' ? formatNumber(String(value)) : '';
 
             return (
-                <div className="relative flex items-center">
-                    <span className="text-muted-foreground absolute left-0 text-xs font-semibold">{symbol}</span>
-                    <input
-                        type="text"
-                        value={formattedVal}
-                        onChange={handleCurrencyChange}
-                        placeholder={customPlaceholder || "0"}
-                        className={cn(baseClass, plClass)}
-                        style={typographyStyle}
-                    />
-                </div>
+                <input
+                    type="text"
+                    value={formattedVal}
+                    onChange={handleNumberChange}
+                    placeholder={customPlaceholder || '0'}
+                    className={baseClass}
+                    style={lineStyle}
+                />
             );
         }
 

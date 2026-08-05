@@ -296,7 +296,11 @@ class ContractFormatter
             'role_id' => array_key_exists('role_id', $attributes) ? $user->role_id : null,
             'department_id' => array_key_exists('division_id', $attributes) ? ($user->division_id ?? (array_key_exists('department_id', $attributes) ? $user->department_id : null)) : (array_key_exists('department_id', $attributes) ? $user->department_id : null),
             'division_id' => array_key_exists('division_id', $attributes) ? $user->division_id : null,
-            'department_name' => $user->relationLoaded('department') ? $user->department?->name : ($user->relationLoaded('division') ? $user->division?->name : null),
+            'department_name' => $user->relationLoaded('department') ? $user->department?->name : null,
+            'division_name' => $user->relationLoaded('division') ? $user->division?->name : null,
+            'company_name' => $user->relationLoaded('company') ? $user->company?->name : null,
+            'company_group_name' => $user->relationLoaded('company') && $user->company?->relationLoaded('companyGroup') ? $user->company?->companyGroup?->name : null,
+            'region_name' => $user->relationLoaded('company') && $user->company?->relationLoaded('region') ? $user->company?->region?->name : null,
             'email' => array_key_exists('email', $attributes) ? $user->email : null,
         ];
     }

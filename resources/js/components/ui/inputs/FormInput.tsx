@@ -7,6 +7,7 @@ import InputError from '@/components/ui/forms/InputError';
 export interface FormInputProps extends React.ComponentProps<typeof Input> {
     label?: React.ReactNode;
     error?: string;
+    helperText?: string;
     containerClassName?: string;
     labelClassName?: string;
     inputSize?: 'default' | 'compact';
@@ -14,7 +15,7 @@ export interface FormInputProps extends React.ComponentProps<typeof Input> {
 }
 
 const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
-    ({ label, error, containerClassName, labelClassName, className, inputSize = 'default', icon: Icon, ...props }, ref) => {
+    ({ label, error, helperText, containerClassName, labelClassName, className, inputSize = 'default', icon: Icon, ...props }, ref) => {
         const id = React.useId();
         const inputId = props.id || id;
         const isCompact = inputSize === 'compact';
@@ -28,7 +29,7 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
                             className={cn(
                                 'font-bold transition-colors flex items-center gap-1.5',
                                 isCompact ? 'text-[10px]' : 'text-[11px]',
-                                error ? 'text-rose-500' : 'text-muted-foreground group-focus-within:text-primary',
+                                error ? 'text-rose-500' : 'text-slate-700 dark:text-zinc-200 group-focus-within:text-primary',
                                 labelClassName
                             )}
                         >
@@ -57,6 +58,11 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
                         {...props}
                     />
                 </div>
+                {helperText && !error && (
+                    <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
+                        {helperText}
+                    </p>
+                )}
                 <InputError message={error} className={isCompact ? 'text-[10px] font-bold uppercase' : ''} />
             </div>
         );

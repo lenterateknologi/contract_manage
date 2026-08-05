@@ -117,21 +117,21 @@ function MsgBubble({
 
     return (
         <div className={cn('animate-in slide-in-from-bottom-1 mb-4 flex flex-col gap-1.5 duration-300', isMe ? 'items-end' : 'items-start')}>
-            <div className={cn('flex items-center gap-2 px-1', isMe ? 'flex-row-reverse' : 'flex-row')}>
-                <span className={cn('text-text-main text-[11px] font-normal', isMe ? '' : 'opacity-80')}>{isMe ? 'Anda' : name}</span>
+            <div className={cn('flex items-center gap-2 px-1 mb-1', isMe ? 'flex-row-reverse' : 'flex-row')}>
+                <span className="text-text-main text-xs font-bold">{isMe ? 'Anda' : name}</span>
                 {role && (
-                    <span className="bg-primary/10 text-text-main rounded-full px-2.5 py-0.5 text-[9px] font-normal tracking-tight uppercase">
+                    <span className="bg-primary/10 border border-primary/20 text-primary rounded-full px-2.5 py-0.5 text-[9.5px] font-bold tracking-tight uppercase">
                         {role}
                     </span>
                 )}
-                <span className="text-text-main text-[10px] tabular-nums">{time}</span>
+                <span className="text-text-soft text-[10.5px] font-semibold tabular-nums">{time}</span>
             </div>
 
             <div className={cn('group relative max-w-[82%] min-w-[65px]', isMe ? 'text-right' : 'text-left')}>
                 <div
                     className={cn(
-                        'rounded-2xl shadow-sm transition-all duration-300',
-                        isMe ? 'bg-primary text-primary-foreground' : 'bg-primary/5 border border-primary/10 text-text-main',
+                        'rounded-2xl shadow-xs transition-all duration-300',
+                        isMe ? 'bg-primary text-primary-foreground font-medium' : 'bg-surface-base border border-surface-border text-text-main font-medium shadow-xs',
                     )}
                 >
                     {attachmentUrl && isImage && (
@@ -141,7 +141,7 @@ function MsgBubble({
                                 e.preventDefault();
                                 onPreview(attachmentUrl, attachmentName);
                             }}
-                            className="group/img bg-primary/5 relative cursor-pointer overflow-hidden rounded-t-2xl border-b border-inherit"
+                            className="group/img bg-surface-muted/40 relative cursor-pointer overflow-hidden rounded-t-2xl border-b border-inherit"
                         >
                             <img
                                 src={attachmentUrl}
@@ -160,7 +160,7 @@ function MsgBubble({
                         {msg.message && (
                             <div
                                 className={cn(
-                                    'text-[13px] leading-relaxed tracking-tight',
+                                    'text-xs leading-relaxed tracking-tight font-medium',
                                     attachmentUrl && !isImage ? 'mb-2 border-b border-inherit pb-2 opacity-80' : '',
                                 )}
                             >
@@ -187,28 +187,27 @@ function MsgBubble({
                                 className={cn(
                                     'group/file flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition-all',
                                     isMe
-                                        ? 'border-white/10 bg-white/5 text-white hover:bg-white/10'
-                                        : 'border-surface-border bg-surface-base/50 text-text-main hover:bg-surface-base',
+                                        ? 'border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20'
+                                        : 'border-surface-border bg-surface-muted/60 text-text-main hover:bg-surface-muted',
                                 )}
                             >
                                 <div
                                     className={cn(
                                         'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-transform group-hover/file:scale-110',
-                                        isMe ? 'border-white/10 bg-white/10 text-white' : 'border-surface-border bg-surface-base text-text-main',
+                                        isMe ? 'border-primary-foreground/20 bg-primary-foreground/20 text-primary-foreground' : 'border-surface-border bg-surface-base text-primary',
                                     )}
                                 >
                                     <FileIcon size={14} />
                                 </div>
                                 <div className="min-w-0 flex-1 text-left">
-                                    <div className="mb-0.5 truncate text-[10px] leading-none font-normal tracking-tight uppercase">
+                                    <div className="mb-0.5 truncate text-[10px] leading-none font-bold tracking-tight uppercase">
                                         {attachmentName}
                                     </div>
-                                    {/* ponytail: dynamically label either preview or download based on type */}
-                                    <div className="text-[8px] font-normal uppercase opacity-40">
+                                    <div className="text-[8.5px] font-extrabold uppercase tracking-wider opacity-70">
                                         {isPdf ? 'PREVIEW' : 'DOWNLOAD'}
                                     </div>
                                 </div>
-                                <Download size={12} className="opacity-0 transition-opacity group-hover/file:opacity-40" />
+                                <Download size={12} className="opacity-60 transition-opacity group-hover/file:opacity-100" />
                             </div>
                         )}
                     </div>
@@ -222,7 +221,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const { showToast } = useToast();
     const [input, setInput] = useState('');
     const [search, setSearch] = useState('');
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [sending, setSending] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [previewTarget, setPreviewTarget] = useState<{ url: string; name: string } | null>(null);
@@ -235,20 +234,46 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const editorRef = useRef<HTMLDivElement>(null);
     const endRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const msgs = contract.messages ?? [];
+    const [messages, setMessages] = useState<ContractMessage[]>(contract.messages ?? []);
     const isFirstRender = useRef(true);
+
+    useEffect(() => {
+        setMessages(contract.messages ?? []);
+        isFirstRender.current = true;
+    }, [contract.id]);
+
+    useEffect(() => {
+        if (contract.id) {
+            contractApi.messages.list(contract.id)
+                .then((newMsgs) => {
+                    setMessages((prev) => {
+                        if (JSON.stringify(prev) === JSON.stringify(newMsgs)) {
+                            return prev;
+                        }
+                        return newMsgs;
+                    });
+                })
+                .catch(() => null);
+        }
+    }, [contract.id]);
 
     useEffect(() => {
         contractApi.getUsers().then(setAllUsers).catch(console.error);
     }, []);
 
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const msgs = messages;
+
     useEffect(() => {
-        const timer = setTimeout(() => {
-            endRef.current?.scrollIntoView({ behavior: isFirstRender.current ? 'auto' : 'smooth', block: 'end' });
+        if (isFirstRender.current) {
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+            }
             isFirstRender.current = false;
-        }, 100);
-        return () => clearTimeout(timer);
-    }, [msgs.length]);
+        } else if (endRef.current) {
+            endRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+    }, [msgs]);
 
     const [currentMatchIndex, setCurrentMatchIndex] = useState<number>(0);
     const matchRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -294,23 +319,65 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
-            const updated = await contractApi.get(contract.id);
-            onNewMessage(updated);
+            const [fetchedMsgs, updated] = await Promise.all([
+                contractApi.messages.list(contract.id).catch(() => null),
+                contractApi.get(contract.id).catch(() => null)
+            ]);
+            if (fetchedMsgs) {
+                setMessages(fetchedMsgs);
+            }
+            if (updated) {
+                onNewMessage(updated);
+            }
         } finally {
             setRefreshing(false);
         }
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const maxSize = 10 * 1024 * 1024; // 10MB
+    const [isDragging, setIsDragging] = useState(false);
+
+    const processFiles = (files: FileList | File[]) => {
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        const validFiles: File[] = [];
+        Array.from(files).forEach((file) => {
             if (file.size > maxSize) {
-                showToast('Ukuran berkas terlalu besar! Batas maksimum adalah 10MB.', 'danger');
-                if (fileInputRef.current) fileInputRef.current.value = '';
-                return;
+                showToast(`Berkas "${file.name}" terlalu besar! Maksimum 10MB per berkas.`, 'danger');
+            } else {
+                validFiles.push(file);
             }
-            setSelectedFile(file);
+        });
+        if (validFiles.length > 0) {
+            setSelectedFiles((prev) => [...prev, ...validFiles]);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            processFiles(e.target.files);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const removeFile = (index: number) => {
+        setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        if (!isDragging) setIsDragging(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+        setIsDragging(false);
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            processFiles(e.dataTransfer.files);
         }
     };
 
@@ -337,12 +404,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         });
     };
 
-    const handleContentEditableInput = () => {
-        if (editorRef.current) {
-            setInput(editorRef.current.innerHTML);
-            updateActiveFormats();
-        }
-    };
+
 
     // ponytail: Rich Text Formatting helper for contentEditable (WYSIWYG)
     const execFormat = (command: string, value: string | undefined = undefined) => {
@@ -372,12 +434,29 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         const savedDraft = localStorage.getItem(draftKey);
         if (savedDraft) {
             setInput(savedDraft);
+            if (editorRef.current) {
+                editorRef.current.innerHTML = savedDraft;
+            }
             setDraftSavedTime('Draf tersimpan');
         } else {
             setInput('');
+            if (editorRef.current) {
+                editorRef.current.innerHTML = '';
+            }
             setDraftSavedTime(null);
         }
-    }, [contract.id]);
+    }, [contract.id, draftKey]);
+
+    // Auto save draft whenever input content changes
+    useEffect(() => {
+        if (input.trim()) {
+            localStorage.setItem(draftKey, input);
+            setDraftSavedTime('Tersimpan otomatis');
+        } else {
+            localStorage.removeItem(draftKey);
+            setDraftSavedTime(null);
+        }
+    }, [input, draftKey]);
 
     // Manual Save Draft function
     const saveDraft = () => {
@@ -393,44 +472,55 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         showToast('Draf pesan berhasil disimpan.', 'success');
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const val = e.target.value;
-        setInput(val);
+    const handleContentEditableInput = () => {
+        if (editorRef.current) {
+            const val = editorRef.current.innerHTML;
+            setInput(val);
+            updateActiveFormats();
 
-        // Auto save to localStorage
-        if (val.trim()) {
-            localStorage.setItem(draftKey, val);
-            setDraftSavedTime('Tersimpan otomatis');
-        } else {
-            localStorage.removeItem(draftKey);
-            setDraftSavedTime(null);
-        }
+            const textContent = editorRef.current.innerText || '';
+            const parts = textContent.split(' ');
+            const lastPart = parts[parts.length - 1];
 
-        const parts = val.split(' ');
-        const lastPart = parts[parts.length - 1];
-
-        if (lastPart.startsWith('@')) {
-            setMentionSearch(lastPart.substring(1));
-            setShowMentions(true);
-            setMentionIndex(0);
-        } else {
-            setShowMentions(false);
+            if (lastPart.startsWith('@')) {
+                setMentionSearch(lastPart.substring(1));
+                setShowMentions(true);
+                setMentionIndex(0);
+            } else {
+                setShowMentions(false);
+            }
         }
     };
 
     const send = async () => {
         const text = input.trim();
-        if (!text && !selectedFile) return;
+        if (!text && selectedFiles.length === 0) return;
         if (sending) return;
 
         setSending(true);
         try {
-            await contractApi.messages.send(contract.id, text, selectedFile || undefined);
-            const updated = await contractApi.get(contract.id);
-            onNewMessage(updated);
+            if (selectedFiles.length > 0) {
+                for (let i = 0; i < selectedFiles.length; i++) {
+                    const msgText = i === 0 ? text : '';
+                    await contractApi.messages.send(contract.id, msgText, selectedFiles[i]);
+                }
+            } else {
+                await contractApi.messages.send(contract.id, text);
+            }
+
+            const [fetchedMsgs, updated] = await Promise.all([
+                contractApi.messages.list(contract.id).catch(() => null),
+                contractApi.get(contract.id).catch(() => null)
+            ]);
+            if (fetchedMsgs) {
+                setMessages(fetchedMsgs);
+            }
+            if (updated) {
+                onNewMessage(updated);
+            }
             setInput('');
             if (editorRef.current) editorRef.current.innerHTML = '';
-            setSelectedFile(null);
+            setSelectedFiles([]);
             localStorage.removeItem(draftKey);
             setDraftSavedTime(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -466,15 +556,26 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         }
     };
 
-    const groupedMessages = msgs.reduce(
-        (acc, msg) => {
-            const date = msg.created_at.split(' ')[0];
-            if (!acc[date]) acc[date] = [];
-            acc[date].push(msg);
-            return acc;
-        },
-        {} as Record<string, ContractMessage[]>,
-    );
+    const sortedMsgs = useMemo(() => {
+        return [...msgs].sort((a, b) => {
+            const timeA = new Date(a.created_at).getTime();
+            const timeB = new Date(b.created_at).getTime();
+            if (timeA !== timeB) return timeA - timeB;
+            return a.id.localeCompare(b.id);
+        });
+    }, [msgs]);
+
+    const groupedMessages = useMemo(() => {
+        return sortedMsgs.reduce(
+            (acc, msg) => {
+                const date = msg.created_at ? msg.created_at.split(' ')[0] : 'Lainnya';
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(msg);
+                return acc;
+            },
+            {} as Record<string, ContractMessage[]>,
+        );
+    }, [sortedMsgs]);
 
     return (
         <div className="animate-in fade-in relative flex h-full flex-col p-5 duration-500">
@@ -489,8 +590,8 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         />
                     </div>
                     {search.trim() !== '' && (
-                        <div className="flex items-center gap-1.5 bg-surface-muted/60 dark:bg-surface-muted/20 border border-surface-border rounded-lg px-2 py-1">
-                            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 tabular-nums">
+                        <div className="flex items-center gap-1.5 bg-surface-muted/60 border border-surface-border rounded-lg px-2 py-1">
+                            <span className="text-[11px] font-semibold text-text-soft tabular-nums">
                                 {matchingMessages.length > 0 ? `${currentMatchIndex + 1}/${matchingMessages.length}` : '0/0'}
                             </span>
                             <div className="flex items-center gap-0.5">
@@ -499,7 +600,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                                     onClick={handlePrevMatch}
                                     disabled={matchingMessages.length === 0}
                                     title="Pesan Sebelumnya (Up)"
-                                    className="p-1 rounded hover:bg-surface-border text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                    className="p-1 rounded hover:bg-surface-border text-text-soft hover:text-text-main disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
                                 >
                                     <ChevronUp size={14} />
                                 </button>
@@ -508,7 +609,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                                     onClick={handleNextMatch}
                                     disabled={matchingMessages.length === 0}
                                     title="Pesan Selanjutnya (Down)"
-                                    className="p-1 rounded hover:bg-surface-border text-slate-600 dark:text-slate-300 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                    className="p-1 rounded hover:bg-surface-border text-text-soft hover:text-text-main disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
                                 >
                                     <ChevronDown size={14} />
                                 </button>
@@ -534,6 +635,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             </div>
 
             <div
+                ref={scrollContainerRef}
                 onScroll={(e) => {
                     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
                     const isAtBottom = scrollHeight - scrollTop - clientHeight < 120;
@@ -579,29 +681,49 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             )}
 
             <div className="border-surface-border mt-auto border-t pt-3">
-                {selectedFile && (
-                    <div className="bg-primary/5 border border-primary/10 animate-in slide-in-from-bottom-1 mb-3 flex items-center justify-between rounded-lg p-2.5 duration-300">
-                        <div className="flex items-center gap-2.5">
-                            <FileIcon size={14} strokeWidth={2.5} />
-                            <div className="flex flex-col">
-                                <span className="text-text-main mb-1 text-[9px] leading-none font-normal tracking-tight uppercase">
-                                    {selectedFile?.name}
-                                </span>
-                                <span className="text-text-main text-[7.5px] font-normal uppercase tabular-nums opacity-40">
-                                    {((selectedFile?.size || 0) / 1024).toFixed(1)} KB
-                                </span>
+                {selectedFiles.length > 0 && (
+                    <div className="mb-2.5 flex flex-wrap gap-2">
+                        {selectedFiles.map((file, idx) => (
+                            <div key={`${file.name}-${idx}`} className="bg-surface-muted/60 border-surface-border flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-xs shadow-2xs">
+                                <div className="bg-primary/10 text-primary flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-bold">
+                                    <Paperclip size={12} />
+                                </div>
+                                <div className="flex flex-col max-w-[180px] overflow-hidden">
+                                    <span className="text-text-main truncate text-[11px] font-semibold">{file.name}</span>
+                                    <span className="text-text-soft text-[9px]">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => removeFile(idx)}
+                                    className="hover:bg-rose-500/10 text-text-soft hover:text-rose-500 ml-1 flex h-5 w-5 items-center justify-center rounded-md transition-all active:scale-90"
+                                >
+                                    <X size={12} strokeWidth={2.5} />
+                                </button>
                             </div>
-                        </div>
-                        <button
-                            onClick={() => setSelectedFile(null)}
-                            className="hover:bg-primary/10 flex h-7 w-7 items-center justify-center rounded-lg transition-all active:scale-90"
-                        >
-                            <X size={14} strokeWidth={2.5} />
-                        </button>
+                        ))}
                     </div>
                 )}
 
-                <div className="group relative flex items-end gap-2">
+                <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
+
+                {/* Main Action & Input Wrapper Card */}
+                <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={cn(
+                        "group relative flex flex-col gap-2 rounded-2xl border bg-white p-2.5 shadow-sm dark:bg-zinc-900 transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/10 overflow-hidden",
+                        isDragging
+                            ? "border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10"
+                            : "border-surface-border focus-within:border-primary/60"
+                    )}
+                >
+                    {isDragging && (
+                        <div className="absolute inset-0 z-40 flex flex-col items-center justify-center gap-2 bg-primary/10 dark:bg-primary/20 backdrop-blur-xs border-2 border-dashed border-primary rounded-2xl animate-in fade-in duration-150 pointer-events-none">
+                            <Paperclip size={24} className="text-primary" />
+                            <p className="text-xs font-bold text-primary tracking-wide uppercase">Lepaskan berkas untuk melampirkan</p>
+                        </div>
+                    )}
                     <MentionDropdown
                         isOpen={showMentions}
                         users={filteredUsers}
@@ -610,133 +732,152 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         insertMention={insertMention}
                     />
 
-                    <div className="border-surface-border bg-white dark:bg-slate-900 focus-within:border-primary/50 relative flex flex-col flex-1 rounded-2xl border shadow-xs transition-all duration-300 overflow-hidden">
-                        {/* Formatting Toolbar (Summernote Style) */}
-                        <div className="flex flex-wrap items-center justify-between gap-1 px-3 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-800/60">
-                            <div className="flex flex-wrap items-center gap-1">
-                            {/* Text Formatting Group */}
-                            <div className="flex items-center gap-0.5 border-r border-slate-300 dark:border-slate-700 pr-1.5 mr-0.5">
+                    {/* Top Toolbar: Rich Text Formatting & Draft Actions */}
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-surface-border/70 pb-2 px-1">
+                        <div className="flex flex-wrap items-center gap-1">
+                            {/* Formatting Buttons */}
+                            <div className="flex items-center gap-0.5 rounded-lg border border-surface-border bg-slate-50/80 p-0.5 dark:bg-slate-800/40">
                                 <button
                                     type="button"
                                     title="Tebal (Bold)"
                                     onClick={() => execFormat('bold')}
                                     className={cn(
-                                        "p-1.5 rounded transition-colors",
-                                        activeFormats.bold ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
+                                        activeFormats.bold ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
                                     )}
                                 >
-                                    <Bold size={14} />
+                                    <Bold size={13} />
                                 </button>
                                 <button
                                     type="button"
                                     title="Miring (Italic)"
                                     onClick={() => execFormat('italic')}
                                     className={cn(
-                                        "p-1.5 rounded transition-colors",
-                                        activeFormats.italic ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
+                                        activeFormats.italic ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
                                     )}
                                 >
-                                    <Italic size={14} />
+                                    <Italic size={13} />
                                 </button>
                                 <button
                                     type="button"
                                     title="Coret (Strikethrough)"
                                     onClick={() => execFormat('strikeThrough')}
                                     className={cn(
-                                        "p-1.5 rounded transition-colors",
-                                        activeFormats.strikethrough ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
+                                        activeFormats.strikethrough ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
                                     )}
                                 >
-                                    <Strikethrough size={14} />
+                                    <Strikethrough size={13} />
                                 </button>
                                 <button
                                     type="button"
                                     title="Kode (Inline Code)"
                                     onClick={() => execFormat('formatBlock', 'pre')}
                                     className={cn(
-                                        "p-1.5 rounded transition-colors",
-                                        activeFormats.code ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
+                                        activeFormats.code ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
                                     )}
                                 >
-                                    <Code size={14} />
+                                    <Code size={13} />
                                 </button>
                             </div>
 
                             {/* Lists Group */}
-                            <div className="flex items-center gap-0.5">
+                            <div className="flex items-center gap-0.5 rounded-lg border border-surface-border bg-slate-50/80 p-0.5 dark:bg-slate-800/40">
                                 <button
                                     type="button"
                                     title="Daftar Poin (Bullet List)"
                                     onClick={() => execFormat('insertUnorderedList')}
                                     className={cn(
-                                        "p-1.5 rounded transition-colors",
-                                        activeFormats.unorderedList ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
+                                        activeFormats.unorderedList ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
                                     )}
                                 >
-                                    <List size={14} />
+                                    <List size={13} />
                                 </button>
                                 <button
                                     type="button"
                                     title="Daftar Angka (Numbered List)"
                                     onClick={() => execFormat('insertOrderedList')}
                                     className={cn(
-                                        "p-1.5 rounded transition-colors",
-                                        activeFormats.orderedList ? "bg-primary text-white" : "hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
+                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
+                                        activeFormats.orderedList ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
                                     )}
                                 >
-                                    <ListOrdered size={14} />
-                                </button>
-                            </div>
-                            </div>
-
-                            {/* Draft Group */}
-                            <div className="ml-auto flex items-center gap-2 border-l border-slate-300 dark:border-slate-700 pl-2">
-                                {draftSavedTime && (
-                                    <span className="text-[10px] italic text-slate-400 dark:text-slate-500">
-                                        {draftSavedTime}
-                                    </span>
-                                )}
-                                <button
-                                    type="button"
-                                    title="Simpan Draf Pesan"
-                                    onClick={saveDraft}
-                                    className="flex items-center gap-1 px-2 py-1 rounded bg-slate-200/80 dark:bg-slate-700 hover:bg-primary/10 hover:text-primary text-slate-700 dark:text-slate-200 text-[10px] font-medium transition-colors"
-                                >
-                                    <Save size={12} /> Draf
+                                    <ListOrdered size={13} />
                                 </button>
                             </div>
                         </div>
 
-                        <div className="flex items-end min-h-[50px] max-h-[160px]">
-                            <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileSelect} />
+                        {/* Draft Status & Actions */}
+                        <div className="ml-auto flex items-center gap-2">
+                            {draftSavedTime && (
+                                <span className="text-[10px] font-medium text-slate-400 italic">
+                                    {draftSavedTime}
+                                </span>
+                            )}
                             <button
-                                onClick={() => fileInputRef.current?.click()}
-                                className="text-text-main hover:text-primary flex h-10 w-10 shrink-0 items-center justify-center transition-colors"
+                                type="button"
+                                title="Simpan Draf Pesan"
+                                onClick={saveDraft}
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-semibold transition-all shadow-2xs cursor-pointer"
                             >
-                                <Paperclip size={16} />
+                                <Save size={12} className="text-slate-400" /> Draf
                             </button>
-                            <div
-                                ref={editorRef}
-                                contentEditable
-                                onInput={handleContentEditableInput}
-                                onKeyDown={handleKeyDown}
-                                data-placeholder="Ketik pesan..."
-                                className="text-text-main flex-1 overflow-y-auto py-2.5 pr-4 text-[13px] leading-relaxed font-normal tracking-tight outline-none empty:before:text-text-main/30 empty:before:content-[attr(data-placeholder)] empty:before:pointer-events-none min-h-[50px] max-h-[140px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:ml-1"
-                            />
                         </div>
                     </div>
-                    <button
-                        className={cn(
-                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all',
-                            input.trim() || selectedFile
-                                ? 'bg-primary hover:bg-primary/90 text-white shadow-lg active:scale-95'
-                                : 'bg-primary/5 text-text-main/40',
-                        )}
-                        onClick={send}
-                        disabled={(!input.trim() && !selectedFile) || sending}
-                    >
-                        {sending ? <RefreshCw size={14} className="animate-spin" /> : <Send size={16} />}
-                    </button>
+
+                    {/* Middle: ContentEditable Input Area */}
+                    <div className="py-1 px-1">
+                        <div
+                            ref={editorRef}
+                            contentEditable
+                            onInput={handleContentEditableInput}
+                            onKeyDown={handleKeyDown}
+                            data-placeholder="Ketik pesan diskusi..."
+                            className="text-text-main min-h-[60px] max-h-[140px] w-full overflow-y-auto text-xs leading-relaxed font-medium tracking-tight outline-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] empty:before:pointer-events-none [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_li]:ml-1"
+                        />
+                    </div>
+
+                    {/* Bottom Toolbar: Attachment & Send Controls Outside Input */}
+                    <div className="flex items-center justify-between border-t border-surface-border/50 pt-2 px-1">
+                        <div className="flex items-center gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                                title="Lampirkan Dokumen"
+                            >
+                                <Paperclip size={14} className="text-slate-500" />
+                                <span>Lampiran</span>
+                            </button>
+                        </div>
+
+                        <button
+                            type="button"
+                            className={cn(
+                                'flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-sm',
+                                input.trim() || selectedFiles.length > 0
+                                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md active:scale-95'
+                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed',
+                            )}
+                            onClick={send}
+                            disabled={(!input.trim() && selectedFiles.length === 0) || sending}
+                        >
+                            {sending ? (
+                                <>
+                                    <RefreshCw size={13} className="animate-spin" />
+                                    <span>Mengirim...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Kirim</span>
+                                    <Send size={13} />
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
 

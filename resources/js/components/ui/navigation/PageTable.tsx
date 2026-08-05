@@ -50,25 +50,27 @@ export function PageTable({
     pagination,
 }: PageTableProps) {
     return (
-        <div className="flex flex-col h-[calc(100svh-88px)] overflow-hidden bg-background w-full">
-            <PageHeader
-                title={title}
-                subtitle={subtitle}
-                icon={icon}
-                searchValue={searchValue}
-                onSearchChange={onSearchChange}
-                searchPlaceholder={searchPlaceholder}
-                filters={filters}
-                activeFilters={activeFilters}
-                onFilterChange={onFilterChange}
-                onResetFilters={onResetFilters}
-                totalResults={totalResults}
-                actions={actions}
-            />
-            <div className="flex-1 min-h-0 w-full p-0 m-0 flex flex-col overflow-hidden">
-                {children}
+        <div className="flex flex-col h-[calc(100svh-76px)] overflow-hidden bg-slate-100/60 dark:bg-zinc-950 w-full p-4">
+            <div className="flex flex-col flex-1 min-h-0 w-full rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
+                <PageHeader
+                    title={title}
+                    subtitle={subtitle}
+                    icon={icon}
+                    searchValue={searchValue}
+                    onSearchChange={onSearchChange}
+                    searchPlaceholder={searchPlaceholder}
+                    filters={filters}
+                    activeFilters={activeFilters}
+                    onFilterChange={onFilterChange}
+                    onResetFilters={onResetFilters}
+                    totalResults={totalResults}
+                    actions={actions}
+                />
+                <div className="flex-1 min-h-0 w-full p-0 m-0 flex flex-col overflow-hidden">
+                    {children}
+                </div>
+                <PageFooter pagination={pagination} />
             </div>
-            <PageFooter pagination={pagination} />
         </div>
     );
 }

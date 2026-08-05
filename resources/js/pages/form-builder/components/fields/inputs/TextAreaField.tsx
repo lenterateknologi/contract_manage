@@ -50,7 +50,7 @@ export const TextAreaField: React.FC<FieldProps> = ({ field, value, onChange, re
                         'placeholder:text-muted-foreground/50 focus:ring-primary/20 flex min-h-[80px] w-full resize-none text-[11px] font-semibold transition-all placeholder:italic focus:ring-1',
                         field.options?.border_style === 'solid'
                             ? 'border-foreground rounded-none border-solid p-2'
-                            : 'border-border bg-surface-base focus:border-primary rounded-lg border px-3 py-2',
+                            : 'border-slate-300 bg-white text-slate-900 focus:border-primary rounded-lg border px-3 py-2 shadow-2xs',
                     )}
                     style={{
                         minHeight: field.options?.min_height ? `${field.options.min_height}px` : undefined,

@@ -19,7 +19,7 @@ class ChatController extends Controller
     /**
      * Display the global chat page.
      */
-    public function index(Request $request): Response
+    public function index(Request $request, ?string $contractId = null): Response
     {
         $user = Auth::user();
 
@@ -58,9 +58,39 @@ class ChatController extends Controller
                 'creator' => $c->creator ? ['id' => $c->creator->id, 'name' => $c->creator->name] : null,
             ]);
 
+        $selectedId = $contractId ?: $request->query('contract_id');
+
+        $contractsData = $contracts->map(function ($c) use ($selectedId) {
+            $isInitialSelected = $selectedId && $c['id'] === $selectedId;
+            if ($isInitialSelected) {
+                $contractModel = Contract::with(['messages.user'])->find($c['id']);
+                if ($contractModel) {
+                    $c['messages'] = $contractModel->messages
+                        ->sortBy('created_at')
+                        ->values()
+                        ->map(fn ($m) => [
+                            'id' => $m->id,
+                            'user_id' => $m->user_id,
+                            'message' => $m->message,
+                            'read_by' => $m->read_by ?? [],
+                            'created_at' => $m->created_at->format('Y-m-d H:i'),
+                            'attachment_url' => $m->attachment_path ? asset('storage/'.$m->attachment_path) : null,
+                            'attachment_name' => $m->attachment_name,
+                            'user' => $m->user ? [
+                                'id' => $m->user->id,
+                                'name' => $m->user->name,
+                                'initials' => $m->user->initials,
+                                'role' => $m->user->role,
+                            ] : null,
+                        ]);
+                }
+            }
+            return $c;
+        });
+
         return Inertia::render('chat/ChatPage', [
-            'contracts' => $contracts,
-            'initialContractId' => $request->query('contract_id'),
+            'contracts' => $contractsData,
+            'initialContractId' => $selectedId,
             'breadcrumbs' => [
                 ['title' => 'Diskusi', 'href' => '#', 'icon' => 'MessageSquare'],
                 ['title' => 'Chat Center', 'href' => route('admin.chat.index'), 'icon' => 'MessagesSquare'],
@@ -77,12 +107,11 @@ class ChatController extends Controller
         $limit = $request->integer('limit', 100);
 
         $messages = $contract->messages()
-            ->with(['user:id,name,role'])
-            ->orderBy('created_at', 'desc')
+            ->with(['user'])
+            ->orderBy('created_at', 'asc')
+            ->orderBy('id', 'asc')
             ->take($limit)
-            ->get()
-            ->reverse()
-            ->values();
+            ->get();
 
         return response()->json($messages->map(fn ($m) => [
             'id' => $m->id,

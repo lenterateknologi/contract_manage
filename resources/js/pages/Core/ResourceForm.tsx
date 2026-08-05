@@ -175,9 +175,6 @@ function MultiSelectField({
         }
     }, [isOpen]);
 
-    const { auth } = usePage().props as any;
-    const loginUser = auth?.user;
-
     const optionsList = React.useMemo(() => {
         const list = Array.isArray(field.options) 
             ? [...field.options].map(item => Array.isArray(item) ? item : [String(item), String(item)])
@@ -210,14 +207,14 @@ function MultiSelectField({
     }, [isDisabled]);
  
     return (
-        <div ref={containerRef} className={cn("flex flex-col gap-1.5 w-full relative", disabled && "opacity-60")}>
+        <div ref={containerRef} className={cn("space-y-1.5 w-full relative", disabled && "opacity-60")}>
             <div className="flex items-center justify-between w-full">
-                <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
+                <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200">
                     {field.label} {field.required && <span className="text-rose-500">*</span>}
                 </Label>
                 {toggleName && onToggleChange && (
                     <div className={cn("flex items-center gap-2", disabled && "pointer-events-none")}>
-                        <span className="text-[9px] text-text-main font-normal uppercase">Dapat Mengubah</span>
+                        <span className="text-[9px] text-muted-foreground font-semibold uppercase">Dapat Mengubah</span>
                         <button
                             type="button"
                             role="switch"
@@ -245,13 +242,14 @@ function MultiSelectField({
                 type="button"
                 disabled={isDisabled}
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex h-11 w-full items-center justify-between rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-sm font-normal shadow-xs transition-all text-left ${
+                className={cn(
+                    "flex h-11 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3 py-2 text-sm font-semibold shadow-xs transition-all text-left",
                     isDisabled 
                         ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200' 
-                        : 'hover:bg-surface-muted/30 hover:border-surface-border cursor-pointer'
-                }`}
+                        : 'hover:bg-accent hover:border-primary/50 cursor-pointer'
+                )}
             >
-                <span className="truncate text-text-main">
+                <span className="truncate text-foreground font-medium">
                     {disabled
                         ? 'Filter Terkunci (Mengikuti Filter Bawaan Role)'
                         : isDisabled
@@ -260,12 +258,12 @@ function MultiSelectField({
                         ? `${selectedLabels.length} terpilih (${selectedLabels.slice(0, 2).join(', ')}${selectedLabels.length > 2 ? '...' : ''})`
                         : `Pilih ${field.label}...`}
                 </span>
-                <LucideIcons.ChevronDown className="h-4 w-4 text-text-main shrink-0" />
+                <LucideIcons.ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </button>
  
             {isOpen && (
                 <div className={cn(
-                    "absolute left-0 z-50 w-full rounded-lg border border-surface-border bg-surface-base shadow-lg p-2.5 flex flex-col gap-2.5 max-h-64",
+                    "absolute left-0 z-50 w-full rounded-md border border-border bg-popover text-popover-foreground shadow-md p-2.5 flex flex-col gap-2.5 max-h-64",
                     dropdownDirection === 'down' ? 'top-full mt-1' : 'bottom-full mb-1'
                 )}>
                     <input
@@ -273,10 +271,10 @@ function MultiSelectField({
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={`Cari ${field.label}...`}
-                        className="flex h-9 w-full rounded-md border border-surface-border bg-surface-base px-3 py-1 text-xs outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                        className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-xs outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
                         onClick={(e) => e.stopPropagation()}
                     />
-                    <div className="flex flex-col gap-2 overflow-y-auto pr-1">
+                    <div className="flex flex-col gap-1 overflow-y-auto pr-1">
                         {paginatedOptions.map((option: any) => {
                             const val = Array.isArray(field.options) ? option : option[0];
                             const label = Array.isArray(field.options) ? option : option[1];
@@ -284,19 +282,17 @@ function MultiSelectField({
                             return (
                                 <label
                                     key={val}
-                                    className="flex items-center gap-2 cursor-pointer text-xs font-normal text-text-main hover:text-foreground py-1 px-1 rounded-md hover:bg-surface-muted/30"
+                                    className="flex items-center gap-2 cursor-pointer text-xs font-medium text-foreground hover:bg-accent py-1.5 px-2 rounded-sm"
                                 >
-                                    <input
-                                        type="checkbox"
+                                    <Checkbox
                                         checked={isChecked}
-                                        onChange={(e) => {
-                                            if (e.target.checked) {
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
                                                 onChange([...value, String(val)]);
                                             } else {
                                                 onChange(value.filter((v: any) => String(v) !== String(val)));
                                             }
                                         }}
-                                        className="rounded border-surface-border text-primary focus:ring-primary h-4 w-4"
                                     />
                                     <span>{label}</span>
                                 </label>
@@ -309,13 +305,13 @@ function MultiSelectField({
                                     e.stopPropagation();
                                     setPageSize(prev => prev + 15);
                                 }}
-                                className="text-[10px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-1.5 mt-1 cursor-pointer bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-md"
+                                className="text-[10px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-1.5 mt-1 cursor-pointer bg-muted border border-border rounded-md"
                             >
                                 Lihat Lebih Banyak... (+{filteredOptions.length - pageSize} Data)
                             </button>
                         )}
                         {filteredOptions.length === 0 && (
-                            <span className="text-xs text-text-main/60 text-center py-2">
+                            <span className="text-xs text-muted-foreground text-center py-2">
                                 Tidak ada data
                             </span>
                         )}
@@ -323,7 +319,7 @@ function MultiSelectField({
                 </div>
             )}
             {error && (
-                <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
+                <span className="text-rose-500 text-[10px] font-bold uppercase mt-1 block">
                     {error}
                 </span>
             )}
@@ -381,8 +377,8 @@ function SingleSelectField({
     })();
 
     return (
-        <div ref={containerRef} className="flex flex-col gap-1.5 w-full relative">
-            <Label htmlFor={field.name} className="text-[11px] font-normal text-text-main uppercase px-0.5">
+        <div ref={containerRef} className="space-y-1.5 w-full relative">
+            <Label htmlFor={field.name} className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200">
                 {field.label} {field.required && <span className="text-rose-500">*</span>}
             </Label>
             
@@ -390,26 +386,27 @@ function SingleSelectField({
                 type="button"
                 disabled={disabled}
                 onClick={() => setIsOpen(!isOpen)}
-                className={`flex h-11 w-full items-center justify-between rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-sm font-normal shadow-xs transition-all text-left ${
+                className={cn(
+                    "flex h-11 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3 py-2 text-sm font-semibold shadow-xs transition-all text-left",
                     disabled 
                         ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200' 
-                        : 'hover:bg-surface-muted/30 hover:border-surface-border cursor-pointer'
-                }`}
+                        : 'hover:bg-accent hover:border-primary/50 cursor-pointer'
+                )}
             >
-                <span className="truncate text-text-main">
+                <span className="truncate text-foreground font-medium">
                     {selectedLabel ? String(selectedLabel) : (field.placeholder || `Pilih ${field.label.toLowerCase()}...`)}
                 </span>
-                <LucideIcons.ChevronDown className="h-4 w-4 text-text-main shrink-0" />
+                <LucideIcons.ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border border-surface-border bg-surface-base shadow-lg p-2.5 flex flex-col gap-2.5 max-h-64">
+                <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border border-border bg-popover text-popover-foreground shadow-md p-2.5 flex flex-col gap-2.5 max-h-64">
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={`Cari ${field.label}...`}
-                        className="flex h-9 w-full rounded-md border border-surface-border bg-surface-base px-3 py-1 text-xs outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                        className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-xs outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
                         onClick={(e) => e.stopPropagation()}
                     />
                     <div className="flex flex-col gap-1 overflow-y-auto pr-1">
@@ -425,9 +422,10 @@ function SingleSelectField({
                                         onChange(val);
                                         setIsOpen(false);
                                     }}
-                                    className={`w-full flex items-center justify-between p-2 rounded-md text-left transition-all text-xs font-normal text-text-main hover:bg-surface-muted/30 ${
-                                        isSelected ? 'bg-primary-muted text-primary font-semibold' : ''
-                                    }`}
+                                    className={cn(
+                                        "w-full flex items-center justify-between p-2 rounded-sm text-left transition-all text-xs font-medium text-foreground hover:bg-accent",
+                                        isSelected && "bg-accent text-accent-foreground font-semibold"
+                                    )}
                                 >
                                     <span>{label}</span>
                                     {isSelected && <LucideIcons.Check className="h-3.5 w-3.5 text-primary shrink-0" />}
@@ -441,13 +439,13 @@ function SingleSelectField({
                                     e.stopPropagation();
                                     setPageSize(prev => prev + 15);
                                 }}
-                                className="text-[10px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-1.5 mt-1 cursor-pointer bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-md"
+                                className="text-[10px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-1.5 mt-1 cursor-pointer bg-muted border border-border rounded-md"
                             >
                                 Tampilkan Lebih Banyak... (+{filteredOptions.length - pageSize} Data)
                             </button>
                         )}
                         {filteredOptions.length === 0 && (
-                            <span className="text-xs text-text-main/60 text-center py-2">
+                            <span className="text-xs text-muted-foreground text-center py-2">
                                 Tidak ada data
                             </span>
                         )}
@@ -455,7 +453,7 @@ function SingleSelectField({
                 </div>
             )}
             {error && (
-                <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
+                <span className="text-rose-500 text-[10px] font-bold uppercase mt-1 block">
                     {error}
                 </span>
             )}
@@ -996,19 +994,25 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         value={data[field.name]}
                         onChange={(e) => setData(field.name, e.target.value)}
                         error={errors[field.name]}
+                        helperText={field.helperText}
                         required={field.required}
                         placeholder={field.placeholder}
                         icon={IconComponent}
                     />
                 )}
                 {field.type === 'readonly' && (
-                    <div className="flex flex-col gap-1.5 w-full">
-                        <label className="text-[11px] font-normal text-text-main uppercase px-0.5 tracking-wider">
+                    <div className="space-y-1.5 w-full">
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-zinc-200 uppercase px-0.5 tracking-wider">
                             {field.label}
                         </label>
-                        <div className="flex h-10 w-full items-center rounded-lg border border-surface-border/60 bg-surface-muted/30 px-3 text-xs font-normal text-text-main select-all cursor-default">
-                            {data[field.name] ?? <span className="italic opacity-40">{field.placeholder || '—'}</span>}
+                        <div className="flex h-10 w-full items-center rounded-lg border border-border bg-muted px-3 text-xs font-medium text-foreground select-all cursor-default">
+                            {data[field.name] ?? <span className="italic text-muted-foreground">{field.placeholder || '—'}</span>}
                         </div>
+                        {field.helperText && (
+                            <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
+                                {field.helperText}
+                            </p>
+                        )}
                     </div>
                 )}
                 {field.type === 'textarea' && (
@@ -1017,13 +1021,14 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         value={data[field.name]}
                         onChange={(e) => setData(field.name, e.target.value)}
                         error={errors[field.name]}
+                        helperText={field.helperText}
                         required={field.required}
                         placeholder={field.placeholder}
                     />
                 )}
                 {field.type === 'color' && (
-                    <div className="flex flex-col gap-1.5 w-full">
-                        <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
+                    <div className="space-y-1.5 w-full">
+                        <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 px-0.5">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </Label>
                         <div className="flex items-center gap-2">
@@ -1031,52 +1036,61 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                 type="color"
                                 value={data[field.name] || '#ffffff'}
                                 onChange={(e) => setData(field.name, e.target.value)}
-                                className="h-11 w-14 cursor-pointer rounded-lg border border-surface-border bg-surface-base p-1"
+                                className="h-9 w-12 cursor-pointer rounded-lg border border-border bg-background p-1 shrink-0"
                                 required={field.required}
                             />
                             <input
                                 type="text"
                                 value={data[field.name] || ''}
                                 onChange={(e) => setData(field.name, e.target.value)}
-                                className="flex h-11 w-full rounded-lg border border-surface-border bg-surface-base px-3 py-2 text-sm font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                                className="flex h-9 w-full rounded-lg border border-border bg-background px-3 py-1 text-xs font-mono font-semibold uppercase focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                                 placeholder="#hexcode"
                             />
                             {data[field.name] && (
                                 <button
                                     type="button"
                                     onClick={() => setData(field.name, '')}
-                                    className="h-11 px-3 flex items-center justify-center rounded-lg border border-surface-border bg-surface-base hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 text-text-main transition-all shadow-xs"
+                                    className="h-9 px-2.5 flex items-center justify-center rounded-lg border border-border bg-background hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 text-muted-foreground transition-all shadow-xs shrink-0 cursor-pointer"
                                     title="Hapus Warna"
                                 >
-                                    <LucideIcons.X className="h-4 w-4" />
+                                    <LucideIcons.X className="h-3.5 w-3.5" />
                                 </button>
                             )}
                         </div>
+                        {field.helperText && !errors[field.name] && (
+                            <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
+                                {field.helperText}
+                            </p>
+                        )}
                         {errors[field.name] && (
-                            <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
+                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1 block">
                                 {errors[field.name]}
                             </span>
                         )}
                     </div>
                 )}
                 {field.type === 'icon' && (
-                    <div className="flex flex-col gap-1.5 w-full relative">
-                        <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
+                    <div className="space-y-1.5 w-full relative">
+                        <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 px-0.5">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </Label>
                         <IconPicker
                             value={data[field.name] || ''}
                             onChange={(val) => setData(field.name, val)}
                         />
+                        {field.helperText && !errors[field.name] && (
+                            <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
+                                {field.helperText}
+                            </p>
+                        )}
                         {errors[field.name] && (
-                            <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
+                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1 block">
                                 {errors[field.name]}
                             </span>
                         )}
                     </div>
                 )}
                 {field.type === 'select' && field.multiple ? (() => {
-                    // ponytail: simplifikasi whitelist filter organisasi jadi dropdown biasa
                     const toggleName = field.name === 'allowed_company_groups' ? 'can_change_company_group'
                                      : field.name === 'allowed_regions' ? 'can_change_region'
                                      : field.name === 'allowed_companies' ? 'can_change_company'
@@ -1087,29 +1101,43 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         data[toggleName] === true || data[toggleName] === 1 || data[toggleName] === '1' || data[toggleName] === 'true'
                     ) : false;
                     return (
-                        <MultiSelectField
-                            field={field}
-                            value={Array.isArray(data[field.name]) ? data[field.name] : []}
-                            onChange={(val) => setData(field.name, val)}
-                            error={errors[field.name]}
-                            toggleName={toggleName}
-                            toggleValue={toggleVal}
-                            onToggleChange={toggleName ? (val) => setData(toggleName, val) : undefined}
-                            disabled={isFieldDisabled(field.name)}
-                        />
+                        <div className="space-y-1">
+                            <MultiSelectField
+                                field={field}
+                                value={Array.isArray(data[field.name]) ? data[field.name] : []}
+                                onChange={(val) => setData(field.name, val)}
+                                error={errors[field.name]}
+                                toggleName={toggleName}
+                                toggleValue={toggleVal}
+                                onToggleChange={toggleName ? (val) => setData(toggleName, val) : undefined}
+                                disabled={isFieldDisabled(field.name)}
+                            />
+                            {field.helperText && !errors[field.name] && (
+                                <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
+                                    {field.helperText}
+                                </p>
+                            )}
+                        </div>
                     );
                 })() : field.type === 'select' && (
-                    <SingleSelectField
-                        field={field}
-                        value={data[field.name]}
-                        onChange={(val) => setData(field.name, val)}
-                        error={errors[field.name]}
-                        disabled={isFieldDisabled(field.name)}
-                    />
+                    <div className="space-y-1">
+                        <SingleSelectField
+                            field={field}
+                            value={data[field.name]}
+                            onChange={(val) => setData(field.name, val)}
+                            error={errors[field.name]}
+                            disabled={isFieldDisabled(field.name)}
+                        />
+                        {field.helperText && !errors[field.name] && (
+                            <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
+                                {field.helperText}
+                            </p>
+                        )}
+                    </div>
                 )}
                 {field.type === 'tree_select' && (
-                    <div className="flex flex-col gap-1.5 w-full">
-                        <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
+                    <div className="space-y-1.5 w-full">
+                        <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 px-0.5">
                             {field.label} {field.required && <span className="text-rose-500">*</span>}
                         </Label>
                         <TreeSelect
@@ -1119,8 +1147,13 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                             placeholder={field.placeholder || `Pilih ${field.label}...`}
                             disabled={isFieldDisabled(field.name)}
                         />
+                        {field.helperText && !errors[field.name] && (
+                            <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
+                                {field.helperText}
+                            </p>
+                        )}
                         {errors[field.name] && (
-                            <span className="text-rose-500 text-[10px] font-normal uppercase mt-1">
+                            <span className="text-rose-500 text-[10px] font-bold uppercase mt-1 block">
                                 {errors[field.name]}
                             </span>
                         )}
@@ -1129,8 +1162,8 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 {field.type === 'switch' && (() => {
                     const isChecked = data[field.name] === true || data[field.name] === 1 || data[field.name] === '1' || data[field.name] === 'true';
                     return (
-                        <div className="flex flex-col gap-1.5 w-full">
-                            <Label className="text-[11px] font-normal text-text-main uppercase px-0.5">
+                        <div className="space-y-1.5 w-full">
+                            <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 px-0.5">
                                 {field.label}
                             </Label>
                             <div className="flex items-center h-11">
@@ -1150,6 +1183,11 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                     />
                                 </button>
                             </div>
+                            {field.helperText && (
+                                <p className="text-[11px] text-muted-foreground px-0.5 font-normal">
+                                    {field.helperText}
+                                </p>
+                            )}
                         </div>
                     );
                 })()}
@@ -1161,178 +1199,80 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         <>
             <Head title={isEdit ? `Edit ${title}` : `Tambah ${title}`} />
 
-            <div className="flex flex-col gap-6 p-6 w-full">
-                <div className="flex items-center gap-4">
-                    <Link
-                        href={`/admin/core/${resourceSlug}`}
-                        className="p-2 border border-surface-border rounded-xl hover:bg-surface-muted transition-all text-text-main"
-                    >
-                        <ArrowLeft size={16} />
-                    </Link>
-                    <div>
-                        <h1 className="text-lg font-normal text-text-main">
-                             {isEdit ? `Edit ${title}` : `Tambah ${title}`}
-                        </h1>
-                        <p className="text-xs text-text-main">
-                            {isEdit ? 'Ubah informasi data yang sudah ada.' : 'Tambahkan data master baru ke sistem.'}
-                        </p>
-                    </div>
-                </div>
-
-
-                {(!isEdit || resourceSlug !== 'vendors') && (
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full animate-in fade-in duration-200">
-                        <div className={getGridClass()}>
-                        {formSchema.map((field: any) => {
-                            if (field.isGroup) {
-                                const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
-                                    ? (LucideIcons as any)[field.icon]
-                                    : undefined;
-
-                                return (
-                                    <div key={field.label} className="col-span-full border border-surface-border bg-surface-muted/5 dark:bg-surface-muted/10 rounded-2xl p-6 flex flex-col gap-5">
-                                        <div className="flex items-center justify-between pb-3 border-b border-surface-border gap-4">
-                                            <div className="flex items-center gap-2">
-                                                {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
-                                                <div>
-                                                    <h3 className="text-xs font-normal uppercase tracking-wider text-text-main">{field.label}</h3>
-                                                    {field.description && (
-                                                        <p className="text-[11px] text-text-main mt-0.5">{field.description}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                         {field.label === 'Konfigurasi Filter Kontrak' ? (
-                                             <div className="space-y-5 w-full animate-in fade-in duration-200">
-                                                 {field.schema && field.schema.some((s: any) => !['can_change_company_group', 'allowed_company_groups', 'can_change_region', 'allowed_regions', 'can_change_company', 'allowed_companies', 'can_change_division', 'allowed_divisions', 'can_change_department', 'allowed_departments', 'use_role_filter'].includes(s.name)) && (
-                                                     <div className="grid grid-cols-1 gap-4 pb-2">
-                                                         {field.schema
-                                                             .filter((s: any) => !['can_change_company_group', 'allowed_company_groups', 'can_change_region', 'allowed_regions', 'can_change_company', 'allowed_companies', 'can_change_division', 'allowed_divisions', 'can_change_department', 'allowed_departments', 'use_role_filter'].includes(s.name))
-                                                             .map((s: any) => renderField(s))}
-                                                     </div>
-                                                 )}
-
-                                                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
-                                                     <Shield size={14} className="text-primary" />
-                                                     <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-                                                         Pengaturan Dimensi Organisasi
-                                                     </h3>
-                                                 </div>
-
-                                                 <div className="divide-y divide-slate-100 dark:divide-slate-800/40">
-                                                     {(() => {
-                                                         const DIMENSIONS = [
-                                                             { key: 'company_group', label: 'Grup Perusahaan (Holding)', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
-                                                             { key: 'region', label: 'Wilayah (Region)', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
-                                                             { key: 'company', label: 'Perusahaan (Company)', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
-                                                             { key: 'division', label: 'Divisi', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
-                                                             { key: 'department', label: 'Departemen', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
-                                                         ];
-
-                                                         const getFormattedOptions = (fieldOptions: any) => {
-                                                             if (!fieldOptions) return [];
-                                                             if (Array.isArray(fieldOptions)) {
-                                                                 return fieldOptions.map(opt => ({ value: String(opt), label: String(opt) }));
-                                                             }
-                                                             return Object.entries(fieldOptions).map(([k, v]) => ({ value: String(k), label: String(v) }));
-                                                         };
-
-                                                         return DIMENSIONS.map(dim => {
-                                                             const dimField = field.schema.find((s: any) => s.name === dim.allowedName);
-                                                             if (!dimField) return null;
-                                                             
-                                                             const isAllowedToChange = data[dim.toggleName] === true || data[dim.toggleName] === 1 || String(data[dim.toggleName]) === 'true';
-                                                             const currentValues = data[dim.allowedName] || [];
-                                                             
-                                                             const accessType = localAccessTypes[dim.key] || (isAllowedToChange ? (currentValues.length > 0 ? 'custom' : 'full_access') : 'user_data');
-
-                                                             return (
-                                                                 <div key={dim.key} className="grid grid-cols-[200px_180px_1fr] items-center gap-4 py-3 first:pt-0 last:pb-0">
-                                                                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{dim.label}</label>
-                                                                     
-                                                                     <div>
-                                                                         <select
-                                                                             value={accessType}
-                                                                             onChange={(e) => {
-                                                                                 const type = e.target.value;
-                                                                                 setLocalAccessTypes(prev => ({
-                                                                                     ...prev,
-                                                                                     [dim.key]: type
-                                                                                 }));
-                                                                                 if (type === 'user_data') {
-                                                                                     setData({ ...data, [dim.toggleName]: false, [dim.allowedName]: [] });
-                                                                                 } else if (type === 'full_access') {
-                                                                                     setData({ ...data, [dim.toggleName]: true, [dim.allowedName]: [] });
-                                                                                 } else if (type === 'custom') {
-                                                                                     setData({ ...data, [dim.toggleName]: true, [dim.allowedName]: [] });
-                                                                                 }
-                                                                             }}
-                                                                             className="flex h-9 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary cursor-pointer"
-                                                                         >
-                                                                             <option value="user_data">Sesuai Data User</option>
-                                                                             <option value="full_access">Buka Semua (Full Access)</option>
-                                                                             <option value="custom">Pilih Data Tertentu</option>
-                                                                         </select>
-                                                                     </div>
-                                                                     
-                                                                     {accessType === 'custom' ? (
-                                                                         <div>
-                                                                             <SearchableMultiSelect
-                                                                                 values={currentValues}
-                                                                                 onValuesChange={(vals) => {
-                                                                                     setData(dim.allowedName, vals);
-                                                                                 }}
-                                                                                 options={getFormattedOptions(dimField.options)}
-                                                                                 placeholder={`Pilih ${dim.label}...`}
-                                                                                 disabled={false}
-                                                                             />
-                                                                         </div>
-                                                                     ) : (
-                                                                         <div className="opacity-50 pointer-events-none">
-                                                                             <SearchableMultiSelect
-                                                                                 values={[]}
-                                                                                 onValuesChange={() => {}}
-                                                                                 options={[]}
-                                                                                 placeholder={accessType === 'user_data' ? 'Filter Terkunci (Mengikuti Filter Bawaan Role)' : 'Seluruh Data Diizinkan (Akses Terbuka)'}
-                                                                                 disabled={true}
-                                                                             />
-                                                                         </div>
-                                                                     )}
-                                                                 </div>
-                                                             );
-                                                         });
-                                                     })()}
-                                                 </div>
-                                             </div>
-                                        ) : (
-                                            <div className={getGridClass()}>
-                                                {field.schema
-                                                    .filter((subField: any) => !['can_change_company_group', 'can_change_region', 'can_change_company', 'can_change_division', 'can_change_department', 'use_role_filter'].includes(subField.name))
-                                                    .map((subField: any) => renderField(subField))}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            }
-
-                            return renderField(field);
-                        })}
-                    </div>
-
-                    <div className="flex justify-end gap-3 pt-4 border-t border-surface-border mt-4">
-                        <Link href={`/admin/core/${resourceSlug}`}>
-                            <Button type="button" variant="white">
-                                Batal
-                            </Button>
+            <div className="flex flex-col h-[calc(100svh-76px)] overflow-hidden bg-slate-100/60 dark:bg-zinc-950 w-full p-4">
+                <div className="flex flex-col flex-1 min-h-0 w-full rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
+                    {/* Sticky Header */}
+                    <div className="flex items-center gap-4 px-6 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 shrink-0">
+                        <Link
+                            href={`/admin/core/${resourceSlug}`}
+                            className="p-2 border border-slate-200 dark:border-zinc-700 rounded-xl hover:bg-white dark:hover:bg-zinc-800 transition-all text-slate-700 dark:text-slate-200"
+                        >
+                            <ArrowLeft size={16} />
                         </Link>
-                        <Button type="submit" variant="primary" disabled={processing}>
-                            Simpan Data
-                        </Button>
+                        <div>
+                            <h1 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                 {isEdit ? `Edit ${title}` : `Tambah ${title}`}
+                            </h1>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {isEdit ? 'Ubah informasi data yang sudah ada.' : 'Tambahkan data master baru ke sistem.'}
+                            </p>
+                        </div>
                     </div>
-                </form>
-                )}
 
-                {/* Document-style read-only detail view for vendor (flat clean text, no shadow/card effects) */}
+                    {(!isEdit || resourceSlug !== 'vendors') && (
+                        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden animate-in fade-in duration-200">
+                            {/* Scrollable Form Body */}
+                            <div className="flex-1 overflow-y-auto p-6 pb-48 space-y-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                <div className={getGridClass()}>
+                                    {formSchema.map((field: any) => {
+                                        if (field.isGroup) {
+                                            const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
+                                                ? (LucideIcons as any)[field.icon]
+                                                : undefined;
+
+                                            return (
+                                                <div key={field.label} className="col-span-full flex flex-col gap-4 pt-2">
+                                                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800 gap-4">
+                                                        <div className="flex items-center gap-2">
+                                                            {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
+                                                            <div>
+                                                                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">{field.label}</h3>
+                                                                {field.description && (
+                                                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{field.description}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className={getGridClass()}>
+                                                        {field.schema
+                                                            .filter((subField: any) => !['can_change_company_group', 'can_change_region', 'can_change_company', 'can_change_division', 'can_change_department', 'use_role_filter'].includes(subField.name))
+                                                            .map((subField: any) => renderField(subField))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        return renderField(field);
+                                    })}
+                                </div>
+                                <div className="h-16" /> {/* Extra bottom padding space for open dropdowns */}
+                            </div>
+
+                            {/* Sticky Footer */}
+                            <div className="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 shrink-0">
+                                <Link href={`/admin/core/${resourceSlug}`}>
+                                    <Button type="button" variant="white" className="h-9 text-xs rounded-xl border-slate-200 dark:border-zinc-700">
+                                        Batal
+                                    </Button>
+                                </Link>
+                                <Button type="submit" variant="primary" disabled={processing} className="h-9 text-xs rounded-xl">
+                                    Simpan Data
+                                </Button>
+                            </div>
+                        </form>
+                    )}
+
+                {/* Document-style read-only detail view for vendor */}
                 {resourceSlug === 'vendors' && isEdit && activeTab === 'info' && (() => {
                     const r = record as Record<string, any>;
                     const detail = (r.vendor_detail || {}) as Record<string, any>;
@@ -1384,8 +1324,8 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     };
 
                     return (
-                        <div className="w-full py-2 animate-in fade-in duration-200">
-                            {/* Document Paper Container - Flat & Clean without shadow/borders */}
+                        <div className="flex-1 overflow-y-auto p-6 space-y-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden animate-in fade-in duration-200 w-full">
+                            {/* Document Paper Container */}
                             <div className="w-full space-y-8">
                                 
                                 {/* Document Header / Kop */}
@@ -1615,6 +1555,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     );
                 })()}
             </div>
+        </div>
         </>
     );
 }

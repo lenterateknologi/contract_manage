@@ -85,28 +85,34 @@ export function ContractToolbar({
                     </Button>
                 </div>
 
-                <div className="border-border bg-background flex h-10 overflow-hidden rounded-lg border shadow-sm">
+                <div className="border-surface-border bg-surface-muted flex h-10 overflow-hidden rounded-xl border p-1 gap-1">
                     <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => setLayout('list')}
                         className={cn(
-                            'px-2.5 transition-colors',
-                            layout === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
+                            'h-8 px-3 rounded-lg transition-all text-[10px] font-bold uppercase',
+                            layout === 'list' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-text-desc hover:text-text-main hover:bg-surface-base/60',
                         )}
+                        title="Tampilan Tabel"
                     >
-                        <ListIcon size={16} />
+                        <ListIcon size={15} />
+                        Tabel
                     </Button>
                     <Button
+                        type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => setLayout('card')}
                         className={cn(
-                            'px-2.5 transition-colors',
-                            layout === 'card' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted',
+                            'h-8 px-3 rounded-lg transition-all text-[10px] font-bold uppercase',
+                            layout === 'card' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-text-desc hover:text-text-main hover:bg-surface-base/60',
                         )}
+                        title="Tampilan Kartu"
                     >
-                        <LayoutGrid size={16} />
+                        <LayoutGrid size={15} />
+                        Kartu
                     </Button>
                 </div>
 

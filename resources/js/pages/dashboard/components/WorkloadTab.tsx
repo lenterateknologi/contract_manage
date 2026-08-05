@@ -6,8 +6,9 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
-import { Briefcase, Calendar, Clock, Filter, Layers, UserCheck, ChevronDown } from 'lucide-react';
+import { Briefcase, Calendar, ChevronDown, Clock, Filter, Layers, RotateCcw, UserCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { MetricItem } from './MetricItem';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
 
@@ -59,6 +60,9 @@ interface UserWorkload {
     text_color?: string;
     department_name?: string;
     department_id?: string | null;
+    company_id?: string | number | null;
+    company_group_id?: string | number | null;
+    region_id?: string | number | null;
     active_contracts_count: number;
     pending_tasks_count: number;
     initiated_contracts_count: number;
@@ -100,7 +104,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
         setIsMounted(true);
     }, []);
 
-    const { auth, departments = [] } = usePage<any>().props;
+    const { auth, departments = [], companyGroups = [], regions = [], companies = [] } = usePage<any>().props;
     const userDeptId = auth?.user?.department_id;
     const loginUserRole = auth?.user?.role;
     const isAdmin = loginUserRole === 'Admin';
@@ -112,19 +116,78 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
     const dailyTrend = data?.dailyTrend || [];
     const renewalCompletionRate = data?.renewalCompletionRate ?? 0;
 
+    const userGroupId = auth?.user?.company_group_id;
+    const userRegionId = auth?.user?.region_id;
+    const userCompanyId = auth?.user?.company_id;
+
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
+    const [selectedGroupId, setSelectedGroupId] = useState<string>(!isAdmin && userGroupId ? String(userGroupId) : 'all');
+    const [selectedRegionId, setSelectedRegionId] = useState<string>(!isAdmin && userRegionId ? String(userRegionId) : 'all');
+    const [selectedCompanyId, setSelectedCompanyId] = useState<string>(!isAdmin && userCompanyId ? String(userCompanyId) : 'all');
+    const [selectedDeptId, setSelectedDeptId] = useState<string>(!isAdmin && userDeptId ? String(userDeptId) : 'all');
     const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'sibuk'>('all');
     const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [dialogParent, setDialogParent] = useState<any>(null);
     const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
-    const [selectedDeptId, setSelectedDeptId] = useState<string>(!isAdmin && userDeptId ? String(userDeptId) : 'all');
+    const [datePreset, setDatePreset] = useState<'7d' | '14d' | 'this_month' | 'last_month' | 'custom'>('7d');
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
 
+    const filteredCompanies = useMemo(() => {
+        return companies.filter((c: any) => {
+            const matchGroup = selectedGroupId === 'all' || String(c.company_group_id) === selectedGroupId;
+            const matchRegion = selectedRegionId === 'all' || String(c.region_id) === selectedRegionId;
+            return matchGroup && matchRegion;
+        });
+    }, [companies, selectedGroupId, selectedRegionId]);
+
+    const filteredDepartments = useMemo(() => {
+        return departments.filter((d: any) => {
+            const matchCompany = selectedCompanyId === 'all' || String(d.company_id) === selectedCompanyId;
+            return matchCompany;
+        });
+    }, [departments, selectedCompanyId]);
+
+    const groupOptions = useMemo(() => [
+        { value: 'all', label: 'Semua Group' },
+        ...companyGroups.map((cg: any) => ({ value: String(cg.id), label: cg.name }))
+    ], [companyGroups]);
+
+    const regionOptions = useMemo(() => [
+        { value: 'all', label: 'Semua Region' },
+        ...regions.map((r: any) => ({ value: String(r.id), label: r.name }))
+    ], [regions]);
+
+    const companyOptions = useMemo(() => [
+        { value: 'all', label: 'Semua Perusahaan' },
+        ...filteredCompanies.map((c: any) => ({ value: String(c.id), label: c.name }))
+    ], [filteredCompanies]);
+
+    const deptOptions = useMemo(() => [
+        { value: 'all', label: 'Semua Divisi' },
+        ...filteredDepartments.map((dept: any) => ({ value: String(dept.id), label: dept.name }))
+    ], [filteredDepartments]);
+
+    const statusOptions = useMemo(() => [
+        { value: 'all', label: 'Semua Status' },
+        { value: 'ready', label: 'Ready' },
+        { value: 'sibuk', label: 'Sibuk' },
+    ], []);
 
     const filteredWorkloads = useMemo(() => {
         return userWorkloads.filter((user) => {
-            const matchesDept = selectedDeptId === 'all' || String(user.department_id) === selectedDeptId;
+            const userGroupId = String(user.company_group_id ?? '');
+            const userRegionId = String(user.region_id ?? '');
+            const userCompanyId = String(user.company_id ?? '');
+            const userDeptIdStr = String(user.department_id ?? '');
+
+            const matchesGroup = selectedGroupId === 'all' || userGroupId === selectedGroupId;
+            const matchesRegion = selectedRegionId === 'all' || userRegionId === selectedRegionId;
+            const matchesCompany = selectedCompanyId === 'all' || userCompanyId === selectedCompanyId;
+            const matchesDept = selectedDeptId === 'all' || userDeptIdStr === selectedDeptId;
+
             const matchesSearch =
                 user.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
                 user.role.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -133,9 +196,9 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                 statusFilter === 'all' ||
                 (statusFilter === 'ready' && user.load_status === 'Ready') ||
                 (statusFilter === 'sibuk' && user.load_status === 'Sibuk');
-            return matchesDept && matchesSearch && matchesStatus;
+            return matchesGroup && matchesRegion && matchesCompany && matchesDept && matchesSearch && matchesStatus;
         });
-    }, [userWorkloads, selectedDeptId, debouncedSearch, statusFilter]);
+    }, [userWorkloads, selectedGroupId, selectedRegionId, selectedCompanyId, selectedDeptId, debouncedSearch, statusFilter]);
 
     const totalPendingThisMonth = useMemo(() => {
         return userWorkloads.reduce((sum, u) => sum + (u.stats_this_month?.pending || 0), 0);
@@ -178,37 +241,79 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
     }, [activeParent, contractTypesLevel0]);
 
     const chartLinesList = useMemo(() => {
-        const list = activeChartCategories.map((cat: any) => ({
+        return activeChartCategories.map((cat: any) => ({
             id: cat.id,
             label: cat.label,
             descendantIds: getDescendantIds(cat)
         }));
-        if (!selectedParentId) {
-            list.push({
-                id: 'null',
-                label: 'Lainnya',
-                descendantIds: ['null']
+    }, [activeChartCategories]);
+
+    const filteredDailyTrend = useMemo(() => {
+        if (!dailyTrend || dailyTrend.length === 0) return [];
+
+        if (datePreset === '7d') {
+            return dailyTrend.slice(-7);
+        }
+        if (datePreset === '14d') {
+            return dailyTrend.slice(-14);
+        }
+        if (datePreset === 'this_month') {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const thisMonthKey = `${year}-${month}`;
+            return dailyTrend.filter((item: any) => item.month_key === thisMonthKey || (item.raw_date && item.raw_date.startsWith(thisMonthKey)));
+        }
+        if (datePreset === 'last_month') {
+            const now = new Date();
+            now.setMonth(now.getMonth() - 1);
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const lastMonthKey = `${year}-${month}`;
+            return dailyTrend.filter((item: any) => item.month_key === lastMonthKey || (item.raw_date && item.raw_date.startsWith(lastMonthKey)));
+        }
+        if (datePreset === 'custom') {
+            if (!startDate && !endDate) return dailyTrend;
+            return dailyTrend.filter((item: any) => {
+                const rawDate = item.raw_date || item.date_key || item.date;
+                if (!rawDate) return true;
+                if (startDate && endDate) {
+                    return rawDate >= startDate && rawDate <= endDate;
+                }
+                if (startDate) {
+                    return rawDate >= startDate;
+                }
+                if (endDate) {
+                    return rawDate <= endDate;
+                }
+                return true;
             });
         }
-        return list;
-    }, [activeChartCategories, selectedParentId]);
+        return dailyTrend;
+    }, [dailyTrend, datePreset, startDate, endDate]);
+
+    const handleResetDateFilter = () => {
+        setDatePreset('7d');
+        setStartDate('');
+        setEndDate('');
+    };
 
     const aggregatedDailyTrend = useMemo(() => {
-        return dailyTrend.map((day: any) => {
+        return filteredDailyTrend.map((day: any) => {
             const point: any = {
                 date: day.date,
                 full_date: day.full_date,
             };
-            chartLinesList.forEach((line) => {
+            chartLinesList.forEach((line: any) => {
                 let sum = 0;
-                line.descendantIds.forEach((id) => {
+                line.descendantIds.forEach((id: any) => {
                     sum += (day['type_' + id] || 0);
                 });
                 point[line.label] = sum;
             });
             return point;
         });
-    }, [dailyTrend, chartLinesList]);
+    }, [filteredDailyTrend, chartLinesList]);
 
     const CHART_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'];
 
@@ -219,7 +324,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                 {/* Column 1-2: Kategori Kontrak (Contract Types) - Takes 2 of 3 columns */}
                 <div className="lg:col-span-2 space-y-4">
                     <h3 className="text-[10px] font-bold text-text-soft uppercase tracking-widest">Kategori Kontrak (Klik untuk Detail & Filter Grafik)</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[650px] pr-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto max-h-[650px] pr-1">
                         {contractTypesLevel0.length > 0 ? (
                             contractTypesLevel0.map((type: any, index: number) => {
                                 const icons = [Layers, Briefcase, Calendar, Clock, UserCheck];
@@ -256,7 +361,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
 
                     {/* Daily Trend Stepped Line Chart */}
                     <div className="bg-white dark:bg-zinc-900/50 border border-surface-border/60 rounded-xl p-5 space-y-4 shadow-sm mt-6">
-                        <div className="flex items-center justify-between border-b border-surface-border/60 pb-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-border/60 pb-3">
                             <div>
                                 <h3 className="text-sm font-bold text-text-main">
                                     Tren Pembuatan Kontrak Harian {activeParent ? `(${activeParent.label})` : ''}
@@ -264,19 +369,111 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                 <p className="text-[10px] text-text-soft">
                                     {activeParent 
                                         ? `Perkembangan volume sub-kategori di bawah ${activeParent.label}` 
-                                        : 'Perkembangan volume pembuatan kontrak baru per kategori utama pada bulan ini'}
+                                        : 'Perkembangan volume pembuatan kontrak baru per kategori utama'}
                                 </p>
                             </div>
-                            {activeParent && (
-                                <button
-                                    onClick={() => setSelectedParentId(null)}
-                                    className="text-[10px] text-primary hover:underline font-bold uppercase tracking-wider"
-                                >
-                                    Tampilkan Semua Kategori
-                                </button>
-                            )}
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                {activeParent && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedParentId(null)}
+                                        className="mr-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:underline"
+                                    >
+                                        Tampilkan Semua Kategori
+                                    </button>
+                                )}
+
+                                {/* Filter Presets & Custom Date Selector */}
+                                <div className="flex items-center rounded-lg border border-surface-border bg-surface-muted/30 p-0.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setDatePreset('7d')}
+                                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                            datePreset === '7d'
+                                                ? 'bg-primary text-primary-foreground shadow-xs'
+                                                : 'text-text-soft hover:text-text-main'
+                                        }`}
+                                    >
+                                        7 Hari
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDatePreset('14d')}
+                                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                            datePreset === '14d'
+                                                ? 'bg-primary text-primary-foreground shadow-xs'
+                                                : 'text-text-soft hover:text-text-main'
+                                        }`}
+                                    >
+                                        14 Hari
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDatePreset('this_month')}
+                                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                            datePreset === 'this_month'
+                                                ? 'bg-primary text-primary-foreground shadow-xs'
+                                                : 'text-text-soft hover:text-text-main'
+                                        }`}
+                                    >
+                                        Bulan Ini
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDatePreset('last_month')}
+                                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                            datePreset === 'last_month'
+                                                ? 'bg-primary text-primary-foreground shadow-xs'
+                                                : 'text-text-soft hover:text-text-main'
+                                        }`}
+                                    >
+                                        Bulan Lalu
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDatePreset('custom')}
+                                        className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                            datePreset === 'custom'
+                                                ? 'bg-primary text-primary-foreground shadow-xs'
+                                                : 'text-text-soft hover:text-text-main'
+                                        }`}
+                                    >
+                                        <Calendar size={11} /> Kustom
+                                    </button>
+                                </div>
+
+                                {/* Custom Date Range Inputs */}
+                                {datePreset === 'custom' && (
+                                    <div className="animate-in fade-in slide-in-from-right-2 flex items-center gap-1.5 duration-200">
+                                        <input
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                            className="h-7.5 rounded-lg border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                        />
+                                        <span className="text-[10px] font-bold text-text-soft">s/d</span>
+                                        <input
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                            className="h-7.5 rounded-lg border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                        />
+                                        {(startDate || endDate) && (
+                                            <button
+                                                type="button"
+                                                onClick={handleResetDateFilter}
+                                                className="flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-surface-border bg-surface-base text-text-soft hover:text-rose-500 transition-colors"
+                                                title="Reset Filter Tanggal"
+                                            >
+                                                <RotateCcw size={12} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="h-[280px] w-full pt-2">
+                        <div className="h-[495px] w-full pt-2">
                             {aggregatedDailyTrend.length === 0 ? (
                                 <div className="text-center py-16 text-xs text-muted-foreground uppercase animate-in fade-in duration-300">Tidak ada data tren harian</div>
                             ) : (
@@ -356,53 +553,101 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                     </div>
                 </div>
 
-                {/* Column 3: Tabel PIC dengan Search */}
+                {/* Column 3: Tabel PIC dengan Search & Filter Langsung (Group, Region, Company, Department, Status) */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
                         <h3 className="text-[10px] font-bold text-text-soft uppercase tracking-widest">Beban Kerja PIC</h3>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className="h-8 shrink-0 gap-1.5 px-2 text-[10px] font-semibold">
-                                    <Filter size={12} />
-                                    Filter
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent align="end" className="w-60 p-3 dark:bg-slate-900 dark:border-slate-800">
-                                <div className="space-y-3">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-semibold uppercase text-text-soft">Divisi</label>
-                                        <select
-                                            value={selectedDeptId}
-                                            onChange={(e) => setSelectedDeptId(e.target.value)}
-                                            disabled={!isAdmin}
-                                            className="bg-background border-input focus:ring-primary h-8 w-full cursor-pointer appearance-none rounded-lg border px-3 text-[10px] outline-none"
-                                        >
-                                            {isAdmin && <option value="all">Semua Divisi</option>}
-                                            {departments.map((dept: any) =>
-                                                !isAdmin && String(dept.id) !== selectedDeptId ? null : (
-                                                    <option key={dept.id} value={String(dept.id)}>
-                                                        {dept.name}
-                                                    </option>
-                                                ),
-                                            )}
-                                        </select>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-semibold uppercase text-text-soft">Status Beban</label>
-                                        <select
-                                            value={statusFilter}
-                                            onChange={(e) => setStatusFilter(e.target.value as any)}
-                                            className="bg-background border-input focus:ring-primary h-8 w-full cursor-pointer appearance-none rounded-lg border px-3 text-[10px] outline-none"
-                                        >
-                                            <option value="all">Semua Status</option>
-                                            <option value="ready">Ready</option>
-                                            <option value="sibuk">Sibuk</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                        {(selectedGroupId !== 'all' || selectedRegionId !== 'all' || selectedCompanyId !== 'all' || selectedDeptId !== 'all' || statusFilter !== 'all') && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedGroupId('all');
+                                    setSelectedRegionId('all');
+                                    setSelectedCompanyId('all');
+                                    setSelectedDeptId(isAdmin ? 'all' : String(userDeptId || 'all'));
+                                    setStatusFilter('all');
+                                }}
+                                className="text-[10px] font-bold text-rose-500 hover:underline uppercase transition-all"
+                            >
+                                Reset Filter
+                            </button>
+                        )}
                     </div>
+
+                    {/* Filter Langsung: Group, Region, Company, Departemen & Status */}
+                    <div className="space-y-2 rounded-xl border border-surface-border/60 bg-surface-muted/20 p-2.5 shadow-2xs">
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Group</label>
+                                <SearchableSelect
+                                    value={selectedGroupId}
+                                    onValueChange={(val) => {
+                                        setSelectedGroupId(val);
+                                        setSelectedCompanyId('all');
+                                    }}
+                                    options={groupOptions}
+                                    placeholder="Semua Group"
+                                    searchPlaceholder="Cari group..."
+                                    triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Region</label>
+                                <SearchableSelect
+                                    value={selectedRegionId}
+                                    onValueChange={(val) => {
+                                        setSelectedRegionId(val);
+                                        setSelectedCompanyId('all');
+                                    }}
+                                    options={regionOptions}
+                                    placeholder="Semua Region"
+                                    searchPlaceholder="Cari region..."
+                                    triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <div>
+                                <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Perusahaan</label>
+                                <SearchableSelect
+                                    value={selectedCompanyId}
+                                    onValueChange={(val) => setSelectedCompanyId(val)}
+                                    options={companyOptions}
+                                    placeholder="Semua Perusahaan"
+                                    searchPlaceholder="Cari perusahaan..."
+                                    triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Departemen</label>
+                                <SearchableSelect
+                                    value={selectedDeptId}
+                                    onValueChange={(val) => setSelectedDeptId(val)}
+                                    options={deptOptions}
+                                    disabled={!isAdmin}
+                                    placeholder="Semua Divisi"
+                                    searchPlaceholder="Cari departemen..."
+                                    triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Status Beban</label>
+                            <SearchableSelect
+                                value={statusFilter}
+                                onValueChange={(val) => setStatusFilter(val as any)}
+                                options={statusOptions}
+                                placeholder="Semua Status"
+                                searchPlaceholder="Cari status..."
+                                triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
+                            />
+                        </div>
+                    </div>
+
                     <div className="relative">
                         <SearchInput
                             placeholder="Cari nama, peran, divisi..."

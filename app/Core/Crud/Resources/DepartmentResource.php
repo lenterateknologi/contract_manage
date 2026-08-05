@@ -4,6 +4,7 @@ namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
+use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
 use App\Core\Crud\Filters\Filter;
@@ -43,7 +44,7 @@ class DepartmentResource extends Resource
             TextInput::make('name', 'Nama Departemen')
                 ->required()
                 ->rules(['string', 'max:255']),
-            TextInput::make('description', 'Deskripsi')
+            TextareaInput::make('description', 'Deskripsi')
                 ->rules(['nullable', 'string']),
             ToggleInput::make('is_active', 'Status Aktif')
                 ->default(true),

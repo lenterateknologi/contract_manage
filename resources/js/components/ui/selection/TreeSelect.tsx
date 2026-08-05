@@ -202,23 +202,36 @@ export function TreeSelect({
         }
     }, [selectedIds, multiple, items]);
 
-    // Filtering logic
+    // Filtering logic (Preserve full parent-to-child hierarchy on search)
     const filteredTree = React.useMemo(() => {
         if (!search.trim()) return treeData;
 
-        const searchLower = search.toLowerCase();
+        const searchLower = search.toLowerCase().trim();
 
-        const filterNode = (node: any): any | null => {
-            const matchesSearch = node.name.toLowerCase().includes(searchLower);
-            const filteredChildren = (node.children || []).map(filterNode).filter(Boolean);
-            
-            if (matchesSearch || filteredChildren.length > 0) {
-                return { ...node, children: filteredChildren };
+        const filterSubtree = (node: any): any | null => {
+            const selfMatches = node.name?.toLowerCase().includes(searchLower);
+
+            // If node itself matches the search, return full node with ALL its children intact
+            if (selfMatches) {
+                return node;
             }
+
+            // Otherwise, check if any of its children match
+            const filteredChildren = (node.children || [])
+                .map(filterSubtree)
+                .filter(Boolean);
+
+            if (filteredChildren.length > 0) {
+                return {
+                    ...node,
+                    children: filteredChildren,
+                };
+            }
+
             return null;
         };
 
-        return treeData.map(filterNode).filter(Boolean);
+        return treeData.map(filterSubtree).filter(Boolean);
     }, [treeData, search]);
 
     // Auto expand parents if searching or if defaultExpandAll is true
@@ -295,10 +308,10 @@ export function TreeSelect({
                                     handleSelect(node);
                                 }
                             }}
-                            className={cn(
-                                "flex flex-1 items-center gap-2 py-2 text-left text-[11px] uppercase tracking-tight transition-colors",
-                                depth === 0 ? "font-bold px-3" : "font-semibold px-2",
-                                fullySelected ? "text-sidebar-primary" : "text-sidebar-foreground/80"
+                        className={cn(
+                                "flex flex-1 items-center gap-2 py-1.5 text-left text-sm transition-colors rounded-sm",
+                                depth === 0 ? "font-semibold px-3" : "font-medium px-2",
+                                fullySelected ? "text-accent-foreground" : "text-popover-foreground/80"
                             )}
                         >
                             {(!disableParentSelection || !hasChildren) && (
@@ -355,24 +368,25 @@ export function TreeSelect({
         <div
             id="tree-select-dropdown"
             className={cn(
-                "border-sidebar-border bg-sidebar mt-1 flex flex-col overflow-hidden rounded-lg border",
-                inline ? "relative max-h-[600px]" : "absolute left-0 right-0 top-full z-50 max-h-[400px] shadow-xl animate-in fade-in slide-in-from-top-1 duration-100"
+                "flex flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xs",
+                inline ? "w-full max-h-[380px]" : "absolute left-0 right-0 top-full z-50 mt-1 max-h-[350px] shadow-md animate-in fade-in-0 zoom-in-95"
             )}
         >
-            <div className="relative border-b border-sidebar-border/50 bg-sidebar-accent/10 px-3 py-2">
-                <Search size={14} className="absolute left-6 top-1/2 -translate-y-1/2 text-sidebar-foreground/40" />
+            {/* Shadcn cmdk-style search */}
+            <div className="flex items-center border-b border-border px-3 shrink-0 bg-background/50">
+                <Search size={13} className="mr-2 shrink-0 text-muted-foreground" />
                 <input
                     autoFocus={!inline}
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder={searchPlaceholder}
-                    className="h-8 w-full bg-transparent pl-8 pr-3 text-[12px] text-sidebar-foreground outline-none placeholder:text-sidebar-foreground/30 border border-sidebar-border/50 rounded-md focus:border-sidebar-primary/50"
+                    className="flex h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
                 />
             </div>
 
-            <div className="flex-1 overflow-y-auto p-1 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-1.5 max-h-[320px] [scrollbar-width:thin]">
                 {filteredTree.length === 0 ? (
-                    <div className="py-6 text-center text-[12px] text-sidebar-foreground/40 italic">{emptyText}</div>
+                    <div className="py-6 text-center text-sm text-muted-foreground italic">{emptyText}</div>
                 ) : (
                     renderTreeNodes(filteredTree)
                 )}
@@ -394,16 +408,17 @@ export function TreeSelect({
                         }
                     }}
                     className={cn(
-                        'flex min-h-[44px] w-full items-center justify-between rounded-lg border border-border bg-surface-base px-4 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
-                        !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
-                        disabled && 'bg-slate-50 border-slate-200 text-slate-500 opacity-50 cursor-not-allowed shadow-none',
+                        'flex h-9 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background transition-all outline-none',
+                        !disabled && 'cursor-pointer hover:border-primary/60 focus:ring-2 focus:ring-primary/20',
+                        disabled && 'cursor-not-allowed opacity-50 bg-muted',
+                        open && 'border-primary ring-2 ring-primary/20',
                         triggerClassName
                     )}
                 >
-                    <span className={cn(selectedDisplay ? 'text-black dark:text-white font-semibold' : 'text-sidebar-foreground/60')}>
+                    <span className={cn('truncate text-sm', selectedDisplay ? 'text-foreground' : 'text-muted-foreground')}>
                         {selectedDisplay || placeholder}
                     </span>
-                    <ChevronDown size={14} className={cn("text-sidebar-foreground/60 shrink-0 ml-2 transition-transform duration-200", open && "rotate-180")} />
+                    <ChevronDown size={14} className={cn('text-muted-foreground shrink-0 ml-2 transition-transform duration-200', open && 'rotate-180')} />
                 </button>
             )}
 

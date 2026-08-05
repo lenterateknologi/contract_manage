@@ -708,7 +708,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             {/* Reusable Form Dialog */}
             {DIALOG_RESOURCES.includes(resourceSlug) && (
                 <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
-                    <DialogContent className={`border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[780px]' : 'sm:max-w-[600px]'}`}>
+                    <DialogContent className={`border-border bg-card text-card-foreground overflow-hidden rounded-2xl border p-0 shadow-xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[850px]' : 'sm:max-w-[600px]'}`}>
                         <form onSubmit={handleDeptSubmit}>
                             <div className="px-6 pt-6 pb-4 flex flex-col gap-1 border-b border-border/40">
                                 <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
@@ -718,7 +718,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     {editDataId ? `Ubah informasi ${title.toLowerCase()} Anda` : `Buat data ${title.toLowerCase()} baru`}
                                 </DialogDescription>
                             </div>
-                            <div className="space-y-4 p-6 max-h-[70vh] overflow-y-auto">
+                            <div className="space-y-4 p-6 max-h-[85vh] overflow-y-auto">
                                 {formSchema.map((field) => {
                                     if (field.isGroup) {
                                         if (field.label === 'Konfigurasi Filter Kontrak') {
@@ -873,35 +873,16 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                                 ? subField.options.map((opt: any) => ({ value: String(opt), label: String(opt) }))
                                                                 : Object.entries(subField.options || {}).map(([val, label]) => ({ value: String(val), label: String(label) }));
 
-                                                            if (subField.searchable) {
-                                                                return (
-                                                                    <div key={subField.name} className="grid gap-1.5">
-                                                                        <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
-                                                                        <SearchableSelect
-                                                                            value={deptForm.data[subField.name] ? String(deptForm.data[subField.name]) : ''}
-                                                                            onValueChange={(val) => deptForm.setData(subField.name as any, val)}
-                                                                            options={rawOptions}
-                                                                            placeholder={subField.placeholder || `Pilih ${subField.label}...`}
-                                                                            allowClear={!subField.required}
-                                                                        />
-                                                                    </div>
-                                                                );
-                                                            }
-
                                                             return (
                                                                 <div key={subField.name} className="grid gap-1.5">
                                                                     <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
-                                                                    <select
-                                                                        required={subField.required}
-                                                                        value={deptForm.data[subField.name] ?? ''}
-                                                                        onChange={(e) => deptForm.setData(subField.name as any, e.target.value)}
-                                                                        className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
-                                                                    >
-                                                                        <option value="">{subField.placeholder || 'Pilih...'}</option>
-                                                                        {rawOptions.map((option: any) => (
-                                                                            <option key={option.value} value={option.value}>{option.label}</option>
-                                                                        ))}
-                                                                    </select>
+                                                                    <SearchableSelect
+                                                                        value={deptForm.data[subField.name] ? String(deptForm.data[subField.name]) : ''}
+                                                                        onValueChange={(val) => deptForm.setData(subField.name as any, val)}
+                                                                        options={rawOptions}
+                                                                        placeholder={subField.placeholder || `Pilih ${subField.label}...`}
+                                                                        allowClear={!subField.required}
+                                                                    />
                                                                 </div>
                                                             );
                                                         }
@@ -962,35 +943,16 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                             ? field.options.map((opt: any) => ({ value: String(opt), label: String(opt) }))
                                             : Object.entries(field.options || {}).map(([val, label]) => ({ value: String(val), label: String(label) }));
 
-                                        if (field.searchable) {
-                                            return (
-                                                <div key={field.name} className="grid gap-1.5">
-                                                    <Label className="text-xs font-medium text-foreground">{field.label}</Label>
-                                                    <SearchableSelect
-                                                        value={deptForm.data[field.name] ? String(deptForm.data[field.name]) : ''}
-                                                        onValueChange={(val) => deptForm.setData(field.name as any, val)}
-                                                        options={rawOptions}
-                                                        placeholder={field.placeholder || `Pilih ${field.label}...`}
-                                                        allowClear={!field.required}
-                                                    />
-                                                </div>
-                                            );
-                                        }
-
                                         return (
                                             <div key={field.name} className="grid gap-1.5">
                                                 <Label className="text-xs font-medium text-foreground">{field.label}</Label>
-                                                <select
-                                                    required={field.required}
-                                                    value={deptForm.data[field.name] ?? ''}
-                                                    onChange={(e) => deptForm.setData(field.name as any, e.target.value)}
-                                                    className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
-                                                >
-                                                    <option value="">{field.placeholder || 'Pilih...'}</option>
-                                                    {rawOptions.map((option: any) => (
-                                                        <option key={option.value} value={option.value}>{option.label}</option>
-                                                    ))}
-                                                </select>
+                                                <SearchableSelect
+                                                    value={deptForm.data[field.name] ? String(deptForm.data[field.name]) : ''}
+                                                    onValueChange={(val) => deptForm.setData(field.name as any, val)}
+                                                    options={rawOptions}
+                                                    placeholder={field.placeholder || `Pilih ${field.label}...`}
+                                                    allowClear={!field.required}
+                                                />
                                             </div>
                                         );
                                     }

@@ -3,6 +3,7 @@
 namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\TextColumn;
+use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Resource;
 use App\Exports\CompanyGroupsExport;
@@ -39,7 +40,7 @@ class CompanyGroupResource extends Resource
             TextInput::make('name', 'Nama Group')
                 ->required()
                 ->rules(['string', 'max:255']),
-            TextInput::make('description', 'Deskripsi')
+            TextareaInput::make('description', 'Deskripsi')
                 ->rules(['nullable', 'string']),
         ];
     }

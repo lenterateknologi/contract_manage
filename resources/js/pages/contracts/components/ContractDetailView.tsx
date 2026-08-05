@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/navigation/Tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
@@ -284,11 +285,13 @@ const ContractDetailView = ({
             return [
                 { id: 'form_template', label: 'F1 (Permohonan)', mode: meta.show_tab_f1 === false ? 'none' : ((contract as any).f1_mode || 'upload') },
                 { id: 'f2', label: 'F2 (Ringkasan)', mode: meta.show_tab_f2 === false ? 'none' : ((contract as any).f2_mode || 'upload') },
-                { id: 'agreement', label: 'Draft Perjanjian', mode: meta.show_tab_agreement === false ? 'none' : ((contract as any).contract_mode || 'upload') },
-                { id: 'timeline', label: 'Alur Persetujuan', mode: meta.show_tab_timeline === false ? 'none' : 'always' },
+                { id: 'agreement', label: 'Perjanjian', mode: meta.show_tab_agreement === false ? 'none' : ((contract as any).contract_mode || 'upload') },
+                { id: 'timeline', label: 'Alur', mode: meta.show_tab_timeline === false ? 'none' : 'always' },
                 { id: 'attachments', label: 'Lampiran', mode: meta.show_tab_attachments === false ? 'none' : 'always' },
                 { id: 'chat', label: 'Chat', mode: meta.show_tab_chat === false ? 'none' : 'always' },
-                { id: 'references', label: 'Kontrak Referensi', mode: meta.show_tab_references === false ? 'none' : 'always' },
+                { id: 'references', label: 'Referensi', mode: meta.show_tab_references === false ? 'none' : 'always' },
+                { id: 'audit', label: 'Audit', mode: 'always' },
+                { id: 'members', label: 'Member', mode: meta.show_tab_members === false ? 'none' : 'always' },
             ].filter((tab) => tab.mode !== 'none');
         },
         [contract],
@@ -310,179 +313,108 @@ const ContractDetailView = ({
 
     return (
         <div className="mx-auto flex w-full max-w-full flex-1 flex-col gap-6 p-4">
-            <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-6">
+            {/* Simple & Clear Header Bar */}
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-1">
+                <div className="flex items-center gap-3">
                     <Button
                         variant="ghost"
                         onClick={onClose}
-                        className="text-text-main flex h-auto items-center gap-2 px-0 transition-all hover:bg-transparent hover:opacity-70 active:scale-95"
+                        className="text-text-main flex h-8 items-center gap-1.5 px-2 transition-all hover:bg-surface-muted active:scale-95 rounded-lg"
                     >
-                        <ChevronLeft size={20} strokeWidth={2.5} />
-                        <span className="text-[10px] font-semibold uppercase">Kembali</span>
+                        <ChevronLeft size={18} strokeWidth={2.5} />
+                        <span className="text-xs font-semibold uppercase">Kembali</span>
                     </Button>
-                    <div className="bg-surface-border h-10 w-px" />
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-3">
-                            {isEditingTitle && isDraftTitle ? (
-                                <input
-                                    autoFocus
-                                    value={headerTitle}
-                                    onChange={(e) => setHeaderTitle(e.target.value)}
-                                    onBlur={handleTitleBlur}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleTitleBlur(); }}
-                                    className="text-text-main text-lg leading-none font-semibold bg-transparent border-b border-primary focus:outline-none min-w-[400px] md:min-w-[600px] w-full"
-                                    placeholder="Masukkan judul kontrak..."
-                                />
-                            ) : (
-                                <h2 
-                                    className={`text-text-main text-lg leading-none font-semibold ${isDraftTitle ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
-                                    onClick={() => { if (isDraftTitle) setIsEditingTitle(true); }}
-                                    title={isDraftTitle ? "Klik untuk mengedit judul" : ""}
-                                >
-                                    {contract.title || <span className="italic text-text-soft">Tanpa Judul</span>}
-                                </h2>
-                            )}
-                             <StatusBadge status={contract.status} statusInfo={contract.status_info} />
-                        </div>
-                        <div className="mt-1.5 flex flex-wrap items-center gap-3">
-                            <span className="text-text-soft text-[10px] font-semibold tracking-[0.2em] uppercase">
-                                #{contract.form_no || 'NO-REQ'}
-                            </span>
-                        </div>
+                    <div className="bg-surface-border h-6 w-px" />
+                    <div className="flex items-center gap-3 flex-wrap">
+                        {isEditingTitle && isDraftTitle ? (
+                            <input
+                                autoFocus
+                                value={headerTitle}
+                                onChange={(e) => setHeaderTitle(e.target.value)}
+                                onBlur={handleTitleBlur}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleTitleBlur(); }}
+                                className="text-text-main text-base font-bold bg-surface-muted border-b border-primary focus:outline-none min-w-[300px] md:min-w-[450px] px-2 py-0.5 rounded"
+                                placeholder="Masukkan judul..."
+                            />
+                        ) : (
+                            <h2 
+                                className={`text-text-main text-base font-bold tracking-tight ${isDraftTitle ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                                onClick={() => { if (isDraftTitle) setIsEditingTitle(true); }}
+                                title={isDraftTitle ? "Klik untuk mengedit" : ""}
+                            >
+                                {contract.title || <span className="italic text-text-soft">Tanpa Judul</span>}
+                            </h2>
+                        )}
+                        <span className="text-text-soft text-xs font-medium">
+                            #{contract.form_no || 'NO-REQ'}
+                        </span>
+                        <StatusBadge status={contract.status} statusInfo={contract.status_info} />
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 self-end sm:self-center">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="border-surface-border bg-surface-base h-10 w-10 shadow-sm active:scale-95"
+                                className="border-surface-border bg-surface-base hover:bg-surface-muted h-8 w-8 rounded-lg shadow-2xs active:scale-95"
                             >
-                                <MoreVertical size={18} className="text-text-soft" />
+                                <MoreVertical size={16} className="text-text-soft" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                            align="end"
-                            className="border-surface-border bg-surface-base w-56 rounded-xl p-1.5 shadow-2xl backdrop-blur-xl"
-                        >
-                            <div className="mb-1 px-2 py-1.5">
-                                <p className="text-text-soft text-[10px] font-semibold  uppercase">Opsi Kontrak</p>
-                            </div>
-                            <DropdownMenuItem
-                                onClick={() => handleUpdate({}, true)}
-                                className="text-text-main flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase transition-all"
+                            <DropdownMenuContent
+                                align="end"
+                                className="border-surface-border bg-surface-base/95 w-56 rounded-xl p-1.5 shadow-2xl backdrop-blur-xl"
                             >
-                                <Save size={14} className="text-primary" /> Paksa Simpan (Force Sync)
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-text-main flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase transition-all">
-                                <Archive size={14} className="text-text-soft" /> Arsipkan Kontrak
-                            </DropdownMenuItem>
-                            <div className="bg-surface-border/40 my-1.5 h-px" />
-                            <DropdownMenuItem
-                                onClick={() => setDeleteOpen(true)}
-                                className="text-danger focus:bg-danger/5 focus:text-danger flex cursor-pointer items-center gap-2 rounded-xl text-[11px] font-semibold tracking-tight uppercase transition-all"
-                            >
-                                <Trash2 size={14} /> Hapus Kontrak
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                <div className="mb-1 px-2 py-1.5">
+                                    <p className="text-text-soft text-[10px] font-bold uppercase tracking-wider">Opsi Kontrak</p>
+                                </div>
+                                <DropdownMenuItem
+                                    onClick={() => handleUpdate({}, true)}
+                                    className="text-text-main flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight uppercase transition-all hover:bg-primary/10"
+                                >
+                                    <Save size={14} className="text-primary" /> Paksa Simpan (Force Sync)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-text-main flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight uppercase transition-all hover:bg-surface-muted">
+                                    <Archive size={14} className="text-text-soft" /> Arsipkan Kontrak
+                                </DropdownMenuItem>
+                                <div className="bg-surface-border/40 my-1.5 h-px" />
+                                <DropdownMenuItem
+                                    onClick={() => setDeleteOpen(true)}
+                                    className="text-danger focus:bg-danger/10 focus:text-danger flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight uppercase transition-all"
+                                >
+                                    <Trash2 size={14} /> Hapus Kontrak
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
-            </div>
 
             <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
                 <div className="flex flex-col gap-6">
                     {contract.workflow_step?.meta?.show_document_detail !== false && (
-                        <div className="bg-surface-base border-surface-border overflow-hidden rounded-2xl border shadow-sm">
-                            <div className="bg-primary border-surface-border flex h-12 items-center justify-between border-b px-4">
-                                <div className="text-primary-foreground flex items-center gap-2 text-sm font-semibold  uppercase">
-                                    <FileText size={16} className="text-primary-foreground/70" /> Detail Dokumen & Alur Kerja
+                        <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs">
+                            {/* Compact Header + Tabs */}
+                            <div className="bg-primary rounded-t-xl flex items-center gap-3 border-b border-primary/80 px-3 py-3 overflow-x-auto">
+                                <div className="text-primary-foreground flex items-center gap-1.5 shrink-0">
+                                    <FileText size={13} className="text-primary-foreground/80" />
+                                    <span className="text-[10px] font-bold uppercase tracking-wide whitespace-nowrap text-primary-foreground">Detail Dokumen</span>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="text-primary-foreground/40 h-7 w-7 hover:bg-white/10 hover:text-white active:scale-95"
-                                        >
-                                            <MoreVertical size={14} />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        align="end"
-                                        className="border-surface-border bg-surface-base w-56 rounded-xl p-1.5 shadow-2xl backdrop-blur-xl"
-                                    >
-                                        <div className="text-text-soft mb-1 px-2 py-1.5 text-[10px] font-semibold  uppercase">
-                                            Menu Tambahan
-                                        </div>
-                                        <DropdownMenuItem
-                                            onClick={() => setDetailTab('audit')}
-                                            className={cn(
-                                                'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
-                                                detailTab === 'audit'
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'text-text-main hover:bg-surface-muted',
-                                            )}
-                                        >
-                                            <Clock size={14} className={cn(detailTab === 'audit' ? 'text-primary-foreground' : 'text-text-soft')} />{' '}
-                                            Audit Trail
-                                        </DropdownMenuItem>
-                                        {tabs.some(t => t.id === 'timeline') && (
-                                            <DropdownMenuItem
-                                                onClick={() => setDetailTab('timeline')}
-                                                className={cn(
-                                                    'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
-                                                    detailTab === 'timeline'
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'text-text-main hover:bg-surface-muted',
-                                                )}
+                                <div className="bg-primary-foreground/20 w-px h-4 shrink-0" />
+                                <Tabs value={detailTab} onValueChange={(val) => setDetailTab(val as any)} className="flex-1">
+                                    <TabsList className="bg-transparent h-auto p-0 gap-0.5 flex-wrap justify-start">
+                                        {tabs.map((tab) => (
+                                            <TabsTrigger
+                                                key={tab.id}
+                                                value={tab.id}
+                                                className="h-6 px-2.5 text-[10px] font-semibold uppercase rounded transition-all data-[state=active]:bg-primary-foreground data-[state=active]:text-primary data-[state=active]:shadow-xs text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/15 cursor-pointer"
                                             >
-                                                <CheckCircle2
-                                                    size={14}
-                                                    className={cn(detailTab === 'timeline' ? 'text-primary-foreground' : 'text-text-soft')}
-                                                />{' '}
-                                                Alur Persetujuan
-                                            </DropdownMenuItem>
-                                        )}
-                                        {contract.workflow_step?.meta?.show_tab_members !== false && (
-                                            <DropdownMenuItem
-                                                onClick={() => setDetailTab('members')}
-                                                className={cn(
-                                                    'flex cursor-pointer items-center gap-2 rounded-lg text-xs font-semibold tracking-tight uppercase transition-all',
-                                                    detailTab === 'members'
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'text-text-main hover:bg-surface-muted',
-                                                )}
-                                            >
-                                                <UserPlus
-                                                    size={14}
-                                                    className={cn(detailTab === 'members' ? 'text-primary-foreground' : 'text-text-soft')}
-                                                />{' '}
-                                                Daftar Member
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                                                {tab.label}
+                                            </TabsTrigger>
+                                        ))}
+                                    </TabsList>
+                                </Tabs>
                             </div>
-                        </div>
-                        <div className="border-surface-border bg-surface-muted/30 flex flex-wrap gap-1.5 border-b px-4 py-2">
-                            {tabs.map((tab) => (
-                                <Button
-                                    key={tab.id}
-                                    variant={detailTab === tab.id ? 'primary' : 'ghost'}
-                                    onClick={() => setDetailTab(tab.id)}
-                                    className={cn(
-                                        'h-8 px-3 text-[11px] font-semibold uppercase transition-all',
-                                        detailTab === tab.id
-                                            ? 'bg-primary text-primary-foreground shadow-sm'
-                                            : 'text-text-soft hover:bg-primary/5 hover:text-text-main',
-                                    )}
-                                >
-                                    {tab.label}
-                                </Button>
-                            ))}
-                        </div>
                         <div className={cn(
                             'flex flex-1 flex-col',
                             ['chat', 'attachments', 'timeline'].includes(detailTab)
@@ -546,23 +478,23 @@ const ContractDetailView = ({
                 </div>
                 <div className="sticky top-6 flex flex-col gap-4 self-start">
                     {canApprove && contract.workflow_step?.meta?.show_action_panel !== false && (
-                        <div className="border-primary/20 bg-surface-base ring-primary/5 flex flex-col gap-4 overflow-hidden rounded-2xl border p-6 shadow-xl ring-1">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-xl shadow-inner">
-                                    <Zap size={20} />
+                        <div className="border-primary/20 bg-surface-base ring-primary/5 flex flex-col gap-3 overflow-hidden rounded-xl border p-3.5 shadow-md ring-1">
+                            <div className="flex items-center gap-2.5">
+                                <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-inner">
+                                    <Zap size={16} />
                                 </div>
                                 <div className="flex flex-col gap-0.5">
-                                    <h3 className="text-text-main text-sm font-semibold tracking-tight uppercase">
+                                    <h3 className="text-text-main text-xs font-bold tracking-tight uppercase">
                                         {isSigner ? 'Upload Tanda Tangan Dibutuhkan' : 'Approval Dibutuhkan'}
                                     </h3>
-                                    <p className="text-text-soft text-[10px] font-medium tracking-wide uppercase">
+                                    <p className="text-text-soft text-[10px] font-medium tracking-wide">
                                         {isSigner
                                             ? `Anda terdaftar sebagai ${activeSignerApproval?.role}`
                                             : 'Anda terdaftar sebagai salah satu reviewer'}
                                     </p>
                                 </div>
                             </div>
-                            <div className="flex flex-col gap-2 pt-2">
+                            <div className="flex flex-col gap-2 pt-1">
                                 {isSigner ? (
                                     <div className="flex flex-col gap-2">
                                         <Button

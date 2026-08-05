@@ -115,11 +115,11 @@ export function PortalSelect({
                 className={cn(
                     'flex min-h-[44px] w-full items-center justify-between rounded-lg border border-border bg-surface-base px-4 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
                     !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
-                    disabled && 'bg-slate-50 border-slate-200 text-slate-500 opacity-50 cursor-not-allowed shadow-none',
+                    disabled && 'bg-slate-50 dark:bg-zinc-900/50 border-slate-200 dark:border-zinc-800 text-slate-400 dark:text-zinc-500 opacity-60 cursor-not-allowed shadow-none',
                     triggerClassName
                 )}
             >
-                <span className={cn(selectedOption ? 'text-black dark:text-white font-semibold' : 'text-sidebar-foreground/60')}>
+                <span className={cn(selectedOption ? 'text-text-main font-semibold' : 'text-slate-400 dark:text-zinc-400 font-normal')}>
                     {selectedOption ? selectedOption.label : placeholder}
                 </span>
                 <ChevronDown size={14} className={cn("text-sidebar-foreground/60 shrink-0 ml-2 transition-transform duration-200", open && "rotate-180")} />

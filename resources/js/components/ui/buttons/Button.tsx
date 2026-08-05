@@ -4,14 +4,15 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
+/* ponytail: solid filled button themes for dark mode instead of forced outline */
 const buttonThemes = {
-    primary: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary-hover dark:bg-transparent dark:border dark:border-white dark:text-white dark:shadow-none dark:hover:bg-white dark:hover:text-black',
-    outline: 'border border-primary bg-transparent text-primary shadow-sm hover:bg-primary/5 dark:bg-transparent dark:border dark:border-white dark:text-white dark:hover:bg-white/10',
-    ghost: 'hover:bg-surface-muted text-text-main dark:text-white dark:hover:bg-white/10',
+    primary: 'bg-primary text-primary-foreground shadow-sm hover:bg-primary-hover dark:bg-white dark:text-black dark:hover:bg-zinc-200 dark:border-none',
+    outline: 'border border-border bg-transparent text-foreground shadow-sm hover:bg-muted dark:bg-transparent dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800',
+    ghost: 'hover:bg-surface-muted text-text-main dark:text-zinc-300 dark:hover:bg-zinc-800/80',
     link: 'text-primary underline-offset-4 hover:underline lowercase dark:text-white',
-    destructive: 'bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm dark:bg-transparent dark:border dark:border-danger dark:text-danger dark:shadow-none dark:hover:bg-danger dark:hover:text-white',
-    secondary: 'bg-secondary text-secondary-foreground border border-surface-border hover:bg-secondary/80 dark:bg-transparent dark:border dark:border-white dark:text-white dark:hover:bg-white/10',
-    white: 'bg-surface-base/40 backdrop-blur-md border border-surface-border text-text-main shadow-sm hover:bg-surface-muted hover:border-surface-border dark:bg-transparent dark:border dark:border-white dark:text-white dark:hover:bg-white/10',
+    destructive: 'bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm dark:bg-rose-600 dark:text-white dark:hover:bg-rose-500 dark:border-none',
+    secondary: 'bg-secondary text-secondary-foreground border border-surface-border hover:bg-secondary/80 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700',
+    white: 'bg-surface-base/80 backdrop-blur-md border border-surface-border text-text-main shadow-sm hover:bg-surface-muted hover:border-surface-border dark:bg-zinc-900/90 dark:border-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-800',
 };
 
 const buttonVariants = cva(

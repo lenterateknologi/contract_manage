@@ -29,7 +29,8 @@ createInertiaApp({
         root.render(<App {...props} />);
     },
     progress: {
-        color: '#4f46e5',
+        /* ponytail: use dynamic primary color (soft white in dark mode) */
+        color: 'var(--primary)',
         showSpinner: false,
     },
 });

@@ -84,7 +84,7 @@ export function SearchableMultiSelect({
     }, [open]);
 
     return (
-        <div ref={containerRef} className={cn("relative w-full", disabled && "opacity-60 cursor-not-allowed", open && "z-50", className)}>
+        <div ref={containerRef} className={cn("relative w-full", disabled && "opacity-60 cursor-not-allowed", open && "z-[999999]", className)}>
             <div
                 onClick={(e) => {
                     if (disabled) e.preventDefault();
@@ -131,7 +131,7 @@ export function SearchableMultiSelect({
             </div>
 
             {open && (
-                <div className="absolute left-0 right-0 top-full z-[9999] mt-1 border border-slate-200 bg-white shadow-xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950">
+                <div className="absolute left-0 right-0 top-full z-[999999] mt-1 border border-slate-200 bg-white shadow-2xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950">
                     {/* Search input */}
                     <div className="relative border-b border-slate-100 dark:border-slate-800">
                         <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
