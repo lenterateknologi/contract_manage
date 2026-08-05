@@ -256,7 +256,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         return (
                             <React.Fragment key={block.workflowId + bIdx}>
                                 {block.isSubWorkflow && (
-                                    <div className="mb-4 flex items-center gap-2 pl-2">
+                                    <div className="mb-2 flex items-center gap-2 pl-2">
                                         <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
                                         <span className="text-[10px] font-semibold tracking-tighter text-indigo-600 uppercase dark:text-indigo-400">
                                             Sub-Workflow: {block.workflowName}
@@ -305,7 +305,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                         </span>
                                                     )}
 
-                                                    <div className="space-y-2 mt-1">
+                                                    <div className="space-y-1 mt-0.5">
                                                         {(() => {
                                                             const groupKey = `${block.workflowId}_${group.sequence}`;
                                                             const isExpanded = !!expandedGroups[groupKey];

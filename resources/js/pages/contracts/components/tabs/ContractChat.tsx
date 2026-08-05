@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
@@ -33,6 +34,20 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DocumentPreviewModal from '../modals/DocumentPreviewModal';
 import { MentionDropdown } from '../parts/MentionDropdown';
 import { useToast } from '@/components/ui/feedback/Toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/user/Avatar';
+import {
+    Bubble,
+    BubbleContent,
+    BubbleGroup,
+    BubbleReactions,
+    Marker,
+    MarkerContent,
+    Message,
+    MessageAvatar,
+    MessageContent,
+    MessageFooter,
+    MessageHeader,
+} from '@/components/ui/user/Message';
 
 interface Props {
     contract: Contract;
@@ -52,20 +67,114 @@ function MsgBubble({
     highlight?: string;
     onPreview: (url: string, name: string) => void;
 }) {
+    const pageProps = usePage().props;
+    const currentUserId = (pageProps.auth as any)?.user?.id;
+    const [localReactions, setLocalReactions] = useState<any[]>((msg as any).reactions || []);
+    const [showReactionPicker, setShowReactionPicker] = useState(false);
+    const pickerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        setLocalReactions((msg as any).reactions || []);
+    }, [(msg as any).reactions]);
+
+    // Close picker when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+                setShowReactionPicker(false);
+            }
+        };
+        if (showReactionPicker) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showReactionPicker]);
+
+    const handleContextMenu = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setShowReactionPicker((prev) => !prev);
+    };
+
+    const computedReactions = useMemo(() => {
+        const counts: Record<string, number> = {};
+        if (Array.isArray(localReactions)) {
+            localReactions.forEach((r: any) => {
+                if (r && r.emoji) {
+                    counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+                }
+            });
+        }
+        return counts;
+    }, [localReactions]);
+
+    const toggleReaction = async (emoji: string, e?: React.MouseEvent) => {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+
+        // Optimistic UI Update: Update localReactions immediately
+        setLocalReactions((prev) => {
+            const copy = Array.isArray(prev) ? [...prev] : [];
+            const existingIdx = copy.findIndex((r: any) => r && (r.is_me || r.user_id === currentUserId));
+
+            if (existingIdx >= 0) {
+                if (copy[existingIdx].emoji === emoji) {
+                    // Clicked same emoji -> Unset / remove reaction
+                    copy.splice(existingIdx, 1);
+                } else {
+                    // Clicked different emoji -> Replace existing reaction with new emoji
+                    copy[existingIdx] = {
+                        ...copy[existingIdx],
+                        emoji,
+                        is_me: true,
+                    };
+                }
+            } else {
+                // First reaction from user
+                copy.push({
+                    emoji,
+                    user_id: currentUserId || 'me',
+                    is_me: true,
+                    user: { name: 'Anda' },
+                });
+            }
+            return copy;
+        });
+
+        try {
+            const res = await axios.post(`/admin/chat/messages/${msg.id}/reaction`, { emoji });
+            if (res.data && Array.isArray(res.data.reactions)) {
+                setLocalReactions(res.data.reactions);
+            }
+        } catch (err) {
+            console.error('Failed to toggle reaction', err);
+        }
+    };
+
     const time = msg.created_at.split(' ')[1]?.substring(0, 5) ?? '';
     const name = msg.user?.name ?? 'Unknown';
     const role = msg.user?.role ?? '';
+    const initials = name
+        .split(' ')
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase();
+
     let attachmentUrl = (msg as any).attachment_url || (msg as any).attachment_path;
     if (attachmentUrl && !attachmentUrl.startsWith('http') && !attachmentUrl.startsWith('/')) {
         attachmentUrl = `/storage/${attachmentUrl}`;
     }
     const attachmentName = (msg as any).attachment_name || (msg as any).file_name || 'Berkas';
-    
+
     let upload_configs: any = null;
     try {
         upload_configs = usePage().props;
     } catch (e) {
-        // Safe fallback for standalone previews (like Cosmos)
         upload_configs = null;
     }
 
@@ -82,138 +191,223 @@ function MsgBubble({
     const isPdf = ext === 'pdf';
 
     const renderMessage = (text: string, term?: string) => {
-        // ponytail: Clean HTML/Markdown parsing with native list support
-        let formatted = text
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>');
-
-        // Ensure raw markdown list symbols are parsed to HTML tags
+        let formatted = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
         formatted = formatted.replace(/(?:^|\n)[-*]\s+(.*)/g, '<ul><li>$1</li></ul>');
         formatted = formatted.replace(/(?:^|\n)\d+\.\s+(.*)/g, '<ol><li>$1</li></ol>');
 
-        // Basic formatting
         formatted = formatted
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/~~(.*?)~~/g, '<del>$1</del>')
             .replace(/`(.*?)`/g, '<code class="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-xs">$1</code>');
 
-        // Mentions
-        formatted = formatted.replace(/(@[\w\s.-]+(?:\s|$))/g, `<span class="${isMe ? 'text-primary-foreground font-semibold underline' : 'text-primary font-semibold underline'}">$1</span>`);
+        formatted = formatted.replace(
+            /(@[\w\s.-]+(?:\s|$))/g,
+            `<span class="${isMe ? 'text-primary-foreground font-semibold underline' : 'text-primary font-semibold underline'}">$1</span>`,
+        );
 
-        // Highlight
         if (term && term.trim()) {
             const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            formatted = formatted.replace(new RegExp(`(${escapedTerm})`, 'gi'), '<mark class="bg-yellow-300 text-slate-900 font-semibold px-1 rounded shadow-xs">$1</mark>');
+            formatted = formatted.replace(
+                new RegExp(`(${escapedTerm})`, 'gi'),
+                '<mark class="bg-yellow-300 text-slate-900 font-semibold px-1 rounded shadow-xs">$1</mark>',
+            );
         }
 
         return (
-            <div 
+            <div
                 className="prose dark:prose-invert max-w-none break-words text-[13px] leading-relaxed [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-1 [&_li]:my-0.5"
                 dangerouslySetInnerHTML={{ __html: formatted }}
             />
         );
     };
 
+    const activeReactions = Object.entries(computedReactions).filter(([_, count]) => count > 0);
+
     return (
-        <div className={cn('animate-in slide-in-from-bottom-1 mb-4 flex flex-col gap-1.5 duration-300', isMe ? 'items-end' : 'items-start')}>
-            <div className={cn('flex items-center gap-2 px-1 mb-1', isMe ? 'flex-row-reverse' : 'flex-row')}>
-                <span className="text-text-main text-xs font-bold">{isMe ? 'Anda' : name}</span>
-                {role && (
-                    <span className="bg-primary/10 border border-primary/20 text-primary rounded-full px-2.5 py-0.5 text-[9.5px] font-bold tracking-tight uppercase">
-                        {role}
-                    </span>
-                )}
-                <span className="text-text-soft text-[10.5px] font-semibold tabular-nums">{time}</span>
-            </div>
-
-            <div className={cn('group relative max-w-[82%] min-w-[65px]', isMe ? 'text-right' : 'text-left')}>
-                <div
-                    className={cn(
-                        'rounded-2xl shadow-xs transition-all duration-300',
-                        isMe ? 'bg-primary text-primary-foreground font-medium' : 'bg-surface-base border border-surface-border text-text-main font-medium shadow-xs',
+        <Message align={isMe ? 'end' : 'start'} className="mb-4 group/msg">
+            <MessageAvatar>
+                <Avatar className="h-8 w-8 border border-border shadow-2xs">
+                    <AvatarImage src={msg.user?.avatar || ''} alt={name} />
+                    <AvatarFallback className={isMe ? 'bg-primary text-white text-[10px] font-bold' : 'bg-muted text-foreground text-[10px] font-bold'}>
+                        {initials}
+                    </AvatarFallback>
+                </Avatar>
+            </MessageAvatar>
+            <MessageContent className="max-w-[80%] relative">
+                <MessageHeader className={isMe ? 'justify-end' : 'justify-start'}>
+                    <span className="font-semibold text-foreground text-xs">{isMe ? 'Anda' : name}</span>
+                    {role && (
+                        <span className="bg-primary/10 border border-primary/20 text-primary rounded-full px-2 py-0.2 text-[9px] font-bold tracking-tight uppercase">
+                            {role}
+                        </span>
                     )}
-                >
-                    {attachmentUrl && isImage && (
-                        <div
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                onPreview(attachmentUrl, attachmentName);
-                            }}
-                            className="group/img bg-surface-muted/40 relative cursor-pointer overflow-hidden rounded-t-2xl border-b border-inherit"
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{time}</span>
+                </MessageHeader>
+
+                <div className="relative">
+                    <BubbleGroup>
+                        <Bubble
+                            variant={isMe ? 'default' : 'muted'}
+                            className="relative cursor-pointer select-none"
+                            onContextMenu={handleContextMenu}
                         >
-                            <img
-                                src={attachmentUrl}
-                                alt={attachmentName || 'Image'}
-                                className="h-auto max-h-[250px] w-full cursor-pointer object-cover transition-transform duration-500 group-hover/img:scale-105"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    onPreview(attachmentUrl, attachmentName);
-                                }}
-                            />
-                        </div>
-                    )}
-
-                    <div className="p-3.5">
-                        {msg.message && (
-                            <div
-                                className={cn(
-                                    'text-xs leading-relaxed tracking-tight font-medium',
-                                    attachmentUrl && !isImage ? 'mb-2 border-b border-inherit pb-2 opacity-80' : '',
-                                )}
-                            >
-                                {renderMessage(msg.message, highlight)}
-                            </div>
-                        )}
-
-                        {attachmentUrl && !isImage && (
-                            <div
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    if (isPdf) {
-                                        onPreview(attachmentUrl, attachmentName);
-                                    } else {
-                                        const link = document.createElement('a');
-                                        link.href = attachmentUrl;
-                                        link.setAttribute('download', attachmentName);
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                    }
-                                }}
-                                className={cn(
-                                    'group/file flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition-all',
-                                    isMe
-                                        ? 'border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20'
-                                        : 'border-surface-border bg-surface-muted/60 text-text-main hover:bg-surface-muted',
-                                )}
-                            >
+                            {attachmentUrl && isImage && (
                                 <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        onPreview(attachmentUrl, attachmentName);
+                                    }}
+                                    className="group/img bg-black/5 relative cursor-pointer overflow-hidden rounded-xl border border-inherit mb-2"
+                                >
+                                    <img
+                                        src={attachmentUrl}
+                                        alt={attachmentName || 'Image'}
+                                        className="h-auto max-h-[250px] w-full cursor-pointer object-cover transition-transform duration-500 group-hover/img:scale-105"
+                                    />
+                                </div>
+                            )}
+
+                            {msg.message && (
+                                <BubbleContent>
+                                    {renderMessage(msg.message, highlight)}
+                                </BubbleContent>
+                            )}
+
+                            {attachmentUrl && !isImage && (
+                                <div
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        if (isPdf) {
+                                            onPreview(attachmentUrl, attachmentName);
+                                        } else {
+                                            const link = document.createElement('a');
+                                            link.href = attachmentUrl;
+                                            link.setAttribute('download', attachmentName);
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                        }
+                                    }}
                                     className={cn(
-                                        'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-sm transition-transform group-hover/file:scale-110',
-                                        isMe ? 'border-primary-foreground/20 bg-primary-foreground/20 text-primary-foreground' : 'border-surface-border bg-surface-base text-primary',
+                                        'group/file flex cursor-pointer items-center gap-2.5 rounded-xl border p-2 transition-all mt-1',
+                                        isMe
+                                            ? 'border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20'
+                                            : 'border-border bg-background text-foreground hover:bg-muted',
                                     )}
                                 >
-                                    <FileIcon size={14} />
-                                </div>
-                                <div className="min-w-0 flex-1 text-left">
-                                    <div className="mb-0.5 truncate text-[10px] leading-none font-bold tracking-tight uppercase">
-                                        {attachmentName}
+                                    <div
+                                        className={cn(
+                                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border shadow-xs transition-transform group-hover/file:scale-105',
+                                            isMe ? 'border-primary-foreground/20 bg-primary-foreground/20 text-primary-foreground' : 'border-border bg-muted text-primary',
+                                        )}
+                                    >
+                                        <FileIcon size={14} />
                                     </div>
-                                    <div className="text-[8.5px] font-extrabold uppercase tracking-wider opacity-70">
-                                        {isPdf ? 'PREVIEW' : 'DOWNLOAD'}
+                                    <div className="min-w-0 flex-1 text-left">
+                                        <div className="mb-0.5 truncate text-[10px] leading-none font-bold tracking-tight uppercase">
+                                            {attachmentName}
+                                        </div>
+                                        <div className="text-[8.5px] font-extrabold uppercase tracking-wider opacity-70">
+                                            {isPdf ? 'PREVIEW' : 'DOWNLOAD'}
+                                        </div>
                                     </div>
+                                    <Download size={12} className="opacity-60 transition-opacity group-hover/file:opacity-100" />
                                 </div>
-                                <Download size={12} className="opacity-60 transition-opacity group-hover/file:opacity-100" />
+                            )}
+                        </Bubble>
+
+                        {/* Reaction badges — di luar Bubble, flow normal */}
+                        {activeReactions.length > 0 && (
+                            <div className={cn("flex flex-wrap items-center gap-1 mt-1 px-1", isMe ? "justify-end" : "justify-start")}>
+                                {activeReactions.map(([emoji, count]) => {
+                                    const reactingUsers = Array.isArray(localReactions)
+                                        ? localReactions.filter((r: any) => r.emoji === emoji).map((r: any) => r.user?.name || (r.is_me ? 'Anda' : 'User'))
+                                        : [];
+                                    const userNames = reactingUsers.join(', ');
+                                    const hasMyReaction = Array.isArray(localReactions) && localReactions.some((r: any) => r.emoji === emoji && (r.is_me || r.user_id === currentUserId));
+
+                                    return (
+                                        <div key={emoji} className="group/react relative flex items-center cursor-pointer">
+                                            {/* Hover Popover */}
+                                            <div className={cn(
+                                                "pointer-events-none absolute bottom-full mb-2 opacity-0 group-hover/react:opacity-100 transition-all duration-200 z-50 flex flex-col",
+                                                isMe ? "items-end right-0" : "items-start left-0"
+                                            )}>
+                                                <div className="rounded-lg border border-border/80 bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 px-3 py-1.5 text-[11px] font-medium whitespace-nowrap shadow-xl flex items-center gap-1.5">
+                                                    <span className="text-xs">{emoji}</span>
+                                                    <span className="font-semibold tracking-tight">{userNames || '1 Orang'}</span>
+                                                </div>
+                                                <div className={cn("w-2 h-2 bg-zinc-900 dark:bg-zinc-100 rotate-45 -mt-1 shadow-sm", isMe ? "mr-2" : "ml-2")}></div>
+                                            </div>
+
+                                            <BubbleReactions
+                                                onClick={(e) => toggleReaction(emoji, e)}
+                                                className={cn(
+                                                    "static transition-all shadow-xs gap-1 px-2 py-0.5 select-none",
+                                                    hasMyReaction
+                                                        ? "border-primary bg-primary text-primary-foreground font-bold ring-2 ring-primary/30"
+                                                        : "bg-background text-foreground border-border hover:bg-muted"
+                                                )}
+                                            >
+                                                <span>{emoji}</span>
+                                                <span className="text-[10px] font-semibold">{count}</span>
+                                            </BubbleReactions>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
-                    </div>
+                    </BubbleGroup>
+
+                    {/* Right-Click Context Menu Reaction Selector Bar */}
+                    {showReactionPicker && (
+                        <div
+                            ref={pickerRef}
+                            className={cn(
+                                "absolute -top-10 z-40 flex items-center gap-1 rounded-full border border-border/80 bg-white dark:bg-zinc-900 px-2 py-1 shadow-xl animate-in fade-in zoom-in-95 duration-150",
+                                isMe ? "right-2" : "left-2"
+                            )}
+                        >
+                            {['👍', '❤️', '😂', '🔥', '🎉'].map((emoji) => {
+                                const isSelected = Array.isArray(localReactions) && localReactions.some((r: any) => r.emoji === emoji && (r.is_me || r.user_id === currentUserId));
+                                return (
+                                    <button
+                                        key={emoji}
+                                        type="button"
+                                        onClick={(e) => {
+                                            toggleReaction(emoji, e);
+                                            setShowReactionPicker(false);
+                                        }}
+                                        className={cn(
+                                            "p-1 rounded-full transition-all text-sm cursor-pointer hover:scale-125",
+                                            isSelected
+                                                ? "bg-primary/20 text-primary font-bold scale-110 ring-1 ring-primary/40"
+                                                : "hover:bg-muted opacity-80 hover:opacity-100"
+                                        )}
+                                        title={isSelected ? `Hapus Reaksi ${emoji}` : `Reaksi ${emoji}`}
+                                    >
+                                        {emoji}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
-            </div>
-        </div>
+
+                {isMe && (
+                    <MessageFooter className="justify-end mt-0.5">
+                        {msg.read_by && msg.read_by.length > 0 ? (
+                            <span title="Dibaca" className="text-sky-500 text-[10px] font-bold tracking-tighter leading-none">✓✓</span>
+                        ) : (
+                            <span title="Terkirim" className="text-slate-400 text-[10px] leading-none">✓</span>
+                        )}
+                    </MessageFooter>
+                )}
+            </MessageContent>
+        </Message>
     );
 }
 
@@ -225,6 +419,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const [sending, setSending] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [previewTarget, setPreviewTarget] = useState<{ url: string; name: string } | null>(null);
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
     const [mentionSearch, setMentionSearch] = useState('');
     const [showMentions, setShowMentions] = useState(false);
@@ -327,7 +522,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 setMessages(fetchedMsgs);
             }
             if (updated) {
-                onNewMessage(updated);
+                onNewMessage(updated, true); // silent: hanya update state, tanpa router.reload()
             }
         } finally {
             setRefreshing(false);
@@ -474,8 +669,10 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
     const handleContentEditableInput = () => {
         if (editorRef.current) {
-            const val = editorRef.current.innerHTML;
-            setInput(val);
+            // Gunakan innerText untuk validasi (stripping HTML tags seperti <br>, <div>)
+            // sehingga tombol Kirim disable dengan benar saat field kosong
+            const plainText = editorRef.current.innerText?.replace(/\n/g, '').trim() ?? '';
+            setInput(plainText);
             updateActiveFormats();
 
             const textContent = editorRef.current.innerText || '';
@@ -493,7 +690,9 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     };
 
     const send = async () => {
-        const text = input.trim();
+        // Ambil plaintext dari DOM langsung untuk akurasi (bukan dari state yang mungkin stale)
+        const rawText = editorRef.current?.innerHTML ?? '';
+        const text = rawText.replace(/<br\s*\/?>/gi, '').replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').trim();
         if (!text && selectedFiles.length === 0) return;
         if (sending) return;
 
@@ -516,7 +715,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 setMessages(fetchedMsgs);
             }
             if (updated) {
-                onNewMessage(updated);
+                onNewMessage(updated, true); // silent: hanya update state, tanpa router.reload()
             }
             setInput('');
             if (editorRef.current) editorRef.current.innerHTML = '';
@@ -712,7 +911,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     className={cn(
-                        "group relative flex flex-col gap-2 rounded-2xl border bg-white p-2.5 shadow-sm dark:bg-zinc-900 transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/10 overflow-hidden",
+                        "group relative flex flex-col gap-2 rounded-2xl border bg-white p-2.5 shadow-sm dark:bg-zinc-900 transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/10",
                         isDragging
                             ? "border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10"
                             : "border-surface-border focus-within:border-primary/60"
@@ -842,7 +1041,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
                     {/* Bottom Toolbar: Attachment & Send Controls Outside Input */}
                     <div className="flex items-center justify-between border-t border-surface-border/50 pt-2 px-1">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 relative">
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
@@ -852,6 +1051,55 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                                 <Paperclip size={14} className="text-slate-500" />
                                 <span>Lampiran</span>
                             </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowEmojiPicker((prev) => !prev)}
+                                className={cn(
+                                    "flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-95",
+                                    showEmojiPicker
+                                        ? "border-primary bg-primary/10 text-primary"
+                                        : "border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                                )}
+                                title="Pilih Emoji"
+                            >
+                                <Smile size={14} className={showEmojiPicker ? "text-primary" : "text-amber-500"} />
+                                <span>Emoji</span>
+                            </button>
+
+                            {showEmojiPicker && (
+                                <div className="absolute bottom-11 left-0 z-50 animate-in fade-in zoom-in-95 duration-150 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white p-3 shadow-2xl dark:bg-zinc-900 w-72">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-2 dark:border-zinc-800">
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pilih Emoji</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEmojiPicker(false)}
+                                            className="text-slate-400 hover:text-slate-600 p-0.5 rounded cursor-pointer"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-6 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                                        {['👍', '❤️', '😂', '🔥', '🎉', '👏', '🙏', '😊', '✅', '🚀', '💡', '🤔', '👀', '💯', '🤝', '🙌', '⭐', '📌', '⚠️', '❌', '👌', '💬', '📝', '⚡', '🤩', '😎', '💪', '🎯', '✨', '👋'].map((emoji) => (
+                                            <button
+                                                key={emoji}
+                                                type="button"
+                                                onClick={() => {
+                                                    if (editorRef.current) {
+                                                        editorRef.current.focus();
+                                                        document.execCommand('insertText', false, emoji);
+                                                        setInput(editorRef.current.innerHTML);
+                                                    }
+                                                    setShowEmojiPicker(false);
+                                                }}
+                                                className="flex h-8 w-8 items-center justify-center rounded-lg text-base hover:bg-slate-100 dark:hover:bg-zinc-800 transition-transform active:scale-125 cursor-pointer"
+                                            >
+                                                {emoji}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <button

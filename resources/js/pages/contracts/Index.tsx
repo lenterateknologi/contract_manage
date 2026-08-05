@@ -864,7 +864,7 @@ function ContractPage({
             <Head title={view} />
             <div className="bg-background dark:bg-background/50 flex min-h-0 flex-1 flex-col">
                 {selected ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 flex-col duration-300 ease-in-out">
+                    <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 flex-col overflow-y-auto duration-300 ease-in-out">
                         <ContractDetailView
                             contract={selected}
                             meId={meId}

@@ -266,6 +266,15 @@
     background: #334155;
 }
 
+/* Hide scrollbar visually but keep functionality */
+.scrollbar-none {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+.scrollbar-none::-webkit-scrollbar {
+    display: none; /* Chrome/Safari/Opera */
+}
+
 /* Print Utilities */
 @media print {
     .no-print {

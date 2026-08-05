@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractMessage;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -73,6 +74,7 @@ class ChatController extends Controller
                             'user_id' => $m->user_id,
                             'message' => $m->message,
                             'read_by' => $m->read_by ?? [],
+                            'reactions' => self::enrichReactionsWithUser($m->reactions),
                             'created_at' => $m->created_at->format('Y-m-d H:i'),
                             'attachment_url' => $m->attachment_path ? asset('storage/'.$m->attachment_path) : null,
                             'attachment_name' => $m->attachment_name,
@@ -118,6 +120,7 @@ class ChatController extends Controller
             'user_id' => $m->user_id,
             'message' => $m->message,
             'read_by' => $m->read_by ?? [],
+            'reactions' => self::enrichReactionsWithUser($m->reactions),
             'created_at' => $m->created_at->format('Y-m-d H:i'),
             'attachment_url' => $m->attachment_path ? asset('storage/'.$m->attachment_path) : null,
             'attachment_name' => $m->attachment_name,
@@ -161,6 +164,7 @@ class ChatController extends Controller
             'user_id' => $userId,
             'message' => $request->message ?? '',
             'read_by' => [$userId],
+            'reactions' => [],
             'attachment_path' => $attachmentPath,
             'attachment_name' => $attachmentName,
         ]);
@@ -174,6 +178,7 @@ class ChatController extends Controller
             'attachment_url' => $msg->attachment_path ? asset('storage/'.$msg->attachment_path) : null,
             'attachment_name' => $msg->attachment_name,
             'read_by' => $msg->read_by,
+            'reactions' => $msg->reactions ?? [],
             'created_at' => $msg->created_at->format('Y-m-d H:i'),
             'user' => $msg->user ? [
                 'id' => $msg->user->id,
@@ -182,6 +187,93 @@ class ChatController extends Controller
                 'role' => $msg->user->role,
             ] : null,
         ], 201);
+    }
+
+    /**
+     * Toggle reaction on a message.
+     */
+    public function toggleReaction(Request $request, string $messageId): JsonResponse
+    {
+        $request->validate([
+            'emoji' => 'required|string',
+        ]);
+
+        $msg = ContractMessage::findOrFail($messageId);
+        $userId = Auth::id();
+        $emoji = $request->emoji;
+
+        $reactions = $msg->reactions ?? [];
+        if (! is_array($reactions)) {
+            $reactions = [];
+        }
+
+        // Check if user already reacted with ANY emoji
+        $existingIndex = -1;
+        $sameEmoji = false;
+        foreach ($reactions as $idx => $r) {
+            if (isset($r['user_id']) && $r['user_id'] === $userId) {
+                $existingIndex = $idx;
+                if (isset($r['emoji']) && $r['emoji'] === $emoji) {
+                    $sameEmoji = true;
+                }
+                break;
+            }
+        }
+
+        if ($existingIndex >= 0) {
+            if ($sameEmoji) {
+                // Unset (remove reaction if clicking exact same emoji)
+                array_splice($reactions, $existingIndex, 1);
+            } else {
+                // Change / Replace reaction emoji
+                $reactions[$existingIndex]['emoji'] = $emoji;
+            }
+        } else {
+            // New reaction
+            $reactions[] = [
+                'emoji' => $emoji,
+                'user_id' => $userId,
+            ];
+        }
+
+        $msg->reactions = array_values($reactions);
+        $msg->save();
+
+        return response()->json([
+            'message_id' => $msg->id,
+            'reactions' => self::enrichReactionsWithUser($msg->reactions),
+        ]);
+    }
+
+    /**
+     * Helper to enrich simple [{emoji, user_id}] with live Eloquent User data.
+     */
+    public static function enrichReactionsWithUser(?array $reactions): array
+    {
+        if (empty($reactions) || ! is_array($reactions)) {
+            return [];
+        }
+
+        $currentUserId = Auth::id();
+        $userIds = collect($reactions)->pluck('user_id')->filter()->unique();
+        $users = User::whereIn('id', $userIds)->get()->keyBy('id');
+
+        return collect($reactions)->map(function ($r) use ($users, $currentUserId) {
+            $u = $users->get($r['user_id'] ?? null);
+            return [
+                'emoji' => $r['emoji'] ?? '',
+                'react' => true,
+                'user_id' => $r['user_id'] ?? null,
+                'is_me' => ($r['user_id'] ?? null) === $currentUserId,
+                'user' => $u ? [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'initials' => $u->initials,
+                    'avatar' => $u->avatar_url ?? $u->avatar ?? null,
+                    'role' => $u->role,
+                ] : null,
+            ];
+        })->toArray();
     }
 
     /**

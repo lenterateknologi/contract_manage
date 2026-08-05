@@ -188,6 +188,7 @@ class ContractFormatter
                 'user_id' => $m->user_id,
                 'message' => $m->message,
                 'read_by' => $m->read_by ?? [],
+                'reactions' => \App\Http\Controllers\Chat\ChatController::enrichReactionsWithUser($m->reactions),
                 'created_at' => $m->created_at->format('Y-m-d H:i'),
                 'attachment_url' => $m->attachment_url,
                 'attachment_name' => $m->attachment_name,

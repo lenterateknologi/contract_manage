@@ -395,19 +395,19 @@ const ContractDetailView = ({
                     {contract.workflow_step?.meta?.show_document_detail !== false && (
                         <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs">
                             {/* Compact Header + Tabs */}
-                            <div className="bg-primary rounded-t-xl flex items-center gap-3 border-b border-primary/80 px-3 py-3 overflow-x-auto">
+                            <div className="bg-primary rounded-t-xl flex items-center gap-3 border-b border-primary/80 px-3 py-3 overflow-x-auto scrollbar-none">
                                 <div className="text-primary-foreground flex items-center gap-1.5 shrink-0">
                                     <FileText size={13} className="text-primary-foreground/80" />
                                     <span className="text-[10px] font-bold uppercase tracking-wide whitespace-nowrap text-primary-foreground">Detail Dokumen</span>
                                 </div>
                                 <div className="bg-primary-foreground/20 w-px h-4 shrink-0" />
-                                <Tabs value={detailTab} onValueChange={(val) => setDetailTab(val as any)} className="flex-1">
-                                    <TabsList className="bg-transparent h-auto p-0 gap-0.5 flex-wrap justify-start">
+                                <Tabs value={detailTab} onValueChange={(val) => setDetailTab(val as any)} className="flex-1 min-w-0">
+                                    <TabsList className="bg-transparent h-auto p-0 gap-0.5 flex flex-nowrap overflow-x-auto scrollbar-none justify-start w-full">
                                         {tabs.map((tab) => (
                                             <TabsTrigger
                                                 key={tab.id}
                                                 value={tab.id}
-                                                className="h-6 px-2.5 text-[10px] font-semibold uppercase rounded transition-all data-[state=active]:bg-primary-foreground data-[state=active]:text-primary data-[state=active]:shadow-xs text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/15 cursor-pointer"
+                                                className="h-6 px-2.5 text-[10px] font-semibold uppercase rounded transition-all whitespace-nowrap shrink-0 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary data-[state=active]:shadow-xs text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/15 cursor-pointer"
                                             >
                                                 {tab.label}
                                             </TabsTrigger>

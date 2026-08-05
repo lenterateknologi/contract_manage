@@ -14,4 +14,5 @@ Route::prefix('contracts/{contractId}/messages')->controller(ChatController::cla
     Route::post('/read', 'markAsRead');
 });
 
+Route::post('/messages/{messageId}/reaction', [ChatController::class, 'toggleReaction']);
 Route::get('/messages/attachment/{messageId}', [ChatController::class, 'downloadAttachment'])->name('contracts.message-attachment');

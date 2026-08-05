@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ContractApproval } from '@/pages/contracts/types';
-import { Check, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Clock, ChevronDown } from 'lucide-react';
 import { Avatar, StatusBadge } from '../ui/ui';
 
 interface ApprovalCardProps {
@@ -24,103 +24,96 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false 
     return (
         <div
             className={cn(
-                'group bg-surface-base relative flex flex-col justify-center gap-1.5 rounded-lg border-2 px-3 py-2 shadow-2xs transition-all duration-300 w-fit max-w-[95%] sm:max-w-xl',
-                isApproved &&
-                'border-emerald-500/60 bg-emerald-500/10 hover:border-emerald-500/80 dark:bg-emerald-950/30 dark:border-emerald-500/60',
-                isRejected &&
-                'border-rose-500/60 bg-rose-500/10 hover:border-rose-500/80 dark:bg-rose-950/30 dark:border-rose-500/60',
-                isPending &&
-                'border-amber-500/70 bg-amber-500/15 shadow-sm ring-2 ring-amber-500/20 hover:border-amber-500 dark:bg-amber-950/40 dark:border-amber-500/70',
-                isSkipped &&
-                'border-slate-300 dark:border-zinc-700 bg-surface-muted/20 opacity-50 grayscale',
-                (isWaiting || isStaged) &&
-                !isSkipped &&
-                'border-dashed border-slate-300 dark:border-zinc-700 bg-surface-muted/30 opacity-80 hover:border-slate-400 dark:hover:border-zinc-600',
-                'hover:shadow-xs',
+                'group bg-surface-base relative flex items-center gap-2 rounded-md border px-2.5 py-1.5 transition-all duration-200 w-fit max-w-[95%] sm:max-w-xl',
+                isApproved && 'border-emerald-500/50 bg-emerald-500/8 hover:border-emerald-500/70 dark:bg-emerald-950/20 dark:border-emerald-500/40',
+                isRejected && 'border-rose-500/50 bg-rose-500/8 hover:border-rose-500/70 dark:bg-rose-950/20 dark:border-rose-500/40',
+                isPending && 'border-amber-500/60 bg-amber-500/10 ring-1 ring-amber-500/20 hover:border-amber-500 dark:bg-amber-950/30 dark:border-amber-500/50',
+                isSkipped && 'border-slate-300 dark:border-zinc-700 bg-surface-muted/20 opacity-50 grayscale',
+                (isWaiting || isStaged) && !isSkipped && 'border-dashed border-slate-300 dark:border-zinc-700 bg-surface-muted/20 opacity-75',
             )}
         >
-            {/* Visual indicator bar on the left */}
-            <div
-                className={cn(
-                    'absolute top-1.5 bottom-1.5 left-0 w-0.5 rounded-r-full transition-all',
-                    isApproved && 'bg-emerald-500',
-                    isRejected && 'bg-rose-500',
-                    isPending && 'animate-pulse bg-amber-500',
-                    isSkipped && 'bg-surface-border',
-                    (isWaiting || isStaged) && !isSkipped && 'bg-surface-border',
+            {/* Left indicator bar */}
+            <div className={cn(
+                'absolute top-1 bottom-1 left-0 w-0.5 rounded-r-full',
+                isApproved && 'bg-emerald-500',
+                isRejected && 'bg-rose-500',
+                isPending && 'animate-pulse bg-amber-500',
+                (isWaiting || isStaged || isSkipped) && 'bg-surface-border',
+            )} />
+
+            {/* Avatar */}
+            <div className="pl-1 shrink-0">
+                {a.approver ? (
+                    <Avatar user={a.approver} size="sm" className="h-5 w-5 ring-1 ring-surface-base" />
+                ) : (
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-surface-muted text-text-soft">
+                        <Clock size={10} strokeWidth={2} />
+                    </div>
                 )}
-            />
-
-            {/* Row 1: Approver Details + Status Badge */}
-            <div className="flex items-center justify-between gap-3 w-full pl-1">
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    {a.approver ? (
-                        <>
-                            <Avatar user={a.approver} size="sm" className="h-6 w-6 shadow-2xs ring-1 ring-surface-base shrink-0" />
-                            <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1 flex-wrap">
-                                <span className="text-text-main truncate text-[11.5px] leading-tight font-bold">{a.approver.name}</span>
-                                {isApproved && <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />}
-                                <span className="text-text-soft truncate text-[10.5px] font-medium opacity-80">{a.approver.email}</span>
-                                {a.decided_at && (
-                                    <span className="text-text-soft flex shrink-0 items-center gap-1 text-[10.5px] font-normal opacity-70">
-                                        <Clock size={9} /> {a.decided_at}
-                                    </span>
-                                )}
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-muted text-text-soft">
-                                <Clock size={12} strokeWidth={2} />
-                            </div>
-                            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden flex-wrap">
-                                {(() => {
-                                    const approverList = a.target_approvers ? a.target_approvers.split(',').map(name => name.trim()).filter(Boolean) : [];
-                                    if (approverList.length > 1) {
-                                        const visibleApprovers = isApproverListExpanded ? approverList : approverList.slice(0, 3);
-                                        const remainingCount = approverList.length - 3;
-
-                                        return (
-                                            <div className="flex flex-wrap items-center gap-1.5">
-                                                {visibleApprovers.map((name, idx) => (
-                                                    <span key={idx} className="inline-flex items-center rounded-md bg-surface-muted/90 border border-surface-border px-1.5 py-0.5 text-[10px] font-medium text-text-main">
-                                                        {name}
-                                                    </span>
-                                                ))}
-                                                {remainingCount > 0 && !isApproverListExpanded && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setIsApproverListExpanded(true);
-                                                        }}
-                                                        className="inline-flex items-center gap-1 rounded-md bg-primary/10 border border-primary/25 hover:bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-primary transition-all cursor-pointer"
-                                                    >
-                                                        +{remainingCount} <ChevronDown size={10} strokeWidth={2} />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        );
-                                    }
-                                    return (
-                                        <span className="text-text-main truncate text-[11.5px] leading-tight font-bold">
-                                            {a.target_approvers || `Semua ${a.role || 'Approver'}`}
-                                        </span>
-                                    );
-                                })()}
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                <div className="shrink-0">
-                    <StatusBadge status={a.status} size="sm" />
-                </div>
             </div>
 
-            {/* Row 2: Comment Section (If Present) */}
+            {/* Main content row */}
+            <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+                {a.approver ? (
+                    <>
+                        <span className="text-text-main truncate text-[11px] font-semibold leading-tight">{a.approver.name}</span>
+                        {isApproved && <Check size={10} className="shrink-0 text-emerald-500" strokeWidth={2.5} />}
+                        <span className="text-text-soft truncate text-[10px] opacity-60 hidden sm:inline">{a.approver.email}</span>
+                        {a.decided_at && (
+                            <span className="text-text-soft flex shrink-0 items-center gap-0.5 text-[9px] opacity-50">
+                                <Clock size={8} /> {a.decided_at}
+                            </span>
+                        )}
+                    </>
+                ) : (
+                    <div className="flex flex-wrap items-center gap-1">
+                        {(() => {
+                            const approverList = a.target_approvers
+                                ? a.target_approvers.split(',').map((n) => n.trim()).filter(Boolean)
+                                : [];
+                            if (approverList.length > 1) {
+                                const visible = isApproverListExpanded ? approverList : approverList.slice(0, 3);
+                                const remaining = approverList.length - 3;
+                                return (
+                                    <div className="flex flex-wrap items-center gap-1">
+                                        {visible.map((name, idx) => (
+                                            <span
+                                                key={idx}
+                                                className="inline-flex items-center rounded bg-surface-muted/90 border border-surface-border px-1 py-0 text-[10px] font-medium text-text-main"
+                                            >
+                                                {name}
+                                            </span>
+                                        ))}
+                                        {remaining > 0 && !isApproverListExpanded && (
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); setIsApproverListExpanded(true); }}
+                                                className="inline-flex items-center gap-0.5 rounded bg-primary/10 border border-primary/25 hover:bg-primary/20 px-1 py-0 text-[10px] font-semibold text-primary cursor-pointer"
+                                            >
+                                                +{remaining} <ChevronDown size={9} strokeWidth={2} />
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            }
+                            return (
+                                <span className="text-text-main truncate text-[11px] font-semibold leading-tight">
+                                    {a.target_approvers || `Semua ${a.role || 'Approver'}`}
+                                </span>
+                            );
+                        })()}
+                    </div>
+                )}
+            </div>
+
+            {/* Status badge */}
+            <div className="shrink-0">
+                <StatusBadge status={a.status} size="sm" />
+            </div>
+
+            {/* Comment row */}
             {a.comment && (
-                <div className="w-full pl-1 pt-1 border-t border-surface-border/40 text-[10.5px] italic text-text-soft leading-normal">
+                <div className="w-full col-span-full pl-6 pt-0.5 text-[9.5px] italic text-text-soft truncate opacity-60 border-t border-surface-border/40">
                     "{a.comment}"
                 </div>
             )}
