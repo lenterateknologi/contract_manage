@@ -2,11 +2,11 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/cards/Card';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { Input } from '@/components/ui/inputs/Input';
-import { SearchInput } from '@/components/ui/inputs/SearchInput';
+
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
-import { Briefcase, Calendar, ChevronDown, Clock, Filter, Layers, RotateCcw, UserCheck } from 'lucide-react';
+import { Briefcase, Calendar, ChevronDown, Clock, Filter, Layers, RotateCcw, Search, UserCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { MetricItem } from './MetricItem';
@@ -122,11 +122,12 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
 
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
-    const [selectedGroupId, setSelectedGroupId] = useState<string>(!isAdmin && userGroupId ? String(userGroupId) : 'all');
-    const [selectedRegionId, setSelectedRegionId] = useState<string>(!isAdmin && userRegionId ? String(userRegionId) : 'all');
-    const [selectedCompanyId, setSelectedCompanyId] = useState<string>(!isAdmin && userCompanyId ? String(userCompanyId) : 'all');
-    const [selectedDeptId, setSelectedDeptId] = useState<string>(!isAdmin && userDeptId ? String(userDeptId) : 'all');
+    const [selectedGroupId, setSelectedGroupId] = useState<string>(userGroupId ? String(userGroupId) : 'all');
+    const [selectedRegionId, setSelectedRegionId] = useState<string>(userRegionId ? String(userRegionId) : 'all');
+    const [selectedCompanyId, setSelectedCompanyId] = useState<string>(userCompanyId ? String(userCompanyId) : 'all');
+    const [selectedDeptId, setSelectedDeptId] = useState<string>(userDeptId ? String(userDeptId) : 'all');
     const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'sibuk'>('all');
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [dialogParent, setDialogParent] = useState<any>(null);
@@ -178,15 +179,23 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
 
     const filteredWorkloads = useMemo(() => {
         return userWorkloads.filter((user) => {
-            const userGroupId = String(user.company_group_id ?? '');
-            const userRegionId = String(user.region_id ?? '');
-            const userCompanyId = String(user.company_id ?? '');
-            const userDeptIdStr = String(user.department_id ?? '');
+            const uGroupId = user.company_group_id != null ? String(user.company_group_id) : '';
+            const uRegionId = user.region_id != null ? String(user.region_id) : '';
+            const uCompanyId = user.company_id != null ? String(user.company_id) : '';
+            const uDeptIdStr = user.department_id != null ? String(user.department_id) : '';
 
-            const matchesGroup = selectedGroupId === 'all' || userGroupId === selectedGroupId;
-            const matchesRegion = selectedRegionId === 'all' || userRegionId === selectedRegionId;
-            const matchesCompany = selectedCompanyId === 'all' || userCompanyId === selectedCompanyId;
-            const matchesDept = selectedDeptId === 'all' || userDeptIdStr === selectedDeptId;
+            // If non-admin, strictly enforce scope filtering: must match company_id AND department_id
+            if (!isAdmin) {
+                if (userCompanyId && uCompanyId !== String(userCompanyId)) return false;
+                if (userDeptId && uDeptIdStr !== String(userDeptId)) return false;
+                if (userGroupId && uGroupId && uGroupId !== String(userGroupId)) return false;
+                if (userRegionId && uRegionId && uRegionId !== String(userRegionId)) return false;
+            }
+
+            const matchesGroup = selectedGroupId === 'all' || uGroupId === selectedGroupId;
+            const matchesRegion = selectedRegionId === 'all' || uRegionId === selectedRegionId;
+            const matchesCompany = selectedCompanyId === 'all' || uCompanyId === selectedCompanyId;
+            const matchesDept = selectedDeptId === 'all' || uDeptIdStr === selectedDeptId;
 
             const matchesSearch =
                 user.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
@@ -198,7 +207,12 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                 (statusFilter === 'sibuk' && user.load_status === 'Sibuk');
             return matchesGroup && matchesRegion && matchesCompany && matchesDept && matchesSearch && matchesStatus;
         });
-    }, [userWorkloads, selectedGroupId, selectedRegionId, selectedCompanyId, selectedDeptId, debouncedSearch, statusFilter]);
+    }, [userWorkloads, isAdmin, userGroupId, userRegionId, userCompanyId, userDeptId, selectedGroupId, selectedRegionId, selectedCompanyId, selectedDeptId, debouncedSearch, statusFilter]);
+
+    const selectedUser = useMemo(() => {
+        if (!selectedUserId) return null;
+        return userWorkloads.find((u) => u.id === selectedUserId) || null;
+    }, [userWorkloads, selectedUserId]);
 
     const totalPendingThisMonth = useMemo(() => {
         return userWorkloads.reduce((sum, u) => sum + (u.stats_this_month?.pending || 0), 0);
@@ -228,14 +242,27 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
         return ids;
     };
 
+    const findNodeInTree = (nodes: any[], targetId: string): any => {
+        for (const n of nodes) {
+            if (n.id === targetId) return n;
+            if (n.children && n.children.length > 0) {
+                const found = findNodeInTree(n.children, targetId);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+
     const activeParent = useMemo(() => {
         if (!selectedParentId) return null;
-        return contractTypesLevel0.find((p: any) => p.id === selectedParentId);
+        return findNodeInTree(contractTypesLevel0, selectedParentId);
     }, [contractTypesLevel0, selectedParentId]);
 
     const activeChartCategories = useMemo(() => {
         if (activeParent) {
-            return activeParent.children || [];
+            return activeParent.children && activeParent.children.length > 0
+                ? activeParent.children
+                : [activeParent];
         }
         return contractTypesLevel0;
     }, [activeParent, contractTypesLevel0]);
@@ -323,7 +350,11 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                 
                 {/* Column 1-2: Kategori Kontrak (Contract Types) - Takes 2 of 3 columns */}
                 <div className="lg:col-span-2 space-y-4">
-                    <h3 className="text-[10px] font-bold text-text-soft uppercase tracking-widest">Kategori Kontrak (Klik untuk Detail & Filter Grafik)</h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-[10px] font-bold text-text-soft uppercase tracking-widest">
+                            Kategori Kontrak
+                        </h3>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto max-h-[650px] pr-1">
                         {contractTypesLevel0.length > 0 ? (
                             contractTypesLevel0.map((type: any, index: number) => {
@@ -331,27 +362,48 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                 const colors = ['text-primary', 'text-warning', 'text-cyan-500', 'text-success', 'text-purple-500'];
                                 const Icon = icons[index % icons.length];
                                 const colorClass = colors[index % colors.length];
+                                const isSelectedCategory = selectedParentId === type.id;
+                                const hasSubCategories = type.children && type.children.length > 0;
 
                                 return (
-                                    <div 
+                                    <Card 
                                         key={type.id || index}
                                         onClick={() => {
-                                            if (type.children && type.children.length > 0) {
-                                                setDialogParent(type);
-                                                setIsDialogOpen(true);
-                                                setSelectedParentId(type.id);
-                                            }
+                                            setSelectedParentId(isSelectedCategory ? null : type.id);
                                         }}
-                                        className="cursor-pointer transition-transform hover:scale-[1.01]"
-                                        title={type.children && type.children.length > 0 ? "Klik untuk melihat sub-kategori" : undefined}
+                                        className={cn(
+                                            "relative cursor-pointer transition-all duration-200 overflow-hidden border",
+                                            isSelectedCategory 
+                                                ? "border-primary bg-primary/5 shadow-md ring-2 ring-primary/20" 
+                                                : "border-surface-border/60 hover:border-primary/40 hover:shadow-xs bg-white dark:bg-zinc-900/50"
+                                        )}
+                                        title="Klik card untuk mengganti filter tren line chart"
                                     >
-                                        <MetricItem 
-                                            label={type.label} 
-                                            value={type.count || 0} 
-                                            icon={Icon} 
-                                            color={colorClass} 
-                                        />
-                                    </div>
+                                        <CardContent className="p-3.5 pt-3.5 space-y-2">
+                                            <MetricItem 
+                                                label={type.label} 
+                                                value={type.count || 0} 
+                                                icon={Icon} 
+                                                color={colorClass} 
+                                            />
+
+                                            {hasSubCategories && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setDialogParent(type);
+                                                        setIsDialogOpen(true);
+                                                        setSelectedParentId(type.id);
+                                                    }}
+                                                    className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-lg border border-white/40 bg-white dark:bg-zinc-900 px-2.5 py-1 text-[9.5px] font-bold text-slate-800 dark:text-zinc-100 shadow-md hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all uppercase tracking-wider scale-100 hover:scale-105"
+                                                    title="Buka detail sub-kategori"
+                                                >
+                                                    <Layers size={11} className="text-primary" /> DETAIL
+                                                </button>
+                                            )}
+                                        </CardContent>
+                                    </Card>
                                 );
                             })
                         ) : (
@@ -359,26 +411,26 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                         )}
                     </div>
 
-                    {/* Daily Trend Stepped Line Chart */}
-                    <div className="bg-white dark:bg-zinc-900/50 border border-surface-border/60 rounded-xl p-5 space-y-4 shadow-sm mt-6">
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-border/60 pb-3">
+                    {/* Daily Trend Stepped Line Chart & Sub-type Selector Split 20 / 80 */}
+                    <Card className="bg-white dark:bg-zinc-900/50 border border-surface-border/60 shadow-xs mt-4">
+                        <CardHeader className="p-3.5 pb-2 flex flex-row flex-wrap items-center justify-between gap-2 border-b border-surface-border/60 space-y-0">
                             <div>
-                                <h3 className="text-sm font-bold text-text-main">
+                                <CardTitle className="text-xs font-bold text-text-main">
                                     Tren Pembuatan Kontrak Harian {activeParent ? `(${activeParent.label})` : ''}
-                                </h3>
-                                <p className="text-[10px] text-text-soft">
+                                </CardTitle>
+                                <p className="text-[9.5px] text-text-soft">
                                     {activeParent 
                                         ? `Perkembangan volume sub-kategori di bawah ${activeParent.label}` 
                                         : 'Perkembangan volume pembuatan kontrak baru per kategori utama'}
                                 </p>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                                 {activeParent && (
                                     <button
                                         type="button"
                                         onClick={() => setSelectedParentId(null)}
-                                        className="mr-2 text-[10px] font-bold uppercase tracking-wider text-primary hover:underline"
+                                        className="mr-1.5 text-[9px] font-bold uppercase tracking-wider text-primary hover:underline"
                                     >
                                         Tampilkan Semua Kategori
                                     </button>
@@ -389,7 +441,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                     <button
                                         type="button"
                                         onClick={() => setDatePreset('7d')}
-                                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                        className={`rounded-md px-2 py-0.5 text-[9px] font-bold uppercase transition-all ${
                                             datePreset === '7d'
                                                 ? 'bg-primary text-primary-foreground shadow-xs'
                                                 : 'text-text-soft hover:text-text-main'
@@ -400,7 +452,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                     <button
                                         type="button"
                                         onClick={() => setDatePreset('14d')}
-                                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                        className={`rounded-md px-2 py-0.5 text-[9px] font-bold uppercase transition-all ${
                                             datePreset === '14d'
                                                 ? 'bg-primary text-primary-foreground shadow-xs'
                                                 : 'text-text-soft hover:text-text-main'
@@ -411,7 +463,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                     <button
                                         type="button"
                                         onClick={() => setDatePreset('this_month')}
-                                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                        className={`rounded-md px-2 py-0.5 text-[9px] font-bold uppercase transition-all ${
                                             datePreset === 'this_month'
                                                 ? 'bg-primary text-primary-foreground shadow-xs'
                                                 : 'text-text-soft hover:text-text-main'
@@ -422,7 +474,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                     <button
                                         type="button"
                                         onClick={() => setDatePreset('last_month')}
-                                        className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                        className={`rounded-md px-2 py-0.5 text-[9px] font-bold uppercase transition-all ${
                                             datePreset === 'last_month'
                                                 ? 'bg-primary text-primary-foreground shadow-xs'
                                                 : 'text-text-soft hover:text-text-main'
@@ -433,124 +485,272 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                     <button
                                         type="button"
                                         onClick={() => setDatePreset('custom')}
-                                        className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
+                                        className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase transition-all ${
                                             datePreset === 'custom'
                                                 ? 'bg-primary text-primary-foreground shadow-xs'
                                                 : 'text-text-soft hover:text-text-main'
                                         }`}
                                     >
-                                        <Calendar size={11} /> Kustom
+                                        <Calendar size={10} /> Kustom
                                     </button>
                                 </div>
 
                                 {/* Custom Date Range Inputs */}
                                 {datePreset === 'custom' && (
-                                    <div className="animate-in fade-in slide-in-from-right-2 flex items-center gap-1.5 duration-200">
+                                    <div className="animate-in fade-in slide-in-from-right-2 flex items-center gap-1 duration-200">
                                         <input
                                             type="date"
                                             value={startDate}
                                             onChange={(e) => setStartDate(e.target.value)}
-                                            className="h-7.5 rounded-lg border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                            className="h-6.5 rounded-md border border-surface-border bg-surface-base px-1.5 text-[9px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                                         />
-                                        <span className="text-[10px] font-bold text-text-soft">s/d</span>
+                                        <span className="text-[9px] font-bold text-text-soft">s/d</span>
                                         <input
                                             type="date"
                                             value={endDate}
                                             onChange={(e) => setEndDate(e.target.value)}
-                                            className="h-7.5 rounded-lg border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                            className="h-6.5 rounded-md border border-surface-border bg-surface-base px-1.5 text-[9px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                                         />
                                         {(startDate || endDate) && (
                                             <button
                                                 type="button"
                                                 onClick={handleResetDateFilter}
-                                                className="flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-surface-border bg-surface-base text-text-soft hover:text-rose-500 transition-colors"
+                                                className="flex h-6.5 w-6.5 items-center justify-center rounded-md border border-surface-border bg-surface-base text-text-soft hover:text-rose-500 transition-colors"
                                                 title="Reset Filter Tanggal"
                                             >
-                                                <RotateCcw size={12} />
+                                                <RotateCcw size={11} />
                                             </button>
                                         )}
                                     </div>
                                 )}
                             </div>
-                        </div>
-                        <div className="h-[495px] w-full pt-2">
-                            {aggregatedDailyTrend.length === 0 ? (
-                                <div className="text-center py-16 text-xs text-muted-foreground uppercase animate-in fade-in duration-300">Tidak ada data tren harian</div>
-                            ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={aggregatedDailyTrend} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                        <XAxis 
-                                            dataKey="date" 
-                                            stroke="#888888" 
-                                            fontSize={10} 
-                                            tickLine={false} 
-                                            axisLine={false} 
-                                        />
-                                        <YAxis 
-                                            stroke="#888888" 
-                                            fontSize={10} 
-                                            tickLine={false} 
-                                            axisLine={false} 
-                                            allowDecimals={false}
-                                        />
-                                        <RechartsTooltip
-                                            content={({ active, payload, label }: any) => {
-                                                if (active && payload && payload.length) {
-                                                    const item = payload[0].payload;
-                                                    const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
-                                                    return (
-                                                        <div className="rounded-xl border border-surface-border bg-white dark:bg-zinc-950 p-2.5 shadow-md text-xs space-y-1.5 min-w-[150px]">
-                                                            <p className="font-bold text-text-main">{item.full_date}</p>
-                                                            <div className="space-y-1 border-t border-surface-border/40 pt-1.5">
-                                                                {payload.map((p: any, idx: number) => {
-                                                                    if (p.value === 0) return null;
-                                                                    return (
-                                                                        <div key={idx} className="flex justify-between items-center gap-4">
-                                                                            <span className="text-text-soft flex items-center gap-1.5">
-                                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                                                                                {p.name}
+                        </CardHeader>
+
+                        {/* Resizable Split: Sub-tipe Tree & Line Chart */}
+                        <div className="flex flex-col md:flex-row gap-3 items-stretch p-3.5 pt-0">
+                            {/* Resizable Sub-tipe Tree Panel */}
+                            <div className="w-full md:w-64 min-w-[180px] max-w-[450px] resize-x overflow-auto border-r border-surface-border/40 pr-3.5 pl-1 space-y-2.5 max-h-[430px] shrink-0">
+                                <div className="flex items-center justify-between pt-1">
+                                    <h4 className="text-[9.5px] font-bold uppercase tracking-wider text-text-soft">
+                                        Hierarki Sub-Tipe
+                                    </h4>
+                                    {selectedParentId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedParentId(null)}
+                                            className="text-[8.5px] font-bold text-primary hover:underline uppercase"
+                                        >
+                                            Reset
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="space-y-1.5 pr-1">
+                                    {(() => {
+                                        // Find top-level parent if selectedParentId is a child node
+                                        const topLevelParent = contractTypesLevel0.find((p: any) => {
+                                            if (p.id === selectedParentId) return true;
+                                            const sub = findNodeInTree(p.children || [], selectedParentId || '');
+                                            return !!sub;
+                                        });
+
+                                        const treeNodes = topLevelParent
+                                            ? topLevelParent.children || []
+                                            : contractTypesLevel0;
+
+                                        if (!treeNodes || treeNodes.length === 0) {
+                                            return <div className="text-[9px] text-text-soft py-4 text-center">Tidak ada sub-tipe</div>;
+                                        }
+
+                                        return treeNodes.map((node: any, idx: number) => {
+                                            const color = CHART_COLORS[idx % CHART_COLORS.length];
+                                            const isSelected = selectedParentId === node.id;
+                                            const hasChildren = node.children && node.children.length > 0;
+                                            const isExpanded = expandedChildId === node.id;
+
+                                            return (
+                                                <div key={node.id || idx} className="space-y-1">
+                                                    <div
+                                                        className={cn(
+                                                            "flex items-center justify-between gap-1.5 p-2 rounded-lg border text-left cursor-pointer transition-all select-none",
+                                                            isSelected 
+                                                                ? "border-primary bg-primary/10 font-bold shadow-xs" 
+                                                                : "border-surface-border/40 hover:bg-surface-muted/30"
+                                                        )}
+                                                        onClick={() => {
+                                                            setSelectedParentId(isSelected ? (activeParent ? activeParent.id : null) : node.id);
+                                                        }}
+                                                    >
+                                                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                            {hasChildren && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setExpandedChildId(isExpanded ? null : node.id);
+                                                                    }}
+                                                                    className="p-0.5 text-text-soft hover:text-text-main transition-transform shrink-0"
+                                                                    title="Expand/Collapse Sub-tipe"
+                                                                >
+                                                                    <ChevronDown 
+                                                                        size={11} 
+                                                                        className={cn("transition-transform duration-200", isExpanded ? "" : "-rotate-90")} 
+                                                                    />
+                                                                </button>
+                                                            )}
+                                                            <div 
+                                                                className="w-4 h-4 rounded-full shrink-0 shadow-xs flex items-center justify-center text-white" 
+                                                                style={{ backgroundColor: color }}
+                                                            >
+                                                                <Layers size={9} strokeWidth={2.5} />
+                                                            </div>
+                                                            <span className="text-[10px] font-semibold text-text-main leading-tight truncate" title={node.label}>
+                                                                {node.label}
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1.5 shrink-0">
+                                                            <span className="text-[9px] font-bold text-text-soft">
+                                                                {node.count || 0}
+                                                            </span>
+                                                            {hasChildren && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setDialogParent(node);
+                                                                        setIsDialogOpen(true);
+                                                                    }}
+                                                                    className="flex h-5 w-5 items-center justify-center text-primary hover:text-primary-foreground bg-primary/10 hover:bg-primary rounded-md transition-all shadow-2xs"
+                                                                    title="Lihat Detail Sub-tipe"
+                                                                >
+                                                                    <Layers size={10} />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Nested Level 3 Children Tree Nodes (Colored & Non-clickable) */}
+                                                    {isExpanded && hasChildren && (
+                                                        <div className="pl-3.5 space-y-1 border-l border-surface-border/40 ml-2.5 animate-in slide-in-from-top-1 duration-150">
+                                                            {node.children.map((subChild: any, sIdx: number) => {
+                                                                const childColor = CHART_COLORS[(idx + sIdx + 1) % CHART_COLORS.length];
+                                                                return (
+                                                                    <div
+                                                                        key={subChild.id || sIdx}
+                                                                        className="flex items-center justify-between gap-1.5 p-1.5 rounded-md border border-surface-border/20 bg-surface-muted/10 text-left select-none text-[9px]"
+                                                                    >
+                                                                        <div className="flex items-center gap-1.5 min-w-0">
+                                                                            <div 
+                                                                                className="w-3.5 h-3.5 rounded-full shrink-0 shadow-xs flex items-center justify-center text-white" 
+                                                                                style={{ backgroundColor: childColor }}
+                                                                            >
+                                                                                <Layers size={8} strokeWidth={2.5} />
+                                                                            </div>
+                                                                            <span className="text-text-main font-medium truncate" title={subChild.label}>
+                                                                                {subChild.label}
                                                                             </span>
-                                                                            <span className="font-bold text-text-main">{p.value} Kontrak</span>
                                                                         </div>
-                                                                    );
-                                                                })}
-                                                                {/* Total contracts in day */}
-                                                                <div className="border-t border-surface-border/40 pt-1 mt-1 flex justify-between font-bold text-text-main">
-                                                                    <span>Total</span>
-                                                                    <span>{total} Kontrak</span>
+                                                                        <span className="font-bold text-text-soft shrink-0">
+                                                                            {subChild.count || 0}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+                            </div>
+
+                            {/* Line Chart Panel */}
+                            <div className="flex-1 min-w-0 h-[430px] p-2">
+                                {aggregatedDailyTrend.length === 0 ? (
+                                    <div className="text-center py-12 text-xs text-muted-foreground uppercase animate-in fade-in duration-300">Tidak ada data tren harian</div>
+                                ) : (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={aggregatedDailyTrend} margin={{ top: 10, right: 15, left: -25, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                            <XAxis 
+                                                dataKey="date" 
+                                                stroke="#888888" 
+                                                fontSize={9.5} 
+                                                tickLine={false} 
+                                                axisLine={false} 
+                                            />
+                                            <YAxis 
+                                                stroke="#888888" 
+                                                fontSize={9.5} 
+                                                tickLine={false} 
+                                                axisLine={false} 
+                                                allowDecimals={false}
+                                            />
+                                            <RechartsTooltip
+                                                content={({ active, payload }: any) => {
+                                                    if (active && payload && payload.length) {
+                                                        const item = payload[0].payload;
+                                                        const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
+                                                        return (
+                                                            <div className="rounded-xl border border-surface-border bg-white dark:bg-zinc-950 p-2 shadow-md text-xs space-y-1 min-w-[140px]">
+                                                                <p className="font-bold text-text-main">{item.full_date}</p>
+                                                                <div className="space-y-0.5 border-t border-surface-border/40 pt-1">
+                                                                    {payload.map((p: any, idx: number) => {
+                                                                        if (p.value === 0) return null;
+                                                                        return (
+                                                                            <div key={idx} className="flex justify-between items-center gap-3">
+                                                                                <span className="text-text-soft flex items-center gap-1 text-[10px]">
+                                                                                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.color }} />
+                                                                                    {p.name}
+                                                                                </span>
+                                                                                <span className="font-bold text-text-main text-[10px]">{p.value} Kontrak</span>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                    <div className="border-t border-surface-border/40 pt-1 mt-0.5 flex justify-between font-bold text-text-main text-[10.5px]">
+                                                                        <span>Total</span>
+                                                                        <span>{total} Kontrak</span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            }}
-                                        />
-                                        <Legend 
-                                            verticalAlign="top" 
-                                            height={36} 
-                                            iconType="circle"
-                                            iconSize={8}
-                                            formatter={(value) => <span className="text-[9px] text-text-soft font-bold uppercase tracking-wider">{value}</span>}
-                                        />
-                                        {chartLinesList.map((line: any, idx: number) => (
-                                            <Line 
-                                                key={line.label}
-                                                type="linear" 
-                                                dataKey={line.label} 
-                                                name={line.label}
-                                                stroke={CHART_COLORS[idx % CHART_COLORS.length]} 
-                                                strokeWidth={2}
-                                                dot={{ r: 2, stroke: CHART_COLORS[idx % CHART_COLORS.length], strokeWidth: 1, fill: '#fff' }}
-                                                activeDot={{ r: 4 }}
+                                                        );
+                                                    }
+                                                    return null;
+                                                }}
                                             />
-                                        ))}
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            )}
+                                            {chartLinesList.map((line: any, idx: number) => {
+                                                const strokeColor = CHART_COLORS[idx % CHART_COLORS.length];
+                                                return (
+                                                    <Line 
+                                                        key={line.label}
+                                                        type="linear" 
+                                                        dataKey={line.label} 
+                                                        name={line.label}
+                                                        stroke={strokeColor} 
+                                                        strokeWidth={2}
+                                                        dot={(props: any) => {
+                                                            const { cx, cy, index, dataKey } = props;
+                                                            const isLast = index === aggregatedDailyTrend.length - 1;
+                                                            if (isLast) {
+                                                                return (
+                                                                    <g key={`last-dot-${dataKey}-${index}`}>
+                                                                        <circle cx={cx} cy={cy} r={7} fill={strokeColor} stroke="#fff" strokeWidth={1.5} />
+                                                                        <circle cx={cx} cy={cy} r={2} fill="#fff" />
+                                                                    </g>
+                                                                );
+                                                            }
+                                                            return <circle key={`dot-${dataKey}-${index}`} cx={cx} cy={cy} r={2} fill="#fff" stroke={strokeColor} strokeWidth={1} />;
+                                                        }}
+                                                        activeDot={{ r: 3.5 }}
+                                                    />
+                                                );
+                                            })}
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
                 {/* Column 3: Tabel PIC dengan Search & Filter Langsung (Group, Region, Company, Department, Status) */}
@@ -574,159 +774,197 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                         )}
                     </div>
 
-                    {/* Filter Langsung: Group, Region, Company, Departemen & Status */}
-                    <div className="space-y-2 rounded-xl border border-surface-border/60 bg-surface-muted/20 p-2.5 shadow-2xs">
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Group</label>
-                                <SearchableSelect
-                                    value={selectedGroupId}
-                                    onValueChange={(val) => {
-                                        setSelectedGroupId(val);
-                                        setSelectedCompanyId('all');
-                                    }}
-                                    options={groupOptions}
-                                    placeholder="Semua Group"
-                                    searchPlaceholder="Cari group..."
-                                    triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
-                                />
+                    {/* Pie Chart: Kontrak Sedang Dikerjakan oleh Anggota PIC */}
+                    <Card className="border border-surface-border/60 bg-white dark:bg-zinc-900/50 shadow-xs">
+                        <CardHeader className="p-3.5 pb-0 flex flex-row items-center justify-between space-y-0">
+                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-soft">
+                                {selectedUser ? `Distribusi Status Kontrak — ${selectedUser.name}` : 'Distribusi Kontrak Aktif per PIC'}
+                            </CardTitle>
+                            {selectedUserId && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedUserId(null)}
+                                    className="text-[9px] font-bold text-primary hover:underline uppercase"
+                                >
+                                    Lihat Semua PIC
+                                </button>
+                            )}
+                        </CardHeader>
+                        <CardContent className="p-3.5 pt-2">
+                            <div className="h-[170px] w-full flex items-center justify-center">
+                                {(() => {
+                                    const pieData = selectedUser
+                                        ? [
+                                              { name: 'Pending (Tunggu Approval)', value: selectedUser.stats_this_month?.pending || 0, color: '#f59e0b' },
+                                              { name: 'Kontrak Selesai', value: selectedUser.stats_this_month?.completed || 0, color: '#10b981' },
+                                          ].filter((d) => d.value > 0)
+                                        : filteredWorkloads
+                                              .map((u) => ({
+                                                  name: u.name,
+                                                  value: (u.stats_this_month?.active || 0) + (u.stats_this_month?.pending || 0),
+                                              }))
+                                              .filter((d) => d.value > 0);
+
+                                    const hasData = pieData.length > 0;
+                                    const displayData = hasData ? pieData : [{ name: 'Belum Ada Data', value: 1, color: 'rgba(156, 163, 175, 0.25)' }];
+
+                                    return (
+                                        <div className="relative w-full h-full flex items-center justify-center">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={displayData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={35}
+                                                        outerRadius={65}
+                                                        paddingAngle={hasData ? 3 : 0}
+                                                        dataKey="value"
+                                                    >
+                                                        {displayData.map((entry: any, index: number) => (
+                                                            <Cell
+                                                                key={`pic-cell-${index}`}
+                                                                fill={
+                                                                    hasData
+                                                                        ? entry.color || CHART_COLORS[index % CHART_COLORS.length]
+                                                                        : 'rgba(156, 163, 175, 0.25)'
+                                                                }
+                                                            />
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip
+                                                        content={({ active, payload }: any) => {
+                                                            if (active && payload && payload.length) {
+                                                                return (
+                                                                    <div className="rounded-xl border border-surface-border bg-white dark:bg-zinc-950 p-2 shadow-md text-xs">
+                                                                        <p className="font-bold text-text-main">{payload[0].name}</p>
+                                                                        <p className="text-primary font-semibold">
+                                                                            {hasData ? `${payload[0].value} Kontrak` : '0 Kontrak'}
+                                                                        </p>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        }}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+
+                                            {/* Centered Total Count Overlay */}
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                <span className="text-[13px] font-black leading-none text-text-main">
+                                                    {hasData ? pieData.reduce((acc, curr) => acc + (curr.value || 0), 0) : 0}
+                                                </span>
+                                                <span className="text-[7.5px] font-extrabold uppercase tracking-widest text-text-soft mt-0.5">
+                                                    Total
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
+                        </CardContent>
+                    </Card>
 
-                            <div>
-                                <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Region</label>
-                                <SearchableSelect
-                                    value={selectedRegionId}
-                                    onValueChange={(val) => {
-                                        setSelectedRegionId(val);
-                                        setSelectedCompanyId('all');
-                                    }}
-                                    options={regionOptions}
-                                    placeholder="Semua Region"
-                                    searchPlaceholder="Cari region..."
-                                    triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
-                                />
-                            </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Perusahaan</label>
-                                <SearchableSelect
-                                    value={selectedCompanyId}
-                                    onValueChange={(val) => setSelectedCompanyId(val)}
-                                    options={companyOptions}
-                                    placeholder="Semua Perusahaan"
-                                    searchPlaceholder="Cari perusahaan..."
-                                    triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Departemen</label>
-                                <SearchableSelect
-                                    value={selectedDeptId}
-                                    onValueChange={(val) => setSelectedDeptId(val)}
-                                    options={deptOptions}
-                                    disabled={!isAdmin}
-                                    placeholder="Semua Divisi"
-                                    searchPlaceholder="Cari departemen..."
-                                    triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="mb-0.5 block text-[9px] font-bold uppercase tracking-wider text-text-soft">Status Beban</label>
-                            <SearchableSelect
-                                value={statusFilter}
-                                onValueChange={(val) => setStatusFilter(val as any)}
-                                options={statusOptions}
-                                placeholder="Semua Status"
-                                searchPlaceholder="Cari status..."
-                                triggerClassName="min-h-[32px] h-8 py-1 px-2.5 text-[10px] rounded-lg border-surface-border bg-background shadow-2xs"
-                            />
-                        </div>
-                    </div>
-
-                    <div className="relative">
-                        <SearchInput
-                            placeholder="Cari nama, peran, divisi..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="bg-background h-9 w-full"
-                        />
-                    </div>
                     
-                    <div className="w-full border border-surface-border/60 rounded-xl bg-white dark:bg-zinc-900/50 shadow-xs max-h-[580px] overflow-y-auto">
-                        <table className="w-full table-fixed border-collapse text-left text-xs">
-                            <colgroup>
-                                <col className="w-[50%]" />
-                                <col className="w-[25%]" />
-                                <col className="w-[25%]" />
-                            </colgroup>
-                            <thead>
-                                <tr className="border-b border-surface-border/60 bg-surface-muted/50 text-[9px] font-bold uppercase tracking-wider text-text-soft sticky top-0 bg-white dark:bg-zinc-900 z-10">
-                                    <th className="px-2.5 py-2">PIC / Pengguna</th>
-                                    <th className="px-1.5 py-2 text-center">Status</th>
-                                    <th className="px-1.5 py-2 text-center">Beban (T/P/S)</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-surface-border/40">
-                                {filteredWorkloads.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={3} className="px-2.5 py-10 text-center text-text-desc font-medium uppercase opacity-60">
-                                            PIC tidak ditemukan
+                    <Card className="w-full border border-surface-border/60 bg-white dark:bg-zinc-900/50 shadow-xs max-h-[580px] overflow-y-auto">
+                        <CardContent className="p-0">
+                            <table className="w-full table-fixed border-collapse text-left text-xs">
+                                <colgroup>
+                                    <col className="w-[70%]" />
+                                    <col className="w-[30%]" />
+                                </colgroup>
+                                <thead>
+                                    <tr className="border-b border-surface-border/40 bg-surface-muted/50 text-[9px] font-bold uppercase tracking-wider text-text-soft sticky top-0 bg-white dark:bg-zinc-900 z-10">
+                                        <th className="px-3 py-2.5">PIC / Pengguna</th>
+                                        <th className="px-2 py-2.5 text-center" title="Format: [Pending] / [Selesai]">Pending / Selesai</th>
+                                    </tr>
+                                    <tr className="sticky top-[33px] z-10 bg-white dark:bg-zinc-900 border-b border-surface-border/60">
+                                        <td colSpan={2} className="px-2.5 py-1.5">
+                                            <div className="relative">
+                                                <Search size={10} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft pointer-events-none" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Cari PIC..."
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    className="h-7 w-full rounded-md border border-surface-border/60 bg-surface-muted/30 pl-7 pr-3 text-[10px] text-text-main placeholder:text-text-soft focus:outline-none focus:ring-1 focus:ring-primary/40 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                                                />
+                                            </div>
                                         </td>
                                     </tr>
-                                ) : (
-                                    filteredWorkloads.map((user) => {
-                                        const isBusy = user.load_status === 'Sibuk';
-                                        const customAvatarStyle = user.bg_color && user.text_color ? { backgroundColor: user.bg_color, color: user.text_color } : undefined;
-                                        return (
-                                            <tr key={user.id} className="hover:bg-surface-muted/30 transition-colors">
-                                                <td className="px-2.5 py-1.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <div
-                                                            style={customAvatarStyle}
-                                                            className={cn(
-                                                                'flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-black/5 text-[8.5px] font-bold dark:border-white/5',
-                                                                !customAvatarStyle && 'bg-surface-muted text-text-desc',
-                                                            )}
-                                                        >
-                                                            {user.initials ?? user.name.substring(0, 2).toUpperCase()}
+                                </thead>
+                                <tbody className="divide-y divide-surface-border/40">
+                                    {filteredWorkloads.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={2} className="px-2.5 py-10 text-center text-text-desc font-medium uppercase opacity-60">
+                                                PIC tidak ditemukan
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        filteredWorkloads.map((user) => {
+                                            const isBusy = user.load_status === 'Sibuk';
+                                            const isSelected = selectedUserId === user.id;
+
+                                            // Generate vibrant full-color HSL from user name or ID if no custom color provided
+                                            const hash = (user.name || user.id || '').split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
+                                            const hue = Math.abs(hash) % 360;
+                                            const fullColorStyle = user.bg_color && user.text_color 
+                                                ? { backgroundColor: user.bg_color, color: user.text_color } 
+                                                : { backgroundColor: `hsl(${hue}, 75%, 45%)`, color: '#ffffff' };
+
+                                            return (
+                                                <tr 
+                                                    key={user.id} 
+                                                    onClick={() => setSelectedUserId(isSelected ? null : user.id)}
+                                                    className={cn(
+                                                        "cursor-pointer transition-colors",
+                                                        isSelected ? "bg-primary/10 hover:bg-primary/15" : "hover:bg-surface-muted/30"
+                                                    )}
+                                                    title="Klik untuk melihat Pie Chart distribusi status pengguna ini"
+                                                >
+                                                    <td className="px-3 py-2.5">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <div
+                                                                style={fullColorStyle}
+                                                                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[9.5px] font-extrabold shadow-xs tracking-wider"
+                                                            >
+                                                                {user.initials ?? user.name.substring(0, 2).toUpperCase()}
+                                                            </div>
+                                                            <div className="min-w-0 flex-1 space-y-0.5">
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="text-text-main font-semibold leading-snug text-[10.5px] whitespace-normal break-words" title={user.name}>
+                                                                        {user.name}
+                                                                    </span>
+                                                                    <span className={cn(
+                                                                        'inline-flex items-center px-1.5 py-0.2 rounded text-[7.5px] font-bold uppercase tracking-wider shrink-0',
+                                                                        isBusy 
+                                                                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400' 
+                                                                            : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                                                    )}>
+                                                                        {user.load_status || 'Ready'}
+                                                                    </span>
+                                                                </div>
+                                                                <span className="text-text-soft block text-[8px] font-bold uppercase tracking-wider whitespace-normal break-words" title={`${user.position || user.role} • ${user.department_name || 'Umum'}`}>
+                                                                    {user.position || user.role} • {user.department_name || 'Umum'}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="min-w-0">
-                                                            <span className="text-text-main block font-semibold leading-tight text-[10px] truncate" title={user.name}>{user.name}</span>
-                                                            <span className="text-text-soft block text-[7.5px] font-bold uppercase tracking-wider truncate" title={`${user.position || user.role} • ${user.department_name || 'Umum'}`}>
-                                                                {user.position || user.role} • {user.department_name || 'Umum'}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-1.5 py-1.5 text-center">
-                                                    <span className={cn(
-                                                        'inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider',
-                                                        isBusy 
-                                                            ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400' 
-                                                            : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
-                                                    )}>
-                                                        {user.load_status || 'Ready'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-1.5 py-1.5 text-center whitespace-nowrap text-[9.5px] font-semibold">
-                                                    <span className="text-warning" title="Tunggu Approval">{user.stats_this_month?.pending || 0}</span>
-                                                    <span className="text-text-soft/60 mx-0.5">/</span>
-                                                    <span className="text-primary" title="Proses Kontrak">{user.stats_this_month?.active || 0}</span>
-                                                    <span className="text-text-soft/60 mx-0.5">/</span>
-                                                    <span className="text-success" title="Kontrak Selesai">{user.stats_this_month?.completed || 0}</span>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                                    </td>
+                                                    <td className="px-2 py-2.5 text-center whitespace-nowrap text-[10px] font-semibold">
+                                                        <span className="text-warning font-bold" title="Pending / Tunggu Approval">{user.stats_this_month?.pending || 0}</span>
+                                                        <span className="text-text-soft/60 mx-1 font-normal">/</span>
+                                                        <span className="text-success font-bold" title="Kontrak Selesai">{user.stats_this_month?.completed || 0}</span>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 

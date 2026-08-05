@@ -1204,7 +1204,7 @@ export default function ContractsIndex({
                     .then((res) => res.data)
                     .catch(() => []),
                 axios
-                    .post('/admin/reports/api/data', {})
+                    .get('/contracts/dashboard-metrics')
                     .then((res) => res.data)
                     .catch(() => null),
             ])

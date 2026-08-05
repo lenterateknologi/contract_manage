@@ -239,6 +239,11 @@ class ContractController extends Controller
         return response()->json($loaders['submissionTypes']());
     }
 
+    public function getDashboardMetrics(Request $request): JsonResponse
+    {
+        return response()->json((new ContractDashboardQuery)->getMetrics($request));
+    }
+
     #[OA\Get(
         path: '/api/contracts/{id}',
         summary: 'Get contract details',

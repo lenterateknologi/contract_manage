@@ -140,6 +140,9 @@ export function DashboardMetrics({ metrics, activeTab }: { metrics: any; activeT
     if (!metrics) return null;
 
     const config = metrics.dashboardConfig;
+    console.log('[DASHBOARD LOG] Dashboard Metrics received:', metrics);
+    console.log('[DASHBOARD LOG] Resolved Dashboard Config:', config);
+
     const hasAnyTab = config ? (config.show_overview || config.show_workload || config.show_master_data) : false;
 
     if (!hasAnyTab) {
