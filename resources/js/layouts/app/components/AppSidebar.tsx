@@ -160,7 +160,6 @@ export const AppSidebar = memo(function AppSidebar() {
                                 <SearchInput
                                     ref={inputRef}
                                     placeholder="Cari fitur..."
-                                    className="bg-sidebar-accent/50 border-sidebar-border/50 text-sidebar-foreground placeholder:text-sidebar-foreground/30 h-9 w-full rounded-lg pr-12 text-[13px] font-semibold transition-all duration-300"
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     autoFocus={search !== ''}

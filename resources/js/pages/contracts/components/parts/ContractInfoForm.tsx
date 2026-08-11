@@ -12,6 +12,8 @@ interface ContractInfoFormProps {
     setTitle: (val: string) => void;
     contractNo: string;
     setContractNo: (val: string) => void;
+    price: string;
+    setPrice: (val: string) => void;
     typeId: string;
     setTypeId: (val: string) => void;
     submissionTypeId: string;
@@ -53,6 +55,8 @@ export function ContractInfoForm({
     setTitle,
     contractNo,
     setContractNo,
+    price,
+    setPrice,
     typeId,
     setTypeId,
     submissionTypeId,
@@ -130,6 +134,35 @@ export function ContractInfoForm({
                     />
                 ) : (
                     <ReadonlyValue value={selected.contract_type} />
+                )}
+            </FieldRow>
+
+            {/* Nilai / Harga Kontrak */}
+            <FieldRow label="Nilai / Harga Kontrak">
+                {isDraft && selected.allow_price_edit !== false ? (
+                    <Input
+                        value={(() => {
+                            if (!price) return '';
+                            const clean = String(price).replace(/\D/g, '');
+                            if (!clean) return '';
+                            return new Intl.NumberFormat('id-ID').format(parseInt(clean, 10));
+                        })()}
+                        onChange={(e) => {
+                            const raw = e.target.value.replace(/\D/g, '');
+                            setPrice(raw);
+                        }}
+                        placeholder="Contoh: 510.000.000..."
+                        size="sm"
+                    />
+                ) : (
+                    <ReadonlyValue
+                        value={(() => {
+                            const val = price || (selected.metadata?.meta_harga ?? selected.metadata?.f2_price ?? selected.meta?.f2_price);
+                            if (val === undefined || val === null || val === '') return null;
+                            const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.]/g, ''));
+                            return isNaN(num) ? String(val) : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+                        })()}
+                    />
                 )}
             </FieldRow>
 

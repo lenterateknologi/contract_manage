@@ -131,7 +131,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                             variant="outline"
                             size="sm"
                             className={cn(
-                                'h-9 gap-1.5 rounded-xl border-black/10 px-3 font-bold text-black shadow-sm transition-all hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5',
+                                'h-9 gap-1.5 rounded-xl border-black/10 px-3 font-bold text-black transition-all hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5',
                                 activeCount > 0 && 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
                             )}
                         >

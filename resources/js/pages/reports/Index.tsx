@@ -174,7 +174,7 @@ export default function ReportsPage() {
                         >
                             <Button
                                 className={cn(
-                                    'h-9 rounded-xl border px-4 text-xs font-bold transition-all shadow-xs',
+                                    'h-9 rounded-xl border px-4 text-xs font-bold transition-all',
                                     activeFilterCount > 0
                                         ? 'border-primary bg-primary text-primary-foreground hover:bg-primary/95'
                                         : 'border-surface-border bg-card text-text-main hover:bg-surface-muted',
@@ -199,11 +199,11 @@ export default function ReportsPage() {
                     <div className="flex h-9 items-center gap-2">
                         <Button
                             variant="outline"
-                            className="flex h-full items-center gap-2 rounded-xl border-surface-border bg-card px-4 text-xs font-bold transition-all hover:bg-surface-muted"
+                            className="flex h-full items-center gap-1.5 rounded-xl border-surface-border bg-card px-3 text-xs font-medium transition-all hover:bg-surface-muted shadow-none"
                             onClick={exportCsv}
                         >
-                            <Download size={14} />
-                            Export CSV
+                            <Download size={13} />
+                            Export
                         </Button>
                     </div>
                 </div>

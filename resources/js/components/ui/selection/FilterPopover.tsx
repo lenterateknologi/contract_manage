@@ -11,7 +11,9 @@ import {
     X,
     Calendar,
     Settings2,
-    Check
+    Check,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/buttons/Button';
@@ -196,44 +198,83 @@ function DateRangeCategoryOptions({
     const toVal = typeof activeFilters[toKey] === 'string' ? activeFilters[toKey].split('T')[0] : '';
 
     return (
-        <div className="space-y-2">
-            <Label className="text-[10px] font-bold text-text-desc uppercase ">
-                {category.label}
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                    <span className="text-[9px] font-bold text-text-soft uppercase">Mulai</span>
-                    <input
-                        type="date"
-                        value={fromVal}
-                        max={toVal || undefined}
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            onFilterChange(fromKey, val);
-                            if (toVal && val && new Date(val) > new Date(toVal)) {
-                                onFilterChange(toKey, val);
-                            }
-                        }}
-                        className="w-full h-8 px-2 text-[10px] font-bold bg-surface-muted/30 border border-surface-border rounded-lg text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm"
-                    />
-                </div>
-                <div className="space-y-1">
-                    <span className="text-[9px] font-bold text-text-soft uppercase">Sampai</span>
-                    <input
-                        type="date"
-                        value={toVal}
-                        min={fromVal || undefined}
-                        onChange={(e) => {
-                            const val = e.target.value;
+        <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+                <span className="text-[9px] font-bold text-text-soft uppercase">Mulai</span>
+                <input
+                    type="date"
+                    value={fromVal}
+                    max={toVal || undefined}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        onFilterChange(fromKey, val);
+                        if (toVal && val && new Date(val) > new Date(toVal)) {
                             onFilterChange(toKey, val);
-                            if (fromVal && val && new Date(val) < new Date(fromVal)) {
-                                onFilterChange(fromKey, val);
-                            }
-                        }}
-                        className="w-full h-8 px-2 text-[10px] font-bold bg-surface-muted/30 border border-surface-border rounded-lg text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm"
-                    />
-                </div>
+                        }
+                    }}
+                    className="w-full h-8 px-2 text-[10px] font-bold bg-surface-muted/30 border border-surface-border rounded-lg text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm"
+                />
             </div>
+            <div className="space-y-1">
+                <span className="text-[9px] font-bold text-text-soft uppercase">Sampai</span>
+                <input
+                    type="date"
+                    value={toVal}
+                    min={fromVal || undefined}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        onFilterChange(toKey, val);
+                        if (fromVal && val && new Date(val) < new Date(fromVal)) {
+                            onFilterChange(fromKey, val);
+                        }
+                    }}
+                    className="w-full h-8 px-2 text-[10px] font-bold bg-surface-muted/30 border border-surface-border rounded-lg text-text-main focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm"
+                />
+            </div>
+        </div>
+    );
+}
+
+function FilterCategoryAccordion({
+    title,
+    activeCount,
+    children,
+    defaultOpen = true
+}: {
+    title: string;
+    activeCount?: number;
+    children: React.ReactNode;
+    defaultOpen?: boolean;
+}) {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <div className="border border-surface-border/60 rounded-xl overflow-hidden bg-surface-base/40 dark:bg-zinc-900/40">
+            <button
+                type="button"
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full flex items-center justify-between p-2.5 bg-surface-muted/30 hover:bg-surface-muted/60 transition-colors text-left cursor-pointer select-none"
+            >
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-text-desc uppercase tracking-wider">
+                        {title}
+                    </span>
+                    {activeCount !== undefined && activeCount > 0 && (
+                        <span className="text-[9px] font-bold text-primary bg-primary-muted px-1.5 py-0.2 rounded-md">
+                            {activeCount}
+                        </span>
+                    )}
+                </div>
+                <div className="text-text-desc hover:text-text-main transition-transform duration-200">
+                    {isOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                </div>
+            </button>
+
+            {isOpen && (
+                <div className="p-2.5 pt-1 space-y-2 border-t border-surface-border/30">
+                    {children}
+                </div>
+            )}
         </div>
     );
 }
@@ -246,6 +287,8 @@ export function FilterPopover({
     totalResults,
     children
 }: FilterPopoverProps) {
+    const [isMinimized, setIsMinimized] = useState(false);
+
     const activeCount = React.useMemo(() => {
         const keys = categories.map(c => c.key);
         let count = 0;
@@ -276,127 +319,151 @@ export function FilterPopover({
 
                     <PopoverContent
                         align="start"
-                        className="w-80 sm:w-96 p-0 border border-surface-border/80 bg-surface-base/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden z-[9999]"
+                        className="w-80 sm:w-96 p-0 border border-surface-border/80 bg-surface-base/95 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden z-[9999] transition-all duration-300"
                     >
                         {/* Header */}
-                        <div className="p-4 border-b border-surface-border bg-surface-muted/30 flex items-center justify-between">
+                        <div className="p-3.5 border-b border-surface-border bg-surface-muted/30 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white shadow-sm">
                                     <Settings2 size={14} />
                                 </div>
                                 <div>
-                                    <h4 className="text-xs font-bold text-text-main">Saringan Data</h4>
+                                    <h4 className="text-xs font-bold text-text-main flex items-center gap-1.5">
+                                        Saringan Data
+                                        {hasActiveFilters && (
+                                            <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-extrabold bg-primary text-primary-foreground">
+                                                {activeCount}
+                                            </span>
+                                        )}
+                                    </h4>
                                     <p className="text-[9px] font-medium text-text-desc">Persempit hasil pencarian</p>
                                 </div>
                             </div>
 
-                            {hasActiveFilters && (
+                            <div className="flex items-center gap-1.5">
+                                {hasActiveFilters && (
+                                    <button
+                                        type="button"
+                                        onClick={onReset}
+                                        className="flex h-7 px-2 items-center gap-1 rounded-lg bg-danger/10 hover:bg-danger hover:text-white text-danger transition-all shadow-sm cursor-pointer"
+                                        title="Reset Filter"
+                                    >
+                                        <RotateCcw size={10} />
+                                        <span className="text-[9px] font-bold uppercase">Reset</span>
+                                    </button>
+                                )}
+
+                                {/* Expand / Minimize Header Button */}
                                 <button
                                     type="button"
-                                    onClick={onReset}
-                                    className="flex h-7 px-2 items-center gap-1 rounded-lg bg-danger/10 hover:bg-danger hover:text-white text-danger transition-all shadow-sm"
+                                    onClick={() => setIsMinimized(!isMinimized)}
+                                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-surface-border hover:bg-surface-muted text-text-desc hover:text-text-main transition-all cursor-pointer"
+                                    title={isMinimized ? "Perluas Filter" : "Ciutkan Filter"}
                                 >
-                                    <RotateCcw size={10} />
-                                    <span className="text-[9px] font-bold uppercase ">Reset</span>
+                                    {isMinimized ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
                                 </button>
-                            )}
+                            </div>
                         </div>
 
-                        {/* Body - Filter Categories */}
-                        <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto custom-scrollbar">
-                            {categories.map((category) => {
-                                if (category.type === 'searchable' && (!category.options || category.options.length === 0)) {
-                                    return null;
-                                }
+                        {/* Body & Footer container */}
+                        {!isMinimized && (
+                            <>
+                                {/* Body - Filter Categories */}
+                                <div className="p-3 space-y-2.5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                                    {categories.map((category) => {
+                                        if (category.type === 'searchable' && (!category.options || category.options.length === 0)) {
+                                            return null;
+                                        }
 
-                                const currentVals = Array.isArray(activeFilters[category.key])
-                                    ? activeFilters[category.key]
-                                    : activeFilters[category.key]
-                                        ? [activeFilters[category.key]]
-                                        : [];
+                                        const currentVals = Array.isArray(activeFilters[category.key])
+                                            ? activeFilters[category.key]
+                                            : activeFilters[category.key]
+                                                ? [activeFilters[category.key]]
+                                                : [];
 
-                                return (
-                                    <div key={category.key} className="space-y-2">
-                                        {category.type === 'searchable' ? (
-                                            <SearchableCategoryOptions
-                                                category={category}
-                                                activeValues={currentVals.map(String)}
-                                                onToggle={(next) => onFilterChange(category.key, next)}
-                                            />
-                                        ) : category.type === 'date-range' ? (
-                                            <DateRangeCategoryOptions
-                                                category={category}
-                                                activeFilters={activeFilters}
-                                                onFilterChange={onFilterChange}
-                                            />
-                                        ) : (
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-text-desc uppercase ">
-                                                    {category.label}
-                                                </Label>
-                                                <div className="grid grid-cols-1 gap-1 border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5">
-                                                    {category.options?.map((opt) => {
-                                                        const isSelected = currentVals.map(String).includes(String(opt.value));
-                                                        return (
-                                                            <button
-                                                                key={String(opt.value)}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    const valStr = String(opt.value);
-                                                                    const next = currentVals.map(String).includes(valStr)
-                                                                        ? currentVals.filter((v: any) => String(v) !== valStr)
-                                                                        : [...currentVals, valStr];
-                                                                    onFilterChange(category.key, next);
-                                                                }}
-                                                                className={cn(
-                                                                    "w-full flex items-center justify-between p-1.5 rounded-md text-left transition-all text-xs font-semibold uppercase tracking-wide",
-                                                                    isSelected
-                                                                        ? "bg-primary-muted text-primary"
-                                                                        : "text-text-main hover:bg-surface-muted"
-                                                                )}
-                                                            >
-                                                                <span>{opt.label}</span>
-                                                                <div className={cn(
-                                                                    "h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0",
-                                                                    isSelected
-                                                                        ? "border-primary bg-primary text-white"
-                                                                        : "border-surface-border bg-white"
-                                                                )}>
-                                                                    {isSelected && <Check size={10} strokeWidth={3} />}
-                                                                </div>
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
+                                        return (
+                                            <FilterCategoryAccordion
+                                                key={category.key}
+                                                title={category.label}
+                                                activeCount={currentVals.length}
+                                            >
+                                                {category.type === 'searchable' ? (
+                                                    <SearchableCategoryOptions
+                                                        category={category}
+                                                        activeValues={currentVals.map(String)}
+                                                        onToggle={(next) => onFilterChange(category.key, next)}
+                                                    />
+                                                ) : category.type === 'date-range' ? (
+                                                    <DateRangeCategoryOptions
+                                                        category={category}
+                                                        activeFilters={activeFilters}
+                                                        onFilterChange={onFilterChange}
+                                                    />
+                                                ) : (
+                                                    <div className="grid grid-cols-1 gap-1 border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5">
+                                                        {category.options?.map((opt) => {
+                                                            const isSelected = currentVals.map(String).includes(String(opt.value));
+                                                            return (
+                                                                <button
+                                                                    key={String(opt.value)}
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const valStr = String(opt.value);
+                                                                        const next = currentVals.map(String).includes(valStr)
+                                                                            ? currentVals.filter((v: any) => String(v) !== valStr)
+                                                                            : [...currentVals, valStr];
+                                                                        onFilterChange(category.key, next);
+                                                                    }}
+                                                                    className={cn(
+                                                                        "w-full flex items-center justify-between p-1.5 rounded-md text-left transition-all text-xs font-semibold uppercase tracking-wide cursor-pointer",
+                                                                        isSelected
+                                                                            ? "bg-primary-muted text-primary"
+                                                                            : "text-text-main hover:bg-surface-muted"
+                                                                    )}
+                                                                >
+                                                                    <span>{opt.label}</span>
+                                                                    <div className={cn(
+                                                                        "h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0",
+                                                                        isSelected
+                                                                            ? "border-primary bg-primary text-white"
+                                                                            : "border-surface-border bg-white"
+                                                                    )}>
+                                                                        {isSelected && <Check size={10} strokeWidth={3} />}
+                                                                    </div>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </FilterCategoryAccordion>
+                                        );
+                                    })}
+                                </div>
 
-                        {/* Footer */}
-                        <div className="p-3 border-t border-surface-border bg-surface-muted/20 flex justify-end gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => {
-                                    close();
-                                }}
-                                className="h-8 text-[10px] font-bold px-3 rounded-lg"
-                            >
-                                BATAL
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    close();
-                                }}
-                                className="h-8 text-[10px] font-bold px-3 rounded-lg"
-                            >
-                                {totalResults !== undefined ? `TERAPKAN (${totalResults})` : 'TERAPKAN'}
-                            </Button>
-                        </div>
+                                {/* Footer */}
+                                <div className="p-3 border-t border-surface-border bg-surface-muted/20 flex justify-end gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => {
+                                            close();
+                                        }}
+                                        className="h-8 text-[10px] font-bold px-3 rounded-lg cursor-pointer"
+                                    >
+                                        BATAL
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        onClick={() => {
+                                            close();
+                                        }}
+                                        className="h-8 text-[10px] font-bold px-3 rounded-lg cursor-pointer"
+                                    >
+                                        {totalResults !== undefined ? `TERAPKAN (${totalResults})` : 'TERAPKAN'}
+                                    </Button>
+                                </div>
+                            </>
+                        )}
                     </PopoverContent>
                 </>
             )}

@@ -35,6 +35,7 @@ import DocumentPreviewModal from '../modals/DocumentPreviewModal';
 import { MentionDropdown } from '../parts/MentionDropdown';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/user/Avatar';
+import { getAvatarColor } from '@/lib/avatarColor';
 import {
     Bubble,
     BubbleContent,
@@ -164,6 +165,7 @@ function MsgBubble({
         .slice(0, 2)
         .join('')
         .toUpperCase();
+    const avatarColorClass = isMe ? 'bg-primary text-white' : getAvatarColor(name);
 
     let attachmentUrl = (msg as any).attachment_url || (msg as any).attachment_path;
     if (attachmentUrl && !attachmentUrl.startsWith('http') && !attachmentUrl.startsWith('/')) {
@@ -229,7 +231,7 @@ function MsgBubble({
             <MessageAvatar>
                 <Avatar className="h-8 w-8 border border-border shadow-2xs">
                     <AvatarImage src={msg.user?.avatar || ''} alt={name} />
-                    <AvatarFallback className={isMe ? 'bg-primary text-white text-[10px] font-bold' : 'bg-muted text-foreground text-[10px] font-bold'}>
+                    <AvatarFallback className={`${avatarColorClass} text-[10px] font-bold`}>
                         {initials}
                     </AvatarFallback>
                 </Avatar>

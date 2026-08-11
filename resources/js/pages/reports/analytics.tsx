@@ -185,18 +185,18 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                         onClick={handleExport}
                         disabled={exportLoading}
                         className={cn(
-                            "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-150 shadow-sm",
-                            "border-border bg-white text-foreground hover:bg-muted/50 hover:border-border/80",
+                            "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150",
+                            "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800",
                             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                             "disabled:opacity-60 disabled:cursor-not-allowed"
                         )}
                     >
-                        {exportLoading
-                            ? <Loader2 size={13} className="animate-spin text-muted-foreground" />
-                            : <Download size={13} className="text-muted-foreground" />
-                        }
+                        {exportLoading ? (
+                            <Loader2 size={13} className="animate-spin text-slate-400" />
+                        ) : (
+                            <Download size={13} className="text-slate-500 dark:text-slate-400" />
+                        )}
                         <span>Export</span>
-                        <span className="text-muted-foreground font-normal">Excel / CSV</span>
                     </button>
                 }
                 pagination={{

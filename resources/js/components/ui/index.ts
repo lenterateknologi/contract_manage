@@ -48,6 +48,7 @@ export * from './selection/Checkbox';
 export * from './selection/CompactSwitch';
 export * from './selection/DropdownMenu';
 export * from './selection/FilterPopover';
+export * from './selection/SideFilterCard';
 export * from './selection/PortalSelect';
 export * from './selection/Radio';
 export * from './selection/SearchableMultiSelect';

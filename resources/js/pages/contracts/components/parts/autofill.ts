@@ -22,124 +22,104 @@ export const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; t
     { key: 'meta_vp_legal', label: 'VP Legal / Management', width: '1/3', type: 'signature_box' },
 ];
 
-/**
- * Fuzzy matching helper to autofill F1 form fields from general contract data.
- */
+export const AUTOFILL_KEY_DEFINITIONS: Record<string, { label: string; group: string }> = {
+    meta_nomor: { label: 'Nomor Form', group: 'Header & Nomor' },
+    meta_no_kontrak: { label: 'No. Kontrak', group: 'Header & Nomor' },
+    meta_judul_kontrak: { label: 'Judul Perjanjian', group: 'Header & Nomor' },
+    meta_tipe_perjanjian: { label: 'Tipe Perjanjian', group: 'Header & Nomor' },
+    meta_sub_topik: { label: 'Sub Topik', group: 'Header & Nomor' },
+    meta_tgl_dibuat: { label: 'Tanggal Dibuat', group: 'Header & Nomor' },
+
+    meta_p1_entity: { label: 'Nama Pihak I (PT)', group: 'Para Pihak' },
+    meta_p1_signer: { label: 'Penandatangan Pihak I', group: 'Para Pihak' },
+    meta_p1_signer_position: { label: 'Jabatan Penandatangan Pihak I', group: 'Para Pihak' },
+    meta_p1_alamat: { label: 'Alamat Pihak I', group: 'Para Pihak' },
+
+    meta_p2_entity: { label: 'Nama Pihak II (Vendor)', group: 'Para Pihak' },
+    meta_p2_signer: { label: 'Penandatangan Pihak II', group: 'Para Pihak' },
+    meta_p2_signer_position: { label: 'Jabatan Penandatangan Pihak II', group: 'Para Pihak' },
+    meta_p2_alamat: { label: 'Alamat Pihak II', group: 'Para Pihak' },
+
+    meta_nilai_transaksi: { label: 'Harga / Nilai Transaksi', group: 'Detail Kontrak' },
+    meta_masa_berlaku: { label: 'Masa Berlaku', group: 'Detail Kontrak' },
+    meta_lokasi: { label: 'Lokasi Area', group: 'Detail Kontrak' },
+    meta_mekanisme_pembayaran: { label: 'Mekanisme Bayar', group: 'Detail Kontrak' },
+    meta_ringkasan_klausul: { label: 'Ringkasan Klausul', group: 'Detail Kontrak' },
+    meta_ruang_lingkup: { label: 'Ruang Lingkup', group: 'Detail Kontrak' },
+    meta_lampiran: { label: 'Daftar Lampiran', group: 'Detail Kontrak' },
+    meta_deskripsi: { label: 'Deskripsi / Keterangan', group: 'Detail Kontrak' },
+
+    meta_pic: { label: 'PIC', group: 'Tanda Tangan & Persetujuan' },
+    meta_vp_legal: { label: 'VP Legal / Management', group: 'Tanda Tangan & Persetujuan' },
+    meta_manager_legal: { label: 'Manager Legal', group: 'Tanda Tangan & Persetujuan' },
+    meta_tax_required: { label: 'Status Pajak', group: 'Tanda Tangan & Persetujuan' },
+};
+
 export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' | 'f2' | 'contract', users: any[] = []) => {
-    const name = field.name.toLowerCase();
+    const name = field.name?.toLowerCase();
+    if (!name) return null;
 
-    // Special Case: F2 Ruang Lingkup composite
-    if (name === 'meta_ruang_lingkup' && docType === 'f2') {
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
-        const crownNo = contract.contract_no || '';
-        const signer = contract.p1_signer || (contract as any).initiator?.name || '';
-        return `${crownNo}/${dateStr}/${signer}`;
-    }
+    const vendor = (contract as any)?.vendor;
+    const typeObj = (contract as any)?.contract_type;
 
-    // 1. Identification / Metadata
-    if (name === 'meta_nomor') return contract.form_no || '';
-    if (name === 'meta_nomor_kontrak' || name === 'meta_no_kontrak' || name === 'meta_no_pengajuan')
-        return contract.contract_no || contract.form_no || '';
-    if (name === 'meta_judul' || name === 'meta_judul_kontrak' || name === 'meta_nama_kontrak') return contract.title || '';
-    if (name === 'meta_topik' || name === 'meta_jenis_kontrak' || name === 'contract_type') {
-        const type = (contract as any).contract_type;
-        return type?.name || (typeof type === 'string' ? type : '');
-    }
-    if (name === 'meta_sub_topik' || name === 'meta_kop_sub_topik') return (contract as any).kop_sub_topik || '';
-    if (name === 'meta_lampiran') {
-        const vendor = (contract as any).vendor;
-        const docs = vendor?.documents || [];
-        if (docs.length === 0) return '';
-
-        const docLabels: Record<string, string> = {
-            'NIB': 'Nomor Induk Berusaha (NIB)',
-            'SIUP': 'Surat Izin Usaha Perdagangan (SIUP)',
-            'NPWP': 'Nomor Pokok Wajib Pajak (NPWP)',
-            'Akta Pendirian': 'Akta Pendirian Perusahaan',
-            'KTP Direktur': 'KTP Direktur / PIC',
-            'SPPKP': 'Surat Pengukuhan Pengusaha Kena Pajak (SPPKP)',
-        };
-
-        const getDocLabel = (d: any) => docLabels[d.document_type] || d.document_type || d.document_name || d.name || 'Dokumen';
-
-        if (docs.length > 3) {
-            return (
-                docs
-                    .slice(0, 3)
-                    .map((d: any, i: number) => `${i + 1}. ${getDocLabel(d)}`)
-                    .join(', ') + `, dan +${docs.length - 3} lainnya`
-            );
-        }
-        return docs.map((d: any, i: number) => `${i + 1}. ${getDocLabel(d)}`).join(', ');
-    }
-
-    // 2. Dates
-    if (name === 'created_at' || name === 'meta_tgl_dibuat' || name === 'tanggal' || name === 'meta_tanggal') {
-        let dateObj = new Date();
-        
-        if (contract.created_at) {
-            const parsed = new Date(contract.created_at);
-            if (!isNaN(parsed.getTime())) {
-                dateObj = parsed;
+    const resolvers: Record<string, () => any> = {
+        meta_ruang_lingkup: () => {
+            if (docType !== 'f2') return null;
+            const dateStr = new Date().toLocaleDateString('en-CA');
+            return `${contract.contract_no || ''}/${dateStr}/${contract.p1_signer || (contract as any).initiator?.name || ''}`;
+        },
+        meta_nomor: () => contract.form_no || '',
+        meta_no_kontrak: () => contract.contract_no || contract.form_no || '',
+        meta_judul_kontrak: () => contract.title || '',
+        meta_tipe_perjanjian: () => typeObj?.name || (typeof typeObj === 'string' ? typeObj : ''),
+        meta_sub_topik: () => (contract as any).kop_sub_topik || '',
+        meta_lampiran: () => {
+            const docs = vendor?.documents || [];
+            if (!docs.length) return '';
+            const docLabels: Record<string, string> = {
+                'NIB': 'Nomor Induk Berusaha (NIB)',
+                'SIUP': 'Surat Izin Usaha Perdagangan (SIUP)',
+                'NPWP': 'Nomor Pokok Wajib Pajak (NPWP)',
+                'Akta Pendirian': 'Akta Pendirian Perusahaan',
+                'KTP Direktur': 'KTP Direktur / PIC',
+                'SPPKP': 'Surat Pengukuhan Pengusaha Kena Pajak (SPPKP)',
+            };
+            const getDocLabel = (d: any) => docLabels[d.document_type] || d.document_type || d.document_name || d.name || 'Dokumen';
+            return docs.length > 3
+                ? docs.slice(0, 3).map((d: any, i: number) => `${i + 1}. ${getDocLabel(d)}`).join(', ') + `, dan +${docs.length - 3} lainnya`
+                : docs.map((d: any, i: number) => `${i + 1}. ${getDocLabel(d)}`).join(', ');
+        },
+        meta_tgl_dibuat: () => {
+            let dateObj = new Date();
+            if (contract.created_at) {
+                const parsed = new Date(contract.created_at);
+                if (!isNaN(parsed.getTime())) dateObj = parsed;
             }
-        }
+            const dateStr = dateObj.toLocaleDateString('en-CA');
+            const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            return (field.type === 'date' || field.options?.value_type === 'date') ? dateStr : `${dateStr} ${timeStr}`;
+        },
+        meta_masa_berlaku: () => (contract.contract_date && contract.end_date) ? `${contract.contract_date.split(' ')[0]} s/d ${contract.end_date.split(' ')[0]}` : '',
+        meta_p1_entity: () => 'PT. LENTERA TEKNOLOGI',
+        meta_p1_signer: () => contract.p1_signer || (contract as any).initiator?.name || '',
+        meta_p1_signer_position: () => contract.p1_signer_position || (contract as any).initiator?.role || '',
+        meta_p1_alamat: () => 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan',
+        meta_p2_entity: () => vendor?.name || '',
+        meta_p2_signer: () => vendor?.pic_name || '',
+        meta_p2_signer_position: () => vendor?.pic_position || '',
+        meta_p2_alamat: () => vendor?.address || '',
+        meta_lokasi: () => (contract as any).location || '',
+        meta_nilai_transaksi: () => contract.metadata?.meta_harga || (contract as any).amount || '',
+        meta_harga: () => contract.metadata?.meta_harga || (contract as any).amount || '',
+        meta_mekanisme_pembayaran: () => (contract as any).payment_terms || '',
+        meta_deskripsi: () => contract.description || '',
+        meta_manager_legal: () => (contract.approvals || []).find((a) => a.role === 'CEO')?.approver?.name || '',
+        meta_vp_legal: () => (contract.approvals || []).find((a) => a.role === 'VP')?.approver?.name || '',
+        meta_tax_required: () => contract.metadata?.tax_required ? 'Ya' : 'Tidak',
+    };
 
-        const dateStr = dateObj.toLocaleDateString('en-CA'); // YYYY-MM-DD
-        const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        const isDateField = field.type === 'date' || field.options?.value_type === 'date';
-        return isDateField ? dateStr : `${dateStr} ${timeStr}`;
-    }
-    if (name === 'meta_masa_berlaku') {
-        if (contract.contract_date && contract.end_date) {
-            return `${contract.contract_date.split(' ')[0]} s/d ${contract.end_date.split(' ')[0]}`;
-        }
-        return '';
-    }
-
-    // 3. Parties & Metadata
-    if (name === 'meta_p1_entity') return 'PT. LENTERA TEKNOLOGI';
-    if (name === 'meta_type' || name === 'meta_tipe_perjanjian') return (contract as any).submission_type || '';
-    if (name === 'meta_perjanjian') return (contract as any).submission_type || '';
-    if (name === 'meta_p1_signer') return contract.p1_signer || (contract as any).initiator?.name || '';
-    if (name === 'meta_p1_signer_position') return contract.p1_signer_position || (contract as any).initiator?.role || '';
-    if (name === 'meta_p1_alamat') return 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan';
-
-    const vendor = (contract as any).vendor;
-    if (name === 'meta_p2_entity' || name === 'meta_vendor_name') return vendor?.name || '';
-    if (name === 'meta_p2_signer') return vendor?.pic_name || '';
-    if (name === 'meta_p2_signer_position') return vendor?.pic_position || '';
-    if (name === 'meta_p2_alamat') return vendor?.address || '';
-
-    if (name === 'meta_lokasi') return (contract as any).location || '';
-    if (name === 'meta_nilai_transaksi' || name === 'meta_amount') return (contract as any).amount || '';
-    if (name === 'meta_mekanisme_pembayaran') return (contract as any).payment_terms || '';
-    if (name === 'meta_deskripsi' || name === 'keterangan') return contract.description || '';
-
-    if (name === 'contract_no' || name === 'meta_no_kontrak') return contract.contract_no || contract.form_no || '';
-
-    // 4. Management Approvers for Signature Boxes
-    if (name === 'meta_manager_legal') {
-        const approvals = contract.approvals || [];
-        const ceoApproval = approvals.find((a) => a.role === 'CEO');
-        if (ceoApproval) {
-            return ceoApproval.approver?.name || ceoApproval.approver_name || ceoApproval.target_approvers || '';
-        }
-        return '';
-    }
-
-    if (name === 'meta_vp_legal') {
-        const approvals = contract.approvals || [];
-        const vpApproval = approvals.find((a) => a.role === 'VP');
-        if (vpApproval) {
-            return vpApproval.approver?.name || vpApproval.approver_name || vpApproval.target_approvers || '';
-        }
-        return '';
-    }
-
-    // 5. Tax Requirement
-    if (name === 'meta_tax_required' || name === 'meta_pajak' || name === 'has_tax' || name === 'contract.has_tax') {
-        return contract.metadata?.tax_required ? 'Ya' : 'Tidak';
+    if (resolvers[name]) {
+        return resolvers[name]();
     }
 
     // Fallback to direct metadata match

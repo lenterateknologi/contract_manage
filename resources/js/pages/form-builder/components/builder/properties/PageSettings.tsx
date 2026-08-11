@@ -12,8 +12,31 @@ interface PageSettingsProps {
 export const PageSettings: React.FC<PageSettingsProps> = ({ templateData, setTemplateData }) => {
     return (
         <div className="space-y-3.5 border-t border-border/50 pt-3">
+            {/* Title & Description Inputs */}
+            <div className="space-y-2.5 pb-2 border-b border-border/50">
+                <div className="space-y-1">
+                    <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Nama / Judul Template</Label>
+                    <Input
+                        value={templateData.name || ''}
+                        onChange={(e) => setTemplateData('name', e.target.value)}
+                        className="h-8 font-sans text-[10px] font-semibold"
+                        placeholder="Judul Template Form"
+                    />
+                </div>
+                <div className="space-y-1">
+                    <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Deskripsi Template</Label>
+                    <textarea
+                        value={templateData.description || ''}
+                        onChange={(e) => setTemplateData('description', e.target.value)}
+                        rows={2}
+                        className="w-full rounded-md border border-input bg-background px-2 py-1.5 font-sans text-[10px] font-normal shadow-xs focus:ring-1 focus:ring-primary outline-none resize-y"
+                        placeholder="Deskripsi atau catatan template..."
+                    />
+                </div>
+            </div>
+
             {/* Title Header */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 pt-1">
                 <Layout size={12} className="text-muted-foreground" />
                 <h3 className="font-sans text-[9px] font-semibold uppercase">Template & Margin</h3>
             </div>

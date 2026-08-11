@@ -175,74 +175,7 @@ export function DataTable<T extends Record<string, any>>({
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full antialiased text-foreground select-none animate-in fade-in duration-200">
-            {/* --- TOP HEADER SECTION --- */}
-            {(title || onSearchChange || localSearch !== undefined || headerActions || filters.length > 0) && (
-                <div>
-                    {/* Left side: Search input & Filter */}
-                    <div className="flex items-center gap-3">
-                        {onSearchChange !== undefined && (
-                            <div className="w-full md:w-96">
-                                <SearchInput
-                                    placeholder={searchPlaceholder}
-                                    value={localSearch}
-                                    onChange={(e) => setLocalSearch(e.target.value)}
-                                />
-                            </div>
-                        )}
 
-                        {filters.length > 0 && (
-                            <FilterPopover
-                                categories={filters}
-                                activeFilters={activeFilters}
-                                onFilterChange={(key, value) => {
-                                    if (onFilterChange) {
-                                        onFilterChange({ ...activeFilters, [key]: value });
-                                    }
-                                }}
-                                onReset={() => onFilterChange?.(Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {}))}
-                                totalResults={pagination?.total}
-                            >
-                                <Button
-                                    variant={activeCount > 0 ? "primary" : "white"}
-                                    size="icon"
-                                    className="relative h-9 w-9 rounded-xl animate-all duration-200"
-                                    title="Filter Data"
-                                >
-                                    <SlidersHorizontal size={14} />
-                                    {activeCount > 0 && (
-                                        <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[8px] font-bold bg-primary text-primary-foreground ring-2 ring-surface-base">
-                                            {activeCount}
-                                        </span>
-                                    )}
-                                </Button>
-                            </FilterPopover>
-                        )}
-                    </div>
-
-                    {/* Right side: other actions */}
-                    {headerActions && (
-                        <div className="flex items-center gap-2 ml-auto">
-                            {headerActions}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* --- BULK ACTIONS HUD --- */}
-            {/* ponytail: neutral charcoal dark floating HUD instead of navy */}
-            {activeSelectedRows.length > 0 && bulkActions && (
-                <div className="flex items-center justify-between p-3 bg-zinc-900 dark:bg-zinc-900 text-zinc-100 rounded-2xl shadow-xl border border-zinc-800 animate-in slide-in-from-top-2 duration-300 mx-1">
-                    <div className="flex items-center gap-3 pl-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="text-xs font-semibold text-zinc-100 uppercase tracking-wide">
-                            {activeSelectedRows.length} Terpilih
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {typeof bulkActions === 'function' ? bulkActions(activeSelectedRows) : bulkActions}
-                    </div>
-                </div>
-            )}
 
             {/* --- TABLE CONTENT AREA --- */}
             <div className={cn(

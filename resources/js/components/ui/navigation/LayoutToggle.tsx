@@ -11,34 +11,34 @@ export interface LayoutToggleProps {
 }
 
 const LayoutToggle = ({ value, onChange, className }: LayoutToggleProps) => {
-    /* ponytail: clean balanced fill for layout toggle buttons */
+    /* ponytail: clean balanced fill for layout toggle buttons - icon only */
     return (
         <div className={cn("flex rounded-xl bg-surface-muted border border-surface-border p-1 gap-1", className)}>
             <button
                 type="button"
                 onClick={() => onChange('table')}
+                title="Tampilan Tabel"
                 className={cn(
-                    'flex h-7 items-center gap-1.5 rounded-lg px-3 text-[10px] font-bold uppercase transition-all font-sans cursor-pointer',
+                    'flex h-7 w-7 items-center justify-center rounded-lg transition-all font-sans cursor-pointer',
                     value === 'table'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        ? 'bg-primary text-primary-foreground'
                         : 'text-text-desc hover:text-text-main hover:bg-surface-base/60',
                 )}
             >
-                <LayoutList size={13} strokeWidth={2.5} />
-                Tabel
+                <LayoutList size={14} strokeWidth={2.2} />
             </button>
             <button
                 type="button"
                 onClick={() => onChange('grid')}
+                title="Tampilan Kartu"
                 className={cn(
-                    'flex h-7 items-center gap-1.5 rounded-lg px-3 text-[10px] font-bold uppercase transition-all font-sans cursor-pointer',
+                    'flex h-7 w-7 items-center justify-center rounded-lg transition-all font-sans cursor-pointer',
                     value === 'grid'
-                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        ? 'bg-primary text-primary-foreground'
                         : 'text-text-desc hover:text-text-main hover:bg-surface-base/60',
                 )}
             >
-                <LayoutGrid size={13} strokeWidth={2.5} />
-                Kartu
+                <LayoutGrid size={14} strokeWidth={2.2} />
             </button>
         </div>
     );

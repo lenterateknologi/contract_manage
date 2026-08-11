@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
-import { Download, Loader2, History } from 'lucide-react';
+import { Download, Loader2, History, Calendar, X } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 
 interface AuditLog {
@@ -160,23 +160,66 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                 }}
                 totalResults={pagination.total}
                 actions={
-                    <button
-                        onClick={handleExport}
-                        disabled={exportLoading}
-                        className={cn(
-                            "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-150 shadow-sm",
-                            "border-border bg-white text-foreground hover:bg-muted/50 hover:border-border/80",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-                            "disabled:opacity-60 disabled:cursor-not-allowed"
-                        )}
-                    >
-                        {exportLoading
-                            ? <Loader2 size={13} className="animate-spin text-muted-foreground" />
-                            : <Download size={13} className="text-muted-foreground" />
-                        }
-                        <span>Export</span>
-                        <span className="text-muted-foreground font-normal">Excel / CSV</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {/* Header Date Range Picker */}
+                        <div className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-xs text-slate-600 dark:text-slate-300">
+                            <Calendar size={13} className="text-slate-400 shrink-0" />
+                            <input
+                                type="date"
+                                value={filters.date_from || ''}
+                                onChange={(e) => {
+                                    const nextFilters = { ...filters, date_from: e.target.value, audit_page: 1 };
+                                    setFilters(nextFilters);
+                                    fetchData(nextFilters);
+                                }}
+                                className="bg-transparent border-none focus:outline-none p-0 text-xs w-24 text-slate-700 dark:text-slate-200"
+                                title="Dari Tanggal"
+                            />
+                            <span className="text-slate-300 dark:text-slate-600">-</span>
+                            <input
+                                type="date"
+                                value={filters.date_to || ''}
+                                onChange={(e) => {
+                                    const nextFilters = { ...filters, date_to: e.target.value, audit_page: 1 };
+                                    setFilters(nextFilters);
+                                    fetchData(nextFilters);
+                                }}
+                                className="bg-transparent border-none focus:outline-none p-0 text-xs w-24 text-slate-700 dark:text-slate-200"
+                                title="Sampai Tanggal"
+                            />
+                            {(filters.date_from || filters.date_to) && (
+                                <button
+                                    onClick={() => {
+                                        const nextFilters = { ...filters, date_from: '', date_to: '', audit_page: 1 };
+                                        setFilters(nextFilters);
+                                        fetchData(nextFilters);
+                                    }}
+                                    className="ml-0.5 text-slate-400 hover:text-rose-500 rounded transition-colors"
+                                    title="Reset Tanggal"
+                                >
+                                    <X size={12} />
+                                </button>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={handleExport}
+                            disabled={exportLoading}
+                            className={cn(
+                                "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-150",
+                                "border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-800",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                                "disabled:opacity-60 disabled:cursor-not-allowed"
+                            )}
+                        >
+                            {exportLoading ? (
+                                <Loader2 size={13} className="animate-spin text-slate-400" />
+                            ) : (
+                                <Download size={13} className="text-slate-500 dark:text-slate-400" />
+                            )}
+                            <span>Export</span>
+                        </button>
+                    </div>
                 }
                 pagination={{
                     currentPage: pagination.current_page || 1,

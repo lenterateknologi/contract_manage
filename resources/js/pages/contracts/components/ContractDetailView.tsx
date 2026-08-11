@@ -9,6 +9,7 @@ import { router } from '@inertiajs/react';
 import {
     AlertCircle,
     Archive,
+    Check,
     CheckCircle2,
     ChevronLeft,
     Clock,
@@ -114,6 +115,14 @@ const ContractDetailView = ({
     const [headerTitle, setHeaderTitle] = useState(contract.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const isDraftTitle = contract.status === 'draft' && contract.workflow_step?.meta?.allow_info_edit !== false && (contract.can_approve || contract.created_by === meId);
+
+    const [hasInfoChanges, setHasInfoChanges] = useState(false);
+    const [infoSaving, setInfoSaving] = useState(false);
+    const saveInfoRef = React.useRef<(() => Promise<void>) | null>(null);
+    const resetInfoRef = React.useRef<(() => void) | null>(null);
+
+    const onSaveInfoChanges = () => saveInfoRef.current?.();
+    const onResetInfoChanges = () => resetInfoRef.current?.();
 
     useEffect(() => {
         setHeaderTitle(contract.title);
@@ -312,20 +321,23 @@ const ContractDetailView = ({
 
 
     return (
-        <div className="mx-auto flex w-full max-w-full flex-1 flex-col gap-6 p-4">
-            {/* Simple & Clear Header Bar */}
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-1">
-                <div className="flex items-center gap-3">
+        <div className="mx-auto flex w-full max-w-full flex-1 flex-col gap-6 p-4 relative">
+            {/* Stylish Sticky Header Bar */}
+            <div className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 -mx-4 -mt-4 mb-2 bg-surface-base border-b border-surface-border backdrop-blur-2xl shadow-md transition-all duration-300">
+                <div className="flex items-center gap-3 min-w-0">
                     <Button
                         variant="ghost"
                         onClick={onClose}
-                        className="text-text-main flex h-8 items-center gap-1.5 px-2 transition-all hover:bg-surface-muted active:scale-95 rounded-lg"
+                        className="text-text-main flex h-8 items-center gap-1.5 px-2 transition-all hover:bg-surface-muted active:scale-95 rounded-lg shrink-0"
                     >
                         <ChevronLeft size={18} strokeWidth={2.5} />
                         <span className="text-xs font-semibold uppercase">Kembali</span>
                     </Button>
-                    <div className="bg-surface-border h-6 w-px" />
-                    <div className="flex items-center gap-3 flex-wrap">
+                    <div className="bg-surface-border h-6 w-px shrink-0" />
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                        <span className="text-text-main text-xs font-bold tracking-wider uppercase">
+                            #{contract.form_no || 'NO-REQ'}
+                        </span>
                         {isEditingTitle && isDraftTitle ? (
                             <input
                                 autoFocus
@@ -333,65 +345,62 @@ const ContractDetailView = ({
                                 onChange={(e) => setHeaderTitle(e.target.value)}
                                 onBlur={handleTitleBlur}
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleTitleBlur(); }}
-                                className="text-text-main text-base font-bold bg-surface-muted border-b border-primary focus:outline-none min-w-[300px] md:min-w-[450px] px-2 py-0.5 rounded"
+                                className="text-text-main text-base font-bold bg-surface-muted border-b border-primary focus:outline-none min-w-[280px] md:min-w-[400px] px-2 py-0.5 rounded"
                                 placeholder="Masukkan judul..."
                             />
                         ) : (
                             <h2 
-                                className={`text-text-main text-base font-bold tracking-tight ${isDraftTitle ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
+                                className={`text-text-main text-sm md:text-base font-bold tracking-tight truncate max-w-[300px] md:max-w-[550px] ${isDraftTitle ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
                                 onClick={() => { if (isDraftTitle) setIsEditingTitle(true); }}
-                                title={isDraftTitle ? "Klik untuk mengedit" : ""}
+                                title={isDraftTitle ? "Klik untuk mengedit" : contract.title}
                             >
-                                {contract.title || <span className="italic text-text-soft">Tanpa Judul</span>}
+                                {contract.title || <span className="italic text-text-main">Tanpa Judul</span>}
                             </h2>
                         )}
-                        <span className="text-text-soft text-xs font-medium">
-                            #{contract.form_no || 'NO-REQ'}
-                        </span>
-                        <StatusBadge status={contract.status} statusInfo={contract.status_info} />
-                    </div>
-                </div>
-                <div className="flex items-center gap-2 self-end sm:self-center">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="border-surface-border bg-surface-base hover:bg-surface-muted h-8 w-8 rounded-lg shadow-2xs active:scale-95"
-                            >
-                                <MoreVertical size={16} className="text-text-soft" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                align="end"
-                                className="border-surface-border bg-surface-base/95 w-56 rounded-xl p-1.5 shadow-2xl backdrop-blur-xl"
-                            >
-                                <div className="mb-1 px-2 py-1.5">
-                                    <p className="text-text-soft text-[10px] font-bold uppercase tracking-wider">Opsi Kontrak</p>
-                                </div>
-                                <DropdownMenuItem
-                                    onClick={() => handleUpdate({}, true)}
-                                    className="text-text-main flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight uppercase transition-all hover:bg-primary/10"
-                                >
-                                    <Save size={14} className="text-primary" /> Paksa Simpan (Force Sync)
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-text-main flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight uppercase transition-all hover:bg-surface-muted">
-                                    <Archive size={14} className="text-text-soft" /> Arsipkan Kontrak
-                                </DropdownMenuItem>
-                                <div className="bg-surface-border/40 my-1.5 h-px" />
-                                <DropdownMenuItem
-                                    onClick={() => setDeleteOpen(true)}
-                                    className="text-danger focus:bg-danger/10 focus:text-danger flex cursor-pointer items-center gap-2 rounded-lg text-[11px] font-semibold tracking-tight uppercase transition-all"
-                                >
-                                    <Trash2 size={14} /> Hapus Kontrak
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
                     </div>
                 </div>
 
-            <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_400px]">
-                <div className="flex flex-col gap-6">
+                {/* Right Column: Status & Save Buttons */}
+                <div className="flex items-center gap-3 shrink-0">
+                    <StatusBadge status={contract.status} statusInfo={contract.status_info} />
+
+                    {/* Save button in navbar when contract info has changes */}
+                    {hasInfoChanges && (
+                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-3 duration-200">
+                            <button
+                                type="button"
+                            onClick={() => onResetInfoChanges?.()}
+                            disabled={infoSaving}
+                            className="px-3 py-1.5 text-xs font-semibold text-text-soft hover:text-text-main hover:bg-surface-muted rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                        >
+                            Batal
+                        </button>
+                        <Button
+                            variant="primary"
+                            onClick={() => onSaveInfoChanges?.()}
+                            disabled={infoSaving}
+                            className="h-8 px-4 text-xs font-bold shadow-md shadow-primary/20 transition-all flex items-center gap-1.5"
+                        >
+                            {infoSaving ? (
+                                <>
+                                    <Loader2 size={14} className="animate-spin" />
+                                    <span>Menyimpan...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Check size={14} />
+                                    <span>Simpan Perubahan</span>
+                                </>
+                            )}
+                        </Button>
+                    </div>
+                )}
+                </div>
+            </div>
+
+            <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[1fr_420px] items-start lg:h-[calc(100vh-100px)] lg:overflow-hidden">
+                {/* Left Column: Form / Document Detail (Scroll Independen) */}
+                <div className="flex flex-col gap-6 lg:h-full lg:overflow-y-auto lg:pr-1 custom-scrollbar">
                     {contract.workflow_step?.meta?.show_document_detail !== false && (
                         <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs">
                             {/* Compact Header + Tabs */}
@@ -476,24 +485,19 @@ const ContractDetailView = ({
                     </div>
                     )}
                 </div>
-                <div className="sticky top-6 flex flex-col gap-4 self-start">
+                {/* Right Column: Panel Informasi & Aksi (Scroll Independen) */}
+                <div className="flex flex-col gap-4 lg:h-full lg:overflow-y-auto lg:pr-1 custom-scrollbar">
                     {canApprove && contract.workflow_step?.meta?.show_action_panel !== false && (
-                        <div className="border-primary/20 bg-surface-base ring-primary/5 flex flex-col gap-3 overflow-hidden rounded-xl border p-3.5 shadow-md ring-1">
-                            <div className="flex items-center gap-2.5">
-                                <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-inner">
-                                    <Zap size={16} />
+                        <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs">
+                            <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
+                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-tight text-primary-foreground">
+                                    <Zap size={16} className="text-primary-foreground/80" /> {isSigner ? 'Upload Tanda Tangan Dibutuhkan' : 'Approval Dibutuhkan'}
                                 </div>
-                                <div className="flex flex-col gap-0.5">
-                                    <h3 className="text-text-main text-xs font-bold tracking-tight uppercase">
-                                        {isSigner ? 'Upload Tanda Tangan Dibutuhkan' : 'Approval Dibutuhkan'}
-                                    </h3>
-                                    <p className="text-text-soft text-[10px] font-medium tracking-wide">
-                                        {isSigner
-                                            ? `Anda terdaftar sebagai ${activeSignerApproval?.role}`
-                                            : 'Anda terdaftar sebagai salah satu reviewer'}
-                                    </p>
-                                </div>
+                                <span className="text-[10px] font-medium text-primary-foreground/80">
+                                    {isSigner ? activeSignerApproval?.role : 'Reviewer'}
+                                </span>
                             </div>
+                            <div className="p-3.5 flex flex-col gap-3">
                             <div className="flex flex-col gap-2 pt-1">
                                 {isSigner ? (
                                     <div className="flex flex-col gap-2">
@@ -652,6 +656,7 @@ const ContractDetailView = ({
                                     </>
                                 )}
                             </div>
+                            </div>
                         </div>
                     )}
 
@@ -670,6 +675,12 @@ const ContractDetailView = ({
                             setPreviewHasFile={setPreviewHasFile}
                             setPreviewOpen={setPreviewOpen}
                             meId={meId}
+                            onStateChange={(hasChanges, isSaving) => {
+                                setHasInfoChanges(hasChanges);
+                                setInfoSaving(isSaving);
+                            }}
+                            saveRef={saveInfoRef}
+                            resetRef={resetInfoRef}
                         />
                     )}
 

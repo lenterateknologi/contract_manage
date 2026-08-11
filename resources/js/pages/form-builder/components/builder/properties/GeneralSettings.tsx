@@ -18,12 +18,56 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
         <div className="grid grid-cols-1 gap-4">
             {!isBulk && (
                 <div className="space-y-1.5">
-                    <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Internal Key (meta_)</Label>
+                    <div className="flex items-center justify-between">
+                        <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Internal Key (meta_)</Label>
+                        <select
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    updateField(selectedField.id, 'name', e.target.value);
+                                }
+                            }}
+                            value=""
+                            className="text-[9px] bg-transparent text-primary hover:underline cursor-pointer border-none p-0 h-auto font-sans focus:ring-0"
+                        >
+                            <option value="" disabled>-- Pilih Key Presets --</option>
+                            <optgroup label="Header & Nomor">
+                                <option value="meta_nomor">Nomor Form (meta_nomor)</option>
+                                <option value="meta_no_kontrak">No. Kontrak (meta_no_kontrak)</option>
+                                <option value="meta_judul_kontrak">Judul Perjanjian (meta_judul_kontrak)</option>
+                                <option value="meta_tipe_perjanjian">Tipe Perjanjian (meta_tipe_perjanjian)</option>
+                                <option value="meta_tgl_dibuat">Tanggal Dibuat (meta_tgl_dibuat)</option>
+                            </optgroup>
+                            <optgroup label="Para Pihak">
+                                <option value="meta_p1_entity">Nama Pihak I / PT (meta_p1_entity)</option>
+                                <option value="meta_p1_signer">Penandatangan Pihak I (meta_p1_signer)</option>
+                                <option value="meta_p1_signer_position">Jabatan Penandatangan Pihak I (meta_p1_signer_position)</option>
+                                <option value="meta_p1_alamat">Alamat Pihak I (meta_p1_alamat)</option>
+                                <option value="meta_p2_entity">Nama Pihak II / Vendor (meta_p2_entity)</option>
+                                <option value="meta_p2_signer">Penandatangan Pihak II (meta_p2_signer)</option>
+                                <option value="meta_p2_signer_position">Jabatan Penandatangan Pihak II (meta_p2_signer_position)</option>
+                                <option value="meta_p2_alamat">Alamat Pihak II (meta_p2_alamat)</option>
+                            </optgroup>
+                            <optgroup label="Detail Kontrak">
+                                <option value="meta_nilai_transaksi">Harga / Nilai Transaksi (meta_nilai_transaksi)</option>
+                                <option value="meta_masa_berlaku">Masa Berlaku (meta_masa_berlaku)</option>
+                                <option value="meta_lokasi">Lokasi Area (meta_lokasi)</option>
+                                <option value="meta_mekanisme_pembayaran">Mekanisme Bayar (meta_mekanisme_pembayaran)</option>
+                                <option value="meta_ringkasan_klausul">Ringkasan Klausul (meta_ringkasan_klausul)</option>
+                                <option value="meta_ruang_lingkup">Ruang Lingkup (meta_ruang_lingkup)</option>
+                                <option value="meta_lampiran">Daftar Lampiran (meta_lampiran)</option>
+                            </optgroup>
+                            <optgroup label="Tanda Tangan & Persetujuan">
+                                <option value="meta_pic">PIC (meta_pic)</option>
+                                <option value="meta_vp_legal">VP Legal / Management (meta_vp_legal)</option>
+                                <option value="meta_manager_legal">Manager Legal (meta_manager_legal)</option>
+                            </optgroup>
+                        </select>
+                    </div>
                     <Input
                         value={selectedField.name || ''}
                         onChange={(e) => updateField(selectedField.id, 'name', e.target.value)}
                         className="h-8 font-mono text-[10px]"
-                        placeholder="e.g. meta_total_harga"
+                        placeholder="e.g. meta_p1_entity"
                     />
                 </div>
             )}

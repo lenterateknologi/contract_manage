@@ -24,6 +24,7 @@ export interface WorkflowStep {
         
         allow_f2_contract_no_edit?: boolean;
         allow_tax_toggle_edit?: boolean;
+        allow_price_edit?: boolean;
         show_info?: boolean;
         allow_timeline_edit?: boolean;
         allow_chat_edit?: boolean;
@@ -77,6 +78,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                 show_tab_chat: checked,
                 allow_f2_contract_no_edit: checked,
                 allow_tax_toggle_edit: checked,
+                allow_price_edit: checked,
                 show_info: checked,
                 allow_timeline_edit: checked,
                 allow_chat_edit: checked,
@@ -130,6 +132,11 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                                     <td className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400 pl-8">↳ Field Penentuan Pajak</td>
                                     <td className="px-4 py-3 text-center"><Checkbox checked={step.meta?.allow_tax_toggle_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_tax_toggle_edit', !!c)} /></td>
                                     <td className="px-4 py-3 text-center"><Checkbox checked={step.meta?.show_tax_toggle !== false} onCheckedChange={(c) => handleMetaChange('show_tax_toggle', !!c)} /></td>
+                                </tr>
+                                <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                    <td className="px-4 py-3 font-medium text-slate-600 dark:text-slate-400 pl-8">↳ Field Nilai / Harga Kontrak</td>
+                                    <td className="px-4 py-3 text-center"><Checkbox checked={step.meta?.allow_price_edit !== false} onCheckedChange={(c) => handleMetaChange('allow_price_edit', !!c)} /></td>
+                                    <td className="px-4 py-3 text-center"><span className="text-slate-300 dark:text-slate-700">-</span></td>
                                 </tr>
                                 <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                                     <td className="px-4 py-3 font-medium">Draft Perjanjian</td>

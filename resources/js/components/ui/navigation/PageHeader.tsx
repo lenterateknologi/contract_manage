@@ -83,7 +83,7 @@ export function PageHeader({
                 <div className="flex flex-wrap items-center gap-3 md:ml-auto">
                     {/* Search Input */}
                     {onSearchChange !== undefined && (
-                        <div className="w-full sm:w-64">
+                        <div className="w-full sm:w-64 md:w-80 lg:w-96">
                             <SearchInput
                                 placeholder={searchPlaceholder}
                                 value={localSearch}
@@ -93,31 +93,6 @@ export function PageHeader({
                                 }}
                             />
                         </div>
-                    )}
-
-                    {/* Filter Button */}
-                    {filters.length > 0 && onFilterChange && (
-                        <FilterPopover
-                            categories={filters}
-                            activeFilters={activeFilters}
-                            onFilterChange={onFilterChange}
-                            onReset={onResetFilters || (() => {})}
-                            totalResults={totalResults}
-                        >
-                            <Button
-                                variant={activeCount > 0 ? "primary" : "secondary"}
-                                size="icon"
-                                className="relative h-9 w-9 rounded-xl transition-all duration-200"
-                                title="Filter Data"
-                            >
-                                <SlidersHorizontal size={14} />
-                                {activeCount > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-md px-1 text-[8px] font-bold bg-primary text-primary-foreground ring-2 ring-surface-base">
-                                        {activeCount}
-                                    </span>
-                                )}
-                            </Button>
-                        </FilterPopover>
                     )}
 
                     {/* Actions */}

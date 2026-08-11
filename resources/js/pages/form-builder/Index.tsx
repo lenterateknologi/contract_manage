@@ -13,7 +13,7 @@ import { closestCenter, DndContext, DragEndEvent, DragOverlay, KeyboardSensor, P
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Head, Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowLeft, Check, Clock, Command, Download, Edit3, Eye, FileText, GitBranch, GitCommit, Grid, HelpCircle, History, Layout, List, Loader2, Play, Plus, Redo, RotateCcw, Save, Sparkles, Undo, User } from 'lucide-react';
+import { ArrowLeft, Clock, Download, Edit3, Eye, GitBranch, GitCommit, Grid, HelpCircle, Layout, List, Loader2, Play, Plus, Redo, RotateCcw, Save, Trash2, Undo, User } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TrashZone } from './components/TrashZone';
 
@@ -202,7 +202,7 @@ const generatePresetFields = (
             id: docTitleId,
             parent_id: layoutId,
             label: 'SURAT KONTRAK KERJA',
-            name: `preset_title_${currentFieldCount + 8}`,
+            name: 'meta_judul_kontrak',
             type: 'static_text',
             placeholder: '',
             is_required: false,
@@ -223,7 +223,7 @@ const generatePresetFields = (
             id: docSubtitleId,
             parent_id: layoutId,
             label: 'Nomor : 14.012/PT.OGD/11/2022',
-            name: `preset_subtitle_${currentFieldCount + 9}`,
+            name: 'meta_no_kontrak',
             type: 'static_text',
             placeholder: '',
             is_required: false,
@@ -438,7 +438,7 @@ const generatePresetFields = (
                 id: namaId,
                 parent_id: headerRowId,
                 label: 'Nama',
-                name: `party_nama_${baseCount + partyNum * 10 + 3}`,
+                name: partyNum === 1 ? 'meta_p1_signer' : 'meta_p2_signer',
                 type: 'labeled_value',
                 placeholder: '',
                 is_required: false,
@@ -459,7 +459,7 @@ const generatePresetFields = (
                 id: jabatanId,
                 parent_id: blockId,
                 label: 'Jabatan',
-                name: `party_jabatan_${baseCount + partyNum * 10 + 4}`,
+                name: partyNum === 1 ? 'meta_p1_signer_position' : 'meta_p2_signer_position',
                 type: 'labeled_value',
                 placeholder: '',
                 is_required: false,
@@ -481,7 +481,7 @@ const generatePresetFields = (
                 id: alamatId,
                 parent_id: blockId,
                 label: 'Alamat',
-                name: `party_alamat_${baseCount + partyNum * 10 + 5}`,
+                name: partyNum === 1 ? 'meta_p1_alamat' : 'meta_p2_alamat',
                 type: 'labeled_value',
                 placeholder: '',
                 is_required: false,
@@ -1227,7 +1227,7 @@ function FormBuilder({ template }: Props) {
         timestamp: string;
         fieldsCount: number;
         fields: FormField[];
-    }>([
+    }[]>([
         {
             hash: 'init-01',
             message: 'Initial commit: Template schema created',
@@ -1280,7 +1280,7 @@ function FormBuilder({ template }: Props) {
         title: '',
         description: '',
         variant: 'danger',
-        onConfirm: () => {},
+        onConfirm: () => { },
     });
     const closeDialog = () => setDialog((d) => ({ ...d, open: false }));
     const openDialog = (opts: Omit<typeof dialog, 'open'>) => setDialog({ ...opts, open: true });
@@ -1639,15 +1639,15 @@ function FormBuilder({ template }: Props) {
                 options:
                     typeValue === 'kop_surat'
                         ? {
-                              logo_url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2117&auto=format&fit=crop',
-                              logo_size: 80,
-                              logo_position: 'left',
-                              description:
-                                  'Jl. Sudirman No. 123, SCBD, Jakarta Selatan, 12190\nTelp: (021) 5088 1234 • Fax: (021) 5088 5678\nEmail: info@company.com • Website: www.company.com',
-                          }
+                            logo_url: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2117&auto=format&fit=crop',
+                            logo_size: 80,
+                            logo_position: 'left',
+                            description:
+                                'Jl. Sudirman No. 123, SCBD, Jakarta Selatan, 12190\nTelp: (021) 5088 1234 • Fax: (021) 5088 5678\nEmail: info@company.com • Website: www.company.com',
+                        }
                         : typeValue === 'select' || typeValue === 'radio'
-                          ? ['Option 1', 'Option 2']
-                          : null,
+                            ? ['Option 1', 'Option 2']
+                            : null,
                 order: (data?.fields || []).length,
             };
 
@@ -2029,7 +2029,11 @@ function FormBuilder({ template }: Props) {
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
-        setShowSaveCommitModal(true);
+        executeDirectSave();
+    };
+
+    const executeDirectSave = () => {
+        post(route('admin.form-templates.save', template.id));
     };
 
     const executeSaveCommit = (customNote?: string) => {
@@ -2294,15 +2298,33 @@ function FormBuilder({ template }: Props) {
                             variant="outline"
                             onClick={handleTestDownload}
                             disabled={saving}
-                            className="h-9 px-3.5 text-xs font-semibold rounded-xl border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all"
+                            className="h-9 px-3 text-xs font-semibold rounded-xl border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all"
                         >
                             {saving ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Download size={14} className="mr-1.5" />}
                             <span className="hidden sm:inline">{saving ? 'Exporting...' : 'PDF'}</span>
                         </Button>
 
-                        <Button type="submit" variant="primary" className="h-9 px-4.5 text-xs font-semibold rounded-xl shadow-xs transition-all" disabled={processing}>
+                        <Button
+                            type="submit"
+                            variant="secondary"
+                            className="h-9 px-3.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-zinc-700 shadow-xs transition-all"
+                            disabled={processing}
+                            title="Simpan perubahan template langsung"
+                        >
                             <Save size={14} className="mr-1.5" />
                             <span>{processing ? 'Saving...' : 'Simpan'}</span>
+                        </Button>
+
+                        <Button
+                            type="button"
+                            variant="primary"
+                            onClick={() => setShowSaveCommitModal(true)}
+                            className="h-9 px-4 text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+                            disabled={processing}
+                            title="Simpan perubahan sekaligus buat Git commit log baru"
+                        >
+                            <GitCommit size={14} />
+                            <span>Simpan & Commit</span>
                         </Button>
                     </div>
                 </header>
@@ -2444,7 +2466,7 @@ function FormBuilder({ template }: Props) {
                         {activeLibItem && (() => {
                             const typeInfo = FIELD_TYPES.flatMap((c) => c.items).find((t) => t.value === activeLibItem);
                             const isPreset = activeLibItem.startsWith('preset_');
-                            
+
                             if (isPreset) {
                                 return (
                                     <div className="bg-primary border-primary-foreground/20 flex items-center gap-3 rounded-none border-2 px-6 py-4 font-sans text-[10px] font-semibold text-white uppercase backdrop-blur-md">
@@ -2561,7 +2583,22 @@ function FormBuilder({ template }: Props) {
                                 <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 text-[11px]">
                                     <GitCommit size={13} className="text-primary" /> Commit State Saat Ini
                                 </span>
-                                <span className="font-mono text-[10px] text-muted-foreground bg-slate-200/60 dark:bg-zinc-700 px-1.5 py-0.5 rounded">branch: main</span>
+                                <div className="flex items-center gap-2">
+                                    {commitLogs.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (confirm('Apakah Anda yakin ingin menghapus seluruh riwayat commit log (kecuali commit HEAD saat ini)?')) {
+                                                    setCommitLogs((prev) => prev.slice(0, 1));
+                                                }
+                                            }}
+                                            className="text-[10px] font-semibold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+                                        >
+                                            <Trash2 size={11} /> Hapus Riwayat
+                                        </button>
+                                    )}
+                                    <span className="font-mono text-[10px] text-muted-foreground bg-slate-200/60 dark:bg-zinc-700 px-1.5 py-0.5 rounded">branch: main</span>
+                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <input
@@ -2671,30 +2708,47 @@ function FormBuilder({ template }: Props) {
                                             </div>
                                         </div>
 
-                                        <Button
-                                            type="button"
-                                            size="sm"
-                                            variant={idx === 0 ? "ghost" : "outline"}
-                                            disabled={idx === 0}
-                                            onClick={() => {
-                                                const selectedCommit = commit;
-                                                const newHeadCommit = {
-                                                    hash: Math.random().toString(36).substring(2, 9),
-                                                    message: `Checkout to ${selectedCommit.hash}: ${selectedCommit.message}`,
-                                                    author: 'Wahyudi Ramadhan',
-                                                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                                                    fieldsCount: selectedCommit.fields.length,
-                                                    fields: [...selectedCommit.fields],
-                                                };
-                                                setData('fields', selectedCommit.fields);
-                                                setSelectedFieldIds([]);
-                                                setCommitLogs((prev) => [newHeadCommit, ...prev]);
-                                                setShowVersionModal(false);
-                                            }}
-                                            className="h-7 text-[10px] px-2.5 font-semibold rounded-lg shrink-0"
-                                        >
-                                            <RotateCcw size={11} className="mr-1" /> Checkout
-                                        </Button>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                variant={idx === 0 ? "ghost" : "outline"}
+                                                disabled={idx === 0}
+                                                onClick={() => {
+                                                    const selectedCommit = commit;
+                                                    const newHeadCommit = {
+                                                        hash: Math.random().toString(36).substring(2, 9),
+                                                        message: `Checkout to ${selectedCommit.hash}: ${selectedCommit.message}`,
+                                                        author: 'Wahyudi Ramadhan',
+                                                        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                                        fieldsCount: selectedCommit.fields.length,
+                                                        fields: [...selectedCommit.fields],
+                                                    };
+                                                    setData('fields', selectedCommit.fields);
+                                                    setSelectedFieldIds([]);
+                                                    setCommitLogs((prev) => [newHeadCommit, ...prev]);
+                                                    setShowVersionModal(false);
+                                                }}
+                                                className="h-7 text-[10px] px-2.5 font-semibold rounded-lg"
+                                            >
+                                                <RotateCcw size={11} className="mr-1" /> Checkout
+                                            </Button>
+
+                                            {commitLogs.length > 1 && (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => {
+                                                        setCommitLogs((prev) => prev.filter((c) => c.hash !== commit.hash));
+                                                    }}
+                                                    className="h-7 w-7 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg"
+                                                    title="Hapus Commit Ini"
+                                                >
+                                                    <Trash2 size={12} />
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}

@@ -4,23 +4,13 @@ import { Input } from '@/components/ui/inputs/Input';
 import { Label } from '@/components/ui/forms/Label';
 import { Textarea } from '@/components/ui/inputs/Textarea';
 import { Column, DataTable as TableMasterData } from '@/components/ui/tables/DataTable';
-import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
+import { FilterCategory } from '@/components/ui/selection/FilterPopover';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
-import { LayoutToggle } from '@/components/ui/navigation/LayoutToggle';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/selection/DropdownMenu';
 import { Modal } from '@/components/ui/dialogs/Modal';
-import { cn } from '@/lib/utils';
 import { Head, router, useForm } from '@inertiajs/react';
 import {
     ChevronDown,
@@ -376,8 +366,8 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                     );
                 }
                 return (
-                    <div 
-                        style={{ paddingLeft: '20px' }} 
+                    <div
+                        style={{ paddingLeft: '20px' }}
                         className="flex items-start gap-1.5 font-normal text-text-main"
                     >
                         <span className="text-text-main font-mono select-none mt-0.5">

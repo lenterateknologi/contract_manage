@@ -3,12 +3,13 @@ import { AppSidebarHeader } from '@/layouts/app/components/AppSidebarHeader';
 import { SidebarInset, SidebarProvider } from '@/components/ui/navigation/Sidebar';
 import { Head, usePage, usePoll } from '@inertiajs/react';
 import { useState, useMemo, useEffect } from 'react';
-import { Building2, ExternalLink, FileText, MessageSquare, Search } from 'lucide-react';
+import { Building2, Calendar, ExternalLink, FileText, MessageSquare, Search, X } from 'lucide-react';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import ContractChat from '@/pages/contracts/components/tabs/ContractChat';
 import { Contract } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
 import { ContractListItem } from './ui/ContractListItem';
+import { ChatRightPanel } from './ui/ChatRightPanel';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
 export default function ChatPage({ contracts: initialContracts, initialContractId, breadcrumbs }: Props) {
     const { auth } = usePage<any>().props;
     const [search, setSearch] = useState('');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
     const [selectedContractId, setSelectedContractId] = useState<string | null>(initialContractId || null);
 
     // Manage local contracts state to reflect new messages immediately
@@ -52,16 +55,30 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
         }
     }, [selectedContractId]);
 
-    // Memoize filtered contracts
+    // Memoize filtered contracts (Search text & Date range)
     const filteredContracts = useMemo(() => {
-        if (!search) return contracts;
-        const s = search.toLowerCase();
-        return contracts.filter(c =>
-            c.title.toLowerCase().includes(s) ||
-            c.form_no?.toLowerCase().includes(s) ||
-            c.contract_no?.toLowerCase().includes(s)
-        );
-    }, [contracts, search]);
+        return contracts.filter((c) => {
+            // Text search
+            if (search) {
+                const s = search.toLowerCase();
+                const matchesSearch =
+                    c.title.toLowerCase().includes(s) ||
+                    c.form_no?.toLowerCase().includes(s) ||
+                    c.contract_no?.toLowerCase().includes(s);
+                if (!matchesSearch) return false;
+            }
+
+            // Date filter (updated_at or created_at)
+            const rawDate = c.updated_at || c.created_at;
+            if (rawDate) {
+                const cDate = new Date(rawDate).toISOString().split('T')[0];
+                if (dateFrom && cDate < dateFrom) return false;
+                if (dateTo && cDate > dateTo) return false;
+            }
+
+            return true;
+        });
+    }, [contracts, search, dateFrom, dateTo]);
 
     const selectedContract = useMemo(() => {
         return contracts.find(c => c.id === selectedContractId) || null;
@@ -113,18 +130,48 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
 
                 <div className="flex h-[calc(100vh-76px)] overflow-hidden font-sans p-4 gap-4 bg-slate-100/60 dark:bg-zinc-950">
                     {/* Sidebar: Floating Card Daftar Kontrak */}
-                    <div className="flex w-80 flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
+                    <div className="flex w-80 flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md overflow-hidden shrink-0">
                         {/* Search & Header */}
-                        <div className="p-3.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/50">
-                            <h2 className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2.5 flex items-center justify-between">
-                                <span className="flex items-center gap-1.5">
+                        <div className="p-3.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/50 dark:bg-zinc-900/50 space-y-2.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <h2 className="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 shrink-0">
                                     <MessageSquare className="h-4 w-4 text-primary" />
                                     <span>Percakapan</span>
-                                </span>
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                                    {contracts.length}
-                                </span>
-                            </h2>
+                                </h2>
+                                <div className="flex items-center gap-1.5">
+                                    {/* Compact Header Date Picker */}
+                                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg border border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-[10px] text-slate-600 dark:text-slate-300">
+                                        <Calendar size={11} className="text-slate-400 shrink-0" />
+                                        <input
+                                            type="date"
+                                            value={dateFrom}
+                                            onChange={(e) => setDateFrom(e.target.value)}
+                                            className="bg-transparent border-none focus:outline-none p-0 text-[10px] w-20 text-slate-700 dark:text-slate-200"
+                                            title="Dari Tanggal"
+                                        />
+                                        <span className="text-slate-300 dark:text-slate-600">-</span>
+                                        <input
+                                            type="date"
+                                            value={dateTo}
+                                            onChange={(e) => setDateTo(e.target.value)}
+                                            className="bg-transparent border-none focus:outline-none p-0 text-[10px] w-20 text-slate-700 dark:text-slate-200"
+                                            title="Sampai Tanggal"
+                                        />
+                                        {(dateFrom || dateTo) && (
+                                            <button
+                                                onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                                className="ml-0.5 text-slate-400 hover:text-rose-500 rounded transition-colors"
+                                                title="Reset Tanggal"
+                                            >
+                                                <X size={11} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-slate-200/60 dark:bg-slate-800 text-slate-600 dark:text-slate-400 shrink-0">
+                                        {filteredContracts.length}
+                                    </span>
+                                </div>
+                            </div>
                             <SearchInput
                                 placeholder="Cari kontrak..."
                                 value={search}
@@ -163,54 +210,58 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                     </div>
 
                     {/* Main: Floating Chat Area Card */}
-                    <div className="flex-1 flex flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
+                    <div className="flex-1 flex rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md overflow-hidden">
                         {selectedContract ? (
-                            <div className="flex flex-col h-full">
-                                <div className="px-5 py-3 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between bg-slate-50/40 dark:bg-zinc-900/40 shadow-2xs z-10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-semibold border border-primary/20">
-                                            <FileText className="w-4 h-4 text-primary" />
+                            <>
+                                <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+                                    <div className="px-5 py-3 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between bg-slate-50/40 dark:bg-zinc-900/40 z-10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-semibold border border-primary/20">
+                                                <FileText className="w-4 h-4 text-primary" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 tracking-tight leading-none">
+                                                        {selectedContract.title}
+                                                    </h3>
+                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9.5px] font-mono font-medium border border-slate-200 dark:border-slate-700">
+                                                        #{selectedContract.form_no || selectedContract.contract_no || 'DRAFT'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                                    <span className="flex items-center gap-1">
+                                                        <Building2 size={11} className="text-slate-400" />
+                                                        {selectedContract.contract_type || 'General Contract'}
+                                                    </span>
+                                                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                                                    <span>Dibuat: <strong className="font-medium text-slate-700 dark:text-slate-300">{selectedContract.creator?.name || 'System'}</strong></span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className="flex flex-col">
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                                <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 tracking-tight leading-none">
-                                                    {selectedContract.title}
-                                                </h3>
-                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9.5px] font-mono font-medium border border-slate-200 dark:border-slate-700">
-                                                    #{selectedContract.form_no || selectedContract.contract_no || 'DRAFT'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-slate-400">
-                                                <span className="flex items-center gap-1">
-                                                    <Building2 size={11} className="text-slate-400" />
-                                                    {selectedContract.contract_type || 'General Contract'}
-                                                </span>
-                                                <span className="text-slate-300 dark:text-slate-700">•</span>
-                                                <span>Dibuat: <strong className="font-medium text-slate-700 dark:text-slate-300">{selectedContract.creator?.name || 'System'}</strong></span>
-                                            </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-xs font-medium text-slate-700 dark:text-slate-200 transition-all active:scale-95 cursor-pointer"
+                                            >
+                                                <span>Buka Kontrak</span>
+                                                <ExternalLink size={12} className="opacity-70" />
+                                            </button>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700 text-xs font-medium text-slate-700 dark:text-slate-200 shadow-2xs transition-all active:scale-95 cursor-pointer"
-                                        >
-                                            <span>Buka Kontrak</span>
-                                            <ExternalLink size={12} className="opacity-70" />
-                                        </button>
+                                    <div className="flex-1 overflow-hidden">
+                                        <ContractChat
+                                            key={selectedContract.id}
+                                            contract={selectedContract}
+                                            meId={auth.user.id}
+                                            onNewMessage={handleNewMessage}
+                                        />
                                     </div>
                                 </div>
-                                <div className="flex-1 overflow-hidden">
-                                    <ContractChat
-                                        key={selectedContract.id}
-                                        contract={selectedContract}
-                                        meId={auth.user.id}
-                                        onNewMessage={handleNewMessage}
-                                    />
-                                </div>
-                            </div>
+                                {/* Right Panel: Member & Media */}
+                                <ChatRightPanel contract={selectedContract} />
+                            </>
                         ) : (
-                            <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
+                            <div className="flex-1 flex flex-col items-center justify-center h-full gap-3 text-slate-500">
                                 <div className="bg-primary/10 p-5 rounded-2xl text-primary border border-primary/20">
                                     <MessageSquare size={36} strokeWidth={1.5} />
                                 </div>

@@ -2,8 +2,11 @@ import { ProfileView } from '@/pages/contracts/components/parts/ProfileView';
 import { DashboardMetrics, DashboardTab } from '@/pages/dashboard/components/DashboardMetrics';
 import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
+import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
+import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { Column, DataTable as TableContract } from '@/components/ui/tables/DataTable';
 import { FilterPopover } from '@/components/ui/selection/FilterPopover';
+import { SideFilterCard } from '@/components/ui/selection/SideFilterCard';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { ContractCardSkeleton, ContractTableSkeleton } from '@/components/ui/feedback/ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
@@ -42,6 +45,7 @@ import {
     FileEdit,
     FileText,
     FileType,
+    FilePlus,
     Filter,
     GitBranch,
     Hash,
@@ -616,19 +620,101 @@ function ContractPage({
     }, [meUser]);
 
     const filterCategories = useMemo(() => {
-        const list: any[] = [
-            {
-                label: 'Departemen',
-                key: 'department_id',
+        const list: any[] = [];
+
+        if (companyGroups && companyGroups.length > 0) {
+            list.push({
+                label: 'Grup Perusahaan',
+                key: 'company_group_id',
                 type: 'searchable',
-                options: (departments ?? []).map((d: any) => ({
+                options: companyGroups.map((g: any) => ({
+                    label: g.name,
+                    value: g.id,
+                })),
+            });
+        }
+
+        if (regions && regions.length > 0) {
+            list.push({
+                label: 'Regional',
+                key: 'region_id',
+                type: 'searchable',
+                options: regions.map((r: any) => ({
+                    label: r.name,
+                    value: r.id,
+                })),
+            });
+        }
+
+        if (companies && companies.length > 0) {
+            list.push({
+                label: 'Perusahaan',
+                key: 'company_id',
+                type: 'searchable',
+                options: companies.map((c: any) => ({
+                    label: c.name,
+                    value: c.id,
+                })),
+            });
+        }
+
+        if (divisions && divisions.length > 0) {
+            list.push({
+                label: 'Divisi',
+                key: 'division_id',
+                type: 'searchable',
+                options: divisions.map((d: any) => ({
                     label: d.name,
                     value: d.id,
                 })),
-            },
-        ];
+            });
+        }
+
+        if (departments && departments.length > 0) {
+            list.push({
+                label: 'Departemen',
+                key: 'department_id',
+                type: 'searchable',
+                options: departments.map((d: any) => ({
+                    label: d.name,
+                    value: d.id,
+                })),
+            });
+        }
+
+        if (types && types.length > 0) {
+            list.push({
+                label: 'Kategori Kontrak',
+                key: 'contract_type_id',
+                type: 'searchable',
+                options: types.map((t: any) => ({
+                    label: t.name,
+                    value: t.id,
+                })),
+            });
+        }
+
+        list.push({
+            label: 'Status',
+            key: 'status',
+            type: 'multiselect',
+            options: [
+                { label: 'Draft', value: 'DRAFT' },
+                { label: 'Proses Persetujuan', value: 'IN_APPROVAL' },
+                { label: 'Disetujui', value: 'APPROVED' },
+                { label: 'Ditolak', value: 'REJECTED' },
+                { label: 'Kadaluarsa', value: 'EXPIRED' },
+            ],
+        });
+
+        list.push({
+            label: 'Rentang Tanggal',
+            key: 'created',
+            type: 'date-range',
+        });
+
         return list;
-    }, [departments]);
+    }, [companyGroups, regions, companies, divisions, departments, types]);
 
     const activeFiltersCount = useMemo(() => {
         const getCount = (val: any) => {
@@ -862,9 +948,9 @@ function ContractPage({
     return (
         <>
             <Head title={view} />
-            <div className="bg-background dark:bg-background/50 flex min-h-0 flex-1 flex-col">
+            <div className="flex min-h-0 flex-1 flex-col w-full h-full bg-slate-100/60 dark:bg-zinc-950">
                 {selected ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 flex-col overflow-y-auto duration-300 ease-in-out">
+                    <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 flex-col duration-300 ease-in-out">
                         <ContractDetailView
                             contract={selected}
                             meId={meId}
@@ -886,161 +972,174 @@ function ContractPage({
                         />
                     </div>
                 ) : (
-                    <PageTable
-                        title={viewTitleMap[view] || 'Manajemen Kontrak'}
-                        subtitle={viewDescMap[view] || 'Daftar seluruh kontrak dalam sistem.'}
-                        icon={viewIconMap[view] || FileText}
-                        {...(view === 'dashboard' ? {
-                            actions: (() => {
-                                const config = metrics?.dashboardConfig;
-                                const showOverview = config ? !!config.show_overview : false;
-                                const showWorkload = config ? !!config.show_workload : false;
-                                const showMasterData = config ? !!config.show_master_data : false;
+                    <MasterPageLayout>
+                        <FloatingPanel className="flex-1 min-w-0 flex flex-col">
+                            <PageTable
+                                standalone={false}
+                                title={viewTitleMap[view] || 'Manajemen Kontrak'}
+                                subtitle={viewDescMap[view] || 'Daftar seluruh kontrak dalam sistem.'}
+                                icon={viewIconMap[view] || FileText}
+                                {...(view === 'dashboard' ? {
+                                    actions: (() => {
+                                        const config = metrics?.dashboardConfig;
+                                        const showOverview = config ? !!config.show_overview : false;
+                                        const showWorkload = config ? !!config.show_workload : false;
+                                        const showMasterData = config ? !!config.show_master_data : false;
 
-                                if (!showOverview && !showWorkload && !showMasterData) return null;
+                                        if (!showOverview && !showWorkload && !showMasterData) return null;
 
-                                return (
-                                    <div className="flex items-center gap-2">
-                                        {showOverview && (
-                                            <DashboardTab
-                                                active={dashboardTab === 'overview'}
-                                                onClick={() => setDashboardTab('overview')}
-                                                label="Ringkasan"
-                                                icon={LayoutDashboard}
-                                            />
-                                        )}
-                                        {showWorkload && (
-                                            <DashboardTab
-                                                active={dashboardTab === 'workload'}
-                                                onClick={() => setDashboardTab('workload')}
-                                                label="Beban Kerja"
-                                                icon={Briefcase}
-                                            />
-                                        )}
-                                        {showMasterData && (
-                                            <DashboardTab
-                                                active={dashboardTab === 'master_data'}
-                                                onClick={() => setDashboardTab('master_data')}
-                                                label="Master Data"
-                                                icon={Layers}
-                                            />
-                                        )}
-                                    </div>
-                                );
-                            })()
-                        } : (view !== 'profile' ? {
-                            searchValue: search,
-                            onSearchChange: setSearch,
-                            searchPlaceholder: "Cari kontrak...",
-                            actions: (
-                                <>
-                                    <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
-                                    <Button variant="white" fontSize="11px" onClick={() => setCreateOpen(true)}>
-                                        <PlusCircle size={16} strokeWidth={2.5} /> Kontrak Baru
-                                    </Button>
-                                </>
-                            )
-                        } : {}))}
-                        pagination={view !== 'profile' && view !== 'dashboard' ? {
-                            currentPage: contractsPaged.current_page,
-                            lastPage: contractsPaged.last_page,
-                            total: contractsPaged.total,
-                            from: contractsPaged.from,
-                            to: contractsPaged.to,
-                            perPage: contractsPaged.per_page,
-                            onPageChange: (page: number) =>
-                                router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
-                            onPerPageChange: (perPage: number) =>
-                                router.get(globalThis.location.pathname, { ...filters, page: 1, per_page: perPage }, { preserveState: true }),
-                        } : undefined}
-                    >
-                        <div className="flex-1 overflow-auto">
-                            {view === 'dashboard' && (
-                                <div className="p-5">
-                                    <DashboardMetrics metrics={metrics} activeTab={dashboardTab} />
-                                </div>
-                            )}
-                            {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
-                            {view !== 'profile' && view !== 'dashboard' && (
-                                <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden h-full">
-                                    <PageFilter
-                                        filters={filters}
-                                        types={types}
-                                        departments={departments}
-                                        divisions={divisions}
-                                        regions={regions}
-                                        companies={companies}
-                                        companyGroups={companyGroups}
-                                        meUser={meUser}
-                                        handleFilterChange={handleFilterChange}
-                                    />
-
-                                    <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
-                                        {layout === 'table' ? (
-                                            <TableContract
-                                                columns={columns}
-                                                data={contractsPaged.data}
-                                                loading={processing}
-                                                skeleton={<ContractTableSkeleton />}
-                                                onRowClick={openDetail}
-                                                onSelectionChange={setSelectedRows}
-                                                selectedRows={selectedRows}
-                                                bulkActions={renderBulkActions(selectedRows)}
-                                            />
-                                        ) : processing ? (
-                                            <ContractCardSkeleton />
-                                        ) : (
-                                            <div className="flex flex-col gap-8">
-                                                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                                                    {contractsPaged.data.map((c) => (
-                                                        <button
-                                                            key={c.id}
-                                                            onClick={() => openDetail(c)}
-                                                            className="group border-surface-border bg-surface-base/60 hover:border-primary hover:shadow-primary/5 focus:ring-primary relative flex cursor-pointer flex-col gap-2.5 rounded-xl border p-3 text-left backdrop-blur-sm transition-all hover:shadow-md focus:ring-2 focus:outline-none"
-                                                        >
-                                                            <div className="flex items-center justify-between gap-2">
-                                                                <span className="group-hover:text-primary text-text-soft text-[9px] font-bold tracking-wider uppercase transition-all">
-                                                                    {c.form_no || 'No Req'}
-                                                                </span>
-                                                                <div className="flex-shrink-0 origin-right scale-[0.75]">
-                                                                    <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="flex flex-col gap-0.5">
-                                                                <h3 className="group-hover:text-primary text-text-main truncate text-xs font-semibold tracking-tight uppercase transition-colors">
-                                                                    {c.title}
-                                                                </h3>
-                                                                <span className="text-text-desc text-[9px] font-medium uppercase italic truncate">
-                                                                    {c.contract_type}
-                                                                </span>
-                                                            </div>
-
-                                                            <div className="flex items-center justify-between border-t border-surface-border/40 pt-2.5 text-[9px] font-semibold text-text-soft uppercase">
-                                                                <div className="flex items-center gap-1.5 truncate max-w-[60%]">
-                                                                    <span className="truncate">{c.initiator?.department_name || 'Umum'}</span>
-                                                                    <span className="text-text-soft/40">•</span>
-                                                                    <span className="truncate font-normal">{c.assigned_pic?.name || 'No PIC'}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-2 shrink-0">
-                                                                    <span className="text-primary bg-primary/5 rounded-md px-1.5 py-0.5 font-bold">
-                                                                        {c.progress.done}/{c.progress.total}
-                                                                    </span>
-                                                                    <div className="origin-right scale-[0.65]">
-                                                                        <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
+                                        return (
+                                            <div className="flex items-center gap-2">
+                                                {showOverview && (
+                                                    <DashboardTab
+                                                        active={dashboardTab === 'overview'}
+                                                        onClick={() => setDashboardTab('overview')}
+                                                        label="Ringkasan"
+                                                        icon={LayoutDashboard}
+                                                    />
+                                                )}
+                                                {showWorkload && (
+                                                    <DashboardTab
+                                                        active={dashboardTab === 'workload'}
+                                                        onClick={() => setDashboardTab('workload')}
+                                                        label="Beban Kerja"
+                                                        icon={Briefcase}
+                                                    />
+                                                )}
+                                                {showMasterData && (
+                                                    <DashboardTab
+                                                        active={dashboardTab === 'master_data'}
+                                                        onClick={() => setDashboardTab('master_data')}
+                                                        label="Master Data"
+                                                        icon={Layers}
+                                                    />
+                                                )}
                                             </div>
-                                        )}
-                                    </div>
+                                        );
+                                    })()
+                                } : (view !== 'profile' ? {
+                                    searchValue: search,
+                                    onSearchChange: setSearch,
+                                    searchPlaceholder: "Cari kontrak...",
+                                    actions: (
+                                        <>
+                                            <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
+                                            <Button variant="primary" fontSize="11px" className="shadow-none" onClick={() => setCreateOpen(true)}>
+                                                <FilePlus size={16} strokeWidth={2.2} /> Buat Pengajuan
+                                            </Button>
+                                        </>
+                                    )
+                                } : {}))}
+                                pagination={view !== 'profile' && view !== 'dashboard' ? {
+                                    currentPage: contractsPaged.current_page,
+                                    lastPage: contractsPaged.last_page,
+                                    total: contractsPaged.total,
+                                    from: contractsPaged.from,
+                                    to: contractsPaged.to,
+                                    perPage: contractsPaged.per_page,
+                                    onPageChange: (page: number) =>
+                                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
+                                    onPerPageChange: (perPage: number) =>
+                                        router.get(globalThis.location.pathname, { ...filters, page: 1, per_page: perPage }, { preserveState: true }),
+                                } : undefined}
+                            >
+                                <div className="flex-1 overflow-auto">
+                                    {view === 'dashboard' && (
+                                        <div className="p-5">
+                                            <DashboardMetrics metrics={metrics} activeTab={dashboardTab} />
+                                        </div>
+                                    )}
+                                    {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
+                                    {view !== 'profile' && view !== 'dashboard' && (
+                                        <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden h-full">
+                                            <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
+                                                {layout === 'table' ? (
+                                                    <TableContract
+                                                        columns={columns}
+                                                        data={contractsPaged.data}
+                                                        loading={processing}
+                                                        skeleton={<ContractTableSkeleton />}
+                                                        onRowClick={openDetail}
+                                                        onSelectionChange={setSelectedRows}
+                                                        selectedRows={selectedRows}
+                                                        bulkActions={renderBulkActions(selectedRows)}
+                                                    />
+                                                ) : processing ? (
+                                                    <ContractCardSkeleton />
+                                                ) : (
+                                                    <div className="flex flex-col gap-8">
+                                                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                                                            {contractsPaged.data.map((c) => (
+                                                                <button
+                                                                    key={c.id}
+                                                                    onClick={() => openDetail(c)}
+                                                                    className="group border-surface-border bg-surface-base/60 hover:border-primary hover:shadow-primary/5 focus:ring-primary relative flex cursor-pointer flex-col gap-2.5 rounded-xl border p-3 text-left backdrop-blur-sm transition-all hover:shadow-md focus:ring-2 focus:outline-none"
+                                                                >
+                                                                    <div className="flex items-center justify-between gap-2">
+                                                                        <span className="group-hover:text-primary text-text-soft text-[9px] font-bold tracking-wider uppercase transition-all">
+                                                                            {c.form_no || 'No Req'}
+                                                                        </span>
+                                                                        <div className="flex-shrink-0 origin-right scale-[0.75]">
+                                                                            <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex flex-col gap-0.5">
+                                                                        <h3 className="group-hover:text-primary text-text-main truncate text-xs font-semibold tracking-tight uppercase transition-colors">
+                                                                            {c.title}
+                                                                        </h3>
+                                                                        <span className="text-text-desc text-[9px] font-medium uppercase italic truncate">
+                                                                            {c.contract_type}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <div className="flex items-center justify-between border-t border-surface-border/40 pt-2.5 text-[9px] font-semibold text-text-soft uppercase">
+                                                                        <div className="flex items-center gap-1.5 truncate max-w-[60%]">
+                                                                            <span className="truncate">{c.initiator?.department_name || 'Umum'}</span>
+                                                                            <span className="text-text-soft/40">•</span>
+                                                                            <span className="truncate font-normal">{c.assigned_pic?.name || 'No PIC'}</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-2 shrink-0">
+                                                                            <span className="text-primary bg-primary/5 rounded-md px-1.5 py-0.5 font-bold">
+                                                                                {c.progress.done}/{c.progress.total}
+                                                                            </span>
+                                                                            <div className="origin-right scale-[0.65]">
+                                                                                <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    </PageTable>
+                            </PageTable>
+                        </FloatingPanel>
+
+                        {/* Side Filter Card floating outside PageTable card */}
+                        {view !== 'profile' && view !== 'dashboard' && (
+                            <FloatingPanel padded shrink>
+                                <SideFilterCard
+                                    categories={filterCategories}
+                                    activeFilters={filters}
+                                    onFilterChange={(keyOrObj, value) => {
+                                        if (typeof keyOrObj === 'object') {
+                                            handleFilterChange(keyOrObj);
+                                        } else {
+                                            handleFilterChange({ [keyOrObj]: value });
+                                        }
+                                    }}
+                                    onReset={() => handleFilterChange(Object.keys(filters).reduce((acc, k) => ({ ...acc, [k]: [] }), {}))}
+                                    totalResults={contractsPaged.total}
+                                    defaultExpanded={false}
+                                />
+                            </FloatingPanel>
+                        )}
+                    </MasterPageLayout>
                 )}
             </div>
 

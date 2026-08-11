@@ -201,6 +201,21 @@ class ContractFormController extends Controller
                 $updates['p2_address'] = $formData['meta_p2_alamat'];
             }
 
+            // --- Sync all formData values into contract->metadata for dynamic workflow conditions ---
+            $currentContractMeta = $contract->metadata ?? [];
+            foreach ($formData as $k => $v) {
+                if ($v !== null && $v !== '') {
+                    // Clean up formatted currency inputs if string contains non-digits for numeric keys
+                    if (is_string($v) && preg_replace('/[^\d]/', '', $v) !== '' && preg_match('/^[0-9.,\s]+$/', $v)) {
+                        $numericVal = (float) preg_replace('/[^\d.]/', '', str_replace(',', '.', $v));
+                        $currentContractMeta[$k] = $numericVal;
+                    } else {
+                        $currentContractMeta[$k] = $v;
+                    }
+                }
+            }
+            $contract->update(['metadata' => $currentContractMeta]);
+
             $baseUpdates = collect($updates)->only(['transaction_type', 'title', 'contract_date'])->toArray();
             $metaUpdates = collect($updates)->except(['transaction_type', 'title', 'contract_date'])->toArray();
 
@@ -292,18 +307,25 @@ class ContractFormController extends Controller
         $inheritanceMap = [
             'meta_perjanjian_tentang' => 'meta_judul_kontrak',
             'meta_f2_scope' => 'meta_ringkasan_klausul',
-            'meta_f2_price' => 'meta_nilai_transaksi',
+            'meta_f2_price' => 'meta_harga',
             'meta_f2_payment' => 'meta_mekanisme_pembayaran',
             'meta_f2_tenure' => 'meta_masa_berlaku',
             'meta_f2_location' => 'meta_lokasi',
             'perjanjian_tentang' => 'meta_judul_kontrak',
             'f2_scope' => 'meta_ringkasan_klausul',
+            'f2_price' => 'meta_harga',
         ];
 
         foreach ($inheritanceMap as $f2Field => $f1Field) {
             if (empty($formData[$f2Field]) && ! empty($f1Data[$f1Field])) {
                 $formData[$f2Field] = $f1Data[$f1Field];
             }
+        }
+
+        // Fallback for legacy meta_nilai_transaksi if meta_harga is empty
+        if (empty($formData['meta_f2_price']) && ! empty($f1Data['meta_nilai_transaksi'])) {
+            $formData['meta_f2_price'] = $f1Data['meta_nilai_transaksi'];
+            $formData['f2_price'] = $f1Data['meta_nilai_transaksi'];
         }
 
         $f1PassthroughFields = [

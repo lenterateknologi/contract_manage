@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils';
 import { Building2, User } from 'lucide-react';
 import { Contract } from '@/pages/contracts/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/user/Avatar';
+import { getAvatarColor } from '@/lib/avatarColor';
 
 interface ContractListItemProps {
     contract: Contract;
@@ -17,6 +18,7 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
         .slice(0, 2)
         .join('')
         .toUpperCase();
+    const avatarColorClass = getAvatarColor(creatorName);
 
     return (
         <div
@@ -30,7 +32,7 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
         >
             <Avatar className={cn("h-9 w-9 shrink-0 border transition-transform group-hover:scale-105", isSelected ? "border-primary-foreground/30" : "border-slate-200 dark:border-zinc-700")}>
                 <AvatarImage src={contract.creator?.avatar || ''} alt={creatorName} />
-                <AvatarFallback className={cn("text-[10px] font-bold", isSelected ? "bg-white text-primary" : "bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300")}>
+                <AvatarFallback className={cn("text-[10px] font-bold", isSelected ? "bg-white text-primary" : avatarColorClass)}>
                     {initials}
                 </AvatarFallback>
             </Avatar>

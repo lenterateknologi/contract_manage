@@ -3,6 +3,8 @@ import { Head, router, Link, useForm } from '@inertiajs/react';
 import { DataTable } from '@/components/ui/tables/DataTable';
 import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
+import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
+import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
@@ -14,6 +16,7 @@ import { Textarea } from '@/components/ui/inputs/Textarea';
 import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { SideFilterCard } from '@/components/ui/selection/SideFilterCard';
 
 interface Props {
     resourceSlug: string;
@@ -401,171 +404,216 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     return (
         <>
             <Head title={title} />
-            <PageTable
-                title={title}
-                subtitle={`Kelola daftar data master ${title.toLowerCase()} dalam sistem`}
-                icon={HeaderIcon}
-                searchValue={activeFilters.search || ''}
-                onSearchChange={(v) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, search: v, page: 1 }, { preserveState: true, replace: true })}
-                filters={filters}
-                activeFilters={activeFilters}
-                onFilterChange={(key, val) => {
-                    const nextFilters = { ...activeFilters, [key]: val, page: 1 };
-                    router.get(`/admin/core/${resourceSlug}`, nextFilters, { preserveState: true, replace: true });
-                }}
-                onResetFilters={() => {
-                    const clear = Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {});
-                    router.get(`/admin/core/${resourceSlug}`, { ...clear, page: 1 }, { preserveState: true, replace: true });
-                }}
-                totalResults={data.total}
-                actions={
-                    <div className="flex items-center gap-2">
-                        {(hasExport || hasImport) && (
-                            <ExcelActions
-                                exportRoute={`/admin/core/${resourceSlug}/export`}
-                                importRoute={`/admin/core/${resourceSlug}/import`}
-                                label={title}
-                            />
-                        )}
-                        {DIALOG_RESOURCES.includes(resourceSlug) ? (
-                            <Button 
-                                variant="primary" 
-                                className="gap-2"
-                                onClick={() => {
-                                    setLocalAccessTypes({});
-                                    deptForm.setData(initialFormData);
-                                    setEditDataId(null);
-                                    setIsDeptDialogOpen(true);
-                                }}
-                            >
-                                <Plus size={16} /> Tambah Baru
-                            </Button>
-                        ) : resourceSlug !== 'vendors' ? (
-                            <Link href={`/admin/core/${resourceSlug}/create`}>
-                                <Button variant="primary" className="gap-2">
-                                    <Plus size={16} /> Tambah Baru
-                                </Button>
-                            </Link>
-                        ) : null}
-                    </div>
-                }
-                pagination={{
-                    currentPage: data.current_page || 1,
-                    lastPage: data.last_page || 1,
-                    total: data.total || 0,
-                    from: data.from,
-                    to: data.to,
-                    perPage: data.per_page,
-                    onPageChange: (page) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, page }, { preserveState: true }),
-                    onPerPageChange: (perPage) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, page: 1, per_page: perPage }, { preserveState: true })
-                }}
-            >
-                <DataTable
-                    columns={columns}
-                    borderless={true}
-                    data={processedData}
-                    sortBy={activeFilters.sort_by}
-                    sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
-                    onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}
-                    isRowSelectable={(row) => true}
-                    onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
-                    selectedRows={selectedRows}
-                    bulkActions={(selected: any[]) => resourceSlug === 'vendors' ? null : (
-                        <div className="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                variant="white"
-                                size="sm"
-                                onClick={() => {
-                                    if (confirm(`Hapus ${selected.length} data terpilih? Tindakan ini tidak dapat dibatalkan.`)) {
-                                        router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
-                                            ids: selected.map((r: any) => r.id)
-                                        }, {
-                                            onSuccess: () => setSelectedRows([])
-                                        });
-                                    }
-                                }}
-                                className="text-xs py-1.5 px-3 h-8 hover:bg-rose-50 hover:border-rose-200 text-rose-500 rounded-xl flex items-center gap-1.5 font-normal uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
-                            >
-                                <Trash2 size={13} /> Hapus Terpilih
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="white"
-                                size="sm"
-                                onClick={() => setShowBulkEditModal(true)}
-                                className="text-xs py-1.5 px-3 h-8 hover:bg-slate-50 hover:border-slate-300 text-text-main rounded-xl flex items-center gap-1.5 font-normal uppercase tracking-wider bg-white border border-surface-border shadow-sm animate-in fade-in"
-                            >
-                                <LucideIcons.Edit2 size={13} /> Ubah Massal ({selected.length})
-                            </Button>
-                        </div>
-                    )}
-                    rowActions={(row) => (
-                        <div className="flex items-center justify-end gap-2">
-                            {resourceSlug === 'vendors' ? (
-                                <Link href={`/admin/core/${resourceSlug}/${row.id}/edit`}>
-                                    <Button variant="white" size="sm" className="h-8 gap-1.5 px-3 text-[11px] font-normal uppercase tracking-wider">
-                                        <Eye size={13} className="text-primary" />
-                                        Lihat Detail
+            <MasterPageLayout>
+                <FloatingPanel className="flex-1 min-w-0 flex flex-col">
+                    <PageTable
+                        standalone={false}
+                        title={title}
+                        subtitle={`Kelola daftar data master ${title.toLowerCase()} dalam sistem`}
+                        icon={HeaderIcon}
+                        searchValue={activeFilters.search || ''}
+                        onSearchChange={(v) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, search: v, page: 1 }, { preserveState: true, replace: true })}
+                        filters={filters}
+                        activeFilters={activeFilters}
+                        onFilterChange={(key, val) => {
+                            const nextFilters = { ...activeFilters, [key]: val, page: 1 };
+                            router.get(`/admin/core/${resourceSlug}`, nextFilters, { preserveState: true, replace: true });
+                        }}
+                        onResetFilters={() => {
+                            const clear = Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {});
+                            router.get(`/admin/core/${resourceSlug}`, { ...clear, page: 1 }, { preserveState: true, replace: true });
+                        }}
+                        totalResults={data.total}
+                        actions={
+                            <div className="flex items-center gap-2">
+                                {DIALOG_RESOURCES.includes(resourceSlug) ? (
+                                    <Button 
+                                        variant="primary" 
+                                        className="gap-2"
+                                        onClick={() => {
+                                            setLocalAccessTypes({});
+                                            deptForm.setData(initialFormData);
+                                            setEditDataId(null);
+                                            setIsDeptDialogOpen(true);
+                                        }}
+                                    >
+                                        <Plus size={16} /> Tambah Baru
                                     </Button>
-                                </Link>
-                            ) : DIALOG_RESOURCES.includes(resourceSlug) ? (
-                                <Button 
-                                    variant="white" 
-                                    size="icon" 
-                                    className="h-8 w-8"
-                                    onClick={() => {
-                                        const editValues: Record<string, any> = {};
-                                        formSchema.forEach((field) => {
-                                            if (field.isGroup && Array.isArray(field.schema)) {
-                                                field.schema.forEach((subField: any) => {
-                                                    editValues[subField.name] = row[subField.name] ?? (subField.type === 'switch' ? false : '');
+                                ) : resourceSlug !== 'vendors' ? (
+                                    <Link href={`/admin/core/${resourceSlug}/create`}>
+                                        <Button variant="primary" className="gap-2">
+                                            <Plus size={16} /> Tambah Baru
+                                        </Button>
+                                    </Link>
+                                ) : null}
+
+                                {selectedRows.length > 0 && resourceSlug !== 'vendors' && (
+                                    <>
+                                        <Button
+                                            type="button"
+                                            variant="white"
+                                            onClick={() => setShowBulkEditModal(true)}
+                                            className="gap-1.5 font-semibold shadow-none"
+                                        >
+                                            <LucideIcons.Edit2 size={14} className="text-primary" /> Ubah ({selectedRows.length})
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="white"
+                                            onClick={() => {
+                                                if (confirm(`Hapus ${selectedRows.length} data terpilih?`)) {
+                                                    router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
+                                                        ids: selectedRows.map((r: any) => r.id)
+                                                    }, {
+                                                        onSuccess: () => setSelectedRows([])
+                                                    });
+                                                }
+                                            }}
+                                            className="gap-1.5 font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 dark:border-zinc-700 shadow-none"
+                                        >
+                                            <Trash2 size={14} /> Hapus ({selectedRows.length})
+                                        </Button>
+                                    </>
+                                )}
+                            </div>
+                        }
+                        pagination={{
+                            currentPage: data.current_page || 1,
+                            lastPage: data.last_page || 1,
+                            total: data.total || 0,
+                            from: data.from,
+                            to: data.to,
+                            perPage: data.per_page,
+                            onPageChange: (page) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, page }, { preserveState: true }),
+                            onPerPageChange: (perPage) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, page: 1, per_page: perPage }, { preserveState: true })
+                        }}
+                    >
+                        <DataTable
+                            columns={columns}
+                            borderless={true}
+                            data={processedData}
+                            sortBy={activeFilters.sort_by}
+                            sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
+                            onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}
+                            isRowSelectable={(row) => true}
+                            onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
+                            selectedRows={selectedRows}
+                            bulkActions={(selected: any[]) => resourceSlug === 'vendors' ? null : (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() => setShowBulkEditModal(true)}
+                                        className="h-8 gap-1.5 px-3 text-xs font-semibold rounded-lg shadow-xs"
+                                    >
+                                        <LucideIcons.Edit2 size={13} /> Ubah ({selected.length})
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="white"
+                                        size="sm"
+                                        onClick={() => {
+                                            if (confirm(`Hapus ${selected.length} data terpilih?`)) {
+                                                router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
+                                                    ids: selected.map((r: any) => r.id)
+                                                }, {
+                                                    onSuccess: () => setSelectedRows([])
                                                 });
-                                            } else {
-                                                editValues[field.name] = row[field.name] ?? (field.type === 'switch' ? false : '');
                                             }
-                                        });
-                                         const initialTypes: Record<string, string> = {};
-                                         const DIMENSIONS = [
-                                             { key: 'company_group', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
-                                             { key: 'region', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
-                                             { key: 'company', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
-                                             { key: 'division', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
-                                             { key: 'department', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
-                                         ];
-                                         DIMENSIONS.forEach(dim => {
-                                             const canChange = row[dim.toggleName] === true || row[dim.toggleName] === 1 || String(row[dim.toggleName]) === 'true';
-                                             const allowed = row[dim.allowedName] || [];
-                                             if (!canChange) {
-                                                 initialTypes[dim.key] = 'user_data';
-                                             } else {
-                                                 initialTypes[dim.key] = allowed.length > 0 ? 'custom' : 'full_access';
-                                             }
-                                         });
-                                         setLocalAccessTypes(initialTypes);
-                                        deptForm.setData(editValues);
-                                        setEditDataId(row.id);
-                                        setIsDeptDialogOpen(true);
-                                    }}
-                                >
-                                    <Edit2 size={14} className="text-text-main" />
-                                </Button>
-                            ) : (
-                                <Link href={`/admin/core/${resourceSlug}/${row.id}/edit`}>
-                                    <Button variant="white" size="icon" className="h-8 w-8">
-                                        <Edit2 size={14} className="text-text-main" />
+                                        }}
+                                        className="h-8 gap-1.5 px-3 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 dark:border-zinc-700 rounded-lg shadow-xs"
+                                    >
+                                        <Trash2 size={13} /> Hapus ({selected.length})
                                     </Button>
-                                </Link>
+                                </div>
                             )}
-                            {resourceSlug !== 'vendors' && (
-                                <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
-                                    <Trash2 size={14} className="text-rose-500" />
-                                </Button>
+                            onRowClick={(row) => {
+                                if (resourceSlug === 'vendors') {
+                                    router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
+                                } else if (DIALOG_RESOURCES.includes(resourceSlug)) {
+                                    const editValues: Record<string, any> = {};
+                                    formSchema.forEach((field) => {
+                                        if (field.isGroup && Array.isArray(field.schema)) {
+                                            field.schema.forEach((subField: any) => {
+                                                editValues[subField.name] = row[subField.name] ?? (subField.type === 'switch' ? false : '');
+                                            });
+                                        } else {
+                                            editValues[field.name] = row[field.name] ?? (field.type === 'switch' ? false : '');
+                                        }
+                                    });
+                                    const initialTypes: Record<string, string> = {};
+                                    const DIMENSIONS = [
+                                        { key: 'company_group', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
+                                        { key: 'region', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
+                                        { key: 'company', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
+                                        { key: 'division', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
+                                        { key: 'department', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
+                                    ];
+                                    DIMENSIONS.forEach(dim => {
+                                        const canChange = row[dim.toggleName] === true || row[dim.toggleName] === 1 || String(row[dim.toggleName]) === 'true';
+                                        const allowed = row[dim.allowedName] || [];
+                                        if (!canChange) {
+                                            initialTypes[dim.key] = 'user_data';
+                                        } else {
+                                            initialTypes[dim.key] = allowed.length > 0 ? 'custom' : 'full_access';
+                                        }
+                                    });
+                                    setLocalAccessTypes(initialTypes);
+                                    deptForm.setData(editValues);
+                                    setEditDataId(row.id);
+                                    setIsDeptDialogOpen(true);
+                                } else {
+                                    router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
+                                }
+                            }}
+                            rowActions={(row) => (
+                                <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                                    {resourceSlug !== 'vendors' && (
+                                        <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
+                                            <Trash2 size={14} className="text-rose-500" />
+                                        </Button>
+                                    )}
+                                </div>
                             )}
-                        </div>
-                    )}
-                />
-            </PageTable>
+                        />
+                    </PageTable>
+                </FloatingPanel>
+
+                {filters && filters.length > 0 && (
+                    <FloatingPanel padded shrink>
+                        <SideFilterCard
+                            categories={filters}
+                            activeFilters={activeFilters}
+                            actions={
+                                (hasExport || hasImport) ? (
+                                    <ExcelActions
+                                        exportRoute={`/admin/core/${resourceSlug}/export`}
+                                        importRoute={hasImport ? `/admin/core/${resourceSlug}/import` : undefined}
+                                        label={title}
+                                        inline={true}
+                                    />
+                                ) : null
+                            }
+                            onFilterChange={(keyOrObj, val) => {
+                                let nextFilters = { ...activeFilters, page: 1 };
+                                if (typeof keyOrObj === 'object') {
+                                    nextFilters = { ...nextFilters, ...keyOrObj };
+                                } else {
+                                    nextFilters = { ...nextFilters, [keyOrObj]: val };
+                                }
+                                router.get(`/admin/core/${resourceSlug}`, nextFilters, { preserveState: true, replace: true });
+                            }}
+                            onReset={() => {
+                                const clear = Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {});
+                                router.get(`/admin/core/${resourceSlug}`, { ...clear, page: 1 }, { preserveState: true, replace: true });
+                            }}
+                            totalResults={data.total}
+                            defaultExpanded={false}
+                        />
+                    </FloatingPanel>
+                )}
+            </MasterPageLayout>
 
             <ConfirmationModal
                 open={!!deleteId}
