@@ -216,6 +216,44 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         cell: (row: any) => {
             const val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
 
+            // Render merged username and email column for users resource
+            if (resourceSlug === 'users' && (col.name === 'username' || col.name === 'user_identity')) {
+                return (
+                    <div className="flex flex-col gap-0.5 text-left">
+                        <span className="font-semibold text-xs text-text-main">@{row.username || '—'}</span>
+                        <span className="text-[11px] text-text-soft font-medium">{row.email || '—'}</span>
+                    </div>
+                );
+            }
+
+            // Render merged role, division, and department column for users resource
+            if (resourceSlug === 'users' && (col.name === 'role_unit' || col.name === 'role_relation.name')) {
+                const roleName = row.role_relation?.name || row.roleRelation?.name || row.role?.name || '—';
+                const divName = row.division?.name;
+                const deptName = row.department?.name;
+                const unitStr = [divName, deptName].filter(Boolean).join(' • ');
+
+                return (
+                    <div className="flex flex-col gap-0.5 text-left">
+                        <span className="font-semibold text-xs text-text-main">{roleName}</span>
+                        <span className="text-[11px] text-text-soft font-medium">{unitStr || '—'}</span>
+                    </div>
+                );
+            }
+
+            // Render merged company and group column for users resource
+            if (resourceSlug === 'users' && (col.name === 'company_entity' || col.name === 'company.name')) {
+                const companyName = row.company?.name || '—';
+                const groupName = row.company_group?.name || row.companyGroup?.name || row.company?.company_group?.name || row.company?.companyGroup?.name;
+
+                return (
+                    <div className="flex flex-col gap-0.5 text-left">
+                        <span className="font-semibold text-xs text-text-main">{companyName}</span>
+                        {groupName && <span className="text-[11px] text-text-soft font-medium">{groupName}</span>}
+                    </div>
+                );
+            }
+
             // Custom render for name column if resource is contract-types (showing tree structure)
             if (col.name === 'name' && resourceSlug === 'contract-types') {
                 const depth = row._depth || 0;
@@ -756,15 +794,24 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             {/* Reusable Form Dialog */}
             {DIALOG_RESOURCES.includes(resourceSlug) && (
                 <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
-                    <DialogContent className={`border-border bg-card text-card-foreground overflow-hidden rounded-2xl border p-0 shadow-xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[850px]' : 'sm:max-w-[600px]'}`}>
+                    <DialogContent className={`border-border bg-card text-card-foreground overflow-hidden rounded-[24px] border p-0 shadow-xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[850px]' : 'sm:max-w-[600px]'}`}>
                         <form onSubmit={handleDeptSubmit}>
-                            <div className="px-6 pt-6 pb-4 flex flex-col gap-1 border-b border-border/40">
-                                <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
-                                    {editDataId ? `Ubah ${title}` : `Tambah ${title}`}
-                                </DialogTitle>
-                                <DialogDescription className="text-xs text-muted-foreground">
-                                    {editDataId ? `Ubah informasi ${title.toLowerCase()} Anda` : `Buat data ${title.toLowerCase()} baru`}
-                                </DialogDescription>
+                            <div className="p-[1px] pb-0">
+                                <div className="bg-primary text-primary-foreground px-5 py-3.5 relative overflow-hidden flex items-center justify-between rounded-[8px] border border-white/10 shadow-xs">
+                                    <div className="flex items-center gap-3 z-10 pr-10">
+                                        <div className="bg-white/15 border border-white/20 shadow-xs flex h-9 w-9 items-center justify-center rounded-lg backdrop-blur-xs">
+                                            <Shield size={18} className="text-white" />
+                                        </div>
+                                        <div>
+                                            <DialogTitle className="text-sm font-bold tracking-wide text-white">
+                                                {editDataId ? `Ubah ${title}` : `Tambah ${title}`}
+                                            </DialogTitle>
+                                            <DialogDescription className="text-white/80 text-[10.5px] font-normal">
+                                                {editDataId ? `Ubah informasi ${title.toLowerCase()} Anda` : `Buat data ${title.toLowerCase()} baru`}
+                                            </DialogDescription>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div className="space-y-4 p-6 max-h-[85vh] overflow-y-auto">
                                 {formSchema.map((field) => {

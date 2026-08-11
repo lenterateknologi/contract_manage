@@ -162,36 +162,35 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
         <Modal
             isOpen={open}
             onClose={onClose}
-            maxWidth="3xl"
-            title={
-                <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <UserCheck size={16} />
-                    </div>
-                    <span className="text-text-main text-sm font-bold tracking-tight uppercase">
-                        {actionAlias || 'Tugaskan PIC'}
-                    </span>
-                </div>
-            }
+            maxWidth="2xl"
+            headerVariant="primary"
+            headerIcon={<UserCheck size={18} className="text-white" />}
+            title={actionAlias || 'Tugaskan PIC'}
+            description="Pilih personil penanggung jawab dokumen pada tahap ini"
             footer={
-                <div className="flex w-full gap-3">
-                    <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 text-[10px] uppercase">
+                <div className="flex w-full justify-end gap-2.5">
+                    <Button
+                        variant="ghost"
+                        onClick={onClose}
+                        disabled={loading}
+                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                    >
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading || selectedUserIds.length === 0}
-                        className="flex-1 bg-primary text-[10px] text-primary-foreground uppercase transition-all duration-200 shadow-lg shadow-primary/20"
+                        className="min-w-[140px] h-9 text-xs"
                     >
-                        {loading ? <Loader2 size={14} className="mr-2 animate-spin" /> : <CheckCircle2 size={14} className="mr-2" />}
+                        {loading ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <CheckCircle2 size={15} className="mr-1.5" />}
                         Konfirmasi Penugasan
                     </Button>
                 </div>
             }
         >
-            <div className="space-y-6">
-                <div className="rounded-xl border border-primary/10 bg-primary/5 p-4">
-                    <p className="text-[11px] leading-relaxed font-medium text-primary/80">
+            <div className="space-y-3.5 pt-1">
+                <div className="rounded-lg border border-primary/10 bg-primary/5 p-3">
+                    <p className="text-[11px] leading-relaxed font-normal text-primary/90">
                         Pilih personil yang akan bertanggung jawab untuk memproses dokumen ini pada tahap selanjutnya.
                     </p>
                 </div>

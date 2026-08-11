@@ -166,6 +166,10 @@ export function DashboardMetrics({ metrics, activeTab }: { metrics: any; activeT
             router.get('/contracts/expiry', params);
         } else if (targetView === 'mine') {
             router.get('/contracts/mine', params);
+        } else if (targetView === 'archived') {
+            router.get('/contracts/archived', params);
+        } else if (targetView === 'in_progress') {
+            router.get('/contracts/in-progress', params);
         } else {
             router.get('/contracts', params);
         }

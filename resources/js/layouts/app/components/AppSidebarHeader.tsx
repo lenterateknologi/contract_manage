@@ -15,7 +15,7 @@ import { memo } from 'react';
 export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [] }: { readonly breadcrumbs?: BreadcrumbItemType[] }) {
     const { url } = usePage();
     const path = url.split('?')[0];
-    const isDetailRoute = /^\/contracts\/[a-zA-Z0-9-]+$/.test(path) && !['/contracts/mine', '/contracts/pending', '/contracts/expiry'].includes(path);
+    const isDetailRoute = /^\/contracts\/[a-zA-Z0-9-]+$/.test(path) && !['/contracts/mine', '/contracts/pending', '/contracts/expiry', '/contracts/in-progress', '/contracts/archived'].includes(path);
 
     return (
         <div

@@ -21,7 +21,7 @@ export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[]
                                 <Fragment key={index}>
                                     <BreadcrumbItem>
                                         {isLast ? (
-                                            <BreadcrumbPage className="text-sidebar-foreground font-bold tracking-wide">{item.title}</BreadcrumbPage>
+                                            <BreadcrumbPage className="text-sidebar-foreground font-semibold tracking-wide">{item.title}</BreadcrumbPage>
                                         ) : (
                                             <BreadcrumbLink href={item.href} className="hover:text-sidebar-primary transition-colors">
                                                 {item.title}

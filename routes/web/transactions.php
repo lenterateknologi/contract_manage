@@ -23,6 +23,8 @@ Route::controller(ContractController::class)->group(function () {
         Route::get('/f1', 'contractsView')->defaults('view', 'f1')->name('f1');
         Route::get('/f2', 'contractsView')->defaults('view', 'f2')->name('f2');
         Route::get('/expiry', 'contractsView')->defaults('view', 'expiry')->name('contracts.expiry');
+        Route::get('/archived', 'contractsView')->defaults('view', 'archived')->name('contracts.archived');
+        Route::get('/in-progress', 'contractsView')->defaults('view', 'in_progress')->name('contracts.in_progress');
         Route::get('/dashboard-metrics', 'getDashboardMetrics')->name('contracts.dashboard-metrics');
         Route::get('/{id}', 'showView')->name('contracts.show');
 

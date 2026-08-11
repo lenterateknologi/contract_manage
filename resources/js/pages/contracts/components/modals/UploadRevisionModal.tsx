@@ -48,19 +48,23 @@ export default function UploadRevisionModal({ open, onClose, onSubmit, initialTy
         <Modal
             isOpen={open}
             onClose={onClose}
-            title={
-                <div className="flex items-center gap-2">
-                    <FileUp size={18} className="text-muted-foreground" />
-                    <span>Upload Revisi {type === 'f1' ? 'Form F1' : 'Form F2'}</span>
-                </div>
-            }
+            headerVariant="primary"
+            headerIcon={<FileUp size={18} className="text-white" />}
+            title="Upload Revisi Dokumen"
+            description={`Unggah berkas versi revisi untuk ${type === 'f1' ? 'Form F1' : 'Form F2'}`}
+            maxWidth="2xl"
             footer={
-                <div className="flex w-full justify-end gap-3">
-                    <Button variant="outline" onClick={onClose} disabled={loading}>
+                <div className="flex w-full justify-end gap-2.5">
+                    <Button
+                        variant="ghost"
+                        onClick={onClose}
+                        disabled={loading}
+                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                    >
                         Batal
                     </Button>
-                    <Button onClick={handleSubmit} disabled={loading || !file || !changelog.trim()} className="min-w-[120px]">
-                        {loading ? 'Mengupload...' : 'Upload'}
+                    <Button onClick={handleSubmit} disabled={loading || !file || !changelog.trim()} className="min-w-[120px] h-9 text-xs">
+                        {loading ? 'Mengupload...' : 'Upload Revisi'}
                     </Button>
                 </div>
             }

@@ -66,6 +66,8 @@ export interface ContractApproval {
             name: string;
         };
     };
+    approver_authorities?: any[];
+    debug_sql_queries?: string[];
     approver: UserProfile;
 }
 

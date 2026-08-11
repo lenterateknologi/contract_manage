@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Plus, Shield, Pencil } from 'lucide-react';
+import { Trash2, Plus, Shield, Pencil, Search } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialogs/Dialog';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
@@ -13,11 +13,13 @@ interface AuthorityItem {
     division_id?: string | null;
     user_id?: string | null;
     company_group_id?: string | null;
+    company_id?: string | null;
     region_id?: string | null;
     role_use_initiator?: boolean;
     department_use_initiator?: boolean;
     division_use_initiator?: boolean;
     company_group_use_initiator?: boolean;
+    company_use_initiator?: boolean;
     region_use_initiator?: boolean;
 }
 
@@ -29,6 +31,7 @@ interface AuthorityTableManagerProps {
     departments: any[];
     divisions: any[];
     companyGroups: any[];
+    companies?: any[];
     regions: any[];
     title?: string;
     showCustom?: boolean;
@@ -43,11 +46,13 @@ export default function AuthorityTableManager({
     departments = [],
     divisions = [],
     companyGroups = [],
+    companies = [],
     regions = [],
     title = 'Otoritas Akses',
     showCustom = false,
     showCombinations = true,
 }: AuthorityTableManagerProps) {
+    const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editIndex, setEditIndex] = useState<number | null>(null);
 
@@ -60,6 +65,7 @@ export default function AuthorityTableManager({
     const [modalDepartmentId, setModalDepartmentId] = useState<string>('');
     const [modalDivisionId, setModalDivisionId] = useState<string>('');
     const [modalCompanyGroupId, setModalCompanyGroupId] = useState<string>('');
+    const [modalCompanyId, setModalCompanyId] = useState<string>('');
     const [modalRegionId, setModalRegionId] = useState<string>('');
     
     // Per-dimension initiator flags
@@ -67,6 +73,7 @@ export default function AuthorityTableManager({
     const [departmentUseInitiator, setDepartmentUseInitiator] = useState<boolean>(false);
     const [divisionUseInitiator, setDivisionUseInitiator] = useState<boolean>(false);
     const [companyGroupUseInitiator, setCompanyGroupUseInitiator] = useState<boolean>(false);
+    const [companyUseInitiator, setCompanyUseInitiator] = useState<boolean>(false);
     const [regionUseInitiator, setRegionUseInitiator] = useState<boolean>(false);
 
     const handleIndividualChange = (type: 'user' | 'custom', val: string[]) => {
@@ -78,11 +85,13 @@ export default function AuthorityTableManager({
             setModalDepartmentId('');
             setModalDivisionId('');
             setModalCompanyGroupId('');
+            setModalCompanyId('');
             setModalRegionId('');
             setRoleUseInitiator(false);
             setDepartmentUseInitiator(false);
             setDivisionUseInitiator(false);
             setCompanyGroupUseInitiator(false);
+            setCompanyUseInitiator(false);
             setRegionUseInitiator(false);
         }
     };
@@ -92,6 +101,7 @@ export default function AuthorityTableManager({
         if (type === 'department') setModalDepartmentId(val);
         if (type === 'division') setModalDivisionId(val);
         if (type === 'company_group') setModalCompanyGroupId(val);
+        if (type === 'company') setModalCompanyId(val);
         if (type === 'region') setModalRegionId(val);
 
         if (val) {
@@ -108,11 +118,13 @@ export default function AuthorityTableManager({
         setModalDepartmentId('');
         setModalDivisionId('');
         setModalCompanyGroupId('');
+        setModalCompanyId('');
         setModalRegionId('');
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
         setDivisionUseInitiator(false);
         setCompanyGroupUseInitiator(false);
+        setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
         setIsModalOpen(true);
     };
@@ -133,11 +145,13 @@ export default function AuthorityTableManager({
         setModalDepartmentId('');
         setModalDivisionId('');
         setModalCompanyGroupId('');
+        setModalCompanyId('');
         setModalRegionId('');
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
         setDivisionUseInitiator(false);
         setCompanyGroupUseInitiator(false);
+        setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
 
         if (auth.authority_type === 'custom' && auth.user_id) {
@@ -150,12 +164,14 @@ export default function AuthorityTableManager({
             if (auth.department_id) setModalDepartmentId(auth.department_id);
             if (auth.division_id) setModalDivisionId(auth.division_id);
             if (auth.company_group_id) setModalCompanyGroupId(auth.company_group_id);
+            if (auth.company_id) setModalCompanyId(auth.company_id);
             if (auth.region_id) setModalRegionId(auth.region_id);
             
             if (auth.role_use_initiator) setRoleUseInitiator(true);
             if (auth.department_use_initiator) setDepartmentUseInitiator(true);
             if (auth.division_use_initiator) setDivisionUseInitiator(true);
             if (auth.company_group_use_initiator) setCompanyGroupUseInitiator(true);
+            if (auth.company_use_initiator) setCompanyUseInitiator(true);
             if (auth.region_use_initiator) setRegionUseInitiator(true);
         }
 
@@ -174,18 +190,20 @@ export default function AuthorityTableManager({
         }
 
         // Save Group Combination
-        if (modalRoleId || modalDepartmentId || modalDivisionId || modalCompanyGroupId || modalRegionId || roleUseInitiator || departmentUseInitiator || divisionUseInitiator || companyGroupUseInitiator || regionUseInitiator) {
+        if (modalRoleId || modalDepartmentId || modalDivisionId || modalCompanyGroupId || modalCompanyId || modalRegionId || roleUseInitiator || departmentUseInitiator || divisionUseInitiator || companyGroupUseInitiator || companyUseInitiator || regionUseInitiator) {
             newAuths.push({
                 authority_type: 'group',
                 role_id: modalRoleId || undefined,
                 department_id: modalDepartmentId || undefined,
                 division_id: modalDivisionId || undefined,
                 company_group_id: modalCompanyGroupId || undefined,
+                company_id: modalCompanyId || undefined,
                 region_id: modalRegionId || undefined,
                 role_use_initiator: roleUseInitiator,
                 department_use_initiator: departmentUseInitiator,
                 division_use_initiator: divisionUseInitiator,
                 company_group_use_initiator: companyGroupUseInitiator,
+                company_use_initiator: companyUseInitiator,
                 region_use_initiator: regionUseInitiator,
             });
         }
@@ -213,7 +231,6 @@ export default function AuthorityTableManager({
         onChange(authorities.filter((_, idx) => idx !== indexToRemove));
     };
 
-    // Helper to get labels for display
     const getUserLabel = (id?: string) => {
         if (!id) return '-';
         return users.find(u => String(u.id) === id)?.name || id;
@@ -234,6 +251,10 @@ export default function AuthorityTableManager({
         if (!id) return '-';
         return companyGroups.find(cg => String(cg.id) === id)?.name || id;
     };
+    const getCompanyLabel = (id?: string) => {
+        if (!id) return '-';
+        return companies.find(c => String(c.id) === id)?.name || id;
+    };
     const getRegionLabel = (id?: string) => {
         if (!id) return '-';
         return regions.find(r => String(r.id) === id)?.name || id;
@@ -247,6 +268,24 @@ export default function AuthorityTableManager({
         return id;
     };
 
+    const filteredAuthorities = React.useMemo(() => {
+        if (!searchQuery.trim()) return authorities.map((auth, index) => ({ auth, originalIndex: index }));
+        const q = searchQuery.toLowerCase().trim();
+        return authorities
+            .map((auth, index) => ({ auth, originalIndex: index }))
+            .filter(({ auth }) => {
+                const typeMatch = auth.authority_type?.toLowerCase().includes(q);
+                const userMatch = getUserLabel(auth.user_id || undefined).toLowerCase().includes(q);
+                const roleMatch = (auth.role_use_initiator ? 'sesuai inisiator' : getRoleLabel(auth.role_id || undefined)).toLowerCase().includes(q);
+                const deptMatch = (auth.department_use_initiator ? 'sesuai inisiator' : getDeptLabel(auth.department_id || undefined)).toLowerCase().includes(q);
+                const divMatch = (auth.division_use_initiator ? 'sesuai inisiator' : getDivLabel(auth.division_id || undefined)).toLowerCase().includes(q);
+                const cgMatch = (auth.company_group_use_initiator ? 'sesuai inisiator' : getCompanyGroupLabel(auth.company_group_id || undefined)).toLowerCase().includes(q);
+                const compMatch = (auth.company_use_initiator ? 'sesuai inisiator' : getCompanyLabel(auth.company_id || undefined)).toLowerCase().includes(q);
+                const regMatch = (auth.region_use_initiator ? 'sesuai inisiator' : getRegionLabel(auth.region_id || undefined)).toLowerCase().includes(q);
+                return typeMatch || userMatch || roleMatch || deptMatch || divMatch || cgMatch || compMatch || regMatch;
+            });
+    }, [authorities, searchQuery, users, roles, departments, divisions, companyGroups, companies, regions]);
+
     return (
         <div className="space-y-4 w-full">
             <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-2 dark:border-zinc-800 gap-3">
@@ -258,9 +297,22 @@ export default function AuthorityTableManager({
                         </h3>
                     </div>
                 </div>
-                <Button variant="primary" size="sm" onClick={openModal} className="h-8 text-xs rounded-lg px-3 shadow-none">
-                    <Plus size={14} className="mr-1" /> Tambah Otoritas
-                </Button>
+
+                <div className="flex items-center gap-2">
+                    <div className="relative flex items-center">
+                        <Search size={14} className="absolute left-2.5 text-slate-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Cari otoritas..."
+                            className="h-8 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg outline-none focus:border-primary transition-all w-48 focus:w-60"
+                        />
+                    </div>
+                    <Button variant="primary" size="sm" onClick={openModal} className="h-8 text-xs rounded-lg px-3 shadow-none">
+                        <Plus size={14} className="mr-1" /> Tambah Otoritas
+                    </Button>
+                </div>
             </div>
 
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 overflow-hidden overflow-x-auto">
@@ -268,24 +320,29 @@ export default function AuthorityTableManager({
                     <div className="p-8 text-center text-slate-400 text-sm">
                         Belum ada otoritas yang ditambahkan.
                     </div>
+                ) : filteredAuthorities.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 text-sm">
+                        Tidak ada otoritas yang sesuai dengan pencarian "{searchQuery}".
+                    </div>
                 ) : (
                     <table className="w-full border-collapse text-left text-xs whitespace-nowrap">
-                        <thead>
-                            <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider">Tipe</th>
-                                {showCustom && <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider">Aktor Kustom</th>}
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider">User</th>
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider">Role</th>
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider">Departemen</th>
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider">Divisi</th>
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider">Company Group</th>
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider">Wilayah</th>
-                                <th className="px-3 py-3 font-bold text-slate-500 uppercase tracking-wider text-center">Aksi</th>
+                        <thead className="bg-primary text-white">
+                            <tr className="bg-primary text-white">
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">Tipe</th>
+                                {showCustom && <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">Aktor Kustom</th>}
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">User</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">Role</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">Departemen</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">Divisi</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">Company Group</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">Perusahaan PT</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white">Wilayah</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-center text-white">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {authorities.map((auth, idx) => (
-                                <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
+                            {filteredAuthorities.map(({ auth, originalIndex }) => (
+                                <tr key={originalIndex} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/10">
                                     <td className="px-3 py-2.5 font-semibold text-slate-700 dark:text-slate-300">
                                         <div className="flex flex-col gap-1 items-start">
                                             <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400">
@@ -322,6 +379,11 @@ export default function AuthorityTableManager({
                                         ) : getCompanyGroupLabel(auth.company_group_id)}
                                     </td>
                                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
+                                        {auth.company_use_initiator ? (
+                                            <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
+                                        ) : getCompanyLabel(auth.company_id)}
+                                    </td>
+                                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                         {auth.region_use_initiator ? (
                                             <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
                                         ) : getRegionLabel(auth.region_id)}
@@ -330,7 +392,7 @@ export default function AuthorityTableManager({
                                         <div className="flex items-center justify-center gap-1">
                                             <button
                                                 type="button"
-                                                onClick={() => editAuthority(idx)}
+                                                onClick={() => editAuthority(originalIndex)}
                                                 className="p-1.5 text-slate-400 hover:text-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors inline-flex"
                                                 title="Ubah"
                                             >
@@ -338,8 +400,8 @@ export default function AuthorityTableManager({
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => removeAuthority(idx)}
-                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors inline-flex"
+                                                onClick={() => removeAuthority(originalIndex)}
+                                                className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors inline-flex"
                                                 title="Hapus"
                                             >
                                                 <Trash2 size={14} />
@@ -516,6 +578,35 @@ export default function AuthorityTableManager({
                                         options={companyGroups.map(cg => ({ value: String(cg.id), label: cg.name }))}
                                         placeholder="Semua Company Group..."
                                         disabled={companyGroupUseInitiator}
+                                    />
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Perusahaan PT</label>
+                                        <div className="flex items-center gap-1.5">
+                                            <Checkbox
+                                                id="company_initiator"
+                                                checked={companyUseInitiator}
+                                                onCheckedChange={(c) => {
+                                                    setCompanyUseInitiator(!!c);
+                                                    if (c) {
+                                                        setModalCompanyId('');
+                                                        setModalCustomIds([]);
+                                                        setModalUserIds([]);
+                                                    }
+                                                }}
+                                                className="h-3.5 w-3.5"
+                                            />
+                                            <label htmlFor="company_initiator" className="text-[10px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                        </div>
+                                    </div>
+                                    <SearchableSelect
+                                        value={modalCompanyId}
+                                        onValueChange={(val) => handleGroupChange('company', val)}
+                                        options={companies.map(c => ({ value: String(c.id), label: c.name }))}
+                                        placeholder="Semua Perusahaan PT..."
+                                        disabled={companyUseInitiator}
                                     />
                                 </div>
 

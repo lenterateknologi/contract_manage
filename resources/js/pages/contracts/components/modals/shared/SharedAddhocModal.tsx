@@ -187,36 +187,35 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         <Modal
             isOpen={open}
             onClose={onClose}
-            maxWidth="3xl"
-            title={
-                <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500 dark:bg-indigo-500/20">
-                        <UserPlus size={16} />
-                    </div>
-                    <span className="text-text-main text-sm font-bold tracking-tight uppercase">
-                        {actionAlias || 'Persetujuan Tambahan'}
-                    </span>
-                </div>
-            }
+            maxWidth="2xl"
+            headerVariant="primary"
+            headerIcon={<UserPlus size={18} className="text-white" />}
+            title={actionAlias || 'Persetujuan Tambahan'}
+            description="Minta persetujuan tambahan di luar alur kerja template"
             footer={
-                <div className="flex w-full gap-3">
-                    <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 text-[10px]  uppercase">
+                <div className="flex w-full justify-end gap-2.5">
+                    <Button
+                        variant="ghost"
+                        onClick={onClose}
+                        disabled={loading}
+                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                    >
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading || selectedUserIds.length === 0}
-                        className="flex-1 bg-indigo-600 text-[10px]  text-white uppercase transition-all duration-200 hover:bg-indigo-700 dark:bg-indigo-50 dark:text-black dark:hover:bg-indigo-100"
+                        className="min-w-[140px] h-9 text-xs"
                     >
-                        {loading ? <Loader2 size={14} className="mr-2 animate-spin" /> : <CheckCircle2 size={14} className="mr-2" />}
+                        {loading ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <CheckCircle2 size={15} className="mr-1.5" />}
                         Simpan Perubahan
                     </Button>
                 </div>
             }
         >
-            <div className="space-y-6">
-                <div className="rounded-xl border border-indigo-100 bg-indigo-50/20 p-4 dark:border-indigo-950/40 dark:bg-indigo-950/10">
-                    <p className="text-[11px] leading-relaxed font-medium text-indigo-700/80 dark:text-indigo-300/80">
+            <div className="space-y-3.5 pt-1">
+                <div className="rounded-lg border border-primary/10 bg-primary/5 p-3">
+                    <p className="text-[11px] leading-relaxed font-normal text-primary/90">
                         Anda dapat meminta persetujuan tambahan di luar alur kerja template saat ini. User yang dipilih wajib menyetujui dokumen sebelum lanjut.
                     </p>
                 </div>

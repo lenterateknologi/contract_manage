@@ -41,26 +41,22 @@ export function ManagementForm({
             style={{ maxHeight: flat ? '100%' : 'calc(100svh - 2.5rem)' }}
         >
             {/* COMPACT STICKY HEADER */}
-            <div className="border-surface-border bg-surface-muted/95 sticky top-0 z-50 flex shrink-0 items-center justify-between border-b px-6 py-2 backdrop-blur">
+            <div className="border-surface-border bg-surface-muted/95 sticky top-0 z-50 flex shrink-0 items-center justify-between border-b px-6 py-2.5 backdrop-blur">
                 <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="hover:bg-surface-muted h-8 w-8 shrink-0 rounded-xl" onClick={onClose}>
-                        <ArrowLeft size={16} />
-                    </Button>
+                    <div className="flex shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white p-1 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+                        <Button variant="ghost" size="icon" className="hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 rounded-lg text-slate-600 dark:text-slate-300" onClick={onClose}>
+                            <ArrowLeft size={16} />
+                        </Button>
+                    </div>
 
                     <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-text-main text-base font-semibold">{title}</h1>
+                            <h1 className="text-text-main text-sm font-normal">{title}</h1>
                             {isEdit && <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />}
                         </div>
                         {subtitle && <p className="text-text-desc text-xs font-medium">{subtitle}</p>}
                     </div>
                 </div>
-
-                {tabs && (
-                    <div className="flex items-center justify-center flex-1 mx-4">
-                        {tabs}
-                    </div>
-                )}
 
                 <div className="flex items-center gap-3">
                     {onCollapseAll && (
@@ -92,6 +88,13 @@ export function ManagementForm({
                     </Button>
                 </div>
             </div>
+
+            {/* SUB-HEADER TABS ROW */}
+            {tabs && (
+                <div className="border-b border-primary/20 bg-primary/5 dark:bg-primary/[0.05] dark:border-primary/30 px-6 py-2 shrink-0">
+                    {tabs}
+                </div>
+            )}
 
             {/* COMPACT FORM BODY */}
             <div className="bg-surface-base flex-1 overflow-y-auto p-3 md:p-4">

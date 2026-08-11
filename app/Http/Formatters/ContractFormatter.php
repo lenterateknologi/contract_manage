@@ -353,11 +353,11 @@ class ContractFormatter
             $targetApprovers = null;
             $targetEmails = null;
 
-            // Resolve potential approvers for placeholders
-            // Skip this heavy logic in list mode
+            $stepSqlQueries = [];
             if ($isDetail) {
                 $resolved = $workflowService->resolveApproversForStep($c, $step);
                 $approvers = $resolved['approvers'];
+                $stepSqlQueries = $resolved['sql_queries'] ?? [];
                 $targetApprovers = $approvers->pluck('name')->implode(', ');
                 $targetEmails = $approvers->pluck('email')->implode(', ');
 
@@ -499,6 +499,30 @@ class ContractFormatter
 
                     $isCurrentStep = $c->workflow_step_id === $step->id;
 
+                    $authoritiesPayload = [];
+                    if ($step->relationLoaded('approverAuthorities') || $step->approverAuthorities()->exists()) {
+                        $authorities = $step->relationLoaded('approverAuthorities')
+                            ? $step->approverAuthorities
+                            : $step->approverAuthorities()->with(['role', 'department', 'division', 'companyGroup', 'company', 'region'])->get();
+
+                        $authoritiesPayload = $authorities->map(fn ($a) => [
+                            'id' => $a->id,
+                            'authority_type' => $a->authority_type,
+                            'role_name' => $a->relationLoaded('role') ? $a->role?->name : null,
+                            'department_name' => $a->relationLoaded('department') ? $a->department?->name : null,
+                            'division_name' => $a->relationLoaded('division') ? $a->division?->name : null,
+                            'company_group_name' => $a->relationLoaded('companyGroup') ? $a->companyGroup?->name : null,
+                            'company_name' => $a->relationLoaded('company') ? $a->company?->name : null,
+                            'region_name' => $a->relationLoaded('region') ? $a->region?->name : null,
+                            'role_use_initiator' => (bool) $a->role_use_initiator,
+                            'department_use_initiator' => (bool) $a->department_use_initiator,
+                            'division_use_initiator' => (bool) $a->division_use_initiator,
+                            'company_group_use_initiator' => (bool) $a->company_group_use_initiator,
+                            'company_use_initiator' => (bool) $a->company_use_initiator,
+                            'region_use_initiator' => (bool) $a->region_use_initiator,
+                        ])->values()->toArray();
+                    }
+
                     $timeline[] = [
                         'id' => 'step-'.$step->id,
                         'user_id' => null,
@@ -517,6 +541,8 @@ class ContractFormatter
                         'step_name' => $step->name,
                         'step_description' => $step->description,
                         'step_category' => $step->step_category,
+                        'approver_authorities' => $authoritiesPayload,
+                        'debug_sql_queries' => $stepSqlQueries,
                     ];
                 }
             }

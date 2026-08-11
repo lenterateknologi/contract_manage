@@ -1,11 +1,9 @@
 import { Button } from '@/components/ui/buttons/Button';
-import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
-import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
-import { Download, ListFilter } from 'lucide-react';
+import { Download } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
@@ -22,43 +20,56 @@ interface Props {
     onApprove: (note: string, attachment?: File) => Promise<void>;
 }
 
+type ViewTab = 'all' | 'eligible' | 'active' | 'no_skipped';
+
 export default function ApprovalSteps({ contract, approvals, creator, submittedAt, meId, onApprove }: Props) {
-    const { showToast } = useToast();
-    const [statusFilter, setStatusFilter] = useState<string>('');
-    const [roleFilter, setRoleFilter] = useState<string>('');
-    const [deptFilter, setDeptFilter] = useState<string>('');
+    const [viewTab, setViewTab] = useState<ViewTab>('eligible');
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
-    const roles = useMemo(
-        () =>
-            Array.from(new Set(approvals.map((a) => a.role)))
-                .filter(Boolean)
-                .sort(),
-        [approvals],
-    );
-    const depts = useMemo(
-        () =>
-            Array.from(new Set(approvals.map((a) => a.department_name)))
-                .filter(Boolean)
-                .sort(),
-        [approvals],
-    );
-
     const filteredSteps = useMemo(() => {
         let result = [...approvals];
-        if (statusFilter) result = result.filter((a) => a.status === statusFilter);
-        if (roleFilter) result = result.filter((a) => a.role === roleFilter);
-        if (deptFilter) result = result.filter((a) => a.department_name === deptFilter);
+
+        // Tab: Syarat Terpenuhi = hanya approved / rejected / pending+active
+        if (viewTab === 'eligible') {
+            result = result.filter(
+                (a) =>
+                    a.status === 'approved' ||
+                    a.status === 'rejected' ||
+                    (a.status === 'pending' && a.is_active),
+            );
+        }
+
+        // Tab: Semua Kecuali Tidak Terpenuhi
+        // = hide step yang is_active=false, waiting, SELANJUTNYA (sesuai logika ApprovalCard isStaged/isWaiting)
+        if (viewTab === 'active') {
+            result = result.filter(
+                (a) =>
+                    a.is_active === true &&
+                    a.status !== 'waiting' &&
+                    (a.status as string) !== 'SELANJUTNYA' &&
+                    (a.status as string) !== 'SKIPPED',
+            );
+        }
+
+        // Tab: Tanpa Dilewati = hide SKIPPED saja, tampilkan sisanya
+        if (viewTab === 'no_skipped') {
+            result = result.filter(
+                (a) => (a.status as string) !== 'SKIPPED',
+            );
+        }
+
         if (debouncedSearch) {
             const s = debouncedSearch.toLowerCase();
             result = result.filter(
                 (a) =>
-                    a.role?.toLowerCase().includes(s) || a.department_name?.toLowerCase().includes(s) || a.approver?.name?.toLowerCase().includes(s),
+                    a.role?.toLowerCase().includes(s) ||
+                    a.department_name?.toLowerCase().includes(s) ||
+                    a.approver?.name?.toLowerCase().includes(s),
             );
         }
-        // Sort primarily by sort_order if available, then by creation time or id
+
         return result.sort((a, b) => {
             if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
                 return (a.sort_order || 0) - (b.sort_order || 0);
@@ -68,7 +79,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             }
             return a.id.localeCompare(b.id);
         });
-    }, [approvals, statusFilter, roleFilter, deptFilter, debouncedSearch]);
+    }, [approvals, viewTab, meId, debouncedSearch]);
 
     // Build a hierarchical tree of steps
     const stepTree = useMemo(() => {
@@ -103,24 +114,18 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             group.items.push(a);
         });
 
-        // After grouping, ensure each group is named correctly and items are sorted properly
         blocks.forEach((block) => {
             block.groups.forEach((group: any) => {
-                // Find the main step (the one that is not a sub-step, i.e., sub_step is null)
                 const mainStep = group.items.find((a: any) => a.sub_step == null) || group.items[0];
                 group.stepName = mainStep.step_name || mainStep.role || 'Persetujuan';
                 group.stepDescription = mainStep.step_description;
 
-                // Sort items so the main step (sub_step == null) is ALWAYS LAST
                 group.items.sort((a: any, b: any) => {
                     if (a.sub_step == null && b.sub_step != null) return 1;
                     if (a.sub_step != null && b.sub_step == null) return -1;
-
                     if (a.sub_step != null && b.sub_step != null) {
                         return Number(a.sub_step) - Number(b.sub_step);
                     }
-
-                    // Fallback to ID or created_at if both are main steps (shouldn't happen)
                     if (a.created_at && b.created_at) {
                         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
                     }
@@ -128,7 +133,6 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 });
             });
 
-            // Also ensure groups are sorted by sequence
             block.groups.sort((a: any, b: any) => Number(a.sequence) - Number(b.sequence));
         });
         return blocks;
@@ -137,92 +141,47 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const showProjectedManager = approvals.length === 0 && creator.role?.toLowerCase() === 'staff';
 
     const handleExportPdf = () => {
-        const params = new URLSearchParams({
-            status: statusFilter || '',
-            role: roleFilter || '',
-            department: deptFilter || '',
-        }).toString();
-        window.open(`/api/contracts/${contract.id}/approval/pdf?${params}`, '_blank');
+        window.open(`/api/contracts/${contract.id}/approval/pdf`, '_blank');
     };
 
-    const filterCategories: FilterCategory[] = [
-        {
-            label: 'STATUS',
-            key: 'status',
-            options: [
-                { label: 'DISETUJUI', value: 'approved' },
-                { label: 'DITOLAK', value: 'rejected' },
-                { label: 'PENDING', value: 'pending' },
-                { label: 'WAITING', value: 'waiting' },
-            ],
-        },
-        {
-            label: 'ROLE',
-            key: 'role',
-            type: 'searchable',
-            options: roles.map((r) => ({ label: r || 'UNNAMED ROLE', value: r || '' })),
-        },
-        {
-            label: 'DEPARTEMEN',
-            key: 'department',
-            type: 'searchable',
-            options: depts.map((d) => ({ label: d || 'UMUM', value: d || '' })),
-        },
+    const tabs: { key: ViewTab; label: string }[] = [
+        { key: 'eligible', label: 'Syarat Terpenuhi' },
+        { key: 'no_skipped', label: 'Semua (Tanpa Dilewati)' },
+        { key: 'all', label: 'Semua Alur' },
     ];
-
-    const activeCount = (statusFilter ? 1 : 0) + (roleFilter ? 1 : 0) + (deptFilter ? 1 : 0);
 
     return (
         <div className="animate-in fade-in relative flex min-w-0 flex-col gap-4 overflow-x-hidden duration-500">
-            {/* Clean 1-Row Toolbar with compact search bar */}
-            <div className="flex items-center justify-between gap-2 w-full">
-                <div className="w-48 sm:w-60 shrink-0">
-                    <SearchInput
-                        placeholder="CARI NAMA / ROLE..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="h-8 text-[10px] uppercase"
-                    />
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+                {/* Tab buttons */}
+                <div className="flex items-center gap-0 rounded-lg border border-surface-border bg-surface-muted p-0.5">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setViewTab(tab.key)}
+                            className={cn(
+                                'rounded-md px-3 py-1 text-[10px] font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer',
+                                viewTab === tab.key
+                                    ? 'bg-primary text-white shadow-xs'
+                                    : 'text-text-soft hover:text-text-main',
+                            )}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                    <FilterPopover
-                        categories={filterCategories}
-                        activeFilters={{
-                            status: statusFilter ? [statusFilter] : [],
-                            role: roleFilter ? [roleFilter] : [],
-                            department: deptFilter ? [deptFilter] : [],
-                        }}
-                        onFilterChange={(key, val) => {
-                            const firstVal = Array.isArray(val) ? val[0] || '' : val;
-                            if (key === 'status') setStatusFilter(statusFilter === firstVal ? '' : firstVal);
-                            if (key === 'role') setRoleFilter(roleFilter === firstVal ? '' : firstVal);
-                            if (key === 'department') setDeptFilter(deptFilter === firstVal ? '' : firstVal);
-                        }}
-                        onReset={() => {
-                            setStatusFilter('');
-                            setRoleFilter('');
-                            setDeptFilter('');
-                        }}
-                        totalResults={filteredSteps.length}
-                    >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className={cn(
-                                'border-surface-border text-text-main hover:bg-surface-muted h-8 gap-1.5 px-2.5 transition-all text-[10px] font-semibold uppercase rounded-lg',
-                                activeCount > 0 && 'border-primary bg-primary text-primary-foreground',
-                            )}
-                        >
-                            <ListFilter size={13} strokeWidth={2.5} />
-                            <span>Filter</span>
-                            {activeCount > 0 && (
-                                <span className="text-primary ml-1 flex h-3.5 w-3.5 items-center justify-center rounded-md bg-white text-[8px] font-bold">
-                                    {activeCount}
-                                </span>
-                            )}
-                        </Button>
-                    </FilterPopover>
+                    <div className="w-44 sm:w-56">
+                        <SearchInput
+                            placeholder="CARI NAMA / ROLE..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="h-8 text-[10px] uppercase"
+                        />
+                    </div>
 
                     <Button
                         variant="outline"
@@ -239,12 +198,12 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
             <div className="relative px-1">
                 <Timeline>
-                    {!activeCount && !search && !approvals.some((a) => a.sequence === 1) && (
+                    {!search && !approvals.some((a) => a.sequence === 1) && (
                         <TimelineItem status="completed">
                             <InitiatorStepCard isOnly={stepTree.length === 0 && !showProjectedManager} creator={creator} submittedAt={submittedAt} />
                         </TimelineItem>
                     )}
-                    {!activeCount && !search && showProjectedManager && (
+                    {!search && showProjectedManager && (
                         <TimelineItem status="waiting">
                             <ProjectedStepCard creator={creator} />
                         </TimelineItem>

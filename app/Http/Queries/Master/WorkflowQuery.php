@@ -44,9 +44,19 @@ class WorkflowQuery
     {
         return Workflow::with([
             'contractType',
-            'steps.approverAuthorities',
+            'steps.approverAuthorities.role',
+            'steps.approverAuthorities.department',
+            'steps.approverAuthorities.division',
+            'steps.approverAuthorities.companyGroup',
+            'steps.approverAuthorities.company',
+            'steps.approverAuthorities.region',
             'steps.actions.additionalAuthorities',
-            'initiatorAuthorities',
+            'initiatorAuthorities.role',
+            'initiatorAuthorities.department',
+            'initiatorAuthorities.division',
+            'initiatorAuthorities.companyGroup',
+            'initiatorAuthorities.company',
+            'initiatorAuthorities.region',
         ])->findOrFail($id);
     }
 

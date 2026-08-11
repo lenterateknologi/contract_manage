@@ -28,7 +28,7 @@ class UserResource extends Resource
 
     public static ?string $importClass = UsersImport::class;
 
-    public static array $with = ['roleRelation', 'department', 'division', 'company', 'region'];
+    public static array $with = ['roleRelation', 'department', 'division', 'company', 'companyGroup', 'region'];
 
     public static ?string $title = 'Registri Otoritas Pengguna';
 
@@ -40,11 +40,9 @@ class UserResource extends Resource
     {
         return [
             TextColumn::make('name', 'Nama')->sortable()->searchable(),
-            TextColumn::make('username', 'Username')->sortable()->searchable(),
-            TextColumn::make('email', 'Email')->sortable()->searchable(),
-            TextColumn::make('role_relation.name', 'Role')->sortable(),
-            TextColumn::make('division.name', 'Divisi')->sortable(),
-            TextColumn::make('department.name', 'Departemen')->sortable(),
+            TextColumn::make('username', 'Username / Email')->sortable()->searchable(),
+            TextColumn::make('role_unit', 'Role, Divisi & Departemen')->sortable(),
+            TextColumn::make('company_entity', 'Perusahaan PT & Group')->sortable(),
             TextColumn::make('region.name', 'Regional')->sortable(),
             BooleanColumn::make('is_active', 'Status Aktif'),
         ];
@@ -115,6 +113,9 @@ class UserResource extends Resource
             Filter::make('role_id', 'Role Akses')
                 ->type('searchable')
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('company_id', 'Perusahaan PT')
+                ->type('searchable')
+                ->options(fn () => Company::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('company_group_id', 'Holding / Group')
                 ->type('searchable')
                 ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),

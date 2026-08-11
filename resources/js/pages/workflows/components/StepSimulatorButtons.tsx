@@ -21,20 +21,30 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
     const buttons = [];
 
     for (const act of actions) {
-        let code = '';
-        let name = '';
+        let code = act.action_code || act.code || '';
+        let name = act.alias || act.label || '';
+
         if (act.master_action_id) {
             const ma = MASTER_ACTIONS.find((m: any) => m.id === act.master_action_id || m.code === act.action_code);
-            code = ma?.code || '';
-            name = ma?.name || '';
-        } else if (act.master_action_name) {
-            code = act.master_action_name.toLowerCase();
-            name = act.master_action_name;
+            if (ma) {
+                code = code || ma.code;
+                name = name || ma.name;
+            }
+        } else if (act.master_action) {
+            code = code || act.master_action.code || act.master_action.name?.toLowerCase();
+            name = name || act.master_action.name;
         }
 
-        if (!code) {
-            continue;
+        if (!code && act.name) {
+            code = act.name.toLowerCase();
         }
+        if (!name) {
+            name = act.name || act.label || `Aksi`;
+        }
+
+        if (name.toLowerCase().includes('setuju') || name.toLowerCase().includes('approve')) code = 'approve';
+        else if (name.toLowerCase().includes('tolak') || name.toLowerCase().includes('reject')) code = 'reject';
+        else if (name.toLowerCase().includes('tugas') || name.toLowerCase().includes('assign')) code = 'assign';
 
         const { color, icon, actionType } = getActionTheme(code);
 
@@ -66,36 +76,33 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
     return (
         <div 
             onClick={(e) => e.stopPropagation()}
-            className="ml-4 flex items-center gap-2 border-l border-slate-200 pl-4 dark:border-slate-800"
+            className="flex items-center gap-1.5 flex-wrap"
         >
-            <span className="text-[10px] font-semibold text-slate-400 uppercase">Simulasi:</span>
-            <div className="flex flex-wrap items-center gap-1.5">
-                {buttons.map((btn, bIdx) => (
-                    <button
-                        key={bIdx}
-                        type="button"
-                        title={btn.tooltip}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            if (['approve', 'reject', 'assign_pic', 'sign', 'forward'].includes(btn.actionType)) {
-                                setActiveModal(btn.actionType as any);
-                            } else {
-                                showToast(
-                                    `Simulasi: Menjalankan aksi "${btn.label}" (${btn.tooltip}). Kolom Wajib: ${(btn.act.required_fields || []).join(', ') || '-'}`,
-                                    'success',
-                                );
-                            }
-                        }}
-                        className={cn(
-                            'flex cursor-pointer items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-semibold text-white uppercase shadow-sm transition-all hover:scale-105 active:scale-95',
-                            btn.color,
-                        )}
-                    >
-                        <btn.icon size={10} className="opacity-80" />
-                        <span>{btn.label}</span>
-                    </button>
-                ))}
-            </div>
+            {buttons.map((btn, bIdx) => (
+                <button
+                    key={bIdx}
+                    type="button"
+                    title={btn.tooltip}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (['approve', 'reject', 'assign_pic', 'sign', 'forward'].includes(btn.actionType)) {
+                            setActiveModal(btn.actionType as any);
+                        } else {
+                            showToast(
+                                `Simulasi: Menjalankan aksi "${btn.label}" (${btn.tooltip}). Kolom Wajib: ${(btn.act.required_fields || []).join(', ') || '-'}`,
+                                'success',
+                            );
+                        }
+                    }}
+                    className={cn(
+                        'inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-semibold text-white uppercase shadow-none transition-all hover:scale-105 active:scale-95',
+                        btn.color,
+                    )}
+                >
+                    <btn.icon size={10} className="opacity-90" />
+                    <span>{btn.label}</span>
+                </button>
+            ))}
         </div>
     );
 }

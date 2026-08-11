@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { User, Layers, Building, Network, GitBranch, Briefcase, ChevronRight, BarChart3, ListTree } from 'lucide-react';
+import { User, Users, Layers, Building, Network, GitBranch, Briefcase, ChevronRight, BarChart3, ListTree } from 'lucide-react';
 import { MetricItem } from './MetricItem';
 import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -112,6 +112,116 @@ export function MasterDataTab({ data }: MasterDataTabProps) {
                 />
             </div>
 
+            {/* Grid 50/50 (2 Kolom Sejajar) untuk Visualisasi Distribusi Pengguna Group & Perusahaan */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* Distribusi Pengguna per Group (50%) */}
+                <div className="w-full min-w-0 bg-white dark:bg-zinc-900/50 border border-surface-border/60 rounded-xl p-5 space-y-4 shadow-sm overflow-hidden box-border">
+                    <div className="border-b border-surface-border/60 pb-3 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-bold text-text-main flex items-center gap-2">
+                                <Users size={16} className="text-indigo-500" /> Distribusi Pengguna per Group
+                            </h3>
+                            <p className="text-[10px] text-text-soft">Jumlah total pengguna aktif berdasarkan Grup Perusahaan</p>
+                        </div>
+                    </div>
+
+                    {(!counts.usersByGroup || counts.usersByGroup.length === 0) ? (
+                        <div className="text-center py-10 text-xs text-muted-foreground">Tidak ada data pengguna per group</div>
+                    ) : (
+                        <div className="h-[280px] w-full pt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={counts.usersByGroup} margin={{ top: 15, right: 20, left: 10, bottom: 45 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                    <XAxis 
+                                        dataKey="name" 
+                                        stroke="#888888" 
+                                        fontSize={10} 
+                                        tickLine={false} 
+                                        axisLine={false} 
+                                        interval={0}
+                                        angle={-20}
+                                        textAnchor="end"
+                                    />
+                                    <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <Tooltip
+                                        content={({ active, payload, label }: any) => {
+                                            if (active && payload && payload.length) {
+                                                return (
+                                                    <div className="rounded-xl border border-surface-border bg-white dark:bg-zinc-950 p-2.5 shadow-md text-xs">
+                                                        <p className="font-bold text-text-main">{label}</p>
+                                                        <p className="text-indigo-600 dark:text-indigo-400 font-semibold">{payload[0].value} Pengguna</p>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        }}
+                                    />
+                                    <Bar dataKey="user_count" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={44} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
+                </div>
+
+                {/* Distribusi Pengguna per Perusahaan (50% Sejajar dengan Sub-Card Horizontal Scroll) */}
+                <div className="w-full min-w-0 bg-white dark:bg-zinc-900/50 border border-surface-border/60 rounded-xl p-5 space-y-4 shadow-sm overflow-hidden box-border">
+                    <div className="border-b border-surface-border/60 pb-3 flex items-center justify-between">
+                        <div>
+                            <h3 className="text-sm font-bold text-text-main flex items-center gap-2">
+                                <Building size={16} className="text-emerald-500" /> Distribusi Pengguna per Perusahaan
+                            </h3>
+                            <p className="text-[10px] text-text-soft">Jumlah pengguna aktif per perusahaan (scroll ke samping di dalam sub-card untuk melihat seluruh perusahaan)</p>
+                        </div>
+                    </div>
+
+                    {(!counts.usersByCompany || counts.usersByCompany.length === 0) ? (
+                        <div className="text-center py-10 text-xs text-muted-foreground">Tidak ada data pengguna per perusahaan</div>
+                    ) : (
+                        <div className="w-full max-w-full overflow-x-auto pb-3 pt-1 scrollbar-thin scrollbar-thumb-surface-border">
+                            <div className="h-[280px]" style={{ width: `${Math.max(600, (counts.usersByCompany?.length || 0) * 55)}px` }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart 
+                                        data={counts.usersByCompany} 
+                                        margin={{ top: 15, right: 20, left: 10, bottom: 75 }}
+                                    >
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                        <XAxis 
+                                            dataKey="company_name" 
+                                            stroke="#888888" 
+                                            fontSize={9} 
+                                            tickLine={false} 
+                                            axisLine={false} 
+                                            interval={0}
+                                            angle={-45}
+                                            textAnchor="end"
+                                            dy={5}
+                                            tickFormatter={(val) => val.length > 18 ? val.substring(0, 16) + '...' : val}
+                                        />
+                                        <YAxis stroke="#888888" fontSize={10} tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <Tooltip
+                                            content={({ active, payload }: any) => {
+                                                if (active && payload && payload.length) {
+                                                    const row = payload[0].payload;
+                                                    return (
+                                                        <div className="rounded-xl border border-surface-border bg-white dark:bg-zinc-950 p-2.5 shadow-md text-xs space-y-0.5">
+                                                            <p className="font-bold text-text-main">{row.company_name}</p>
+                                                            <p className="text-[10px] text-text-soft">Group: {row.group_name}</p>
+                                                            <p className="text-emerald-600 dark:text-emerald-400 font-semibold pt-1">{row.user_count} Pengguna</p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
+                                        />
+                                        <Bar dataKey="user_count" fill="#10b981" radius={[4, 4, 0, 0]} barSize={26} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* Bagan Struktur Organisasi (Bar Chart) */}
             <div className="bg-white dark:bg-zinc-900/50 border border-surface-border/60 rounded-xl p-5 space-y-4 shadow-sm">
                 <div className="border-b border-surface-border/60 pb-3">
@@ -123,7 +233,7 @@ export function MasterDataTab({ data }: MasterDataTabProps) {
                     <div className="text-center py-10 text-xs text-muted-foreground">Tidak ada data struktur organisasi</div>
                 ) : (
                     /* Chart View: Simple Non-stacked Bar Chart */
-                    <div className="h-[420px] w-full pt-4 pb-2">
+                    <div className="h-[360px] w-full pt-4 pb-2">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData} margin={{ top: 15, right: 40, left: 30, bottom: 110 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />

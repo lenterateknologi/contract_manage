@@ -420,7 +420,7 @@ export default function AgreementView({
             </div>
 
             {/* Main Preview Area - PDF Iframe */}
-            <div className="border-surface-border bg-slate-100/80 dark:bg-zinc-950 relative flex min-h-[1000px] flex-1 flex-col items-center overflow-y-auto border-t py-8 px-4">
+            <div className="border-surface-border bg-white dark:bg-zinc-900 relative flex min-h-[1000px] flex-1 flex-col items-center overflow-y-auto border-t py-8 px-4">
                 {loading ? (
                     <div className="flex h-full flex-col items-center justify-center gap-4 py-20">
                         <LoadingLottie width={120} height={120} />

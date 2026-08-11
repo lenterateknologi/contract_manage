@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import axios from 'axios';
 import { ArrowRight, Check, Columns, Download, FileText, FolderOpen, History, Loader2, MoreVertical, PlusCircle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getAutofillValue } from '../parts/autofill';
 
 interface FormTemplateInfo {
@@ -50,6 +50,8 @@ export function FormSubmissionTab({
     onContractUpdated,
     users = [],
     meUser,
+    onFormDirty,
+    onFormSave,
 }: {
     docType: 'f1' | 'f2' | 'contract';
     selected: Contract;
@@ -57,6 +59,8 @@ export function FormSubmissionTab({
     onContractUpdated: (c: Contract) => void;
     users?: any[];
     meUser?: any;
+    onFormDirty?: (dirty: boolean) => void;
+    onFormSave?: (saveFn: () => Promise<void>) => void;
 }) {
     return (
         <GenericFormTab
@@ -66,6 +70,8 @@ export function FormSubmissionTab({
             onContractUpdated={onContractUpdated}
             users={users}
             meUser={meUser}
+            onFormDirty={onFormDirty}
+            onFormSave={onFormSave}
         />
     );
 }
@@ -81,6 +87,8 @@ function GenericFormTab({
     onContractUpdated,
     users = [],
     meUser,
+    onFormDirty,
+    onFormSave,
 }: {
     docType: 'f1' | 'f2' | 'contract';
     selected: Contract;
@@ -88,6 +96,8 @@ function GenericFormTab({
     onContractUpdated: (c: Contract) => void;
     users?: any[];
     meUser?: any;
+    onFormDirty?: (dirty: boolean) => void;
+    onFormSave?: (saveFn: () => Promise<void>) => void;
 }) {
     const { showToast, showProgress, hideProgress } = useToast();
     const [fields, setFields] = useState<FormField[]>([]);
@@ -153,7 +163,6 @@ function GenericFormTab({
                         const val = getAutofillValue(f, selected, docType, users);
                         if (val !== null) {
                             const currentVal = synced[f.name];
-                            const serverVal = originalData[f.name];
                             const isManualEdit = manualFields.has(f.name);
                             const isDateField =
                                 f.name === 'meta_tgl_dibuat' ||
@@ -173,13 +182,16 @@ function GenericFormTab({
                         }
                     }
                 });
+                if (hasChanged && !isManual) {
+                    setOriginalData((origPrev) => ({ ...origPrev, ...synced }));
+                }
                 return hasChanged ? synced : prev;
             });
             if (isManual) {
                 showToast('Data sinkron dengan informasi kontrak & vendor.', 'success');
             }
         },
-        [fields, selected, originalData, showToast, manualFields, docType, users],
+        [fields, selected, showToast, manualFields, docType, users],
     );
     useEffect(() => {
         if (!loading && fields.length > 0) {
@@ -221,7 +233,7 @@ function GenericFormTab({
                 });
 
                 setFormData(finalData);
-                setOriginalData(savedData);
+                setOriginalData(finalData);
                 setVersions(subRes.versions);
             } else {
                 const initial: Record<string, any> = {};
@@ -298,47 +310,25 @@ function GenericFormTab({
         workflowStepId: selected.workflow_step_id,
     });
 
-    const isDirty = JSON.stringify(formData) !== JSON.stringify(originalData);
-    const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-    const autoSaveTimerRef = useRef<any>(null);
-
-    const latestVersion = versions.length > 0 ? [...versions].sort((a, b) => b.version_no - a.version_no)[0] : null;
-    const vno = latestVersion?.version_no;
-
-    // Debounced Auto-Save
-    useEffect(() => {
-        if (!loading && isDirty && matchingTemplate && canEdit) {
-            setAutoSaveStatus('saving');
-
-            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-
-            autoSaveTimerRef.current = setTimeout(async () => {
-                try {
-                    await contractApi.formSubmissions.save(selected.id, {
-                        form_template_id: matchingTemplate.id,
-                        document_type: docType,
-                        form_data: formData,
-                        is_new_version: false, // Don't bump version on auto-save
-                    });
-                    setOriginalData({ ...formData });
-                    setAutoSaveStatus('saved');
-                    // Reset to idle after 3 seconds
-                    setTimeout(() => setAutoSaveStatus('idle'), 3000);
-                } catch (e) {
-                    console.error('Auto-save failed', e);
-                    setAutoSaveStatus('error');
-                }
-            }, 3000); // 3 second debounce
+    const isDirty = useMemo(() => {
+        const allKeys = new Set([...Object.keys(formData || {}), ...Object.keys(originalData || {})]);
+        for (const key of allKeys) {
+            const currentVal = formData[key] ?? '';
+            const origVal = originalData[key] ?? '';
+            if (String(currentVal).trim() !== String(origVal).trim()) {
+                return true;
+            }
         }
+        return false;
+    }, [formData, originalData]);
 
-        return () => {
-            if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
-        };
-    }, [formData, loading, matchingTemplate, selected.id, docType, isDirty]);
+    useEffect(() => {
+        if (canEdit) {
+            onFormDirty?.(isDirty);
+        }
+    }, [isDirty, canEdit, onFormDirty]);
 
-    const isF2 = docType === 'f2';
-
-    const handleManualSave = async () => {
+    const handleSave = async (isNewVersion = false) => {
         if (!matchingTemplate) return;
         setSaving(true);
         try {
@@ -346,15 +336,19 @@ function GenericFormTab({
                 form_template_id: matchingTemplate.id,
                 document_type: docType,
                 form_data: formData,
-                is_new_version: true, // Explicit version bump
-                change_summary: versionNote || undefined,
+                is_new_version: isNewVersion,
+                change_summary: isNewVersion && versionNote ? versionNote : undefined,
             });
             onContractUpdated(updated);
             setOriginalData({ ...formData });
-            showToast(`Versi baru ${docType.toUpperCase()} berhasil disimpan.`, 'success');
+            onFormDirty?.(false);
+            if (isNewVersion) {
+                showToast(`Versi baru ${docType.toUpperCase()} berhasil disimpan.`, 'success');
+            } else {
+                showToast(`Perubahan ${docType.toUpperCase()} berhasil disimpan.`, 'success');
+            }
             const res = await contractApi.formSubmissions.get(selected.id, docType);
             if (res.versions) setVersions(res.versions);
-            setAutoSaveStatus('idle');
             setVersionNote('');
             setShowNoteModal(false);
         } catch (e: any) {
@@ -363,6 +357,12 @@ function GenericFormTab({
             setSaving(false);
         }
     };
+
+    useEffect(() => {
+        if (canEdit && onFormSave) {
+            onFormSave(() => handleSave(false));
+        }
+    }, [canEdit, onFormSave, formData, originalData, matchingTemplate]);
 
     const handleExportPdf = async () => {
         if (!matchingTemplate) return;
@@ -468,7 +468,7 @@ function GenericFormTab({
 
     if (!matchingTemplate) {
         return (
-            <div className="border-surface-border bg-surface-muted rounded-xl border border-dashed py-20 text-center">
+            <div className="border-surface-border bg-white dark:bg-zinc-900 rounded-xl border border-dashed py-20 text-center">
                 <div className="bg-surface-base mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full shadow-sm">
                     <FileText className="text-text-soft" size={24} />
                 </div>
@@ -545,22 +545,6 @@ function GenericFormTab({
                 </div>
 
                 <div className="flex items-center gap-3" ref={dropdownRef}>
-                    {autoSaveStatus !== 'idle' && (
-                        <div className="mr-2 flex items-center gap-2 rounded-md bg-black/5 px-2.5 py-1 dark:bg-white/5">
-                            {autoSaveStatus === 'saving' && (
-                                <>
-                                    <Loader2 size={12} className="animate-spin text-black dark:text-white" />
-                                    <span className="text-[11px] font-medium text-black dark:text-white">Menyimpan...</span>
-                                </>
-                            )}
-                            {autoSaveStatus === 'saved' && (
-                                <>
-                                    <Check size={12} className="text-black dark:text-white" />
-                                    <span className="text-[11px] text-black dark:text-white">Tersimpan</span>
-                                </>
-                            )}
-                        </div>
-                    )}
                     <div className="relative">
                         <Button
                             variant={showVersions ? 'primary' : 'white'}
@@ -680,43 +664,76 @@ function GenericFormTab({
                         )}
                     </div>
 
+                    {canEdit && isDirty && (
+                        <Button
+                            onClick={() => handleSave(false)}
+                            disabled={saving}
+                            className="bg-primary text-primary-foreground h-9 px-3.5 text-xs font-semibold shadow-none animate-in fade-in zoom-in-95"
+                        >
+                            {saving ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Check size={14} className="mr-1.5" />}
+                            Simpan
+                        </Button>
+                    )}
+
                     {/* Simpan Versi Popup Modal */}
                     <Modal
                         isOpen={showNoteModal}
                         onClose={() => setShowNoteModal(false)}
-                        title="Update Versi Dokumen"
-                        description="Arsipkan perubahan sebagai versi baru."
-                        maxWidth="md"
-                    >
-                        <div className="space-y-6">
-                            <div>
-                                <label className="mb-2 block text-xs font-medium text-black dark:text-white">Catatan Perubahan</label>
-                                <textarea
-                                    autoFocus
-                                    value={versionNote}
-                                    onChange={(e) => setVersionNote(e.target.value)}
-                                    placeholder="Apa saja yang berubah pada versi ini?"
-                                    rows={4}
-                                    className="w-full resize-none rounded-2xl border border-black bg-white p-5 text-sm font-medium transition-all outline-none placeholder:text-black focus:ring-2 focus:ring-black dark:border-white dark:bg-transparent dark:text-white dark:placeholder:text-white dark:focus:ring-white"
+                        maxWidth="lg"
+                        title={
+                            <div className="bg-primary text-primary-foreground -m-8 flex items-center justify-between px-5 py-3.5 relative overflow-hidden border-b border-white/20">
+                                <div className="flex items-center gap-3 z-10">
+                                    <div className="bg-white/15 border border-white/20 shadow-xs flex h-9 w-9 items-center justify-center rounded-lg backdrop-blur-xs">
+                                        <PlusCircle size={18} className="text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold tracking-wide">Update Versi Dokumen</h3>
+                                        <p className="text-white/80 text-[10.5px] font-normal">Arsipkan perubahan sebagai versi baru</p>
+                                    </div>
+                                </div>
+                                {/* Oversized transparent rotated background icon */}
+                                <PlusCircle
+                                    size={55}
+                                    className="absolute right-14 top-1/2 -translate-y-1/2 text-white/15 rotate-12 pointer-events-none select-none"
                                 />
                             </div>
-                            <div className="flex gap-4">
-                                <Button variant="outline" onClick={() => setShowNoteModal(false)} className="flex-1">
+                        }
+                        footer={
+                            <div className="flex w-full justify-end gap-2.5">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => setShowNoteModal(false)}
+                                    disabled={saving}
+                                    className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                                >
                                     Batal
                                 </Button>
-                                <Button onClick={handleManualSave} disabled={saving} className="shadow-primary/20 flex-[1.5]">
-                                    {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                                <Button onClick={() => handleSave(true)} disabled={saving} className="min-w-[140px] h-9 text-xs">
+                                    {saving ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <Check size={15} className="mr-1.5" />}
                                     Simpan Versi Baru
                                 </Button>
+                            </div>
+                        }
+                    >
+                        <div className="space-y-3 pt-1">
+                            <div className="space-y-1.5">
+                                <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
+                                    Catatan Perubahan / Versi
+                                </label>
+                                <textarea
+                                    value={versionNote}
+                                    onChange={(e) => setVersionNote(e.target.value)}
+                                    placeholder="Contoh: Perbaikan nilai kontrak dan lampiran vendor..."
+                                    rows={3}
+                                    className="w-full rounded-xl border border-surface-border bg-surface-muted/30 p-3 text-xs text-text-main outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all placeholder:text-text-soft/40"
+                                />
                             </div>
                         </div>
                     </Modal>
 
-                    <div className="mx-1 h-8 w-px bg-black/10 dark:bg-white/10" />
-
                     {canEdit && (
-                        <Button onClick={() => setShowNoteModal(true)} disabled={saving} className="shadow-primary/20">
-                            <PlusCircle size={16} />
+                        <Button onClick={() => setShowNoteModal(true)} disabled={saving} className="h-9 px-3 text-xs font-semibold">
+                            <PlusCircle size={14} className="mr-1.5" />
                             Update Versi
                         </Button>
                     )}

@@ -57,17 +57,18 @@ trait HasExportHelpers
 
         if ($contract->vendor_id && $contract->vendor) {
             $v = $contract->vendor;
+            $detail = $v->vendor_detail ?? [];
             if (empty($formData['meta_p2_entity'])) {
-                $formData['meta_p2_entity'] = $v->name;
+                $formData['meta_p2_entity'] = $v->vendor_name ?? ($detail['company_name'] ?? '');
             }
             if (empty($formData['meta_p2_signer'])) {
-                $formData['meta_p2_signer'] = $v->pic_name;
+                $formData['meta_p2_signer'] = $detail['pic'] ?? ($detail['pic_name'] ?? '');
             }
             if (empty($formData['meta_p2_signer_position'])) {
-                $formData['meta_p2_signer_position'] = $v->pic_position;
+                $formData['meta_p2_signer_position'] = $detail['pic_position'] ?? ($detail['position'] ?? '');
             }
             if (empty($formData['meta_p2_alamat'])) {
-                $formData['meta_p2_alamat'] = $v->address;
+                $formData['meta_p2_alamat'] = $detail['address'] ?? '';
             }
         }
 

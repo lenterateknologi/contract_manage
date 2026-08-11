@@ -52,8 +52,14 @@ class UpdateWorkflowAction
                         'division_id' => $auth['division_id'] ?? null,
                         'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
                         'company_group_id' => $auth['company_group_id'] ?? null,
+                        'company_id' => $auth['company_id'] ?? null,
                         'region_id' => $auth['region_id'] ?? null,
-                        'region_id' => $auth['region_id'] ?? null,
+                        'role_use_initiator' => (bool) ($auth['role_use_initiator'] ?? false),
+                        'department_use_initiator' => (bool) ($auth['department_use_initiator'] ?? false),
+                        'division_use_initiator' => (bool) ($auth['division_use_initiator'] ?? false),
+                        'company_group_use_initiator' => (bool) ($auth['company_group_use_initiator'] ?? false),
+                        'company_use_initiator' => (bool) ($auth['company_use_initiator'] ?? false),
+                        'region_use_initiator' => (bool) ($auth['region_use_initiator'] ?? false),
                     ]);
                 }
             } else {
@@ -266,11 +272,13 @@ class UpdateWorkflowAction
                                 'division_id' => $auth['division_id'] ?? null,
                                 'user_id' => ($auth['authority_type'] ?? null) === 'custom' ? null : (! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null),
                                 'company_group_id' => $auth['company_group_id'] ?? null,
+                                'company_id' => $auth['company_id'] ?? null,
                                 'region_id' => $auth['region_id'] ?? null,
                                 'role_use_initiator' => (bool) ($auth['role_use_initiator'] ?? false),
                                 'department_use_initiator' => (bool) ($auth['department_use_initiator'] ?? false),
                                 'division_use_initiator' => (bool) ($auth['division_use_initiator'] ?? false),
                                 'company_group_use_initiator' => (bool) ($auth['company_group_use_initiator'] ?? false),
+                                'company_use_initiator' => (bool) ($auth['company_use_initiator'] ?? false),
                                 'region_use_initiator' => (bool) ($auth['region_use_initiator'] ?? false),
                             ]);
                         }

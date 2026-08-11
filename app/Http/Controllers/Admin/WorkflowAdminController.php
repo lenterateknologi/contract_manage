@@ -25,6 +25,7 @@ use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\Workflow;
+use App\Models\WorkflowStepPreset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -67,6 +68,7 @@ class WorkflowAdminController extends Controller
             'contractStatuses' => ContractStatus::select('id', 'code', 'label')->orderBy('label')->get(),
             'allWorkflows' => $this->workflowQuery->options()->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
+            'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
@@ -85,7 +87,7 @@ class WorkflowAdminController extends Controller
 
         $workflowData['steps'] = $workflow->steps->map(function ($s) {
             $sd = $s->toArray();
-            $sd['role'] = $s->approverAuthorities->filter(fn ($a) => ! $a->role_use_initiator)->pluck('role.name')->filter()->values()->toArray();
+            $sd['role'] = $s->approverAuthorities->filter(fn ($a) => ! $a->role_use_initiator)->map(fn ($a) => $a->role?->name)->filter()->values()->toArray();
             $sd['user_ids'] = $s->approverAuthorities->pluck('user_id')->filter()->values()->toArray();
             $sd['department_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->department_use_initiator)->pluck('department_id')->filter()->values()->toArray();
             $sd['division_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->division_use_initiator)->pluck('division_id')->filter()->values()->toArray();
@@ -167,6 +169,7 @@ class WorkflowAdminController extends Controller
             'contractStatuses' => ContractStatus::select('id', 'code', 'label')->orderBy('label')->get(),
             'allWorkflows' => $this->workflowQuery->options()->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
+            'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'icon' => 'GitBranch'],
@@ -415,5 +418,29 @@ class WorkflowAdminController extends Controller
 
             return back()->withErrors(['error' => 'Gagal mengimpor alur kerja: '.$e->getMessage()]);
         }
+    }
+
+    public function storePreset(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'step_data' => 'required|array',
+        ]);
+
+        $preset = WorkflowStepPreset::create([
+            'name' => $validated['name'],
+            'step_data' => $validated['step_data'],
+            'created_by_user_id' => auth()->id(),
+        ]);
+
+        return back()->with('success', "Preset '{$preset->name}' berhasil disimpan.");
+    }
+
+    public function destroyPreset(WorkflowStepPreset $preset)
+    {
+        $name = $preset->name;
+        $preset->delete();
+
+        return back()->with('success', "Preset '{$name}' berhasil dihapus.");
     }
 }

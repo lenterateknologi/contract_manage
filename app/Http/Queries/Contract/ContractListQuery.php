@@ -66,7 +66,7 @@ class ContractListQuery
             ->with(self::WITH)
             ->latest();
 
-        $this->applyViewFilter($query, $view);
+        $this->applyViewFilter($query, $view, $request);
         $this->applySearchFilter($query, $request);
         $this->applyStatusFilter($query, $request, $view);
         $this->applyTypeFilter($query, $request);
@@ -81,25 +81,117 @@ class ContractListQuery
     /**
      * Apply view-specific constraints (mine, pending, expiry, f1, f2, contracts, all).
      */
-    private function applyViewFilter(Builder $query, string $view): void
+    private function applyViewFilter(Builder $query, string $view, Request $request): void
     {
         switch ($view) {
             case 'mine':
-                $query->where('t_contracts.created_by', Auth::id());
+                $query->where('created_by', Auth::id());
+
+                $mineTab = $request->input('mine_tab', 'all');
+                if ($mineTab === 'archived') {
+                    $query->whereRaw('UPPER(status) = ?', ['ARCHIVED']);
+                } elseif ($mineTab === 'in_progress') {
+                    $query->whereIn('status', ['in_review', 'pending', 'locked']);
+                } else {
+                    $query->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+
+                    if (in_array($mineTab, ['kontrak', 'non_kontrak', 'nda'])) {
+                        $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
+                        $targetParent = null;
+
+                        if ($mineTab === 'kontrak') {
+                            $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
+                        } elseif ($mineTab === 'non_kontrak') {
+                            $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
+                        } elseif ($mineTab === 'nda') {
+                            $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
+                        }
+
+                        if ($targetParent) {
+                            $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
+                                $ids = [$parentId];
+                                $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                                foreach ($children as $childId) {
+                                    $ids = array_merge($ids, $getDescendantIds($childId));
+                                }
+
+                                return array_unique($ids);
+                            };
+
+                            $allDescendantIds = $getDescendantIds($targetParent->id);
+
+                            $query->where(function (Builder $q) use ($allDescendantIds, $targetParent) {
+                                $q->whereIn('contract_type_id', $allDescendantIds)
+                                  ->orWhere('contract_type_parent_id', $targetParent->id);
+                            });
+                        }
+                    }
+                }
                 break;
 
             case 'pending':
-                $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
-                    ->whereHas('approvals', function (Builder $q): void {
-                        $q->where('user_id', Auth::id())
-                            ->where('status', 'pending')
-                            ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
-                    });
+                $pendingTab = $request->input('pending_tab', 'pending');
+
+                if ($pendingTab === 'history') {
+                    $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
+                        ->whereHas('approvals', function (Builder $q): void {
+                            $q->where('user_id', Auth::id())
+                                ->whereIn('status', ['approved', 'rejected', 'revision']);
+                        });
+                } else {
+                    $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
+                        ->whereHas('approvals', function (Builder $q): void {
+                            $q->where('user_id', Auth::id())
+                                ->where('status', 'pending')
+                                ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
+                        });
+                }
                 break;
 
             case 'expiry':
                 $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
                     ->whereNotNull('end_date');
+
+                $expiryTab = $request->input('expiry_tab', 'all');
+                if (in_array($expiryTab, ['kontrak', 'non_kontrak', 'nda'])) {
+                    $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
+                    $targetParent = null;
+
+                    if ($expiryTab === 'kontrak') {
+                        $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
+                    } elseif ($expiryTab === 'non_kontrak') {
+                        $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
+                    } elseif ($expiryTab === 'nda') {
+                        $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
+                    }
+
+                    if ($targetParent) {
+                        $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
+                            $ids = [$parentId];
+                            $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                            foreach ($children as $childId) {
+                                $ids = array_merge($ids, $getDescendantIds($childId));
+                            }
+
+                            return array_unique($ids);
+                        };
+
+                        $allDescendantIds = $getDescendantIds($targetParent->id);
+
+                        $query->where(function (Builder $q) use ($allDescendantIds, $targetParent) {
+                            $q->whereIn('contract_type_id', $allDescendantIds)
+                              ->orWhere('contract_type_parent_id', $targetParent->id);
+                        });
+                    }
+                }
+                break;
+
+            case 'archived':
+                $query->whereRaw('UPPER(status) = ?', ['ARCHIVED']);
+                break;
+
+            case 'in_progress':
+                $query->whereIn('status', ['in_review', 'revision', 'pending', 'locked']);
                 break;
 
             case 'f1':
@@ -119,6 +211,47 @@ class ContractListQuery
             case 'contracts':
             default:
                 $query->whereRaw('UPPER(status) != ?', ['DRAFT']);
+
+                $parentTab = $request->input('parent_tab', 'all');
+                if ($parentTab === 'archived') {
+                    $query->whereRaw('UPPER(status) = ?', ['ARCHIVED']);
+                } elseif ($parentTab === 'in_progress') {
+                    $query->whereIn('status', ['in_review', 'pending', 'locked']);
+                } else {
+                    $query->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+
+                    if (in_array($parentTab, ['kontrak', 'non_kontrak', 'nda'])) {
+                        $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
+                        $targetParent = null;
+
+                        if ($parentTab === 'kontrak') {
+                            $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
+                        } elseif ($parentTab === 'non_kontrak') {
+                            $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
+                        } elseif ($parentTab === 'nda') {
+                            $targetParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
+                        }
+
+                        if ($targetParent) {
+                            $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
+                                $ids = [$parentId];
+                                $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                                foreach ($children as $childId) {
+                                    $ids = array_merge($ids, $getDescendantIds($childId));
+                                }
+
+                                return array_unique($ids);
+                            };
+
+                            $allDescendantIds = $getDescendantIds($targetParent->id);
+
+                            $query->where(function (Builder $q) use ($allDescendantIds, $targetParent) {
+                                $q->whereIn('contract_type_id', $allDescendantIds)
+                                  ->orWhere('contract_type_parent_id', $targetParent->id);
+                            });
+                        }
+                    }
+                }
                 break;
         }
     }

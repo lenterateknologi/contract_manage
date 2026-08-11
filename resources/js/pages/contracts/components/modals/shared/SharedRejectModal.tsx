@@ -114,65 +114,62 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, contra
             isOpen={open}
             onClose={onClose}
             maxWidth="2xl"
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="bg-danger/10 text-danger flex h-10 w-10 items-center justify-center rounded-2xl shadow-inner">
-                        <XCircle size={20} />
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-900 uppercase dark:text-white">
-                            {actionAlias || 'Tolak Kontrak'}
-                        </h3>
-                        <p className="mt-0.5 text-[10px] font-medium text-slate-400 uppercase">Berikan alasan penolakan</p>
-                    </div>
-                </div>
-            }
+            headerVariant="danger"
+            headerIcon={<XCircle size={18} className="text-white" />}
+            title={actionAlias || 'Tolak Kontrak'}
+            description="Berikan catatan atau alasan penolakan kontrak"
             footer={
-                <div className="flex w-full gap-3">
-                    <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 rounded-xl">
+                <div className="flex w-full justify-end gap-2.5">
+                    <Button
+                        variant="ghost"
+                        onClick={onClose}
+                        disabled={loading}
+                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                    >
                         Batal
                     </Button>
                     <Button
                         variant="destructive"
                         onClick={handleSubmit}
                         disabled={loading || !reason.trim()}
-                        className="shadow-destructive/20 flex-1 rounded-xl shadow-lg"
+                        className="min-w-[140px] h-9 text-xs text-white"
                     >
-                        {loading ? <Loader2 size={16} className="mr-2 animate-spin" /> : <XCircle size={16} className="mr-2" />}
+                        {loading ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <XCircle size={15} className="mr-1.5" />}
                         Konfirmasi Penolakan
                     </Button>
                 </div>
             }
         >
-            <div className="space-y-6">
+            <div className="space-y-3.5 pt-1">
                 {preview && (
-                    <div className="rounded-xl border border-rose-100 bg-rose-50/50 p-3.5 text-left dark:border-rose-950/30 dark:bg-rose-950/10">
+                    <div className="rounded-lg border border-rose-100 bg-rose-50/50 p-2.5 text-left dark:border-rose-950/30 dark:bg-rose-950/10">
                         <div className="flex items-center gap-2 text-[10px] font-extrabold tracking-wider text-rose-700 dark:text-rose-400 uppercase">
                             <AlertCircle size={12} />
                             Proyeksi Mundur Alur Kerja
                         </div>
-                        <div className="mt-1.5 flex flex-col gap-0.5">
+                        <div className="mt-1 flex flex-col gap-0.5">
                             <span className="text-[9px] font-medium text-slate-400 uppercase">{preview.label}</span>
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{preview.target}</span>
                         </div>
                     </div>
                 )}
 
-                <p className="text-text-desc text-sm leading-relaxed font-medium">
+                <p className="text-text-desc text-xs leading-relaxed font-normal">
                     Mohon jelaskan alasan penolakan kontrak ini agar pihak inisiator dapat melakukan perbaikan yang diperlukan.
                 </p>
 
                 <FormTextarea
                     label="Alasan Penolakan"
+                    labelClassName="font-extrabold text-[10.5px] uppercase"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    rows={4}
+                    rows={3}
                     placeholder="Jelaskan alasan penolakan secara detail..."
                     required
                 />
 
-                <div className="space-y-1.5">
-                    <label className="text-text-desc text-[11px] font-bold uppercase">Lampiran Pendukung (Optional)</label>
+                <div className="space-y-1">
+                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">Lampiran Pendukung (Optional)</label>
                     <div className="mt-1">
                         {!attachment ? (
                             <Button

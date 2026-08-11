@@ -52,129 +52,93 @@ export default function ContractTypeTableManager({
     };
 
     return (
-        <div className="space-y-3 w-full">
-            <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-2 dark:border-zinc-800 gap-3">
-                <div 
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center gap-2 cursor-pointer select-none group"
-                >
-                    <button
-                        type="button"
-                        className="p-1 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 rounded-md transition-colors"
-                        title={isExpanded ? "Minimize" : "Expand"}
-                    >
-                        {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
+        <div className="space-y-3 w-full h-full flex flex-col">
+            <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-xs dark:bg-slate-900/95 dark:border-zinc-800 pb-2.5 pt-1 gap-3 shrink-0">
+                <div className="flex items-center gap-2">
                     <LayoutTemplate size={14} className="text-primary" />
-                    <div className="flex items-center gap-2">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                            {title}
-                        </h3>
-                        <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border-0">
-                            {contractTypeIds.length} Terpilih
-                        </Badge>
-                    </div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                        {title}
+                    </h3>
+                    <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border-0">
+                        {contractTypeIds.length} Terpilih
+                    </Badge>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {isExpanded && (
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={handleSelectAll}
-                                className="px-2 py-0.5 text-[10px] font-bold uppercase rounded text-primary hover:underline transition-all cursor-pointer"
-                            >
-                                Pilih Semua
-                            </button>
-                            <span className="text-slate-300 dark:text-slate-700">•</span>
-                            <button
-                                type="button"
-                                onClick={handleClearAll}
-                                className="px-2 py-0.5 text-[10px] font-bold uppercase rounded text-rose-500 hover:underline transition-all cursor-pointer"
-                            >
-                                Bersihkan
-                            </button>
+                    <button
+                        type="button"
+                        onClick={handleSelectAll}
+                        className="px-2 py-0.5 text-[10px] font-bold uppercase rounded text-primary hover:underline transition-all cursor-pointer"
+                    >
+                        Pilih Semua
+                    </button>
+                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <button
+                        type="button"
+                        onClick={handleClearAll}
+                        className="px-2 py-0.5 text-[10px] font-bold uppercase rounded text-rose-500 hover:underline transition-all cursor-pointer"
+                    >
+                        Bersihkan
+                    </button>
 
-                            <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-[11px] font-medium">
-                                <button
-                                    type="button"
-                                    onClick={() => setFilterMode('all')}
-                                    className={cn(
-                                        "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
-                                        filterMode === 'all'
-                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                                    )}
-                                >
-                                    Semua ({contractTypes.length})
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setFilterMode('selected')}
-                                    className={cn(
-                                        "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
-                                        filterMode === 'selected'
-                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                                    )}
-                                >
-                                    Terpilih ({contractTypeIds.length})
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setFilterMode('unselected')}
-                                    className={cn(
-                                        "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
-                                        filterMode === 'unselected'
-                                            ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                            : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-                                    )}
-                                >
-                                    Belum Terpilih ({Math.max(0, contractTypes.length - contractTypeIds.length)})
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {!isExpanded && selectedNames.length > 0 && (
-                        <div 
-                            onClick={() => setIsExpanded(!isExpanded)}
-                            className="flex flex-wrap gap-1 max-w-md justify-end cursor-pointer select-none"
-                        >
-                            {selectedNames.slice(0, 3).map((name, idx) => (
-                                <span key={idx} className="text-[10px] bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-foreground px-2 py-0.5 rounded-md font-medium truncate max-w-[150px]">
-                                    {name}
-                                </span>
-                            ))}
-                            {selectedNames.length > 3 && (
-                                <span className="text-[10px] bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-2 py-0.5 rounded-md font-medium">
-                                    +{selectedNames.length - 3} lainnya
-                                </span>
+                    <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-[11px] font-medium">
+                        <button
+                            type="button"
+                            onClick={() => setFilterMode('all')}
+                            className={cn(
+                                "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
+                                filterMode === 'all'
+                                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
+                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
                             )}
-                        </div>
-                    )}
+                        >
+                            Semua ({contractTypes.length})
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFilterMode('selected')}
+                            className={cn(
+                                "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
+                                filterMode === 'selected'
+                                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
+                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                            )}
+                        >
+                            Terpilih ({contractTypeIds.length})
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setFilterMode('unselected')}
+                            className={cn(
+                                "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
+                                filterMode === 'unselected'
+                                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
+                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                            )}
+                        >
+                            Belum Terpilih ({Math.max(0, contractTypes.length - contractTypeIds.length)})
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {isExpanded && (
-                <div className="pt-1">
-                    <TreeSelect
-                        value={contractTypeIds}
-                        onValueChange={(newIds) => onChange(Array.from(new Set(newIds)))}
-                        items={filteredContractTypes.map((t: any) => ({
-                            id: t.id,
-                            name: t.name,
-                            parent_id: t.parent_id
-                        }))}
-                        placeholder="Pilih Kategori Kontrak..."
-                        searchPlaceholder="Cari kategori kontrak..."
-                        multiple={true}
-                        inline={true}
-                        defaultExpandAll={true}
-                        triggerClassName="min-h-10 rounded-xl"
-                    />
-                </div>
-            )}
+            <div className="pt-1 flex-1 w-full min-h-0">
+                <TreeSelect
+                    value={contractTypeIds}
+                    onValueChange={(newIds) => onChange(Array.from(new Set(newIds)))}
+                    items={filteredContractTypes.map((t: any) => ({
+                        id: t.id,
+                        name: t.name,
+                        parent_id: t.parent_id
+                    }))}
+                    placeholder="Pilih Kategori Kontrak..."
+                    searchPlaceholder="Cari kategori kontrak..."
+                    multiple={true}
+                    inline={true}
+                    defaultExpandAll={true}
+                    triggerClassName="min-h-10 rounded-xl"
+                />
+            </div>
         </div>
     );
 }

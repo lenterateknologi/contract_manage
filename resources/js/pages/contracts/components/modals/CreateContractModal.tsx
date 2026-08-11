@@ -152,99 +152,109 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         <Modal
             isOpen={open}
             onClose={onClose}
-            title={
-                <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 flex h-10 w-10 items-center justify-center rounded-xl">
-                        <FilePlus2 size={20} className="text-primary" />
-                    </div>
-                    <span>Buat Kontrak Baru</span>
-                </div>
-            }
-            maxWidth="5xl"
+            headerVariant="primary"
+            headerIcon={<FilePlus2 size={18} />}
+            title="Buat Kontrak Baru"
+            description="Isi formulir berikut untuk memulai pengajuan kontrak"
+            maxWidth="2xl"
             footer={
-                <div className="flex w-full justify-end gap-3">
-                    <Button variant="ghost" onClick={onClose} disabled={loading}>
+                <div className="flex w-full justify-end gap-2.5">
+                    <Button
+                        variant="ghost"
+                        onClick={onClose}
+                        disabled={loading}
+                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                    >
                         Batal
                     </Button>
-                    <Button onClick={handleSubmit} disabled={loading} className="min-w-[140px]">
-                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check size={16} className="mr-2" />}
+                    <Button onClick={handleSubmit} disabled={loading} className="min-w-[120px] h-9 text-xs">
+                        {loading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Check size={15} className="mr-1.5" />}
                         Buat Kontrak
                     </Button>
                 </div>
             }
         >
-            <div className="space-y-5">
-                <div className="border-primary/20 bg-primary/5 dark:bg-primary/10 space-y-2.5 rounded-xl border p-3.5">
-                    <label className="text-primary flex items-center gap-2 text-[11px] font-extrabold uppercase">
-                        <ShieldCheck size={14} /> Dibuat Untuk (Initiator)
+            <div className="space-y-3.5 pt-1">
+                {(() => {
+                    const roleUpper = String(auth?.user?.role || '').toUpperCase();
+                    const deptUpper = String(auth?.user?.department_name || auth?.user?.department?.name || '').toUpperCase();
+                    const canSelectInitiator = roleUpper.includes('ADMIN') || roleUpper.includes('LEGAL') || deptUpper.includes('LEGAL');
+
+                    if (!canSelectInitiator) return null;
+
+                    return (
+                        <div className="border-primary/20 bg-primary/5 dark:bg-primary/10 space-y-2 rounded-lg border p-3">
+                            <label className="text-primary flex items-center gap-1.5 text-[10.5px] font-extrabold uppercase">
+                                <ShieldCheck size={13} /> Dibuat Untuk (Initiator)
+                            </label>
+                            <PortalSelect
+                                value={initiatedById}
+                                onValueChange={(val) => setInitiatedById(val)}
+                                options={initiatorOptions}
+                                placeholder="Pilih Initiator"
+                            />
+                            <p className="text-text-soft text-[11px] leading-relaxed font-normal mt-1">
+                                Workflow akan disesuaikan dengan departemen dan otoritas initiator yang dipilih.
+                            </p>
+                        </div>
+                    );
+                })()}
+
+                <div className="space-y-1">
+                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
+                        Klasifikasi & Jenis Dokumen <span className="text-rose-500">*</span>
                     </label>
-                    <PortalSelect
-                        value={initiatedById}
-                        onValueChange={(val) => setInitiatedById(val)}
-                        options={initiatorOptions}
-                        placeholder="Pilih Initiator"
+                    <TreeSelect
+                        value={typeId}
+                        onValueChange={(childId, parentId) => {
+                            setTypeId(childId);
+                            setParentTypeId(parentId ?? '');
+
+                            if (Array.isArray(types)) {
+                                const selectedType = types.find((t) => String(t.id) === childId);
+                                if (selectedType) {
+                                    const pathNames = [selectedType.name];
+                                    let current = selectedType;
+                                    while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
+                                        const parent = types.find((t) => String(t.id) === String(current.parent_id));
+                                        if (parent && String(parent.id) !== String(current.id)) {
+                                            pathNames.unshift(parent.name);
+                                            current = parent;
+                                        } else {
+                                            break;
+                                        }
+                                    }
+                                    setTitle(pathNames.join(' - '));
+                                }
+                            }
+                        }}
+                        items={types}
+                        placeholder="Pilih Klasifikasi / Jenis Kontrak"
+                        disableParentSelection={true}
                     />
-                    <p className="text-slate-500 dark:text-zinc-400 text-[10.5px] leading-relaxed font-normal mt-0.5">
-                        Workflow akan disesuaikan dengan departemen dan otoritas initiator yang dipilih.
-                    </p>
+                    {errors.contract_type_id && <div className="mt-0.5 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>}
                 </div>
 
-                <div className="grid grid-cols-2 gap-5 items-start">
-                    <div className="col-span-1 space-y-1.5">
-                        <label className="text-slate-700 dark:text-zinc-200 text-[11px] font-extrabold uppercase">
-                            Klasifikasi & Jenis Dokumen <span className="text-rose-500">*</span>
-                        </label>
-                        <TreeSelect
-                            value={typeId}
-                            onValueChange={(childId, parentId) => {
-                                setTypeId(childId);
-                                setParentTypeId(parentId ?? '');
-
-                                if (Array.isArray(types)) {
-                                    const selectedType = types.find((t) => String(t.id) === childId);
-                                    if (selectedType) {
-                                        const pathNames = [selectedType.name];
-                                        let current = selectedType;
-                                        while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
-                                            const parent = types.find((t) => String(t.id) === String(current.parent_id));
-                                            if (parent && String(parent.id) !== String(current.id)) {
-                                                pathNames.unshift(parent.name);
-                                                current = parent;
-                                            } else {
-                                                break;
-                                            }
-                                        }
-                                        setTitle(pathNames.join(' - '));
-                                    }
-                                }
-                            }}
-                            items={types}
-                            placeholder="Pilih Klasifikasi / Jenis Kontrak"
-                            disableParentSelection={true}
-                        />
-                        {errors.contract_type_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.contract_type_id}</div>}
-                    </div>
-
-                    <div className="col-span-1 animate-in fade-in slide-in-from-top-2 space-y-1.5">
-                        <label className="text-primary flex items-center gap-2 text-[11px] font-extrabold uppercase">
-                            <ShieldCheck size={14} /> Pilih Alur Kerja <span className="text-rose-500">*</span>
-                        </label>
-                        <PortalSelect
-                            value={workflowId}
-                            onValueChange={(val) => setWorkflowId(val)}
-                            options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
-                            placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
-                            disabled={!typeId || fetchingWorkflows}
-                        />
-                        <p className="text-slate-500 dark:text-zinc-400 text-[10.5px] leading-relaxed font-normal mt-1">
-                            Silakan pilih alur kerja (workflow) yang sesuai untuk tipe kontrak ini.
-                        </p>
-                        {errors.workflow_id && <div className="mt-1 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
-                    </div>
+                <div className="animate-in fade-in slide-in-from-top-2 space-y-1">
+                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
+                        Pilih Alur Kerja <span className="text-rose-500">*</span>
+                    </label>
+                    <PortalSelect
+                        value={workflowId}
+                        onValueChange={(val) => setWorkflowId(val)}
+                        options={workflows.map((w) => ({ value: String(w.id), label: w.name }))}
+                        placeholder={!typeId ? 'Pilih jenis dokumen dulu...' : fetchingWorkflows ? 'Memuat...' : 'Pilih Alur Kerja'}
+                        disabled={!typeId || fetchingWorkflows}
+                    />
+                    <p className="text-text-soft text-[11px] leading-relaxed font-normal mt-1">
+                        Alur kerja persetujuan sesuai tipe kontrak yang dipilih.
+                    </p>
+                    {errors.workflow_id && <div className="mt-0.5 text-[10px] font-medium text-rose-500">{errors.workflow_id}</div>}
                 </div>
 
                 <FormInput
-                    label="Nama Project / Judul Kontrak *"
+                    label="Nama Project / Judul Kontrak"
+                    labelClassName="font-extrabold text-[10.5px] uppercase"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Masukkan nama project atau judul kontrak"
@@ -259,7 +269,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     value={desc}
                     onChange={(e) => setDesc(e.target.value)}
                     placeholder="Tambahkan keterangan singkat mengenai kontrak ini..."
-                    rows={3}
+                    rows={2}
                 />
 
                 {errors.general && (

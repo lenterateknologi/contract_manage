@@ -3,6 +3,7 @@ import { DashboardMetrics, DashboardTab } from '@/pages/dashboard/components/Das
 import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
+import { Card } from '@/components/ui/cards/Card';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { Column, DataTable as TableContract } from '@/components/ui/tables/DataTable';
 import { FilterPopover } from '@/components/ui/selection/FilterPopover';
@@ -34,6 +35,7 @@ import axios from 'axios';
 import {
     AlertCircle,
     AlertTriangle,
+    Archive,
     Check,
     CheckCircle2,
     ChevronLeft,
@@ -46,6 +48,7 @@ import {
     FileText,
     FileType,
     FilePlus,
+    FileCheck,
     Filter,
     GitBranch,
     Hash,
@@ -80,7 +83,7 @@ const ensureArray = (val: any): any[] => {
     return val ? [val] : [];
 };
 
-type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry';
+type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
 
 import {
     renderAssignedBy,
@@ -356,6 +359,10 @@ function ContractPage({
     regions = [],
     divisions = [],
     organizationTree = [],
+    mineCounts,
+    parentCategoryCounts,
+    pendingCounts,
+    expiryCategoryCounts,
 }: Readonly<{
     contracts: PaginatedData<Contract>;
     meId: string;
@@ -365,12 +372,42 @@ function ContractPage({
     submissionTypes: any[];
     currentView: View;
     metrics: any;
+    mineCounts?: {
+        all: number;
+        kontrak: number;
+        non_kontrak: number;
+        nda: number;
+        in_progress: number;
+        archived: number;
+    };
+    parentCategoryCounts?: {
+        all: number;
+        kontrak: number;
+        non_kontrak: number;
+        nda: number;
+        in_progress: number;
+        archived: number;
+    };
+    pendingCounts?: {
+        pending: number;
+        history: number;
+    };
+    expiryCategoryCounts?: {
+        all: number;
+        kontrak: number;
+        non_kontrak: number;
+        nda: number;
+    };
     filters: {
         search?: string;
         status?: string;
         contract_type_id?: string;
         submission_type_id?: string;
         per_page?: number;
+        mine_tab?: string;
+        parent_tab?: string;
+        pending_tab?: string;
+        expiry_tab?: string;
         role_id?: string;
         department_id?: string;
         created_from?: string;
@@ -418,20 +455,24 @@ function ContractPage({
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const viewTitleMap: Record<string, string> = {
         dashboard: 'Dashboard Kontrak',
-        contracts: 'Daftar Kontrak',
+        contracts: 'Daftar Dokumen',
         mine: 'Kontrak Saya',
         pending: 'Persetujuan Tertunda',
         expiry: 'Masa Berlaku Kontrak',
+        archived: 'Arsip Dokumen',
+        in_progress: 'On Progress',
         f1: 'Dokumen Formulir F1',
         f2: 'Dokumen Formulir F2',
         profile: 'Profil Saya',
     };
     const viewDescMap: Record<string, string> = {
         dashboard: 'Statistik dan ringkasan aktivitas kontrak.',
-        contracts: 'Daftar seluruh kontrak dalam sistem.',
+        contracts: 'Daftar seluruh dokumen dalam sistem.',
         mine: 'Daftar kontrak yang Anda buat.',
         pending: 'Kontrak yang menunggu persetujuan Anda.',
         expiry: 'Kontrak yang akan atau telah berakhir.',
+        archived: 'Daftar seluruh dokumen kontrak yang diarsipkan.',
+        in_progress: 'Daftar seluruh kontrak dalam proses pengerjaan.',
         f1: 'Daftar kontrak dengan dokumen F1.',
         f2: 'Daftar kontrak dengan dokumen F2.',
         profile: 'Informasi akun dan pengaturan profil.',
@@ -442,6 +483,8 @@ function ContractPage({
         mine: FileEdit,
         pending: Clock,
         expiry: History,
+        archived: Archive,
+        in_progress: Clock,
         f1: FileText,
         f2: FileText,
         profile: User,
@@ -912,16 +955,6 @@ function ContractPage({
                 cell: renderStatusAndStep,
             },
             {
-                accessorKey: 'assigned_by',
-                header: (
-                    <div className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-text-desc" />
-                        <span>Disetujui Oleh</span>
-                    </div>
-                ),
-                cell: renderAssignedBy,
-            },
-            {
                 accessorKey: 'assigned_pic',
                 header: (
                     <div className="flex items-center gap-2">
@@ -1052,6 +1085,303 @@ function ContractPage({
                                     {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                                     {view !== 'profile' && view !== 'dashboard' && (
                                         <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden h-full">
+                                            {view === 'mine' && (
+                                                <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
+                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border/70 rounded-xl w-full overflow-x-auto">
+                                                        {/* Left side tabs: Category Tabs */}
+                                                        <div className="flex items-center gap-1.5">
+                                                            {[
+                                                                { key: 'all', label: 'Semua Dokumen', icon: Layers },
+                                                                { key: 'kontrak', label: 'Dokumen', icon: FileText },
+                                                                { key: 'non_kontrak', label: 'Non Dokumen', icon: FileCheck },
+                                                                { key: 'nda', label: 'NDA', icon: Zap },
+                                                            ].map((tabItem) => {
+                                                                const activeTab = filters?.mine_tab || 'all';
+                                                                const isActive = activeTab === tabItem.key;
+                                                                const countVal = mineCounts ? (mineCounts as any)[tabItem.key] : undefined;
+                                                                const IconComp = tabItem.icon;
+
+                                                                return (
+                                                                    <button
+                                                                        key={tabItem.key}
+                                                                        type="button"
+                                                                        onClick={() => handleFilterChange({ mine_tab: tabItem.key, page: 1 })}
+                                                                        className={cn(
+                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
+                                                                            isActive
+                                                                                ? 'bg-primary text-primary-foreground'
+                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
+                                                                        )}
+                                                                    >
+                                                                        <IconComp size={14} />
+                                                                        <span>{tabItem.label}</span>
+                                                                        {countVal !== undefined && (
+                                                                            <span
+                                                                                className={cn(
+                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
+                                                                                    isActive
+                                                                                        ? 'bg-white/20 text-primary-foreground'
+                                                                                        : 'bg-surface-muted text-text-soft'
+                                                                                )}
+                                                                            >
+                                                                                {countVal}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+
+                                                        {/* Right side tabs: Status Tabs (On Progress & Arsip) */}
+                                                        <div className="flex items-center gap-1.5 ml-auto">
+                                                            <div className="bg-border/60 hidden h-4 w-px md:block mr-1 shrink-0" />
+                                                            {[
+                                                                { key: 'in_progress', label: 'On Progress', icon: Clock },
+                                                                { key: 'archived', label: 'Arsip Dokumen', icon: Archive },
+                                                            ].map((tabItem) => {
+                                                                const activeTab = filters?.mine_tab || 'all';
+                                                                const isActive = activeTab === tabItem.key;
+                                                                const countVal = mineCounts ? (mineCounts as any)[tabItem.key] : undefined;
+                                                                const IconComp = tabItem.icon;
+
+                                                                return (
+                                                                    <button
+                                                                        key={tabItem.key}
+                                                                        type="button"
+                                                                        onClick={() => handleFilterChange({ mine_tab: tabItem.key, page: 1 })}
+                                                                        className={cn(
+                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
+                                                                            isActive
+                                                                                ? 'bg-primary text-primary-foreground'
+                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
+                                                                        )}
+                                                                    >
+                                                                        <IconComp size={14} />
+                                                                        <span>{tabItem.label}</span>
+                                                                        {countVal !== undefined && (
+                                                                            <span
+                                                                                className={cn(
+                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
+                                                                                    isActive
+                                                                                        ? 'bg-white/20 text-primary-foreground'
+                                                                                        : 'bg-surface-muted text-text-soft'
+                                                                                )}
+                                                                            >
+                                                                                {countVal}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </Card>
+                                                </div>
+                                            )}
+
+                                            {view === 'pending' && (
+                                                <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
+                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border/70 rounded-xl w-full">
+                                                        <div className="flex items-center gap-1.5">
+                                                            {[
+                                                                { key: 'pending', label: 'Menunggu Persetujuan', icon: Clock },
+                                                                { key: 'history', label: 'Riwayat Persetujuan', icon: History },
+                                                            ].map((tabItem) => {
+                                                                const activeTab = filters?.pending_tab || 'pending';
+                                                                const isActive = activeTab === tabItem.key;
+                                                                const countVal = pendingCounts ? (pendingCounts as any)[tabItem.key] : undefined;
+                                                                const IconComp = tabItem.icon;
+
+                                                                return (
+                                                                    <button
+                                                                        key={tabItem.key}
+                                                                        type="button"
+                                                                        onClick={() => handleFilterChange({ pending_tab: tabItem.key, page: 1 })}
+                                                                        className={cn(
+                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer',
+                                                                            isActive
+                                                                                ? 'bg-primary text-primary-foreground'
+                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
+                                                                        )}
+                                                                    >
+                                                                        <IconComp size={14} />
+                                                                        <span>{tabItem.label}</span>
+                                                                        {countVal !== undefined && (
+                                                                            <span
+                                                                                className={cn(
+                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
+                                                                                    isActive
+                                                                                        ? 'bg-white/20 text-primary-foreground'
+                                                                                        : 'bg-surface-muted text-text-soft'
+                                                                                )}
+                                                                            >
+                                                                                {countVal}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        {pendingCounts && (
+                                                            <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-text-soft bg-surface-muted/40 border border-surface-border/40 rounded-lg mr-1 select-none">
+                                                                <span>Total Persetujuan:</span>
+                                                                <span className="text-text-main font-black">
+                                                                    {(pendingCounts.pending || 0) + (pendingCounts.history || 0)}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </Card>
+                                                </div>
+                                            )}
+
+                                            {view === 'expiry' && (
+                                                <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
+                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border/70 rounded-xl w-full overflow-x-auto">
+                                                        <div className="flex items-center gap-1.5">
+                                                            {[
+                                                                { key: 'all', label: 'Semua Dokumen', icon: Layers },
+                                                                { key: 'kontrak', label: 'Dokumen', icon: FileText },
+                                                                { key: 'non_kontrak', label: 'Non Dokumen', icon: FileCheck },
+                                                                { key: 'nda', label: 'NDA', icon: Zap },
+                                                            ].map((tabItem) => {
+                                                                const activeTab = filters?.expiry_tab || 'all';
+                                                                const isActive = activeTab === tabItem.key;
+                                                                const countVal = expiryCategoryCounts ? (expiryCategoryCounts as any)[tabItem.key] : undefined;
+                                                                const IconComp = tabItem.icon;
+
+                                                                return (
+                                                                    <button
+                                                                        key={tabItem.key}
+                                                                        type="button"
+                                                                        onClick={() => handleFilterChange({ expiry_tab: tabItem.key, page: 1 })}
+                                                                        className={cn(
+                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
+                                                                            isActive
+                                                                                ? 'bg-primary text-primary-foreground'
+                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
+                                                                        )}
+                                                                    >
+                                                                        <IconComp size={14} />
+                                                                        <span>{tabItem.label}</span>
+                                                                        {countVal !== undefined && (
+                                                                            <span
+                                                                                className={cn(
+                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
+                                                                                    isActive
+                                                                                        ? 'bg-white/20 text-primary-foreground'
+                                                                                        : 'bg-surface-muted text-text-soft'
+                                                                                )}
+                                                                            >
+                                                                                {countVal}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        {expiryCategoryCounts && (
+                                                            <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-text-soft bg-surface-muted/40 border border-surface-border/40 rounded-lg mr-1 select-none">
+                                                                <span>Total Dokumen:</span>
+                                                                <span className="text-text-main font-black">
+                                                                    {expiryCategoryCounts.all || 0}
+                                                                </span>
+                                                            </div>
+                                                        )}
+                                                    </Card>
+                                                </div>
+                                            )}
+
+                                            {view === 'contracts' && (
+                                                <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
+                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border/70 rounded-xl w-full overflow-x-auto">
+                                                        {/* Left side tabs: Category Tabs */}
+                                                        <div className="flex items-center gap-1.5">
+                                                            {[
+                                                                { key: 'all', label: 'Semua Dokumen', icon: Layers },
+                                                                { key: 'kontrak', label: 'Dokumen', icon: FileText },
+                                                                { key: 'non_kontrak', label: 'Non Dokumen', icon: FileCheck },
+                                                                { key: 'nda', label: 'NDA', icon: Zap },
+                                                            ].map((tabItem) => {
+                                                                const activeTab = filters?.parent_tab || 'all';
+                                                                const isActive = activeTab === tabItem.key;
+                                                                const countVal = parentCategoryCounts ? (parentCategoryCounts as any)[tabItem.key] : undefined;
+                                                                const IconComp = tabItem.icon;
+
+                                                                return (
+                                                                    <button
+                                                                        key={tabItem.key}
+                                                                        type="button"
+                                                                        onClick={() => handleFilterChange({ parent_tab: tabItem.key, page: 1 })}
+                                                                        className={cn(
+                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
+                                                                            isActive
+                                                                                ? 'bg-primary text-primary-foreground'
+                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
+                                                                        )}
+                                                                    >
+                                                                        <IconComp size={14} />
+                                                                        <span>{tabItem.label}</span>
+                                                                        {countVal !== undefined && (
+                                                                            <span
+                                                                                className={cn(
+                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
+                                                                                    isActive
+                                                                                        ? 'bg-white/20 text-primary-foreground'
+                                                                                        : 'bg-surface-muted text-text-soft'
+                                                                                )}
+                                                                            >
+                                                                                {countVal}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+
+                                                        {/* Right side tabs: Status Tabs (On Progress & Arsip) */}
+                                                        <div className="flex items-center gap-1.5 ml-auto">
+                                                            <div className="bg-border/60 hidden h-4 w-px md:block mr-1 shrink-0" />
+                                                            {[
+                                                                { key: 'in_progress', label: 'On Progress', icon: Clock },
+                                                                { key: 'archived', label: 'Arsip Dokumen', icon: Archive },
+                                                            ].map((tabItem) => {
+                                                                const activeTab = filters?.parent_tab || 'all';
+                                                                const isActive = activeTab === tabItem.key;
+                                                                const countVal = parentCategoryCounts ? (parentCategoryCounts as any)[tabItem.key] : undefined;
+                                                                const IconComp = tabItem.icon;
+
+                                                                return (
+                                                                    <button
+                                                                        key={tabItem.key}
+                                                                        type="button"
+                                                                        onClick={() => handleFilterChange({ parent_tab: tabItem.key, page: 1 })}
+                                                                        className={cn(
+                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
+                                                                            isActive
+                                                                                ? 'bg-primary text-primary-foreground'
+                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
+                                                                        )}
+                                                                    >
+                                                                        <IconComp size={14} />
+                                                                        <span>{tabItem.label}</span>
+                                                                        {countVal !== undefined && (
+                                                                            <span
+                                                                                className={cn(
+                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
+                                                                                    isActive
+                                                                                        ? 'bg-white/20 text-primary-foreground'
+                                                                                        : 'bg-surface-muted text-text-soft'
+                                                                                )}
+                                                                            >
+                                                                                {countVal}
+                                                                            </span>
+                                                                        )}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </Card>
+                                                </div>
+                                            )}
                                             <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
                                                 {layout === 'table' ? (
                                                     <TableContract

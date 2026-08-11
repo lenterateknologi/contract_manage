@@ -152,3 +152,54 @@ export const contractApi = {
         },
     },
 };
+
+// ── Form Formatting Helpers ──────────────────────────────────────────
+export const formatDateWithOptionalTime = (dateStrInput?: string | null, field?: any): string => {
+    let dateObj = new Date();
+    if (dateStrInput) {
+        const parsed = new Date(dateStrInput);
+        if (!isNaN(parsed.getTime())) dateObj = parsed;
+    }
+    const dateStr = dateObj.toLocaleDateString('en-CA');
+    const isDateOnly = field?.type === 'date' || field?.options?.value_type === 'date';
+    if (isDateOnly) return dateStr;
+    const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    return `${dateStr} ${timeStr}`;
+};
+
+export const formatRuangLingkup = (contractNo?: string, signerName?: string): string => {
+    const dateStr = new Date().toLocaleDateString('en-CA');
+    return `${contractNo ?? ''}/${dateStr}/${signerName ?? ''}`;
+};
+
+export const formatLampiranList = (docs?: any[]): string => {
+    if (!docs || !docs.length) return '';
+    
+    // Filter documents that actually have valid file paths/names or non-empty content
+    const validDocs = docs.filter((d: any) => {
+        if (!d) return false;
+        if (typeof d === 'string') return d.trim() !== '' && d.trim() !== '-';
+        const file = d.file || d.path || d.url || d.file_name || d.document_name || d.name;
+        return Boolean(file) && String(file).trim() !== '-';
+    });
+
+    if (!validDocs.length) return '';
+
+    const getDocLabel = (d: any) => {
+        if (typeof d === 'string') return d;
+        return d.label || d.document_name || d.name || d.type || d.document_type || 'Dokumen';
+    };
+
+    if (validDocs.length <= 2) {
+        return validDocs.map((d: any) => getDocLabel(d)).join(', ');
+    }
+
+    const firstTwo = validDocs.slice(0, 2).map((d: any) => getDocLabel(d)).join(', ');
+    const remaining = validDocs.length - 2;
+    return `${firstTwo}, dan +${remaining} lampiran lainnya`;
+};
+
+export const cleanSingleLineText = (text?: string | null): string => {
+    if (!text) return '';
+    return text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+};

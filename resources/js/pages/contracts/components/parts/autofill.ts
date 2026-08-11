@@ -1,4 +1,5 @@
 import { Contract } from '@/pages/contracts/types';
+import { cleanSingleLineText, formatDateWithOptionalTime, formatLampiranList, formatRuangLingkup } from '@/pages/contracts/utils';
 
 // ── F2 important field keys (from F1 data) ──────────────────────────
 // These are the F1 field names (snake_case) that should appear in the F2 summary.
@@ -38,7 +39,7 @@ export const AUTOFILL_KEY_DEFINITIONS: Record<string, { label: string; group: st
     meta_p2_entity: { label: 'Nama Pihak II (Vendor)', group: 'Para Pihak' },
     meta_p2_signer: { label: 'Penandatangan Pihak II', group: 'Para Pihak' },
     meta_p2_signer_position: { label: 'Jabatan Penandatangan Pihak II', group: 'Para Pihak' },
-    meta_p2_alamat: { label: 'Alamat Pihak II', group: 'Para Pihak' },
+    meta_p2_alamat: { label: 'Alamat Pihak II / Vendor', group: 'Alamat & Kontak Resmi' },
 
     meta_nilai_transaksi: { label: 'Harga / Nilai Transaksi', group: 'Detail Kontrak' },
     meta_masa_berlaku: { label: 'Masa Berlaku', group: 'Detail Kontrak' },
@@ -63,58 +64,90 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
     const typeObj = (contract as any)?.contract_type;
 
     const resolvers: Record<string, () => any> = {
-        meta_ruang_lingkup: () => {
-            if (docType !== 'f2') return null;
-            const dateStr = new Date().toLocaleDateString('en-CA');
-            return `${contract.contract_no || ''}/${dateStr}/${contract.p1_signer || (contract as any).initiator?.name || ''}`;
-        },
-        meta_nomor: () => contract.form_no || '',
-        meta_no_kontrak: () => contract.contract_no || contract.form_no || '',
-        meta_judul_kontrak: () => contract.title || '',
-        meta_tipe_perjanjian: () => typeObj?.name || (typeof typeObj === 'string' ? typeObj : ''),
-        meta_sub_topik: () => (contract as any).kop_sub_topik || '',
+        meta_ruang_lingkup: () => formatRuangLingkup(contract.contract_no, contract.p1_signer ?? (contract as any).initiator?.name),
+        meta_nomor: () => contract.form_no ?? '',
+        meta_no_kontrak: () => contract.contract_no ?? contract.form_no ?? '',
+        meta_judul_kontrak: () => contract.title ?? '',
+        meta_tipe_perjanjian: () => (typeof typeObj === 'object' ? typeObj?.name : typeObj) ?? '',
+        meta_sub_topik: () => (contract as any).kop_sub_topik ?? '',
         meta_lampiran: () => {
-            const docs = vendor?.documents || [];
-            if (!docs.length) return '';
-            const docLabels: Record<string, string> = {
-                'NIB': 'Nomor Induk Berusaha (NIB)',
-                'SIUP': 'Surat Izin Usaha Perdagangan (SIUP)',
-                'NPWP': 'Nomor Pokok Wajib Pajak (NPWP)',
-                'Akta Pendirian': 'Akta Pendirian Perusahaan',
-                'KTP Direktur': 'KTP Direktur / PIC',
-                'SPPKP': 'Surat Pengukuhan Pengusaha Kena Pajak (SPPKP)',
+            const vendorObj = (contract.vendor as any) || {};
+            const vendorDetail = vendorObj.vendor_detail || vendorObj.detail || {};
+
+            const extractAttachments = (obj: any, prefix = ''): any[] => {
+                let results: any[] = [];
+                if (!obj || typeof obj !== 'object') return results;
+
+                if (Array.isArray(obj)) {
+                    obj.forEach((item, idx) => {
+                        if (typeof item === 'string' && item.trim()) {
+                            results.push({ label: `${prefix} ${idx + 1}`.trim(), file_name: item });
+                        } else if (typeof item === 'object' && item !== null) {
+                            const fn = item.file_name || item.url || item.path || item.name || '';
+                            if (fn) {
+                                results.push({
+                                    label: item.label || item.type || item.name || `${prefix} ${idx + 1}`.trim(),
+                                    file_name: fn,
+                                });
+                            }
+                        }
+                    });
+                    return results;
+                }
+
+                Object.entries(obj).forEach(([key, val]) => {
+                    const lowerKey = key.toLowerCase();
+                    const isAttachmentKey = lowerKey.includes('attachment') || lowerKey.includes('file');
+
+                    if (isAttachmentKey && typeof val === 'string' && val.trim() && val.trim() !== '-') {
+                        const cleanLabel = key
+                            .replace(/([A-Z])/g, ' $1')
+                            .replace(/_/g, ' ')
+                            .replace(/attachment/gi, '')
+                            .replace(/file/gi, '')
+                            .trim()
+                            .toUpperCase();
+
+                        results.push({
+                            label: cleanLabel || key.toUpperCase(),
+                            file_name: val.trim(),
+                        });
+                    } else if (typeof val === 'object' && val !== null && !Array.isArray(val) && key !== 'businessFields' && key !== 'bank' && key !== 'paymentMethod') {
+                        results = results.concat(extractAttachments(val, key.toUpperCase()));
+                    } else if (Array.isArray(val) && (lowerKey === 'documents' || lowerKey === 'berkas' || lowerKey === 'files')) {
+                        results = results.concat(extractAttachments(val, key.toUpperCase()));
+                    }
+                });
+
+                return results;
             };
-            const getDocLabel = (d: any) => docLabels[d.document_type] || d.document_type || d.document_name || d.name || 'Dokumen';
-            return docs.length > 3
-                ? docs.slice(0, 3).map((d: any, i: number) => `${i + 1}. ${getDocLabel(d)}`).join(', ') + `, dan +${docs.length - 3} lainnya`
-                : docs.map((d: any, i: number) => `${i + 1}. ${getDocLabel(d)}`).join(', ');
+
+            const vendorDocs = extractAttachments(vendorDetail);
+            const contractDocs = (contract.attachments || []).map((a: any) => ({
+                label: a.label || a.file_name,
+                file_name: a.file_name,
+            }));
+
+            const combinedDocs = [...vendorDocs, ...contractDocs];
+            return formatLampiranList(combinedDocs);
         },
-        meta_tgl_dibuat: () => {
-            let dateObj = new Date();
-            if (contract.created_at) {
-                const parsed = new Date(contract.created_at);
-                if (!isNaN(parsed.getTime())) dateObj = parsed;
-            }
-            const dateStr = dateObj.toLocaleDateString('en-CA');
-            const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-            return (field.type === 'date' || field.options?.value_type === 'date') ? dateStr : `${dateStr} ${timeStr}`;
-        },
-        meta_masa_berlaku: () => (contract.contract_date && contract.end_date) ? `${contract.contract_date.split(' ')[0]} s/d ${contract.end_date.split(' ')[0]}` : '',
+        meta_tgl_dibuat: () => formatDateWithOptionalTime(contract.created_at, field),
+        meta_masa_berlaku: () => (Boolean(contract.contract_date) && Boolean(contract.end_date)) ? `${contract.contract_date.split(' ')[0]} s/d ${contract.end_date.split(' ')[0]}` : '',
         meta_p1_entity: () => 'PT. LENTERA TEKNOLOGI',
-        meta_p1_signer: () => contract.p1_signer || (contract as any).initiator?.name || '',
-        meta_p1_signer_position: () => contract.p1_signer_position || (contract as any).initiator?.role || '',
-        meta_p1_alamat: () => 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan',
-        meta_p2_entity: () => vendor?.name || '',
-        meta_p2_signer: () => vendor?.pic_name || '',
-        meta_p2_signer_position: () => vendor?.pic_position || '',
-        meta_p2_alamat: () => vendor?.address || '',
-        meta_lokasi: () => (contract as any).location || '',
-        meta_nilai_transaksi: () => contract.metadata?.meta_harga || (contract as any).amount || '',
-        meta_harga: () => contract.metadata?.meta_harga || (contract as any).amount || '',
-        meta_mekanisme_pembayaran: () => (contract as any).payment_terms || '',
-        meta_deskripsi: () => contract.description || '',
-        meta_manager_legal: () => (contract.approvals || []).find((a) => a.role === 'CEO')?.approver?.name || '',
-        meta_vp_legal: () => (contract.approvals || []).find((a) => a.role === 'VP')?.approver?.name || '',
+        meta_p1_signer: () => contract.p1_signer ?? (contract as any).initiator?.name ?? '',
+        meta_p1_signer_position: () => contract.p1_signer_position ?? (contract as any).initiator?.role ?? '',
+        meta_p1_alamat: () => cleanSingleLineText('The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan'),
+        meta_p2_entity: () => vendor?.name ?? vendor?.vendor_name ?? '',
+        meta_p2_signer: () => vendor?.pic_name ?? vendor?.pic ?? vendor?.detail?.pic ?? '',
+        meta_p2_signer_position: () => vendor?.pic_position ?? vendor?.detail?.pic_position ?? '',
+        meta_p2_alamat: () => cleanSingleLineText(vendor?.address ?? vendor?.detail?.address),
+        meta_lokasi: () => (contract as any).location ?? '',
+        meta_nilai_transaksi: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
+        meta_harga: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
+        meta_mekanisme_pembayaran: () => (contract as any).payment_terms ?? '',
+        meta_deskripsi: () => contract.description ?? '',
+        meta_manager_legal: () => (contract.approvals ?? []).find((a) => a.role === 'CEO')?.approver?.name ?? '',
+        meta_vp_legal: () => (contract.approvals ?? []).find((a) => a.role === 'VP')?.approver?.name ?? '',
         meta_tax_required: () => contract.metadata?.tax_required ? 'Ya' : 'Tidak',
     };
 

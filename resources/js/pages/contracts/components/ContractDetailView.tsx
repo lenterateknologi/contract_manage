@@ -407,7 +407,7 @@ const ContractDetailView = ({
                             <div className="bg-primary rounded-t-xl flex items-center gap-3 border-b border-primary/80 px-3 py-3 overflow-x-auto scrollbar-none">
                                 <div className="text-primary-foreground flex items-center gap-1.5 shrink-0">
                                     <FileText size={13} className="text-primary-foreground/80" />
-                                    <span className="text-[10px] font-bold uppercase tracking-wide whitespace-nowrap text-primary-foreground">Detail Dokumen</span>
+                                    <span className="text-[10px] font-normal uppercase tracking-wide whitespace-nowrap text-primary-foreground">Detail Dokumen</span>
                                 </div>
                                 <div className="bg-primary-foreground/20 w-px h-4 shrink-0" />
                                 <Tabs value={detailTab} onValueChange={(val) => setDetailTab(val as any)} className="flex-1 min-w-0">
@@ -426,16 +426,36 @@ const ContractDetailView = ({
                             </div>
                         <div className={cn(
                             'flex flex-1 flex-col',
-                            ['chat', 'attachments', 'timeline'].includes(detailTab)
+                            ['chat', 'attachments', 'timeline', 'references', 'audit', 'members'].includes(detailTab)
                                 ? 'h-[calc(100vh-180px)] min-h-[600px]'
                                 : 'min-h-[600px]'
                         )}>
                             <Suspense fallback={<TabSkeleton />}>
                                 {detailTab === 'form_template' && (
-                                    <F1Tab contract={contract} formTemplates={formTemplates} vendors={vendors} meUser={meUser} onUpdate={onUpdate} />
+                                    <F1Tab
+                                        contract={contract}
+                                        formTemplates={formTemplates}
+                                        vendors={vendors}
+                                        meUser={meUser}
+                                        onUpdate={onUpdate}
+                                        onFormDirty={(dirty) => setHasInfoChanges(dirty)}
+                                        onFormSave={(fn) => {
+                                            saveInfoRef.current = fn;
+                                        }}
+                                    />
                                 )}
                                 {detailTab === 'f2' && (
-                                    <F2Tab contract={contract} formTemplates={formTemplates} vendors={vendors} meUser={meUser} onUpdate={onUpdate} />
+                                    <F2Tab
+                                        contract={contract}
+                                        formTemplates={formTemplates}
+                                        vendors={vendors}
+                                        meUser={meUser}
+                                        onUpdate={onUpdate}
+                                        onFormDirty={(dirty) => setHasInfoChanges(dirty)}
+                                        onFormSave={(fn) => {
+                                            saveInfoRef.current = fn;
+                                        }}
+                                    />
                                 )}
                                 {detailTab === 'agreement' && (
                                     <AgreementTab
@@ -593,11 +613,11 @@ const ContractDetailView = ({
                                                             setApproveOpen(true);
                                                         }
                                                     }}
-                                                    className={cn(
-                                                        'w-full text-xs  uppercase shadow-sm transition-all',
-                                                        isApproveType && 'shadow-primary/20 shadow-lg',
-                                                        isRejectType && 'border-danger/20 hover:bg-danger hover:text-white',
-                                                        isForwardType && 'border border-indigo-500/20 text-indigo-600 hover:bg-indigo-500/10',
+                                                     className={cn(
+                                                        'w-full text-xs uppercase shadow-none transition-all',
+                                                        isApproveType && 'font-semibold',
+                                                        isRejectType && 'bg-rose-600 text-white hover:bg-rose-700 font-semibold',
+                                                        isForwardType && 'bg-primary text-primary-foreground hover:bg-primary/90 font-semibold',
                                                     )}
                                                 >
                                                     <Icon size={16} />{' '}
@@ -632,7 +652,7 @@ const ContractDetailView = ({
                                                             setApproveOpen(true);
                                                         }
                                                     }}
-                                                    className="shadow-primary/20 w-full text-xs  uppercase shadow-lg"
+                                                    className="w-full text-xs uppercase shadow-none font-semibold"
                                                 >
                                                     <CheckCircle2 size={16} />{' '}
                                                     {contract.workflow_step?.step === 1
@@ -642,12 +662,12 @@ const ContractDetailView = ({
                                                             : 'Setujui Kontrak'}
                                                 </Button>
                                                 <Button
-                                                    variant="outline"
+                                                    variant="ghost"
                                                     onClick={() => {
                                                         setActiveActionCode('reject');
                                                         setRejectOpen(true);
                                                     }}
-                                                    className="border-danger/20 hover:bg-danger w-full text-xs  uppercase shadow-sm transition-all hover:text-white"
+                                                    className="w-full text-xs uppercase bg-rose-600 text-white hover:bg-rose-700 font-semibold shadow-none transition-all"
                                                 >
                                                     <AlertCircle size={16} /> Tolak Kontrak
                                                 </Button>

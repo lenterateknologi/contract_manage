@@ -25,6 +25,10 @@ class ContractDashboardQuery
     public function getMetrics(Request $request): array
     {
         $user = Auth::user();
+        if ($user) {
+            (new \App\Services\ContractFilterScopeService)->applyToRequest($request, $user);
+        }
+
         $roleName = $user->role;
         $hasFullAccess = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
         $isAdmin = $hasFullAccess;
@@ -33,14 +37,15 @@ class ContractDashboardQuery
 
         [$createdFrom, $createdTo, $period] = $this->resolveDateRange($request);
 
-        $regionIds = $this->normalizeArray($request->input('region_ids', []));
-        $companyGroupIds = $this->normalizeArray($request->input('company_group_ids', []));
-        $companyIds = $this->normalizeArray($request->input('company_ids', []));
+        $cleanFn = fn ($id) => preg_replace('/^(g|r|c)_/', '', trim($id));
+        $regionIds = array_values(array_map($cleanFn, $this->normalizeArray($request->input('region_ids', $request->input('region_id', [])))));
+        $companyGroupIds = array_values(array_map($cleanFn, $this->normalizeArray($request->input('company_group_ids', $request->input('company_group_id', [])))));
+        $companyIds = array_values(array_map($cleanFn, $this->normalizeArray($request->input('company_ids', $request->input('company_id', [])))));
         $vendorIds = $this->normalizeArray($request->input('vendor_ids', []));
         $statuses = $this->normalizeArray($request->input('statuses', []));
         $contractTypeIds = $this->normalizeArray($request->input('contract_type_ids', []));
         $picIds = $this->normalizeArray($request->input('pic_ids', []));
-        $departmentIds = $this->normalizeArray($request->input('department_ids', []));
+        $departmentIds = $this->normalizeArray($request->input('department_ids', $request->input('department_id', [])));
 
         // ponytail: Query against the materialized view for maximum speed
         $baseQuery = $this->buildBaseQuery(
@@ -62,9 +67,29 @@ class ContractDashboardQuery
 
         // KPI Cards
         $totalContracts = (clone $baseQuery)->count();
+        $myTotalContracts = DB::table('t_contracts')
+            ->where('created_by', Auth::id())
+            ->whereNull('deleted_at')
+            ->where('status', '!=', 'draft')
+            ->count();
+        $archivedTotalContracts = (clone $baseQuery)
+            ->where('status', 'archived')
+            ->count();
         $inProcessContracts = (clone $baseQuery)
             ->whereIn('status', array_map(fn ($s) => $s->value, ContractStatusEnum::inProcess()))
             ->count();
+        $pendingApprovalsForMe = Approval::where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->whereHas('contract', function ($q) use ($statuses, $contractTypeIds, $vendorIds, $picIds, $departmentIds, $regionIds, $companyGroupIds, $companyIds) {
+                if (! empty($statuses)) {
+                    $q->whereIn('status', $statuses);
+                } else {
+                    $q->where('status', '!=', ContractStatusEnum::Draft->value);
+                }
+                if (! empty($contractTypeIds)) {
+                    $q->whereIn('contract_type_id', $contractTypeIds);
+                }
+            })->count();
         $activeContracts = (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
             ->where(fn (QueryBuilder $q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))
@@ -262,14 +287,17 @@ class ContractDashboardQuery
                 'expiringContracts' => $expiringSoonContracts,
                 'expiredContracts' => $expiredContracts,
                 'pendingContracts' => $inProcessContracts,
-                'pendingApprovals' => $inProcessContracts,
+                'pendingApprovals' => $pendingApprovalsForMe,
                 'renewalRate' => $renewalRate,
                 'totalValue' => $totalValue,
                 'avgCycleTime' => $avgDays,
             ],
             'summary' => [
                 'total' => $todayTotal,
+                'my_total' => $myTotalContracts,
+                'archived_total' => $archivedTotalContracts,
                 'in_process' => $inProcessContracts,
+                'pending_for_me' => $pendingApprovalsForMe,
                 'completed' => $todayCompleted,
                 'rejected' => $todayRejected,
                 'approved' => $todayApproved,
@@ -302,21 +330,83 @@ class ContractDashboardQuery
             'departmentTraffic' => $departmentTraffic,
             'dailyTrend' => $this->getDailyTrend($baseQuery),
             'overviewDailyTrend' => $this->getOverviewDailyTrend($baseQuery),
-            'masterDataCounts' => [
-                'users' => \App\Models\User::count(),
-                'companyGroups' => \App\Models\CompanyGroup::count(),
-                'companies' => \App\Models\Company::count(),
-                'departments' => \App\Models\Department::count(),
-                'divisions' => \App\Models\Division::count(),
-                'vendors' => \App\Models\Vendor::count(),
-                'organizationTree' => $this->getOrganizationTree(),
-            ],
+            'masterDataCounts' => $this->getScopedMasterDataCounts($user, $hasFullAccess),
         ];
     }
 
-    private function getOrganizationTree()
+    private function getScopedMasterDataCounts(User $user, bool $hasFullAccess): array
     {
-        $groups = \App\Models\CompanyGroup::with(['companies.region'])->get();
+        $settings = $user->getContractFilterSettings();
+        $groupFull = $hasFullAccess || ($settings['can_change_company_group'] ?? false);
+        $companyGroupIds = $groupFull ? null : (array_filter([$user->company_group_id], fn ($v) => ! empty($v)));
+
+        $userQuery = \App\Models\User::query();
+        $groupQuery = \App\Models\CompanyGroup::query();
+        $companyQuery = \App\Models\Company::query();
+        $deptQuery = \App\Models\Department::query();
+        $divQuery = \App\Models\Division::query();
+
+        if (! empty($companyGroupIds)) {
+            $userQuery->whereIn('company_group_id', $companyGroupIds);
+            $groupQuery->whereIn('id', $companyGroupIds);
+            $companyQuery->whereIn('company_group_id', $companyGroupIds);
+
+            // ponytail: filter department & divisi berdasarkan company yang ada dalam company_group user
+            $deptQuery->whereHas('company', fn ($q) => $q->whereIn('company_group_id', $companyGroupIds));
+            $divQuery->whereIn('id', function ($q) use ($companyGroupIds) {
+                $q->select('division_id')->from('m_users')->whereIn('company_group_id', $companyGroupIds)->whereNotNull('division_id');
+            });
+        }
+
+        // ponytail: tambahkan statistik distribusi jumlah user per group dan per company
+        $usersByGroupQuery = \Illuminate\Support\Facades\DB::table('m_users as u')
+            ->leftJoin('m_company_groups as cg', 'u.company_group_id', '=', 'cg.id')
+            ->select(
+                \Illuminate\Support\Facades\DB::raw("COALESCE(cg.name, 'Tanpa Group') as name"),
+                \Illuminate\Support\Facades\DB::raw('count(u.id) as user_count')
+            )
+            ->whereNull('u.deleted_at')
+            ->groupBy('cg.name', 'cg.id');
+
+        $usersByCompanyQuery = \Illuminate\Support\Facades\DB::table('m_users as u')
+            ->leftJoin('m_companies as c', 'u.company_id', '=', 'c.id')
+            ->leftJoin('m_company_groups as cg', 'u.company_group_id', '=', 'cg.id')
+            ->select(
+                \Illuminate\Support\Facades\DB::raw("COALESCE(c.name, 'Tanpa Perusahaan') as company_name"),
+                \Illuminate\Support\Facades\DB::raw("COALESCE(cg.name, '-') as group_name"),
+                \Illuminate\Support\Facades\DB::raw('count(u.id) as user_count')
+            )
+            ->whereNull('u.deleted_at')
+            ->groupBy('c.name', 'c.id', 'cg.name');
+
+        if (! empty($companyGroupIds)) {
+            $usersByGroupQuery->whereIn('u.company_group_id', $companyGroupIds);
+            $usersByCompanyQuery->whereIn('u.company_group_id', $companyGroupIds);
+        }
+
+        $usersByGroup = $usersByGroupQuery->orderByDesc('user_count')->get();
+        $usersByCompany = $usersByCompanyQuery->orderByDesc('user_count')->get();
+
+        return [
+            'users' => $userQuery->count(),
+            'companyGroups' => $groupQuery->count(),
+            'companies' => $companyQuery->count(),
+            'departments' => $deptQuery->count(),
+            'divisions' => $divQuery->count(),
+            'vendors' => \App\Models\Vendor::count(),
+            'organizationTree' => $this->getOrganizationTree($companyGroupIds),
+            'usersByGroup' => $usersByGroup,
+            'usersByCompany' => $usersByCompany,
+        ];
+    }
+
+    private function getOrganizationTree(?array $companyGroupIds = null)
+    {
+        $groupQuery = \App\Models\CompanyGroup::with(['companies.region']);
+        if (! empty($companyGroupIds)) {
+            $groupQuery->whereIn('id', $companyGroupIds);
+        }
+        $groups = $groupQuery->get();
 
         $tree = [];
         foreach ($groups as $group) {
@@ -402,25 +492,6 @@ class ContractDashboardQuery
     ): QueryBuilder {
         $baseQuery = DB::table('mv_dashboard_contracts');
 
-        // Role-based scope
-        if ($isManager && $user->company_id) {
-            $baseQuery->where(function (QueryBuilder $q) use ($user): void {
-                $q->where('initiator_company_id', $user->company_id)
-                    ->orWhere(function (QueryBuilder $sq) use ($user): void {
-                        $sq->whereNull('initiated_by_id')
-                            ->where('creator_company_id', $user->company_id);
-                    });
-            });
-        } elseif ($hasDepartmentAccess && $user->department_id) {
-            $baseQuery->where(function (QueryBuilder $q) use ($user): void {
-                $q->where('initiator_department_id', $user->department_id)
-                    ->orWhere(function (QueryBuilder $sq) use ($user): void {
-                        $sq->whereNull('initiated_by_id')
-                            ->where('creator_department_id', $user->department_id);
-                    });
-            });
-        }
-
         // Date filters
         if (! empty($createdFrom)) {
             $baseQuery->whereDate('created_at', '>=', $createdFrom);
@@ -446,12 +517,8 @@ class ContractDashboardQuery
             $baseQuery->whereIn('assigned_pic_id', $picIds);
         }
 
-        // Advanced filters (by role level)
-        if ($hasFullAccess) {
-            $this->applyFullAccessFilters($baseQuery, $departmentIds, $regionIds, $companyGroupIds, $companyIds);
-        } elseif ($isManager && ! empty($departmentIds)) {
-            $this->applyDepartmentScopeFilter($baseQuery, $departmentIds);
-        }
+        // Advanced filters (apply organizational scope filters for all users as determined by ContractFilterScopeService)
+        $this->applyFullAccessFilters($baseQuery, $departmentIds, $regionIds, $companyGroupIds, $companyIds);
 
         return $baseQuery;
     }
@@ -743,62 +810,70 @@ class ContractDashboardQuery
     private function getOverviewDailyTrend(QueryBuilder $baseQuery): array
     {
         $startDate = now()->subMonth()->startOfMonth();
-        $endDate = now();
+        $endDate   = now();
+        $userId    = Auth::id();
 
-        $allContracts = (clone $baseQuery)->get(['created_at', 'updated_at', 'status']);
+        // 1. Semua Dokumen (non-draft) — grouped by created_at date
+        $allDocsByDay = (clone $baseQuery)
+            ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
+            ->groupBy('day')
+            ->pluck('total', 'day')
+            ->all();
 
-        $trend = [];
+        // 2. Menunggu Persetujuan Saya — approvals pending for me, grouped by created_at date
+        $pendingByDay = DB::table('t_approvals')
+            ->where('user_id', $userId)
+            ->where('status', 'pending')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
+            ->groupBy('day')
+            ->pluck('total', 'day')
+            ->all();
+
+        // 3. Dokumen Saya (excluding draft) — grouped by created_at date
+        $myDocsByDay = DB::table('t_contracts')
+            ->where('created_by', $userId)
+            ->whereNull('deleted_at')
+            ->where('status', '!=', 'draft')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
+            ->groupBy('day')
+            ->pluck('total', 'day')
+            ->all();
+
+        // 4. Dokumen Arsip — contracts with status = archived, grouped by updated_at date
+        $archivedByDay = (clone $baseQuery)
+            ->where('status', 'archived')
+            ->whereBetween('updated_at', [$startDate, $endDate])
+            ->select(DB::raw('DATE(updated_at) as day'), DB::raw('count(*) as total'))
+            ->groupBy('day')
+            ->pluck('total', 'day')
+            ->all();
+
+        // 5. On Progress — contracts in process statuses, grouped by created_at date
+        $inProgressByDay = (clone $baseQuery)
+            ->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
+            ->groupBy('day')
+            ->pluck('total', 'day')
+            ->all();
+
+        $trend   = [];
         $current = $startDate->copy();
         while ($current->lte($endDate)) {
             $dateKey = $current->toDateString();
 
-            // 1. Pengajuan Per Hari (contracts created on this day)
-            $total = $allContracts->filter(function($c) use ($dateKey) {
-                return \Carbon\Carbon::parse($c->created_at)->toDateString() === $dateKey;
-            })->count();
-
-            // 2. Sedang Diproses (created on or before D, not yet resolved by D)
-            $inProcess = $allContracts->filter(function($c) use ($dateKey) {
-                $createdDate = \Carbon\Carbon::parse($c->created_at)->toDateString();
-                if ($createdDate > $dateKey) {
-                    return false;
-                }
-                $isResolved = in_array($c->status, ['approved', 'rejected', 'locked']);
-                if (!$isResolved) {
-                    return true;
-                }
-                $resolvedDate = \Carbon\Carbon::parse($c->updated_at)->toDateString();
-                return $resolvedDate > $dateKey;
-            })->count();
-
-            // 3. Diselesaikan Hari Ini (resolved on D)
-            $completed = $allContracts->filter(function($c) use ($dateKey) {
-                $updatedDate = \Carbon\Carbon::parse($c->updated_at)->toDateString();
-                return $updatedDate === $dateKey && in_array($c->status, ['approved', 'locked']);
-            })->count();
-
-            // 4. Ditolak Hari Ini (rejected on D)
-            $rejected = $allContracts->filter(function($c) use ($dateKey) {
-                $updatedDate = \Carbon\Carbon::parse($c->updated_at)->toDateString();
-                return $updatedDate === $dateKey && $c->status === 'rejected';
-            })->count();
-
-            // 5. Approved Hari Ini (approved on D)
-            $approved = $allContracts->filter(function($c) use ($dateKey) {
-                $updatedDate = \Carbon\Carbon::parse($c->updated_at)->toDateString();
-                return $updatedDate === $dateKey && $c->status === 'approved';
-            })->count();
-
             $trend[] = [
-                'date' => $current->format('d M'),
-                'raw_date' => $dateKey,
-                'full_date' => $current->translatedFormat('d M Y'),
-                'month_key' => $current->format('Y-m'),
-                'Total Pengajuan' => $total,
-                'Sedang Diproses' => $inProcess,
-                'Diselesaikan' => $completed,
-                'Ditolak' => $rejected,
-                'Approved' => $approved,
+                'date'                       => $current->format('d M'),
+                'raw_date'                   => $dateKey,
+                'full_date'                  => $current->translatedFormat('d M Y'),
+                'month_key'                  => $current->format('Y-m'),
+                'Semua Dokumen'              => (int) ($allDocsByDay[$dateKey] ?? 0),
+                'Menunggu Persetujuan Saya'  => (int) ($pendingByDay[$dateKey] ?? 0),
+                'Dokumen Saya'               => (int) ($myDocsByDay[$dateKey] ?? 0),
+                'Dokumen Arsip'              => (int) ($archivedByDay[$dateKey] ?? 0),
+                'On Progress'               => (int) ($inProgressByDay[$dateKey] ?? 0),
             ];
 
             $current->addDay();

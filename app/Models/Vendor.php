@@ -23,10 +23,50 @@ class Vendor extends Model
         'updated_by',
     ];
 
+    protected $appends = [
+        'name',
+        'pic_name',
+        'pic_position',
+        'address',
+        'documents',
+        'detail',
+    ];
+
     protected $casts = [
         'vendor_detail' => 'array',
         'is_active' => 'boolean',
     ];
+
+    public function getDetailAttribute(): array
+    {
+        return $this->vendor_detail ?? [];
+    }
+
+    public function getDocumentsAttribute(): array
+    {
+        $detail = $this->vendor_detail ?? [];
+        return $detail['documents'] ?? $detail['berkas'] ?? $detail['files'] ?? [];
+    }
+
+    public function getNameAttribute(): ?string
+    {
+        return $this->vendor_name ?? ($this->vendor_detail['company_name'] ?? null);
+    }
+
+    public function getPicNameAttribute(): ?string
+    {
+        return $this->vendor_detail['pic'] ?? ($this->vendor_detail['pic_name'] ?? null);
+    }
+
+    public function getPicPositionAttribute(): ?string
+    {
+        return $this->vendor_detail['pic_position'] ?? ($this->vendor_detail['position'] ?? null);
+    }
+
+    public function getAddressAttribute(): ?string
+    {
+        return $this->vendor_detail['address'] ?? null;
+    }
 
     public function contracts(): HasMany
     {

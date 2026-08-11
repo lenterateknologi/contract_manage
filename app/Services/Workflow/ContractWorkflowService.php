@@ -209,6 +209,7 @@ class ContractWorkflowService
      */
     public function resolveApproversForStep(Contract $contract, WorkflowStep $step): array
     {
+        $executedQueries = [];
         $roles = $step->relationLoaded('approverAuthorities')
             ? $step->approverAuthorities->filter(fn ($a) => $a->authority_type === 'role')->pluck('role.name')->filter()->toArray()
             : $step->approverAuthorities()->where('authority_type', 'role')->with('role')->get()->pluck('role.name')->filter()->toArray();
@@ -305,38 +306,100 @@ class ContractWorkflowService
                     $isGroup = $a->authority_type === 'group';
 
                     // ponytail: support *_use_initiator flags for dynamic targeting
-                    $roleId = $a->role_use_initiator ? $contract->initiator?->role_id : $a->role_id;
+                    $invalidInitiatorFilter = false;
+
+                    if ($a->role_use_initiator) {
+                        $roleId = data_get($contract->initiator, 'role_id');
+                        if (! $roleId) $invalidInitiatorFilter = true;
+                    } else {
+                        $roleId = $a->role_id;
+                    }
+
                     if ($roleId && ($isGroup || $a->authority_type === 'role')) {
                         $query->where('role_id', $roleId);
                         $hasFilters = true;
                     }
 
-                    $departmentId = $a->department_use_initiator ? $contract->initiator?->department_id : $a->department_id;
+                    if ($a->department_use_initiator) {
+                        $departmentId = data_get($contract->initiator, 'department_id') ?: data_get($contract->initiator, 'division_id');
+                        if (! $departmentId) $invalidInitiatorFilter = true;
+                    } else {
+                        $departmentId = $a->department_id;
+                    }
+
                     if ($departmentId && ($isGroup || $a->authority_type === 'department')) {
-                        $query->where('department_id', $departmentId);
+                        $query->where(function ($q) use ($departmentId) {
+                            $q->where('department_id', $departmentId)
+                              ->orWhere('division_id', $departmentId);
+                        });
                         $hasFilters = true;
                     }
 
-                    $divisionId = $a->division_use_initiator ? $contract->initiator?->division_id : $a->division_id;
+                    if ($a->division_use_initiator) {
+                        $divisionId = data_get($contract->initiator, 'division_id') ?: data_get($contract->initiator, 'department_id');
+                        if (! $divisionId) $invalidInitiatorFilter = true;
+                    } else {
+                        $divisionId = $a->division_id;
+                    }
+
                     if ($divisionId && ($isGroup || $a->authority_type === 'division')) {
-                        $query->where('division_id', $divisionId);
+                        $query->where(function ($q) use ($divisionId) {
+                            $q->where('division_id', $divisionId)
+                              ->orWhere('department_id', $divisionId);
+                        });
                         $hasFilters = true;
                     }
 
-                    $companyGroupId = $a->company_group_use_initiator ? $contract->initiator?->company_group_id : $a->company_group_id;
-                    if ($companyGroupId && ($isGroup || $a->authority_type === 'company_group')) {
-                        $query->where('company_group_id', $companyGroupId);
+                    if ($a->company_group_use_initiator) {
+                        $companyGroupId = data_get($contract->initiator, 'company_group_id') ?: data_get($contract->initiator, 'company.company_group_id');
+                        if (! $companyGroupId) $invalidInitiatorFilter = true;
+                    } else {
+                        $companyGroupId = $a->company_group_id;
+                    }
+
+                    if (($a->company_group_use_initiator || $companyGroupId) && ($isGroup || $a->authority_type === 'company_group')) {
+                        $query->where(function ($q) use ($companyGroupId) {
+                            $q->where('company_group_id', $companyGroupId)
+                              ->orWhereHas('company', fn ($cq) => $cq->where('company_group_id', $companyGroupId));
+                        });
                         $hasFilters = true;
                     }
 
-                    $regionId = $a->region_use_initiator ? $contract->initiator?->region_id : $a->region_id;
-                    if ($regionId && ($isGroup || $a->authority_type === 'region')) {
-                        $query->where('region_id', $regionId);
+                    if ($a->company_use_initiator) {
+                        $companyId = data_get($contract->initiator, 'company_id');
+                        if (! $companyId) $invalidInitiatorFilter = true;
+                    } else {
+                        $companyId = $a->company_id;
+                    }
+
+                    if (($a->company_use_initiator || $companyId) && ($isGroup || $a->authority_type === 'company')) {
+                        $query->where('company_id', $companyId);
                         $hasFilters = true;
                     }
 
-                    if ($hasFilters) {
+                    if ($a->region_use_initiator) {
+                        $regionId = data_get($contract->initiator, 'region_id') ?: data_get($contract->initiator, 'company.region_id');
+                        if (! $regionId) $invalidInitiatorFilter = true;
+                    } else {
+                        $regionId = $a->region_id;
+                    }
+
+                    if (($a->region_use_initiator || $regionId) && ($isGroup || $a->authority_type === 'region')) {
+                        $query->where(function ($q) use ($regionId) {
+                            $q->where('region_id', $regionId)
+                              ->orWhereHas('company', fn ($cq) => $cq->where('region_id', $regionId));
+                        });
+                        $hasFilters = true;
+                    }
+
+                    if ($hasFilters && ! $invalidInitiatorFilter) {
                         $query = $this->applyStepFilters($query, $step, $contract);
+                        $rawSql = $query->toSql();
+                        foreach ($query->getBindings() as $binding) {
+                            $val = is_numeric($binding) ? $binding : "'".addslashes((string)$binding)."'";
+                            $rawSql = preg_replace('/\?/', $val, $rawSql, 1);
+                        }
+                        $executedQueries[] = $rawSql;
                         $approvers = $approvers->merge($query->get());
                     }
                 }
@@ -344,7 +407,14 @@ class ContractWorkflowService
                 // 4. Resolve Users
                 $stepUsers = $authorities->filter(fn ($a) => $a->authority_type === 'user' && ! empty($a->user_id))->pluck('user_id')->toArray();
                 if (! empty($stepUsers)) {
-                    $approvers = $approvers->merge(User::whereIn('id', $stepUsers)->get());
+                    $uQuery = User::whereIn('id', $stepUsers);
+                    $rawSql = $uQuery->toSql();
+                    foreach ($uQuery->getBindings() as $binding) {
+                        $val = is_numeric($binding) ? $binding : "'".addslashes((string)$binding)."'";
+                        $rawSql = preg_replace('/\?/', $val, $rawSql, 1);
+                    }
+                    $executedQueries[] = $rawSql;
+                    $approvers = $approvers->merge($uQuery->get());
                 }
 
                 $approvers = $approvers->unique('id');
@@ -418,6 +488,12 @@ class ContractWorkflowService
                         }
 
                         if ($hasFilters) {
+                            $rawSql = $query->toSql();
+                            foreach ($query->getBindings() as $binding) {
+                                $val = is_numeric($binding) ? $binding : "'".addslashes((string)$binding)."'";
+                                $rawSql = preg_replace('/\?/', $val, $rawSql, 1);
+                            }
+                            $executedQueries[] = $rawSql;
                             $approvers = $query->get();
                         } else {
                             $approvers = collect();
@@ -430,6 +506,7 @@ class ContractWorkflowService
         return [
             'approvers' => $approvers,
             'roles' => $roles,
+            'sql_queries' => $executedQueries,
         ];
     }
 

@@ -173,11 +173,13 @@ trait HasWorkflowHelpers
                     'division_id' => ! empty($auth['division_id']) ? $this->resolveDivisionId($auth['division_id']) : null,
                     'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
                     'company_group_id' => $auth['company_group_id'] ?? null,
+                    'company_id' => $auth['company_id'] ?? null,
                     'region_id' => $auth['region_id'] ?? null,
                     'role_use_initiator' => $auth['role_use_initiator'] ?? false,
                     'department_use_initiator' => $auth['department_use_initiator'] ?? false,
                     'division_use_initiator' => $auth['division_use_initiator'] ?? false,
                     'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
+                    'company_use_initiator' => $auth['company_use_initiator'] ?? false,
                     'region_use_initiator' => $auth['region_use_initiator'] ?? false,
                 ]);
             }

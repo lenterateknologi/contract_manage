@@ -10,14 +10,17 @@ import { CSS } from '@dnd-kit/utilities';
 import {
     ArrowDown,
     ArrowUp,
+    Bookmark,
     Briefcase,
     CheckCircle2,
+    CheckSquare2,
     ChevronUp,
     Copy,
     GitBranch,
     Key,
     Settings2,
     Shield,
+    Square,
     Trash2,
     UserCheck,
     Users as UsersIcon,
@@ -55,9 +58,14 @@ export default function SortableStepItem({
     divisions = [],
     users,
     companyGroups = [],
+    companies = [],
     regions = [],
     allWorkflows = [],
     allWorkflowSteps = [],
+    onSavePreset,
+    isSelected = false,
+    onToggleSelect,
+    onMoveKeyboard,
 }: {
     step: any;
     idx: number;
@@ -74,9 +82,14 @@ export default function SortableStepItem({
     divisions?: any[];
     users: any[];
     companyGroups?: any[];
+    companies?: any[];
     regions?: any[];
     allWorkflows?: any[];
     allWorkflowSteps?: any[];
+    onSavePreset?: (step: any) => void;
+    isSelected?: boolean;
+    onToggleSelect?: (id: string) => void;
+    onMoveKeyboard?: (idx: number, direction: 'up' | 'down') => void;
 }) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: step.id });
     const style = {
@@ -345,53 +358,77 @@ export default function SortableStepItem({
         <div
             ref={setNodeRef}
             style={style}
+            tabIndex={0}
+            onKeyDown={(e) => {
+                if (e.target !== e.currentTarget) return;
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    onMoveKeyboard?.(idx, 'up');
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    onMoveKeyboard?.(idx, 'down');
+                }
+            }}
             className={cn(
-                'group/step flex flex-col gap-0 transition-all duration-300 bg-white dark:bg-slate-900/40 border rounded-lg p-4',
+                'group/step flex flex-col gap-0 transition-all duration-300 rounded-lg p-4 outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 isExpanded
-                    ? 'border-slate-300 dark:border-slate-700 shadow-sm'
-                    : 'border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900/60',
+                    ? 'border border-primary/40 dark:border-primary/50 bg-white dark:bg-slate-900/60'
+                    : 'border border-primary/20 dark:border-primary/30 bg-primary/[0.01] dark:bg-primary/[0.02] hover:bg-primary/[0.03] hover:border-primary/40',
                 isExpanded ? 'overflow-visible' : 'overflow-hidden',
-                isDragging && 'z-50 scale-[1.01] border-primary/20 shadow-md',
+                isDragging && 'z-50 scale-[1.01] border-primary/60',
+                isSelected && 'ring-2 ring-primary/50 border-primary bg-primary/[0.04] dark:bg-primary/[0.08]',
             )}
         >
             <div
+                {...attributes}
+                {...listeners}
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
-                    'group/header relative flex cursor-pointer gap-3 transition-all duration-300',
+                    'group/header relative flex items-center cursor-grab active:cursor-grabbing gap-3 transition-all duration-300',
                     !step.approver_type && 'bg-rose-50/20 dark:bg-rose-950/10 p-2 rounded border border-dashed border-rose-200 dark:border-rose-900/50',
                 )}
             >
-                <div className="flex shrink-0 flex-col items-center">
-                    <div
-                        {...attributes}
-                        {...listeners}
-                        onClick={(e) => e.stopPropagation()}
-                        className="border-primary/5 bg-primary/[0.03] hover:bg-primary/10 hover:border-primary/20 flex h-10 w-10 cursor-grab items-center justify-center rounded-xl border transition-all"
-                    >
-                        <div className="bg-primary/30 mb-0.5 h-1.5 w-1.5 rounded-full" />
-                        <span className="text-primary/40 text-xs leading-none font-semibold">#{step.step}</span>
+                {/* Column 1: Bulk Select Checkbox */}
+                {onToggleSelect && (
+                    <div className="flex shrink-0 items-center justify-center">
+                        <div
+                            onClick={(e) => { e.stopPropagation(); onToggleSelect(step.id); }}
+                            className={cn(
+                                'flex h-5 w-5 items-center justify-center rounded border transition-all cursor-pointer z-10',
+                                isSelected
+                                    ? 'bg-primary border-primary opacity-100'
+                                    : 'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 opacity-60 group-hover/step:opacity-100'
+                            )}
+                            title={isSelected ? 'Batalkan pilihan' : 'Pilih tahap ini'}
+                        >
+                            {isSelected && (
+                                <svg viewBox="0 0 10 8" className="h-3 w-3 text-white fill-none stroke-current stroke-[1.5]">
+                                    <polyline points="1,4 3.5,6.5 9,1" />
+                                </svg>
+                            )}
+                        </div>
                     </div>
+                )}
+
+                {/* Column 2: Step Number Text Only (Tanpa Efek Card) */}
+                <div className="flex shrink-0 items-center justify-center min-w-[24px]">
+                    <span className="text-sm font-black text-slate-700 dark:text-slate-200 select-none">
+                        {step.step}.
+                    </span>
                 </div>
 
-                <div className="flex min-w-0 flex-1 items-center justify-between">
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                        <div className="flex flex-wrap items-center gap-2">
-
-
-                            {/* Conditional Flag */}
-                            {step.condition_expression && (
-                                <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-600 uppercase dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400">
-                                    <GitBranch size={10} /> BERSYARAT
-                                </div>
-                            )}
-
+                {/* Column 3: Status, Deskripsi & Action Buttons */}
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                        {/* Row 1: Status & Deskripsi (Single Row) */}
+                        <div className="flex items-center gap-2 min-w-0 overflow-hidden">
                             {/* Target Status Badge */}
                             {selectedStatus && (
                                 <div
-                                    className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase"
+                                    className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase shrink-0"
                                     style={{
-                                        backgroundColor: `${selectedStatus.color}10`,
-                                        borderColor: `${selectedStatus.color}30`,
+                                        backgroundColor: `${selectedStatus.color}15`,
+                                        borderColor: `${selectedStatus.color}40`,
                                         color: selectedStatus.color,
                                     }}
                                 >
@@ -400,9 +437,23 @@ export default function SortableStepItem({
                                 </div>
                             )}
 
+                            {/* Deskripsi Step */}
+                            {step.description && (
+                                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-snug truncate shrink">
+                                    {step.description}
+                                </p>
+                            )}
+
+                            {/* Conditional Flag */}
+                            {step.condition_expression && (
+                                <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600 uppercase dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 shrink-0">
+                                    <GitBranch size={10} /> BERSYARAT
+                                </div>
+                            )}
+
                             {/* Data Filters Indicator */}
                             {(step.filter_department || step.filter_company_group || step.filter_region || step.filter_company) && (
-                                <div className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-[10px] font-medium text-indigo-600 uppercase dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400">
+                                <div className="flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600 uppercase dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-400 shrink-0">
                                     <Shield size={10} className="shrink-0" />
                                     <div className="flex gap-1">
                                         {step.filter_department && <span>UNIT</span>}
@@ -412,8 +463,10 @@ export default function SortableStepItem({
                                     </div>
                                 </div>
                             )}
+                        </div>
 
-                            {/* Simulator Buttons in Header */}
+                        {/* Row 2: Action Buttons */}
+                        <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                             <StepSimulatorButtons
                                 actions={actions}
                                 idx={idx}
@@ -423,25 +476,24 @@ export default function SortableStepItem({
                                 setActiveModal={setActiveModal}
                             />
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                            {step.description && (
-                                <span className="text-xs font-normal text-slate-500 italic dark:text-slate-400">"{step.description}"</span>
-                            )}
-
-                            {step.allowed_actions?.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                    <Shield size={10} className="text-slate-400" />
-                                    <span className="text-[10px] font-medium text-slate-500 uppercase dark:text-slate-400">
-                                        AKSI: {step.allowed_actions.map((a: string) => a.toUpperCase()).join(', ')}
-                                    </span>
-                                </div>
-                            )}
-                        </div>
                     </div>
 
                     <div className="ml-6 flex shrink-0 items-center gap-2">
                         <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+                            {onSavePreset && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onSavePreset(step);
+                                    }}
+                                    className="hover:text-amber-600 h-7 w-7 rounded-md text-amber-500/80 transition-all hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                                    title="Simpan sebagai Preset"
+                                >
+                                    <Bookmark size={12} />
+                                </Button>
+                            )}
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -459,40 +511,17 @@ export default function SortableStepItem({
                                 size="icon"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    moveLocalStep(idx, 'up');
+                                    removeLocalStep(idx);
                                 }}
-                                disabled={idx === 0}
-                                className="hover:text-primary h-7 w-7 rounded-md text-slate-400 transition-all hover:bg-white disabled:opacity-10 dark:hover:bg-slate-700"
-                                title="Pindah ke Atas"
+                                className="hover:text-rose-600 h-7 w-7 rounded-md text-slate-400 transition-all hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                title="Hapus Tahap"
                             >
-                                <ArrowUp size={12} />
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    moveLocalStep(idx, 'down');
-                                }}
-                                disabled={idx === totalSteps - 1}
-                                className="hover:text-primary h-7 w-7 rounded-md text-slate-400 transition-all hover:bg-white disabled:opacity-10 dark:hover:bg-slate-700"
-                                title="Pindah ke Bawah"
-                            >
-                                <ArrowDown size={12} />
+                                <Trash2 size={12} />
                             </Button>
                         </div>
-
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                removeLocalStep(idx);
-                            }}
-                            className="h-8 w-8 rounded-lg text-slate-300 transition-all hover:bg-rose-50 hover:text-rose-500 dark:text-slate-700 dark:hover:bg-rose-500/10"
-                        >
-                            <Trash2 size={14} />
-                        </Button>
+                        <div className="text-slate-400 transition-transform duration-300">
+                            <ChevronUp size={16} className={cn('transition-transform duration-300', !isExpanded && 'rotate-180')} />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -636,6 +665,22 @@ export default function SortableStepItem({
                                                 onUpdateStep={(updates) => updateLocalStep(idx, updates)}
                                             />
                                         </div>
+
+                                        {/* Save as Preset Button */}
+                                        {onSavePreset && (
+                                            <div className="col-span-12 sm:col-span-6 md:col-span-4 space-y-1.5">
+                                                <label className="text-xs font-bold text-amber-700 dark:text-amber-400">Preset Tahapan</label>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full justify-start h-10 rounded-lg text-sm font-bold border-amber-300 bg-amber-50/50 text-amber-800 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300 dark:hover:bg-amber-950/40"
+                                                    onClick={() => onSavePreset(step)}
+                                                >
+                                                    <Bookmark className="mr-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
+                                                    Simpan sebagai Preset
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Condition Expression */}
@@ -753,6 +798,7 @@ export default function SortableStepItem({
                                     departments={departments}
                                     divisions={divisions}
                                     companyGroups={companyGroups}
+                                    companies={companies}
                                     regions={regions}
                                     showCustom={true}
                                 />

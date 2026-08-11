@@ -190,50 +190,49 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         }
     };
 
-    const renderTitle = () => {
-        if (actionAlias)
-            return (
-                <>
-                    <CheckCircle2 size={18} className="text-primary" /> {actionAlias}
-                </>
-            );
-        if (contract?.workflow_step?.step === 1)
-            return (
-                <>
-                    <Send size={18} className="text-primary" /> Kirim Persetujuan
-                </>
-            );
-        return (
-            <>
-                <CheckCircle2 size={18} className="text-success" /> Setujui Kontrak
-            </>
-        );
-    };
+    const titleText = actionAlias || (contract?.workflow_step?.step === 1 ? 'Kirim Persetujuan' : 'Setujui Kontrak');
+    const subtitleText = contract?.workflow_step?.step === 1 
+        ? 'Konfirmasi untuk mengirim draft kontrak ke tahap persetujuan berikutnya'
+        : 'Berikan persetujuan atau catatan untuk memproses tahap kontrak ini';
 
     return (
         <Modal
             isOpen={open}
             onClose={onClose}
-            maxWidth="3xl"
-            title={renderTitle()}
+            maxWidth="2xl"
+            headerVariant="primary"
+            headerIcon={
+                contract?.workflow_step?.step === 1 ? (
+                    <Send size={18} className="text-white" />
+                ) : (
+                    <CheckCircle2 size={18} className="text-white" />
+                )
+            }
+            title={titleText}
+            description={subtitleText}
             footer={
-                <div className="flex w-full gap-3">
-                    <Button variant="outline" onClick={onClose} disabled={loading} className="flex-1 rounded-xl">
+                <div className="flex w-full justify-end gap-2.5">
+                    <Button
+                        variant="ghost"
+                        onClick={onClose}
+                        disabled={loading}
+                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                    >
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className={cn('flex-1 rounded-xl shadow-lg transition-all', 'shadow-primary/20')}
+                        className="min-w-[140px] h-9 text-xs"
                     >
                         {loading ? (
-                            <Loader2 size={16} className="mr-2 animate-spin" />
+                            <Loader2 size={15} className="mr-1.5 animate-spin" />
                         ) : (
                             <>
                                 {contract?.workflow_step?.step === 1 ? (
-                                    <Send size={16} className="mr-2" />
+                                    <Send size={15} className="mr-1.5" />
                                 ) : (
-                                    <CheckCircle2 size={16} className="mr-2" />
+                                    <CheckCircle2 size={15} className="mr-1.5" />
                                 )}
                             </>
                         )}
@@ -242,10 +241,10 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                 </div>
             }
         >
-            <div className="space-y-5">
+            <div className="space-y-3.5 pt-1">
                 {preview && (
-                    <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3.5 text-left dark:border-slate-800 dark:bg-slate-900/40">
-                        <div className=" flex flex-col gap-0.5">
+                    <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-2.5 text-left dark:border-slate-800 dark:bg-slate-900/40">
+                        <div className="flex flex-col gap-0.5">
                             <span className="text-[9px] font-medium text-slate-400 uppercase">{preview.label}</span>
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{preview.target}</span>
                         </div>

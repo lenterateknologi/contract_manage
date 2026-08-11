@@ -24,9 +24,10 @@ class ChatController extends Controller
     {
         $user = Auth::user();
 
-        // Fetch contracts that the user is involved in (Creator, Initiator, PIC, Manager, Approver, or message participant)
+        // Fetch contracts that the user is involved in (Creator, Initiator, PIC, Manager, Approver, or message participant), excluding DRAFT
         $contracts = Contract::query()
             ->select(['id', 'form_no', 'contract_no', 'title', 'contract_type_id', 'created_by', 'updated_at'])
+            ->whereRaw("UPPER(status) != 'DRAFT'")
             ->where(function ($query) use ($user) {
                 $query->where('created_by', $user->id)
                     ->orWhere('initiated_by_id', $user->id)
@@ -106,6 +107,10 @@ class ChatController extends Controller
     public function getMessages(string $contractId, Request $request): JsonResponse
     {
         $contract = Contract::findOrFail($contractId);
+        if (strtoupper($contract->status) === 'DRAFT') {
+            return response()->json(['message' => 'Kontrak berstatus DRAFT belum memiliki fitur chat.'], 403);
+        }
+
         $limit = $request->integer('limit', 100);
 
         $messages = $contract->messages()
@@ -148,6 +153,9 @@ class ChatController extends Controller
         }
 
         $contract = Contract::findOrFail($contractId);
+        if (strtoupper($contract->status) === 'DRAFT') {
+            return response()->json(['message' => 'Kontrak berstatus DRAFT belum dapat menggunakan fitur chat.'], 403);
+        }
         $userId = Auth::id();
 
         $attachmentPath = null;

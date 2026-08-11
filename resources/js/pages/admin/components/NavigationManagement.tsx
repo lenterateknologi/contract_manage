@@ -74,7 +74,7 @@ interface NavigationManagementProps {
 
 const GroupNameCell = ({ name }: Readonly<{ name: string }>) => (
     <div className="group flex items-center gap-4">
-        <div className="bg-surface-muted border-surface-border text-text-main/40 group-hover:bg-primary flex h-10 w-10 items-center justify-center rounded-xl border transition-all group-hover:text-white">
+        <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-xl transition-all text-white">
             <Folder size={16} />
         </div>
         <span className="text-text-main text-[13px] font-semibold tracking-tight uppercase">{name}</span>
@@ -97,7 +97,7 @@ const ModuleNameCell = ({
     const IconComp = icon && SELECTABLE_ICONS[icon] ? SELECTABLE_ICONS[icon] : LayoutGrid;
     return (
         <div className="group flex items-start gap-3">
-            <div className="bg-surface-muted border-surface-border text-text-main/40 group-hover:bg-primary mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-all group-hover:text-white">
+            <div className="bg-primary mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all text-white">
                 <IconComp size={14} />
             </div>
             <div className="flex flex-col gap-0.5">

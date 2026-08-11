@@ -1,4 +1,4 @@
-import { Activity, ArrowRight, Calendar, Clock, FileText, Layers, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Archive, Calendar, Clock, FileText, Layers, RotateCcw, Timer } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { MetricItem } from './MetricItem';
@@ -76,22 +76,31 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
     // Dynamically calculate summary KPI metrics from the selected date range
     const summaryMetrics = useMemo(() => {
         if (!filteredDailyTrend || filteredDailyTrend.length === 0) {
-            return { total: 0, in_process: 0, completed: 0, rejected: 0, approved: 0 };
+            return { semua: 0, pending: 0, mine: 0, arsip: 0, inProgress: 0 };
         }
         return filteredDailyTrend.reduce(
             (acc: any, item: any) => ({
-                total: acc.total + (item['Total Pengajuan'] || 0),
-                in_process: acc.in_process + (item['Sedang Diproses'] || 0),
-                completed: acc.completed + (item['Diselesaikan'] || 0),
-                rejected: acc.rejected + (item['Ditolak'] || 0),
-                approved: acc.approved + (item['Approved'] || 0),
+                semua:      acc.semua      + (item['Semua Dokumen']             || 0),
+                pending:    acc.pending    + (item['Menunggu Persetujuan Saya'] || 0),
+                mine:       acc.mine       + (item['Dokumen Saya']              || 0),
+                arsip:      acc.arsip      + (item['Dokumen Arsip']             || 0),
+                inProgress: acc.inProgress + (item['On Progress']              || 0),
             }),
-            { total: 0, in_process: 0, completed: 0, rejected: 0, approved: 0 }
+            { semua: 0, pending: 0, mine: 0, arsip: 0, inProgress: 0 }
         );
     }, [filteredDailyTrend]);
 
-    const categoriesList = ['Total Pengajuan', 'Sedang Diproses', 'Diselesaikan', 'Ditolak', 'Approved'];
-    const CHART_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#06b6d4'];
+    const categoriesList = ['Semua Dokumen', 'Menunggu Persetujuan Saya', 'Dokumen Saya', 'Dokumen Arsip', 'On Progress'];
+    const CHART_COLORS = ['#06b6d4', '#f59e0b', '#6366f1', '#10b981', '#8b5cf6'];
+
+    // All-time values — same source as KPI cards, used for pie chart & legend
+    const categoryValues: Record<string, number> = {
+        'Semua Dokumen':             data?.metrics?.totalContracts ?? 0,
+        'Menunggu Persetujuan Saya': m.pending_for_me             ?? 0,
+        'Dokumen Saya':              m.my_total                   ?? 0,
+        'Dokumen Arsip':             m.archived_total             ?? 0,
+        'On Progress':               m.in_process                 ?? 0,
+    };
 
     const handleResetDateFilter = () => {
         setDatePreset('7d');
@@ -101,77 +110,66 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 space-y-4 duration-700">
-            {/* 5 KPI Metric Rows representing Selected Date Range Actions */}
-            <div className="grid grid-cols-1 gap-4 select-none md:grid-cols-2 lg:grid-cols-5">
+            {/* 5 KPI Metric Cards */}
+            <div className="grid grid-cols-1 gap-4 select-none sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {[
                     {
-                        label: datePreset === '7d' 
-                            ? 'Pengajuan (7 Hari)' 
-                            : datePreset === '14d' 
-                                ? 'Pengajuan (14 Hari)' 
-                                : datePreset === 'this_month'
-                                    ? 'Pengajuan (Bulan Ini)'
-                                    : datePreset === 'last_month'
-                                        ? 'Pengajuan (Bulan Lalu)'
-                                        : 'Pengajuan Total',
-                        value: summaryMetrics.total,
-                        icon: FileText,
-                        color: 'text-primary',
+                        label: 'Semua Dokumen',
+                        value: data?.metrics?.totalContracts ?? 0,
+                        icon: Layers,
+                        color: 'text-cyan-500',
+                        description: 'Seluruh dokumen kontrak terotorisasi',
                         nav: () => onNavigate('contracts')
                     },
                     {
-                        label: 'Sedang Diproses',
-                        value: summaryMetrics.in_process,
+                        label: 'Menunggu Persetujuan',
+                        value: m.pending_for_me !== undefined ? m.pending_for_me : (data?.metrics?.pendingApprovals || 0),
                         icon: Clock,
                         color: 'text-amber-500',
+                        description: 'Kontrak butuh persetujuan Anda',
                         nav: () => onNavigate('pending')
                     },
                     {
-                        label: 'Diselesaikan',
-                        value: summaryMetrics.completed,
-                        icon: ShieldCheck,
+                        label: 'Dokumen Saya',
+                        value: m.my_total ?? 0,
+                        icon: FileText,
+                        color: 'text-primary',
+                        description: 'Kontrak yang Anda buat (tidak termasuk draft)',
+                        nav: () => onNavigate('mine')
+                    },
+                    {
+                        label: 'Dokumen Arsip',
+                        value: m.archived_total ?? 0,
+                        icon: Archive,
                         color: 'text-emerald-500',
-                        nav: () => onNavigate('contracts', { status: 'approved' })
+                        description: 'Kontrak yang telah diarsipkan',
+                        nav: () => onNavigate('archived')
                     },
                     {
-                        label: 'Ditolak',
-                        value: summaryMetrics.rejected,
-                        icon: Activity,
-                        color: 'text-rose-500',
-                        nav: () => onNavigate('contracts', { status: 'rejected' })
+                        label: 'On Progress',
+                        value: m.in_process ?? 0,
+                        icon: Timer,
+                        color: 'text-violet-500',
+                        description: 'Kontrak dalam proses review/revisi',
+                        nav: () => onNavigate('in_progress')
                     },
-                    {
-                        label: 'Approved',
-                        value: summaryMetrics.approved,
-                        icon: ShieldCheck,
-                        color: 'text-cyan-500',
-                        nav: () => onNavigate('contracts', { status: 'approved' })
-                    }
                 ].map((kpi, idx) => (
                     <Card 
                         key={idx} 
                         className="relative cursor-pointer transition-all duration-200 overflow-hidden border border-surface-border/60 hover:border-primary/40 hover:shadow-xs bg-white dark:bg-zinc-900/50"
                         onClick={kpi.nav}
-                        title="Klik untuk melihat detail laporan"
+                        title="Klik untuk melihat detail tiket"
                     >
-                        <CardContent className="p-3.5 pt-3.5 space-y-2">
+                        <CardContent className="p-4 pt-4 space-y-2">
                             <MetricItem 
                                 label={kpi.label} 
                                 value={kpi.value} 
-                                icon={kpi.icon} 
-                                color={kpi.color} 
+                                icon={kpi.icon}
+                                color={kpi.color}
                             />
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    kpi.nav();
-                                }}
-                                className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-lg border border-white/40 bg-white dark:bg-zinc-900 px-2.5 py-1 text-[9.5px] font-bold text-slate-800 dark:text-zinc-100 shadow-md hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all uppercase tracking-wider scale-100 hover:scale-105"
-                                title="Lihat detail laporan"
-                            >
-                                <Layers size={11} className="text-primary" /> DETAIL
-                            </button>
+                            <p className="text-[10px] text-text-soft font-medium opacity-80 mt-1">
+                                {kpi.description}
+                            </p>
                         </CardContent>
                     </Card>
                 ))}
@@ -345,17 +343,17 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                                                 <g key={`last-dot-${dataKey}-${index}`}>
                                                                     <circle cx={cx} cy={cy} r={8.5} fill={strokeColor} stroke="#fff" strokeWidth={1.5} />
                                                                     {/* Render SVG Icon Paths according to category */}
-                                                                    {category === 'Total Pengajuan' && (
-                                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                    {category === 'Semua Dokumen' && (
+                                                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                                                     )}
-                                                                    {category === 'Sedang Diproses' && (
+                                                                    {category === 'Menunggu Persetujuan Saya' && (
                                                                         <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 6v6l4 2" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                                                     )}
-                                                                    {(category === 'Diselesaikan' || category === 'Approved') && (
-                                                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                    {category === 'Dokumen Saya' && (
+                                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                                                     )}
-                                                                    {category === 'Ditolak' && (
-                                                                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                                    {category === 'On Progress' && (
+                                                                        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z M12 6v6l4 2" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                                                     )}
                                                                 </g>
                                                             );
@@ -377,8 +375,8 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                 <Card className="lg:col-span-3 bg-white dark:bg-zinc-900/50 border border-surface-border/60 shadow-xs flex flex-col justify-between">
                     <div>
                         <CardHeader className="p-4 pb-2 border-b border-surface-border/40 space-y-0">
-                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-text-main">Kategori Status</CardTitle>
-                            <p className="text-[9.5px] text-text-soft">Distribusi tren pengajuan harian per kategori</p>
+                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-text-main">Ringkasan Kategori</CardTitle>
+                            <p className="text-[9.5px] text-text-soft">Distribusi total keseluruhan kontrak per kategori</p>
                         </CardHeader>
                         <CardContent className="p-4 space-y-3">
                             {/* Pie Chart Component displaying identical Line Chart Data */}
@@ -390,7 +388,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                                 <Pie
                                                     data={categoriesList.map((category: string, idx: number) => ({
                                                         name: category,
-                                                        value: filteredDailyTrend.reduce((acc: number, curr: any) => acc + (curr[category] || 0), 0),
+                                                        value: categoryValues[category] ?? 0,
                                                         color: CHART_COLORS[idx % CHART_COLORS.length]
                                                     })).filter((item: any) => item.value > 0)}
                                                     cx="50%"
@@ -421,15 +419,13 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                             </PieChart>
                                         </ResponsiveContainer>
 
-                                        {/* Centered Total Count Overlay */}
+                                        {/* Centered Total Count Overlay — show Semua Dokumen total */}
                                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                                             <span className="text-[13px] font-black leading-none text-text-main">
-                                                {categoriesList.map((category: string) => 
-                                                    filteredDailyTrend.reduce((acc: number, curr: any) => acc + (curr[category] || 0), 0)
-                                                ).reduce((a, b) => a + b, 0)}
+                                                {data?.metrics?.totalContracts ?? 0}
                                             </span>
                                             <span className="text-[7.5px] font-extrabold uppercase tracking-widest text-text-soft mt-0.5">
-                                                Total
+                                                Dokumen
                                             </span>
                                         </div>
                                     </>
@@ -440,11 +436,11 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                             <div className="space-y-2 pt-1 border-t border-surface-border/40">
                                 {categoriesList.map((category: string, idx: number) => {
                                     const categoryIcons: Record<string, any> = {
-                                        'Total Pengajuan': FileText,
-                                        'Sedang Diproses': Clock,
-                                        'Diselesaikan': ShieldCheck,
-                                        'Ditolak': Activity,
-                                        'Approved': ShieldCheck,
+                                        'Semua Dokumen': Layers,
+                                        'Menunggu Persetujuan Saya': Clock,
+                                        'Dokumen Saya': FileText,
+                                        'Dokumen Arsip': Archive,
+                                        'On Progress': Timer,
                                     };
                                     const CategoryIcon = categoryIcons[category] || FileText;
 
@@ -462,7 +458,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                                 </span>
                                             </div>
                                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-base border border-surface-border/60 text-text-soft shrink-0">
-                                                {filteredDailyTrend.reduce((acc: number, curr: any) => acc + (curr[category] || 0), 0)}
+                                                {categoryValues[category] ?? 0}
                                             </span>
                                         </div>
                                     );

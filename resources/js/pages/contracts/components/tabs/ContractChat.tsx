@@ -780,60 +780,6 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
     return (
         <div className="animate-in fade-in relative flex h-full flex-col p-5 duration-500">
-            <div className="border-surface-border mb-1 flex items-center justify-between gap-3 border-b pb-3">
-                <div className="flex flex-1 items-center gap-2">
-                    <div className="relative flex-1">
-                        <SearchInput
-                            placeholder="CARI NAMA / ROLE / PESAN..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="h-9 text-[10px]"
-                        />
-                    </div>
-                    {search.trim() !== '' && (
-                        <div className="flex items-center gap-1.5 bg-surface-muted/60 border border-surface-border rounded-lg px-2 py-1">
-                            <span className="text-[11px] font-semibold text-text-soft tabular-nums">
-                                {matchingMessages.length > 0 ? `${currentMatchIndex + 1}/${matchingMessages.length}` : '0/0'}
-                            </span>
-                            <div className="flex items-center gap-0.5">
-                                <button
-                                    type="button"
-                                    onClick={handlePrevMatch}
-                                    disabled={matchingMessages.length === 0}
-                                    title="Pesan Sebelumnya (Up)"
-                                    className="p-1 rounded hover:bg-surface-border text-text-soft hover:text-text-main disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
-                                >
-                                    <ChevronUp size={14} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleNextMatch}
-                                    disabled={matchingMessages.length === 0}
-                                    title="Pesan Selanjutnya (Down)"
-                                    className="p-1 rounded hover:bg-surface-border text-text-soft hover:text-text-main disabled:opacity-30 disabled:hover:bg-transparent transition-colors cursor-pointer"
-                                >
-                                    <ChevronDown size={14} />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <div className="border-surface-border hidden h-7 items-center border-r px-3 sm:flex">
-                        <span className="text-text-main text-[8px] font-normal tracking-[0.2em] uppercase tabular-nums">{msgs.length} LOGS</span>
-                    </div>
-                    <button
-                        onClick={handleRefresh}
-                        className={cn(
-                            'border-surface-border text-text-main hover:bg-surface-muted hover:text-text-main flex h-7 w-7 items-center justify-center rounded-lg border shadow-sm transition-all active:scale-90',
-                            refreshing && 'border-primary text-primary animate-spin shadow-lg',
-                        )}
-                    >
-                        <RefreshCw size={12} strokeWidth={2.5} />
-                    </button>
-                </div>
-            </div>
 
             <div
                 ref={scrollContainerRef}

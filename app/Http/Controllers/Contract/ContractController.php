@@ -129,17 +129,64 @@ class ContractController extends Controller
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
                 'contract_type_ids', 'pic_ids', 'department_ids', 'submission_type_id',
                 'period', 'company_group_ids', 'company_ids',
-                'company_group_id', 'region_id', 'company_id', 'division_id',
+                'company_group_id', 'region_id', 'company_id', 'division_id', 'mine_tab', 'contract_tab', 'parent_tab', 'pending_tab', 'expiry_tab',
             ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
         ];
 
-        $viewTitle = 'Manajemen Kontrak';
-        $viewDesc = 'Daftar seluruh kontrak dalam sistem.';
+        $viewTitle = 'Manajemen Dokumen';
+        $viewDesc = 'Daftar seluruh dokumen dalam sistem.';
         $viewIcon = 'FileText';
 
         switch ($view) {
+            case 'contracts':
+                $baseContractsQuery = \Illuminate\Support\Facades\DB::table('t_contracts')
+                    ->whereNull('deleted_at')
+                    ->whereRaw('UPPER(status) != ?', ['DRAFT']);
+
+                $parents = \Illuminate\Support\Facades\DB::table('m_contract_types')->whereNull('parent_id')->get();
+                $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
+                $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
+                $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
+
+                $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
+                    if (! $parentId) {
+                        return [];
+                    }
+                    $ids = [$parentId];
+                    $children = \Illuminate\Support\Facades\DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                    foreach ($children as $childId) {
+                        $ids = array_merge($ids, $getDescendantIds($childId));
+                    }
+
+                    return array_unique($ids);
+                };
+
+                $activeContractsQuery = (clone $baseContractsQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+
+                $getCategoryCount = function ($targetParent) use ($activeContractsQuery, $getDescendantIds) {
+                    if (! $targetParent) {
+                        return 0;
+                    }
+                    $allDescendantIds = $getDescendantIds($targetParent->id);
+
+                    return (clone $activeContractsQuery)->where(function ($q) use ($allDescendantIds, $targetParent) {
+                        $q->whereIn('contract_type_id', $allDescendantIds)
+                            ->orWhere('contract_type_parent_id', $targetParent->id);
+                    })->count();
+                };
+
+                $props['parentCategoryCounts'] = [
+                    'all' => (clone $activeContractsQuery)->count(),
+                    'kontrak' => $getCategoryCount($kontrakParent),
+                    'non_kontrak' => $getCategoryCount($nonKontrakParent),
+                    'nda' => $getCategoryCount($ndaParent),
+                    'in_progress' => (clone $baseContractsQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
+                    'archived' => (clone $baseContractsQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
+                ];
+
+                break;
             case 'dashboard':
                 $viewTitle = 'Dashboard';
                 $viewDesc = 'Statistik dan ringkasan aktivitas kontrak.';
@@ -147,21 +194,136 @@ class ContractController extends Controller
 
                 break;
             case 'mine':
-                $viewTitle = 'Kontrak Saya';
-                $viewDesc = 'Daftar kontrak yang Anda buat.';
+                $viewTitle = 'Dokumen Saya';
+                $viewDesc = 'Daftar dokumen yang Anda buat.';
                 $viewIcon = 'FileEdit';
+
+                $baseMineQuery = \Illuminate\Support\Facades\DB::table('t_contracts')
+                    ->where('created_by', \Illuminate\Support\Facades\Auth::id())
+                    ->whereNull('deleted_at');
+
+                $parents = \Illuminate\Support\Facades\DB::table('m_contract_types')->whereNull('parent_id')->get();
+                $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
+                $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
+                $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
+
+                $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
+                    if (! $parentId) {
+                        return [];
+                    }
+                    $ids = [$parentId];
+                    $children = \Illuminate\Support\Facades\DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                    foreach ($children as $childId) {
+                        $ids = array_merge($ids, $getDescendantIds($childId));
+                    }
+
+                    return array_unique($ids);
+                };
+
+                $activeMineQuery = (clone $baseMineQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+
+                $getCategoryCount = function ($targetParent) use ($activeMineQuery, $getDescendantIds) {
+                    if (! $targetParent) {
+                        return 0;
+                    }
+                    $allDescendantIds = $getDescendantIds($targetParent->id);
+
+                    return (clone $activeMineQuery)->where(function ($q) use ($allDescendantIds, $targetParent) {
+                        $q->whereIn('contract_type_id', $allDescendantIds)
+                            ->orWhere('contract_type_parent_id', $targetParent->id);
+                    })->count();
+                };
+
+                $props['mineCounts'] = [
+                    'all' => (clone $activeMineQuery)->count(),
+                    'kontrak' => $getCategoryCount($kontrakParent),
+                    'non_kontrak' => $getCategoryCount($nonKontrakParent),
+                    'nda' => $getCategoryCount($ndaParent),
+                    'in_progress' => (clone $baseMineQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
+                    'archived' => (clone $baseMineQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
+                ];
 
                 break;
             case 'pending':
                 $viewTitle = 'Pending Approval';
-                $viewDesc = 'Kontrak yang menunggu persetujuan Anda.';
+                $viewDesc = 'Kontrak yang menunggu atau telah diproses persetujuan Anda.';
                 $viewIcon = 'Clock';
+
+                $userId = \Illuminate\Support\Facades\Auth::id();
+
+                $props['pendingCounts'] = [
+                    'pending' => \App\Models\Contract::whereRaw("UPPER(status) != 'DRAFT'")
+                        ->whereHas('approvals', function ($q) use ($userId) {
+                            $q->where('user_id', $userId)
+                                ->where('status', 'pending')
+                                ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
+                        })->count(),
+                    'history' => \App\Models\Contract::whereRaw("UPPER(status) != 'DRAFT'")
+                        ->whereHas('approvals', function ($q) use ($userId) {
+                            $q->where('user_id', $userId)
+                                ->whereIn('status', ['approved', 'rejected', 'revision']);
+                        })->count(),
+                ];
 
                 break;
             case 'expiry':
-                $viewTitle = 'Masa Berlaku';
-                $viewDesc = 'Kontrak yang akan atau telah berakhir.';
+                $viewTitle = 'Masa Berlaku Dokumen';
+                $viewDesc = 'Dokumen yang akan atau telah berakhir masa berlakunya.';
                 $viewIcon = 'History';
+
+                $baseExpiryQuery = \Illuminate\Support\Facades\DB::table('t_contracts')
+                    ->whereNull('deleted_at')
+                    ->whereRaw("UPPER(status) != 'DRAFT'")
+                    ->whereNotNull('end_date');
+
+                $parents = \Illuminate\Support\Facades\DB::table('m_contract_types')->whereNull('parent_id')->get();
+                $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
+                $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
+                $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
+
+                $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
+                    if (! $parentId) {
+                        return [];
+                    }
+                    $ids = [$parentId];
+                    $children = \Illuminate\Support\Facades\DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                    foreach ($children as $childId) {
+                        $ids = array_merge($ids, $getDescendantIds($childId));
+                    }
+
+                    return array_unique($ids);
+                };
+
+                $getCategoryCount = function ($targetParent) use ($baseExpiryQuery, $getDescendantIds) {
+                    if (! $targetParent) {
+                        return 0;
+                    }
+                    $allDescendantIds = $getDescendantIds($targetParent->id);
+
+                    return (clone $baseExpiryQuery)->where(function ($q) use ($allDescendantIds, $targetParent) {
+                        $q->whereIn('contract_type_id', $allDescendantIds)
+                            ->orWhere('contract_type_parent_id', $targetParent->id);
+                    })->count();
+                };
+
+                $props['expiryCategoryCounts'] = [
+                    'all' => (clone $baseExpiryQuery)->count(),
+                    'kontrak' => $getCategoryCount($kontrakParent),
+                    'non_kontrak' => $getCategoryCount($nonKontrakParent),
+                    'nda' => $getCategoryCount($ndaParent),
+                ];
+
+                break;
+            case 'archived':
+                $viewTitle = 'Arsip Dokumen';
+                $viewDesc = 'Kontrak yang telah diarsipkan.';
+                $viewIcon = 'FolderClosed';
+
+                break;
+            case 'in_progress':
+                $viewTitle = 'On Progress';
+                $viewDesc = 'Kontrak yang sedang dalam proses pengerjaan.';
+                $viewIcon = 'Clock';
 
                 break;
             case 'f1':

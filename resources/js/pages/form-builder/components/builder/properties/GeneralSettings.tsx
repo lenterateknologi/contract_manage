@@ -45,7 +45,9 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                 <option value="meta_p2_entity">Nama Pihak II / Vendor (meta_p2_entity)</option>
                                 <option value="meta_p2_signer">Penandatangan Pihak II (meta_p2_signer)</option>
                                 <option value="meta_p2_signer_position">Jabatan Penandatangan Pihak II (meta_p2_signer_position)</option>
-                                <option value="meta_p2_alamat">Alamat Pihak II (meta_p2_alamat)</option>
+                            </optgroup>
+                            <optgroup label="Alamat & Kontak Resmi">
+                                <option value="meta_p2_alamat">Alamat Pihak II / Vendor (meta_p2_alamat)</option>
                             </optgroup>
                             <optgroup label="Detail Kontrak">
                                 <option value="meta_nilai_transaksi">Harga / Nilai Transaksi (meta_nilai_transaksi)</option>

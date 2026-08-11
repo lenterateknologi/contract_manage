@@ -32,11 +32,13 @@ class WorkflowStepAuthority extends Model
         'division_id',
         'user_id',
         'company_group_id',
+        'company_id',
         'region_id',
         'role_use_initiator',
         'department_use_initiator',
         'division_use_initiator',
         'company_group_use_initiator',
+        'company_use_initiator',
         'region_use_initiator',
         'authority_type',
         'is_additional',
@@ -52,6 +54,7 @@ class WorkflowStepAuthority extends Model
             'department_use_initiator' => 'boolean',
             'division_use_initiator' => 'boolean',
             'company_group_use_initiator' => 'boolean',
+            'company_use_initiator' => 'boolean',
             'region_use_initiator' => 'boolean',
             'is_additional' => 'boolean',
         ];
@@ -60,6 +63,11 @@ class WorkflowStepAuthority extends Model
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function department(): BelongsTo
@@ -80,6 +88,16 @@ class WorkflowStepAuthority extends Model
     public function workflowStepAction(): BelongsTo
     {
         return $this->belongsTo(WorkflowStepAction::class, 'workflow_step_action_id');
+    }
+
+    public function companyGroup(): BelongsTo
+    {
+        return $this->belongsTo(CompanyGroup::class, 'company_group_id');
+    }
+
+    public function region(): BelongsTo
+    {
+        return $this->belongsTo(Region::class, 'region_id');
     }
 
     public function targetStep(): BelongsTo

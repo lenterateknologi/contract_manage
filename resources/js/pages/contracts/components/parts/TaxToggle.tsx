@@ -7,8 +7,8 @@ interface TaxToggleProps {
 
 export function TaxToggle({ taxRequired, setTaxRequired }: TaxToggleProps) {
     return (
-        <div className="flex flex-col gap-1.5">
-            <label className="text-muted-foreground text-[11px] font-bold uppercase">
+        <div className="flex flex-col gap-1">
+            <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">
                 Penentuan Pajak
             </label>
             <div className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-muted/10 px-3 py-2.5">

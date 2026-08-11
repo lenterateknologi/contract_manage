@@ -294,11 +294,16 @@ export function TreeSelect({
             }
 
             return (
-                <div key={nId} className="flex flex-col">
+                <div key={nId} className="flex flex-col relative">
                     <div 
-                        className="group flex w-full items-center gap-1 rounded-md hover:bg-sidebar-accent/40 pr-2"
+                        className="group flex w-full items-center gap-1 rounded-md hover:bg-sidebar-accent/40 pr-2 relative"
                         style={{ paddingLeft: depth === 0 ? '0px' : '6px' }}
                     >
+                        {/* Horizontal Connector Line (Line X) for child items */}
+                        {depth > 0 && (
+                            <div className="absolute -left-[13px] top-1/2 w-3 h-0 border-t-2 border-primary/30 dark:border-primary/40 -translate-y-1/2" />
+                        )}
+
                         <button
                             type="button"
                             onClick={(e) => {
@@ -308,7 +313,7 @@ export function TreeSelect({
                                     handleSelect(node);
                                 }
                             }}
-                        className={cn(
+                            className={cn(
                                 "flex flex-1 items-center gap-2 py-1.5 text-left text-sm transition-colors rounded-sm",
                                 depth === 0 ? "font-semibold px-3" : "font-medium px-2",
                                 fullySelected ? "text-accent-foreground" : "text-popover-foreground/80"
@@ -355,7 +360,7 @@ export function TreeSelect({
                     </div>
 
                     {isExpanded && hasChildren && (
-                        <div className="flex flex-col border-l border-sidebar-border/30 ml-[22px] border-dashed">
+                        <div className="flex flex-col border-l-2 border-primary/30 dark:border-primary/40 ml-[18px] pl-3 my-0.5 space-y-0.5">
                             {renderTreeNodes(node.children, depth + 1)}
                         </div>
                     )}
@@ -368,23 +373,26 @@ export function TreeSelect({
         <div
             id="tree-select-dropdown"
             className={cn(
-                "flex flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xs",
-                inline ? "w-full max-h-[380px]" : "absolute left-0 right-0 top-full z-50 mt-1 max-h-[350px] shadow-md animate-in fade-in-0 zoom-in-95"
+                "flex flex-col text-popover-foreground",
+                inline ? "w-full space-y-3" : "absolute left-0 right-0 top-full z-50 mt-1 max-h-[350px] overflow-hidden rounded-xl border border-border bg-popover shadow-md animate-in fade-in-0 zoom-in-95"
             )}
         >
-            {/* Shadcn cmdk-style search */}
-            <div className="flex items-center border-b border-border px-3 shrink-0 bg-background/50">
-                <Search size={13} className="mr-2 shrink-0 text-muted-foreground" />
+            {/* Shadcn cmdk-style search (Pinned sticky header) */}
+            <div className={cn(
+                "flex items-center px-3 shrink-0 bg-white dark:bg-slate-900 z-10",
+                inline ? "sticky top-0 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs" : "border-b border-border"
+            )}>
+                <Search size={14} className="mr-2 shrink-0 text-muted-foreground" />
                 <input
                     autoFocus={!inline}
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     placeholder={searchPlaceholder}
-                    className="flex h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
+                    className="flex h-10 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
                 />
             </div>
 
-            <div className="flex-1 overflow-y-auto p-1.5 max-h-[320px] [scrollbar-width:thin]">
+            <div className={cn("p-0.5", inline ? "w-full" : "flex-1 overflow-y-auto max-h-[320px] [scrollbar-width:thin]")}>
                 {filteredTree.length === 0 ? (
                     <div className="py-6 text-center text-sm text-muted-foreground italic">{emptyText}</div>
                 ) : (

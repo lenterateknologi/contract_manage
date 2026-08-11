@@ -27,13 +27,20 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
                         <Label
                             htmlFor={inputId}
                             className={cn(
-                                'font-bold transition-colors flex items-center gap-1.5',
-                                isCompact ? 'text-[10px]' : 'text-[11px]',
+                                'font-extrabold uppercase transition-colors flex items-center gap-1',
+                                isCompact ? 'text-[10px]' : 'text-[10.5px]',
                                 error ? 'text-rose-500' : 'text-slate-700 dark:text-zinc-200 group-focus-within:text-primary',
                                 labelClassName
                             )}
                         >
-                            {label}
+                            {typeof label === 'string' ? (
+                                <>
+                                    {label.replace(/\s*\*$/, '')}
+                                    {(props.required || label.includes('*')) && <span className="text-rose-500 ml-0.5">*</span>}
+                                </>
+                            ) : (
+                                label
+                            )}
                         </Label>
                     </div>
                 )}

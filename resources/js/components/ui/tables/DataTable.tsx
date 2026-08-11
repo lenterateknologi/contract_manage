@@ -183,14 +183,14 @@ export function DataTable<T extends Record<string, any>>({
             )}>
                 <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
                     <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead>
-                            <tr className="border-b border-surface-border/60 select-none">
+                        <thead className="bg-primary text-white">
+                            <tr className="border-b border-primary/20 select-none bg-primary text-white">
                                 {onSelectionChange && (
-                                    <th className="py-3.5 px-4 w-10 sticky top-0 z-10 bg-surface-muted/90 backdrop-blur-md">
+                                    <th className="py-3.5 px-4 w-10 sticky top-0 z-10 bg-primary text-white">
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
-                                            className="border-surface-border"
+                                            className="border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-primary"
                                         />
                                     </th>
                                 )}
@@ -201,8 +201,8 @@ export function DataTable<T extends Record<string, any>>({
                                         <th
                                             key={idx}
                                             className={cn(
-                                                "py-3.5 px-4 text-[11px] font-medium uppercase text-text-desc select-none sticky top-0 z-10 bg-surface-muted/90 backdrop-blur-md",
-                                                isSortable && "cursor-pointer hover:text-text-main transition-colors",
+                                                "py-3.5 px-4 text-[11px] font-bold uppercase text-white select-none sticky top-0 z-10 bg-primary",
+                                                isSortable && "cursor-pointer hover:text-white/80 transition-colors",
                                                 col.className
                                             )}
                                             onClick={() => {
@@ -213,18 +213,18 @@ export function DataTable<T extends Record<string, any>>({
                                             }}
                                         >
                                             <div className="flex items-center gap-1.5">
-                                                <span>{col.header}</span>
+                                                <span className="text-white font-bold">{col.header}</span>
                                                 {isSortable && (
-                                                    <span className="flex flex-col text-[8px] leading-[6px] opacity-60">
-                                                        <span className={cn(isSorted && sortDir === 'asc' ? "text-primary" : "text-text-soft")}>▲</span>
-                                                        <span className={cn(isSorted && sortDir === 'desc' ? "text-primary" : "text-text-soft")}>▼</span>
+                                                    <span className="flex flex-col text-[8px] leading-[6px] opacity-80">
+                                                        <span className={cn(isSorted && sortDir === 'asc' ? "text-white font-bold" : "text-white/40")}>▲</span>
+                                                        <span className={cn(isSorted && sortDir === 'desc' ? "text-white font-bold" : "text-white/40")}>▼</span>
                                                     </span>
                                                 )}
                                             </div>
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-semibold uppercase text-text-desc select-none sticky top-0 z-10 bg-surface-muted/90 backdrop-blur-md">Aksi</th>}
+                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-bold uppercase text-white select-none sticky top-0 z-10 bg-primary">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">

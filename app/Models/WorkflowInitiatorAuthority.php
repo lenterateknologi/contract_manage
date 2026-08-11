@@ -32,18 +32,37 @@ class WorkflowInitiatorAuthority extends Model
         'division_id',
         'user_id',
         'company_group_id',
+        'company_id',
         'region_id',
+        'role_use_initiator',
+        'department_use_initiator',
+        'division_use_initiator',
+        'company_group_use_initiator',
+        'company_use_initiator',
+        'region_use_initiator',
         'authority_type',
     ];
 
     protected function casts(): array
     {
-        return [];
+        return [
+            'role_use_initiator' => 'boolean',
+            'department_use_initiator' => 'boolean',
+            'division_use_initiator' => 'boolean',
+            'company_group_use_initiator' => 'boolean',
+            'company_use_initiator' => 'boolean',
+            'region_use_initiator' => 'boolean',
+        ];
     }
 
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'role_id');
+    }
+
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'company_id');
     }
 
     public function department(): BelongsTo

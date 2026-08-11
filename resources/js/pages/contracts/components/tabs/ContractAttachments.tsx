@@ -5,7 +5,7 @@ import { Contract, ContractAttachment } from '@/pages/contracts/types';
 import axios from 'axios';
 import { renderAsync } from 'docx-preview';
 import { ArrowLeft, Download, FileCheck, FileIcon, FolderOpen, Loader2, Plus, Trash2 } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
     contract: Contract;
@@ -72,20 +72,97 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
 
     const [manualLabel, setManualLabel] = useState('');
     const [showManualUpload, setShowManualUpload] = useState(false);
+    const [activeTab, setActiveTab] = useState<'all' | 'available' | 'uploaded'>('available');
 
     // Combined list of attachments for the main grid
-    const vendorDocuments =
-        (contract.vendor as any)?.documents?.map((d: any) => ({
-            id: d.id,
-            label: d.document_name || d.name,
-            category: 'Vendor Document',
-            file_name: d.document_name || d.name,
-            is_vendor_doc: true,
-            created_at: 'Master Vendor',
-        })) || [];
+    const vendorObj = (contract.vendor as any) || {};
+    const vendorDetail = vendorObj.vendor_detail || vendorObj.detail || {};
 
-    const contractAttachments = contract.attachments || [];
+    const extractAttachmentsRecursively = (obj: any, prefix = ''): any[] => {
+        let results: any[] = [];
+        if (!obj || typeof obj !== 'object') return results;
+
+        if (Array.isArray(obj)) {
+            obj.forEach((item, idx) => {
+                if (typeof item === 'string') {
+                    results.push({ label: `${prefix} ${idx + 1}`.trim(), file_name: item, has_file: true });
+                } else if (typeof item === 'object' && item !== null) {
+                    const fn = item.file_name || item.url || item.path || item.name || '';
+                    results.push({
+                        label: item.label || item.type || item.name || `${prefix} ${idx + 1}`.trim(),
+                        file_name: fn || 'Belum diunggah',
+                        has_file: Boolean(fn && fn !== 'Belum diunggah'),
+                        id: item.id,
+                    });
+                }
+            });
+            return results;
+        }
+
+        Object.entries(obj).forEach(([key, val]) => {
+            const lowerKey = key.toLowerCase();
+            const isAttachmentKey = lowerKey.includes('attachment') || lowerKey.includes('file');
+
+            if (isAttachmentKey && (typeof val === 'string' || val === null || typeof val === 'boolean')) {
+                const cleanLabel = key
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/_/g, ' ')
+                    .replace(/attachment/gi, '')
+                    .replace(/file/gi, '')
+                    .trim()
+                    .toUpperCase();
+
+                const fileName = typeof val === 'string' && val.trim() ? val.trim() : null;
+
+                results.push({
+                    label: cleanLabel || key.toUpperCase(),
+                    file_name: fileName || 'Belum diunggah',
+                    has_file: Boolean(fileName),
+                });
+            } else if (typeof val === 'object' && val !== null && !Array.isArray(val) && key !== 'businessFields' && key !== 'bank' && key !== 'paymentMethod') {
+                results = results.concat(extractAttachmentsRecursively(val, key.toUpperCase()));
+            } else if (Array.isArray(val) && (lowerKey === 'documents' || lowerKey === 'berkas' || lowerKey === 'files')) {
+                results = results.concat(extractAttachmentsRecursively(val, key.toUpperCase()));
+            }
+        });
+
+        return results;
+    };
+
+    const rawVendorDocs = extractAttachmentsRecursively(vendorDetail);
+
+    const vendorDocuments = rawVendorDocs.map((d: any, idx: number) => {
+        const fileName = d.file_name || '';
+        const hasFile = d.has_file ?? (Boolean(fileName) && String(fileName).trim() !== '' && String(fileName).trim() !== 'Belum diunggah' && String(fileName).trim() !== '-');
+        return {
+            id: d.id || `vdoc-${idx}`,
+            label: d.label || 'DOKUMEN VENDOR',
+            category: 'Vendor Document',
+            file_name: hasFile ? fileName : 'Belum diunggah',
+            is_vendor_doc: true,
+            has_file: hasFile,
+            created_at: 'Master Vendor',
+        };
+    });
+
+    const contractAttachments = (contract.attachments || []).map((a: any) => ({
+        ...a,
+        is_vendor_doc: false,
+        has_file: true,
+        is_uploaded: true,
+    }));
+
     const allItems = [...vendorDocuments, ...contractAttachments];
+
+    const filteredItems = useMemo(() => {
+        if (activeTab === 'available') {
+            return allItems.filter((item) => item.has_file);
+        }
+        if (activeTab === 'uploaded') {
+            return allItems.filter((item) => item.is_uploaded || !item.is_vendor_doc);
+        }
+        return allItems;
+    }, [allItems, activeTab]);
 
     const handleManualUploadClick = () => {
         if (!manualLabel.trim()) {
@@ -240,130 +317,160 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
     }
 
     return (
-        <div className="bg-surface-muted/30 custom-scrollbar flex flex-1 flex-col overflow-y-auto px-6 py-8">
+        <div className="bg-surface-base custom-scrollbar flex flex-1 flex-col overflow-y-auto p-4">
             <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
 
-            <div className="mb-6 flex items-center justify-between px-1">
+            <div className="mb-4 flex items-center justify-between">
                 <div>
-                    <h4 className="text-text-main text-[11px] font-semibold tracking-[0.3em] uppercase">Dokumen & Lampiran</h4>
-                    <p className="text-text-soft mt-1 text-[9px] font-bold  uppercase">
-                        Daftar kelengkapan dokumen dari Vendor dan Kontrak
+                    <h4 className="text-text-main text-[11px] font-bold tracking-wider uppercase">Dokumen & Lampiran</h4>
+                    <p className="text-text-soft mt-0.5 text-[9.5px] font-medium">
+                        Daftar kelengkapan berkas vendor dan dokumen kontrak
                     </p>
                 </div>
                 {canEdit && !showManualUpload && (
                     <button
                         onClick={() => setShowManualUpload(true)}
-                        className="flex h-9 items-center gap-2 rounded-xl bg-indigo-600 px-5 text-[10px] font-bold text-white uppercase shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-95"
+                        className="bg-primary text-primary-foreground flex h-8 items-center gap-1.5 rounded-md px-3 text-[10px] font-bold uppercase transition-colors hover:opacity-90 cursor-pointer"
                     >
-                        <Plus size={14} /> Tambah Lampiran
+                        <Plus size={13} /> Tambah Lampiran
                     </button>
                 )}
             </div>
 
             {canEdit && showManualUpload && (
-                <div className="animate-in slide-in-from-top-2 mb-8 duration-300">
-                    <div className="flex items-center gap-3 rounded-2xl border border-indigo-100 bg-indigo-50 p-4 backdrop-blur-sm">
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                placeholder="Nama lampiran tambahan..."
-                                value={manualLabel}
-                                onChange={(e) => setManualLabel(e.target.value)}
-                                className="text-text-main w-full rounded-xl border-indigo-100 bg-white px-4 py-2.5 text-sm font-medium shadow-sm transition-all outline-none focus:ring-2 focus:ring-indigo-500/20"
-                                onKeyDown={(e) => e.key === 'Enter' && handleManualUploadClick()}
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => {
-                                    setShowManualUpload(false);
-                                    setManualLabel('');
-                                }}
-                                className="text-text-soft flex h-10 w-10 items-center justify-center rounded-xl transition-all hover:bg-black/5"
-                            >
-                                <Trash2 size={18} />
-                            </button>
-                            <button
-                                onClick={handleManualUploadClick}
-                                className="flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-6 text-[10px] font-bold text-white uppercase shadow-lg shadow-indigo-200 transition-all hover:bg-indigo-700 active:scale-95"
-                            >
-                                <Plus size={14} /> Upload Berkas
-                            </button>
-                        </div>
+                <div className="mb-4">
+                    <div className="flex items-center gap-2 rounded-md border border-surface-border bg-surface-muted/30 p-2">
+                        <input
+                            type="text"
+                            placeholder="Nama lampiran tambahan..."
+                            value={manualLabel}
+                            onChange={(e) => setManualLabel(e.target.value)}
+                            className="text-text-main border-surface-border bg-surface-base flex-1 rounded-md border px-3 py-1.5 text-xs font-medium outline-none focus:border-primary"
+                            onKeyDown={(e) => e.key === 'Enter' && handleManualUploadClick()}
+                        />
+                        <button
+                            onClick={() => {
+                                setShowManualUpload(false);
+                                setManualLabel('');
+                            }}
+                            className="text-text-soft flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-border cursor-pointer"
+                        >
+                            <Trash2 size={15} />
+                        </button>
+                        <button
+                            onClick={handleManualUploadClick}
+                            className="bg-primary text-primary-foreground flex h-8 items-center gap-1.5 rounded-md px-3 text-[10px] font-bold uppercase cursor-pointer"
+                        >
+                            <Plus size={13} /> Upload
+                        </button>
                     </div>
                 </div>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {allItems.map((at) => {
-                    const isUp = uploading === at.label;
-                    return (
-                        <div
-                            key={at.id + at.label}
-                            onClick={() => setPreviewAt(at)}
+            {/* Tab Filter Bar */}
+            <div className="mb-3 flex items-center justify-between gap-2 border-b border-surface-border pb-2">
+                <div className="flex items-center gap-1">
+                    {[
+                        { key: 'all', label: 'Semua', count: allItems.length },
+                        { key: 'available', label: 'Tersedia', count: allItems.filter((i) => i.has_file).length },
+                        { key: 'uploaded', label: 'Uploaded', count: allItems.filter((i) => (i as any).is_uploaded || !i.is_vendor_doc).length },
+                    ].map((tab) => (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setActiveTab(tab.key as any)}
                             className={cn(
-                                'group relative flex flex-col justify-between rounded-2xl border p-5 transition-all duration-300 outline-none',
-                                'border-surface-border hover:border-text-main cursor-pointer bg-white hover:-translate-y-1 hover:shadow-2xl',
+                                'flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all cursor-pointer',
+                                activeTab === tab.key
+                                    ? 'bg-primary text-primary-foreground'
+                                    : 'text-text-soft hover:bg-surface-muted hover:text-text-main',
                             )}
                         >
-                            <div className="mb-4 flex items-start justify-between">
-                                <div
-                                    className={cn(
-                                        'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl transition-all duration-300',
-                                        at.is_vendor_doc ? 'bg-amber-50 text-amber-600' : 'bg-indigo-50 text-indigo-600',
-                                        'group-hover:scale-110',
-                                    )}
-                                >
-                                    <FileCheck size={24} strokeWidth={2.5} />
+                            <span>{tab.label}</span>
+                            <span className={cn('rounded-full px-1.5 py-0.2 text-[9px]', activeTab === tab.key ? 'bg-white/20 text-white' : 'bg-surface-muted text-text-soft')}>
+                                {tab.count}
+                            </span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            <div className="rounded-md border border-surface-border bg-surface-base">
+                <div className="divide-y divide-surface-border">
+                    {filteredItems.map((at) => {
+                        const isUp = uploading === at.label;
+                        const hasFile = (at as any).has_file ?? (Boolean(at.file_name) && at.file_name !== 'Belum diunggah');
+
+                        return (
+                            <div
+                                key={at.id + at.label}
+                                onClick={() => hasFile && setPreviewAt(at)}
+                                className={cn(
+                                    'flex items-center justify-between gap-3 px-3 py-2.5 transition-colors',
+                                    hasFile
+                                        ? 'hover:bg-surface-muted/40 cursor-pointer'
+                                        : 'bg-surface-muted/20 opacity-50 cursor-not-allowed',
+                                )}
+                            >
+                                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                    <FileCheck size={16} className={cn('shrink-0', hasFile ? 'text-emerald-600 dark:text-emerald-400' : 'text-text-soft')} />
+
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                        <span className="text-text-main truncate text-[11px] font-bold uppercase leading-tight" title={at.label}>
+                                            {at.label}
+                                        </span>
+                                        <span className="text-text-main truncate text-[10px] font-medium mt-0.5 opacity-90">
+                                            {at.file_name}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <a
-                                        href={
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <span
+                                        className={cn(
+                                            'rounded px-1.5 py-0.5 text-[8px] font-semibold uppercase',
                                             at.is_vendor_doc
-                                                ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id)
-                                                : contractApi.attachmentDownloadUrl(contract.id, at.id)
-                                        }
-                                        download
-                                        onClick={(e) => e.stopPropagation()}
-                                        className="text-text-soft hover:text-text-main transition-colors"
-                                        title="Download"
+                                                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                                : 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400',
+                                        )}
                                     >
-                                        <Download size={16} />
-                                    </a>
+                                        {at.is_vendor_doc ? 'VENDOR' : 'KONTRAK'}
+                                    </span>
+
+                                    {hasFile && (
+                                        <a
+                                            href={
+                                                at.is_vendor_doc
+                                                    ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id)
+                                                    : contractApi.attachmentDownloadUrl(contract.id, at.id)
+                                            }
+                                            download
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-text-soft hover:text-text-main p-1 transition-colors"
+                                            title="Unduh Berkas"
+                                        >
+                                            <Download size={14} />
+                                        </a>
+                                    )}
+
                                     {!at.is_vendor_doc && canEdit && (
                                         <button
+                                            type="button"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleDelete(at.id, at.label);
                                             }}
-                                            className="text-text-soft transition-colors hover:text-rose-600"
-                                            title="Delete"
+                                            className="text-text-soft hover:text-rose-600 p-1 transition-colors cursor-pointer"
+                                            title="Hapus Berkas"
                                         >
-                                            <Trash2 size={16} />
+                                            <Trash2 size={14} />
                                         </button>
                                     )}
                                 </div>
                             </div>
-
-                            <div className="min-w-0">
-                                <div className="text-text-main truncate text-[12px] font-semibold tracking-tight uppercase" title={at.label}>
-                                    {at.label}
-                                </div>
-                                <div className="mt-1 flex items-center gap-2">
-                                    <span
-                                        className={cn(
-                                            'rounded px-1.5 py-0.5 text-[8px] font-semibold uppercase',
-                                            at.is_vendor_doc ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700',
-                                        )}
-                                    >
-                                        {at.is_vendor_doc ? 'VENDOR' : 'CONTRACT'}
-                                    </span>
-                                    <span className="text-text-soft/40 truncate text-[9px] font-bold">{at.file_name}</span>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
 
                 {allItems.length === 0 && (
                     <div className="col-span-full flex flex-col items-center justify-center py-20 text-center opacity-40">

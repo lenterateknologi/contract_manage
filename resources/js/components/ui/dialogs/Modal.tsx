@@ -19,6 +19,8 @@ interface ModalProps {
     maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full';
     className?: string;
     showClose?: boolean;
+    headerVariant?: 'default' | 'primary' | 'danger';
+    headerIcon?: React.ReactNode;
 }
 
 const maxWidthMap = {
@@ -43,29 +45,54 @@ export function Modal({
     maxWidth = 'md',
     className,
     showClose = true,
+    headerVariant = 'default',
+    headerIcon,
 }: ModalProps) {
+    const isBannerHeader = headerVariant === 'primary' || headerVariant === 'danger';
+    const bgClass = headerVariant === 'danger' ? 'bg-rose-600 text-white' : 'bg-primary text-primary-foreground';
+
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent 
                 className={cn(
                     maxWidthMap[maxWidth],
-                    'p-0 border-none shadow-2xl bg-surface-base rounded-[24px]',
+                    'p-0 border-none shadow-2xl bg-surface-base rounded-[24px] overflow-hidden',
                     className
                 )}
             >
                 {(title || description) && (
-                    <DialogHeader className="p-8 border-b border-surface-border bg-surface-muted/30 text-left rounded-t-[24px] overflow-hidden">
-                        {title && (
-                            <DialogTitle className="text-base font-bold text-text-main">
-                                {title}
-                            </DialogTitle>
-                        )}
-                        {description && (
-                            <DialogDescription className="text-xs font-medium text-text-desc mt-1">
-                                {description}
-                            </DialogDescription>
-                        )}
-                    </DialogHeader>
+                    isBannerHeader ? (
+                        <div className="p-[1px] pb-0">
+                            <div className={cn(bgClass, "px-5 py-3.5 relative overflow-hidden flex items-center justify-between rounded-[8px] border border-white/10 shadow-xs")}>
+                                <div className="flex items-center gap-3 z-10 pr-10">
+                                    {headerIcon && (
+                                        <div className="bg-white/15 border border-white/20 shadow-xs flex h-9 w-9 items-center justify-center rounded-lg backdrop-blur-xs text-white">
+                                            {headerIcon}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <h3 className="text-sm font-bold tracking-wide text-white">{title}</h3>
+                                        {description && (
+                                            <p className="text-white/80 text-[10.5px] font-normal mt-0.5">{description}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <DialogHeader className="p-8 border-b border-surface-border bg-surface-muted/30 text-left overflow-hidden rounded-t-[24px]">
+                            {title && (
+                                <DialogTitle className="text-base font-bold text-text-main">
+                                    {title}
+                                </DialogTitle>
+                            )}
+                            {description && (
+                                <DialogDescription className="text-xs font-medium text-text-desc mt-1">
+                                    {description}
+                                </DialogDescription>
+                            )}
+                        </DialogHeader>
+                    )
                 )}
                 
                 <div className="p-8">

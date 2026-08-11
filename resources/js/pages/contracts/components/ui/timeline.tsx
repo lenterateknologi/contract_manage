@@ -22,7 +22,7 @@ export const TimelineItem = React.forwardRef<HTMLLIElement, TimelineItemProps>(
     ({ className, status = 'waiting', ...props }, ref) => (
         <li
             ref={ref}
-            className={cn('relative pb-6 last:pb-0 group/timeline-item', className)}
+            className={cn('relative pb-2 last:pb-0 group/timeline-item', className)}
             {...props}
         />
     ),
@@ -60,7 +60,15 @@ export interface TimelineContentProps extends React.HTMLAttributes<HTMLDivElemen
 
 export const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentProps>(
     ({ className, ...props }, ref) => (
-        <div ref={ref} className={cn('flex flex-col gap-1.5 min-w-0', className)} {...props} />
+        <div
+            ref={ref}
+            className={cn(
+                'relative flex w-full flex-col gap-1.5 min-w-0',
+                'before:absolute before:top-[11px] before:-left-6 before:h-px before:w-5 before:bg-surface-border/60',
+                className,
+            )}
+            {...props}
+        />
     ),
 );
 TimelineContent.displayName = 'TimelineContent';

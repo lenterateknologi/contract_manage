@@ -1,6 +1,6 @@
 import { Avatar } from '@/pages/contracts/components/ui/ui';
 import { Contract, ContractType } from '@/pages/contracts/types';
-import { Check, ChevronDown, ChevronUp, Info, Loader2, User } from 'lucide-react';
+import { Building2, Check, ChevronDown, ChevronUp, Info, Loader2, User } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContractInfoForm, MetaBadge } from './ContractInfoForm';
 import { TaxToggle } from './TaxToggle';
@@ -195,40 +195,10 @@ export function DraftEditableInfoCard({
             {/* Card 1: Informasi Kontrak */}
             <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
                 <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-tight text-primary-foreground">
+                    <div className="flex items-center gap-2 text-xs font-normal uppercase tracking-tight text-primary-foreground">
                         <Info size={16} className="text-primary-foreground/80" /> Informasi Kontrak
                     </div>
                     <div className="flex items-center gap-2">
-                        {isDraft && hasChanges && (
-                            <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
-                                <button
-                                    type="button"
-                                    onClick={handleResetChanges}
-                                    disabled={saving}
-                                    className="px-2.5 py-1 text-xs font-medium text-primary-foreground/80 hover:text-primary-foreground rounded-lg hover:bg-white/10 transition-all cursor-pointer disabled:opacity-50"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleManualSave}
-                                    disabled={saving || !title.trim()}
-                                    className="px-3 py-1 text-xs font-semibold text-primary bg-white hover:bg-white/90 active:scale-95 rounded-lg shadow-sm transition-all flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                                >
-                                    {saving ? (
-                                        <>
-                                            <Loader2 size={12} className="animate-spin text-primary" />
-                                            <span>Menyimpan...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Check size={12} className="text-primary" />
-                                            <span>Simpan</span>
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        )}
                         <button onClick={() => setMinimized(!minimized)} className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5 ml-1">
                             {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
                         </button>
@@ -262,48 +232,16 @@ export function DraftEditableInfoCard({
                             }}
                         />
 
-                        {isDraft && hasChanges && (
-                            <div className="pt-2 border-t border-surface-border/60 flex items-center justify-between gap-2 animate-in fade-in duration-200">
-                                <span className="text-[11px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-1">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />
-                                    Ada perubahan belum disimpan
-                                </span>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={handleResetChanges}
-                                        disabled={saving}
-                                        className="px-3 py-1.5 text-xs font-medium text-text-soft hover:text-text-main rounded-lg hover:bg-surface-muted transition-all cursor-pointer disabled:opacity-50"
-                                    >
-                                        Batal
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleManualSave}
-                                        disabled={saving || !title.trim()}
-                                        className="px-4 py-1.5 text-xs font-semibold text-white bg-primary hover:bg-primary/90 active:scale-95 rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                                    >
-                                        {saving ? (
-                                            <>
-                                                <Loader2 size={13} className="animate-spin" />
-                                                <span>Menyimpan...</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Check size={13} />
-                                                <span>Simpan Perubahan</span>
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
+
                     </div>
                 )}
             </div>
 
             {/* Card 2: Informasi Pengaju */}
             <RequesterInfoCard selected={selected} />
+
+            {/* Card 3: Detail Pihak Kedua / Vendor */}
+            <VendorInfoCard selected={selected} />
         </div>
     );
 }
@@ -315,7 +253,7 @@ export function RequesterInfoCard({ selected }: { selected: Contract }) {
     return (
         <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
             <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-tight text-primary-foreground">
+                <div className="flex items-center gap-2 text-xs font-normal uppercase tracking-tight text-primary-foreground">
                     <User size={16} className="text-primary-foreground/80" /> Informasi Pengaju
                 </div>
                 <button
@@ -348,65 +286,122 @@ export function RequesterInfoCard({ selected }: { selected: Contract }) {
                         </div>
 
                         {/* Hierarki Organisasi Pengaju */}
-                        <div className="mt-1 flex flex-col gap-1.5 rounded-lg bg-surface-muted/40 p-2.5 border border-surface-border/50 text-[11px]">
-                            <div className="flex items-center justify-between gap-2 border-b border-surface-border/40 pb-1.5">
-                                <span className="text-foreground font-semibold uppercase text-[9.5px]">Departemen</span>
-                                <span className="text-text-main font-bold truncate">{user?.department_name || '—'}</span>
+                        <div className="mt-1 flex flex-col gap-2.5 text-xs">
+                            <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Departemen :</span>
+                                <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.department_name || '—'}</span>
                             </div>
-                            <div className="flex items-center justify-between gap-2 border-b border-surface-border/40 pb-1.5">
-                                <span className="text-foreground font-semibold uppercase text-[9.5px]">Divisi</span>
-                                <span className="text-text-main font-bold truncate">{user?.division_name || '—'}</span>
+                            <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Divisi :</span>
+                                <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.division_name || '—'}</span>
                             </div>
-                            <div className="flex items-center justify-between gap-2 border-b border-surface-border/40 pb-1.5">
-                                <span className="text-foreground font-semibold uppercase text-[9.5px]">Perusahaan (PT)</span>
-                                <span className="text-text-main font-bold truncate">{user?.company_name || '—'}</span>
+                            <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Perusahaan (PT) :</span>
+                                <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.company_name || '—'}</span>
                             </div>
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="text-foreground font-semibold uppercase text-[9.5px]">Company Group</span>
-                                <span className="text-text-main font-bold truncate">{user?.company_group_name || '—'}</span>
+                            <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Company Group :</span>
+                                <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.company_group_name || '—'}</span>
+                            </div>
+                            <div className="leading-relaxed pt-0.5">
+                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider inline-block mr-1.5">Alamat Kantor / Pihak I :</span>
+                                <span className="text-slate-900 dark:text-slate-100 font-normal text-xs break-words">
+                                    {(user as any)?.address || selected.metadata?.meta_p1_alamat || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan'}
+                                </span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
                         <div className="flex items-center justify-between">
-                            <div className="text-foreground text-[10.5px] font-extrabold tracking-wider uppercase">
-                                Tgl Dibuat
+                            <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
+                                Tgl Dibuat :
                             </div>
                             <MetaBadge name="created_at" />
                         </div>
-                        <span className="text-text-main text-xs font-bold">{selected.created_at}</span>
+                        <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.created_at}</span>
                     </div>
 
                     <div className="border-surface-border mt-1 border-t pt-3">
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="flex flex-col gap-1">
-                                <div className="text-foreground text-[10.5px] font-extrabold tracking-wider uppercase">
-                                    Disetujui Oleh
+                            <div className="flex flex-col gap-1 items-start">
+                                <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
+                                    Disetujui Oleh :
                                 </div>
                                 {selected.assigned_by ? (
                                     <div className="flex items-center gap-2">
                                         <Avatar user={selected.assigned_by} size="sm" />
-                                        <span className="text-text-main text-xs font-bold">{selected.assigned_by.name}</span>
+                                        <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.assigned_by.name}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-text-soft text-[11px] font-medium italic opacity-60">Belum disetujui manager</span>
+                                    <span className="text-slate-400 text-xs font-medium italic opacity-60">Belum disetujui manager</span>
                                 )}
                             </div>
 
-                            <div className="flex flex-col gap-1">
-                                <div className="text-foreground text-[10.5px] font-extrabold tracking-wider uppercase">
-                                    Ditugaskan
+                            <div className="flex flex-col gap-1 items-start">
+                                <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
+                                    Ditugaskan :
                                 </div>
                                 {selected.assigned_pic ? (
                                     <div className="flex items-center gap-2">
                                         <Avatar user={selected.assigned_pic} size="sm" />
-                                        <span className="text-text-main text-xs font-bold">{selected.assigned_pic.name}</span>
+                                        <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.assigned_pic.name}</span>
                                     </div>
                                 ) : (
-                                    <span className="text-text-soft text-[11px] font-medium italic opacity-60">Belum ditugaskan</span>
+                                    <span className="text-slate-400 text-xs font-medium italic opacity-60">Belum ditugaskan</span>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export function VendorInfoCard({ selected }: { selected: Contract }) {
+    const [minimized, setMinimized] = useState(false);
+    const vendor = (selected as any)?.vendor;
+    const vendorName = vendor?.name || vendor?.vendor_name || selected.metadata?.meta_p2_entity || '—';
+    const picName = vendor?.pic_name || vendor?.detail?.pic || selected.metadata?.meta_p2_signer || '—';
+    const picPosition = vendor?.pic_position || vendor?.detail?.pic_position || selected.metadata?.meta_p2_signer_position || '—';
+    const address = vendor?.address || vendor?.detail?.address || selected.metadata?.meta_p2_alamat || '—';
+
+    return (
+        <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
+            <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
+                <div className="flex items-center gap-2 text-xs font-normal uppercase tracking-tight text-primary-foreground">
+                    <Building2 size={16} className="text-primary-foreground/80" /> Detail Pihak Kedua / Vendor
+                </div>
+                <button
+                    onClick={() => setMinimized(!minimized)}
+                    className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5"
+                >
+                    {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+                </button>
+            </div>
+
+            {!minimized && (
+                <div className="grid grid-cols-1 gap-3.5 p-3.5">
+                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-slate-200/80 dark:border-slate-800/80 pb-2.5">
+                        <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase shrink-0">
+                            Nama Vendor / Pihak II :
+                        </span>
+                        <span className="text-slate-900 dark:text-slate-100 text-xs font-normal truncate">{vendorName}</span>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5 text-xs">
+                        <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                            <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Nama PIC :</span>
+                            <span className="text-slate-900 dark:text-slate-100 font-normal truncate">{picName}</span>
+                        </div>
+                        <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                            <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Jabatan PIC :</span>
+                            <span className="text-slate-900 dark:text-slate-100 font-normal truncate">{picPosition}</span>
+                        </div>
+                        <div className="leading-relaxed pt-0.5">
+                            <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider inline-block mr-1.5">Alamat Resmi :</span>
+                            <span className="text-slate-900 dark:text-slate-100 font-normal text-xs break-words">{address}</span>
                         </div>
                     </div>
                 </div>

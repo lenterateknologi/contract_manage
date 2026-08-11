@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { type NavGroup, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
 import {
+    Archive,
     BarChart3,
     Building2,
     Clock,
@@ -48,6 +49,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import AppLogo from './AppLogo';
 
 const iconMap: Record<string, LucideIcon> = {
+    Archive,
     LayoutGrid,
     FileText,
     Clock,
