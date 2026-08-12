@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from '@/components/ui/dialogs/Dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialogs/Dialog';
 
 interface Props {
     isOpen: boolean;
@@ -19,10 +19,10 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
             <DialogContent className="flex h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-100 p-0 shadow-2xl">
 
                 {/* Minimal Header */}
-                <div className="flex h-10 shrink-0 items-center border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 px-4 pr-12">
-                    <span className="text-slate-800 dark:text-zinc-100 text-xs truncate font-semibold">
+                <div className="flex h-10 shrink-0 items-center border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 px-4 pr-12">
+                    <DialogTitle className="text-white dark:text-zinc-100 text-xs truncate font-semibold">
                         {fileName}
-                    </span>
+                    </DialogTitle>
                 </div>
 
                 {/* Preview Frame */}

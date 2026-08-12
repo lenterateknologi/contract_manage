@@ -43,9 +43,8 @@ export default function AgreementView({
     const [showMoreActions, setShowMoreActions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
-    const [uploadNote, setUploadNote] = useState('');
-
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Sidebar/Dropdown click outside
     useEffect(() => {
@@ -395,24 +394,34 @@ export default function AgreementView({
 
                     {canEdit && (
                         <div className="flex flex-col items-end gap-1">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                className="hidden"
+                                accept={isRevision ? '.pdf,.doc,.docx,.DOC,.DOCX,.PDF' : '.docx,.DOCX'}
+                                onChange={handleFileChange}
+                                onClick={(e) => {
+                                    // Reset value so re-selecting same file triggers onChange
+                                    (e.target as HTMLInputElement).value = '';
+                                }}
+                            />
                             <Button
-                                asChild
-                                className={cn('h-10 px-6', (uploading || (isSigner && !stepDownloaded)) && 'pointer-events-none opacity-50')}
+                                variant="primary"
+                                className="h-10 px-6 gap-2 font-bold cursor-pointer"
+                                disabled={uploading}
+                                onClick={() => {
+                                    if (isSigner && !stepDownloaded) {
+                                        showToast('Harap unduh dokumen terlebih dahulu sebelum mengunggah persetujuan.', 'warning');
+                                        return;
+                                    }
+                                    fileInputRef.current?.click();
+                                }}
                             >
-                                <label className="cursor-pointer">
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        accept={isRevision ? '.pdf,.doc,.docx,.DOC,.DOCX,.PDF' : '.docx,.DOCX'}
-                                        onChange={handleFileChange}
-                                        disabled={uploading || (isSigner && !stepDownloaded)}
-                                    />
-                                    {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                                    Upload
-                                </label>
+                                {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                <span>Upload</span>
                             </Button>
                             {isSigner && !stepDownloaded && (
-                                <span className="text-danger text-[9px] font-medium italic">Unduh dokumen sebelum upload</span>
+                                <span className="text-amber-600 dark:text-amber-400 text-[9px] font-medium italic">Unduh dokumen sebelum upload</span>
                             )}
                         </div>
                     )}
