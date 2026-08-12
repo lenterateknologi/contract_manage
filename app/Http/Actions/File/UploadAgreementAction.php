@@ -26,7 +26,8 @@ class UploadAgreementAction
             ->max('version_no') ?? 0;
 
         $versionNo = $lastVersion + 1;
-        $path = $file->storeAs('contracts/'.$contract->id.'/agreements', "agreement_v{$versionNo}.docx", 'local');
+        $extension = $file->getClientOriginalExtension() ?: 'docx';
+        $path = $file->storeAs('contracts/'.$contract->id.'/agreements', "agreement_v{$versionNo}.{$extension}", 'local');
 
         ContractVersion::create([
             'contract_id' => $contract->id,

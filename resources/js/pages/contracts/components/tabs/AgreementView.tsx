@@ -118,9 +118,13 @@ export default function AgreementView({
 
         const versionToDownload = vId ? versionsList.find((v) => v.id === vId) : versionsList.sort((a, b) => b.version_no - a.version_no)[0];
 
-        if (!versionToDownload) return;
-
-        window.open(`/api/contracts/${contract.id}/file/${versionToDownload.version_no}?type=${effectiveDocType}`, '_blank');
+        const downloadUrl = `/api/contracts/${contract.id}/file/${versionToDownload.version_no}?type=${effectiveDocType}`;
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = versionToDownload.file_name || 'document';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
 
         if (isSigner && activeSignerApproval) {
             const newMeta = { ...contract.metadata };
