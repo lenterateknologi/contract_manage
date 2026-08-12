@@ -345,15 +345,15 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
             />
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="border-surface-border bg-card max-w-[480px] overflow-hidden rounded-[2.5rem] border p-0 shadow-2xl">
-                    <div className="bg-primary relative overflow-hidden p-10 text-white">
-                        <div className="absolute top-0 right-0 rotate-12 p-8 opacity-10">
+                <DialogContent className="border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-100 max-w-[480px] overflow-hidden rounded-[2.5rem] border p-0 shadow-2xl">
+                    <div className="relative overflow-hidden px-8 py-6 bg-slate-100/90 dark:bg-zinc-800/90 border-b border-slate-200/80 dark:border-zinc-700/80 text-slate-800 dark:text-zinc-200">
+                        <div className="absolute top-0 right-0 rotate-12 p-8 opacity-5">
                             <LayoutGrid size={120} strokeWidth={1} />
                         </div>
-                        <DialogTitle className="relative z-10 flex items-center gap-3 text-2xl font-semibold tracking-tight uppercase">
+                        <DialogTitle className="relative z-10 flex items-center gap-3 text-lg font-bold tracking-tight text-slate-800 dark:text-zinc-200">
                             {editingItem ? 'Edit' : 'Registrasi'} {isModuleView ? 'Modul' : 'Grup'}
                         </DialogTitle>
-                        <DialogDescription className="relative z-10 mt-2 text-[10px] leading-relaxed font-medium  text-white/50 uppercase">
+                        <DialogDescription className="relative z-10 mt-1 text-xs font-medium text-slate-500 dark:text-zinc-400">
                             Konfigurasi struktur hierarki navigasi dan endpoint sistem administrasi
                         </DialogDescription>
                     </div>

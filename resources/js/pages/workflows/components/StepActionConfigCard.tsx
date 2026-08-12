@@ -216,7 +216,7 @@ export function StepActionConfigCard({
     const showAbsoluteStepSelector = transitionType === 'absolute';
 
     return (
-        <div className="relative space-y-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/40">
+        <div className="relative space-y-2 rounded-lg border border-slate-200/80 bg-white p-3 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/90">
             {/* Card Header */}
             <div className={cn(
                 "flex items-center justify-between border-b pb-2 px-3 py-2.5 -mx-3 -mt-3 rounded-t-lg transition-all",
@@ -224,7 +224,7 @@ export function StepActionConfigCard({
                 headerTheme.border
             )}>
                 <span className={cn(
-                    "text-sm font-semibold tracking-wider font-bold",
+                    "text-sm tracking-wider font-bold",
                     headerTheme.text
                 )}>
                     Aksi #{actIdx + 1}
@@ -266,26 +266,26 @@ export function StepActionConfigCard({
                 {/* Cell 1: Nama Aksi */}
                 <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Nama Aksi</label>
+                        <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Nama Aksi</label>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="relative">
                         <Select
                             value={act.master_action_id || ''}
                             onValueChange={(val) => {
-                                const matched = MASTER_ACTIONS.find((m: any) => m.id === val || m.code === val);
+                                const ma = MASTER_ACTIONS.find((m: any) => m.id === val);
                                 updateAction(actIdx, {
                                     master_action_id: val,
-                                    master_action_name: '',
-                                    master_action: matched || null,
+                                    master_action: ma || null,
+                                    alias: ma ? ma.name : act.alias,
                                 });
                             }}
                         >
-                            <SelectTrigger className="h-10 py-2 px-3 rounded-lg border-slate-200 bg-white dark:bg-slate-900 text-sm font-medium  focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900">
+                            <SelectTrigger className="h-10 py-2 px-3 rounded-lg border-slate-200/80 bg-white text-sm font-medium focus:border-slate-900 dark:border-zinc-700/80 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100">
                                 <SelectValue placeholder="Pilih Aksi" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                            <SelectContent className="rounded-lg border-slate-200/80 bg-white dark:border-zinc-700/80 dark:bg-zinc-900">
                                 {MASTER_ACTIONS.map((ma: any) => (
-                                    <SelectItem key={ma.id} value={ma.id} className="text-sm font-medium ">
+                                    <SelectItem key={ma.id} value={ma.id} className="text-sm font-medium">
                                         {ma.name}
                                     </SelectItem>
                                 ))}
@@ -296,12 +296,12 @@ export function StepActionConfigCard({
 
                 {/* Cell 1b: Alias Aksi */}
                 <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Alias Aksi (Label Tombol)</label>
+                    <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Alias Aksi (Label Tombol)</label>
                     <input
                         type="text"
                         value={act.alias || ''}
                         onChange={(e) => updateAction(actIdx, { alias: e.target.value })}
-                        className="h-10 w-full py-2 px-3 rounded-lg border border-slate-200 bg-white dark:bg-slate-900 text-sm font-medium transition-all focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900"
+                        className="h-10 w-full py-2 px-3 rounded-lg border border-slate-200/80 bg-white text-sm font-medium transition-all focus:border-slate-900 dark:border-zinc-700/80 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100"
                         placeholder="Contoh: Kirim Review, Kembalikan ke Legal"
                     />
                 </div>

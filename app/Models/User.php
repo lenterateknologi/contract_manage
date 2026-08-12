@@ -73,10 +73,21 @@ class User extends Authenticatable
         'can_change_company',
         'allowed_companies',
         'can_change_division',
-        'allowed_divisions',
         'can_change_department',
         'allowed_departments',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($user) {
+            if (empty($user->contract_filter_template_id)) {
+                $templateId = ContractFilterTemplate::where('name', 'like', '%staff biasa%')->value('id');
+                if ($templateId) {
+                    $user->contract_filter_template_id = $templateId;
+                }
+            }
+        });
+    }
 
     protected function casts(): array
     {

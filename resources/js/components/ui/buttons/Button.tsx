@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 /* ponytail: solid filled button themes for dark mode instead of forced outline */
 const buttonThemes = {
-    primary: 'bg-primary text-primary-foreground hover:bg-primary-hover dark:bg-white dark:text-black dark:hover:bg-zinc-200 dark:border-none',
+    primary: 'bg-primary text-primary-foreground hover:bg-primary-hover dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90 dark:border-none',
     outline: 'border border-border bg-transparent text-foreground hover:bg-muted dark:bg-transparent dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800',
     ghost: 'hover:bg-surface-muted text-text-main dark:text-zinc-300 dark:hover:bg-zinc-800/80',
     link: 'text-primary underline-offset-4 hover:underline lowercase dark:text-white',

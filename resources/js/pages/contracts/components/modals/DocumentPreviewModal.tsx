@@ -16,11 +16,11 @@ export default function DocumentPreviewModal({ isOpen, onClose, url, fileName }:
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             {/* ponytail: simplified full preview layout, removed unused docx styles/libraries */}
-            <DialogContent className="flex h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border border-surface-border bg-surface-base p-0 shadow-lg">
+            <DialogContent className="flex h-[85vh] w-full max-w-4xl flex-col gap-0 overflow-hidden border border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-100 p-0 shadow-2xl">
 
                 {/* Minimal Header */}
-                <div className="flex h-10 shrink-0 items-center border-b border-surface-border bg-surface-base px-4 pr-12">
-                    <span className="text-text-main text-xs truncate font-medium">
+                <div className="flex h-10 shrink-0 items-center border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 px-4 pr-12">
+                    <span className="text-slate-800 dark:text-zinc-100 text-xs truncate font-semibold">
                         {fileName}
                     </span>
                 </div>

@@ -1087,7 +1087,7 @@ function ContractPage({
                                         <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden h-full">
                                             {view === 'mine' && (
                                                 <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
-                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border/70 rounded-xl w-full overflow-x-auto">
+                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full overflow-x-auto">
                                                         {/* Left side tabs: Category Tabs */}
                                                         <div className="flex items-center gap-1.5">
                                                             {[
@@ -1180,7 +1180,7 @@ function ContractPage({
 
                                             {view === 'pending' && (
                                                 <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
-                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border/70 rounded-xl w-full">
+                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full">
                                                         <div className="flex items-center gap-1.5">
                                                             {[
                                                                 { key: 'pending', label: 'Menunggu Persetujuan', icon: Clock },
@@ -1235,7 +1235,7 @@ function ContractPage({
 
                                             {view === 'expiry' && (
                                                 <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
-                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border/70 rounded-xl w-full overflow-x-auto">
+                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full overflow-x-auto">
                                                         <div className="flex items-center gap-1.5">
                                                             {[
                                                                 { key: 'all', label: 'Semua Dokumen', icon: Layers },
@@ -1292,7 +1292,7 @@ function ContractPage({
 
                                             {view === 'contracts' && (
                                                 <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
-                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-white dark:bg-zinc-900 border border-surface-border/70 rounded-xl w-full overflow-x-auto">
+                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full overflow-x-auto">
                                                         {/* Left side tabs: Category Tabs */}
                                                         <div className="flex items-center gap-1.5">
                                                             {[

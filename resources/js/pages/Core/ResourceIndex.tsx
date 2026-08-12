@@ -226,30 +226,32 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 );
             }
 
-            // Render merged role, division, and department column for users resource
+            // Render merged role, division, and department column for users resource (3 lines)
             if (resourceSlug === 'users' && (col.name === 'role_unit' || col.name === 'role_relation.name')) {
                 const roleName = row.role_relation?.name || row.roleRelation?.name || row.role?.name || '—';
                 const divName = row.division?.name;
                 const deptName = row.department?.name;
-                const unitStr = [divName, deptName].filter(Boolean).join(' • ');
 
                 return (
                     <div className="flex flex-col gap-0.5 text-left">
                         <span className="font-semibold text-xs text-text-main">{roleName}</span>
-                        <span className="text-[11px] text-text-soft font-medium">{unitStr || '—'}</span>
+                        {divName && <span className="text-[11px] text-text-soft font-medium">{divName}</span>}
+                        {deptName && <span className="text-[10.5px] text-text-soft/80 font-medium">{deptName}</span>}
                     </div>
                 );
             }
 
-            // Render merged company and group column for users resource
+            // Render merged company, group, and region column for users resource (3 lines)
             if (resourceSlug === 'users' && (col.name === 'company_entity' || col.name === 'company.name')) {
                 const companyName = row.company?.name || '—';
                 const groupName = row.company_group?.name || row.companyGroup?.name || row.company?.company_group?.name || row.company?.companyGroup?.name;
+                const regionName = row.region?.name;
 
                 return (
                     <div className="flex flex-col gap-0.5 text-left">
                         <span className="font-semibold text-xs text-text-main">{companyName}</span>
                         {groupName && <span className="text-[11px] text-text-soft font-medium">{groupName}</span>}
+                        {regionName && <span className="text-[10.5px] text-primary/90 font-medium">{regionName}</span>}
                     </div>
                 );
             }
@@ -794,22 +796,20 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             {/* Reusable Form Dialog */}
             {DIALOG_RESOURCES.includes(resourceSlug) && (
                 <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
-                    <DialogContent className={`border-border bg-card text-card-foreground overflow-hidden rounded-[24px] border p-0 shadow-xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[850px]' : 'sm:max-w-[600px]'}`}>
+                    <DialogContent className={`border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[24px] border p-0 shadow-2xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[850px]' : 'sm:max-w-[600px]'}`}>
                         <form onSubmit={handleDeptSubmit}>
-                            <div className="p-[1px] pb-0">
-                                <div className="bg-primary text-primary-foreground px-5 py-3.5 relative overflow-hidden flex items-center justify-between rounded-[8px] border border-white/10 shadow-xs">
-                                    <div className="flex items-center gap-3 z-10 pr-10">
-                                        <div className="bg-white/15 border border-white/20 shadow-xs flex h-9 w-9 items-center justify-center rounded-lg backdrop-blur-xs">
-                                            <Shield size={18} className="text-white" />
-                                        </div>
-                                        <div>
-                                            <DialogTitle className="text-sm font-bold tracking-wide text-white">
-                                                {editDataId ? `Ubah ${title}` : `Tambah ${title}`}
-                                            </DialogTitle>
-                                            <DialogDescription className="text-white/80 text-[10.5px] font-normal">
-                                                {editDataId ? `Ubah informasi ${title.toLowerCase()} Anda` : `Buat data ${title.toLowerCase()} baru`}
-                                            </DialogDescription>
-                                        </div>
+                            <div className="px-6 py-4 border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 flex items-center justify-between rounded-t-[24px]">
+                                <div className="flex items-center gap-3 z-10 pr-10">
+                                    <div className="bg-primary/10 text-primary border border-primary/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                        <Shield size={18} />
+                                    </div>
+                                    <div>
+                                        <DialogTitle className="text-sm font-bold tracking-tight text-slate-800 dark:text-zinc-100">
+                                            {editDataId ? `Ubah ${title}` : `Tambah ${title}`}
+                                        </DialogTitle>
+                                        <DialogDescription className="text-slate-500 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                            {editDataId ? `Ubah informasi ${title.toLowerCase()} Anda` : `Buat data ${title.toLowerCase()} baru`}
+                                        </DialogDescription>
                                     </div>
                                 </div>
                             </div>

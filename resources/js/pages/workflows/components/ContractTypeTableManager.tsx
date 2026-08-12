@@ -53,10 +53,10 @@ export default function ContractTypeTableManager({
 
     return (
         <div className="space-y-3 w-full h-full flex flex-col">
-            <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between border-b border-slate-200/80 bg-white/95 backdrop-blur-xs dark:bg-slate-900/95 dark:border-zinc-800 pb-2.5 pt-1 gap-3 shrink-0">
+            <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 backdrop-blur-xs pb-2.5 pt-1 px-3 rounded-xl gap-3 shrink-0">
                 <div className="flex items-center gap-2">
                     <LayoutTemplate size={14} className="text-primary" />
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-100">
                         {title}
                     </h3>
                     <Badge variant="secondary" className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border-0">
@@ -72,7 +72,7 @@ export default function ContractTypeTableManager({
                     >
                         Pilih Semua
                     </button>
-                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                    <span className="text-slate-300 dark:text-zinc-700">•</span>
                     <button
                         type="button"
                         onClick={handleClearAll}
@@ -81,15 +81,15 @@ export default function ContractTypeTableManager({
                         Bersihkan
                     </button>
 
-                    <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-xl border border-slate-200/60 dark:border-slate-800 text-[11px] font-medium">
+                    <div className="flex bg-slate-200/60 dark:bg-zinc-900/60 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/80 text-[11px] font-medium">
                         <button
                             type="button"
                             onClick={() => setFilterMode('all')}
                             className={cn(
                                 "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
                                 filterMode === 'all'
-                                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 shadow-xs font-semibold"
+                                    : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200"
                             )}
                         >
                             Semua ({contractTypes.length})
@@ -100,8 +100,8 @@ export default function ContractTypeTableManager({
                             className={cn(
                                 "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
                                 filterMode === 'selected'
-                                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 shadow-xs font-semibold"
+                                    : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200"
                             )}
                         >
                             Terpilih ({contractTypeIds.length})
@@ -112,8 +112,8 @@ export default function ContractTypeTableManager({
                             className={cn(
                                 "px-2.5 py-1 rounded-lg transition-all cursor-pointer",
                                 filterMode === 'unselected'
-                                    ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold"
-                                    : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                                    ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 shadow-xs font-semibold"
+                                    : "text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200"
                             )}
                         >
                             Belum Terpilih ({Math.max(0, contractTypes.length - contractTypeIds.length)})

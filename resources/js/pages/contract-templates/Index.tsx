@@ -348,10 +348,10 @@ export default function Templates({ folders, templates }: Props) {
                         >
                             <div
                                 className={cn(
-                                    'group flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs font-medium transition-all active:scale-[0.98]',
+                                    'group flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs transition-all active:scale-[0.98]',
                                     currentFolderId === null
-                                        ? 'bg-primary text-white border-primary shadow-xs font-semibold'
-                                        : 'border-transparent text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-foreground',
+                                        ? 'bg-slate-200/80 dark:bg-zinc-800 border-slate-300/80 dark:border-zinc-700 text-slate-950 dark:text-zinc-100 shadow-2xs font-extrabold'
+                                        : 'border-transparent text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800/80 hover:text-foreground font-medium',
                                 )}
                                 onClick={() => setCurrentFolderId(null)}
                                 onContextMenu={(e) => handleContextMenu(e, 'background', 'root', 'Repository Root')}
@@ -371,7 +371,7 @@ export default function Templates({ folders, templates }: Props) {
                             >
                                 <Folder
                                     size={15}
-                                    className={cn('transition-colors', currentFolderId === null ? 'fill-current' : 'text-text-soft')}
+                                    className={cn('transition-colors', currentFolderId === null ? 'text-primary fill-primary/20' : 'text-text-soft')}
                                 />
                                 Repository Root
                             </div>
@@ -1227,7 +1227,7 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                 className={cn(
                     'group flex cursor-grab active:cursor-grabbing items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] transition-all select-none leading-none my-0.5 border',
                     isSelected 
-                        ? 'bg-primary text-white border-primary shadow-xs font-semibold' 
+                        ? 'bg-slate-200/80 dark:bg-zinc-800 border-slate-300/80 dark:border-zinc-700 text-slate-950 dark:text-zinc-100 shadow-2xs font-extrabold' 
                         : 'border-transparent text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800/80 hover:text-foreground font-medium',
                 )}
                 onClick={() => onSelect(folder.id)}
@@ -1236,7 +1236,7 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                 <div
                     className={cn(
                         "p-0.5 rounded transition-colors",
-                        isSelected ? "hover:bg-white/20 text-white" : "hover:bg-slate-200/70 dark:hover:bg-zinc-700/70 text-text-soft"
+                        isSelected ? "hover:bg-slate-300/50 dark:hover:bg-zinc-700/80 text-slate-950 dark:text-zinc-100" : "hover:bg-slate-200/70 dark:hover:bg-zinc-700/70 text-text-soft"
                     )}
                     onClick={(e) => {
                         e.stopPropagation();
@@ -1245,9 +1245,9 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                 >
                     {hasChildren ? (
                         isExpanded ? (
-                            <ChevronDown size={12} className={isSelected ? "text-white" : "text-text-soft"} />
+                            <ChevronDown size={12} className={isSelected ? "text-slate-900 dark:text-zinc-100" : "text-text-soft"} />
                         ) : (
-                            <ChevronRight size={12} className={isSelected ? "text-white" : "text-text-soft"} />
+                            <ChevronRight size={12} className={isSelected ? "text-slate-900 dark:text-zinc-100" : "text-text-soft"} />
                         )
                     ) : (
                         <div className="w-[12px]" />
@@ -1257,14 +1257,19 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                     size={14}
                     className={cn(
                         'shrink-0 transition-colors',
-                        isSelected ? 'text-white fill-white/20' : 'text-text-soft group-hover:text-primary',
+                        isSelected ? 'text-primary fill-primary/20 font-bold' : 'text-text-soft group-hover:text-primary',
                     )}
                 />
                 <span className="truncate tracking-tight">
                     {folder.name}
                 </span>
                 {folder.templates_count > 0 && (
-                    <span className="ml-auto text-[9px] text-text-soft font-medium px-1 py-0.2 rounded bg-slate-100 dark:bg-zinc-800/80">
+                    <span className={cn(
+                        "ml-auto text-[9px] font-medium px-1 py-0.2 rounded transition-colors",
+                        isSelected
+                            ? "bg-slate-300/60 dark:bg-zinc-700 text-slate-950 dark:text-zinc-100 font-extrabold"
+                            : "bg-slate-100 dark:bg-zinc-800/80 text-text-soft"
+                    )}>
                         {folder.templates_count}
                     </span>
                 )}

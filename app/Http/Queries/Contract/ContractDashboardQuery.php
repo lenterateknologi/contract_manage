@@ -66,7 +66,7 @@ class ContractDashboardQuery
         );
 
         // KPI Cards
-        $totalContracts = (clone $baseQuery)->count();
+        $totalContracts = (clone $baseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->count();
         $myTotalContracts = DB::table('t_contracts')
             ->where('created_by', Auth::id())
             ->whereNull('deleted_at')
@@ -813,8 +813,9 @@ class ContractDashboardQuery
         $endDate   = now();
         $userId    = Auth::id();
 
-        // 1. Semua Dokumen (non-draft) — grouped by created_at date
+        // 1. Semua Dokumen (non-draft, non-archived) — grouped by created_at date
         $allDocsByDay = (clone $baseQuery)
+            ->whereRaw("UPPER(status) != 'ARCHIVED'")
             ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
             ->groupBy('day')
             ->pluck('total', 'day')

@@ -32,8 +32,22 @@ export const StatusBadge = ({ status, statusInfo }: StatusBadgeProps) => {
     const color = statusInfo?.color;
     const bgColor = statusInfo?.bg_color;
 
-    // Use inline styles if database has explicit colors defined
+    // Check if bgColor is a light color (like #ffffff or #fff)
+    const isLightBg = (bg?: string) => {
+        if (!bg) return false;
+        const clean = bg.replace('#', '').trim().toLowerCase();
+        if (clean === 'fff' || clean === 'ffffff' || clean === 'white') return true;
+        if (clean.length === 6) {
+            const r = parseInt(clean.substring(0, 2), 16);
+            const g = parseInt(clean.substring(2, 4), 16);
+            const b = parseInt(clean.substring(4, 6), 16);
+            return (r * 299 + g * 587 + b * 114) / 1000 > 200;
+        }
+        return false;
+    };
+
     const hasCustomColors = !!(color || bgColor);
+    const lightBg = isLightBg(bgColor);
 
     return (
         <span
@@ -41,6 +55,7 @@ export const StatusBadge = ({ status, statusInfo }: StatusBadgeProps) => {
                 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-tight uppercase',
                 !hasCustomColors && s.bg,
                 !hasCustomColors && s.text,
+                hasCustomColors && lightBg && 'dark:!bg-slate-800 dark:!text-slate-200',
             )}
             style={hasCustomColors ? {
                 backgroundColor: bgColor || undefined,

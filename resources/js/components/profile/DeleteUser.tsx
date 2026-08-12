@@ -39,9 +39,9 @@ export default function DeleteUser({ className }: { className?: string }) {
                     Close Account
                 </button>
             </DialogTrigger>
-            <DialogContent className="bg-card border-surface-border max-w-md rounded-xl border p-6 shadow-xl">
-                <DialogTitle className="text-text-main text-lg font-bold">Apakah Anda yakin ingin menghapus akun?</DialogTitle>
-                <DialogDescription className="text-text-soft mt-2 text-xs leading-relaxed">
+            <DialogContent className="bg-slate-100/90 dark:bg-zinc-800/90 border-slate-200/80 dark:border-zinc-700/80 text-slate-800 dark:text-zinc-100 max-w-md rounded-2xl border p-6 shadow-2xl">
+                <DialogTitle className="text-slate-800 dark:text-zinc-100 text-lg font-bold">Apakah Anda yakin ingin menghapus akun?</DialogTitle>
+                <DialogDescription className="text-slate-500 dark:text-zinc-400 mt-2 text-xs leading-relaxed">
                     Setelah akun Anda dihapus, semua data dan sumber daya di dalamnya akan terhapus secara permanen. Silakan masukkan password Anda
                     untuk mengonfirmasi penghapusan akun secara permanen.
                 </DialogDescription>

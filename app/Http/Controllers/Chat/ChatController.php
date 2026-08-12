@@ -24,9 +24,16 @@ class ChatController extends Controller
     {
         $user = Auth::user();
 
+        $lastMessageQuery = ContractMessage::query()
+            ->select('created_at')
+            ->whereColumn('contract_id', 't_contracts.id')
+            ->latest('created_at')
+            ->limit(1);
+
         // Fetch contracts that the user is involved in (Creator, Initiator, PIC, Manager, Approver, or message participant), excluding DRAFT
         $contracts = Contract::query()
-            ->select(['id', 'form_no', 'contract_no', 'title', 'contract_type_id', 'created_by', 'updated_at'])
+            ->select(['id', 'form_no', 'contract_no', 'title', 'contract_type_id', 'created_by', 'created_at', 'updated_at'])
+            ->selectSub($lastMessageQuery, 'last_message_at')
             ->whereRaw("UPPER(status) != 'DRAFT'")
             ->where(function ($query) use ($user) {
                 $query->where('created_by', $user->id)
@@ -47,18 +54,25 @@ class ChatController extends Controller
             ->withCount(['messages as unread_count' => function ($q) use ($user) {
                 $q->whereJsonDoesntContain('read_by', $user->id);
             }])
-            ->latest('updated_at')
+            ->orderByRaw('COALESCE((' . $lastMessageQuery->toSql() . '), t_contracts.updated_at) DESC')
             ->get()
-            ->map(fn ($c) => [
-                'id' => $c->id,
-                'form_no' => $c->form_no,
-                'contract_no' => $c->contract_no,
-                'title' => $c->title,
-                'contract_type' => $c->contractType?->name ?? '—',
-                'unread_count' => $c->unread_count ?? 0,
-                'updated_at_formatted' => $c->updated_at?->diffForHumans() ?? '',
-                'creator' => $c->creator ? ['id' => $c->creator->id, 'name' => $c->creator->name] : null,
-            ]);
+            ->map(function ($c) {
+                $effectiveTimestamp = $c->last_message_at
+                    ? \Carbon\Carbon::parse($c->last_message_at)
+                    : ($c->updated_at ?? $c->created_at);
+
+                return [
+                    'id' => $c->id,
+                    'form_no' => $c->form_no,
+                    'contract_no' => $c->contract_no,
+                    'title' => $c->title,
+                    'contract_type' => $c->contractType?->name ?? '—',
+                    'unread_count' => $c->unread_count ?? 0,
+                    'updated_at' => $effectiveTimestamp ? $effectiveTimestamp->toIso8601String() : null,
+                    'updated_at_formatted' => $effectiveTimestamp ? $effectiveTimestamp->diffForHumans() : '',
+                    'creator' => $c->creator ? ['id' => $c->creator->id, 'name' => $c->creator->name] : null,
+                ];
+            });
 
         $selectedId = $contractId ?: $request->query('contract_id');
 
@@ -176,6 +190,8 @@ class ChatController extends Controller
             'attachment_path' => $attachmentPath,
             'attachment_name' => $attachmentName,
         ]);
+
+        $contract->touch();
 
         $msg->load('user');
 

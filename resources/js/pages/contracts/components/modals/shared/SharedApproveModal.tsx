@@ -200,7 +200,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
             isOpen={open}
             onClose={onClose}
             maxWidth="2xl"
-            headerVariant="primary"
+            headerVariant="default"
             headerIcon={
                 contract?.workflow_step?.step === 1 ? (
                     <Send size={18} className="text-white" />

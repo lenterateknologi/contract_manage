@@ -324,15 +324,15 @@ export default function WorkflowEditor({
                         isEdit={!!workflow}
                         flat={true}
                         tabs={
-                            <div className="flex bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <div className="flex bg-slate-100/90 dark:bg-zinc-800/90 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/80">
                                 <button
                                     type="button"
                                     onClick={() => handleTabChange('settings')}
                                     className={cn(
-                                        'px-4 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+                                        'px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer',
                                         mainTab === 'settings'
-                                            ? 'bg-primary text-white shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-extrabold shadow-xs border border-slate-200/60 dark:border-zinc-700/60'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                                     )}
                                 >
                                     Pengaturan Workflow
@@ -341,18 +341,18 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('categories')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer',
                                         mainTab === 'categories'
-                                            ? 'bg-primary text-white shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-extrabold shadow-xs border border-slate-200/60 dark:border-zinc-700/60'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                                     )}
                                 >
                                     Kategori Kontrak
                                     <span className={cn(
-                                        'rounded-full px-1.5 py-0.2 text-[10px] font-bold transition-colors',
+                                        'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
                                         mainTab === 'categories'
-                                            ? 'bg-white/20 text-white'
-                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                            ? 'bg-slate-200/80 dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 font-black'
+                                            : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
                                     )}>
                                         {(form.data.contract_type_ids || []).length}
                                     </span>
@@ -361,18 +361,18 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('authorities')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer',
                                         mainTab === 'authorities'
-                                            ? 'bg-primary text-white shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-extrabold shadow-xs border border-slate-200/60 dark:border-zinc-700/60'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                                     )}
                                 >
                                     Otoritas Inisiator
                                     <span className={cn(
-                                        'rounded-full px-1.5 py-0.2 text-[10px] font-bold transition-colors',
+                                        'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
                                         mainTab === 'authorities'
-                                            ? 'bg-white/20 text-white'
-                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                            ? 'bg-slate-200/80 dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 font-black'
+                                            : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
                                     )}>
                                         {(form.data.initiator_authorities || []).length}
                                     </span>
@@ -381,18 +381,18 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('steps')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer',
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer',
                                         mainTab === 'steps'
-                                            ? 'bg-primary text-white shadow-sm'
-                                            : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300',
+                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-extrabold shadow-xs border border-slate-200/60 dark:border-zinc-700/60'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                                     )}
                                 >
                                     Tahapan Workflow
                                     <span className={cn(
-                                        'rounded-full px-1.5 py-0.2 text-[10px] font-bold transition-colors',
+                                        'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
                                         mainTab === 'steps'
-                                            ? 'bg-white/20 text-white'
-                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                            ? 'bg-slate-200/80 dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 font-black'
+                                            : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
                                     )}>
                                         {form.data.steps.length}
                                     </span>
@@ -506,15 +506,15 @@ export default function WorkflowEditor({
                                 )}
                             >
                                 {/* Left Column: Active Workflow Steps List */}
-                                <div className="min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between gap-4 h-full">
-                                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3.5">
+                                <div className="min-w-0 bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 rounded-xl p-4 flex flex-col justify-between gap-4 h-full">
+                                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3.5">
                                         <div className="flex items-center gap-2">
                                             <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
                                                 <GitBranch size={16} />
                                             </div>
                                             <div className="flex flex-col">
-                                                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-slate-200">Tahapan Alur Kerja</h3>
-                                                <p className="text-[10px] text-slate-400">Atur dan kelola tahapan persetujuan kontrak</p>
+                                                <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-zinc-100">Tahapan Alur Kerja</h3>
+                                                <p className="text-[10px] text-slate-500 dark:text-zinc-400">Atur dan kelola tahapan persetujuan kontrak</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -529,7 +529,7 @@ export default function WorkflowEditor({
                                                             });
                                                             setExpandedStepIds(allExpanded);
                                                         }}
-                                                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-all dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-primary/40 dark:hover:text-primary cursor-pointer"
+                                                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-all dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-primary/40 dark:hover:text-primary cursor-pointer"
                                                         title="Buka Semua Tahapan (Expand All)"
                                                     >
                                                         <ChevronsDown size={14} />
@@ -537,12 +537,12 @@ export default function WorkflowEditor({
                                                     <button
                                                         type="button"
                                                         onClick={() => setExpandedStepIds({})}
-                                                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-all dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-primary/40 dark:hover:text-primary cursor-pointer"
+                                                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-all dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-primary/40 dark:hover:text-primary cursor-pointer"
                                                         title="Tutup Semua Tahapan (Minimize All)"
                                                     >
                                                         <ChevronsUp size={14} />
                                                     </button>
-                                                    <div className="h-3 w-px bg-slate-200 dark:bg-slate-800 mx-0.5" />
+                                                    <div className="h-3 w-px bg-slate-200 dark:bg-zinc-700 mx-0.5" />
                                                     <button
                                                         type="button"
                                                         onClick={() =>
@@ -749,7 +749,7 @@ export default function WorkflowEditor({
                                 {/* Right Column: Step Presets Panel (Ultra Smooth Collapsible Sidebar) */}
                                 <div
                                     className={cn(
-                                        'w-full h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col gap-4 overflow-hidden transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
+                                        'w-full h-full bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-4 overflow-hidden transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
                                         isPresetsMinimized ? 'p-2' : 'p-4'
                                     )}
                                 >
@@ -757,7 +757,7 @@ export default function WorkflowEditor({
                                         onClick={() => setIsPresetsMinimized((prev) => !prev)}
                                         className={cn(
                                             'flex items-center cursor-pointer select-none group transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
-                                            isPresetsMinimized ? 'flex-col gap-3 py-2 items-center justify-center' : 'justify-between border-b border-slate-100 dark:border-slate-800 pb-3.5'
+                                            isPresetsMinimized ? 'flex-col gap-3 py-2 items-center justify-center' : 'justify-between border-b border-slate-100 dark:border-zinc-800 pb-3.5'
                                         )}
                                         title={isPresetsMinimized ? `Buka Preset Tahapan (${presets.length} Preset)` : 'Kecilkan Preset Tahapan (Minimize)'}
                                     >
@@ -767,10 +767,10 @@ export default function WorkflowEditor({
                                             </div>
                                             {!isPresetsMinimized && (
                                                 <div className="flex flex-col overflow-hidden transition-all duration-500 animate-in fade-in">
-                                                    <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors whitespace-nowrap">
+                                                    <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-zinc-100 group-hover:text-primary transition-colors whitespace-nowrap">
                                                         Preset Tahapan
                                                     </h3>
-                                                    <p className="text-[10px] text-slate-400 whitespace-nowrap">Tersimpan di Database (Server)</p>
+                                                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 whitespace-nowrap">Tersimpan di Database (Server)</p>
                                                 </div>
                                             )}
                                         </div>
@@ -786,9 +786,9 @@ export default function WorkflowEditor({
 
                                     <div className={cn('transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] overflow-hidden', isPresetsMinimized ? 'max-h-0 opacity-0' : 'max-h-[700px] opacity-100')}>
                                         {presets.length === 0 ? (
-                                            <div className="flex flex-col items-center justify-center py-8 px-2 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
-                                                <Bookmark size={24} className="text-slate-300 dark:text-slate-700 mb-2" />
-                                                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Belum Ada Preset</p>
+                                            <div className="flex flex-col items-center justify-center py-8 px-2 text-center border border-dashed border-slate-200/80 dark:border-zinc-800 rounded-lg">
+                                                <Bookmark size={24} className="text-slate-300 dark:text-zinc-700 mb-2" />
+                                                <p className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Belum Ada Preset</p>
                                                 <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
                                                 Klik tombol <span className="font-bold text-primary">Simpan sebagai Preset</span> pada tahapan di sebelah kiri untuk menyimpannya.
                                                 </p>

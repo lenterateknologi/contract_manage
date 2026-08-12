@@ -42,8 +42,7 @@ class UserResource extends Resource
             TextColumn::make('name', 'Nama')->sortable()->searchable(),
             TextColumn::make('username', 'Username / Email')->sortable()->searchable(),
             TextColumn::make('role_unit', 'Role, Divisi & Departemen')->sortable(),
-            TextColumn::make('company_entity', 'Perusahaan PT & Group')->sortable(),
-            TextColumn::make('region.name', 'Regional')->sortable(),
+            TextColumn::make('company_entity', 'PT, Group & Wilayah')->sortable(),
             BooleanColumn::make('is_active', 'Status Aktif'),
         ];
     }

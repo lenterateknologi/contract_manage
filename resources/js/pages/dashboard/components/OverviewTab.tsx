@@ -118,7 +118,7 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                         value: data?.metrics?.totalContracts ?? 0,
                         icon: Layers,
                         color: 'text-cyan-500',
-                        description: 'Seluruh dokumen kontrak terotorisasi',
+                        description: 'Seluruh dokumen aktif (non-arsip)',
                         nav: () => onNavigate('contracts')
                     },
                     {

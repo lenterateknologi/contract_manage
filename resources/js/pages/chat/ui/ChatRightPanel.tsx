@@ -135,16 +135,16 @@ export function ChatRightPanel({ contract, onClose }: ChatRightPanelProps) {
     return (
         <div className="w-72 flex flex-col border-l border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 h-full overflow-hidden shrink-0">
             {/* Header with Integrated Tabs */}
-            <div className="px-3.5 py-3 border-b border-primary/20 bg-primary text-white h-[77px] shrink-0 flex flex-col justify-between">
+            <div className="px-3.5 py-3 border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-200 h-[77px] shrink-0 flex flex-col justify-between">
                 <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                        <Info size={14} className="text-white shrink-0" />
+                    <h3 className="text-xs font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5">
+                        <Info size={14} className="text-primary shrink-0" />
                         <span>Informasi Percakapan</span>
                     </h3>
                     {onClose && (
                         <button
                             onClick={onClose}
-                            className="p-1 rounded-lg text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+                            className="p-1 rounded-lg text-slate-500 hover:bg-slate-200 dark:hover:bg-zinc-700 hover:text-slate-800 dark:hover:text-zinc-200 transition-colors"
                         >
                             <X size={14} />
                         </button>
@@ -152,28 +152,28 @@ export function ChatRightPanel({ contract, onClose }: ChatRightPanelProps) {
                 </div>
 
                 {/* Integrated Tabs */}
-                <div className="flex gap-1 bg-white/10 p-0.5 rounded-lg border border-white/20">
+                <div className="flex gap-1 bg-slate-200/70 dark:bg-zinc-700/60 p-0.5 rounded-lg border border-slate-300/50 dark:border-zinc-600/50">
                     <button
                         onClick={() => setActiveTab('members')}
-                        className={`flex-1 py-1 px-2 text-[10.5px] font-bold rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                             activeTab === 'members'
-                                ? 'bg-white text-primary shadow-xs'
-                                : 'text-white/80 hover:text-white hover:bg-white/10'
+                                ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xs font-bold'
+                                : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
                         <Users size={12} />
-                        <span>Member ({membersList.length})</span>
+                        <span>Anggota ({membersList.length})</span>
                     </button>
                     <button
                         onClick={() => setActiveTab('media')}
-                        className={`flex-1 py-1 px-2 text-[10.5px] font-bold rounded-md flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                             activeTab === 'media'
-                                ? 'bg-white text-primary shadow-xs'
-                                : 'text-white/80 hover:text-white hover:bg-white/10'
+                                ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 shadow-2xs font-bold'
+                                : 'text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
                         <Paperclip size={12} />
-                        <span>Media ({mediaAndFiles.length})</span>
+                        <span>Berkas ({mediaAndFiles.length})</span>
                     </button>
                 </div>
             </div>

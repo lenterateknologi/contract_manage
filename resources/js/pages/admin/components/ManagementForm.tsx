@@ -43,8 +43,8 @@ export function ManagementForm({
             {/* COMPACT STICKY HEADER */}
             <div className="border-surface-border bg-surface-muted/95 sticky top-0 z-50 flex shrink-0 items-center justify-between border-b px-6 py-2.5 backdrop-blur">
                 <div className="flex items-center gap-3">
-                    <div className="flex shrink-0 items-center justify-center rounded-xl border border-slate-200/80 bg-white p-1 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-                        <Button variant="ghost" size="icon" className="hover:bg-slate-100 dark:hover:bg-slate-800 h-8 w-8 rounded-lg text-slate-600 dark:text-slate-300" onClick={onClose}>
+                    <div className="flex shrink-0 items-center justify-center rounded-xl border border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 p-1 shadow-2xs">
+                        <Button variant="ghost" size="icon" className="hover:bg-slate-200 dark:hover:bg-zinc-700 h-8 w-8 rounded-lg text-slate-800 dark:text-zinc-200 transition-all" onClick={onClose}>
                             <ArrowLeft size={16} />
                         </Button>
                     </div>

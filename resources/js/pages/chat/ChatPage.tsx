@@ -120,13 +120,13 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                     {/* Sidebar: Floating Card Daftar Kontrak */}
                     <div className="flex w-80 flex-col rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md overflow-hidden shrink-0">
                         {/* Search & Header */}
-                        <div className="px-3.5 py-3 border-b border-primary/20 bg-primary text-white h-[77px] flex flex-col justify-between shrink-0">
+                        <div className="px-3.5 py-3 border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-200 h-[77px] flex flex-col justify-between shrink-0">
                             <div className="flex items-center justify-between gap-2">
-                                <h2 className="text-xs font-bold text-white flex items-center gap-1.5 shrink-0">
-                                    <MessageSquare className="h-4 w-4 text-white" />
+                                <h2 className="text-xs font-bold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5 shrink-0">
+                                    <MessageSquare className="h-4 w-4 text-primary" />
                                     <span>Percakapan</span>
                                 </h2>
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/20 text-white font-bold shrink-0">
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-200/80 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 font-bold shrink-0">
                                     {filteredContracts.length}
                                 </span>
                             </div>
@@ -134,7 +134,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                 placeholder="Cari kontrak..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                className="h-7 text-xs font-normal bg-white dark:bg-zinc-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 border-white/20 rounded-lg"
+                                className="h-7 text-xs font-normal bg-white dark:bg-zinc-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 border-slate-200 dark:border-zinc-700 rounded-lg"
                             />
                         </div>
 
@@ -178,48 +178,48 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                         {selectedContract ? (
                             <>
                                 <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
-                                    <div className="px-5 py-3 border-b border-primary/20 flex items-center justify-between bg-primary text-white z-10 h-[77px] shrink-0 relative">
+                                    <div className="px-5 py-3 border-b border-slate-200/80 dark:border-zinc-700/80 flex items-center justify-between bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-200 z-10 h-[77px] shrink-0 relative">
                                         {showChatSearch ? (
                                             <div className="flex items-center gap-2 w-full animate-in fade-in duration-200">
                                                 <SearchInput
                                                     placeholder="Cari dalam percakapan..."
                                                     value={search}
                                                     onChange={(e) => setSearch(e.target.value)}
-                                                    className="h-9 flex-1 text-xs font-normal bg-white dark:bg-zinc-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 border-white/20 rounded-xl"
+                                                    className="h-9 flex-1 text-xs font-normal bg-white dark:bg-zinc-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 border-slate-200 dark:border-zinc-700 rounded-xl"
                                                     autoFocus
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => { setShowChatSearch(false); setSearch(''); }}
-                                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-xs font-bold text-primary shadow-xs border border-white/80 transition-all active:scale-95 cursor-pointer shrink-0"
+                                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-xs font-bold text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 transition-all active:scale-95 cursor-pointer shrink-0"
                                                 >
-                                                    <X size={14} className="text-primary" />
+                                                    <X size={14} className="text-slate-500 dark:text-zinc-400" />
                                                     <span>Tutup</span>
                                                 </button>
                                             </div>
                                         ) : (
                                             <>
                                                 <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
-                                                    <div className="h-9 w-9 rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0 font-semibold border border-white/30">
-                                                        <FileText className="w-4 h-4 text-white" />
+                                                    <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary dark:bg-primary/20 flex items-center justify-center shrink-0 font-semibold border border-primary/20">
+                                                        <FileText className="w-4 h-4 text-primary" />
                                                     </div>
                                                     <div className="flex flex-col min-w-0 flex-1">
                                                         <div className="flex items-center gap-2 mb-0.5 min-w-0">
-                                                            <h3 className="text-xs font-semibold text-white tracking-tight leading-none truncate">
+                                                            <h3 className="text-xs font-semibold text-slate-900 dark:text-zinc-100 tracking-tight leading-none truncate">
                                                                 {selectedContract.title}
                                                             </h3>
                                                         </div>
-                                                        <div className="flex items-center gap-2.5 text-[11px] text-white/80 truncate">
-                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-white/20 text-white text-[9.5px] font-mono font-bold border border-white/30 shrink-0">
+                                                        <div className="flex items-center gap-2.5 text-[11px] text-slate-500 dark:text-zinc-400 truncate">
+                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-zinc-700 text-slate-700 dark:text-zinc-200 text-[9.5px] font-mono font-bold border border-slate-300/60 dark:border-zinc-600 shrink-0">
                                                                 #{selectedContract.form_no || selectedContract.contract_no || 'DRAFT'}
                                                             </span>
-                                                            <span className="text-white/50">•</span>
+                                                            <span className="text-slate-400 dark:text-zinc-600">•</span>
                                                             <span className="flex items-center gap-1 shrink-0">
-                                                                <Building2 size={11} className="text-white/80" />
+                                                                <Building2 size={11} className="text-slate-500 dark:text-zinc-400" />
                                                                 {selectedContract.contract_type || 'General Contract'}
                                                             </span>
-                                                            <span className="text-white/50">•</span>
-                                                            <span className="truncate">Dibuat: <strong className="font-semibold text-white">{selectedContract.creator?.name || 'System'}</strong></span>
+                                                            <span className="text-slate-400 dark:text-zinc-600">•</span>
+                                                            <span className="truncate">Dibuat: <strong className="font-semibold text-slate-800 dark:text-zinc-200">{selectedContract.creator?.name || 'System'}</strong></span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -228,17 +228,17 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                                         type="button"
                                                         onClick={() => setShowChatSearch(true)}
                                                         title="Cari dalam chat"
-                                                        className="inline-flex items-center justify-center p-2 rounded-lg bg-white hover:bg-slate-100 text-primary shadow-xs border border-white/80 transition-all active:scale-95 cursor-pointer"
+                                                        className="inline-flex items-center justify-center p-2 rounded-lg bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 transition-all active:scale-95 cursor-pointer"
                                                     >
-                                                        <Search size={15} className="text-primary" />
+                                                        <Search size={15} className="text-slate-500 dark:text-zinc-400" />
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
                                                         title="Buka Kontrak"
-                                                        className="inline-flex items-center justify-center p-2 rounded-lg bg-white hover:bg-slate-100 text-primary shadow-xs border border-white/80 transition-all active:scale-95 cursor-pointer shrink-0"
+                                                        className="inline-flex items-center justify-center p-2 rounded-lg bg-white dark:bg-zinc-900 hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 transition-all active:scale-95 cursor-pointer shrink-0"
                                                     >
-                                                        <ExternalLink size={15} className="text-primary" />
+                                                        <ExternalLink size={15} className="text-slate-500 dark:text-zinc-400" />
                                                     </button>
                                                 </div>
                                             </>

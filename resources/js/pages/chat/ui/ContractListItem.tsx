@@ -26,13 +26,13 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
             className={cn(
                 "group relative flex cursor-pointer items-center gap-3 rounded-xl p-3 text-left transition-all duration-200 select-none border",
                 isSelected
-                    ? "bg-primary text-primary-foreground border-primary shadow-md"
-                    : "bg-white/60 hover:bg-slate-100/80 dark:bg-zinc-900/40 dark:hover:bg-zinc-800/80 border-slate-200/60 dark:border-zinc-800/80 text-slate-800 dark:text-slate-200"
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-white dark:bg-zinc-900/60 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-800 text-slate-800 dark:text-slate-200"
             )}
         >
-            <Avatar className={cn("h-9 w-9 shrink-0 border transition-transform group-hover:scale-105", isSelected ? "border-primary-foreground/30" : "border-slate-200 dark:border-zinc-700")}>
+            <Avatar className={cn("h-9 w-9 shrink-0 border transition-transform group-hover:scale-105", isSelected ? "border-white/40" : "border-slate-200 dark:border-zinc-700")}>
                 <AvatarImage src={contract.creator?.avatar || ''} alt={creatorName} />
-                <AvatarFallback className={cn("text-[10px] font-bold", isSelected ? "bg-white text-primary" : avatarColorClass)}>
+                <AvatarFallback className={cn("text-[10.5px] font-black tracking-tight", isSelected ? "bg-white text-slate-950 shadow-xs" : avatarColorClass)}>
                     {initials}
                 </AvatarFallback>
             </Avatar>

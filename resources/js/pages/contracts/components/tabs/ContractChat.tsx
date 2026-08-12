@@ -165,7 +165,7 @@ function MsgBubble({
         .slice(0, 2)
         .join('')
         .toUpperCase();
-    const avatarColorClass = isMe ? 'bg-primary text-white' : getAvatarColor(name);
+    const avatarColorClass = isMe ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-950 font-black' : getAvatarColor(name);
 
     let attachmentUrl = (msg as any).attachment_url || (msg as any).attachment_path;
     if (attachmentUrl && !attachmentUrl.startsWith('http') && !attachmentUrl.startsWith('/')) {
@@ -229,14 +229,14 @@ function MsgBubble({
     return (
         <Message align={isMe ? 'end' : 'start'} className="mb-4 group/msg">
             <MessageAvatar>
-                <Avatar className="h-8 w-8 border border-border shadow-2xs">
+                <Avatar className="h-8 w-8 border border-slate-200/80 dark:border-zinc-700/80">
                     <AvatarImage src={msg.user?.avatar || ''} alt={name} />
-                    <AvatarFallback className={`${avatarColorClass} text-[10px] font-bold`}>
+                    <AvatarFallback className={`${avatarColorClass} text-[10.5px] font-black tracking-tight`}>
                         {initials}
                     </AvatarFallback>
                 </Avatar>
             </MessageAvatar>
-            <MessageContent className="max-w-[80%] relative">
+            <MessageContent className={cn("max-w-[80%] relative flex flex-col", isMe ? "items-end" : "items-start")}>
                 <MessageHeader className={isMe ? 'justify-end' : 'justify-start'}>
                     <span className="font-semibold text-foreground text-xs">{isMe ? 'Anda' : name}</span>
                     {role && (
@@ -247,11 +247,11 @@ function MsgBubble({
                     <span className="text-[10px] text-muted-foreground tabular-nums">{time}</span>
                 </MessageHeader>
 
-                <div className="relative">
-                    <BubbleGroup>
+                <div className={cn("relative flex flex-col w-full", isMe ? "items-end" : "items-start")}>
+                    <BubbleGroup className={cn("flex flex-col w-full", isMe ? "items-end" : "items-start")}>
                         <Bubble
                             variant={isMe ? 'default' : 'muted'}
-                            className="relative cursor-pointer select-none"
+                            className="relative cursor-pointer select-none w-fit"
                             onContextMenu={handleContextMenu}
                         >
                             {attachmentUrl && isImage && (
@@ -859,7 +859,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
                     className={cn(
-                        "group relative flex flex-col gap-2 rounded-2xl border bg-white p-2.5 shadow-sm dark:bg-zinc-900 transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/10",
+                        "group relative flex flex-col gap-2 rounded-2xl border bg-white p-2.5 dark:bg-zinc-900 transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/10",
                         isDragging
                             ? "border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10"
                             : "border-surface-border focus-within:border-primary/60"
@@ -879,104 +879,8 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         insertMention={insertMention}
                     />
 
-                    {/* Top Toolbar: Rich Text Formatting & Draft Actions */}
-                    <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-surface-border/70 pb-2 px-1">
-                        <div className="flex flex-wrap items-center gap-1">
-                            {/* Formatting Buttons */}
-                            <div className="flex items-center gap-0.5 rounded-lg border border-surface-border bg-slate-50/80 p-0.5 dark:bg-slate-800/40">
-                                <button
-                                    type="button"
-                                    title="Tebal (Bold)"
-                                    onClick={() => execFormat('bold')}
-                                    className={cn(
-                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
-                                        activeFormats.bold ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
-                                    )}
-                                >
-                                    <Bold size={13} />
-                                </button>
-                                <button
-                                    type="button"
-                                    title="Miring (Italic)"
-                                    onClick={() => execFormat('italic')}
-                                    className={cn(
-                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
-                                        activeFormats.italic ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
-                                    )}
-                                >
-                                    <Italic size={13} />
-                                </button>
-                                <button
-                                    type="button"
-                                    title="Coret (Strikethrough)"
-                                    onClick={() => execFormat('strikeThrough')}
-                                    className={cn(
-                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
-                                        activeFormats.strikethrough ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
-                                    )}
-                                >
-                                    <Strikethrough size={13} />
-                                </button>
-                                <button
-                                    type="button"
-                                    title="Kode (Inline Code)"
-                                    onClick={() => execFormat('formatBlock', 'pre')}
-                                    className={cn(
-                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
-                                        activeFormats.code ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
-                                    )}
-                                >
-                                    <Code size={13} />
-                                </button>
-                            </div>
-
-                            {/* Lists Group */}
-                            <div className="flex items-center gap-0.5 rounded-lg border border-surface-border bg-slate-50/80 p-0.5 dark:bg-slate-800/40">
-                                <button
-                                    type="button"
-                                    title="Daftar Poin (Bullet List)"
-                                    onClick={() => execFormat('insertUnorderedList')}
-                                    className={cn(
-                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
-                                        activeFormats.unorderedList ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
-                                    )}
-                                >
-                                    <List size={13} />
-                                </button>
-                                <button
-                                    type="button"
-                                    title="Daftar Angka (Numbered List)"
-                                    onClick={() => execFormat('insertOrderedList')}
-                                    className={cn(
-                                        "p-1.5 rounded-md text-xs transition-all cursor-pointer",
-                                        activeFormats.orderedList ? "bg-primary text-white font-bold shadow-xs" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
-                                    )}
-                                >
-                                    <ListOrdered size={13} />
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Draft Status & Actions */}
-                        <div className="ml-auto flex items-center gap-2">
-                            {draftSavedTime && (
-                                <span className="text-[10px] font-medium text-slate-400 italic">
-                                    {draftSavedTime}
-                                </span>
-                            )}
-                            <button
-                                type="button"
-                                title="Simpan Draf Pesan"
-                                onClick={saveDraft}
-                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-semibold transition-all shadow-2xs cursor-pointer"
-                            >
-                                <Save size={12} className="text-slate-400" /> Draf
-                            </button>
-                        </div>
-                    </div>
-
                     {/* Middle: ContentEditable Input Area */}
-                    <div className="py-1 px-1">
+                    <div className="px-1 pt-1 pb-0.5 relative">
                         <div
                             ref={editorRef}
                             contentEditable
@@ -987,24 +891,26 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         />
                     </div>
 
-                    {/* Bottom Toolbar: Attachment & Send Controls Outside Input */}
-                    <div className="flex items-center justify-between border-t border-surface-border/50 pt-2 px-1">
-                        <div className="flex items-center gap-1.5 relative">
+                    {/* Bottom Toolbar: Attachment, Emoji, Text Formatting (Summernote), Draft & Send */}
+                    <div className="flex flex-wrap items-center justify-between border-t border-surface-border/50 pt-2 px-1 gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 relative">
+                            {/* Attachment Button */}
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer active:scale-95 shadow-2xs"
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-semibold transition-all cursor-pointer active:scale-95"
                                 title="Lampirkan Dokumen"
                             >
                                 <Paperclip size={14} className="text-slate-500" />
                                 <span>Lampiran</span>
                             </button>
 
+                            {/* Emoji Button */}
                             <button
                                 type="button"
                                 onClick={() => setShowEmojiPicker((prev) => !prev)}
                                 className={cn(
-                                    "flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-95",
+                                    "flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-95",
                                     showEmojiPicker
                                         ? "border-primary bg-primary/10 text-primary"
                                         : "border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
@@ -1014,6 +920,83 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                                 <Smile size={14} className={showEmojiPicker ? "text-primary" : "text-amber-500"} />
                                 <span>Emoji</span>
                             </button>
+
+                            {/* Separator Divider */}
+                            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-0.5" />
+
+                            {/* Rich Text Formatting Group (Summernote Toolbar) */}
+                            <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 p-0.5 dark:bg-slate-800/40">
+                                <button
+                                    type="button"
+                                    title="Tebal (Bold)"
+                                    onClick={() => execFormat('bold')}
+                                    className={cn(
+                                        "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
+                                        activeFormats.bold ? "bg-primary text-white font-bold" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
+                                    )}
+                                >
+                                    <Bold size={13} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Miring (Italic)"
+                                    onClick={() => execFormat('italic')}
+                                    className={cn(
+                                        "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
+                                        activeFormats.italic ? "bg-primary text-white font-bold" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
+                                    )}
+                                >
+                                    <Italic size={13} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Coret (Strikethrough)"
+                                    onClick={() => execFormat('strikeThrough')}
+                                    className={cn(
+                                        "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
+                                        activeFormats.strikethrough ? "bg-primary text-white font-bold" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
+                                    )}
+                                >
+                                    <Strikethrough size={13} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Kode (Inline Code)"
+                                    onClick={() => execFormat('formatBlock', 'pre')}
+                                    className={cn(
+                                        "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
+                                        activeFormats.code ? "bg-primary text-white font-bold" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
+                                    )}
+                                >
+                                    <Code size={13} />
+                                </button>
+                            </div>
+
+                            {/* Lists Group */}
+                            <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 p-0.5 dark:bg-slate-800/40">
+                                <button
+                                    type="button"
+                                    title="Daftar Poin (Bullet List)"
+                                    onClick={() => execFormat('insertUnorderedList')}
+                                    className={cn(
+                                        "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
+                                        activeFormats.unorderedList ? "bg-primary text-white font-bold" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
+                                    )}
+                                >
+                                    <List size={13} />
+                                </button>
+                                <button
+                                    type="button"
+                                    title="Daftar Angka (Numbered List)"
+                                    onClick={() => execFormat('insertOrderedList')}
+                                    className={cn(
+                                        "p-1.5 rounded-lg text-xs transition-all cursor-pointer",
+                                        activeFormats.orderedList ? "bg-primary text-white font-bold" : "hover:bg-slate-200/60 text-slate-600 dark:text-slate-300"
+                                    )}
+                                >
+                                    <ListOrdered size={13} />
+                                </button>
+                            </div>
 
                             {showEmojiPicker && (
                                 <div className="absolute bottom-11 left-0 z-50 animate-in fade-in zoom-in-95 duration-150 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white p-3 shadow-2xl dark:bg-zinc-900 w-72">
@@ -1050,29 +1033,46 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                             )}
                         </div>
 
-                        <button
-                            type="button"
-                            className={cn(
-                                'flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-sm',
-                                input.trim() || selectedFiles.length > 0
-                                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground shadow-md active:scale-95'
-                                    : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed',
+                        <div className="flex items-center gap-2">
+                            {draftSavedTime && (
+                                <span className="text-[10px] font-medium text-slate-400 italic mr-0.5">
+                                    {draftSavedTime}
+                                </span>
                             )}
-                            onClick={send}
-                            disabled={(!input.trim() && selectedFiles.length === 0) || sending}
-                        >
-                            {sending ? (
-                                <>
-                                    <RefreshCw size={13} className="animate-spin" />
-                                    <span>Mengirim...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span>Kirim</span>
-                                    <Send size={13} />
-                                </>
-                            )}
-                        </button>
+                            <button
+                                type="button"
+                                title="Simpan Draf Pesan"
+                                onClick={saveDraft}
+                                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all cursor-pointer active:scale-95"
+                            >
+                                <Save size={13} className="text-slate-400" />
+                                <span>Draf</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                className={cn(
+                                    'flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer',
+                                    input.trim() || selectedFiles.length > 0
+                                        ? 'bg-primary hover:bg-primary/90 text-primary-foreground active:scale-95'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed',
+                                )}
+                                onClick={send}
+                                disabled={(!input.trim() && selectedFiles.length === 0) || sending}
+                            >
+                                {sending ? (
+                                    <>
+                                        <RefreshCw size={13} className="animate-spin" />
+                                        <span>Mengirim...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span>Kirim</span>
+                                        <Send size={13} />
+                                    </>
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -372,7 +372,7 @@ export default function SortableStepItem({
             className={cn(
                 'group/step flex flex-col gap-0 transition-all duration-300 rounded-lg p-4 outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                 isExpanded
-                    ? 'border border-primary/40 dark:border-primary/50 bg-white dark:bg-slate-900/60'
+                    ? 'border border-primary/40 dark:border-primary/50 bg-white dark:bg-zinc-900/90'
                     : 'border border-primary/20 dark:border-primary/30 bg-primary/[0.01] dark:bg-primary/[0.02] hover:bg-primary/[0.03] hover:border-primary/40',
                 isExpanded ? 'overflow-visible' : 'overflow-hidden',
                 isDragging && 'z-50 scale-[1.01] border-primary/60',
@@ -530,15 +530,15 @@ export default function SortableStepItem({
             {isExpanded && (
                 <div className="animate-in fade-in slide-in-from-top-3 relative overflow-visible duration-300 mt-2">
                     {/* Inner Step Tab Switcher */}
-                    <div className="flex border-b border-slate-200 dark:border-slate-800 mb-4 gap-4 px-2">
+                    <div className="flex border-b border-slate-200/80 dark:border-zinc-700/80 mb-4 gap-4 px-2">
                         <button
                             type="button"
                             onClick={() => setStepTab('config')}
                             className={cn(
                                 'border-b-2 pb-2 text-sm font-semibold transition-all',
                                 stepTab === 'config'
-                                    ? 'border-primary text-primary dark:text-white'
-                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                                    ? 'border-primary text-primary dark:text-zinc-100 font-extrabold'
+                                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                             )}
                         >
                             Konfigurasi Langkah
@@ -549,8 +549,8 @@ export default function SortableStepItem({
                             className={cn(
                                 'border-b-2 pb-2 text-sm font-semibold transition-all',
                                 stepTab === 'actors'
-                                    ? 'border-primary text-primary dark:text-white'
-                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                                    ? 'border-primary text-primary dark:text-zinc-100 font-extrabold'
+                                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                             )}
                         >
                             Aktor & Otoritas
@@ -561,8 +561,8 @@ export default function SortableStepItem({
                             className={cn(
                                 'flex items-center gap-1.5 border-b-2 pb-2 text-sm font-semibold transition-all',
                                 stepTab === 'actions'
-                                    ? 'border-primary text-primary dark:text-white'
-                                    : 'border-transparent text-slate-400 hover:text-slate-600 dark:hover:text-slate-300',
+                                    ? 'border-primary text-primary dark:text-zinc-100 font-extrabold'
+                                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                             )}
                         >
                             Konfigurasi Aksi
@@ -570,7 +570,7 @@ export default function SortableStepItem({
                                 'rounded-full px-1.5 py-0.2 text-[9px] font-bold',
                                 stepTab === 'actions'
                                     ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                    : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
                             )}>
                                 {actions.length}
                             </span>
@@ -582,9 +582,9 @@ export default function SortableStepItem({
                             <div className="space-y-6 animate-in fade-in duration-200 w-full">
                                 {/* --- Column 1: Step Settings (Basic Settings & Conditions) --- */}
                                 <div className="space-y-6">
-                                    <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                                    <div className="flex items-center gap-2 pb-2 border-b border-slate-200/80 dark:border-zinc-800">
                                         <Settings2 size={14} className="text-slate-400" />
-                                        <h4 className="text-xs font-bold tracking-wide text-slate-700 dark:text-slate-300">
+                                        <h4 className="text-xs font-bold tracking-wide text-slate-800 dark:text-zinc-100">
                                             Detail Langkah & Kondisi
                                         </h4>
                                     </div>
@@ -594,12 +594,12 @@ export default function SortableStepItem({
                                         <div className="col-span-12 md:col-span-4">
                                             <FormInput
                                                 label="Deskripsi Tahap"
-                                                labelClassName="text-xs font-bold text-slate-700 dark:text-slate-300"
+                                                labelClassName="text-xs font-bold text-slate-800 dark:text-zinc-200"
                                                 value={step.description || step.label || ''}
                                                 onChange={(e) => updateLocalStep(idx, { description: e.target.value, label: e.target.value })}
                                                 placeholder="Contoh: Review Legal Staff"
                                                 variant="outline"
-                                                className="h-10 rounded-lg border-slate-200 bg-white text-sm font-medium transition-all outline-none focus:border-slate-900 focus:bg-white dark:border-slate-800 dark:bg-slate-900/50 dark:focus:bg-slate-900"
+                                                className="h-10 rounded-lg border-slate-200/80 bg-white text-sm font-medium transition-all outline-none focus:border-slate-900 dark:border-zinc-700/80 dark:bg-zinc-900 dark:text-zinc-100"
                                             />
                                         </div>
 
@@ -648,14 +648,14 @@ export default function SortableStepItem({
 
                                         {/* Advanced Settings Button */}
                                         <div className="col-span-12 sm:col-span-6 md:col-span-4 space-y-1.5">
-                                            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Pengaturan Lanjutan</label>
+                                            <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Pengaturan Lanjutan</label>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                className="w-full justify-start h-10 rounded-lg text-sm font-semibold bg-white dark:bg-slate-900"
+                                                className="w-full justify-start h-10 rounded-lg text-sm font-bold border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
                                                 onClick={() => setAdvancedSettingsOpen(true)}
                                             >
-                                                <Settings2 className="mr-2 h-4 w-4" />
+                                                <Settings2 className="mr-2 h-4 w-4 text-primary" />
                                                 Pengaturan Lanjutan Tahap
                                             </Button>
                                             <AdvancedStepSettingsModal
@@ -666,21 +666,6 @@ export default function SortableStepItem({
                                             />
                                         </div>
 
-                                        {/* Save as Preset Button */}
-                                        {onSavePreset && (
-                                            <div className="col-span-12 sm:col-span-6 md:col-span-4 space-y-1.5">
-                                                <label className="text-xs font-bold text-amber-700 dark:text-amber-400">Preset Tahapan</label>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    className="w-full justify-start h-10 rounded-lg text-sm font-bold border-amber-300 bg-amber-50/50 text-amber-800 hover:bg-amber-100 dark:border-amber-900/60 dark:bg-amber-950/20 dark:text-amber-300 dark:hover:bg-amber-950/40"
-                                                    onClick={() => onSavePreset(step)}
-                                                >
-                                                    <Bookmark className="mr-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
-                                                    Simpan sebagai Preset
-                                                </Button>
-                                            </div>
-                                        )}
                                     </div>
 
                                     {/* Condition Expression */}

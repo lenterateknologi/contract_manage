@@ -379,8 +379,8 @@ export function TreeSelect({
         >
             {/* Shadcn cmdk-style search (Pinned sticky header) */}
             <div className={cn(
-                "flex items-center px-3 shrink-0 bg-white dark:bg-slate-900 z-10",
-                inline ? "sticky top-0 rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-xs" : "border-b border-border"
+                "flex items-center px-3 shrink-0 bg-white dark:bg-zinc-900 z-10",
+                inline ? "sticky top-0 rounded-xl border border-slate-200/80 dark:border-zinc-700/80 shadow-xs" : "border-b border-border"
             )}>
                 <Search size={14} className="mr-2 shrink-0 text-muted-foreground" />
                 <input

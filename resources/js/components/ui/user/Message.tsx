@@ -86,12 +86,12 @@ const MessageFooter = React.forwardRef<
 MessageFooter.displayName = "MessageFooter";
 
 const bubbleVariants = cva(
-  "relative rounded-2xl px-4 py-2.5 text-xs font-medium transition-all break-words leading-relaxed shadow-xs",
+  "relative w-fit max-w-xl rounded-2xl px-4 py-2.5 text-xs font-normal transition-all",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground font-medium",
-        muted: "bg-muted/80 text-foreground border border-border/60 dark:bg-zinc-800/80 dark:border-zinc-700/60 font-medium",
+        muted: "bg-slate-100 dark:bg-zinc-800/90 text-slate-900 dark:text-zinc-100 border border-slate-200/80 dark:border-zinc-700/80 font-medium",
       },
     },
     defaultVariants: {
