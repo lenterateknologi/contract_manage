@@ -636,17 +636,24 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             {/* Modals - High Density */}
             {/* Create Template Modal */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-                <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-xl sm:max-w-[850px]">
+                <DialogContent className="border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[8px] border p-0 shadow-2xl sm:max-w-[850px]">
                     <form onSubmit={handleCreateTemplate}>
-                        <div className="px-8 pt-8 pb-5 flex flex-col gap-1 border-b border-border/40">
-                            <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
-                                Initialize Template
-                            </DialogTitle>
-                            <DialogDescription className="text-xs text-muted-foreground">
-                                Form Builder Repository Control
-                            </DialogDescription>
+                        <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
+                            <div className="flex items-center gap-3 z-10 pr-10">
+                                <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                    <FileJson size={18} />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
+                                        Tambah Template Formulir
+                                    </DialogTitle>
+                                    <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                        Konfigurasi asset formulir dinamis baru dalam sistem
+                                    </DialogDescription>
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-5 p-8">
+                        <div className="space-y-5 p-6 bg-white dark:bg-zinc-900">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="grid gap-1.5">
                                     <Label className="text-xs font-medium text-foreground">Template Name</Label>
@@ -723,22 +730,22 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 />
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 px-8 pb-8 border-t border-border/40 pt-5 bg-muted/10">
+                        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px]">
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="h-9 rounded-lg px-4 text-xs font-medium"
+                                className="h-9 rounded-lg px-4 text-xs font-medium border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200"
                                 onClick={() => setIsCreateModalOpen(false)}
                             >
-                                Cancel
+                                Batal
                             </Button>
                             <Button
                                 type="submit"
                                 variant="primary"
-                                className="h-9 rounded-lg px-5 text-xs font-medium shadow-sm"
+                                className="h-9 rounded-lg px-5 text-xs font-bold shadow-xs"
                                 disabled={createForm.processing}
                             >
-                                Create
+                                Tambah
                             </Button>
                         </div>
                     </form>
@@ -747,17 +754,24 @@ export default function FormTemplates({ templates, contract_types }: Props) {
 
             {/* Edit Metadata Modal */}
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-                <DialogContent className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border p-0 shadow-xl sm:max-w-[850px]">
+                <DialogContent className="border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[8px] border p-0 shadow-2xl sm:max-w-[850px]">
                     <form onSubmit={handleUpdateMetadata}>
-                        <div className="px-8 pt-8 pb-5 flex flex-col gap-1 border-b border-border/40">
-                            <DialogTitle className="text-base font-semibold tracking-tight text-foreground">
-                                Sync Configuration
-                            </DialogTitle>
-                            <DialogDescription className="text-xs text-muted-foreground">
-                                Asset Profile Control
-                            </DialogDescription>
+                        <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
+                            <div className="flex items-center gap-3 z-10 pr-10">
+                                <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                    <FileJson size={18} />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
+                                        Ubah Konfigurasi Template
+                                    </DialogTitle>
+                                    <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                        Pengaturan profil dan klasifikasi asset template
+                                    </DialogDescription>
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-5 p-8">
+                        <div className="space-y-5 p-6 bg-white dark:bg-zinc-900">
                             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                 <div className="grid gap-1.5">
                                     <Label className="text-xs font-medium text-foreground">Template Name</Label>
@@ -833,22 +847,22 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 />
                             </div>
                         </div>
-                        <div className="flex justify-end gap-3 px-8 pb-8 border-t border-border/40 pt-5 bg-muted/10">
+                        <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px]">
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="h-9 rounded-lg px-4 text-xs font-medium"
+                                className="h-9 rounded-lg px-4 text-xs font-medium border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200"
                                 onClick={() => setIsEditModalOpen(false)}
                             >
-                                Discard
+                                Batal
                             </Button>
                             <Button
                                 type="submit"
                                 variant="primary"
-                                className="h-9 rounded-lg px-5 text-xs font-medium shadow-sm"
+                                className="h-9 rounded-lg px-5 text-xs font-bold shadow-xs"
                                 disabled={editForm.processing}
                             >
-                                Save Profile
+                                Simpan
                             </Button>
                         </div>
                     </form>

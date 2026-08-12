@@ -56,36 +56,36 @@ export function Modal({
             <DialogContent 
                 className={cn(
                     maxWidthMap[maxWidth],
-                    'p-0 border border-slate-200 dark:border-zinc-800 shadow-2xl bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 rounded-[24px] overflow-hidden',
+                    'p-0 border border-slate-200 dark:border-zinc-800 shadow-2xl bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 rounded-[8px] overflow-hidden',
                     className
                 )}
             >
                 {(title || description) && (
                     isBannerHeader ? (
-                        <div className="px-6 py-4 border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 flex items-center justify-between rounded-t-[24px]">
+                        <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
                             <div className="flex items-center gap-3 z-10 pr-10">
                                 {headerIcon && (
-                                    <div className="bg-primary/10 text-primary border border-primary/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                    <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
                                         {headerIcon}
                                     </div>
                                 )}
                                 <div>
-                                    <h3 className="text-sm font-bold tracking-tight text-slate-800 dark:text-zinc-200">{title}</h3>
+                                    <h3 className="text-sm font-bold tracking-tight text-white dark:text-zinc-200">{title}</h3>
                                     {description && (
-                                        <p className="text-slate-500 dark:text-zinc-400 text-xs font-medium mt-0.5">{description}</p>
+                                        <p className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">{description}</p>
                                     )}
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <DialogHeader className="px-6 py-4 border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-left overflow-hidden rounded-t-[24px]">
+                        <DialogHeader className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 text-left overflow-hidden rounded-t-[8px]">
                             {title && (
-                                <DialogTitle className="text-sm font-bold text-slate-800 dark:text-zinc-100 tracking-tight">
+                                <DialogTitle className="text-sm font-bold text-white dark:text-zinc-100 tracking-tight">
                                     {title}
                                 </DialogTitle>
                             )}
                             {description && (
-                                <DialogDescription className="text-xs font-medium text-slate-500 dark:text-zinc-400 mt-0.5">
+                                <DialogDescription className="text-xs font-medium text-white/80 dark:text-zinc-400 mt-0.5">
                                     {description}
                                 </DialogDescription>
                             )}
@@ -93,12 +93,12 @@ export function Modal({
                     )
                 )}
                 
-                <div className="p-8 text-text-main">
+                <div className="p-8 text-text-main bg-white dark:bg-zinc-900">
                     {children}
                 </div>
 
                 {footer && (
-                    <DialogFooter className="p-6 border-t border-surface-border bg-surface-muted/40 rounded-b-[24px] overflow-hidden">
+                    <DialogFooter className="p-6 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px] overflow-hidden">
                         {footer}
                     </DialogFooter>
                 )}

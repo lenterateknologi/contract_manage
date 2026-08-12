@@ -91,25 +91,25 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px] bg-slate-100/90 dark:bg-zinc-800/90 border border-slate-200/80 dark:border-zinc-700/80 text-slate-800 dark:text-zinc-100">
-                <DialogHeader>
-                    <DialogTitle className="text-slate-800 dark:text-zinc-100 font-bold">Pengaturan Lanjutan Tahap</DialogTitle>
-                    <DialogDescription className="text-slate-500 dark:text-zinc-400">Konfigurasi kontrol perilaku & hak akses untuk tahap ini.</DialogDescription>
+            <DialogContent className="sm:max-w-[700px] p-0 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-zinc-100 rounded-[8px] overflow-hidden">
+                <DialogHeader className="px-6 py-4 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-100 border-b border-primary/20 dark:border-zinc-700/80">
+                    <DialogTitle className="text-white dark:text-zinc-100 font-bold">Pengaturan Lanjutan Tahap</DialogTitle>
+                    <DialogDescription className="text-white/80 dark:text-zinc-400">Konfigurasi kontrol perilaku & hak akses untuk tahap ini.</DialogDescription>
                 </DialogHeader>
 
-                <div className="flex justify-end gap-2 mt-2 -mb-2">
-                    <Button type="button" size="sm" variant="outline" className="border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold" onClick={() => handleSetAll(true)}>Centang Semua</Button>
-                    <Button type="button" size="sm" variant="outline" className="border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold" onClick={() => handleSetAll(false)}>Kosongkan Semua</Button>
-                </div>
+                <div className="px-6 py-4">
+                    <div className="flex justify-end gap-2 mb-3">
+                        <Button type="button" size="sm" variant="outline" className="border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold" onClick={() => handleSetAll(true)}>Centang Semua</Button>
+                        <Button type="button" size="sm" variant="outline" className="border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold" onClick={() => handleSetAll(false)}>Kosongkan Semua</Button>
+                    </div>
 
-                <div className="py-4">
-                    <div className="rounded-xl border border-slate-200/80 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/90 shadow-xs">
+                    <div className="rounded-[8px] border border-slate-200/80 bg-white overflow-hidden dark:border-zinc-800 dark:bg-zinc-900/90 shadow-xs">
                         <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-200 border-b border-slate-200/80 dark:border-zinc-700/80">
+                            <thead className="bg-primary text-white border-b border-primary/20 dark:bg-zinc-800/90 dark:border-zinc-700/80 dark:text-zinc-200">
                                 <tr>
-                                    <th className="px-4 py-3 font-bold">Fitur / Tab</th>
-                                    <th className="px-4 py-3 font-bold text-center w-28">Dapat Diedit</th>
-                                    <th className="px-4 py-3 font-bold text-center w-28">Tampilkan</th>
+                                    <th className="px-4 py-3 font-bold text-white dark:text-zinc-200">Fitur / Tab</th>
+                                    <th className="px-4 py-3 font-bold text-center w-28 text-white dark:text-zinc-200">Dapat Diedit</th>
+                                    <th className="px-4 py-3 font-bold text-center w-28 text-white dark:text-zinc-200">Tampilkan</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200/60 dark:divide-zinc-800/80">
@@ -188,7 +188,7 @@ export function AdvancedStepSettingsModal({ open, onOpenChange, step, onUpdateSt
                     </div>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter className="px-6 py-4 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/50">
                     <Button variant="outline" className="border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold" onClick={() => onOpenChange(false)}>
                         Tutup
                     </Button>

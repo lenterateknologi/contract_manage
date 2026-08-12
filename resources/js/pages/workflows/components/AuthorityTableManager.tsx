@@ -315,7 +315,7 @@ export default function AuthorityTableManager({
                 </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 overflow-hidden overflow-x-auto">
+            <div className="rounded-[8px] border border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 overflow-hidden overflow-x-auto">
                 {authorities.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 dark:text-zinc-400 text-sm">
                         Belum ada otoritas yang ditambahkan.
@@ -326,18 +326,18 @@ export default function AuthorityTableManager({
                     </div>
                 ) : (
                     <table className="w-full border-collapse text-left text-xs whitespace-nowrap">
-                        <thead className="bg-slate-100/90 dark:bg-zinc-800/90 border-b border-slate-200/80 dark:border-zinc-700/80">
+                        <thead className="bg-primary text-white border-b border-primary/20 dark:bg-zinc-800/90 dark:border-zinc-700/80 dark:text-zinc-200">
                             <tr>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">Tipe</th>
-                                {showCustom && <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">Aktor Kustom</th>}
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">User</th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">Role</th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">Departemen</th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">Divisi</th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">Company Group</th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">Perusahaan PT</th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200">Wilayah</th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-center text-slate-800 dark:text-zinc-200">Aksi</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Tipe</th>
+                                {showCustom && <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Aktor Kustom</th>}
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">User</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Role</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Departemen</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Divisi</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Company Group</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Perusahaan PT</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Wilayah</th>
+                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-center text-white dark:text-zinc-200">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">

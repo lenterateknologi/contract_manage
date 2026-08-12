@@ -796,24 +796,24 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             {/* Reusable Form Dialog */}
             {DIALOG_RESOURCES.includes(resourceSlug) && (
                 <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
-                    <DialogContent className={`border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[24px] border p-0 shadow-2xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[850px]' : 'sm:max-w-[600px]'}`}>
+                    <DialogContent className={`border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[8px] border p-0 shadow-2xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[850px]' : 'sm:max-w-[600px]'}`}>
                         <form onSubmit={handleDeptSubmit}>
-                            <div className="px-6 py-4 border-b border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 flex items-center justify-between rounded-t-[24px]">
+                            <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
                                 <div className="flex items-center gap-3 z-10 pr-10">
-                                    <div className="bg-primary/10 text-primary border border-primary/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                    <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
                                         <Shield size={18} />
                                     </div>
                                     <div>
-                                        <DialogTitle className="text-sm font-bold tracking-tight text-slate-800 dark:text-zinc-100">
+                                        <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
                                             {editDataId ? `Ubah ${title}` : `Tambah ${title}`}
                                         </DialogTitle>
-                                        <DialogDescription className="text-slate-500 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                        <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
                                             {editDataId ? `Ubah informasi ${title.toLowerCase()} Anda` : `Buat data ${title.toLowerCase()} baru`}
                                         </DialogDescription>
                                     </div>
                                 </div>
                             </div>
-                            <div className="space-y-4 p-6 max-h-[85vh] overflow-y-auto">
+                            <div className="space-y-4 p-6 bg-white dark:bg-zinc-900 max-h-[85vh] overflow-y-auto">
                                 {formSchema.map((field) => {
                                     if (field.isGroup) {
                                         if (field.label === 'Konfigurasi Filter Kontrak') {
@@ -1068,11 +1068,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     );
                                 })}
                             </div>
-                            <div className="flex justify-end gap-2 px-6 pb-6 border-t border-border/40 pt-4 bg-muted/20">
+                            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px]">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="h-9 rounded-lg px-4 text-xs font-medium"
+                                    className="h-9 rounded-lg px-4 text-xs font-medium border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200"
                                     onClick={() => setIsDeptDialogOpen(false)}
                                 >
                                     Batal
@@ -1080,7 +1080,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                 <Button
                                     type="submit"
                                     variant="primary"
-                                    className="h-9 rounded-lg px-5 text-xs font-medium shadow-sm"
+                                    className="h-9 rounded-lg px-5 text-xs font-bold shadow-xs"
                                     disabled={deptForm.processing}
                                 >
                                     {editDataId ? 'Simpan' : 'Tambah'}
