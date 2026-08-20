@@ -183,14 +183,14 @@ export function DataTable<T extends Record<string, any>>({
             )}>
                 <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
                     <table className="w-full text-left border-collapse min-w-[800px]">
-                        <thead className="bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-200">
-                            <tr className="border-b border-slate-200/80 dark:border-zinc-700/80 select-none bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-200">
+                        <thead className="bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
+                            <tr className="border-b border-primary/20 dark:border-zinc-700/80 select-none bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
                                 {onSelectionChange && (
-                                    <th className="py-3.5 px-4 w-10 sticky top-0 z-10 bg-slate-100/90 dark:bg-zinc-800/90 text-slate-800 dark:text-zinc-200">
+                                    <th className="py-3.5 px-4 w-10 sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
-                                            className="border-slate-400 dark:border-zinc-500 data-[state=checked]:bg-primary data-[state=checked]:text-white"
+                                            className="border-white/50 dark:border-zinc-500 data-[state=checked]:bg-white data-[state=checked]:text-primary"
                                         />
                                     </th>
                                 )}
@@ -201,8 +201,8 @@ export function DataTable<T extends Record<string, any>>({
                                         <th
                                             key={idx}
                                             className={cn(
-                                                "py-3.5 px-4 text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 select-none sticky top-0 z-10 bg-slate-100/90 dark:bg-zinc-800/90 border-b border-slate-200/80 dark:border-zinc-700/80",
-                                                isSortable && "cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors",
+                                                "py-3.5 px-4 text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80",
+                                                isSortable && "cursor-pointer hover:text-white/80 dark:hover:text-white transition-colors",
                                                 col.className
                                             )}
                                             onClick={() => {
@@ -213,18 +213,18 @@ export function DataTable<T extends Record<string, any>>({
                                             }}
                                         >
                                             <div className="flex items-center gap-1.5">
-                                                <span className="text-slate-800 dark:text-zinc-200 font-bold">{col.header}</span>
+                                                <span className="text-white dark:text-zinc-200 font-bold">{col.header}</span>
                                                 {isSortable && (
                                                     <span className="flex flex-col text-[8px] leading-[6px] opacity-80">
-                                                        <span className={cn(isSorted && sortDir === 'asc' ? "text-slate-900 dark:text-white font-bold" : "text-slate-400 dark:text-zinc-500")}>▲</span>
-                                                        <span className={cn(isSorted && sortDir === 'desc' ? "text-slate-900 dark:text-white font-bold" : "text-slate-400 dark:text-zinc-500")}>▼</span>
+                                                        <span className={cn(isSorted && sortDir === 'asc' ? "text-white dark:text-white font-bold" : "text-white/50 dark:text-zinc-500")}>▲</span>
+                                                        <span className={cn(isSorted && sortDir === 'desc' ? "text-white dark:text-white font-bold" : "text-white/50 dark:text-zinc-500")}>▼</span>
                                                     </span>
                                                 )}
                                             </div>
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 select-none sticky top-0 z-10 bg-slate-100/90 dark:bg-zinc-800/90 border-b border-slate-200/80 dark:border-zinc-700/80">Aksi</th>}
+                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">

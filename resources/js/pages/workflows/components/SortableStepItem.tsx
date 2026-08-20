@@ -12,18 +12,37 @@ import {
     ArrowUp,
     Bookmark,
     Briefcase,
+    Calendar,
     CheckCircle2,
     CheckSquare2,
     ChevronUp,
     Copy,
+    DollarSign,
+    Edit3,
+    Eye,
+    FileCode,
+    FileSpreadsheet,
+    FileText,
     GitBranch,
+    GitCommit,
+    Hash,
+    History,
+    Info,
     Key,
+    Link,
+    MessageSquare,
+    Paperclip,
+    Percent,
     Settings2,
     Shield,
+    ShieldCheck,
+    Sliders,
     Square,
     Trash2,
     UserCheck,
+    Users,
     Users as UsersIcon,
+    Zap,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { ApproveModal } from './modals/ApproveModal';
@@ -150,7 +169,7 @@ export default function SortableStepItem({
     }, [users]);
     const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
     const [conditionModalOpen, setConditionModalOpen] = useState(false);
-    const [stepTab, setStepTab] = useState<'config' | 'actors' | 'actions'>('config');
+    const [stepTab, setStepTab] = useState<'config' | 'actors' | 'actions' | 'advanced'>('config');
 
     const updateConfig = (key: 'custom' | 'roles' | 'departments' | 'users' | 'is_default' | 'is_initiator_role' | 'is_initiator_department' | 'use_combination', value: any) => {
         const nextConfig = {
@@ -370,7 +389,7 @@ export default function SortableStepItem({
                 }
             }}
             className={cn(
-                'group/step flex flex-col gap-0 transition-all duration-300 rounded-lg p-4 outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                'group/step relative flex flex-col gap-0 transition-all duration-300 rounded-lg p-2.5 outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-within:z-30 hover:z-20',
                 isExpanded
                     ? 'border border-primary/40 dark:border-primary/50 bg-white dark:bg-zinc-900/90'
                     : 'border border-primary/20 dark:border-primary/30 bg-primary/[0.01] dark:bg-primary/[0.02] hover:bg-primary/[0.03] hover:border-primary/40',
@@ -427,13 +446,13 @@ export default function SortableStepItem({
                                 <div
                                     className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase shrink-0"
                                     style={{
-                                        backgroundColor: `${selectedStatus.color}15`,
-                                        borderColor: `${selectedStatus.color}40`,
-                                        color: selectedStatus.color,
+                                        backgroundColor: selectedStatus.bg_color || (selectedStatus.color ? `${selectedStatus.color}15` : '#3b82f615'),
+                                        borderColor: selectedStatus.color ? `${selectedStatus.color}40` : '#3b82f640',
+                                        color: selectedStatus.color || '#2563eb',
                                     }}
                                 >
-                                    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: selectedStatus.color }} />
-                                    {selectedStatus.label}
+                                    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: selectedStatus.color || '#2563eb' }} />
+                                    {selectedStatus.label || selectedStatus.name || selectedStatus.code}
                                 </div>
                             )}
 
@@ -529,59 +548,75 @@ export default function SortableStepItem({
             {/* --- Premium Expansion Block --- */}
             {isExpanded && (
                 <div className="animate-in fade-in slide-in-from-top-3 relative overflow-visible duration-300 mt-2">
-                    {/* Inner Step Tab Switcher */}
-                    <div className="flex border-b border-slate-200/80 dark:border-zinc-700/80 mb-4 gap-4 px-2">
+                    {/* Inner Step Tab Switcher (Card Chip Style with Icons) */}
+                    <div className="flex items-center gap-1.5 p-1 mb-2 bg-slate-100/80 dark:bg-zinc-800/60 rounded-lg w-fit">
                         <button
                             type="button"
                             onClick={() => setStepTab('config')}
                             className={cn(
-                                'border-b-2 pb-2 text-sm font-semibold transition-all',
+                                'flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer select-none',
                                 stepTab === 'config'
-                                    ? 'border-primary text-primary dark:text-zinc-100 font-extrabold'
-                                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                    ? 'bg-primary text-white shadow-xs font-bold'
+                                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-200/50 dark:hover:bg-zinc-700/50',
                             )}
                         >
+                            <Settings2 size={13} />
                             Konfigurasi Langkah
                         </button>
                         <button
                             type="button"
                             onClick={() => setStepTab('actors')}
                             className={cn(
-                                'border-b-2 pb-2 text-sm font-semibold transition-all',
+                                'flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer select-none',
                                 stepTab === 'actors'
-                                    ? 'border-primary text-primary dark:text-zinc-100 font-extrabold'
-                                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                    ? 'bg-primary text-white shadow-xs font-bold'
+                                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-200/50 dark:hover:bg-zinc-700/50',
                             )}
                         >
+                            <UsersIcon size={13} />
                             Aktor & Otoritas
                         </button>
                         <button
                             type="button"
                             onClick={() => setStepTab('actions')}
                             className={cn(
-                                'flex items-center gap-1.5 border-b-2 pb-2 text-sm font-semibold transition-all',
+                                'flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer select-none',
                                 stepTab === 'actions'
-                                    ? 'border-primary text-primary dark:text-zinc-100 font-extrabold'
-                                    : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                    ? 'bg-primary text-white shadow-xs font-bold'
+                                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-200/50 dark:hover:bg-zinc-700/50',
                             )}
                         >
+                            <Zap size={13} />
                             Konfigurasi Aksi
                             <span className={cn(
                                 'rounded-full px-1.5 py-0.2 text-[9px] font-bold',
                                 stepTab === 'actions'
-                                    ? 'bg-primary/10 text-primary dark:bg-primary/20'
-                                    : 'bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
+                                    ? 'bg-white/20 text-white'
+                                    : 'bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300'
                             )}>
                                 {actions.length}
                             </span>
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => setStepTab('advanced')}
+                            className={cn(
+                                'flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition-all cursor-pointer select-none',
+                                stepTab === 'advanced'
+                                    ? 'bg-primary text-white shadow-xs font-bold'
+                                    : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 hover:bg-slate-200/50 dark:hover:bg-zinc-700/50',
+                            )}
+                        >
+                            <Shield size={13} />
+                            Pengaturan Lanjutan
+                        </button>
                     </div>
 
-                    <div className="relative z-10 py-3">
+                    <div className="relative z-10 py-1.5">
                         {stepTab === 'config' && (
-                            <div className="space-y-6 animate-in fade-in duration-200 w-full">
+                            <div className="space-y-3 animate-in fade-in duration-200 w-full">
                                 {/* --- Column 1: Step Settings (Basic Settings & Conditions) --- */}
-                                <div className="space-y-6">
+                                <div className="space-y-3">
                                     <div className="flex items-center gap-2 pb-2 border-b border-slate-200/80 dark:border-zinc-800">
                                         <Settings2 size={14} className="text-slate-400" />
                                         <h4 className="text-xs font-bold tracking-wide text-slate-800 dark:text-zinc-100">
@@ -591,7 +626,7 @@ export default function SortableStepItem({
 
                                     <div className="grid grid-cols-12 gap-4 items-end">
                                         {/* Deskripsi */}
-                                        <div className="col-span-12 md:col-span-4">
+                                        <div className="col-span-12 md:col-span-6">
                                             <FormInput
                                                 label="Deskripsi Tahap"
                                                 labelClassName="text-xs font-bold text-slate-800 dark:text-zinc-200"
@@ -604,7 +639,7 @@ export default function SortableStepItem({
                                         </div>
 
                                         {/* Target Status */}
-                                        <div className="col-span-12 sm:col-span-6 md:col-span-4 space-y-1.5">
+                                        <div className="col-span-12 sm:col-span-6 md:col-span-6 space-y-1.5">
                                             <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Status Kontrak Target</label>
                                             <Select
                                                 value={step.meta?.target_status || 'default'}
@@ -645,27 +680,6 @@ export default function SortableStepItem({
                                                 </SelectContent>
                                             </Select>
                                         </div>
-
-                                        {/* Advanced Settings Button */}
-                                        <div className="col-span-12 sm:col-span-6 md:col-span-4 space-y-1.5">
-                                            <label className="text-xs font-bold text-slate-800 dark:text-zinc-200">Pengaturan Lanjutan</label>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="w-full justify-start h-10 rounded-lg text-sm font-bold border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
-                                                onClick={() => setAdvancedSettingsOpen(true)}
-                                            >
-                                                <Settings2 className="mr-2 h-4 w-4 text-primary" />
-                                                Pengaturan Lanjutan Tahap
-                                            </Button>
-                                            <AdvancedStepSettingsModal
-                                                open={advancedSettingsOpen}
-                                                onOpenChange={setAdvancedSettingsOpen}
-                                                step={step}
-                                                onUpdateStep={(updates) => updateLocalStep(idx, updates)}
-                                            />
-                                        </div>
-
                                     </div>
 
                                     {/* Condition Expression */}
@@ -810,7 +824,7 @@ export default function SortableStepItem({
                                     <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
                                         {actions.map((act: any, actIdx: number) => {
                                             return (
-                                                <div key={act.id || actIdx} className="animate-in fade-in relative duration-300">
+                                                <div key={act.id || actIdx} className="animate-in fade-in relative duration-300 focus-within:z-40 hover:z-30">
                                                     <StepActionConfigCard
                                                         act={act}
                                                         actIdx={actIdx}
@@ -824,6 +838,7 @@ export default function SortableStepItem({
                                                         companyGroups={companyGroups}
                                                         regions={regions}
                                                         users={users}
+                                                        contractStatuses={contractStatuses}
                                                         updateAction={updateAction}
                                                         removeAction={removeAction}
                                                         cloneAction={cloneAction}
@@ -835,6 +850,396 @@ export default function SortableStepItem({
                                 )}
                             </div>
                         )}
+
+                        {stepTab === 'advanced' && (() => {
+                            const isSectionChecked = (keys: string[]) => {
+                                if (keys.length === 0) return false;
+                                return keys.every((k) => (k.startsWith('require_') ? !!step.meta?.[k] : step.meta?.[k] !== false));
+                            };
+
+                            const toggleSection = (keys: string[]) => {
+                                if (keys.length === 0) return;
+                                const allChecked = isSectionChecked(keys);
+                                const newVal = !allChecked;
+                                const updates: Record<string, boolean> = {};
+                                keys.forEach((k) => {
+                                    updates[k] = newVal;
+                                });
+                                updateLocalStep(idx, {
+                                    meta: {
+                                        ...(step.meta || {}),
+                                        ...updates,
+                                    },
+                                });
+                            };
+
+                            return (
+                            <div className="space-y-4 animate-in fade-in duration-200 w-full">
+                                <div className="flex items-center justify-between pb-2 border-b border-slate-200/80 dark:border-zinc-800">
+                                    <div className="flex items-center gap-2">
+                                        <Settings2 size={14} className="text-slate-400" />
+                                        <h4 className="text-xs font-bold tracking-wide text-slate-800 dark:text-zinc-100">
+                                            Pengaturan Lanjutan Tahap (Perilaku & Hak Akses)
+                                        </h4>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 text-[11px] border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold"
+                                            onClick={() => {
+                                                updateLocalStep(idx, {
+                                                    meta: {
+                                                        ...(step.meta || {}),
+                                                        allow_info_edit: true, allow_f1_edit: true, allow_f2_edit: true, allow_agreement_edit: true, allow_attachment_edit: true, allow_reference: true, show_f2_contract_no: true, show_tax_toggle: true, show_price: true, show_period: true, show_tab_f1: true, show_tab_f2: true, show_tab_agreement: true, show_tab_attachments: true, show_tab_references: true, show_tab_timeline: true, show_tab_chat: true, allow_f2_contract_no_edit: true, allow_tax_toggle_edit: true, allow_price_edit: true, allow_period_edit: true, show_info: true, allow_timeline_edit: true, allow_chat_edit: true, show_action_panel: true, show_document_detail: true, show_tab_members: true,
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            Centang Semua
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 text-[11px] border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold"
+                                            onClick={() => {
+                                                updateLocalStep(idx, {
+                                                    meta: {
+                                                        ...(step.meta || {}),
+                                                        allow_info_edit: false, allow_f1_edit: false, allow_f2_edit: false, allow_agreement_edit: false, allow_attachment_edit: false, allow_reference: false, show_f2_contract_no: false, show_tax_toggle: false, show_price: false, show_period: false, show_tab_f1: false, show_tab_f2: false, show_tab_agreement: false, show_tab_attachments: false, show_tab_references: false, show_tab_timeline: false, show_tab_chat: false, allow_f2_contract_no_edit: false, allow_tax_toggle_edit: false, allow_price_edit: false, allow_period_edit: false, show_info: false, allow_timeline_edit: false, allow_chat_edit: false, show_action_panel: false, show_document_detail: false, show_tab_members: false,
+                                                    },
+                                                });
+                                            }}
+                                        >
+                                            Kosongkan Semua
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <table className="w-full text-xs text-left border-collapse">
+                                        <thead className="bg-primary text-white border-b border-primary/20 dark:bg-zinc-800/90 dark:border-zinc-700/80 dark:text-zinc-200">
+                                            <tr>
+                                                <th className="px-4 py-2.5 font-bold text-white dark:text-zinc-200">
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Settings2 size={13} className="text-white/80 dark:text-zinc-400" />
+                                                        Fitur / Tab
+                                                    </span>
+                                                </th>
+                                                <th className="px-4 py-2.5 font-bold text-center w-32 text-white dark:text-zinc-200">
+                                                    <span className="flex items-center justify-center gap-1">
+                                                        <Edit3 size={13} className="text-white/80 dark:text-zinc-400" />
+                                                        Dapat Diedit
+                                                    </span>
+                                                </th>
+                                                <th className="px-4 py-2.5 font-bold text-center w-28 text-white dark:text-zinc-200">
+                                                    <span className="flex items-center justify-center gap-1">
+                                                        <Eye size={13} className="text-white/80 dark:text-zinc-400" />
+                                                        Tampilkan
+                                                    </span>
+                                                </th>
+                                                <th className="px-4 py-2.5 font-bold text-center w-28 text-white dark:text-zinc-200">
+                                                    <span className="flex items-center justify-center gap-1">
+                                                        <CheckSquare2 size={13} className="text-white/80 dark:text-zinc-400" />
+                                                        Wajib Diisi
+                                                    </span>
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200/60 dark:divide-zinc-800/80">
+                                            {/* Tab 1: Dokumen */}
+                                            <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
+                                                <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                                    Tab 1: Dokumen (Sub-dokumen F1, F2, & Perjanjian)
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['allow_f1_edit', 'allow_f2_edit', 'allow_agreement_edit'])}
+                                                        onCheckedChange={() => toggleSection(['allow_f1_edit', 'allow_f2_edit', 'allow_agreement_edit'])}
+                                                        title="Centang/Kosongkan Semua Dapat Diedit di Dokumen"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['show_tab_f1', 'show_tab_f2', 'show_tab_agreement'])}
+                                                        onCheckedChange={() => toggleSection(['show_tab_f1', 'show_tab_f2', 'show_tab_agreement'])}
+                                                        title="Centang/Kosongkan Semua Tampilkan di Dokumen"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['require_f1', 'require_f2', 'require_agreement'])}
+                                                        onCheckedChange={() => toggleSection(['require_f1', 'require_f2', 'require_agreement'])}
+                                                        title="Centang/Kosongkan Semua Wajib Diisi di Dokumen"
+                                                    />
+                                                </td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
+                                                    <FileText size={14} className="text-primary dark:text-primary-400" />
+                                                    Sub-tab F1 (Permohonan)
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_f1_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_f1_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_f1 !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_f1: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_f1} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_f1: !!c } })} /></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
+                                                    <FileSpreadsheet size={14} className="text-primary dark:text-primary-400" />
+                                                    Sub-tab F2 (Ringkasan)
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_f2_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_f2_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_f2 !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_f2: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_f2} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_f2: !!c } })} /></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
+                                                    <FileCode size={14} className="text-primary dark:text-primary-400" />
+                                                    Sub-tab Perjanjian / Draft
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_agreement_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_agreement_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_agreement !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_agreement: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_agreement} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_agreement: !!c } })} /></td>
+                                            </tr>
+
+                                            {/* Informational Section: Informasi Kontrak */}
+                                            <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
+                                                <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                                    Informasi Kontrak (Panel & Field Data Utama)
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['allow_info_edit', 'allow_title_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
+                                                        onCheckedChange={() => toggleSection(['allow_info_edit', 'allow_title_edit', 'allow_vendor_edit', 'allow_category_edit', 'allow_f2_contract_no_edit', 'allow_tax_toggle_edit', 'allow_price_edit', 'allow_period_edit'])}
+                                                        title="Centang/Kosongkan Semua Dapat Diedit di Informasi Kontrak"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['show_info', 'show_title', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
+                                                        onCheckedChange={() => toggleSection(['show_info', 'show_title', 'show_vendor', 'show_category', 'show_f2_contract_no', 'show_tax_toggle', 'show_price', 'show_period'])}
+                                                        title="Centang/Kosongkan Semua Tampilkan di Informasi Kontrak"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
+                                                    <Info size={14} className="text-primary dark:text-primary-400" />
+                                                    Info Kontrak Utama (Kanan)
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_info_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_info_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_info !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_info: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
+                                                    <FileText size={13} className="text-primary/70 dark:text-primary-400/70" />
+                                                    ↳ Field Judul Kontrak
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_title_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_title_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_title !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_title: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
+                                                    <Users size={13} className="text-primary/70 dark:text-primary-400/70" />
+                                                    ↳ Field Pihak Kedua (Vendor)
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_vendor_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_vendor_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_vendor !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_vendor: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
+                                                    <Bookmark size={13} className="text-primary/70 dark:text-primary-400/70" />
+                                                    ↳ Field Kategori Kontrak
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_category_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_category_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_category !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_category: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
+                                                    <Hash size={13} className="text-primary/70 dark:text-primary-400/70" />
+                                                    ↳ Field No. Kontrak
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_f2_contract_no_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_f2_contract_no_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_f2_contract_no !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_f2_contract_no: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
+                                                    <Percent size={13} className="text-primary/70 dark:text-primary-400/70" />
+                                                    ↳ Field Penentuan Pajak
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_tax_toggle_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_tax_toggle_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tax_toggle !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tax_toggle: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
+                                                    <DollarSign size={13} className="text-primary/70 dark:text-primary-400/70" />
+                                                    ↳ Field Nilai / Harga Kontrak
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_price_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_price_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_price !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_price: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
+                                                    <Calendar size={13} className="text-primary/70 dark:text-primary-400/70" />
+                                                    ↳ Field Masa Berlaku Kontrak
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_period_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_period_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_period !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_period: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+
+                                            {/* Tab 2: Riwayat & Alur */}
+                                            <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
+                                                <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                                    Tab 2: Riwayat & Alur (Sub-tab Alur & Audit Log)
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['allow_timeline_edit'])}
+                                                        onCheckedChange={() => toggleSection(['allow_timeline_edit'])}
+                                                        title="Centang/Kosongkan Semua Dapat Diedit di Riwayat & Alur"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['show_tab_timeline'])}
+                                                        onCheckedChange={() => toggleSection(['show_tab_timeline'])}
+                                                        title="Centang/Kosongkan Semua Tampilkan di Riwayat & Alur"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
+                                                    <GitCommit size={14} className="text-primary dark:text-primary-400" />
+                                                    Sub-tab Alur Approval & Proses
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_timeline_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_timeline_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_timeline !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_timeline: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+
+                                            {/* Tab 3: Diskusi & Member */}
+                                            <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
+                                                <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                                    Tab 3: Diskusi & Member (Sub-tab Chat & Member)
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['allow_chat_edit'])}
+                                                        onCheckedChange={() => toggleSection(['allow_chat_edit'])}
+                                                        title="Centang/Kosongkan Semua Dapat Diedit di Diskusi & Member"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['show_tab_chat', 'show_tab_members'])}
+                                                        onCheckedChange={() => toggleSection(['show_tab_chat', 'show_tab_members'])}
+                                                        title="Centang/Kosongkan Semua Tampilkan di Diskusi & Member"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
+                                                    <MessageSquare size={14} className="text-primary dark:text-primary-400" />
+                                                    Sub-tab Chat & Diskusi Tim
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_chat_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_chat_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_chat !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_chat: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
+                                                    <Users size={14} className="text-primary dark:text-primary-400" />
+                                                    Sub-tab Member / Anggota Tim
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_members !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_members: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+
+                                            {/* Tab Lainnya & Panel Utama */}
+                                            <tr className="bg-slate-100/90 dark:bg-zinc-800/80 border-y border-slate-200 dark:border-zinc-700">
+                                                <td className="px-4 py-2 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-zinc-300">
+                                                    Tab Lainnya & Panel Utama
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['allow_attachment_edit', 'allow_reference'])}
+                                                        onCheckedChange={() => toggleSection(['allow_attachment_edit', 'allow_reference'])}
+                                                        title="Centang/Kosongkan Semua Dapat Diedit di Tab Lainnya & Panel"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isSectionChecked(['show_tab_attachments', 'show_tab_references', 'show_action_panel', 'show_document_detail'])}
+                                                        onCheckedChange={() => toggleSection(['show_tab_attachments', 'show_tab_references', 'show_action_panel', 'show_document_detail'])}
+                                                        title="Centang/Kosongkan Semua Tampilkan di Tab Lainnya & Panel"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <span className="text-slate-300 dark:text-zinc-600">-</span>
+                                                </td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
+                                                    <Paperclip size={14} className="text-primary dark:text-primary-400" />
+                                                    Tab Lampiran Berkas
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_attachment_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_attachment_edit: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_attachments !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_attachments: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
+                                                    <Link size={14} className="text-primary dark:text-primary-400" />
+                                                    Tab Kontrak Referensi
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_reference !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_reference: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_references !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_references: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
+                                                    <Sliders size={14} className="text-primary dark:text-primary-400" />
+                                                    Panel Aksi Approval (Kanan)
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_action_panel !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_action_panel: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                            <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
+                                                    <FileText size={14} className="text-primary dark:text-primary-400" />
+                                                    Container Detail Dokumen
+                                                </td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_document_detail !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_document_detail: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            );
+                        })()}
                     </div>
                 </div>
             )}

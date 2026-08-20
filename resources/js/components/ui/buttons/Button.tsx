@@ -12,7 +12,7 @@ const buttonThemes = {
     link: 'text-primary underline-offset-4 hover:underline lowercase dark:text-white',
     destructive: 'bg-danger text-danger-foreground hover:bg-danger/90 dark:bg-rose-600 dark:text-white dark:hover:bg-rose-500 dark:border-none',
     secondary: 'bg-secondary text-secondary-foreground border border-surface-border hover:bg-secondary/80 dark:bg-zinc-800 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-700',
-    white: 'bg-surface-base/80 backdrop-blur-md border border-surface-border text-text-main hover:bg-surface-muted hover:border-surface-border dark:bg-zinc-900/90 dark:border-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-800',
+    white: 'bg-white border border-surface-border text-text-main hover:bg-surface-muted hover:border-surface-border dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-800',
 };
 
 const buttonVariants = cva(

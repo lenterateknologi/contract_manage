@@ -163,6 +163,48 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
     };
 
     const handleSubmit = async () => {
+        // Validation check for required step documents (require_f1, require_f2, require_agreement or action_configs.required_fields)
+        let stepMeta = contract?.workflow_step?.meta;
+        let actions = contract?.workflow_step?.action_configs || contract?.workflow_step?.actions || [];
+
+        if (!stepMeta && contract?.workflow?.steps) {
+            const currentStepSeq = contract?.current_step || contract?.workflow_step?.step || 1;
+            const matchedStep = contract.workflow.steps.find((s: any) => s.step === currentStepSeq || s.id === contract?.workflow_step_id);
+            if (matchedStep) {
+                stepMeta = matchedStep.meta;
+                if (!actions.length) actions = matchedStep.action_configs || matchedStep.actions || [];
+            }
+        }
+        stepMeta = stepMeta || {};
+
+        const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
+
+        const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
+        const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
+        const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+
+        const missingDocs: string[] = [];
+
+        if (requireF1) {
+            const hasF1 = !!(contract.f1_file || contract.metadata?.f1_file || contract.metadata?.f1_form_data || (contract.f1_items && contract.f1_items.length > 0));
+            if (!hasF1) missingDocs.push('Sub-dokumen F1 (Permohonan)');
+        }
+
+        if (requireF2) {
+            const hasF2 = !!(contract.f2_file || contract.metadata?.f2_file || contract.metadata?.f2_form_data || contract.contract_no || contract.price);
+            if (!hasF2) missingDocs.push('Sub-dokumen F2 (Ringkasan)');
+        }
+
+        if (requireAgreement) {
+            const hasAgreement = !!(contract.agreement_file || contract.metadata?.agreement_file || contract.agreement_content || contract.metadata?.agreement_content);
+            if (!hasAgreement) missingDocs.push('Sub-dokumen Perjanjian / Draft');
+        }
+
+        if (missingDocs.length > 0) {
+            alert(`Tidak dapat melanjutkan persetujuan. Dokumen berikut wajib diisi/diunggah terlebih dahulu:\n- ${missingDocs.join('\n- ')}`);
+            return;
+        }
+
         const isJointUpload = contract?.next_step?.step_category === 'joint_upload';
         const hasOrderSet = !!contract?.metadata?.step_12_order;
         const showOrderSelection = isJointUpload && !hasOrderSet;
@@ -191,9 +233,82 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
     };
 
     const titleText = actionAlias || (contract?.workflow_step?.step === 1 ? 'Kirim Persetujuan' : 'Setujui Kontrak');
-    const subtitleText = contract?.workflow_step?.step === 1 
+    const subtitleText = contract?.workflow_step?.step === 1
         ? 'Konfirmasi untuk mengirim draft kontrak ke tahap persetujuan berikutnya'
         : 'Berikan persetujuan atau catatan untuk memproses tahap kontrak ini';
+
+    const checkIsSubmitDisabled = () => {
+        let stepMeta = contract?.workflow_step?.meta;
+        let actions = contract?.workflow_step?.action_configs || contract?.workflow_step?.actions || [];
+
+        if (!stepMeta && contract?.workflow?.steps) {
+            const currentStepSeq = contract?.current_step || contract?.workflow_step?.step || 1;
+            const matchedStep = contract.workflow.steps.find((s: any) => s.step === currentStepSeq || s.id === contract?.workflow_step_id);
+            if (matchedStep) {
+                stepMeta = matchedStep.meta;
+                if (!actions.length) actions = matchedStep.action_configs || matchedStep.actions || [];
+            }
+        }
+        stepMeta = stepMeta || {};
+
+        const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
+        const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
+        const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
+        const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+
+        // Waktu saat step persetujuan saat ini dimulai
+        const currentApproval = (contract?.approvals || []).find((a: any) => a.status === 'pending');
+        const stepStartTime = currentApproval?.created_at || contract?.workflow_step?.created_at;
+
+        const hasDocUploadedInCurrentStep = (type: string) => {
+            if (!contract?.versions) return false;
+            return contract.versions.some((v: any) => {
+                if (v.document_type !== type && !(type === 'agreement' && v.document_type === 'contract')) return false;
+                if (!stepStartTime || !v.created_at_raw) return true;
+                return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
+            });
+        };
+
+        if (requireF1) {
+            const hasF1 = hasDocUploadedInCurrentStep('f1') || (contract?.current_step === 1 && !!(
+                contract?.f1_file ||
+                contract?.metadata?.f1_file ||
+                contract?.f1_submission ||
+                contract?.f1_form_data ||
+                contract?.metadata?.f1_form_data ||
+                (contract?.f1_items && contract.f1_items.length > 0)
+            ));
+            if (!hasF1) return true;
+        }
+
+        if (requireF2) {
+            const hasF2 = hasDocUploadedInCurrentStep('f2') || (contract?.current_step === 1 && !!(
+                contract?.f2_file ||
+                contract?.metadata?.f2_file ||
+                contract?.f2_submission ||
+                contract?.f2_form_data ||
+                contract?.metadata?.f2_form_data ||
+                contract?.contract_no ||
+                contract?.price
+            ));
+            if (!hasF2) return true;
+        }
+
+        if (requireAgreement) {
+            const hasAgreement = hasDocUploadedInCurrentStep('agreement') || (contract?.current_step === 1 && !!(
+                contract?.agreement_file ||
+                contract?.metadata?.agreement_file ||
+                contract?.agreement_submission ||
+                contract?.agreement_content ||
+                contract?.metadata?.agreement_content
+            ));
+            if (!hasAgreement) return true;
+        }
+
+        return false;
+    };
+
+    const isSubmitDisabled = loading || checkIsSubmitDisabled();
 
     return (
         <Modal
@@ -222,7 +337,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                     </Button>
                     <Button
                         onClick={handleSubmit}
-                        disabled={loading}
+                        disabled={isSubmitDisabled}
                         className="min-w-[140px] h-9 text-xs"
                     >
                         {loading ? (
@@ -257,6 +372,117 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                             ? 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.'
                             : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
                     </p>
+
+                    {/* Check-list Syarat Dokumen Wajib Tahap Ini */}
+                    {(() => {
+                        let stepMeta = contract?.workflow_step?.meta;
+                        let actions = contract?.workflow_step?.action_configs || contract?.workflow_step?.actions || [];
+
+                        // Fallback ke contract.workflow.steps apabila contract.workflow_step belum memuat meta
+                        if (!stepMeta && contract?.workflow?.steps) {
+                            const currentStepSeq = contract?.current_step || contract?.workflow_step?.step || 1;
+                            const matchedStep = contract.workflow.steps.find((s: any) => s.step === currentStepSeq || s.id === contract?.workflow_step_id);
+                            if (matchedStep) {
+                                stepMeta = matchedStep.meta;
+                                if (!actions.length) actions = matchedStep.action_configs || matchedStep.actions || [];
+                            }
+                        }
+                        stepMeta = stepMeta || {};
+
+                        const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
+
+                        const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
+                        const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
+                        const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+
+                        const currentApproval = (contract?.approvals || []).find((a: any) => a.status === 'pending');
+                        const stepStartTime = currentApproval?.created_at || contract?.workflow_step?.created_at;
+
+                        const hasDocUploadedInCurrentStep = (type: string) => {
+                            if (!contract?.versions) return false;
+                            return contract.versions.some((v: any) => {
+                                if (v.document_type !== type && !(type === 'agreement' && v.document_type === 'contract')) return false;
+                                if (!stepStartTime || !v.created_at_raw) return true;
+                                return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
+                            });
+                        };
+
+                        const reqList: any[] = [];
+
+                        if (requireF1) {
+                            const isFilled = hasDocUploadedInCurrentStep('f1') || (contract?.current_step === 1 && !!(
+                                contract.f1_file ||
+                                contract.metadata?.f1_file ||
+                                contract.f1_submission ||
+                                contract.f1_form_data ||
+                                contract.metadata?.f1_form_data ||
+                                (contract.f1_items && contract.f1_items.length > 0)
+                            ));
+                            reqList.push({ label: 'Sub-dokumen F1 (Permohonan)', isFilled });
+                        }
+                        if (requireF2) {
+                            const isFilled = hasDocUploadedInCurrentStep('f2') || (contract?.current_step === 1 && !!(
+                                contract.f2_file ||
+                                contract.metadata?.f2_file ||
+                                contract.f2_submission ||
+                                contract.f2_form_data ||
+                                contract.metadata?.f2_form_data ||
+                                contract.contract_no ||
+                                contract.price
+                            ));
+                            reqList.push({ label: 'Sub-dokumen F2 (Ringkasan)', isFilled });
+                        }
+                        if (requireAgreement) {
+                            const isFilled = hasDocUploadedInCurrentStep('agreement') || (contract?.current_step === 1 && !!(
+                                contract.agreement_file ||
+                                contract.metadata?.agreement_file ||
+                                contract.agreement_submission ||
+                                contract.agreement_content ||
+                                contract.metadata?.agreement_content
+                            ));
+                            reqList.push({ label: 'Sub-dokumen Perjanjian / Draft', isFilled });
+                        }
+
+                        if (reqList.length === 0) return null;
+
+                        return (
+                            <div className="rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/60 p-2.5 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                        Checklist Syarat Dokumen Wajib
+                                    </span>
+                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
+                                        {reqList.filter(r => r.isFilled).length} / {reqList.length} Terisi
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                                    {reqList.map((req, idx) => (
+                                        <div
+                                            key={idx}
+                                            className={cn(
+                                                'flex items-center justify-between px-2.5 py-1.5 rounded-md border text-[11px] font-semibold transition-colors',
+                                                req.isFilled
+                                                    ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-300'
+                                                    : 'bg-rose-50/90 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-300'
+                                            )}
+                                        >
+                                            <span className="flex items-center gap-1.5 truncate">
+                                                {req.isFilled ? (
+                                                    <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                ) : (
+                                                    <X size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                                                )}
+                                                <span className="truncate">{req.label}</span>
+                                            </span>
+                                            <span className="text-[9px] uppercase font-bold tracking-tight shrink-0 ml-1">
+                                                {req.isFilled ? '✓' : '✗'}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {contract?.next_step?.step_category === 'joint_upload' && !contract?.metadata?.step_12_order && (
                         <div className="space-y-3">

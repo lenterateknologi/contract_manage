@@ -152,6 +152,22 @@ class ContractWorkflowService
         $initialStatus = $hasAdhoc ? 'waiting' : 'pending';
 
         foreach ($approvers as $approver) {
+            // Guard: skip if a non-adhoc pending/waiting approval for this user+step already exists
+            $existing = Approval::where('contract_id', $contract->id)
+                ->where('workflow_step_id', $step->id)
+                ->where('user_id', $approver->id)
+                ->whereNotIn('role', ['Persetujuan Tambahan', 'Penandatangan', 'Pihak 1', 'Pihak 2'])
+                ->whereIn('status', ['pending', 'waiting'])
+                ->first();
+
+            if ($existing) {
+                // If it's still waiting but no adhoc blockers exist, promote to pending
+                if ($existing->status === 'waiting' && ! $hasAdhoc) {
+                    $existing->update(['status' => 'pending']);
+                }
+                continue;
+            }
+
             Approval::create([
                 'contract_id' => $contract->id,
                 'workflow_step_id' => $step->id,

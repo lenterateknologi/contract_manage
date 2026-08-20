@@ -27,9 +27,9 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
                     <Input
                         className={cn(
                             "pl-10 pr-4 h-10 rounded-xl text-xs font-medium text-text-main placeholder:text-text-soft",
-                            "bg-surface-base/80 backdrop-blur-md border border-surface-border transition-all",
+                            "bg-white border border-surface-border transition-all",
                             "focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:ring-offset-0",
-                            "dark:text-white dark:border-zinc-700 dark:bg-zinc-900/90 dark:placeholder:text-zinc-400",
+                            "dark:text-white dark:border-zinc-700 dark:bg-zinc-900 dark:placeholder:text-zinc-400",
                             className
                         )}
                         ref={ref}
@@ -55,7 +55,7 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
                         }
                     }}
                     className={cn(
-                        "relative flex items-center h-10 rounded-xl transition-all duration-300 border border-surface-border bg-surface-base/80 dark:bg-zinc-900/90 dark:border-zinc-700 backdrop-blur-md overflow-hidden",
+                        "relative flex items-center h-10 rounded-xl transition-all duration-300 border border-surface-border bg-white dark:bg-zinc-900 dark:border-zinc-700 overflow-hidden",
                         isExpanded
                             ? "w-full px-3 focus-within:ring-1 focus-within:ring-primary/30 focus-within:border-primary"
                             : "w-10 justify-center cursor-pointer hover:bg-surface-muted hover:border-surface-border/90"

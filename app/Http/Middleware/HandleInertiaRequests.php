@@ -128,6 +128,7 @@ class HandleInertiaRequests extends Middleware
                 'm_modules.name',
                 'm_modules.route',
                 'm_modules.icon',
+                'm_modules.description',
                 'm_module_groups.name as group_title',
                 'm_role_module_groups.sequence as group_sequence',
                 'm_access_modules.sequence as module_sequence',
@@ -140,6 +141,7 @@ class HandleInertiaRequests extends Middleware
                 $sortedItems = $items->map(fn ($module) => [
                     'title' => $module->name,
                     'url' => $module->route,
+                    'description' => $module->description,
                     'icon' => $module->icon,
                     'sequence' => $module->module_sequence,
                 ])->values()->all();
@@ -174,43 +176,19 @@ class HandleInertiaRequests extends Middleware
 
         $isAdmin = $request->user()->role === 'Admin' || $request->user()->role === 'Super Admin' || $request->user()->is_admin;
         if ($isAdmin) {
-            $hasSync = false;
-            $hasOrgTree = false;
             $hasBackup = false;
             foreach ($groups as $group) {
                 foreach ($group['items'] as $item) {
-                    if ($item['url'] === '/admin/master-data-sync') {
-                        $hasSync = true;
-                    }
-                    if ($item['url'] === '/admin/organization-tree') {
-                        $hasOrgTree = true;
-                    }
                     if ($item['url'] === '/admin/backups') {
                         $hasBackup = true;
                     }
                 }
             }
 
-            if (! $hasSync || ! $hasOrgTree || ! $hasBackup) {
+            if (! $hasBackup) {
                 $foundSystemGroup = false;
                 foreach ($groups as &$group) {
                     if (trim($group['title']) === 'Pengaturan Sistem') {
-                        if (! $hasSync) {
-                            $group['items'][] = [
-                                'title' => 'Ekspor Impor Master',
-                                'url' => '/admin/master-data-sync',
-                                'icon' => 'RefreshCw',
-                                'sequence' => 99,
-                            ];
-                        }
-                        if (! $hasOrgTree) {
-                            $group['items'][] = [
-                                'title' => 'Organization Tree',
-                                'url' => '/admin/organization-tree',
-                                'icon' => 'Building2',
-                                'sequence' => 100,
-                            ];
-                        }
                         if (! $hasBackup) {
                             $group['items'][] = [
                                 'title' => 'Backup & Restore',
@@ -237,22 +215,6 @@ class HandleInertiaRequests extends Middleware
 
                 if (! $foundSystemGroup) {
                     $newItems = [];
-                    if (! $hasSync) {
-                        $newItems[] = [
-                            'title' => 'Ekspor Impor Master',
-                            'url' => '/admin/master-data-sync',
-                            'icon' => 'RefreshCw',
-                            'sequence' => 99,
-                        ];
-                    }
-                    if (! $hasOrgTree) {
-                        $newItems[] = [
-                            'title' => 'Organization Tree',
-                            'url' => '/admin/organization-tree',
-                            'icon' => 'Building2',
-                            'sequence' => 100,
-                        ];
-                    }
                     if (! $hasBackup) {
                         $newItems[] = [
                             'title' => 'Backup & Restore',

@@ -98,6 +98,7 @@ interface StepActionConfigCardProps {
     companyGroups?: any[];
     regions?: any[];
     users: any[];
+    contractStatuses?: any[];
     updateAction: (actIdx: number, data: any) => void;
     removeAction: (actIdx: number) => void;
     cloneAction: (actIdx: number) => void;
@@ -116,6 +117,7 @@ export function StepActionConfigCard({
     companyGroups = [],
     regions = [],
     users,
+    contractStatuses = [],
     updateAction,
     removeAction,
     cloneAction,
@@ -124,6 +126,12 @@ export function StepActionConfigCard({
     const isForwardAction = actionCode === 'forward';
     const isSignatureAction = ['signature', 'sign'].includes(actionCode);
     const isAssignOrForwardAction = ['assign', 'forward'].includes(actionCode);
+
+    // Fallback status: act.target_status -> step.meta?.target_status
+    const effectiveStatusCode = act.target_status || step?.meta?.target_status;
+    const effectiveStatusObj = effectiveStatusCode
+        ? contractStatuses.find((s: any) => s.code === effectiveStatusCode)
+        : null;
 
     const { color } = getActionTheme(actionCode);
 
@@ -216,19 +224,31 @@ export function StepActionConfigCard({
     const showAbsoluteStepSelector = transitionType === 'absolute';
 
     return (
-        <div className="relative space-y-2 rounded-lg border border-slate-200/80 bg-white p-3 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/90">
+        <div className="relative space-y-2 rounded-lg border border-slate-200/80 bg-white p-3 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/90 focus-within:z-30">
             {/* Card Header */}
-            <div className={cn(
-                "flex items-center justify-between border-b pb-2 px-3 py-2.5 -mx-3 -mt-3 rounded-t-lg transition-all",
-                headerTheme.bg,
-                headerTheme.border
-            )}>
-                <span className={cn(
-                    "text-sm tracking-wider font-bold",
-                    headerTheme.text
-                )}>
-                    Aksi #{actIdx + 1}
-                </span>
+            <div
+                className={cn(
+                    "flex items-center justify-between border-b pb-2 px-3 py-2.5 -mx-3 -mt-3 rounded-t-lg transition-all",
+                    !effectiveStatusObj && headerTheme.bg,
+                    headerTheme.border
+                )}
+                style={effectiveStatusObj?.color ? {
+                    backgroundColor: effectiveStatusObj.color,
+                    borderColor: 'transparent',
+                } : undefined}
+            >
+                <div className="flex items-center gap-2">
+                    <span className={cn(
+                        "text-sm tracking-wider font-bold text-white",
+                    )}>
+                        Aksi #{actIdx + 1}
+                    </span>
+                    {effectiveStatusObj && (
+                        <span className="inline-flex items-center rounded-full bg-white/20 border border-white/20 px-2 py-0.5 text-[9.5px] font-bold text-white uppercase tracking-wider">
+                            {effectiveStatusObj.label || effectiveStatusObj.code}
+                        </span>
+                    )}
+                </div>
                 <div className="flex items-center gap-1.5">
                     {/* Toggle Active/Inactive */}
                     <button
@@ -370,8 +390,63 @@ export function StepActionConfigCard({
                     </Select>
                 </div>
 
-                {/* Cell 2b: Deskripsi Aksi */}
+                {/* Cell 2b: Status Kontrak Target (Warna & Status Aksi) */}
                 <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Status Kontrak Target</label>
+                        {effectiveStatusObj && (
+                            <span className="text-[10px] font-semibold text-slate-400">
+                                {act.target_status ? 'Kustom' : 'Otomatis dari Tahap'}
+                            </span>
+                        )}
+                    </div>
+                    <Select
+                        value={act.target_status || 'default'}
+                        onValueChange={(v) => {
+                            updateAction(actIdx, {
+                                target_status: v === 'default' ? null : v,
+                            });
+                        }}
+                    >
+                        <SelectTrigger className="h-10 py-2 px-3 rounded-lg border-slate-200 bg-white dark:bg-slate-900 text-sm font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-900">
+                            <SelectValue placeholder="Pilih Status" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                            <SelectItem value="default" className="py-2 text-sm font-medium text-slate-500 uppercase">
+                                <div className="flex items-center gap-2">
+                                    <div
+                                        className="h-2 w-2 rounded-full border border-slate-300"
+                                        style={{ backgroundColor: step?.meta?.target_status ? (contractStatuses.find((s: any) => s.code === step.meta.target_status)?.color || '#cbd5e1') : '#cbd5e1' }}
+                                    />
+                                    <span>
+                                        DEFAULT (MENGIKUTI TAHAP{step?.meta?.target_status ? `: ${step.meta.target_status.toUpperCase()}` : ''})
+                                    </span>
+                                </div>
+                            </SelectItem>
+                            {contractStatuses.map((status: any) => (
+                                <SelectItem
+                                    key={status.id}
+                                    value={status.code}
+                                    className="py-2 text-sm font-medium uppercase"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="h-2 w-2 rounded-full"
+                                            style={{ backgroundColor: status.color || '#cbd5e1' }}
+                                        />
+                                        <span>
+                                            {(status.label || status.name || status.code || '').toUpperCase()} (
+                                            {status.code?.toUpperCase()})
+                                        </span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Cell 2c: Deskripsi Aksi */}
+                <div className="space-y-1 sm:col-span-2">
                     <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Deskripsi Aksi (Tooltip)</label>
                     <input
                         type="text"
@@ -475,8 +550,8 @@ export function StepActionConfigCard({
                 )}
 
                 {/* Cell 3: Required Fields */}
-                <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Kolom Wajib Diisi (Required)</label>
+                <div className="relative space-y-1 z-20 focus-within:z-40">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Kolom Wajib Diisi (Required)</label>
                     <SearchableMultiSelect
                         values={act.required_fields || []}
                         onValuesChange={(vals: string[]) => updateAction(actIdx, { required_fields: vals })}
@@ -486,8 +561,8 @@ export function StepActionConfigCard({
                 </div>
 
                 {/* Cell 4: Autofill Fields */}
-                <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 ">Kolom Isi Otomatis (Autofill)</label>
+                <div className="relative space-y-1 z-10 focus-within:z-40">
+                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Kolom Isi Otomatis (Autofill)</label>
                     <SearchableMultiSelect
                         values={act.autofilled_fields || []}
                         onValuesChange={(vals: string[]) => updateAction(actIdx, { autofilled_fields: vals })}

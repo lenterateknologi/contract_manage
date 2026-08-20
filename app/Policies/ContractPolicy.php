@@ -98,7 +98,12 @@ class ContractPolicy
      */
     private function canPerformEdit(User $user, Contract $contract, string $metaKey): bool
     {
-        // If contract is still in initial state (no step), allow creator
+        // Admin, Super Admin, Creator, and Initiator always have upload/edit permission for contract files
+        if ($user->isAdmin() || $user->isSuperAdmin() || $contract->created_by === $user->id || $contract->initiator_id === $user->id) {
+            return true;
+        }
+
+        // If contract is still in initial state (no step), allow creator or admin
         if (! $contract->workflow_step_id) {
             return $contract->created_by === $user->id || $user->isAdmin();
         }

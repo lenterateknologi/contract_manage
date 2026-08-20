@@ -34,17 +34,19 @@ export interface TimelineIconProps extends React.HTMLAttributes<HTMLDivElement> 
 }
 
 export const TimelineIcon = React.forwardRef<HTMLDivElement, TimelineIconProps>(
-    ({ className, status = 'waiting', children, ...props }, ref) => {
+    ({ className, status = 'waiting', children, style, ...props }, ref) => {
         return (
             <div
                 ref={ref}
+                style={style}
                 className={cn(
                     'absolute -left-[37px] top-0 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shadow-xs transition-all duration-200 ring-4 ring-surface-base',
-                    status === 'completed' && 'bg-emerald-500 text-white dark:bg-emerald-600',
-                    status === 'rejected' && 'bg-rose-500 text-white dark:bg-rose-600',
-                    status === 'active' && 'bg-amber-500 text-white animate-pulse shadow-md ring-amber-500/20',
-                    status === 'skipped' && 'bg-slate-300 text-slate-600 dark:bg-zinc-700 dark:text-zinc-400 opacity-60',
-                    status === 'waiting' && 'bg-surface-muted text-text-soft border border-surface-border',
+                    status === 'completed' && !style?.backgroundColor && 'bg-emerald-500 text-white dark:bg-emerald-600',
+                    status === 'rejected' && !style?.backgroundColor && 'bg-rose-500 text-white dark:bg-rose-600',
+                    status === 'active' && !style?.backgroundColor && 'bg-amber-500 text-white animate-pulse shadow-md ring-amber-500/20',
+                    status === 'active' && !!style?.backgroundColor && 'text-white animate-pulse shadow-md',
+                    status === 'skipped' && !style?.backgroundColor && 'bg-slate-300 text-slate-600 dark:bg-zinc-700 dark:text-zinc-400 opacity-60',
+                    status === 'waiting' && !style?.backgroundColor && 'bg-surface-muted text-text-soft border border-surface-border',
                     className,
                 )}
                 {...props}

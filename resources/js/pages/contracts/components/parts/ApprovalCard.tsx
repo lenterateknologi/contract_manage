@@ -1,45 +1,64 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
-import { ContractApproval } from '@/pages/contracts/types';
-import { Check, Clock, ChevronDown } from 'lucide-react';
+import { Contract, ContractApproval } from '@/pages/contracts/types';
+import { Check, Clock, ChevronDown, CheckCircle2, X } from 'lucide-react';
 import { Avatar, StatusBadge } from '../ui/ui';
 
 interface ApprovalCardProps {
     approval: ContractApproval;
     stepNumber: string;
     displaySubSteps?: boolean;
+    contract?: Contract;
 }
 
-export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false }: ApprovalCardProps) {
+export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false, contract }: ApprovalCardProps) {
     const [isApproverListExpanded, setIsApproverListExpanded] = useState(false);
     const isStaged = !a.is_active || (a.status as string) === 'SELANJUTNYA';
     const isApproved = a.status === 'approved';
     const isRejected = a.status === 'rejected';
-    const isPending = a.status === 'pending' && a.is_active;
-    const isWaiting = a.status === 'waiting';
+    // Aktif = step ini adalah step kontrak saat ini (tidak bergantung pada nilai 'pending'/'waiting')
+    const isCurrent = !isApproved && !isRejected && !!contract?.workflow_step_id && a.workflow_step_id === contract.workflow_step_id;
     const isSkipped = (a.status as string) === 'SKIPPED';
 
     const finalStepNumber = displaySubSteps && a.sub_step ? `${stepNumber}.${a.sub_step}` : stepNumber;
 
+    // Cari workflow step yang cocok untuk card ini
+    const matchedStep = contract?.workflow?.steps?.find((s: any) => s.step === a.sequence || s.id === a.workflow_step_id) || a.workflow_step;
+    const stepMeta = (matchedStep as any)?.meta || {};
+    const stepActions: any[] = (matchedStep as any)?.actions || (matchedStep as any)?.action_configs || [];
+
+    // Ambil target status: jika sudah diputuskan (approved/rejected), cari action terkait jika ada, atau gunakan target_status dari step
+    const targetStatusCode = stepMeta.target_status || null;
+    const statusColor = (isCurrent && contract?.status_info?.color) ? contract.status_info.color : null;
+
     return (
         <div
+            style={isCurrent && statusColor ? {
+                borderColor: `${statusColor}60`,
+                backgroundColor: `${statusColor}10`,
+            } : undefined}
             className={cn(
                 'group bg-surface-base relative flex flex-col gap-1.5 rounded-lg border p-2 transition-all duration-200 w-full shadow-2xs',
                 isApproved && 'border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500/60 dark:bg-emerald-950/20 dark:border-emerald-500/40',
                 isRejected && 'border-rose-500/40 bg-rose-500/5 hover:border-rose-500/60 dark:bg-rose-950/20 dark:border-rose-500/40',
-                isPending && 'border-amber-500/50 bg-amber-500/8 ring-1 ring-amber-500/20 hover:border-amber-500 dark:bg-amber-950/30 dark:border-amber-500/50',
+                isCurrent && !statusColor && 'border-amber-500/50 bg-amber-500/8 ring-1 ring-amber-500/20 hover:border-amber-500 dark:bg-amber-950/30 dark:border-amber-500/50',
+                isCurrent && !!statusColor && 'ring-1 hover:opacity-95',
                 isSkipped && 'border-slate-300 dark:border-zinc-700 bg-surface-muted/20 opacity-50 grayscale',
-                (isWaiting || isStaged) && !isSkipped && 'border-dashed border-slate-300 dark:border-zinc-700 bg-surface-muted/20 opacity-75',
+                !isApproved && !isRejected && !isCurrent && !isSkipped && 'border-dashed border-slate-300 dark:border-zinc-700 bg-surface-muted/20 opacity-75',
             )}
         >
             {/* Left indicator bar */}
-            <div className={cn(
-                'absolute top-1 bottom-1 left-0 w-0.5 rounded-r-full',
-                isApproved && 'bg-emerald-500',
-                isRejected && 'bg-rose-500',
-                isPending && 'animate-pulse bg-amber-500',
-                (isWaiting || isStaged || isSkipped) && 'bg-surface-border',
-            )} />
+            <div
+                style={isCurrent && statusColor ? { backgroundColor: statusColor } : undefined}
+                className={cn(
+                    'absolute top-1 bottom-1 left-0 w-0.5 rounded-r-full',
+                    isApproved && 'bg-emerald-500',
+                    isRejected && 'bg-rose-500',
+                    isCurrent && !statusColor && 'animate-pulse bg-amber-500',
+                    isCurrent && !!statusColor && 'animate-pulse',
+                    (!isApproved && !isRejected && !isCurrent || isSkipped) && 'bg-surface-border',
+                )}
+            />
 
             {/* Top row */}
             <div className="flex items-center justify-between gap-2 w-full pl-1">
@@ -75,25 +94,25 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false 
                         </div>
                     ) : (
                         <div className="flex flex-col min-w-0">
-                            <div className="flex flex-wrap items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                                 {(() => {
-                                    const approverList = a.target_approvers
-                                        ? a.target_approvers.split(',').map((n) => n.trim()).filter(Boolean)
-                                        : [];
-                                    if (approverList.length > 1) {
-                                        const visible = isApproverListExpanded ? approverList : approverList.slice(0, 3);
-                                        const remaining = approverList.length - 3;
+                                    if (a.target_approvers && a.target_approvers.includes(',')) {
+                                        const names = a.target_approvers.split(',').map((s) => s.trim()).filter(Boolean);
+                                        const maxVisible = 2;
+                                        const visible = isApproverListExpanded ? names : names.slice(0, maxVisible);
+                                        const remaining = names.length - maxVisible;
+
                                         return (
                                             <div className="flex flex-wrap items-center gap-1">
-                                                {visible.map((name, idx) => (
+                                                {visible.map((name, i) => (
                                                     <span
-                                                        key={idx}
-                                                        className="inline-flex items-center rounded bg-surface-muted/90 border border-surface-border px-1.5 py-0.5 text-[10px] font-medium text-text-main"
+                                                        key={i}
+                                                        className="inline-flex items-center rounded bg-surface-muted px-1.5 py-0.5 text-[10.5px] font-medium text-text-main"
                                                     >
                                                         {name}
                                                     </span>
                                                 ))}
-                                                {remaining > 0 && !isApproverListExpanded && (
+                                                {!isApproverListExpanded && remaining > 0 && (
                                                     <button
                                                         type="button"
                                                         onClick={(e) => { e.stopPropagation(); setIsApproverListExpanded(true); }}
@@ -107,7 +126,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false 
                                     }
                                     return (
                                         <span className="text-text-main truncate text-[11px] font-bold leading-tight">
-                                            {a.target_approvers || `Semua ${a.role || 'Approver'}`}
+                                            {a.target_approvers || '-'}
                                         </span>
                                     );
                                 })()}
@@ -118,14 +137,120 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false 
 
                 {/* Status & Timestamp */}
                 <div className="flex flex-col items-end shrink-0 gap-0.5">
-                    <StatusBadge status={a.status} size="sm" />
-                    {a.decided_at && (
-                        <span className="text-text-soft flex items-center gap-1 text-[9.5px] font-medium opacity-75 mt-0.5">
-                            <Clock size={10} /> {a.decided_at}
-                        </span>
+                    {/* Sembunyikan label menunggu (hanya tampilkan status jika sudah ada keputusan atau bukan status pending/waiting) */}
+                    {a.status !== 'pending' && a.status !== 'waiting' && (
+                        <StatusBadge status={a.status} size="sm" />
                     )}
+                    {a.decided_at ? (
+                        <span className="text-text-main/90 dark:text-text-main/90 flex items-center gap-1.5 text-[11px] font-semibold mt-0.5" title="Waktu Keputusan / Aksi">
+                            <Clock size={12} className="text-text-soft shrink-0" /> {a.decided_at}
+                        </span>
+                    ) : (a.created_at || a.step_entry_at) ? (
+                        <span className="text-text-main/90 dark:text-text-main/90 flex items-center gap-1.5 text-[11px] font-semibold mt-0.5" title="Waktu Masuk Step">
+                            <Clock size={12} className="text-text-soft shrink-0" /> {a.step_entry_at || a.created_at}
+                        </span>
+                    ) : null}
                 </div>
             </div>
+
+            {/* Syarat Dokumen Wajib untuk Step Card Ini */}
+            {(() => {
+                let stepMeta = a.workflow_step?.meta;
+                let actions = a.workflow_step?.action_configs || [];
+                
+                if (!stepMeta && contract?.workflow?.steps) {
+                    const matchedStep = contract.workflow.steps.find((s: any) => s.step === a.sequence || s.id === a.workflow_step_id);
+                    if (matchedStep) {
+                        stepMeta = matchedStep.meta;
+                        if (!actions.length) actions = matchedStep.action_configs || [];
+                    }
+                }
+                stepMeta = stepMeta || {};
+
+                // Ambil required fields dari stepMeta (checkbox Wajib Diisi) ATAU dari action_configs
+                const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
+                const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
+                const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
+                const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+
+                const reqList = [];
+
+                // Untuk step yang sudah selesai/diproses atau sedang berlangsung, kita periksa apakah ada pengunggahan dokumen pada/setelah step tersebut dimulai
+                const stepStartTime = a.step_entry_at || a.created_at;
+
+                const hasDocUploadedInStep = (type: string) => {
+                    if (!contract?.versions) return false;
+                    return contract.versions.some((v: any) => {
+                        if (v.document_type !== type && !(type === 'agreement' && v.document_type === 'contract')) return false;
+                        if (!stepStartTime || !v.created_at_raw) return true;
+                        return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
+                    });
+                };
+
+                if (requireF1) {
+                    const isFilled = hasDocUploadedInStep('f1') || (a.sequence === 1 && !!(
+                        contract?.f1_file ||
+                        contract?.metadata?.f1_file ||
+                        (contract as any)?.f1_submission ||
+                        (contract as any)?.f1_form_data ||
+                        contract?.metadata?.f1_form_data ||
+                        (contract?.f1_items && contract.f1_items.length > 0)
+                    ));
+                    reqList.push({ label: 'Sub-dokumen F1', isFilled });
+                }
+                if (requireF2) {
+                    const isFilled = hasDocUploadedInStep('f2') || (a.sequence === 1 && !!(
+                        contract?.f2_file ||
+                        contract?.metadata?.f2_file ||
+                        (contract as any)?.f2_submission ||
+                        (contract as any)?.f2_form_data ||
+                        contract?.metadata?.f2_form_data ||
+                        contract?.contract_no ||
+                        contract?.price
+                    ));
+                    reqList.push({ label: 'Sub-dokumen F2', isFilled });
+                }
+                if (requireAgreement) {
+                    const isFilled = hasDocUploadedInStep('agreement') || (a.sequence === 1 && !!(
+                        contract?.agreement_file ||
+                        contract?.metadata?.agreement_file ||
+                        (contract as any)?.agreement_submission ||
+                        contract?.agreement_content ||
+                        contract?.metadata?.agreement_content
+                    ));
+                    reqList.push({ label: 'Sub-dokumen Perjanjian', isFilled });
+                }
+
+                if (reqList.length === 0) return null;
+
+                return (
+                    <div className="mt-1 w-full pl-1">
+                        <div className="flex flex-wrap items-center gap-1.5 p-1.5 rounded-md border border-slate-200/80 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/60">
+                            <span className="text-[9.5px] font-bold text-slate-600 dark:text-zinc-400 uppercase mr-0.5">
+                                Syarat Wajib:
+                            </span>
+                            {reqList.map((req, rIdx) => (
+                                <span
+                                    key={rIdx}
+                                    className={cn(
+                                        'px-2 py-0.5 rounded text-[9.5px] font-bold tracking-wide flex items-center gap-1 border',
+                                        req.isFilled
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                                            : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                                    )}
+                                >
+                                    {req.isFilled ? (
+                                        <CheckCircle2 size={11} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    ) : (
+                                        <X size={11} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                                    )}
+                                    {req.label}: {req.isFilled ? 'Sudah Diisi' : 'Wajib Diisi'}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* Otoritas Langkah Badges (Hidden)
             {a.approver_authorities && a.approver_authorities.length > 0 && (

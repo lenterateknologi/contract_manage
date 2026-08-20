@@ -161,6 +161,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
 
     // Dynamic CRUD Core engine (Mini-Filament)
     Route::prefix('core')->group(function () {
+        Route::get('vendors/{id}/document', [ResourceController::class, 'vendorDocument'])->name('admin.vendors.document');
         Route::get('{resource}/export', [ResourceController::class, 'export'])->name('core.export');
         Route::post('{resource}/import', [ResourceController::class, 'import'])->name('core.import');
         Route::post('{resource}/bulk-delete', [ResourceController::class, 'bulkDestroy'])->name('core.bulk-delete');
@@ -169,6 +170,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('{resource}/create', [ResourceController::class, 'create'])->name('core.create');
         Route::post('{resource}', [ResourceController::class, 'store'])->name('core.store');
         Route::get('{resource}/{id}/edit', [ResourceController::class, 'edit'])->name('core.edit');
+        Route::get('{resource}/{id}', [ResourceController::class, 'edit'])->name('core.show');
         Route::put('{resource}/{id}', [ResourceController::class, 'update'])->name('core.update');
         Route::delete('{resource}/{id}', [ResourceController::class, 'destroy'])->name('core.destroy');
     });

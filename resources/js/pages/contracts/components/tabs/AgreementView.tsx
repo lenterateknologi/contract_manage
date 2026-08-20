@@ -6,7 +6,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import axios from 'axios';
-import { ArrowRight, Diff, Download, FileText, History, Loader2, MoreVertical, RefreshCw, Upload } from 'lucide-react';
+import { ArrowRight, Diff, Download, ExternalLink, FileText, History, Loader2, Maximize2, Minimize2, MoreVertical, RefreshCw, Upload } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface AgreementVersion {
@@ -44,8 +44,30 @@ export default function AgreementView({
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
     const [uploadNote, setUploadNote] = useState('');
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const previewContainerRef = useRef<HTMLDivElement>(null);
+
+    const toggleFullscreen = () => {
+        if (!previewContainerRef.current) return;
+        if (!document.fullscreenElement) {
+            previewContainerRef.current.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {
+                const url = selectedVno ? `/api/contracts/${contract.id}/pdf/${selectedVno}?type=${effectiveDocType}` : null;
+                if (url) window.open(url, '_blank');
+            });
+        } else {
+            document.exitFullscreen().then(() => setIsFullscreen(false));
+        }
+    };
+
+    useEffect(() => {
+        const handleFsChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFsChange);
+        return () => document.removeEventListener('fullscreenchange', handleFsChange);
+    }, []);
 
     // Sidebar/Dropdown click outside
     useEffect(() => {
@@ -199,6 +221,8 @@ export default function AgreementView({
             setUploadNote('');
             if (onUpdate && res.data) onUpdate(res.data);
             await loadVersions(true, true);
+            const typeLabel = effectiveDocType === 'f1' ? 'Sub-dokumen F1' : effectiveDocType === 'f2' ? 'Sub-dokumen F2' : 'Draft Perjanjian';
+            showToast(`${typeLabel} berhasil diunggah.`, 'success');
         } catch (err) {
             console.error('Upload failed', err);
             showToast('Gagal mengupload agreement.', 'danger');
@@ -248,7 +272,7 @@ export default function AgreementView({
     const titleLabel = labelMapping[effectiveDocType] || 'Persetujuan';
 
     return (
-        <div className="bg-card animate-in fade-in custom-scrollbar flex flex-1 flex-col overflow-hidden duration-300">
+        <div className="bg-card animate-in fade-in custom-scrollbar flex flex-1 flex-col w-full min-h-[850px] h-[calc(100vh-140px)] overflow-hidden duration-300">
             {/* Header Area */}
             <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-black/5 bg-white/50 px-6 backdrop-blur-md dark:border-white/5 dark:bg-black/50">
                 <div className="flex items-center gap-4">
@@ -337,6 +361,17 @@ export default function AgreementView({
                         </div>
                     )}
 
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={toggleFullscreen}
+                        title={isFullscreen ? 'Keluar Full Screen' : 'Layar Penuh (Full Screen)'}
+                        className="gap-2 border border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold px-3 transition-all"
+                    >
+                        {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                        <span className="hidden sm:inline text-xs">{isFullscreen ? 'Keluar Full Screen' : 'Full Screen'}</span>
+                    </Button>
+
                     <div className="relative">
                         <Button
                             variant={showMoreActions ? 'primary' : 'outline'}
@@ -393,6 +428,20 @@ export default function AgreementView({
                                         Download
                                     </Button>
                                 )}
+
+                                {pdfUrl && (
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => {
+                                            window.open(pdfUrl, '_blank');
+                                            setShowMoreActions(false);
+                                        }}
+                                        className="text-text-main hover:bg-surface-muted flex h-auto w-full items-center justify-start gap-3 px-4 py-3 text-left text-xs transition-all"
+                                    >
+                                        <ExternalLink size={16} className="opacity-40" />
+                                        Buka di Tab Baru
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -433,10 +482,10 @@ export default function AgreementView({
                 </div>
             </div>
 
-            {/* Main Preview Area - PDF Iframe */}
-            <div className="border-surface-border bg-white dark:bg-zinc-900 relative flex min-h-[1000px] flex-1 flex-col items-center overflow-y-auto border-t py-8 px-4">
+            {/* Main Preview Area - PDF Iframe (Full Width & Height, No Padding/Margin) */}
+            <div ref={previewContainerRef} className="relative flex flex-1 flex-col w-full h-full min-h-[800px] overflow-hidden bg-white dark:bg-zinc-900 p-0 m-0">
                 {loading ? (
-                    <div className="flex h-full flex-col items-center justify-center gap-4 py-20">
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-4 py-20">
                         <LoadingLottie width={120} height={120} />
                         <span className="text-[10px] font-semibold tracking-[0.2em] text-[#172554] uppercase dark:text-white">Memuat Dokumen...</span>
                     </div>
@@ -454,8 +503,8 @@ export default function AgreementView({
                 ) : (
                     <>
                         {pdfUrl ? (
-                            <div className="w-[210mm] max-w-full min-h-[1000px] h-full shadow-xl border border-slate-300 bg-white force-light rounded-none overflow-hidden my-2">
-                                <iframe src={pdfUrl} className="min-h-[1000px] w-full h-full border-none bg-white" title="Agreement Preview" />
+                            <div className="w-full h-full min-h-[800px] flex-1 p-0 m-0 border-none overflow-hidden">
+                                <iframe src={pdfUrl} className="w-full h-full min-h-[800px] flex-1 border-none p-0 m-0" title="Agreement Preview" />
                             </div>
                         ) : (
                             <div className="flex flex-1 items-center justify-center py-20">

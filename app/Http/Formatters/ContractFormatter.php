@@ -72,17 +72,34 @@ class ContractFormatter
             'contract_mode' => self::getEffectiveMode($c, 'contract', ($c->contractType?->getInheritedInputMechanism('contract_input_mechanism') === 'manual') ? 'interactive' : 'upload'),
             'contract_form_template_id' => $c->contractType?->getInheritedTemplateId('contract_form_template_id'),
             'allow_info_edit' => (bool) data_get($effectiveStep?->meta, 'allow_info_edit', true),
+            'allow_title_edit' => (bool) data_get($effectiveStep?->meta, 'allow_title_edit', true),
+            'allow_vendor_edit' => (bool) data_get($effectiveStep?->meta, 'allow_vendor_edit', true),
+            'allow_category_edit' => (bool) data_get($effectiveStep?->meta, 'allow_category_edit', true),
+            'allow_f2_contract_no_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f2_contract_no_edit', true),
+            'allow_tax_toggle_edit' => (bool) data_get($effectiveStep?->meta, 'allow_tax_toggle_edit', true),
+            'allow_price_edit' => (bool) data_get($effectiveStep?->meta, 'allow_price_edit', true),
+            'allow_period_edit' => (bool) data_get($effectiveStep?->meta, 'allow_period_edit', true),
             'allow_f1_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f1_edit', true),
             'allow_f2_edit' => (bool) data_get($effectiveStep?->meta, 'allow_f2_edit', true),
             'allow_agreement_edit' => (bool) data_get($effectiveStep?->meta, 'allow_agreement_edit', true),
             'allow_attachment_edit' => (bool) data_get($effectiveStep?->meta, 'allow_attachment_edit', true),
             'allow_reference' => (bool) data_get($effectiveStep?->meta, 'allow_reference', true),
+            'show_info' => (bool) data_get($effectiveStep?->meta, 'show_info', true),
+            'show_title' => (bool) data_get($effectiveStep?->meta, 'show_title', true),
+            'show_vendor' => (bool) data_get($effectiveStep?->meta, 'show_vendor', true),
+            'show_category' => (bool) data_get($effectiveStep?->meta, 'show_category', true),
             'show_f2_contract_no' => (bool) data_get($effectiveStep?->meta, 'show_f2_contract_no', true),
             'show_tax_toggle' => (bool) data_get($effectiveStep?->meta, 'show_tax_toggle', true),
+            'show_price' => (bool) data_get($effectiveStep?->meta, 'show_price', true),
+            'show_period' => (bool) data_get($effectiveStep?->meta, 'show_period', true),
 
             // Specialized permissions
             'can_fill_contract_no' => Auth::user()?->role === config('master.roles.admin') || Auth::user()?->role === 'Legal Staff' || Auth::user()?->role === 'PIC Legal',
             'can_set_digital_signature' => Auth::user()?->role === config('master.roles.admin') || Auth::user()?->role === 'PIC Legal',
+
+            'f1_file' => $c->versions->where('document_type', 'f1')->first()?->file_name,
+            'f2_file' => $c->versions->where('document_type', 'f2')->first()?->file_name,
+            'agreement_file' => $c->versions->where('document_type', 'agreement')->first()?->file_name ?: ($c->versions->where('document_type', 'contract')->first()?->file_name),
 
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->format('d/m/Y'),
@@ -118,6 +135,15 @@ class ContractFormatter
                     'step' => $s->step,
                     'description' => $s->description,
                     'step_category' => $s->step_category,
+                    'meta' => $s->meta ?? [],
+                    'actions' => $s->relationLoaded('actions') ? $s->actions->map(fn ($act) => [
+                        'id' => $act->id,
+                        'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
+                        'alias' => $act->alias,
+                        'target_status' => $act->target_status,
+                        'required_fields' => $act->required_fields ?? [],
+                        'autofilled_fields' => $act->autofilled_fields ?? [],
+                    ])->toArray() : [],
                 ]) : [],
             ] : null,
             'workflow_step' => $c->workflowStep ? [
@@ -138,6 +164,7 @@ class ContractFormatter
                         'action_code' => $code,
                         'master_action_code' => $code,
                         'alias' => $action->alias,
+                        'target_status' => $action->target_status,
                         'next_workflow_id' => $action->next_workflow_id,
                         'next_workflow_step_id' => $action->next_workflow_step_id,
                         'next_step_id' => $action->next_step_id,
@@ -173,6 +200,7 @@ class ContractFormatter
                 'file_hash' => $v->file_hash,
                 'has_file' => (bool) $v->file_path,
                 'created_at' => $v->created_at->toDateString(),
+                'created_at_raw' => $v->created_at->toIso8601String(),
                 'uploader' => self::formatUser($v->uploader),
             ])->sortByDesc('version_no')->values(),
             'approvals' => self::mapApprovalTimeline($c, $isDetail),
@@ -339,6 +367,7 @@ class ContractFormatter
 
         foreach ($workflowSteps as $step) {
             $isStepSkipped = ! $workflowService->shouldExecuteStep($c, $step);
+            $stepLabel = data_get($step, 'label') ?: (data_get($step, 'name') ?: 'Persetujuan Step '.$step->step);
 
             $regularApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role !== config('master.roles.adhoc_approver') && $a->role !== 'Penandatangan');
             $adhocApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role === config('master.roles.adhoc_approver') || $a->role === 'Penandatangan');
@@ -362,7 +391,7 @@ class ContractFormatter
                 $targetEmails = $approvers->pluck('email')->implode(', ');
 
                 if (empty($targetApprovers)) {
-                    $targetApprovers = 'Belum di-set';
+                    $targetApprovers = is_array($step->role) ? implode(', ', $step->role) : ($step->role ?: null);
                 }
             } else {
                 // List mode minimal resolution
@@ -371,7 +400,7 @@ class ContractFormatter
                 } elseif ($step->approver_type === 'assigned_pic' && $c->assigned_pic_id) {
                     $targetApprovers = $c->assignedPic?->name;
                 } else {
-                    $targetApprovers = is_array($step->role) ? implode(', ', $step->role) : $step->role;
+                    $targetApprovers = is_array($step->role) ? implode(', ', $step->role) : ($step->role ?: null);
                 }
             }
 
@@ -409,6 +438,7 @@ class ContractFormatter
                 if ($regularApprovals->isEmpty()) {
                     $timeline[] = [
                         'id' => 'skipped-'.$step->id,
+                        'workflow_step_id' => $step->id,
                         'user_id' => null,
                         'approver_name' => 'Langkah Dilewati',
                         'role' => is_array($step->role) ? implode(', ', $step->role) : $step->role,
@@ -419,9 +449,16 @@ class ContractFormatter
                         'status' => 'SKIPPED',
                         'note' => 'Langkah ini dilewati berdasarkan logika sistem.',
                         'step_type' => 'APPROVAL',
-                        'step_name' => $step->name,
+                        'step_name' => $stepLabel,
                         'step_description' => $step->description,
                         'step_category' => $step->step_category,
+                        'workflow_step' => [
+                            'id' => $step->id,
+                            'step' => $step->step,
+                            'label' => $stepLabel,
+                            'description' => $step->description,
+                            'workflow_id' => $step->workflow_id,
+                        ],
                     ];
                 }
             } else {
@@ -438,6 +475,7 @@ class ContractFormatter
 
                         $timeline[] = [
                             'id' => 'step-group-'.$step->id,
+                            'workflow_step_id' => $step->id,
                             'user_id' => null,
                             'approver_name' => $first->role,
                             'role' => $first->role,
@@ -448,11 +486,19 @@ class ContractFormatter
                             'status' => 'pending',
                             'comment' => null,
                             'decided_at' => null,
+                            'created_at' => null,
                             'is_active' => (bool) $first->is_active,
                             'step_type' => 'APPROVAL',
-                            'step_name' => $step->name,
+                            'step_name' => $stepLabel,
                             'step_description' => $step->description,
                             'step_category' => $step->step_category,
+                            'workflow_step' => [
+                                'id' => $step->id,
+                                'step' => $step->step,
+                                'label' => $stepLabel,
+                                'description' => $step->description,
+                                'workflow_id' => $step->workflow_id,
+                            ],
                             'approver' => null,
                         ];
                     } else {
@@ -476,12 +522,29 @@ class ContractFormatter
                                 'status' => $a->status,
                                 'comment' => $a->comment,
                                 'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
-                                'created_at' => $a->created_at?->toIso8601String(),
+                                'created_at' => $a->created_at?->format('d/m/Y H:i'),
+                                'step_entry_at' => $a->created_at?->format('d/m/Y H:i'),
                                 'is_active' => $a->is_active,
                                 'step_type' => 'APPROVAL',
-                                'step_name' => $step->name,
+                                'step_name' => $stepLabel,
                                 'step_description' => $step->description,
                                 'step_category' => $step->step_category,
+                                'workflow_step' => [
+                                    'id' => $step->id,
+                                    'step' => $step->step,
+                                    'label' => $stepLabel,
+                                    'description' => $step->description,
+                                    'workflow_id' => $step->workflow_id,
+                                    'meta' => $step->meta ?? [],
+                                    'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
+                                        'id' => $act->id,
+                                        'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
+                                        'alias' => $act->alias,
+                                        'target_status' => $act->target_status,
+                                        'required_fields' => $act->required_fields ?? [],
+                                        'autofilled_fields' => $act->autofilled_fields ?? [],
+                                    ])->toArray() : [],
+                                ],
                                 'approver' => self::formatUser($a->approver),
                             ];
                         }
@@ -525,6 +588,7 @@ class ContractFormatter
 
                     $timeline[] = [
                         'id' => 'step-'.$step->id,
+                        'workflow_step_id' => $step->id,
                         'user_id' => null,
                         'approver_name' => $approverName,
                         'role' => $roleLabel,
@@ -535,6 +599,9 @@ class ContractFormatter
                         'status' => $isCurrentStep ? 'pending' : 'SELANJUTNYA',
                         'note' => null,
                         'approved_at' => null,
+                        'decided_at' => null,
+                        'created_at' => $isCurrentStep ? $c->updated_at?->format('d/m/Y H:i') : null,
+                        'step_entry_at' => $isCurrentStep ? $c->updated_at?->format('d/m/Y H:i') : null,
                         'approver' => null,
                         'is_active' => $isCurrentStep,
                         'step_type' => 'APPROVAL',

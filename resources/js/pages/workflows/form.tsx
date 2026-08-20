@@ -329,9 +329,9 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('settings')}
                                     className={cn(
-                                        'px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer',
+                                        'px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
                                         mainTab === 'settings'
-                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-extrabold shadow-xs border border-slate-200/60 dark:border-zinc-700/60'
+                                            ? 'bg-primary text-white font-bold shadow-xs'
                                             : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                                     )}
                                 >
@@ -341,9 +341,9 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('categories')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer',
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
                                         mainTab === 'categories'
-                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-extrabold shadow-xs border border-slate-200/60 dark:border-zinc-700/60'
+                                            ? 'bg-primary text-white font-bold shadow-xs'
                                             : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                                     )}
                                 >
@@ -351,7 +351,7 @@ export default function WorkflowEditor({
                                     <span className={cn(
                                         'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
                                         mainTab === 'categories'
-                                            ? 'bg-slate-200/80 dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 font-black'
+                                            ? 'bg-white/20 text-white font-bold'
                                             : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
                                     )}>
                                         {(form.data.contract_type_ids || []).length}
@@ -361,9 +361,9 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('authorities')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer',
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
                                         mainTab === 'authorities'
-                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-extrabold shadow-xs border border-slate-200/60 dark:border-zinc-700/60'
+                                            ? 'bg-primary text-white font-bold shadow-xs'
                                             : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                                     )}
                                 >
@@ -371,7 +371,7 @@ export default function WorkflowEditor({
                                     <span className={cn(
                                         'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
                                         mainTab === 'authorities'
-                                            ? 'bg-slate-200/80 dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 font-black'
+                                            ? 'bg-white/20 text-white font-bold'
                                             : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
                                     )}>
                                         {(form.data.initiator_authorities || []).length}
@@ -381,9 +381,9 @@ export default function WorkflowEditor({
                                     type="button"
                                     onClick={() => handleTabChange('steps')}
                                     className={cn(
-                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer',
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
                                         mainTab === 'steps'
-                                            ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-zinc-100 font-extrabold shadow-xs border border-slate-200/60 dark:border-zinc-700/60'
+                                            ? 'bg-primary text-white font-bold shadow-xs'
                                             : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
                                     )}
                                 >
@@ -391,7 +391,7 @@ export default function WorkflowEditor({
                                     <span className={cn(
                                         'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
                                         mainTab === 'steps'
-                                            ? 'bg-slate-200/80 dark:bg-zinc-800 text-slate-900 dark:text-zinc-100 font-black'
+                                            ? 'bg-white/20 text-white font-bold'
                                             : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
                                     )}>
                                         {form.data.steps.length}
@@ -578,28 +578,23 @@ export default function WorkflowEditor({
                                             <button
                                                 type="button"
                                                 onClick={() => bulkMoveSelected('up')}
-                                                title="Pindahkan semua yang dipilih ke atas"
-                                                className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-colors dark:border-slate-700 dark:bg-slate-800"
+                                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer"
                                             >
-                                                <ChevronUp size={12} />
+                                                <ArrowUp size={12} /> Naik
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => bulkMoveSelected('down')}
-                                                title="Pindahkan semua yang dipilih ke bawah"
-                                                className="flex h-6 w-6 items-center justify-center rounded border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-colors dark:border-slate-700 dark:bg-slate-800"
+                                                className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline cursor-pointer"
                                             >
-                                                <ChevronDown size={12} />
+                                                <ArrowDown size={12} /> Turun
                                             </button>
-                                            <div className="h-3 w-px bg-rose-200" />
                                             <button
                                                 type="button"
                                                 onClick={bulkDeleteSelected}
-                                                title="Hapus semua yang dipilih"
-                                                className="flex h-6 items-center gap-1 rounded border border-rose-200 bg-rose-50 px-2 text-[11px] font-medium text-rose-600 hover:border-rose-400 hover:bg-rose-100 transition-colors dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400"
+                                                className="flex items-center gap-1 text-[11px] font-semibold text-rose-600 hover:underline ml-2 cursor-pointer"
                                             >
-                                                <Trash2 size={10} />
-                                                Hapus Dipilih
+                                                <Trash2 size={12} /> Hapus
                                             </button>
                                             <button
                                                 type="button"
@@ -648,7 +643,7 @@ export default function WorkflowEditor({
                                                             regions={regions}
                                                             step={step}
                                                             idx={idx}
-                                                            isExpanded={!!expandedStepIds[step.id]}
+                                                            isExpanded={expandedStepIds[step.id] !== false}
                                                             setIsExpanded={(val) =>
                                                                 setExpandedStepIds((prev: any) => ({
                                                                     ...prev,
@@ -937,24 +932,24 @@ export default function WorkflowEditor({
             description="Pilih untuk membuat tahapan alur kerja baru secara kosongan (default) atau gunakan preset yang tersimpan."
             maxWidth="md"
         >
-            <div className="p-6 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Opsi 1: Step Default */}
                     <div
                         onClick={() => {
                             setAddChoiceModalOpen(false);
                             addLocalStep();
                         }}
-                        className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 hover:bg-primary/5 rounded-xl p-4 cursor-pointer transition-all flex flex-col gap-3"
+                        className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 hover:bg-primary/5 rounded-xl p-3.5 cursor-pointer transition-all flex flex-col gap-2.5"
                     >
-                        <div className="bg-primary/10 text-primary p-2.5 rounded-lg w-fit group-hover:scale-110 transition-transform">
-                            <PlusCircle size={20} />
+                        <div className="bg-primary/10 text-primary p-2 rounded-lg w-fit group-hover:scale-105 transition-transform">
+                            <PlusCircle size={18} />
                         </div>
                         <div>
                             <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors">
                                 Tahap Default
                             </h4>
-                            <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                            <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
                                 Buat tahapan baru secara kosong dengan alur konfigurasinya dari awal.
                             </p>
                         </div>
@@ -966,10 +961,10 @@ export default function WorkflowEditor({
                             setAddChoiceModalOpen(false);
                             setPresetSelectModalOpen(true);
                         }}
-                        className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 hover:bg-primary/5 rounded-xl p-4 cursor-pointer transition-all flex flex-col gap-3"
+                        className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 hover:bg-primary/5 rounded-xl p-3.5 cursor-pointer transition-all flex flex-col gap-2.5"
                     >
-                        <div className="bg-primary/10 text-primary dark:text-primary-400 p-2.5 rounded-lg w-fit group-hover:scale-110 transition-transform">
-                            <Bookmark size={20} />
+                        <div className="bg-primary/10 text-primary dark:text-primary-400 p-2 rounded-lg w-fit group-hover:scale-105 transition-transform">
+                            <Bookmark size={18} />
                         </div>
                         <div>
                             <div className="flex items-center justify-between">
@@ -980,7 +975,7 @@ export default function WorkflowEditor({
                                     {presets.length}
                                 </span>
                             </div>
-                            <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
+                            <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
                                 Pilih dari koleksi preset alur kerja yang tersimpan di server.
                             </p>
                         </div>
@@ -992,7 +987,7 @@ export default function WorkflowEditor({
                         type="button"
                         variant="outline"
                         onClick={() => setAddChoiceModalOpen(false)}
-                        className="h-9 px-4 text-xs font-bold"
+                        className="h-8 px-3.5 text-xs font-bold"
                     >
                         Batal
                     </Button>
@@ -1013,30 +1008,30 @@ export default function WorkflowEditor({
             description="Pilih salah satu preset tahapan yang tersimpan untuk disisipkan ke alur kerja ini."
             maxWidth="lg"
         >
-            <div className="p-6 space-y-4">
+            <div className="space-y-3">
                 {presets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 px-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                        <Bookmark size={32} className="text-slate-300 dark:text-slate-700 mb-2" />
-                        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Belum Ada Preset Tersimpan</p>
-                        <p className="text-xs text-slate-400 mt-1">
+                    <div className="flex flex-col items-center justify-center py-8 px-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                        <Bookmark size={28} className="text-slate-300 dark:text-slate-700 mb-1.5" />
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Belum Ada Preset Tersimpan</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
                             Anda belum menyimpan preset tahapan apa pun ke database server.
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto p-1 custom-scrollbar">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto p-0.5 custom-scrollbar">
                         {presets.map((preset) => {
                             const stepData = preset.step_data || {};
                             return (
                                 <div
                                     key={preset.id}
-                                    className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-4 transition-all flex flex-col justify-between gap-3"
+                                    className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-3 transition-all flex flex-col justify-between gap-2.5"
                                 >
-                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                    <div className="flex flex-col gap-1 min-w-0">
                                         <div className="flex items-center justify-between">
                                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                                                 {preset.name}
                                             </span>
-                                            <span className="text-[9px] font-bold uppercase bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300 px-2 py-0.5 rounded-full">
+                                            <span className="text-[9px] font-bold uppercase bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300 px-1.5 py-0.2 rounded-full">
                                                 Preset
                                             </span>
                                         </div>
@@ -1046,7 +1041,7 @@ export default function WorkflowEditor({
 
                                         {/* Action Step Pills Preview */}
                                         {stepData.actions && stepData.actions.length > 0 && (
-                                            <div className="flex flex-wrap items-center gap-1 pt-1">
+                                            <div className="flex flex-wrap items-center gap-1 pt-0.5">
                                                 {stepData.actions.map((act: any, aIdx: number) => {
                                                     const actName = act.master_action?.name || act.master_action_name || act.label || `Action ${aIdx + 1}`;
                                                     const isApprove = actName.toLowerCase().includes('setuju') || actName.toLowerCase().includes('approve');
@@ -1056,7 +1051,7 @@ export default function WorkflowEditor({
                                                         <span
                                                             key={aIdx}
                                                             className={cn(
-                                                                'text-[9px] font-semibold px-1.5 py-0.5 rounded border tracking-tight',
+                                                                'text-[8.5px] font-semibold px-1.5 py-0.2 rounded border tracking-tight',
                                                                 isApprove && 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40',
                                                                 isReject && 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40',
                                                                 !isApprove && !isReject && 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
@@ -1082,7 +1077,7 @@ export default function WorkflowEditor({
                                             setPresetSelectModalOpen(false);
                                             showToast(`Tahap dari preset "${preset.name}" berhasil ditambahkan!`, 'success');
                                         }}
-                                        className="w-full h-8 text-xs font-bold bg-primary hover:bg-primary/90 text-white border-none"
+                                        className="w-full h-7 text-[11px] font-bold bg-primary hover:bg-primary/90 text-white border-none"
                                     >
                                         + Gunakan Preset Ini
                                     </Button>
@@ -1097,7 +1092,7 @@ export default function WorkflowEditor({
                         type="button"
                         variant="outline"
                         onClick={() => setPresetSelectModalOpen(false)}
-                        className="h-9 px-4 text-xs font-bold"
+                        className="h-8 px-3.5 text-xs font-bold"
                     >
                         Tutup
                     </Button>

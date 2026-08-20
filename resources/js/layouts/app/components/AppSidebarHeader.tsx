@@ -35,6 +35,9 @@ export const AppSidebarHeader = memo(function AppSidebarHeader({ breadcrumbs = [
                 <div className="flex items-center gap-5">
                     <div className="flex items-center">
                         <SidebarTrigger
+                            onClick={() => {
+                                window.dispatchEvent(new CustomEvent('toggle-sidebar'));
+                            }}
                             className={cn(
                                 'h-9 w-9 rounded-xl transition-all duration-300',
                                 'text-foreground/70 dark:text-foreground/70',

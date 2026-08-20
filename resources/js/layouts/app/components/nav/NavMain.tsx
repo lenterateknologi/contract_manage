@@ -74,7 +74,7 @@ export const NavMain = memo(function NavMain({ title, items = [], search = '' }:
                                             className={cn(
                                                 'group/btn relative h-9 overflow-hidden rounded-xl px-3 transition-all duration-300',
                                                 isActive
-                                                    ? 'bg-primary text-primary-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground border-primary animate-in fade-in slide-in-from-left-1 font-semibold duration-300'
+                                                    ? 'bg-primary text-white data-[active=true]:bg-primary data-[active=true]:text-white dark:bg-primary dark:text-white dark:data-[active=true]:bg-primary dark:data-[active=true]:text-white border-primary animate-in fade-in slide-in-from-left-1 font-semibold duration-300 shadow-xs'
                                                     : 'hover:bg-sidebar-accent/40 text-sidebar-foreground/70 hover:text-sidebar-foreground font-medium',
                                             )}
                                         >
@@ -84,7 +84,7 @@ export const NavMain = memo(function NavMain({ title, items = [], search = '' }:
                                                         className={cn(
                                                             'h-[18px] w-[18px] shrink-0 transition-colors duration-200',
                                                             isActive
-                                                                ? 'text-primary-foreground'
+                                                                ? 'text-white'
                                                                 : 'text-sidebar-foreground/40 group-hover/btn:text-sidebar-foreground/70',
                                                         )}
                                                     />

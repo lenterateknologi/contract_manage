@@ -607,13 +607,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
                                 }
                             }}
-                            rowActions={(row) => (
+                            rowActions={resourceSlug === 'vendors' ? undefined : (row) => (
                                 <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                    {resourceSlug !== 'vendors' && (
-                                        <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
-                                            <Trash2 size={14} className="text-rose-500" />
-                                        </Button>
-                                    )}
+                                    <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
+                                        <Trash2 size={14} className="text-rose-500" />
+                                    </Button>
                                 </div>
                             )}
                         />

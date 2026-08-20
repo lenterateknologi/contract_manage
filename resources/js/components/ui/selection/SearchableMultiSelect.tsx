@@ -71,6 +71,8 @@ export function SearchableMultiSelect({
         onValuesChange(values.filter(v => v !== val));
     };
 
+    const [openUpward, setOpenUpward] = React.useState(false);
+
     // Close on outside click
     React.useEffect(() => {
         function handler(e: MouseEvent) {
@@ -83,16 +85,25 @@ export function SearchableMultiSelect({
         return () => document.removeEventListener('mousedown', handler);
     }, [open]);
 
+    const handleToggle = (e: React.MouseEvent) => {
+        if (disabled) {
+            e.preventDefault();
+            return;
+        }
+        if (!open && containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            // If space below is less than 240px and space above is greater, open upward
+            setOpenUpward(spaceBelow < 240 && rect.top > spaceBelow);
+        }
+        setOpen(!open);
+        setSearch('');
+    };
+
     return (
         <div ref={containerRef} className={cn("relative w-full", disabled && "opacity-60 cursor-not-allowed", open && "z-[999999]", className)}>
             <div
-                onClick={(e) => {
-                    if (disabled) e.preventDefault();
-                    else {
-                        setOpen(!open);
-                        setSearch('');
-                    }
-                }}
+                onClick={handleToggle}
                 className={cn(
                     'flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
                     !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
@@ -131,7 +142,10 @@ export function SearchableMultiSelect({
             </div>
 
             {open && (
-                <div className="absolute left-0 right-0 top-full z-[999999] mt-1 border border-slate-200 bg-white shadow-2xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950">
+                <div className={cn(
+                    "absolute left-0 right-0 z-[999999] border border-slate-200 bg-white shadow-2xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950",
+                    openUpward ? "bottom-full mb-1" : "top-full mt-1"
+                )}>
                     {/* Search input */}
                     <div className="relative border-b border-slate-100 dark:border-slate-800">
                         <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />

@@ -93,12 +93,12 @@ export function Modal({
                     )
                 )}
                 
-                <div className="p-8 text-text-main bg-white dark:bg-zinc-900">
+                <div className="p-5 text-text-main bg-white dark:bg-zinc-900">
                     {children}
                 </div>
 
                 {footer && (
-                    <DialogFooter className="p-6 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px] overflow-hidden">
+                    <DialogFooter className="px-5 py-3 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px] overflow-hidden">
                         {footer}
                     </DialogFooter>
                 )}

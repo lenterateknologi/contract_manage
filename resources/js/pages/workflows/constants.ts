@@ -1,28 +1,9 @@
 import { CheckCircle2, FileSignature, Settings2, UserCheck, XCircle } from 'lucide-react';
 
 export const AVAILABLE_FIELDS = [
-    { value: 'attachment', label: 'Lampiran Kontrak (Attachment)' },
-    { value: 'signed_attachment', label: 'Lampiran TTD Kontrak' },
-    { value: 'notes', label: 'Catatan / Review (Notes)' },
-    { value: 'form_no', label: 'Nomor Pengajuan' },
-    { value: 'contract_no', label: 'Nomor Kontrak' },
-    { value: 'title', label: 'Judul Kontrak (title)' },
-    { value: 'description', label: 'Deskripsi Kontrak (description)' },
-    { value: 'contract_date', label: 'Tanggal Kontrak (contract_date)' },
-    { value: 'end_date', label: 'Tanggal Berakhir (end_date)' },
-    { value: 'kop_topik', label: 'Kop Surat Topik' },
-    { value: 'p1_entity', label: 'Pihak 1 Entitas' },
-    { value: 'p1_signer', label: 'Pihak 1 Penandatangan' },
-    { value: 'p2_entity', label: 'Pihak 2 Entitas' },
-    { value: 'p2_signer', label: 'Pihak 2 Penandatangan' },
-    { value: 'f2_price', label: 'Nilai Kontrak (f2_price)' },
-    { value: 'f2_payment', label: 'Ketentuan Pembayaran (f2_payment)' },
-    { value: 'f2_tenure', label: 'Jangka Waktu (f2_tenure)' },
-    { value: 'vendor_id', label: 'Vendor ID' },
-    { value: 'assigned_pic_id', label: 'PIC Ditugaskan' },
-    { value: 'submitted_at', label: 'Waktu Submit (submitted_at)' },
-    { value: 'approved_at', label: 'Waktu Disetujui (approved_at)' },
-    { value: 'closed_at', label: 'Waktu Selesai (closed_at)' },
+    { value: 'f1', label: 'Sub-dokumen F1 (Permohonan)' },
+    { value: 'f2', label: 'Sub-dokumen F2 (Ringkasan)' },
+    { value: 'agreement', label: 'Sub-dokumen Perjanjian / Draft' },
 ];
 
 export const AUTOFILLED_PARAMS = [

@@ -14,15 +14,23 @@ import {
     ChevronLeft,
     Clock,
     Download,
+    FileCheck,
     FileText,
+    GitCommit,
+    History,
+    Link2,
     Loader2,
+    MessageSquare,
     MoreVertical,
+    Paperclip,
     PenTool,
     Save,
+    ShieldCheck,
     Trash2,
     Upload,
     UserCheck,
     UserPlus,
+    Users,
     Zap,
 } from 'lucide-react';
 import React, { useMemo, useState, lazy, Suspense, useEffect } from 'react';
@@ -47,14 +55,11 @@ const MembersTab = lazy(() => import('../show/tabs/MembersTab').then(m => ({ def
 const ReferencesTab = lazy(() => import('../show/tabs/ReferencesTab').then(m => ({ default: m.ReferencesTab })));
 const TimelineTab = lazy(() => import('../show/tabs/TimelineTab').then(m => ({ default: m.TimelineTab })));
 
+import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+
 const TabSkeleton = () => (
-    <div className="flex flex-1 flex-col space-y-4 p-6">
-        <div className="bg-sidebar-accent h-8 w-1/3 animate-pulse rounded-md" />
-        <div className="bg-sidebar-accent h-64 w-full animate-pulse rounded-xl" />
-        <div className="grid grid-cols-2 gap-4">
-            <div className="bg-sidebar-accent h-32 w-full animate-pulse rounded-xl" />
-            <div className="bg-sidebar-accent h-32 w-full animate-pulse rounded-xl" />
-        </div>
+    <div className="flex flex-1 items-center justify-center min-h-[400px] w-full p-6">
+        <LoadingLottie width={120} height={120} />
     </div>
 );
 
@@ -93,15 +98,38 @@ const ContractDetailView = ({
     setPreviewUrl: (url: string) => void;
     setPreviewHasFile: (has: boolean) => void;
     setPreviewOpen: (open: boolean) => void;
-    users: any[];
 }) => {
     const params = new URLSearchParams(window.location.search);
-    const [detailTab, setDetailTabState] = useState((params.get('tab') as any) || 'form_template');
+    const [detailTab, setDetailTabState] = useState((params.get('tab') as any) || 'documents');
+    const [docSubTab, setDocSubTabState] = useState<'f1' | 'f2' | 'agreement'>((params.get('subtab') as any) || 'f1');
+    const [discSubTab, setDiscSubTabState] = useState<'chat' | 'members'>((params.get('discsubtab') as any) || 'chat');
+    const [historySubTab, setHistorySubTabState] = useState<'timeline' | 'audit'>((params.get('histsubtab') as any) || 'timeline');
 
     const setDetailTab = (tab: string) => {
         setDetailTabState(tab);
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('tab', tab);
+        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+    };
+
+    const setDocSubTab = (sub: 'f1' | 'f2' | 'agreement') => {
+        setDocSubTabState(sub);
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.set('subtab', sub);
+        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+    };
+
+    const setDiscSubTab = (sub: 'chat' | 'members') => {
+        setDiscSubTabState(sub);
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.set('discsubtab', sub);
+        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+    };
+
+    const setHistorySubTab = (sub: 'timeline' | 'audit') => {
+        setHistorySubTabState(sub);
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.set('histsubtab', sub);
         window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
     };
 
@@ -291,16 +319,24 @@ const ContractDetailView = ({
     const tabs = useMemo(
         () => {
             const meta = contract.workflow_step?.meta || {};
+            const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
+            const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
+            const hasAgreement = meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
+            const hasDocuments = hasF1 || hasF2 || hasAgreement;
+
+            const hasChat = meta.show_tab_chat !== false;
+            const hasMembers = meta.show_tab_members !== false;
+            const hasDiscussion = hasChat || hasMembers;
+
+            const hasTimeline = meta.show_tab_timeline !== false;
+            const hasHistory = hasTimeline || true; // Audit log is always available
+
             return [
-                { id: 'form_template', label: 'F1 (Permohonan)', mode: meta.show_tab_f1 === false ? 'none' : ((contract as any).f1_mode || 'upload') },
-                { id: 'f2', label: 'F2 (Ringkasan)', mode: meta.show_tab_f2 === false ? 'none' : ((contract as any).f2_mode || 'upload') },
-                { id: 'agreement', label: 'Perjanjian', mode: meta.show_tab_agreement === false ? 'none' : ((contract as any).contract_mode || 'upload') },
-                { id: 'timeline', label: 'Alur', mode: meta.show_tab_timeline === false ? 'none' : 'always' },
-                { id: 'attachments', label: 'Lampiran', mode: meta.show_tab_attachments === false ? 'none' : 'always' },
-                { id: 'chat', label: 'Chat', mode: meta.show_tab_chat === false ? 'none' : 'always' },
-                { id: 'references', label: 'Referensi', mode: meta.show_tab_references === false ? 'none' : 'always' },
-                { id: 'audit', label: 'Audit', mode: 'always' },
-                { id: 'members', label: 'Member', mode: meta.show_tab_members === false ? 'none' : 'always' },
+                { id: 'documents', label: 'Dokumen', icon: FileText, mode: hasDocuments ? 'always' : 'none' },
+                { id: 'history', label: 'Riwayat & Alur', icon: History, mode: hasHistory ? 'always' : 'none' },
+                { id: 'attachments', label: 'Lampiran', icon: Paperclip, mode: meta.show_tab_attachments === false ? 'none' : 'always' },
+                { id: 'discussion', label: 'Diskusi & Member', icon: MessageSquare, mode: hasDiscussion ? 'always' : 'none' },
+                { id: 'references', label: 'Referensi', icon: Link2, mode: meta.show_tab_references === false ? 'none' : 'always' },
             ].filter((tab) => tab.mode !== 'none');
         },
         [contract],
@@ -405,80 +441,166 @@ const ContractDetailView = ({
                         <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs">
                             {/* Compact Header + Tabs */}
                             <div className="bg-primary rounded-t-xl flex items-center gap-3 border-b border-primary/80 px-3 py-3 overflow-x-auto scrollbar-none">
-                                <div className="text-primary-foreground flex items-center gap-1.5 shrink-0">
-                                    <FileText size={13} className="text-primary-foreground/80" />
-                                    <span className="text-[10px] font-normal uppercase tracking-wide whitespace-nowrap text-primary-foreground">Detail Dokumen</span>
-                                </div>
-                                <div className="bg-primary-foreground/20 w-px h-4 shrink-0" />
                                 <Tabs value={detailTab} onValueChange={(val) => setDetailTab(val as any)} className="flex-1 min-w-0">
                                     <TabsList className="bg-transparent h-auto p-0 gap-0.5 flex flex-nowrap overflow-x-auto scrollbar-none justify-start w-full">
-                                        {tabs.map((tab) => (
-                                            <TabsTrigger
-                                                key={tab.id}
-                                                value={tab.id}
-                                                className="h-6 px-2.5 text-[10px] font-semibold uppercase rounded transition-all whitespace-nowrap shrink-0 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary data-[state=active]:shadow-xs text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/15 cursor-pointer"
-                                            >
-                                                {tab.label}
-                                            </TabsTrigger>
-                                        ))}
+                                        {tabs.map((tab) => {
+                                            const TabIcon = tab.icon;
+                                            return (
+                                                <TabsTrigger
+                                                    key={tab.id}
+                                                    value={tab.id}
+                                                    className="h-6 px-2.5 text-[10px] font-semibold uppercase rounded transition-all whitespace-nowrap shrink-0 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary data-[state=active]:shadow-xs text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/15 cursor-pointer inline-flex items-center gap-1.5"
+                                                >
+                                                    {TabIcon && <TabIcon size={12} className="shrink-0" />}
+                                                    <span>{tab.label}</span>
+                                                </TabsTrigger>
+                                            );
+                                        })}
                                     </TabsList>
                                 </Tabs>
                             </div>
                         <div className={cn(
-                            'flex flex-1 flex-col',
-                            ['chat', 'attachments', 'timeline', 'references', 'audit', 'members'].includes(detailTab)
+                            'flex flex-1 flex-col min-h-0',
+                            ['history', 'discussion', 'chat', 'attachments', 'timeline', 'references', 'audit', 'members'].includes(detailTab)
                                 ? 'h-[calc(100vh-180px)] min-h-[600px]'
                                 : 'min-h-[600px]'
                         )}>
                             <Suspense fallback={<TabSkeleton />}>
-                                {detailTab === 'form_template' && (
-                                    <F1Tab
-                                        contract={contract}
-                                        formTemplates={formTemplates}
-                                        vendors={vendors}
-                                        meUser={meUser}
-                                        onUpdate={onUpdate}
-                                        onFormDirty={(dirty) => setHasInfoChanges(dirty)}
-                                        onFormSave={(fn) => {
-                                            saveInfoRef.current = fn;
-                                        }}
-                                    />
-                                )}
-                                {detailTab === 'f2' && (
-                                    <F2Tab
-                                        contract={contract}
-                                        formTemplates={formTemplates}
-                                        vendors={vendors}
-                                        meUser={meUser}
-                                        onUpdate={onUpdate}
-                                        onFormDirty={(dirty) => setHasInfoChanges(dirty)}
-                                        onFormSave={(fn) => {
-                                            saveInfoRef.current = fn;
-                                        }}
-                                    />
-                                )}
-                                {detailTab === 'agreement' && (
-                                    <AgreementTab
-                                        contract={contract}
-                                        formTemplates={formTemplates}
-                                        vendors={vendors}
-                                        meUser={meUser}
-                                        onUpdate={onUpdate}
-                                    />
-                                )}
+                                {detailTab === 'documents' && (() => {
+                                    const meta = contract.workflow_step?.meta || {};
+                                    const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
+                                    const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
+                                    const hasAgreement = meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
+
+                                    const docSubTabs = [
+                                        { id: 'f1', label: 'F1 (Permohonan)', icon: FileText, show: hasF1 },
+                                        { id: 'f2', label: 'F2 (Ringkasan)', icon: FileCheck, show: hasF2 },
+                                        { id: 'agreement', label: 'Perjanjian', icon: PenTool, show: hasAgreement },
+                                    ].filter(t => t.show);
+
+                                    const activeSub = docSubTabs.some(t => t.id === docSubTab) ? docSubTab : (docSubTabs[0]?.id || 'f1');
+
+                                    return (
+                                        <div className="flex flex-col flex-1">
+                                            {docSubTabs.length > 1 && (
+                                                <div className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200/80 dark:border-zinc-800 shrink-0 overflow-x-auto scrollbar-none">
+                                                    {docSubTabs.map((st) => {
+                                                        const SubIcon = st.icon;
+                                                        return (
+                                                            <button
+                                                                key={st.id}
+                                                                type="button"
+                                                                onClick={() => setDocSubTab(st.id as any)}
+                                                                className={cn(
+                                                                    "px-3 py-1 text-[11px] font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5",
+                                                                    activeSub === st.id
+                                                                        ? "bg-primary text-white shadow-2xs font-bold"
+                                                                        : "bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
+                                                                )}
+                                                            >
+                                                                {SubIcon && <SubIcon size={12} className="shrink-0" />}
+                                                                <span>{st.label}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            <div className="flex-1">
+                                                {activeSub === 'f1' && (
+                                                    <F1Tab
+                                                        contract={contract}
+                                                        formTemplates={formTemplates}
+                                                        vendors={vendors}
+                                                        meUser={meUser}
+                                                        onUpdate={onUpdate}
+                                                        onFormDirty={(dirty) => setHasInfoChanges(dirty)}
+                                                        onFormSave={(fn) => {
+                                                            saveInfoRef.current = fn;
+                                                        }}
+                                                    />
+                                                )}
+                                                {activeSub === 'f2' && (
+                                                    <F2Tab
+                                                        contract={contract}
+                                                        formTemplates={formTemplates}
+                                                        vendors={vendors}
+                                                        meUser={meUser}
+                                                        onUpdate={onUpdate}
+                                                        onFormDirty={(dirty) => setHasInfoChanges(dirty)}
+                                                        onFormSave={(fn) => {
+                                                            saveInfoRef.current = fn;
+                                                        }}
+                                                    />
+                                                )}
+                                                {activeSub === 'agreement' && (
+                                                    <AgreementTab
+                                                        contract={contract}
+                                                        formTemplates={formTemplates}
+                                                        vendors={vendors}
+                                                        meUser={meUser}
+                                                        onUpdate={onUpdate}
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                                 {detailTab === 'attachments' && (
                                     <AttachmentsTab contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} showToast={showToast} meUser={meUser} />
                                 )}
 
-                                {detailTab === 'audit' && <AuditTrailTab contract={contract} />}
-                                {detailTab === 'timeline' && (
-                                    <TimelineTab
-                                        contract={contract}
-                                        meId={meId}
-                                        onApprove={(note, file) => handleApprove(note, file)}
-                                        showToast={showToast}
-                                    />
-                                )}
+                                {detailTab === 'history' && (() => {
+                                    const meta = contract.workflow_step?.meta || {};
+                                    const hasTimeline = meta.show_tab_timeline !== false;
+
+                                    const historySubTabs = [
+                                        { id: 'timeline', label: 'Alur Approval & Proses', icon: GitCommit, show: hasTimeline },
+                                        { id: 'audit', label: 'Audit Log & Activity', icon: ShieldCheck, show: true },
+                                    ].filter(t => t.show);
+
+                                    const activeSub = historySubTabs.some(t => t.id === historySubTab) ? historySubTab : (historySubTabs[0]?.id || 'timeline');
+
+                                    return (
+                                        <div className="flex flex-col flex-1 min-h-0">
+                                            {historySubTabs.length > 1 && (
+                                                <div className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200/80 dark:border-zinc-800 shrink-0 overflow-x-auto scrollbar-none">
+                                                    {historySubTabs.map((st) => {
+                                                        const SubIcon = st.icon;
+                                                        return (
+                                                            <button
+                                                                key={st.id}
+                                                                type="button"
+                                                                onClick={() => setHistorySubTab(st.id as any)}
+                                                                className={cn(
+                                                                    "px-3 py-1 text-[11px] font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5",
+                                                                    activeSub === st.id
+                                                                        ? "bg-primary text-white shadow-2xs font-bold"
+                                                                        : "bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
+                                                                )}
+                                                            >
+                                                                {SubIcon && <SubIcon size={12} className="shrink-0" />}
+                                                                <span>{st.label}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            <div className="flex-1 min-h-0 flex flex-col">
+                                                {activeSub === 'timeline' && (
+                                                    <TimelineTab
+                                                        contract={contract}
+                                                        meId={meId}
+                                                        onApprove={(note, file) => handleApprove(note, file)}
+                                                        showToast={showToast}
+                                                    />
+                                                )}
+                                                {activeSub === 'audit' && <AuditTrailTab contract={contract} />}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                                 {detailTab === 'references' && (
                                     <ReferencesTab
                                         contract={contract}
@@ -491,8 +613,51 @@ const ContractDetailView = ({
                                     />
                                 )}
 
-                                {detailTab === 'chat' && <ChatTab contract={contract} meId={meId} users={vendors} onUpdate={onUpdate} />}
-                                {detailTab === 'members' && <MembersTab contract={contract} users={users} />}
+                                {detailTab === 'discussion' && (() => {
+                                    const meta = contract.workflow_step?.meta || {};
+                                    const hasChat = meta.show_tab_chat !== false;
+                                    const hasMembers = meta.show_tab_members !== false;
+
+                                    const discSubTabs = [
+                                        { id: 'chat', label: 'Chat & Diskusi', icon: MessageSquare, show: hasChat },
+                                        { id: 'members', label: 'Member / Anggota Tim', icon: Users, show: hasMembers },
+                                    ].filter(t => t.show);
+
+                                    const activeSub = discSubTabs.some(t => t.id === discSubTab) ? discSubTab : (discSubTabs[0]?.id || 'chat');
+
+                                    return (
+                                        <div className="flex flex-col flex-1 min-h-0">
+                                            {discSubTabs.length > 1 && (
+                                                <div className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200/80 dark:border-zinc-800 shrink-0 overflow-x-auto scrollbar-none">
+                                                    {discSubTabs.map((st) => {
+                                                        const SubIcon = st.icon;
+                                                        return (
+                                                            <button
+                                                                key={st.id}
+                                                                type="button"
+                                                                onClick={() => setDiscSubTab(st.id as any)}
+                                                                className={cn(
+                                                                    "px-3 py-1 text-[11px] font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5",
+                                                                    activeSub === st.id
+                                                                        ? "bg-primary text-white shadow-2xs font-bold"
+                                                                        : "bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
+                                                                )}
+                                                            >
+                                                                {SubIcon && <SubIcon size={12} className="shrink-0" />}
+                                                                <span>{st.label}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+
+                                            <div className="flex-1 min-h-0 flex flex-col">
+                                                {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={vendors} onUpdate={onUpdate} />}
+                                                {activeSub === 'members' && <MembersTab contract={contract} users={users} />}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                                 {detailTab === 'empty' && (
                                     <div className="flex h-full min-h-[400px] flex-col items-center justify-center text-slate-400">
                                         <FileText size={48} className="mb-4 text-slate-300 opacity-50" />

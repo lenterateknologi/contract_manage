@@ -32,6 +32,7 @@ class WorkflowStepAction extends Model
         'signing_parties',
         'assignee_config',
         'alias',
+        'target_status',
         'description',
         'is_active',
         'created_by',

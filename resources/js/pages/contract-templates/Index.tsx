@@ -350,7 +350,7 @@ export default function Templates({ folders, templates }: Props) {
                                 className={cn(
                                     'group flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs transition-all active:scale-[0.98]',
                                     currentFolderId === null
-                                        ? 'bg-slate-200/80 dark:bg-zinc-800 border-slate-300/80 dark:border-zinc-700 text-slate-950 dark:text-zinc-100 shadow-2xs font-extrabold'
+                                        ? 'bg-primary border-primary text-white shadow-xs font-extrabold'
                                         : 'border-transparent text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800/80 hover:text-foreground font-medium',
                                 )}
                                 onClick={() => setCurrentFolderId(null)}
@@ -371,7 +371,7 @@ export default function Templates({ folders, templates }: Props) {
                             >
                                 <Folder
                                     size={15}
-                                    className={cn('transition-colors', currentFolderId === null ? 'text-primary fill-primary/20' : 'text-text-soft')}
+                                    className={cn('transition-colors', currentFolderId === null ? 'text-white fill-white/20' : 'text-text-soft')}
                                 />
                                 Repository Root
                             </div>
@@ -426,8 +426,8 @@ export default function Templates({ folders, templates }: Props) {
 
                 {/* Floating Main Content Area */}
                 <FloatingPanel className="flex flex-col flex-1 min-w-0">
-                    {/* Floating Header Toolbar */}
-                    <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border px-6 bg-card dark:bg-zinc-900/50">
+                    {/* Floating Header Toolbar with Primary Blue */}
+                    <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-primary/20 px-6 bg-primary text-white dark:bg-zinc-800/95">
                         <div className="flex items-center gap-3 overflow-hidden">
                             <Button
                                 variant="white"
@@ -450,14 +450,14 @@ export default function Templates({ folders, templates }: Props) {
                                 disabled={currentFolderId === null}
                                 title="Kembali ke Folder Induk"
                             >
-                                <ArrowLeft size={14} className="text-text-soft" />
+                                <ArrowLeft size={14} className="text-slate-800 dark:text-zinc-200" />
                             </Button>
 
-                            <nav className="flex items-center gap-1.5 overflow-hidden text-xs">
+                            <nav className="flex items-center gap-1.5 overflow-hidden text-xs text-white">
                                 <button
                                     className={cn(
-                                        'hover:text-primary transition-colors flex items-center gap-1 font-medium',
-                                        currentFolderId === null ? 'text-primary font-semibold' : 'text-text-soft',
+                                        'hover:text-white/80 transition-colors flex items-center gap-1 font-medium cursor-pointer',
+                                        currentFolderId === null ? 'text-white font-bold' : 'text-white/70',
                                     )}
                                     onClick={() => setCurrentFolderId(null)}
                                     onDragOver={(e) => e.preventDefault()}
@@ -479,11 +479,11 @@ export default function Templates({ folders, templates }: Props) {
 
                                 {folderPath.map((folder, idx) => (
                                     <React.Fragment key={folder.id}>
-                                        <ChevronRight size={12} className="text-text-soft shrink-0" />
+                                        <ChevronRight size={12} className="text-white/60 shrink-0" />
                                         <button
                                             className={cn(
-                                                'hover:text-primary truncate max-w-[120px] transition-colors font-medium',
-                                                idx === folderPath.length - 1 ? 'text-primary font-semibold' : 'text-text-soft',
+                                                'hover:text-white/80 truncate max-w-[120px] transition-colors font-medium cursor-pointer',
+                                                idx === folderPath.length - 1 ? 'text-white font-bold' : 'text-white/70',
                                             )}
                                             onClick={() => setCurrentFolderId(folder.id)}
                                             onDragOver={(e) => e.preventDefault()}
@@ -512,9 +512,8 @@ export default function Templates({ folders, templates }: Props) {
                                 <Search className="text-text-soft absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 z-10 pointer-events-none" />
                                 <Input
                                     type="search"
-                                    variant="filled"
                                     placeholder="Cari asset..."
-                                    className="h-9 rounded-lg border-border pl-9 text-xs font-normal transition-all shadow-2xs"
+                                    className="h-9 rounded-lg border-none bg-white text-slate-900 dark:bg-zinc-900 dark:text-white pl-9 text-xs font-normal transition-all"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -1227,7 +1226,7 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                 className={cn(
                     'group flex cursor-grab active:cursor-grabbing items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] transition-all select-none leading-none my-0.5 border',
                     isSelected 
-                        ? 'bg-slate-200/80 dark:bg-zinc-800 border-slate-300/80 dark:border-zinc-700 text-slate-950 dark:text-zinc-100 shadow-2xs font-extrabold' 
+                        ? 'bg-primary border-primary text-white shadow-xs font-extrabold' 
                         : 'border-transparent text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800/80 hover:text-foreground font-medium',
                 )}
                 onClick={() => onSelect(folder.id)}
@@ -1236,7 +1235,7 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                 <div
                     className={cn(
                         "p-0.5 rounded transition-colors",
-                        isSelected ? "hover:bg-slate-300/50 dark:hover:bg-zinc-700/80 text-slate-950 dark:text-zinc-100" : "hover:bg-slate-200/70 dark:hover:bg-zinc-700/70 text-text-soft"
+                        isSelected ? "hover:bg-white/20 text-white" : "hover:bg-slate-200/70 dark:hover:bg-zinc-700/70 text-text-soft"
                     )}
                     onClick={(e) => {
                         e.stopPropagation();
@@ -1245,9 +1244,9 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                 >
                     {hasChildren ? (
                         isExpanded ? (
-                            <ChevronDown size={12} className={isSelected ? "text-slate-900 dark:text-zinc-100" : "text-text-soft"} />
+                            <ChevronDown size={12} className={isSelected ? "text-white" : "text-text-soft"} />
                         ) : (
-                            <ChevronRight size={12} className={isSelected ? "text-slate-900 dark:text-zinc-100" : "text-text-soft"} />
+                            <ChevronRight size={12} className={isSelected ? "text-white" : "text-text-soft"} />
                         )
                     ) : (
                         <div className="w-[12px]" />
@@ -1257,17 +1256,17 @@ function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolde
                     size={14}
                     className={cn(
                         'shrink-0 transition-colors',
-                        isSelected ? 'text-primary fill-primary/20 font-bold' : 'text-text-soft group-hover:text-primary',
+                        isSelected ? 'text-white fill-white/20 font-bold' : 'text-text-soft group-hover:text-primary',
                     )}
                 />
-                <span className="truncate tracking-tight">
+                <span className={cn("truncate tracking-tight", isSelected ? "text-white font-bold" : "")}>
                     {folder.name}
                 </span>
                 {folder.templates_count > 0 && (
                     <span className={cn(
-                        "ml-auto text-[9px] font-medium px-1 py-0.2 rounded transition-colors",
+                        "ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full transition-colors",
                         isSelected
-                            ? "bg-slate-300/60 dark:bg-zinc-700 text-slate-950 dark:text-zinc-100 font-extrabold"
+                            ? "bg-white text-primary font-extrabold shadow-xs"
                             : "bg-slate-100 dark:bg-zinc-800/80 text-text-soft"
                     )}>
                         {folder.templates_count}

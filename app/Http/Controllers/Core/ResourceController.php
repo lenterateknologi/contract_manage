@@ -245,6 +245,17 @@ class ResourceController extends Controller
         ]);
     }
 
+    public function vendorDocument(Request $request, $id)
+    {
+        $resourceClass = $this->getResourceClass('vendors');
+        $modelClass = $resourceClass::$model;
+        $record = $modelClass::findOrFail($id);
+
+        return Inertia::render('Core/VendorDocument', [
+            'vendor' => $record,
+        ]);
+    }
+
     public function update(Request $request, string $resourceSlug, $id)
     {
         $resourceClass = $this->getResourceClass($resourceSlug);

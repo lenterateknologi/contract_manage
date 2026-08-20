@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Building2, User } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { Contract } from '@/pages/contracts/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/user/Avatar';
 import { getAvatarColor } from '@/lib/avatarColor';
@@ -24,15 +24,15 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
         <div
             onClick={onClick}
             className={cn(
-                "group relative flex cursor-pointer items-center gap-3 rounded-xl p-3 text-left transition-all duration-200 select-none border",
+                "group relative flex w-full cursor-pointer items-center gap-3 px-3.5 py-3 text-left transition-colors select-none border-b border-border border-l-2",
                 isSelected
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-white dark:bg-zinc-900/60 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border-slate-200/80 dark:border-zinc-800 text-slate-800 dark:text-slate-200"
+                    ? "bg-primary text-primary-foreground border-l-primary"
+                    : "bg-background hover:bg-muted/60 text-foreground border-l-transparent"
             )}
         >
-            <Avatar className={cn("h-9 w-9 shrink-0 border transition-transform group-hover:scale-105", isSelected ? "border-white/40" : "border-slate-200 dark:border-zinc-700")}>
+            <Avatar className={cn("h-8.5 w-8.5 shrink-0 transition-transform group-hover:scale-105 border", isSelected ? "border-primary-foreground/30" : "border-border")}>
                 <AvatarImage src={contract.creator?.avatar || ''} alt={creatorName} />
-                <AvatarFallback className={cn("text-[10.5px] font-black tracking-tight", isSelected ? "bg-white text-slate-950 shadow-xs" : avatarColorClass)}>
+                <AvatarFallback className={cn("text-[10.5px] font-black tracking-tight", isSelected ? "bg-background text-foreground shadow-xs" : avatarColorClass)}>
                     {initials}
                 </AvatarFallback>
             </Avatar>
@@ -40,8 +40,8 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
             <div className="flex flex-1 flex-col min-w-0">
                 <div className="flex items-center justify-between gap-1 mb-0.5">
                     <span className={cn(
-                        "font-mono text-[9.5px] font-semibold truncate",
-                        isSelected ? "text-primary-foreground/80 font-bold" : "text-slate-400 dark:text-slate-500"
+                        "font-mono text-[10px] font-semibold truncate",
+                        isSelected ? "text-primary-foreground/90 font-bold" : "text-muted-foreground"
                     )}>
                         #{contract.form_no || contract.contract_no || 'NO-REQ'}
                     </span>
@@ -53,7 +53,7 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
                         ) : null}
                         <span className={cn(
                             "text-[9px] font-medium tabular-nums",
-                            isSelected ? "text-primary-foreground/80" : "text-slate-400 dark:text-slate-500"
+                            isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
                         )}>
                             {contract.updated_at_formatted || ''}
                         </span>
@@ -62,17 +62,17 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
 
                 <h3 className={cn(
                     "text-xs font-semibold truncate leading-tight tracking-tight",
-                    isSelected ? "text-primary-foreground" : "text-slate-900 dark:text-slate-100"
+                    isSelected ? "text-primary-foreground font-bold" : "text-foreground"
                 )}>
                     {contract.title}
                 </h3>
 
-                <div className="flex items-center gap-2 mt-1.5 text-[9.5px]">
+                <div className="flex items-center gap-2 mt-1 text-[10px]">
                     <span className={cn(
                         "inline-flex items-center gap-1 font-medium truncate",
-                        isSelected ? "text-primary-foreground/80" : "text-slate-500 dark:text-slate-400"
+                        isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
                     )}>
-                        <Building2 size={10} className="shrink-0" /> {contract.contract_type || 'General'}
+                        <Building2 size={11} className="shrink-0" /> {contract.contract_type || 'General'}
                     </span>
                 </div>
             </div>

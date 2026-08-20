@@ -76,6 +76,7 @@ trait HasWorkflowHelpers
                 'assignee_config' => $assigneeConfig,
                 'transition_config' => $actData['transition_config'] ?? null,
                 'alias' => $actData['alias'] ?? null,
+                'target_status' => $actData['target_status'] ?? null,
                 'description' => $actData['description'] ?? null,
                 'is_active' => $actData['is_active'] ?? true,
                 'updated_by' => Auth::id(),

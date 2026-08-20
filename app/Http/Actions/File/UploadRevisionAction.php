@@ -64,7 +64,11 @@ class UploadRevisionAction
 
             $approvals = $contract->approvals()->orderBy('sequence')->get();
             foreach ($approvals as $i => $a) {
-                $a->update(['status' => $i === 0 ? 'pending' : 'waiting', 'note' => null, 'approved_at' => null]);
+                $a->update([
+                    'status' => $i === 0 ? 'pending' : 'waiting',
+                    'comment' => null,
+                    'decided_at' => null,
+                ]);
             }
         }
 

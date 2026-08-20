@@ -1,0 +1,12 @@
+curl -i --request POST \
+  "https://service-chat.qontak.com/api/open/v1/messages/whatsapp/bot" \
+  --header "Authorization: Bearer ${CHATBOT_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --data-raw '{
+    "room_id": "9faf5946-4cd2-40f2-8e96-ff3f519160bb",
+    "type": "text",
+    "text": "Test dari API"
+}'
+
+
+  export CHATBOT_TOKEN="9aqBPjdeV55RSMLPqxiU6y9H3-sHoFFSApUoi6QcqGw"

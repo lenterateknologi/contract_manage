@@ -141,12 +141,12 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
             }}
         >
             <table className="w-full text-xs">
-                <thead>
-                    <tr className="border-b border-border/60 bg-muted/30">
-                        <th className="w-10 px-4 py-3">
+                <thead className="bg-primary text-white dark:bg-zinc-800/90 select-none">
+                    <tr className="border-b border-primary/20 dark:border-zinc-700/80 bg-primary text-white dark:bg-zinc-800/90 select-none">
+                        <th className="w-10 px-4 py-3 bg-primary dark:bg-zinc-800/90 text-white">
                             <input
                                 type="checkbox"
-                                className="h-3.5 w-3.5 rounded border-border"
+                                className="h-3.5 w-3.5 rounded border-white/50 text-primary focus:ring-0"
                                 checked={selectedIds.size === rows.length && rows.length > 0}
                                 onChange={(e) => {
                                     if (e.target.checked) setSelectedIds(new Set(rows.map((r) => r.id)));
@@ -154,32 +154,32 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                 }}
                             />
                         </th>
-                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                        <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
                             <div className="flex items-center gap-1.5">
-                                <GitBranch size={12} /> Identitas Alur
+                                <GitBranch size={13} /> Identitas Alur
                             </div>
                         </th>
-                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                        <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
                             <div className="flex items-center gap-1.5">
-                                <ShieldCheck size={12} /> Otoritas Inisiasi
+                                <ShieldCheck size={13} /> Otoritas Inisiasi
                             </div>
                         </th>
-                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                        <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
                             <div className="flex items-center gap-1.5">
-                                <Layers size={12} /> Tahapan
+                                <Layers size={13} /> Tahapan
                             </div>
                         </th>
-                        <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                        <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
                             <div className="flex items-center gap-1.5">
-                                <Tag size={12} /> Tipe Pengajuan
+                                <Tag size={13} /> Tipe Pengajuan
                             </div>
                         </th>
-                        <th className="px-4 py-3 text-center font-medium text-muted-foreground">
+                        <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
                             <div className="flex items-center justify-center gap-1.5">
-                                <Eye size={12} /> Tampil
+                                <Eye size={13} /> Tampil
                             </div>
                         </th>
-                        <th className="w-28 px-4 py-3" />
+                        <th className="w-28 px-4 py-3 text-right text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">Aksi</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">

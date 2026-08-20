@@ -148,6 +148,8 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         }
     };
 
+    const isFormValid = Boolean(typeId && workflowId && title.trim());
+
     return (
         <Modal
             isOpen={open}
@@ -167,7 +169,7 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     >
                         Batal
                     </Button>
-                    <Button onClick={handleSubmit} disabled={loading} className="min-w-[120px] h-9 text-xs">
+                    <Button onClick={handleSubmit} disabled={loading || !isFormValid} className="min-w-[120px] h-9 text-xs font-bold">
                         {loading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Check size={15} className="mr-1.5" />}
                         Buat Kontrak
                     </Button>

@@ -254,7 +254,7 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
 
     const columns = [
         {
-            header: 'Name',
+            header: 'Nama Struktur',
             accessorKey: 'name',
             sortable: false,
             cell: (row: any) => {
@@ -289,7 +289,7 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
             }
         },
         {
-            header: 'Type',
+            header: 'Tipe Entitas',
             accessorKey: 'type',
             sortable: false,
             cell: (row: any) => {
@@ -312,7 +312,7 @@ export default function OrganizationTree({ treeData, breadcrumbs }: Props) {
             }
         },
         {
-            header: 'Items',
+            header: 'Jumlah Item',
             accessorKey: 'children',
             sortable: false,
             cell: (row: any) => {

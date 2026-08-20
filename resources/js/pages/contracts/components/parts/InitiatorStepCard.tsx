@@ -40,8 +40,8 @@ export function InitiatorStepCard({ isOnly, creator, submittedAt }: InitiatorSte
                                 {creator?.department_name && (
                                     <span className="text-text-soft truncate text-[11px] leading-none font-medium">{creator.department_name}</span>
                                 )}
-                                <span className="text-text-soft flex items-center gap-1 text-[11px] leading-none font-normal">
-                                    <Clock size={10} /> {submittedAt || 'Sudah Diajukan'}
+                                <span className="text-text-main/90 dark:text-text-main/90 flex items-center gap-1.5 text-[11px] leading-none font-semibold">
+                                    <Clock size={12} className="text-text-soft shrink-0" /> {submittedAt || 'Sudah Diajukan'}
                                 </span>
                             </div>
                         </div>

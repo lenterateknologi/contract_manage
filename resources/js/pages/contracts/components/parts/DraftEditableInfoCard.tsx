@@ -1,6 +1,6 @@
 import { Avatar } from '@/pages/contracts/components/ui/ui';
 import { Contract, ContractType } from '@/pages/contracts/types';
-import { Building2, Check, ChevronDown, ChevronUp, Info, Loader2, User } from 'lucide-react';
+import { Building2, Check, ChevronDown, ChevronUp, ExternalLink, Info, Loader2, User } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContractInfoForm, MetaBadge } from './ContractInfoForm';
 import { TaxToggle } from './TaxToggle';
@@ -64,6 +64,14 @@ export function DraftEditableInfoCard({
     const [submissionTypeId, setSubmissionTypeId] = useState(selected.submission_type_id || '');
     const [kopSubTopik, setKopSubTopik] = useState((selected as any).kop_sub_topik || '');
     const [contractNo, setContractNo] = useState(selected.contract_no || '');
+    const [contractDate, setContractDate] = useState(() => {
+        if (!selected.contract_date) return '';
+        return String(selected.contract_date).split('T')[0].split(' ')[0];
+    });
+    const [endDate, setEndDate] = useState(() => {
+        if (!selected.end_date) return '';
+        return String(selected.end_date).split('T')[0].split(' ')[0];
+    });
     const [price, setPrice] = useState(() => {
         const p = selected.metadata?.meta_harga ?? selected.metadata?.f2_price ?? selected.meta?.f2_price;
         return p !== undefined && p !== null ? String(p) : '';
@@ -88,6 +96,8 @@ export function DraftEditableInfoCard({
         setSubmissionTypeId(selected.submission_type_id || '');
         setKopSubTopik((selected as any).kop_sub_topik || '');
         setContractNo(selected.contract_no || '');
+        setContractDate(selected.contract_date ? String(selected.contract_date).split('T')[0].split(' ')[0] : '');
+        setEndDate(selected.end_date ? String(selected.end_date).split('T')[0].split(' ')[0] : '');
         const p = selected.metadata?.meta_harga ?? selected.metadata?.f2_price ?? selected.meta?.f2_price;
         setPrice(p !== undefined && p !== null ? String(p) : '');
         setTaxRequired(!!selected.metadata?.tax_required);
@@ -101,6 +111,8 @@ export function DraftEditableInfoCard({
         selected.submission_type_id,
         selected.transaction_type,
         (selected as any).kop_sub_topik,
+        selected.contract_date,
+        selected.end_date,
         selected.metadata,
         types,
     ]);
@@ -115,6 +127,8 @@ export function DraftEditableInfoCard({
                 : '';
         const origPrice = selected.metadata?.meta_harga ?? selected.metadata?.f2_price ?? selected.meta?.f2_price;
         const origPriceStr = origPrice !== undefined && origPrice !== null ? String(origPrice) : '';
+        const origContractDate = selected.contract_date ? String(selected.contract_date).split('T')[0].split(' ')[0] : '';
+        const origEndDate = selected.end_date ? String(selected.end_date).split('T')[0].split(' ')[0] : '';
         return (
             title !== selected.title ||
             description !== (selected.description || '') ||
@@ -123,10 +137,12 @@ export function DraftEditableInfoCard({
             submissionTypeId !== (selected.submission_type_id || '') ||
             kopSubTopik !== ((selected as any).kop_sub_topik || '') ||
             contractNo !== (selected.contract_no || '') ||
+            contractDate !== origContractDate ||
+            endDate !== origEndDate ||
             price !== origPriceStr ||
             taxRequired !== !!selected.metadata?.tax_required
         );
-    }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, contractNo, price, taxRequired, selected, types]);
+    }, [title, description, typeId, vendorId, submissionTypeId, kopSubTopik, contractNo, contractDate, endDate, price, taxRequired, selected, types]);
 
     const handleManualSave = async () => {
         if (!title.trim()) return;
@@ -141,6 +157,8 @@ export function DraftEditableInfoCard({
                 submission_type_id: submissionTypeId || null,
                 kop_sub_topik: kopSubTopik,
                 contract_no: contractNo || null,
+                contract_date: contractDate || null,
+                end_date: endDate || null,
                 metadata: {
                     ...selected.metadata,
                     tax_required: taxRequired,
@@ -166,6 +184,8 @@ export function DraftEditableInfoCard({
         setSubmissionTypeId(selected.submission_type_id || '');
         setKopSubTopik((selected as any).kop_sub_topik || '');
         setContractNo(selected.contract_no || '');
+        setContractDate(selected.contract_date ? String(selected.contract_date).split('T')[0].split(' ')[0] : '');
+        setEndDate(selected.end_date ? String(selected.end_date).split('T')[0].split(' ')[0] : '');
         const p = selected.metadata?.meta_harga ?? selected.metadata?.f2_price ?? selected.meta?.f2_price;
         setTaxRequired(!!selected.metadata?.tax_required);
     };
@@ -213,6 +233,10 @@ export function DraftEditableInfoCard({
                             setTitle={setTitle}
                             contractNo={contractNo}
                             setContractNo={setContractNo}
+                            contractDate={contractDate}
+                            setContractDate={setContractDate}
+                            endDate={endDate}
+                            setEndDate={setEndDate}
                             price={price}
                             setPrice={setPrice}
                             typeId={typeId}
@@ -373,12 +397,26 @@ export function VendorInfoCard({ selected }: { selected: Contract }) {
                 <div className="flex items-center gap-2 text-xs font-normal uppercase tracking-tight text-primary-foreground">
                     <Building2 size={16} className="text-primary-foreground/80" /> Detail Pihak Kedua / Vendor
                 </div>
-                <button
-                    onClick={() => setMinimized(!minimized)}
-                    className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5"
-                >
-                    {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
-                </button>
+                <div className="flex items-center gap-2">
+                    {vendor?.id && (
+                        <a
+                            href={`/admin/core/vendors/${vendor.id}/document`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1 text-[11px] font-medium text-white transition-all hover:bg-white/20 active:scale-95 cursor-pointer"
+                            title="Buka Dokumen Resmi Vendor"
+                        >
+                            <span>Detail Lengkap</span>
+                            <ExternalLink size={13} />
+                        </a>
+                    )}
+                    <button
+                        onClick={() => setMinimized(!minimized)}
+                        className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5"
+                    >
+                        {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+                    </button>
+                </div>
             </div>
 
             {!minimized && (

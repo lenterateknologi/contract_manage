@@ -31,25 +31,26 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const filteredSteps = useMemo(() => {
         let result = [...approvals];
 
-        // Tab: Syarat Terpenuhi = hanya approved / rejected / pending+active
+        // Tab: Syarat Terpenuhi = approved, rejected, dan step yang sedang aktif (berdasarkan workflow_step_id kontrak)
         if (viewTab === 'eligible') {
+            const currentStepId = contract.workflow_step_id;
             result = result.filter(
                 (a) =>
                     a.status === 'approved' ||
                     a.status === 'rejected' ||
-                    (a.status === 'pending' && a.is_active),
+                    a.workflow_step_id === currentStepId,
             );
         }
 
         // Tab: Semua Kecuali Tidak Terpenuhi
-        // = hide step yang is_active=false, waiting, SELANJUTNYA (sesuai logika ApprovalCard isStaged/isWaiting)
+        // = hide step yang bukan current dan belum ada hasilnya
         if (viewTab === 'active') {
+            const currentStepId = contract.workflow_step_id;
             result = result.filter(
                 (a) =>
-                    a.is_active === true &&
-                    a.status !== 'waiting' &&
-                    (a.status as string) !== 'SELANJUTNYA' &&
-                    (a.status as string) !== 'SKIPPED',
+                    a.status === 'approved' ||
+                    a.status === 'rejected' ||
+                    a.workflow_step_id === currentStepId,
             );
         }
 
@@ -117,8 +118,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         blocks.forEach((block) => {
             block.groups.forEach((group: any) => {
                 const mainStep = group.items.find((a: any) => a.sub_step == null) || group.items[0];
-                group.stepName = mainStep.step_name || mainStep.role || 'Persetujuan';
-                group.stepDescription = mainStep.step_description;
+                group.stepName = mainStep.step_name || mainStep.workflow_step?.label || mainStep.workflow_step?.name || mainStep.role || `Persetujuan Step ${group.sequence}`;
+                group.stepDescription = mainStep.step_description || mainStep.workflow_step?.description;
 
                 group.items.sort((a: any, b: any) => {
                     if (a.sub_step == null && b.sub_step != null) return 1;
@@ -225,13 +226,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
                                 {block.groups.map(
                                     (group: { sequence: number; stepName: string; stepDescription?: string; items: ContractApproval[] }, idx: number) => {
-                                        const currentStep = contract.workflow_step?.step ?? 1;
+                                        const currentStepId = contract.workflow_step_id;
                                         const allApprovedItems = group.items.length > 0 && group.items.every((a) => a.status === 'approved');
-                                        const isCompleted = contract.status === 'approved' || group.sequence < currentStep || allApprovedItems;
-                                        const isActive =
-                                            contract.status !== 'approved' &&
-                                            !isCompleted &&
-                                            (group.sequence === currentStep || group.items.some((a) => a.status === 'pending' && a.is_active));
+                                        const isGroupCurrentStep = group.items.some((a) => a.workflow_step_id === currentStepId);
+                                        const isCompleted = contract.status === 'approved' || allApprovedItems;
+                                        const isActive = contract.status !== 'approved' && !isCompleted && isGroupCurrentStep;
                                         const isRejectedState = group.items.some((a) => a.status === 'rejected');
 
                                         const itemStatus = isCompleted
@@ -242,27 +241,145 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                     ? 'active'
                                                     : 'waiting';
 
+                                        // Cari status target dari workflow step
+                                        const mainItem = group.items[0];
+                                        const matchedStep = contract?.workflow?.steps?.find((s: any) => s.step === group.sequence || s.id === mainItem?.workflow_step_id) || mainItem?.workflow_step;
+                                        const stepMeta = (matchedStep as any)?.meta || {};
+                                        const targetStatus = stepMeta.target_status || (isActive ? (contract.status_info?.code || contract.status) : null);
+                                        const statusColor = (isActive && contract.status_info?.color) ? contract.status_info.color : null;
+
                                         return (
                                             <TimelineItem key={group.sequence + idx} status={itemStatus}>
-                                                <TimelineIcon status={itemStatus}>
+                                                <TimelineIcon
+                                                    status={itemStatus}
+                                                    style={isActive && statusColor ? { backgroundColor: statusColor, borderColor: 'transparent' } : undefined}
+                                                >
                                                     {group.sequence}
                                                 </TimelineIcon>
 
-                                                <TimelineContent>
-                                                    {group.stepName && group.stepName !== 'Persetujuan Tambahan' && (
-                                                        <span className={cn(
-                                                            'text-[11px] font-bold tracking-tight uppercase transition-colors duration-300',
-                                                            isCompleted
-                                                                ? 'text-emerald-700 dark:text-emerald-400'
-                                                                : isActive
-                                                                    ? 'text-amber-600 dark:text-amber-400'
-                                                                    : isRejectedState
-                                                                        ? 'text-rose-600 dark:text-rose-400'
-                                                                        : 'text-text-soft',
-                                                        )}>
-                                                            {group.stepName}
-                                                        </span>
-                                                    )}
+                                                 <TimelineContent>
+                                                     <div className="flex flex-wrap items-center justify-between gap-2">
+                                                         <div className="flex items-center gap-2">
+                                                             <span
+                                                                 style={isActive && statusColor ? { color: statusColor } : undefined}
+                                                                 className={cn(
+                                                                     'text-[11px] font-bold tracking-tight uppercase transition-colors duration-300',
+                                                                     isCompleted
+                                                                         ? 'text-emerald-700 dark:text-emerald-400'
+                                                                         : isActive
+                                                                             ? (!statusColor && 'text-amber-600 dark:text-amber-400')
+                                                                             : isRejectedState
+                                                                                 ? 'text-rose-600 dark:text-rose-400'
+                                                                                 : 'text-text-soft',
+                                                                 )}
+                                                             >
+                                                                 {group.stepName || `Tahap ${group.sequence}`}
+                                                             </span>
+                                                             {isActive && (
+                                                                 <span
+                                                                     style={statusColor ? {
+                                                                         backgroundColor: `${statusColor}18`,
+                                                                         color: statusColor,
+                                                                     } : undefined}
+                                                                     className={cn(
+                                                                         'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide',
+                                                                         !statusColor && 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                                                     )}
+                                                                 >
+                                                                     <span
+                                                                         style={statusColor ? { backgroundColor: statusColor } : undefined}
+                                                                         className={cn(
+                                                                             'h-1.5 w-1.5 rounded-full animate-pulse shrink-0',
+                                                                             !statusColor && 'bg-amber-500'
+                                                                         )}
+                                                                     />
+                                                                     Sekarang
+                                                                 </span>
+                                                             )}
+                                                         </div>
+
+                                                         {/* Required Sub-Documents Badge Pills for Step */}
+                                                         {(() => {
+                                                             const mainItem = group.items[0];
+                                                             let stepMeta = mainItem?.workflow_step?.meta;
+                                                             let actions = mainItem?.workflow_step?.action_configs || [];
+
+                                                             if (!stepMeta && contract?.workflow?.steps) {
+                                                                 const matchedStep = contract.workflow.steps.find((s: any) => s.step === group.sequence || s.id === mainItem?.workflow_step_id);
+                                                                 if (matchedStep) {
+                                                                     stepMeta = matchedStep.meta;
+                                                                     if (!actions.length) actions = matchedStep.action_configs || [];
+                                                                 }
+                                                             }
+                                                             stepMeta = stepMeta || {};
+
+                                                             const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
+                                                             const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
+                                                             const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
+                                                             const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+
+                                                             const reqList = [];
+
+                                                             if (requireF1) {
+                                                                 const isFilled = !!(
+                                                                     contract.f1_file ||
+                                                                     contract.metadata?.f1_file ||
+                                                                     (contract as any)?.f1_submission ||
+                                                                     (contract as any)?.f1_form_data ||
+                                                                     contract.metadata?.f1_form_data ||
+                                                                     (contract?.versions && contract.versions.some((v: any) => v.document_type === 'f1')) ||
+                                                                     (contract.f1_items && contract.f1_items.length > 0)
+                                                                 );
+                                                                 reqList.push({ label: 'F1', isFilled });
+                                                             }
+                                                             if (requireF2) {
+                                                                 const isFilled = !!(
+                                                                     contract.f2_file ||
+                                                                     contract.metadata?.f2_file ||
+                                                                     (contract as any)?.f2_submission ||
+                                                                     (contract as any)?.f2_form_data ||
+                                                                     contract.metadata?.f2_form_data ||
+                                                                     (contract?.versions && contract.versions.some((v: any) => v.document_type === 'f2')) ||
+                                                                     contract.contract_no ||
+                                                                     contract.price
+                                                                 );
+                                                                 reqList.push({ label: 'F2', isFilled });
+                                                             }
+                                                             if (requireAgreement) {
+                                                                 const isFilled = !!(
+                                                                     contract.agreement_file ||
+                                                                     contract.metadata?.agreement_file ||
+                                                                     (contract as any)?.agreement_submission ||
+                                                                     contract.agreement_content ||
+                                                                     contract.metadata?.agreement_content ||
+                                                                     (contract?.versions && contract.versions.some((v: any) => v.document_type === 'agreement' || v.document_type === 'contract'))
+                                                                 );
+                                                                 reqList.push({ label: 'Draft', isFilled });
+                                                             }
+
+                                                             if (reqList.length === 0) return null;
+
+                                                             return (
+                                                                 <div className="flex items-center gap-1.5">
+                                                                     {reqList.map((req, rIdx) => (
+                                                                         <span
+                                                                             key={rIdx}
+                                                                             className={cn(
+                                                                                 'px-2 py-0.5 rounded text-[9.5px] font-bold tracking-wide flex items-center gap-1 border',
+                                                                                 req.isFilled
+                                                                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
+                                                                                     : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+                                                                             )}
+                                                                             title={`Syarat ${req.label}: ${req.isFilled ? 'Sudah Diisi' : 'Wajib Diisi / Belum Ada'}`}
+                                                                         >
+                                                                             <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', req.isFilled ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse')} />
+                                                                             Wajib {req.label}: {req.isFilled ? '✓' : '✗'}
+                                                                         </span>
+                                                                     ))}
+                                                                 </div>
+                                                             );
+                                                         })()}
+                                                     </div>
 
                                                     <div className="space-y-1 mt-0.5">
                                                         {(() => {
@@ -275,7 +392,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                     {visibleItems.map((a: ContractApproval) => {
                                                                         const stepNumber = a.sub_step != null ? `${group.sequence}.${a.sub_step}` : `${group.sequence}`;
                                                                         return (
-                                                                            <ApprovalCard key={a.id} approval={a} stepNumber={stepNumber} displaySubSteps={false} />
+                                                                            <ApprovalCard key={a.id} approval={a} stepNumber={stepNumber} displaySubSteps={false} contract={contract} />
                                                                         );
                                                                     })}
                                                                     {group.items.length > 3 && (
