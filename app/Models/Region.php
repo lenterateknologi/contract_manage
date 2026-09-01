@@ -15,11 +15,16 @@ class Region extends Model
     protected $table = 'm_regions';
 
     protected $fillable = [
-        'name',
+        'idregion',
         'code',
+        'name',
         'alias',
-        'id_portal_master',
-        'description',
+        'region_ad',
+        'created_by_name',
+        'modified_by_name',
+        'portal_created_date',
+        'portal_modified_date',
+        'is_used',
         'is_active',
         'created_by',
         'updated_by',
@@ -27,6 +32,9 @@ class Region extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_used' => 'boolean',
+        'portal_created_date' => 'datetime',
+        'portal_modified_date' => 'datetime',
     ];
 
     /**

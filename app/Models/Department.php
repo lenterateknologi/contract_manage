@@ -17,17 +17,30 @@ class Department extends Model
     use HasUuids, SoftDeletes;
 
     protected $fillable = [
+        'idorganization',
         'company_id',
         'code',
         'name',
+        'idorg_group',
+        'org_group_name',
+        'idorg_level',
+        'org_level_name',
         'description',
+        'is_used',
         'is_active',
         'created_by',
         'updated_by',
+        'created_by_name',
+        'modified_by_name',
+        'portal_created_date',
+        'portal_modified_date',
     ];
 
     protected $casts = [
+        'is_used' => 'boolean',
         'is_active' => 'boolean',
+        'portal_created_date' => 'datetime',
+        'portal_modified_date' => 'datetime',
     ];
 
     /**

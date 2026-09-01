@@ -117,9 +117,18 @@ class Field implements JsonSerializable
 
     protected ?string $helperText = null;
 
+    protected array $meta = [];
+
     public function helperText(string $text): static
     {
         $this->helperText = $text;
+
+        return $this;
+    }
+
+    public function meta(array $meta): static
+    {
+        $this->meta = array_merge($this->meta, $meta);
 
         return $this;
     }
@@ -136,6 +145,7 @@ class Field implements JsonSerializable
             'placeholder' => $this->getPlaceholder(),
             'icon' => $this->icon,
             'helperText' => $this->helperText,
+            'meta' => $this->meta,
         ];
     }
 

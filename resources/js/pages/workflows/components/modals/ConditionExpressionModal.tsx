@@ -57,18 +57,24 @@ export function ConditionExpressionModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
-                <DialogHeader>
-                    <div className="flex items-center gap-2">
-                        <GitBranch className="h-5 w-5 text-primary" />
-                        <DialogTitle>Ekspresi Kondisi (Metadata)</DialogTitle>
+            <DialogContent className="sm:max-w-[520px] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[8px] border p-0 shadow-2xl">
+                <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
+                    <div className="flex items-center gap-3 z-10 pr-10">
+                        <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                            <GitBranch size={18} />
+                        </div>
+                        <div>
+                            <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
+                                Ekspresi Kondisi (Metadata)
+                            </DialogTitle>
+                            <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                Atur kondisi dinamis agar langkah persetujuan ini hanya berjalan saat kriteria terpenuhi
+                            </DialogDescription>
+                        </div>
                     </div>
-                    <DialogDescription>
-                        Atur kondisi dinamis agar langkah persetujuan ini hanya berjalan ketika kriteria metadata tertentu terpenuhi.
-                    </DialogDescription>
-                </DialogHeader>
+                </div>
 
-                <div className="space-y-5 py-4">
+                <div className="p-6 space-y-5 bg-white dark:bg-zinc-900 max-h-[75vh] overflow-y-auto">
                     {/* Status Toggle */}
                     <div className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800/50 dark:bg-card">
                         <div className="space-y-0.5">
@@ -170,8 +176,8 @@ export function ConditionExpressionModal({
                     )}
                 </div>
 
-                <DialogFooter>
-                    <Button variant="default" onClick={() => onOpenChange(false)}>
+                <DialogFooter className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 flex items-center justify-end gap-2 rounded-b-[8px]">
+                    <Button variant="default" onClick={() => onOpenChange(false)} className="rounded-lg h-9 px-4 text-xs font-semibold bg-primary text-white hover:bg-primary/95 shadow-sm">
                         Selesai
                     </Button>
                 </DialogFooter>

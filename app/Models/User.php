@@ -20,38 +20,69 @@ class User extends Authenticatable
     protected $table = 'm_users';
 
     protected $fillable = [
+        'idemployee',
+        'nik',
         'name',
         'email',
         'password',
         'phone_number',
+        'mobile_no',
         'username',
         'role_id',
+        'idorganization',
+        'org_name',
         'department_id',
-        'is_active',
-        'company_id',
-        'spv_id',
-        'code',
-        'company_group_id',
         'division_id',
+        'idcompany',
+        'company_name',
+        'company_id',
+        'company_group_id',
+        'idlocation',
+        'location_name',
+        'location_id',
+        'region_id',
+        'idjobtitle',
+        'jobtitle_name',
+        'idjoblevel',
+        'joblevel_name',
+        'idemployment_type',
+        'idreporting_to',
+        'reporting_to',
+        'spv_id',
+        'start_date',
+        'join_date',
+        'gender',
+        'birth_date',
+        'address',
+        'code',
+        'image_src',
+        'modified_by_name',
+        'portal_modified_date',
+        'is_used',
+        'is_active',
+        'is_employee',
+        'id_employee_portal_master',
+        'contract_filter_template_id',
         'login_status',
         'last_login',
         'last_connected',
-        'address',
-        'birth_date',
-        'gender',
-        'created_by',
-        'updated_by',
         'is_verified',
         'verified_by',
         'verified_at',
-        'job_position_id',
-        'job_level_id',
-        'image_src',
-        'location_id',
-        'region_id',
-        'contract_filter_template_id',
-        'is_employee',
-        'id_employee_portal_master',
+        'created_by',
+        'updated_by',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+        'is_used' => 'boolean',
+        'is_employee' => 'boolean',
+        'start_date' => 'datetime',
+        'join_date' => 'datetime',
+        'portal_modified_date' => 'datetime',
+        'last_login' => 'datetime',
+        'last_connected' => 'datetime',
+        'verified_at' => 'datetime',
     ];
 
     protected $with = ['roleRelation'];
@@ -66,6 +97,8 @@ class User extends Authenticatable
         'role',
         'division_name',
         'department_name',
+        'company_group_name',
+        'region_name',
         'can_change_company_group',
         'allowed_company_groups',
         'can_change_region',
@@ -84,6 +117,27 @@ class User extends Authenticatable
                 $templateId = ContractFilterTemplate::where('name', 'like', '%staff biasa%')->value('id');
                 if ($templateId) {
                     $user->contract_filter_template_id = $templateId;
+                }
+            }
+        });
+
+        // ponytail: sync company, group, and region from master business unit & company when company_name is updated/created
+        static::saving(function ($user) {
+            if ($user->isDirty('company_name') && ! empty($user->company_name)) {
+                $company = Company::where('name', $user->company_name)->first();
+                $bu = BusinessUnit::where('company_name', $user->company_name)
+                    ->orWhere(function ($q) use ($company) {
+                        if ($company && $company->idcompany) {
+                            $q->where('idcompany', $company->idcompany);
+                        }
+                    })
+                    ->first();
+
+                if ($company || $bu) {
+                    $user->company_id = $company?->id ?? $bu?->company_id;
+                    $user->idcompany = $company?->idcompany ?? $bu?->idcompany;
+                    $user->company_group_id = $company?->company_group_id ?? $bu?->company_group_id;
+                    $user->region_id = $company?->region_id ?? $bu?->region_id;
                 }
             }
         });
@@ -130,6 +184,48 @@ class User extends Authenticatable
             return null;
         }
         return $this->department?->name;
+    }
+
+    public function getCompanyGroupNameAttribute(): ?string
+    {
+        if ($this->relationLoaded('companyGroup') && $this->companyGroup) {
+            return $this->companyGroup->name;
+        }
+
+        if ($this->relationLoaded('company') && $this->company && array_key_exists('company_group_name', $this->company->getAttributes())) {
+            return $this->company->getAttributes()['company_group_name'];
+        }
+
+        if (! empty($this->company_group_id)) {
+            return \App\Models\CompanyGroup::find($this->company_group_id)?->name;
+        }
+
+        if (! empty($this->company_name)) {
+            return \App\Models\Company::where('name', $this->company_name)->value('company_group_name');
+        }
+
+        return null;
+    }
+
+    public function getRegionNameAttribute(): ?string
+    {
+        if ($this->relationLoaded('region') && $this->region) {
+            return $this->region->name;
+        }
+
+        if ($this->relationLoaded('company') && $this->company && array_key_exists('region_name', $this->company->getAttributes())) {
+            return $this->company->getAttributes()['region_name'];
+        }
+
+        if (! empty($this->region_id)) {
+            return \App\Models\Region::find($this->region_id)?->name;
+        }
+
+        if (! empty($this->company_name)) {
+            return \App\Models\Company::where('name', $this->company_name)->value('region_name');
+        }
+
+        return null;
     }
 
     public function company(): BelongsTo

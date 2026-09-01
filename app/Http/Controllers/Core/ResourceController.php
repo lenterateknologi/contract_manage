@@ -20,6 +20,7 @@ use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\Region;
 use App\Services\ContractFilterScopeService;
+use App\Services\PortalSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -27,6 +28,9 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ResourceController extends Controller
 {
+    public function __construct(
+        protected PortalSyncService $portalSyncService,
+    ) {}
     /**
      * Map of slugs to their respective Resource classes.
      * In a real app, this can be auto-discovered.
@@ -44,6 +48,8 @@ class ResourceController extends Controller
         'divisions' => DivisionResource::class,
         'contract-filter-templates' => ContractFilterTemplateResource::class,
         'dashboard-types' => \App\Core\Crud\Resources\DashboardTypeResource::class,
+        'locations' => \App\Core\Crud\Resources\LocationResource::class,
+        'business-units' => \App\Core\Crud\Resources\BusinessUnitResource::class,
     ];
 
     /**
@@ -80,20 +86,26 @@ class ResourceController extends Controller
             }]);
         }
 
-        // Implement simple search if exists
-        if ($request->has('search')) {
+        // Implement search with support for multiple comma-separated values (e.g. "1990020003,1990020004,1990020005")
+        if ($request->has('search') && trim((string) $request->input('search')) !== '') {
             $search = $request->input('search');
+            $searchTerms = array_values(array_filter(array_map('trim', explode(',', $search)), fn ($t) => $t !== ''));
+
             $searchableColumns = collect($resourceClass::table())
                 ->filter(fn ($column) => $column->isSearchable())
                 ->map(fn ($column) => $column->getName());
 
-            if ($searchableColumns->isNotEmpty()) {
+            if ($searchableColumns->isNotEmpty() && ! empty($searchTerms)) {
                 if ($resourceSlug === 'contract-types') {
                     // Tree-aware search: find matching IDs then expand to include ancestors + descendants
-                    $lowerSearch = strtolower($search);
-                    $matchingIds = $modelClass::where(function ($q) use ($searchableColumns, $lowerSearch) {
-                        foreach ($searchableColumns as $column) {
-                            $q->orWhere(DB::raw("LOWER({$column})"), 'like', "%{$lowerSearch}%");
+                    $matchingIds = $modelClass::where(function ($q) use ($searchableColumns, $searchTerms) {
+                        foreach ($searchTerms as $term) {
+                            $lowerTerm = strtolower($term);
+                            $q->orWhere(function ($subQ) use ($searchableColumns, $lowerTerm) {
+                                foreach ($searchableColumns as $column) {
+                                    $subQ->orWhere(DB::raw("LOWER({$column})"), 'like', "%{$lowerTerm}%");
+                                }
+                            });
                         }
                     })->pluck('id')->toArray();
 
@@ -124,10 +136,24 @@ class ResourceController extends Controller
                         $query->whereRaw('1 = 0'); // no results
                     }
                 } else {
-                    $query->where(function ($q) use ($searchableColumns, $search) {
-                        $lowerSearch = strtolower($search);
-                        foreach ($searchableColumns as $column) {
-                            $q->orWhere(DB::raw("LOWER({$column})"), 'like', "%{$lowerSearch}%");
+                    $searchColumns = $searchableColumns;
+                    if ($resourceSlug === 'users') {
+                        $searchColumns = collect(['nik', 'name', 'email', 'username', 'jobtitle_name', 'joblevel_name', 'company_name', 'location_name', 'org_name']);
+                    } elseif ($resourceSlug === 'companies') {
+                        $searchColumns = collect(['code', 'name', 'alias', 'npwp', 'company_group_name', 'region_name', 'city_name', 'oracle_code']);
+                    } elseif ($resourceSlug === 'locations') {
+                        $searchColumns = collect(['code', 'name', 'location_group_name', 'city_name', 'province_name', 'oracle_code']);
+                    } elseif ($resourceSlug === 'business-units') {
+                        $searchColumns = collect(['code', 'name', 'company_name', 'location_name', 'company_group_name', 'region_name', 'komoditi_name', 'kebun']);
+                    }
+                    $query->where(function ($q) use ($searchColumns, $searchTerms) {
+                        foreach ($searchTerms as $term) {
+                            $lowerTerm = strtolower($term);
+                            $q->orWhere(function ($subQ) use ($searchColumns, $lowerTerm) {
+                                foreach ($searchColumns as $column) {
+                                    $subQ->orWhere(DB::raw("LOWER(COALESCE({$column}, ''))"), 'like', "%{$lowerTerm}%");
+                                }
+                            });
                         }
                     });
                 }
@@ -143,9 +169,32 @@ class ResourceController extends Controller
             if ($request->has($key) && $request->input($key) !== '' && $request->input($key) !== null) {
                 $val = $request->input($key);
                 if (is_array($val)) {
-                    $query->whereIn($key, array_filter($val, fn ($v) => $v !== '' && $v !== null));
+                    $vals = array_values(array_filter($val, fn ($v) => $v !== '' && $v !== null));
+                    if (! empty($vals)) {
+                        if ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
+                            $groupNames = CompanyGroup::whereIn('id', $vals)->pluck('name')->toArray();
+                            $query->where(function ($q) use ($vals, $groupNames) {
+                                $q->whereIn('company_group_id', $vals);
+                                if (! empty($groupNames)) {
+                                    $q->orWhereIn('company_group_name', $groupNames);
+                                }
+                            });
+                        } else {
+                            $query->whereIn($key, $vals);
+                        }
+                    }
                 } else {
-                    $query->where($key, $val);
+                    if ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
+                        $groupName = CompanyGroup::find($val)?->name;
+                        $query->where(function ($q) use ($val, $groupName) {
+                            $q->where('company_group_id', $val);
+                            if ($groupName) {
+                                $q->orWhere('company_group_name', $groupName);
+                            }
+                        });
+                    } else {
+                        $query->where($key, $val);
+                    }
                 }
             }
         }
@@ -154,8 +203,23 @@ class ResourceController extends Controller
         $sortBy = $request->input('sort_by');
         $sortDir = $request->input('sort_dir', 'asc');
         if ($sortBy) {
-            if (str_contains($sortBy, '.')) {
-                [$relation, $relColumn] = explode('.', $sortBy, 2);
+            $sortColumnMap = [
+                'user_identity'      => 'name',
+                'position_access'    => 'jobtitle_name',
+                'placement_org'      => 'company_name',
+                'company_identity'   => 'name',
+                'org_structure'      => 'company_group_name',
+                'legal_integration'  => 'npwp',
+                'location_identity'  => 'name',
+                'location_group'     => 'location_group_name',
+                'region_group'       => 'location_group_name',
+                'bu_identity'        => 'name',
+                'company_placement'  => 'company_name',
+            ];
+            $actualSortBy = $sortColumnMap[$sortBy] ?? $sortBy;
+
+            if (str_contains($actualSortBy, '.')) {
+                [$relation, $relColumn] = explode('.', $actualSortBy, 2);
                 $modelInstance = new $modelClass;
                 $method = method_exists($modelInstance, $relation) ? $relation : \Illuminate\Support\Str::camel($relation);
                 if (method_exists($modelInstance, $method)) {
@@ -172,7 +236,7 @@ class ResourceController extends Controller
                     }
                 }
             } else {
-                $query->orderBy($sortBy, $sortDir);
+                $query->orderBy($actualSortBy, $sortDir);
             }
         }
 
@@ -190,6 +254,7 @@ class ResourceController extends Controller
             'activeFilters' => $request->only(array_merge(['search', 'sort_by', 'sort_dir', 'per_page'], collect($resourceClass::filters())->map(fn ($f) => $f->getName())->toArray())),
             'hasExport' => ! empty($resourceClass::$exportClass),
             'hasImport' => ! empty($resourceClass::$importClass),
+            'hasPortalSync' => in_array($resourceSlug, ['regions', 'company-groups', 'locations', 'companies', 'business-units', 'departments', 'users']),
         ]);
     }
 
@@ -232,9 +297,8 @@ class ResourceController extends Controller
     {
         $resourceClass = $this->getResourceClass($resourceSlug);
         $modelClass = $resourceClass::$model;
-        $record = $modelClass::findOrFail($id);
-
-
+        $withRelations = $resourceClass::$with ?? [];
+        $record = ! empty($withRelations) ? $modelClass::with($withRelations)->findOrFail($id) : $modelClass::findOrFail($id);
 
         return Inertia::render('Core/ResourceForm', [
             'resourceSlug' => $resourceSlug,
@@ -358,6 +422,84 @@ class ResourceController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Gagal mengimpor data: '.$e->getMessage()]);
         }
+    }
+
+    /**
+     * Synchronize resource master data from external Portal API.
+     */
+    public function syncPortal(Request $request, string $resourceSlug)
+    {
+        if ($resourceSlug === 'regions') {
+            $result = $this->portalSyncService->syncRegions();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'company-groups') {
+            $result = $this->portalSyncService->syncCompanyGroups();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'locations') {
+            $result = $this->portalSyncService->syncLocations();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'companies') {
+            $result = $this->portalSyncService->syncCompanies();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'business-units') {
+            $result = $this->portalSyncService->syncBusinessUnits();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'departments') {
+            $result = $this->portalSyncService->syncDepartments();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'users') {
+            $result = $this->portalSyncService->syncEmployees();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        return back()->withErrors(['error' => "Sinkronisasi portal belum didukung untuk resource [{$resourceSlug}]."]);
     }
 
     private function flattenFields(array $schema): array

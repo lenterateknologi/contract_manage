@@ -40,8 +40,9 @@ class RegionsExport implements FromCollection, ShouldAutoSize, WithEvents, WithH
             'Kode Region',
             'Nama Region',
             'Alias',
-            'Deskripsi',
-            'Status Aktif',
+            'Region AD',
+            'Sistem',
+            'Portal',
         ];
     }
 
@@ -50,7 +51,7 @@ class RegionsExport implements FromCollection, ShouldAutoSize, WithEvents, WithH
         $this->rowNumber++;
 
         if ($region === null) {
-            return ['', '', '', '', '', ''];
+            return ['', '', '', '', '', '', ''];
         }
 
         return [
@@ -58,7 +59,8 @@ class RegionsExport implements FromCollection, ShouldAutoSize, WithEvents, WithH
             $region->code,
             $region->name,
             $region->alias ?? '',
-            $region->description ?? '',
+            $region->region_ad ?? '',
+            $region->is_used ? 'Ya' : 'Tidak',
             $region->is_active ? 'Aktif' : 'Nonaktif',
         ];
     }

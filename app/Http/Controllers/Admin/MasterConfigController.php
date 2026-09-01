@@ -291,13 +291,16 @@ class MasterConfigController extends Controller
     public function storeModuleGroup(StoreModuleGroupRequest $request)
     {
         $data = $request->validated();
+        $roleId = $data['role_id'] ?? null;
+        unset($data['role_id']);
+
         $data['created_by'] = $data['updated_by'] = Auth::id();
         $group = ModuleGroup::create($data);
 
-        if ($request->has('role_id')) {
-            $maxSeq = \App\Models\RoleModuleGroup::where('role_id', $request->role_id)->max('sequence') ?? 0;
+        if ($roleId) {
+            $maxSeq = \App\Models\RoleModuleGroup::where('role_id', $roleId)->max('sequence') ?? 0;
             \App\Models\RoleModuleGroup::create([
-                'role_id' => $request->role_id,
+                'role_id' => $roleId,
                 'module_group_id' => $group->id,
                 'sequence' => $maxSeq + 1,
             ]);

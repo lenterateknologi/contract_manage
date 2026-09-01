@@ -16,7 +16,8 @@ class StoreCompanyGroupRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:m_company_groups,code',
-            'description' => 'nullable|string',
+            'is_used' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
         ];
     }
 }

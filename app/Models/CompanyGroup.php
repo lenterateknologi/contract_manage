@@ -15,9 +15,14 @@ class CompanyGroup extends Model
     protected $table = 'm_company_groups';
 
     protected $fillable = [
-        'name',
+        'idcompany_group',
         'code',
-        'description',
+        'name',
+        'created_by_name',
+        'modified_by_name',
+        'portal_created_date',
+        'portal_modified_date',
+        'is_used',
         'is_active',
         'created_by',
         'updated_by',
@@ -25,6 +30,9 @@ class CompanyGroup extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_used' => 'boolean',
+        'portal_created_date' => 'datetime',
+        'portal_modified_date' => 'datetime',
     ];
 
     public function companies(): HasMany

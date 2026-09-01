@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Models\Role;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -130,13 +131,34 @@ class HandleInertiaRequests extends Middleware
                 'm_modules.icon',
                 'm_modules.description',
                 'm_module_groups.name as group_title',
+                'm_module_groups.icon as group_icon',
                 'm_role_module_groups.sequence as group_sequence',
                 'm_access_modules.sequence as module_sequence',
             )
             ->get();
 
+        // ponytail: compute is_used / total counts for Portal master data
+        $getPortalCount = function (string $table): string {
+            $res = DB::table($table)
+                ->whereNull('deleted_at')
+                ->selectRaw('COUNT(*) as total, COUNT(CASE WHEN is_used THEN 1 END) as used')
+                ->first();
+
+            return ($res->used ?? 0).'/'.($res->total ?? 0);
+        };
+
+        $portalUsedCounts = [
+            '/admin/core/departments' => $getPortalCount('m_departments'),
+            '/admin/core/company-groups' => $getPortalCount('m_company_groups'),
+            '/admin/core/companies' => $getPortalCount('m_companies'),
+            '/admin/core/users' => $getPortalCount('m_users'),
+            '/admin/core/regions' => $getPortalCount('m_regions'),
+            '/admin/core/business-units' => $getPortalCount('m_business_units'),
+            '/admin/core/locations' => $getPortalCount('m_locations'),
+        ];
+
         $groups = $modules->groupBy(fn ($item) => trim($item->group_title))
-            ->map(function ($items, $title) {
+            ->map(function ($items, $title) use ($portalUsedCounts) {
                 $first = $items->first();
                 $sortedItems = $items->map(fn ($module) => [
                     'title' => $module->name,
@@ -144,6 +166,7 @@ class HandleInertiaRequests extends Middleware
                     'description' => $module->description,
                     'icon' => $module->icon,
                     'sequence' => $module->module_sequence,
+                    'badge' => $portalUsedCounts[$module->route] ?? null,
                 ])->values()->all();
 
                 usort($sortedItems, function ($a, $b) {
@@ -158,6 +181,7 @@ class HandleInertiaRequests extends Middleware
 
                 return [
                     'title' => $title,
+                    'icon' => $first?->group_icon,
                     'sequence' => $first?->group_sequence,
                     'items' => $sortedItems,
                 ];

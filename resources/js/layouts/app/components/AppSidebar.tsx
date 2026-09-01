@@ -134,7 +134,12 @@ export const AppSidebar = memo(function AppSidebar() {
                 ...item,
                 icon: typeof item.icon === 'string' ? (iconMap[item.icon] ?? FileText) : item.icon,
             }));
-            const primaryIcon = items.find((i) => i.icon)?.icon ?? LayoutDashboard;
+
+            // Prefer the group's own icon field, fall back to first item's icon
+            const groupIconName = (group as any).icon as string | null | undefined;
+            const primaryIcon = groupIconName
+                ? (iconMap[groupIconName] ?? LayoutDashboard)
+                : (items.find((i) => i.icon)?.icon ?? LayoutDashboard);
 
             return {
                 ...group,
@@ -222,7 +227,7 @@ export const AppSidebar = memo(function AppSidebar() {
                 collapsible="none"
                 variant="inset"
                 style={{ '--sidebar-width': `${totalSidebarWidth}px` } as React.CSSProperties}
-                className="h-svh max-h-svh overflow-hidden border-r-0 bg-transparent p-0 transition-[width] duration-200 ease-linear"
+                className="h-svh max-h-svh overflow-hidden border-r-0 bg-transparent p-0 transition-[width] duration-200 ease-linear" // ponytail: keep outer transparent
             >
                 <div className="flex h-full max-h-full w-full select-none overflow-hidden">
                     {/* ========================================================================= */}
@@ -230,7 +235,7 @@ export const AppSidebar = memo(function AppSidebar() {
                     {/* ========================================================================= */}
                     <div
                         style={{ width: `${PRIMARY_WIDTH}px` }}
-                        className="bg-sidebar flex h-full max-h-full shrink-0 flex-col items-center justify-between border-r border-sidebar-border/60 z-20 overflow-hidden"
+                        className="bg-sidebar/20 flex h-full max-h-full shrink-0 flex-col items-center justify-between border-r border-sidebar-border/60 z-20 overflow-hidden" // ponytail: lighter background for primary sidebar
                     >
                         {/* Top: Logo with matching h-16 Header and border-b divider */}
                         <div className="flex h-16 w-full shrink-0 items-center justify-center border-b border-sidebar-border/40">
@@ -354,7 +359,7 @@ export const AppSidebar = memo(function AppSidebar() {
                     <div
                         style={{ width: isSubOpen ? `${SUB_WIDTH}px` : '0px' }}
                         className={cn(
-                            'bg-sidebar/95 flex h-full max-h-full flex-col border-r border-sidebar-border/60 transition-all duration-200 ease-linear backdrop-blur-xs overflow-hidden',
+                            'bg-sidebar/20 flex h-full max-h-full flex-col border-r border-sidebar-border/60 transition-all duration-200 ease-linear backdrop-blur-xs overflow-hidden', // ponytail: lighter background for sub-sidebar
                             isSubOpen ? 'opacity-100' : 'overflow-hidden border-r-0 opacity-0 pointer-events-none',
                         )}
                     >
@@ -380,8 +385,8 @@ export const AppSidebar = memo(function AppSidebar() {
                             </span>
                         </div>
 
-                        {/* Sub Menu Item List - Full filled style (No card/island effect) */}
-                        <div className="flex-1 min-h-0 overflow-y-auto py-1">
+                        {/* Sub Menu Item List - Rounded selected items */}
+                        <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
                             {currentGroup?.items.map((item) => {
                                 const isActive = checkActive(item.url);
                                 const ItemIcon = item.icon ?? FileText;
@@ -394,10 +399,10 @@ export const AppSidebar = memo(function AppSidebar() {
                                             if (isMobile) setOpenMobile(false);
                                         }}
                                         className={cn(
-                                            'group relative flex w-full items-start gap-3 px-4 py-2.5 text-[13px] font-medium transition-colors border-l-2',
+                                            'group relative flex w-full items-start gap-3 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-200',
                                             isActive
-                                                ? 'bg-primary text-primary-foreground border-primary font-semibold'
-                                                : 'text-sidebar-foreground/75 border-transparent hover:bg-sidebar-accent hover:text-sidebar-foreground',
+                                                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                                                : 'text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
                                         )}
                                     >
                                         <ItemIcon
@@ -421,6 +426,19 @@ export const AppSidebar = memo(function AppSidebar() {
                                                 </span>
                                             )}
                                         </div>
+                                        {item.badge !== undefined && item.badge !== null && (
+                                            <span
+                                                className={cn(
+                                                    'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
+                                                    isActive
+                                                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                                                        : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                                )}
+                                                title={`${item.badge} data sistem aktif`}
+                                            >
+                                                {item.badge}
+                                            </span>
+                                        )}
                                     </Link>
                                 );
                             })}

@@ -40,12 +40,15 @@ class CompaniesMainExport implements FromCollection, ShouldAutoSize, WithEvents,
             'Kode Company',
             'Nama Company',
             'Alias',
+            'NPWP',
+            'Oracle Code',
             'Alamat',
             'Kode Group',
             'Nama Group Perusahaan',
             'Kode Region',
             'Nama Region',
-            'Status Aktif',
+            'Sistem',
+            'Portal',
         ];
     }
 
@@ -59,12 +62,15 @@ class CompaniesMainExport implements FromCollection, ShouldAutoSize, WithEvents,
                 '', // Kode Company
                 '', // Nama Company
                 '', // Alias
+                '', // NPWP
+                '', // Oracle Code
                 '', // Alamat
                 '', // Kode Group
-                '=IF(ISBLANK(F'.$this->rowNumber.'), "", IFERROR(VLOOKUP(F'.$this->rowNumber.', \'Group Perusahaan\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
+                '=IF(ISBLANK(H'.$this->rowNumber.'), "", IFERROR(VLOOKUP(H'.$this->rowNumber.', \'Group Perusahaan\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
                 '', // Kode Region
-                '=IF(ISBLANK(H'.$this->rowNumber.'), "", IFERROR(VLOOKUP(H'.$this->rowNumber.', \'Wilayah Region\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
-                '', // Status Aktif
+                '=IF(ISBLANK(J'.$this->rowNumber.'), "", IFERROR(VLOOKUP(J'.$this->rowNumber.', \'Wilayah Region\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
+                '', // Sistem
+                '', // Portal
             ];
         }
 
@@ -73,11 +79,14 @@ class CompaniesMainExport implements FromCollection, ShouldAutoSize, WithEvents,
             $company->code,
             $company->name,
             $company->alias ?? '',
+            $company->npwp ?? '',
+            $company->oracle_code ?? '',
             $company->address ?? '',
-            $company->group->code ?? '',
-            '=IF(ISBLANK(F'.$this->rowNumber.'), "", IFERROR(VLOOKUP(F'.$this->rowNumber.', \'Group Perusahaan\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
-            $company->region->code ?? '',
-            '=IF(ISBLANK(H'.$this->rowNumber.'), "", IFERROR(VLOOKUP(H'.$this->rowNumber.', \'Wilayah Region\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
+            $company->group->code ?? ($company->company_group_name ?? ''),
+            '=IF(ISBLANK(H'.$this->rowNumber.'), "", IFERROR(VLOOKUP(H'.$this->rowNumber.', \'Group Perusahaan\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
+            $company->region->code ?? ($company->region_name ?? ''),
+            '=IF(ISBLANK(J'.$this->rowNumber.'), "", IFERROR(VLOOKUP(J'.$this->rowNumber.', \'Wilayah Region\'!A:B, 2, FALSE), "Tidak Ditemukan"))',
+            $company->is_used ? 'Ya' : 'Tidak',
             $company->is_active ? 'Aktif' : 'Nonaktif',
         ];
     }

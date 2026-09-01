@@ -146,21 +146,23 @@ export function SearchableMultiSelect({
                     "absolute left-0 right-0 z-[999999] border border-slate-200 bg-white shadow-2xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950",
                     openUpward ? "bottom-full mb-1" : "top-full mt-1"
                 )}>
-                    {/* Search input */}
-                    <div className="relative border-b border-slate-100 dark:border-slate-800">
-                        <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                            autoFocus
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={searchPlaceholder}
-                            className="h-10 w-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pl-8 pr-3 text-sm font-medium uppercase tracking-tight outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
-                        />
-                    </div>
+                    {/* Search input (only shown if options > 5) */}
+                    {options.length > 5 && (
+                        <div className="relative border-b border-slate-100 dark:border-slate-800">
+                            <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input
+                                autoFocus
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                placeholder={searchPlaceholder}
+                                className="h-10 w-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pl-8 pr-3 text-sm font-medium uppercase tracking-tight outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
+                            />
+                        </div>
+                    )}
 
                     {/* Option list */}
                     <div className="max-h-52 overflow-y-auto bg-white dark:bg-slate-950">
-                        {filtered.length === 0 && !search && (
+                        {filtered.length === 0 && (
                             <div className="py-6 text-center text-[9px] font-semibold uppercase text-slate-300 dark:text-slate-700 italic">{emptyText}</div>
                         )}
                         {filtered.map(opt => {

@@ -2,9 +2,11 @@
 
 namespace App\Core\Crud\Resources;
 
+use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
-use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
+use App\Core\Crud\Fields\ToggleInput;
+use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
 use App\Exports\CompanyGroupsExport;
 use App\Imports\CompanyGroupsImport;
@@ -27,7 +29,8 @@ class CompanyGroupResource extends Resource
         return [
             TextColumn::make('code', 'Kode')->sortable()->searchable(),
             TextColumn::make('name', 'Nama Group')->sortable()->searchable(),
-            TextColumn::make('description', 'Deskripsi')->searchable(),
+            BooleanColumn::make('is_used', 'Sistem'),
+            BooleanColumn::make('is_active', 'Portal'),
         ];
     }
 
@@ -40,8 +43,26 @@ class CompanyGroupResource extends Resource
             TextInput::make('name', 'Nama Group')
                 ->required()
                 ->rules(['string', 'max:255']),
-            TextareaInput::make('description', 'Deskripsi')
-                ->rules(['nullable', 'string']),
+            ToggleInput::make('is_used', 'Sistem')
+                ->default(false),
+            ToggleInput::make('is_active', 'Portal')
+                ->default(true),
+        ];
+    }
+
+    public static function filters(): array
+    {
+        return [
+            Filter::make('is_used', 'Status Sistem')
+                ->options([
+                    '1' => 'Digunakan (Ya)',
+                    '0' => 'Tidak Digunakan',
+                ]),
+            Filter::make('is_active', 'Status Portal')
+                ->options([
+                    '1' => 'Aktif',
+                    '0' => 'Nonaktif',
+                ]),
         ];
     }
 }

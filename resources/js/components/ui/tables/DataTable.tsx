@@ -175,7 +175,22 @@ export function DataTable<T extends Record<string, any>>({
 
     return (
         <div className="flex flex-col flex-1 min-h-0 h-full antialiased text-foreground select-none animate-in fade-in duration-200">
-
+            {/* ponytail: Bulk Actions Toolbar between Header and Table */}
+            {bulkActions && activeSelectedRows.length > 0 && (
+                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-primary/5 dark:bg-primary/10 border-b border-primary/15 dark:border-primary/20 animate-in slide-in-from-top-1 duration-150 shrink-0">
+                    <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-md shadow-xs">
+                            {activeSelectedRows.length}
+                        </span>
+                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                            data dipilih
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {typeof bulkActions === 'function' ? bulkActions(activeSelectedRows) : bulkActions}
+                    </div>
+                </div>
+            )}
 
             {/* --- TABLE CONTENT AREA --- */}
             <div className={cn(
@@ -224,7 +239,7 @@ export function DataTable<T extends Record<string, any>>({
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="py-3.5 px-4 w-24 text-right text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80">Aksi</th>}
+                                {rowActions && <th className="py-3 px-2 w-14 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">
@@ -298,7 +313,7 @@ export function DataTable<T extends Record<string, any>>({
                                                 </td>
                                             ))}
                                             {rowActions && (
-                                                <td className="py-3.5 px-4 text-right align-middle" onClick={(e) => e.stopPropagation()}>
+                                                <td className="py-2 px-2 w-14 text-center align-middle" onClick={(e) => e.stopPropagation()}>
                                                     {rowActions(row)}
                                                 </td>
                                             )}
@@ -331,7 +346,7 @@ export function DataTable<T extends Record<string, any>>({
                                     pagination.onPerPageChange?.(val);
                                 }}
                             >
-                                {[10, 25, 50, 100].map(n => (
+                                {[10, 25, 50, 100, 500, 1000, 9999].map(n => (
                                     <option key={n} value={n}>{n}</option>
                                 ))}
                             </select>

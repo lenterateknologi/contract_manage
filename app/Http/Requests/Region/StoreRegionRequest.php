@@ -17,8 +17,9 @@ class StoreRegionRequest extends FormRequest
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:m_regions,code',
             'alias' => 'nullable|string|max:50',
-            'id_portal_master' => 'nullable|string|max:50',
-            'description' => 'nullable|string',
+            'region_ad' => 'nullable|string|max:100',
+            'is_used' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
         ];
     }
 }

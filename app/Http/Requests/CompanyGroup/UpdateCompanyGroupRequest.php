@@ -13,12 +13,13 @@ class UpdateCompanyGroupRequest extends FormRequest
 
     public function rules(): array
     {
-        $groupId = $this->route('group')->id;
+        $groupId = $this->route('group') ? ($this->route('group')->id ?? $this->route('group')) : $this->route('id');
 
         return [
             'name' => 'required|string|max:255',
             'code' => 'required|string|max:50|unique:m_company_groups,code,'.$groupId,
-            'description' => 'nullable|string',
+            'is_used' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
         ];
     }
 }

@@ -34,8 +34,11 @@ class CompanyGroupsImport implements ToCollection, WithHeadingRow
                 throw new \Exception("Kesalahan di baris {$rowCount}: Nama Group Perusahaan wajib diisi.");
             }
 
-            $statusRaw = isset($row['status_aktif']) ? strtolower(trim((string) $row['status_aktif'])) : '';
+            $statusRaw = isset($row['portal']) ? strtolower(trim((string) $row['portal'])) : (isset($row['status_aktif']) ? strtolower(trim((string) $row['status_aktif'])) : '');
             $isActive = in_array($statusRaw, ['aktif', '1', 'true', 'yes', 'y', '']);
+
+            $usedRaw = isset($row['sistem']) ? strtolower(trim((string) $row['sistem'])) : (isset($row['digunakan_di_sistem']) ? strtolower(trim((string) $row['digunakan_di_sistem'])) : '');
+            $isUsed = $usedRaw !== '' ? in_array($usedRaw, ['ya', '1', 'true', 'yes', 'y', 'aktif']) : false;
 
             $id = isset($row['id']) ? trim((string) $row['id']) : '';
             $group = null;
@@ -52,7 +55,7 @@ class CompanyGroupsImport implements ToCollection, WithHeadingRow
                 $group->update([
                     'code' => $code,
                     'name' => $name,
-                    'description' => isset($row['deskripsi']) ? trim((string) $row['deskripsi']) : $group->description,
+                    'is_used' => $isUsed,
                     'is_active' => $isActive,
                     'updated_by' => $admin,
                 ]);
@@ -60,7 +63,7 @@ class CompanyGroupsImport implements ToCollection, WithHeadingRow
                 CompanyGroup::create([
                     'code' => $code,
                     'name' => $name,
-                    'description' => isset($row['deskripsi']) ? trim((string) $row['deskripsi']) : null,
+                    'is_used' => $isUsed,
                     'is_active' => $isActive,
                     'created_by' => $admin,
                     'updated_by' => $admin,

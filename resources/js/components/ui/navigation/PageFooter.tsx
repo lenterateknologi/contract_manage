@@ -53,20 +53,28 @@ export function PageFooter({ className, children, pagination }: PageFooterProps)
                                     <input
                                         type="number"
                                         min={1}
-                                        max={100}
+                                        max={9999}
                                         defaultValue={pagination.perPage}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
                                                 const val = parseInt((e.target as HTMLInputElement).value, 10);
-                                                if (val >= 1 && val <= 100) {
+                                                if (val >= 1 && val <= 9999) {
                                                     pagination.onPerPageChange?.(val);
                                                 } else {
                                                     (e.target as HTMLInputElement).value = String(pagination.perPage);
                                                 }
                                             }
                                         }}
-                                        className="h-6 w-9 rounded border border-border bg-card text-center text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        title="Tekan Enter untuk mengubah limit data"
+                                        onBlur={(e) => {
+                                            const val = parseInt(e.target.value, 10);
+                                            if (val >= 1 && val <= 9999 && val !== pagination.perPage) {
+                                                pagination.onPerPageChange?.(val);
+                                            } else {
+                                                e.target.value = String(pagination.perPage);
+                                            }
+                                        }}
+                                        className="h-6 min-w-12 max-w-16 px-1 rounded border border-border bg-card text-center text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        title="Tekan Enter untuk mengubah limit data (1 - 9999)"
                                     />
                                 ) : (
                                     <span className="font-semibold text-text-main">{pagination.to - pagination.from + 1}</span>

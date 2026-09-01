@@ -78,17 +78,19 @@ export function SearchableSelect({
             {/* Shadcn-style dropdown */}
             {open && (
                 <div className="absolute left-0 right-0 top-full z-[999999] mt-1 overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95">
-                    {/* Search */}
-                    <div className="flex items-center border-b border-border px-3">
-                        <Search size={13} className="mr-2 shrink-0 text-muted-foreground" />
-                        <input
-                            autoFocus
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
-                            placeholder={searchPlaceholder}
-                            className="flex h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
-                        />
-                    </div>
+                    {/* Search (only shown if options > 5) */}
+                    {options.length > 5 && (
+                        <div className="flex items-center border-b border-border px-3">
+                            <Search size={13} className="mr-2 shrink-0 text-muted-foreground" />
+                            <input
+                                autoFocus
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                placeholder={searchPlaceholder}
+                                className="flex h-9 w-full bg-transparent py-2 text-sm outline-none placeholder:text-muted-foreground"
+                            />
+                        </div>
+                    )}
 
                     {/* Items */}
                     <div className="max-h-52 overflow-y-auto p-1">

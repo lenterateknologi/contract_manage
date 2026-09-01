@@ -108,6 +108,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::post('/bulk-delete', 'bulkDestroy')->name('admin.workflows.bulk-destroy');
         Route::post('/{workflow}/duplicate', 'duplicate')->name('admin.workflows.duplicate');
         Route::post('/presets', 'storePreset')->name('admin.workflows.presets.store');
+        Route::put('/presets/{preset}', 'updatePreset')->name('admin.workflows.presets.update');
         Route::delete('/presets/{preset}', 'destroyPreset')->name('admin.workflows.presets.destroy');
     });
 
@@ -162,6 +163,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
     // Dynamic CRUD Core engine (Mini-Filament)
     Route::prefix('core')->group(function () {
         Route::get('vendors/{id}/document', [ResourceController::class, 'vendorDocument'])->name('admin.vendors.document');
+        Route::post('{resource}/sync-portal', [ResourceController::class, 'syncPortal'])->name('core.sync-portal');
         Route::get('{resource}/export', [ResourceController::class, 'export'])->name('core.export');
         Route::post('{resource}/import', [ResourceController::class, 'import'])->name('core.import');
         Route::post('{resource}/bulk-delete', [ResourceController::class, 'bulkDestroy'])->name('core.bulk-delete');

@@ -1,16 +1,17 @@
 import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { Bookmark, PlusCircle, Trash2, GripVertical } from 'lucide-react';
+import { Bookmark, PlusCircle, Trash2, GripVertical, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { APPROVER_TYPE_STYLES } from '../constants/workflowConstants';
 
 interface DraggablePresetCardProps {
     preset: any;
     onApply: (preset: any) => void;
+    onEdit?: (preset: any) => void;
     onDelete: (preset: any) => void;
 }
 
-export function DraggablePresetCard({ preset, onApply, onDelete }: DraggablePresetCardProps) {
+export function DraggablePresetCard({ preset, onApply, onEdit, onDelete }: DraggablePresetCardProps) {
     const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
         id: `preset-${preset.id}`,
         data: {
@@ -27,6 +28,7 @@ export function DraggablePresetCard({ preset, onApply, onDelete }: DraggablePres
 
     const stepData = preset.step_data || {};
     const approverType = stepData.approver_type || 'role';
+    const subtitle = stepData.description || stepData.name || stepData.label;
 
     return (
         <div
@@ -52,9 +54,9 @@ export function DraggablePresetCard({ preset, onApply, onDelete }: DraggablePres
                         <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                             {preset.name}
                         </span>
-                        {stepData.name && (
+                        {subtitle && (
                             <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                                {stepData.name}
+                                {subtitle}
                             </span>
                         )}
                     </div>
@@ -72,13 +74,26 @@ export function DraggablePresetCard({ preset, onApply, onDelete }: DraggablePres
                     >
                         <PlusCircle size={15} />
                     </button>
+                    {onEdit && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(preset);
+                            }}
+                            className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-200 dark:border-slate-800 hover:border-primary/40 rounded-lg transition-colors cursor-pointer"
+                            title="Ubah Preset"
+                        >
+                            <Pencil size={12} />
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation();
                             onDelete(preset);
                         }}
-                        className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-800 rounded-lg transition-colors cursor-pointer"
+                        className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:border-rose-800 rounded-lg transition-colors cursor-pointer"
                         title="Hapus Preset"
                     >
                         <Trash2 size={13} />

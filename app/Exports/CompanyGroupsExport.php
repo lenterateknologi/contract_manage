@@ -39,8 +39,8 @@ class CompanyGroupsExport implements FromCollection, ShouldAutoSize, WithEvents,
             'ID',
             'Kode Group',
             'Nama Group Perusahaan',
-            'Deskripsi',
-            'Status Aktif',
+            'Sistem',
+            'Portal',
         ];
     }
 
@@ -56,7 +56,7 @@ class CompanyGroupsExport implements FromCollection, ShouldAutoSize, WithEvents,
             $group->id,
             $group->code,
             $group->name,
-            $group->description ?? '',
+            $group->is_used ? 'Ya' : 'Tidak',
             $group->is_active ? 'Aktif' : 'Nonaktif',
         ];
     }

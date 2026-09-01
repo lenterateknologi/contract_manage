@@ -2,9 +2,12 @@
 
 namespace App\Core\Crud\Resources;
 
+use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
+use App\Core\Crud\Fields\ToggleInput;
+use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
 use App\Exports\RegionsExport;
 use App\Imports\RegionsImport;
@@ -28,7 +31,9 @@ class RegionResource extends Resource
             TextColumn::make('code', 'Kode')->sortable()->searchable(),
             TextColumn::make('name', 'Nama Region')->sortable()->searchable(),
             TextColumn::make('alias', 'Alias')->sortable()->searchable(),
-            TextColumn::make('description', 'Deskripsi')->searchable(),
+            TextColumn::make('region_ad', 'Region AD')->sortable()->searchable(),
+            BooleanColumn::make('is_used', 'Sistem'),
+            BooleanColumn::make('is_active', 'Portal'),
         ];
     }
 
@@ -43,8 +48,28 @@ class RegionResource extends Resource
                 ->rules(['string', 'max:255']),
             TextInput::make('alias', 'Alias')
                 ->rules(['nullable', 'string', 'max:50']),
-            TextareaInput::make('description', 'Deskripsi')
-                ->rules(['nullable', 'string']),
+            TextInput::make('region_ad', 'Region AD')
+                ->rules(['nullable', 'string', 'max:100']),
+            ToggleInput::make('is_used', 'Sistem')
+                ->default(false),
+            ToggleInput::make('is_active', 'Portal')
+                ->default(true),
+        ];
+    }
+
+    public static function filters(): array
+    {
+        return [
+            Filter::make('is_used', 'Status Sistem')
+                ->options([
+                    '1' => 'Digunakan (Ya)',
+                    '0' => 'Tidak Digunakan',
+                ]),
+            Filter::make('is_active', 'Status Portal')
+                ->options([
+                    '1' => 'Aktif',
+                    '0' => 'Nonaktif',
+                ]),
         ];
     }
 }

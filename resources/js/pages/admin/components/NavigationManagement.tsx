@@ -72,14 +72,17 @@ interface NavigationManagementProps {
     readonly filters: any;
 }
 
-const GroupNameCell = ({ name }: Readonly<{ name: string }>) => (
-    <div className="group flex items-center gap-4">
-        <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-xl transition-all text-white">
-            <Folder size={16} />
+const GroupNameCell = ({ name, icon }: Readonly<{ name: string; icon?: string | null }>) => {
+    const IconComp = (icon && SELECTABLE_ICONS[icon]) ? SELECTABLE_ICONS[icon] : Folder;
+    return (
+        <div className="group flex items-center gap-4">
+            <div className="bg-primary flex h-10 w-10 items-center justify-center rounded-xl transition-all text-white">
+                <IconComp size={16} />
+            </div>
+            <span className="text-text-main text-[13px] font-semibold tracking-tight uppercase">{name}</span>
         </div>
-        <span className="text-text-main text-[13px] font-semibold tracking-tight uppercase">{name}</span>
-    </div>
-);
+    );
+};
 
 const ModulesCountCell = ({ count }: Readonly<{ count: number }>) => (
     <div className="flex items-center gap-2">
@@ -166,7 +169,7 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                 header: 'Grup Navigasi Utama',
                 accessorKey: 'name',
                 sortable: true,
-                cell: (row) => <GroupNameCell name={row.name} />,
+                cell: (row) => <GroupNameCell name={row.name} icon={row.icon} />,
             },
             {
                 header: 'Kapasitas Modul',
@@ -454,14 +457,46 @@ export function NavigationManagement({ groups, modules, isModuleView = false, fi
                                     </div>
                                 </>
                             ) : (
-                                <CompactInput
-                                    label="Judul Grup Menu Utama"
-                                    value={groupForm.data.name}
-                                    onChange={(e) => groupForm.setData('name', e.target.value)}
-                                    placeholder="CONTOH: MASTER DATA"
-                                    required
-                                    icon={Folder}
-                                />
+                                <>
+                                    <CompactInput
+                                        label="Judul Grup Menu Utama"
+                                        value={groupForm.data.name}
+                                        onChange={(e) => groupForm.setData('name', e.target.value)}
+                                        placeholder="CONTOH: MASTER DATA"
+                                        required
+                                        icon={Folder}
+                                    />
+                                    <div className="space-y-2">
+                                        <label className="text-text-desc flex items-center gap-2 text-[10px] font-medium uppercase">
+                                            Icon Grup
+                                        </label>
+                                        <Select
+                                            value={groupForm.data.icon || 'Folder'}
+                                            onValueChange={(v: string) => groupForm.setData('icon', v)}
+                                        >
+                                            <SelectTrigger className="border-surface-border bg-primary/5 focus:border-primary h-10 rounded-xl text-xs font-medium transition-all">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
+                                                {Object.keys(SELECTABLE_ICONS).map((iconName) => {
+                                                    const IconComponent = SELECTABLE_ICONS[iconName];
+                                                    return (
+                                                        <SelectItem
+                                                            key={iconName}
+                                                            value={iconName}
+                                                            className="py-2.5 text-xs font-medium uppercase"
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
+                                                                <span>{iconName}</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    );
+                                                })}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </>
                             )}
                         </div>
 

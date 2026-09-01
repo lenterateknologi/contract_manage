@@ -36,11 +36,15 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
     const selectedGroupValues = groupSection.items.map((i) => String(i.value));
     const selectedRegionValues = regionSection.items.map((i) => String(i.value));
 
-    const groupOptions = companyGroups.map((g: any) => ({ value: String(g.id), label: g.name }));
+    const activeCompanyGroups = companyGroups.filter((g: any) => g.is_used !== false && g.is_used !== 0 && String(g.is_used) !== '0');
+    const activeRegions = regions.filter((r: any) => r.is_used !== false && r.is_used !== 0 && String(r.is_used) !== '0');
+    const activeCompanies = companies.filter((c: any) => c.is_used !== false && c.is_used !== 0 && String(c.is_used) !== '0');
 
-    const filteredRegions = regions.filter((r: any) => {
+    const groupOptions = activeCompanyGroups.map((g: any) => ({ value: String(g.id), label: g.name }));
+
+    const filteredRegions = activeRegions.filter((r: any) => {
         if (selectedGroupValues.length === 0) return true;
-        const validRegionIds = companies
+        const validRegionIds = activeCompanies
             .filter((c: any) => selectedGroupValues.includes(String(c.company_group_id)))
             .map((c: any) => c.region_id)
             .filter(Boolean);
@@ -48,7 +52,7 @@ export default function OrgScopeSelector({ form, companyGroups = [], regions = [
     });
     const regionOptions = filteredRegions.map((r: any) => ({ value: String(r.id), label: r.name }));
 
-    const filteredCompanies = companies.filter((c: any) => {
+    const filteredCompanies = activeCompanies.filter((c: any) => {
         const matchesGroup = selectedGroupValues.length === 0 || selectedGroupValues.includes(String(c.company_group_id));
         const matchesRegion = selectedRegionValues.length === 0 || selectedRegionValues.includes(String(c.region_id));
         return matchesGroup && matchesRegion;

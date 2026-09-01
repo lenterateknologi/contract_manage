@@ -148,23 +148,37 @@ export default function SortableStepItem({
         }
     };
 
+    const formatUserDetail = (u: any) => {
+        const pt = u.company?.name || u.company_name || '';
+        const dept = u.department?.name || u.org_name || '';
+        const role = u.role || 'Staff';
+        const details = [role, pt, dept].filter(Boolean).join(' • ');
+        return details ? `${u.name} (${details})` : u.name;
+    };
+
     // Filtered users for select dropdowns
     const userOptions = useMemo(() => {
-        return (users || []).map((u: any) => ({
-            value: String(u.id),
-            label: `${u.name.toUpperCase()} (${(u.role || 'Staff').toUpperCase()})`,
-            department_id: u.department_id,
-        }));
+        return (users || [])
+            .filter((u: any) => u.is_used !== false && u.is_used !== 0 && String(u.is_used) !== '0')
+            .map((u: any) => ({
+                value: String(u.id),
+                label: formatUserDetail(u),
+                department_id: u.department_id,
+            }));
     }, [users]);
 
     const legalUserOptions = useMemo(() => {
-        let list = (users || []).filter(
-            (u) => u.role?.toLowerCase().includes('legal') || u.role?.toLowerCase().includes('admin') || u.role?.toLowerCase().includes('staff'),
-        );
-        if (list.length === 0) list = users || [];
+        let list = (users || [])
+            .filter((u: any) => u.is_used !== false && u.is_used !== 0 && String(u.is_used) !== '0')
+            .filter(
+                (u) => u.role?.toLowerCase().includes('legal') || u.role?.toLowerCase().includes('admin') || u.role?.toLowerCase().includes('staff'),
+            );
+        if (list.length === 0) {
+            list = (users || []).filter((u: any) => u.is_used !== false && u.is_used !== 0 && String(u.is_used) !== '0');
+        }
         return list.map((u) => ({
             value: String(u.id),
-            label: `${u.name.toUpperCase()} (${(u.role || 'Legal Staff').toUpperCase()})`,
+            label: formatUserDetail(u),
         }));
     }, [users]);
     const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);

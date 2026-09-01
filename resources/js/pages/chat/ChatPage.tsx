@@ -140,8 +140,8 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                 />
                             </div>
 
-                            {/* List items - Full width with divider */}
-                            <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            {/* List items - Rounded item styling with spacing */}
+                            <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden p-2 space-y-2">
                                 {filteredContracts.length === 0 ? (
                                     <div className="p-6 text-center">
                                         <Search size={18} className="mx-auto mb-2 text-muted-foreground" />
@@ -149,8 +149,8 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                     </div>
                                 ) : (
                                     Object.entries(groupedContracts).map(([groupLabel, items]) => (
-                                        <div key={groupLabel}>
-                                            <div className="sticky top-0 z-10 px-3.5 py-1.5 bg-muted/60 dark:bg-zinc-900/90 backdrop-blur-sm border-b border-border flex items-center justify-between">
+                                        <div key={groupLabel} className="space-y-1">
+                                            <div className="sticky top-0 z-10 px-2 py-1 bg-background/95 backdrop-blur-xs flex items-center justify-between">
                                                 <div className="flex items-center gap-1.5">
                                                     <Calendar size={11} className="text-muted-foreground shrink-0" />
                                                     <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
@@ -161,14 +161,16 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                                     {items.length} Percakapan
                                                 </span>
                                             </div>
-                                            {items.map((c) => (
-                                                <ContractListItem
-                                                    key={c.id}
-                                                    contract={c}
-                                                    isSelected={selectedContractId === c.id}
-                                                    onClick={() => setSelectedContractId(c.id)}
-                                                />
-                                            ))}
+                                            <div className="space-y-1">
+                                                {items.map((c) => (
+                                                    <ContractListItem
+                                                        key={c.id}
+                                                        contract={c}
+                                                        isSelected={selectedContractId === c.id}
+                                                        onClick={() => setSelectedContractId(c.id)}
+                                                    />
+                                                ))}
+                                            </div>
                                         </div>
                                     ))
                                 )}

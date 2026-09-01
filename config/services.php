@@ -45,4 +45,9 @@ return [
         'password' => env('COMA_API_PASSWORD'),
     ],
 
+    // ponytail: Portal Master Data API configuration
+    'portal' => [
+        'base_url' => env('PORTAL_API_BASE_URL', 'http://127.0.0.1:8000'),
+    ],
+
 ];

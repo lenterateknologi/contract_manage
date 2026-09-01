@@ -24,10 +24,10 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
         <div
             onClick={onClick}
             className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-3 px-3.5 py-3 text-left transition-colors select-none border-b border-border border-l-2",
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200 select-none",
                 isSelected
-                    ? "bg-primary text-primary-foreground border-l-primary"
-                    : "bg-background hover:bg-muted/60 text-foreground border-l-transparent"
+                    ? "bg-primary text-primary-foreground shadow-xs font-semibold"
+                    : "bg-background hover:bg-muted/60 text-foreground"
             )}
         >
             <Avatar className={cn("h-8.5 w-8.5 shrink-0 transition-transform group-hover:scale-105 border", isSelected ? "border-primary-foreground/30" : "border-border")}>

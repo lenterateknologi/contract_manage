@@ -43,31 +43,22 @@ class CompaniesImport implements ToCollection, WithHeadingRow
             // Resolve Group
             $groupCode = isset($row['kode_group']) ? trim((string) $row['kode_group']) : '';
             $groupId = null;
-            if (! empty($groupCode)) {
-                if (isset($groupMap[$groupCode])) {
-                    $groupId = $groupMap[$groupCode];
-                } else {
-                    throw new \Exception("Kesalahan di baris {$rowCount}: Kode Group '{$groupCode}' tidak ditemukan di sistem.");
-                }
-            } else {
-                throw new \Exception("Kesalahan di baris {$rowCount}: Kode Group wajib diisi.");
+            if (! empty($groupCode) && isset($groupMap[$groupCode])) {
+                $groupId = $groupMap[$groupCode];
             }
 
             // Resolve Region
             $regionCode = isset($row['kode_region']) ? trim((string) $row['kode_region']) : '';
             $regionId = null;
-            if (! empty($regionCode)) {
-                if (isset($regionMap[$regionCode])) {
-                    $regionId = $regionMap[$regionCode];
-                } else {
-                    throw new \Exception("Kesalahan di baris {$rowCount}: Kode Region '{$regionCode}' tidak ditemukan di sistem.");
-                }
-            } else {
-                throw new \Exception("Kesalahan di baris {$rowCount}: Kode Region wajib diisi.");
+            if (! empty($regionCode) && isset($regionMap[$regionCode])) {
+                $regionId = $regionMap[$regionCode];
             }
 
-            $statusRaw = isset($row['status_aktif']) ? strtolower(trim((string) $row['status_aktif'])) : '';
+            $statusRaw = isset($row['portal']) ? strtolower(trim((string) $row['portal'])) : (isset($row['status_aktif']) ? strtolower(trim((string) $row['status_aktif'])) : '');
             $isActive = in_array($statusRaw, ['aktif', '1', 'true', 'yes', 'y', '']);
+
+            $usedRaw = isset($row['sistem']) ? strtolower(trim((string) $row['sistem'])) : (isset($row['digunakan_di_sistem']) ? strtolower(trim((string) $row['digunakan_di_sistem'])) : '');
+            $isUsed = $usedRaw !== '' ? in_array($usedRaw, ['ya', '1', 'true', 'yes', 'y', 'aktif']) : false;
 
             $id = isset($row['id']) ? trim((string) $row['id']) : '';
             $company = null;
@@ -80,29 +71,25 @@ class CompaniesImport implements ToCollection, WithHeadingRow
                 $company = Company::where('code', $code)->first();
             }
 
+            $attributes = [
+                'code'             => $code,
+                'name'             => $name,
+                'alias'            => isset($row['alias']) ? trim((string) $row['alias']) : null,
+                'npwp'             => isset($row['npwp']) ? trim((string) $row['npwp']) : null,
+                'oracle_code'      => isset($row['oracle_code']) ? trim((string) $row['oracle_code']) : null,
+                'address'          => isset($row['alamat']) ? trim((string) $row['alamat']) : null,
+                'company_group_id' => $groupId,
+                'region_id'        => $regionId,
+                'is_used'          => $isUsed,
+                'is_active'        => $isActive,
+                'updated_by'       => $admin,
+            ];
+
             if ($company) {
-                $company->update([
-                    'code' => $code,
-                    'name' => $name,
-                    'alias' => isset($row['alias']) ? trim((string) $row['alias']) : $company->alias,
-                    'address' => isset($row['alamat']) ? trim((string) $row['alamat']) : $company->address,
-                    'company_group_id' => $groupId,
-                    'region_id' => $regionId,
-                    'is_active' => $isActive,
-                    'updated_by' => $admin,
-                ]);
+                $company->update($attributes);
             } else {
-                Company::create([
-                    'code' => $code,
-                    'name' => $name,
-                    'alias' => isset($row['alias']) ? trim((string) $row['alias']) : null,
-                    'address' => isset($row['alamat']) ? trim((string) $row['alamat']) : null,
-                    'company_group_id' => $groupId,
-                    'region_id' => $regionId,
-                    'is_active' => $isActive,
-                    'created_by' => $admin,
-                    'updated_by' => $admin,
-                ]);
+                $attributes['created_by'] = $admin;
+                Company::create($attributes);
             }
         }
     }

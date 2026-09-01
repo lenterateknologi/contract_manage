@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2, Plus, Shield, Pencil, Search } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/Button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialogs/Dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialogs/Dialog';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
@@ -10,14 +10,12 @@ interface AuthorityItem {
     authority_type: string;
     role_id?: string | null;
     department_id?: string | null;
-    division_id?: string | null;
     user_id?: string | null;
     company_group_id?: string | null;
     company_id?: string | null;
     region_id?: string | null;
     role_use_initiator?: boolean;
     department_use_initiator?: boolean;
-    division_use_initiator?: boolean;
     company_group_use_initiator?: boolean;
     company_use_initiator?: boolean;
     region_use_initiator?: boolean;
@@ -29,7 +27,7 @@ interface AuthorityTableManagerProps {
     users: any[];
     roles: any[];
     departments: any[];
-    divisions: any[];
+    divisions?: any[];
     companyGroups: any[];
     companies?: any[];
     regions: any[];
@@ -44,7 +42,6 @@ export default function AuthorityTableManager({
     users = [],
     roles = [],
     departments = [],
-    divisions = [],
     companyGroups = [],
     companies = [],
     regions = [],
@@ -63,7 +60,6 @@ export default function AuthorityTableManager({
     // Single select for combinations
     const [modalRoleId, setModalRoleId] = useState<string>('');
     const [modalDepartmentId, setModalDepartmentId] = useState<string>('');
-    const [modalDivisionId, setModalDivisionId] = useState<string>('');
     const [modalCompanyGroupId, setModalCompanyGroupId] = useState<string>('');
     const [modalCompanyId, setModalCompanyId] = useState<string>('');
     const [modalRegionId, setModalRegionId] = useState<string>('');
@@ -71,10 +67,16 @@ export default function AuthorityTableManager({
     // Per-dimension initiator flags
     const [roleUseInitiator, setRoleUseInitiator] = useState<boolean>(false);
     const [departmentUseInitiator, setDepartmentUseInitiator] = useState<boolean>(false);
-    const [divisionUseInitiator, setDivisionUseInitiator] = useState<boolean>(false);
     const [companyGroupUseInitiator, setCompanyGroupUseInitiator] = useState<boolean>(false);
     const [companyUseInitiator, setCompanyUseInitiator] = useState<boolean>(false);
     const [regionUseInitiator, setRegionUseInitiator] = useState<boolean>(false);
+
+    // Filter only items where is_used is true (hardcode filter)
+    const activeUsers = React.useMemo(() => (users || []).filter(u => u.is_used !== false && u.is_used !== 0 && String(u.is_used) !== '0'), [users]);
+    const activeDepartments = React.useMemo(() => (departments || []).filter(d => d.is_used !== false && d.is_used !== 0 && String(d.is_used) !== '0'), [departments]);
+    const activeCompanyGroups = React.useMemo(() => (companyGroups || []).filter(cg => cg.is_used !== false && cg.is_used !== 0 && String(cg.is_used) !== '0'), [companyGroups]);
+    const activeCompanies = React.useMemo(() => (companies || []).filter(c => c.is_used !== false && c.is_used !== 0 && String(c.is_used) !== '0'), [companies]);
+    const activeRegions = React.useMemo(() => (regions || []).filter(r => r.is_used !== false && r.is_used !== 0 && String(r.is_used) !== '0'), [regions]);
 
     const handleIndividualChange = (type: 'user' | 'custom', val: string[]) => {
         if (type === 'custom') setModalCustomIds(val);
@@ -83,13 +85,11 @@ export default function AuthorityTableManager({
         if (val.length > 0) {
             setModalRoleId('');
             setModalDepartmentId('');
-            setModalDivisionId('');
             setModalCompanyGroupId('');
             setModalCompanyId('');
             setModalRegionId('');
             setRoleUseInitiator(false);
             setDepartmentUseInitiator(false);
-            setDivisionUseInitiator(false);
             setCompanyGroupUseInitiator(false);
             setCompanyUseInitiator(false);
             setRegionUseInitiator(false);
@@ -99,7 +99,6 @@ export default function AuthorityTableManager({
     const handleGroupChange = (type: string, val: string) => {
         if (type === 'role') setModalRoleId(val);
         if (type === 'department') setModalDepartmentId(val);
-        if (type === 'division') setModalDivisionId(val);
         if (type === 'company_group') setModalCompanyGroupId(val);
         if (type === 'company') setModalCompanyId(val);
         if (type === 'region') setModalRegionId(val);
@@ -116,13 +115,11 @@ export default function AuthorityTableManager({
         setModalCustomIds([]);
         setModalRoleId('');
         setModalDepartmentId('');
-        setModalDivisionId('');
         setModalCompanyGroupId('');
         setModalCompanyId('');
         setModalRegionId('');
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
-        setDivisionUseInitiator(false);
         setCompanyGroupUseInitiator(false);
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
@@ -143,13 +140,11 @@ export default function AuthorityTableManager({
         setModalCustomIds([]);
         setModalRoleId('');
         setModalDepartmentId('');
-        setModalDivisionId('');
         setModalCompanyGroupId('');
         setModalCompanyId('');
         setModalRegionId('');
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
-        setDivisionUseInitiator(false);
         setCompanyGroupUseInitiator(false);
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
@@ -162,14 +157,12 @@ export default function AuthorityTableManager({
             // Group combination
             if (auth.role_id) setModalRoleId(auth.role_id);
             if (auth.department_id) setModalDepartmentId(auth.department_id);
-            if (auth.division_id) setModalDivisionId(auth.division_id);
             if (auth.company_group_id) setModalCompanyGroupId(auth.company_group_id);
             if (auth.company_id) setModalCompanyId(auth.company_id);
             if (auth.region_id) setModalRegionId(auth.region_id);
             
             if (auth.role_use_initiator) setRoleUseInitiator(true);
             if (auth.department_use_initiator) setDepartmentUseInitiator(true);
-            if (auth.division_use_initiator) setDivisionUseInitiator(true);
             if (auth.company_group_use_initiator) setCompanyGroupUseInitiator(true);
             if (auth.company_use_initiator) setCompanyUseInitiator(true);
             if (auth.region_use_initiator) setRegionUseInitiator(true);
@@ -190,18 +183,16 @@ export default function AuthorityTableManager({
         }
 
         // Save Group Combination
-        if (modalRoleId || modalDepartmentId || modalDivisionId || modalCompanyGroupId || modalCompanyId || modalRegionId || roleUseInitiator || departmentUseInitiator || divisionUseInitiator || companyGroupUseInitiator || companyUseInitiator || regionUseInitiator) {
+        if (modalRoleId || modalDepartmentId || modalCompanyGroupId || modalCompanyId || modalRegionId || roleUseInitiator || departmentUseInitiator || companyGroupUseInitiator || companyUseInitiator || regionUseInitiator) {
             newAuths.push({
                 authority_type: 'group',
                 role_id: modalRoleId || undefined,
                 department_id: modalDepartmentId || undefined,
-                division_id: modalDivisionId || undefined,
                 company_group_id: modalCompanyGroupId || undefined,
                 company_id: modalCompanyId || undefined,
                 region_id: modalRegionId || undefined,
                 role_use_initiator: roleUseInitiator,
                 department_use_initiator: departmentUseInitiator,
-                division_use_initiator: divisionUseInitiator,
                 company_group_use_initiator: companyGroupUseInitiator,
                 company_use_initiator: companyUseInitiator,
                 region_use_initiator: regionUseInitiator,
@@ -231,9 +222,18 @@ export default function AuthorityTableManager({
         onChange(authorities.filter((_, idx) => idx !== indexToRemove));
     };
 
+    const formatUserDetail = (u: any) => {
+        const pt = u.company?.name || u.company_name || '';
+        const dept = u.department?.name || u.org_name || '';
+        const role = u.role || '';
+        const details = [role, pt, dept].filter(Boolean).join(' • ');
+        return details ? `${u.name} (${details})` : u.name;
+    };
+
     const getUserLabel = (id?: string) => {
         if (!id) return '-';
-        return users.find(u => String(u.id) === id)?.name || id;
+        const u = users.find(x => String(x.id) === id);
+        return u ? formatUserDetail(u) : id;
     };
     const getRoleLabel = (id?: string) => {
         if (!id) return '-';
@@ -242,10 +242,6 @@ export default function AuthorityTableManager({
     const getDeptLabel = (id?: string) => {
         if (!id) return '-';
         return departments.find(d => String(d.id) === id)?.name || id;
-    };
-    const getDivLabel = (id?: string) => {
-        if (!id) return '-';
-        return divisions.find(d => String(d.id) === id)?.name || id;
     };
     const getCompanyGroupLabel = (id?: string) => {
         if (!id) return '-';
@@ -278,13 +274,12 @@ export default function AuthorityTableManager({
                 const userMatch = getUserLabel(auth.user_id || undefined).toLowerCase().includes(q);
                 const roleMatch = (auth.role_use_initiator ? 'sesuai inisiator' : getRoleLabel(auth.role_id || undefined)).toLowerCase().includes(q);
                 const deptMatch = (auth.department_use_initiator ? 'sesuai inisiator' : getDeptLabel(auth.department_id || undefined)).toLowerCase().includes(q);
-                const divMatch = (auth.division_use_initiator ? 'sesuai inisiator' : getDivLabel(auth.division_id || undefined)).toLowerCase().includes(q);
                 const cgMatch = (auth.company_group_use_initiator ? 'sesuai inisiator' : getCompanyGroupLabel(auth.company_group_id || undefined)).toLowerCase().includes(q);
                 const compMatch = (auth.company_use_initiator ? 'sesuai inisiator' : getCompanyLabel(auth.company_id || undefined)).toLowerCase().includes(q);
                 const regMatch = (auth.region_use_initiator ? 'sesuai inisiator' : getRegionLabel(auth.region_id || undefined)).toLowerCase().includes(q);
-                return typeMatch || userMatch || roleMatch || deptMatch || divMatch || cgMatch || compMatch || regMatch;
+                return typeMatch || userMatch || roleMatch || deptMatch || cgMatch || compMatch || regMatch;
             });
-    }, [authorities, searchQuery, users, roles, departments, divisions, companyGroups, companies, regions]);
+    }, [authorities, searchQuery, users, roles, departments, companyGroups, companies, regions]);
 
     return (
         <div className="space-y-4 w-full">
@@ -333,7 +328,6 @@ export default function AuthorityTableManager({
                                 <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">User</th>
                                 <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Role</th>
                                 <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Departemen</th>
-                                <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Divisi</th>
                                 <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Company Group</th>
                                 <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Perusahaan PT</th>
                                 <th className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200">Wilayah</th>
@@ -369,11 +363,6 @@ export default function AuthorityTableManager({
                                         ) : getDeptLabel(auth.department_id)}
                                     </td>
                                     <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                                        {auth.division_use_initiator ? (
-                                            <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
-                                        ) : getDivLabel(auth.division_id)}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                         {auth.company_group_use_initiator ? (
                                             <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
                                         ) : getCompanyGroupLabel(auth.company_group_id)}
@@ -397,7 +386,7 @@ export default function AuthorityTableManager({
                                                 title="Ubah"
                                             >
                                                 <Pencil size={14} />
-                                            </button>
+                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => removeAuthority(originalIndex)}
@@ -416,23 +405,36 @@ export default function AuthorityTableManager({
             </div>
 
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                <DialogContent className="sm:max-w-2xl bg-slate-100/90 dark:bg-zinc-800/90 border border-slate-200/80 dark:border-zinc-700/80 rounded-3xl p-6">
-                    <DialogHeader>
-                        <DialogTitle className="text-base font-bold text-slate-900 dark:text-zinc-100">
-                            {editIndex !== null ? 'Ubah Otoritas' : 'Tambah Otoritas'}
-                        </DialogTitle>
-                    </DialogHeader>
+                <DialogContent className="sm:max-w-2xl border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[8px] border p-0 shadow-2xl">
+                    <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
+                        <div className="flex items-center gap-3 z-10 pr-10">
+                            <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                <Shield size={18} />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
+                                    {editIndex !== null ? 'Ubah Otoritas Akses' : 'Tambah Otoritas Akses'}
+                                </DialogTitle>
+                                <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                    {editIndex !== null ? 'Perbarui kriteria atau kombinasi akses otoritas' : 'Atur hak akses berdasarkan pengguna atau kombinasi organisasi'}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </div>
 
-                    <div className="space-y-6 py-4 max-h-[80vh] overflow-y-auto px-2">
+                    <div className="p-6 bg-white dark:bg-zinc-900 max-h-[75vh] overflow-y-auto space-y-6">
                         {/* Kategori Individu */}
-                        <div>
-                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
-                                Tipe Pilih User Aja (Personal)
-                            </h3>
-                            <div className="space-y-4">
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
+                                <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-primary font-bold text-[10px]">1</span>
+                                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                                    Tipe Pilih User (Personal)
+                                </h3>
+                            </div>
+                            <div className="space-y-4 pt-1">
                                 {showCustom && (
                                     <div className="space-y-1.5">
-                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Aktor Kustom</label>
+                                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Aktor Kustom</label>
                                         <SearchableMultiSelect
                                             values={modalCustomIds}
                                             onValuesChange={(val) => handleIndividualChange('custom', val)}
@@ -447,11 +449,11 @@ export default function AuthorityTableManager({
                                 )}
 
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih User</label>
+                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Pengguna (User)</label>
                                     <SearchableMultiSelect
                                         values={modalUserIds}
                                         onValuesChange={(val) => handleIndividualChange('user', val)}
-                                        options={(users || []).map(u => ({ value: String(u.id), label: `${u.name}${u.role ? ` (${u.role})` : ''}` }))}
+                                        options={(activeUsers || []).map(u => ({ value: String(u.id), label: formatUserDetail(u) }))}
                                         placeholder="Pilih User..."
                                     />
                                 </div>
@@ -460,195 +462,169 @@ export default function AuthorityTableManager({
 
                         {/* Kategori Grup */}
                         {(showCombinations !== false) && (
-                            <div>
-                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 pb-2 border-b border-slate-100 dark:border-slate-800">
-                                    Tipe Pilih Kombinasi (Group/Organisasi)
-                                </h3>
-                                <div className="space-y-4">
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Role</label>
-                                        <div className="flex items-center gap-1.5">
-                                            <Checkbox
-                                                id="role_initiator"
-                                                checked={roleUseInitiator}
-                                                onCheckedChange={(c) => {
-                                                    setRoleUseInitiator(!!c);
-                                                    if (c) {
-                                                        setModalRoleId('');
-                                                        setModalCustomIds([]);
-                                                        setModalUserIds([]);
-                                                    }
-                                                }}
-                                                className="h-3.5 w-3.5"
-                                            />
-                                            <label htmlFor="role_initiator" className="text-[10px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
-                                        </div>
-                                    </div>
-                                    <SearchableSelect
-                                        value={modalRoleId}
-                                        onValueChange={(val) => handleGroupChange('role', val)}
-                                        options={roles.map(r => ({ value: String(r.id), label: r.name }))}
-                                        placeholder="Semua Role..."
-                                        disabled={roleUseInitiator}
-                                    />
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2 border-b border-slate-100 pb-2 dark:border-slate-800">
+                                    <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-primary font-bold text-[10px]">2</span>
+                                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                                        Tipe Kombinasi (Group & Organisasi)
+                                    </h3>
                                 </div>
+                                <div className="space-y-4 pt-1">
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Role</label>
+                                            <div className="flex items-center gap-1.5">
+                                                <Checkbox
+                                                    id="role_initiator"
+                                                    checked={roleUseInitiator}
+                                                    onCheckedChange={(c) => {
+                                                        setRoleUseInitiator(!!c);
+                                                        if (c) {
+                                                            setModalRoleId('');
+                                                            setModalCustomIds([]);
+                                                            setModalUserIds([]);
+                                                        }
+                                                    }}
+                                                    className="h-3.5 w-3.5"
+                                                />
+                                                <label htmlFor="role_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                            </div>
+                                        </div>
+                                        <SearchableSelect
+                                            value={modalRoleId}
+                                            onValueChange={(val) => handleGroupChange('role', val)}
+                                            options={roles.map(r => ({ value: String(r.id), label: r.name }))}
+                                            placeholder="Semua Role..."
+                                            disabled={roleUseInitiator}
+                                        />
+                                    </div>
 
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Departemen</label>
-                                        <div className="flex items-center gap-1.5">
-                                            <Checkbox
-                                                id="dept_initiator"
-                                                checked={departmentUseInitiator}
-                                                onCheckedChange={(c) => {
-                                                    setDepartmentUseInitiator(!!c);
-                                                    if (c) {
-                                                        setModalDepartmentId('');
-                                                        setModalCustomIds([]);
-                                                        setModalUserIds([]);
-                                                    }
-                                                }}
-                                                className="h-3.5 w-3.5"
-                                            />
-                                            <label htmlFor="dept_initiator" className="text-[10px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Departemen</label>
+                                            <div className="flex items-center gap-1.5">
+                                                <Checkbox
+                                                    id="dept_initiator"
+                                                    checked={departmentUseInitiator}
+                                                    onCheckedChange={(c) => {
+                                                        setDepartmentUseInitiator(!!c);
+                                                        if (c) {
+                                                            setModalDepartmentId('');
+                                                            setModalCustomIds([]);
+                                                            setModalUserIds([]);
+                                                        }
+                                                    }}
+                                                    className="h-3.5 w-3.5"
+                                                />
+                                                <label htmlFor="dept_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                            </div>
                                         </div>
+                                        <SearchableSelect
+                                            value={modalDepartmentId}
+                                            onValueChange={(val) => handleGroupChange('department', val)}
+                                            options={activeDepartments.map(d => ({ value: String(d.id), label: d.name }))}
+                                            placeholder="Semua Departemen..."
+                                            disabled={departmentUseInitiator}
+                                        />
                                     </div>
-                                    <SearchableSelect
-                                        value={modalDepartmentId}
-                                        onValueChange={(val) => handleGroupChange('department', val)}
-                                        options={departments.map(d => ({ value: String(d.id), label: d.name }))}
-                                        placeholder="Semua Departemen..."
-                                        disabled={departmentUseInitiator}
-                                    />
-                                </div>
 
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Divisi</label>
-                                        <div className="flex items-center gap-1.5">
-                                            <Checkbox
-                                                id="div_initiator"
-                                                checked={divisionUseInitiator}
-                                                onCheckedChange={(c) => {
-                                                    setDivisionUseInitiator(!!c);
-                                                    if (c) {
-                                                        setModalDivisionId('');
-                                                        setModalCustomIds([]);
-                                                        setModalUserIds([]);
-                                                    }
-                                                }}
-                                                className="h-3.5 w-3.5"
-                                            />
-                                            <label htmlFor="div_initiator" className="text-[10px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Company Group</label>
+                                            <div className="flex items-center gap-1.5">
+                                                <Checkbox
+                                                    id="cg_initiator"
+                                                    checked={companyGroupUseInitiator}
+                                                    onCheckedChange={(c) => {
+                                                        setCompanyGroupUseInitiator(!!c);
+                                                        if (c) {
+                                                            setModalCompanyGroupId('');
+                                                            setModalCustomIds([]);
+                                                            setModalUserIds([]);
+                                                        }
+                                                    }}
+                                                    className="h-3.5 w-3.5"
+                                                />
+                                                <label htmlFor="cg_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                            </div>
                                         </div>
+                                        <SearchableSelect
+                                            value={modalCompanyGroupId}
+                                            onValueChange={(val) => handleGroupChange('company_group', val)}
+                                            options={activeCompanyGroups.map(cg => ({ value: String(cg.id), label: cg.name }))}
+                                            placeholder="Semua Company Group..."
+                                            disabled={companyGroupUseInitiator}
+                                        />
                                     </div>
-                                    <SearchableSelect
-                                        value={modalDivisionId}
-                                        onValueChange={(val) => handleGroupChange('division', val)}
-                                        options={divisions.map(d => ({ value: String(d.id), label: d.name }))}
-                                        placeholder="Semua Divisi..."
-                                        disabled={divisionUseInitiator}
-                                    />
-                                </div>
 
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Company Group</label>
-                                        <div className="flex items-center gap-1.5">
-                                            <Checkbox
-                                                id="cg_initiator"
-                                                checked={companyGroupUseInitiator}
-                                                onCheckedChange={(c) => {
-                                                    setCompanyGroupUseInitiator(!!c);
-                                                    if (c) {
-                                                        setModalCompanyGroupId('');
-                                                        setModalCustomIds([]);
-                                                        setModalUserIds([]);
-                                                    }
-                                                }}
-                                                className="h-3.5 w-3.5"
-                                            />
-                                            <label htmlFor="cg_initiator" className="text-[10px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Perusahaan PT</label>
+                                            <div className="flex items-center gap-1.5">
+                                                <Checkbox
+                                                    id="company_initiator"
+                                                    checked={companyUseInitiator}
+                                                    onCheckedChange={(c) => {
+                                                        setCompanyUseInitiator(!!c);
+                                                        if (c) {
+                                                            setModalCompanyId('');
+                                                            setModalCustomIds([]);
+                                                            setModalUserIds([]);
+                                                        }
+                                                    }}
+                                                    className="h-3.5 w-3.5"
+                                                />
+                                                <label htmlFor="company_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                            </div>
                                         </div>
+                                        <SearchableSelect
+                                            value={modalCompanyId}
+                                            onValueChange={(val) => handleGroupChange('company', val)}
+                                            options={activeCompanies.map(c => ({ value: String(c.id), label: c.name }))}
+                                            placeholder="Semua Perusahaan PT..."
+                                            disabled={companyUseInitiator}
+                                        />
                                     </div>
-                                    <SearchableSelect
-                                        value={modalCompanyGroupId}
-                                        onValueChange={(val) => handleGroupChange('company_group', val)}
-                                        options={companyGroups.map(cg => ({ value: String(cg.id), label: cg.name }))}
-                                        placeholder="Semua Company Group..."
-                                        disabled={companyGroupUseInitiator}
-                                    />
-                                </div>
 
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Perusahaan PT</label>
-                                        <div className="flex items-center gap-1.5">
-                                            <Checkbox
-                                                id="company_initiator"
-                                                checked={companyUseInitiator}
-                                                onCheckedChange={(c) => {
-                                                    setCompanyUseInitiator(!!c);
-                                                    if (c) {
-                                                        setModalCompanyId('');
-                                                        setModalCustomIds([]);
-                                                        setModalUserIds([]);
-                                                    }
-                                                }}
-                                                className="h-3.5 w-3.5"
-                                            />
-                                            <label htmlFor="company_initiator" className="text-[10px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Wilayah</label>
+                                            <div className="flex items-center gap-1.5">
+                                                <Checkbox
+                                                    id="region_initiator"
+                                                    checked={regionUseInitiator}
+                                                    onCheckedChange={(c) => {
+                                                        setRegionUseInitiator(!!c);
+                                                        if (c) {
+                                                            setModalRegionId('');
+                                                            setModalCustomIds([]);
+                                                            setModalUserIds([]);
+                                                        }
+                                                    }}
+                                                    className="h-3.5 w-3.5"
+                                                />
+                                                <label htmlFor="region_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                            </div>
                                         </div>
+                                        <SearchableSelect
+                                            value={modalRegionId}
+                                            onValueChange={(val) => handleGroupChange('region', val)}
+                                            options={activeRegions.map(r => ({ value: String(r.id), label: r.name }))}
+                                            placeholder="Semua Wilayah..."
+                                            disabled={regionUseInitiator}
+                                        />
                                     </div>
-                                    <SearchableSelect
-                                        value={modalCompanyId}
-                                        onValueChange={(val) => handleGroupChange('company', val)}
-                                        options={companies.map(c => ({ value: String(c.id), label: c.name }))}
-                                        placeholder="Semua Perusahaan PT..."
-                                        disabled={companyUseInitiator}
-                                    />
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-xs font-bold text-slate-600 dark:text-slate-400">Pilih Wilayah</label>
-                                        <div className="flex items-center gap-1.5">
-                                            <Checkbox
-                                                id="region_initiator"
-                                                checked={regionUseInitiator}
-                                                onCheckedChange={(c) => {
-                                                    setRegionUseInitiator(!!c);
-                                                    if (c) {
-                                                        setModalRegionId('');
-                                                        setModalCustomIds([]);
-                                                        setModalUserIds([]);
-                                                    }
-                                                }}
-                                                className="h-3.5 w-3.5"
-                                            />
-                                            <label htmlFor="region_initiator" className="text-[10px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
-                                        </div>
-                                    </div>
-                                    <SearchableSelect
-                                        value={modalRegionId}
-                                        onValueChange={(val) => handleGroupChange('region', val)}
-                                        options={regions.map(r => ({ value: String(r.id), label: r.name }))}
-                                        placeholder="Semua Wilayah..."
-                                        disabled={regionUseInitiator}
-                                    />
-                                </div>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <DialogFooter className="gap-2">
-                        <Button type="button" variant="outline" onClick={closeModal} className="rounded-xl h-10 text-xs font-bold">
+                    <DialogFooter className="px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 flex items-center justify-end gap-2 rounded-b-[8px]">
+                        <Button type="button" variant="outline" onClick={closeModal} className="rounded-lg h-9 px-4 text-xs font-semibold">
                             Batal
                         </Button>
-                        <Button type="button" onClick={handleSave} className="rounded-xl h-10 text-xs font-bold bg-primary text-white">
-                            Simpan Pilihan
+                        <Button type="button" onClick={handleSave} className="rounded-lg h-9 px-4 text-xs font-semibold bg-primary text-white hover:bg-primary/95 shadow-sm">
+                            {editIndex !== null ? 'Perbarui Otoritas' : 'Simpan Otoritas'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

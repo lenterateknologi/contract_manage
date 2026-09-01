@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 
 export interface FilterOption {
     label: string;
@@ -42,6 +43,7 @@ export interface SideFilterCardProps {
     actions?: React.ReactNode;
     className?: string;
     defaultExpanded?: boolean;
+    storageKey?: string;
 }
 
 function SearchableCategoryOptions({
@@ -53,117 +55,24 @@ function SearchableCategoryOptions({
     activeValues: string[];
     onToggle: (val: any) => void;
 }) {
-    const [query, setQuery] = useState('');
-    const [pageSize, setPageSize] = useState(5);
     const options = category.options || [];
-
-    React.useEffect(() => {
-        setPageSize(5);
-    }, [query]);
-
-    const filteredOptions = useMemo(() => {
-        if (!query) return options;
-        return options.filter((opt) =>
-            opt.label.toLowerCase().includes(query.toLowerCase())
-        );
-    }, [options, query]);
-
-    const paginatedOptions = useMemo(() => {
-        return filteredOptions.slice(0, pageSize);
-    }, [filteredOptions, pageSize]);
+    const searchableOptions = useMemo(() => {
+        return options.map(opt => ({
+            value: String(opt.value),
+            label: opt.label
+        }));
+    }, [options]);
 
     return (
-        <div className="space-y-2">
-            {activeValues.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                    {activeValues.map((val) => {
-                        const opt = options.find((o) => String(o.value) === val);
-                        return (
-                            <button
-                                key={val}
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    onToggle(activeValues.filter((v) => v !== val));
-                                }}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary text-white text-[10px] font-semibold hover:bg-primary/80 transition-colors cursor-pointer"
-                            >
-                                {opt?.label ?? val}
-                                <X size={9} strokeWidth={3} />
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
-
-            <div className="relative">
-                <Search
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-soft pointer-events-none"
-                    size={12}
-                />
-                <input
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={`Cari ${category.label.toLowerCase()}...`}
-                    className="w-full h-7 pl-7 pr-3 text-[11px] bg-surface-muted/40 border border-surface-border rounded-lg focus:ring-1 focus:ring-primary focus:border-primary transition-all outline-none"
-                />
-            </div>
-
-            <div className="border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5 max-h-32 overflow-y-auto space-y-0.5 custom-scrollbar flex flex-col">
-                {filteredOptions.length === 0 && (
-                    <div className="py-2 text-center">
-                        <p className="text-[10px] text-text-soft font-bold uppercase">
-                            Tidak ditemukan
-                        </p>
-                    </div>
-                )}
-                {paginatedOptions.map((opt) => {
-                    const isSelected = activeValues.includes(String(opt.value));
-                    return (
-                        <button
-                            key={String(opt.value)}
-                            type="button"
-                            onClick={() => {
-                                const valStr = String(opt.value);
-                                const next = activeValues.includes(valStr)
-                                    ? activeValues.filter((v) => v !== valStr)
-                                    : [...activeValues, valStr];
-                                onToggle(next);
-                            }}
-                            className={cn(
-                                "w-full flex items-center justify-between p-1.5 rounded-md text-left transition-all text-[11px] font-semibold uppercase tracking-wide cursor-pointer",
-                                isSelected
-                                    ? "bg-primary-muted text-primary"
-                                    : "text-text-main hover:bg-surface-muted"
-                            )}
-                        >
-                            <span className="truncate">{opt.label}</span>
-                            <div className={cn(
-                                "h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0",
-                                isSelected
-                                    ? "border-primary bg-primary text-white"
-                                    : "border-surface-border bg-white"
-                            )}>
-                                {isSelected && <Check size={10} strokeWidth={3} />}
-                            </div>
-                        </button>
-                    );
-                })}
-                {filteredOptions.length > pageSize && (
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setPageSize(prev => prev + 10);
-                        }}
-                        className="text-[9px] font-bold text-primary hover:underline text-center py-1 mt-0.5 cursor-pointer"
-                    >
-                        + Lebih Banyak ({filteredOptions.length - pageSize})
-                    </button>
-                )}
-            </div>
+        <div className="w-full space-y-2">
+            <SearchableMultiSelect
+                values={activeValues}
+                onValuesChange={onToggle}
+                options={searchableOptions}
+                placeholder={`Pilih ${category.label.toLowerCase()}...`}
+                searchPlaceholder={`Cari ${category.label.toLowerCase()}...`}
+                className="w-full"
+            />
         </div>
     );
 }
@@ -314,10 +223,26 @@ export function SideFilterCard({
     totalResults,
     actions,
     className,
-    defaultExpanded = false
+    defaultExpanded = false,
+    storageKey = 'side_filter'
 }: SideFilterCardProps) {
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-    const [activeMode, setActiveMode] = useState<'filter' | 'actions'>('filter');
+    const expandedStorageKey = `${storageKey}_expanded`;
+    const modeStorageKey = `${storageKey}_mode`;
+
+    const [isExpanded, setIsExpanded] = useState(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem(expandedStorageKey);
+            return saved !== null ? saved === 'true' : defaultExpanded;
+        }
+        return defaultExpanded;
+    });
+    const [activeMode, setActiveMode] = useState<'filter' | 'actions'>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem(modeStorageKey);
+            return (saved === 'filter' || saved === 'actions') ? saved : 'filter';
+        }
+        return 'filter';
+    });
     const [draftFilters, setDraftFilters] = useState<Record<string, any>>(activeFilters);
 
     // Sync draft filters whenever activeFilters props change externally
@@ -366,9 +291,12 @@ export function SideFilterCard({
     const handleOpenMode = (mode: 'filter' | 'actions') => {
         if (isExpanded && activeMode === mode) {
             setIsExpanded(false);
+            localStorage.setItem(expandedStorageKey, 'false');
         } else {
             setActiveMode(mode);
             setIsExpanded(true);
+            localStorage.setItem(modeStorageKey, mode);
+            localStorage.setItem(expandedStorageKey, 'true');
         }
     };
 
@@ -512,53 +440,18 @@ export function SideFilterCard({
                                     }}
                                     defaultOpen={true}
                                 >
-                                    {category.type === 'searchable' ? (
-                                        <SearchableCategoryOptions
-                                            category={category}
-                                            activeValues={currentVals.map(String)}
-                                            onToggle={(next) => handleLocalToggle(category.key, next)}
-                                        />
-                                    ) : category.type === 'date-range' ? (
+                                    {category.type === 'date-range' ? (
                                         <DateRangeCategoryOptions
                                             category={category}
                                             activeFilters={draftFilters}
                                             onFilterChange={handleLocalToggle}
                                         />
                                     ) : (
-                                        <div className="grid grid-cols-1 gap-1 border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5">
-                                            {category.options?.map((opt) => {
-                                                const isSelected = currentVals.map(String).includes(String(opt.value));
-                                                return (
-                                                    <button
-                                                        key={String(opt.value)}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            const valStr = String(opt.value);
-                                                            const next = currentVals.map(String).includes(valStr)
-                                                                ? currentVals.filter((v: any) => String(v) !== valStr)
-                                                                : [...currentVals, valStr];
-                                                            handleLocalToggle(category.key, next);
-                                                        }}
-                                                        className={cn(
-                                                            "w-full flex items-center justify-between p-1.5 rounded-md text-left transition-all text-[11px] font-semibold uppercase tracking-wide cursor-pointer",
-                                                            isSelected
-                                                                ? "bg-primary-muted text-primary"
-                                                                : "text-text-main hover:bg-surface-muted"
-                                                        )}
-                                                    >
-                                                        <span>{opt.label}</span>
-                                                        <div className={cn(
-                                                            "h-3.5 w-3.5 rounded border flex items-center justify-center transition-all shrink-0",
-                                                            isSelected
-                                                                ? "border-primary bg-primary text-white"
-                                                                : "border-surface-border bg-white"
-                                                        )}>
-                                                            {isSelected && <Check size={10} strokeWidth={3} />}
-                                                        </div>
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
+                                        <SearchableCategoryOptions
+                                            category={category}
+                                            activeValues={currentVals.map(String)}
+                                            onToggle={(next) => handleLocalToggle(category.key, next)}
+                                        />
                                     )}
                                 </CategoryAccordion>
                             );

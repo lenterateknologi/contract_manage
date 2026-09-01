@@ -954,6 +954,22 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         }
     }, [data.contract_input_mechanism]);
 
+    // ponytail: auto-sync group & region live in form when company is changed
+    useEffect(() => {
+        if (resourceSlug === 'users' && data.company_name) {
+            const companyField = flattenedFields.find(f => f.name === 'company_name');
+            const companyMap = companyField?.meta?.company_map;
+            if (companyMap && companyMap[data.company_name]) {
+                const info = companyMap[data.company_name];
+                setData((prev: any) => ({
+                    ...prev,
+                    company_group_name: info.group_name || '',
+                    region_name: info.region_name || '',
+                }));
+            }
+        }
+    }, [data.company_name, resourceSlug]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (isEdit) {

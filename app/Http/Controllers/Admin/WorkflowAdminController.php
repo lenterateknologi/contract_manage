@@ -58,13 +58,13 @@ class WorkflowAdminController extends Controller
         return Inertia::render('workflows/form', [
             'workflow' => null,
             'contractTypes' => ContractType::select('id', 'name', 'code', 'parent_id')->orderBy('name')->get(),
-            'departments' => Department::select('id', 'name', 'code')->orderBy('name')->get(),
+            'departments' => Department::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
             'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
             'roles' => Role::select('id', 'name')->orderBy('name')->get(),
-            'users' => Inertia::defer(fn () => User::select('id', 'name', 'email', 'role_id', 'department_id', 'division_id')->orderBy('name')->get()),
-            'companyGroups' => CompanyGroup::select('id', 'name')->orderBy('name')->get(),
-            'regions' => Region::select('id', 'name')->orderBy('name')->get(),
-            'companies' => Company::select('id', 'name')->orderBy('name')->get(),
+            'users' => Inertia::defer(fn () => User::select('id', 'name', 'email', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'is_used')->with(['department:id,name', 'company:id,name,company_group_name,region_name'])->where('is_used', true)->orderBy('name')->get()),
+            'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+            'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+            'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'contractStatuses' => ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->orderBy('label')->get(),
             'allWorkflows' => $this->workflowQuery->options()->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
@@ -160,13 +160,13 @@ class WorkflowAdminController extends Controller
         return Inertia::render('workflows/form', [
             'workflow' => $workflowData,
             'contractTypes' => ContractType::select('id', 'name', 'code', 'parent_id')->orderBy('name')->get(),
-            'departments' => Department::select('id', 'name', 'code')->orderBy('name')->get(),
+            'departments' => Department::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
             'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
             'roles' => Role::select('id', 'name')->orderBy('name')->get(),
-            'users' => Inertia::defer(fn () => User::select('id', 'name', 'email', 'role_id', 'department_id', 'division_id')->orderBy('name')->get()),
-            'companyGroups' => CompanyGroup::select('id', 'name')->orderBy('name')->get(),
-            'regions' => Region::select('id', 'name')->orderBy('name')->get(),
-            'companies' => Company::select('id', 'name')->orderBy('name')->get(),
+            'users' => Inertia::defer(fn () => User::select('id', 'name', 'email', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'is_used')->with(['department:id,name', 'company:id,name,company_group_name,region_name'])->where('is_used', true)->orderBy('name')->get()),
+            'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+            'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+            'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'contractStatuses' => ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->orderBy('label')->get(),
             'allWorkflows' => $this->workflowQuery->options()->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
@@ -435,6 +435,23 @@ class WorkflowAdminController extends Controller
         ]);
 
         return back()->with('success', "Preset '{$preset->name}' berhasil disimpan.");
+    }
+
+    public function updatePreset(Request $request, WorkflowStepPreset $preset)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'step_data' => 'nullable|array',
+        ]);
+
+        $updates = ['name' => $validated['name']];
+        if (isset($validated['step_data'])) {
+            $updates['step_data'] = $validated['step_data'];
+        }
+
+        $preset->update($updates);
+
+        return back()->with('success', "Preset '{$preset->name}' berhasil diperbarui.");
     }
 
     public function destroyPreset(WorkflowStepPreset $preset)

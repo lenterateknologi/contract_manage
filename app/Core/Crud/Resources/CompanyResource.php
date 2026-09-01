@@ -35,11 +35,11 @@ class CompanyResource extends Resource
     public static function table(): array
     {
         return [
-            TextColumn::make('code', 'Kode')->sortable()->searchable(),
-            TextColumn::make('name', 'Nama Perusahaan')->sortable()->searchable(),
-            TextColumn::make('group.name', 'Group')->sortable(),
-            TextColumn::make('region.name', 'Region')->sortable(),
-            BooleanColumn::make('is_active', 'Status Aktif'),
+            TextColumn::make('company_identity', 'Perusahaan & Identitas')->sortable()->searchable(),
+            TextColumn::make('org_structure', 'Struktur Organisasi')->sortable()->searchable(),
+            TextColumn::make('legal_integration', 'Legal, Lokasi & Oracle')->sortable()->searchable(),
+            BooleanColumn::make('is_used', 'Sistem'),
+            BooleanColumn::make('is_active', 'Portal'),
         ];
     }
 
@@ -52,31 +52,61 @@ class CompanyResource extends Resource
             TextInput::make('name', 'Nama Perusahaan')
                 ->required()
                 ->rules(['string', 'max:255']),
-            SelectInput::make('company_group_id', 'Company Group')
-                ->required()
-                ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
-            SelectInput::make('region_id', 'Region')
-                ->required()
-                ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
+            TextInput::make('alias', 'Alias')
+                ->rules(['nullable', 'string', 'max:50']),
+            TextInput::make('npwp', 'NPWP')
+                ->rules(['nullable', 'string', 'max:50']),
+            TextInput::make('company_group_name', 'Group Perusahaan')
+                ->rules(['nullable', 'string', 'max:255']),
+            TextInput::make('region_name', 'Region')
+                ->rules(['nullable', 'string', 'max:150']),
+            TextInput::make('city_name', 'Kota / Kabupaten')
+                ->rules(['nullable', 'string', 'max:100']),
+            TextInput::make('province_name', 'Provinsi')
+                ->rules(['nullable', 'string', 'max:100']),
+            TextInput::make('country_name', 'Negara')
+                ->rules(['nullable', 'string', 'max:100']),
+            TextInput::make('sub_district_name', 'Kecamatan')
+                ->rules(['nullable', 'string', 'max:100']),
+            TextInput::make('village_name', 'Kelurahan / Desa')
+                ->rules(['nullable', 'string', 'max:100']),
+            TextInput::make('zip_code', 'Kode Pos')
+                ->rules(['nullable', 'string', 'max:20']),
+            TextInput::make('phone', 'No. Telepon')
+                ->rules(['nullable', 'string', 'max:50']),
+            TextInput::make('fax', 'Fax')
+                ->rules(['nullable', 'string', 'max:50']),
+            TextInput::make('email', 'Email')
+                ->rules(['nullable', 'email', 'max:150']),
+            TextInput::make('oracle_code', 'Oracle Code')
+                ->rules(['nullable', 'string', 'max:50']),
             TextareaInput::make('address', 'Alamat')
                 ->rules(['nullable', 'string'])
                 ->columnSpan(2),
-            ToggleInput::make('is_active', 'Status Aktif')
+            ToggleInput::make('is_used', 'Sistem')
+                ->default(false)
+                ->columnSpan(1),
+            ToggleInput::make('is_active', 'Portal')
                 ->default(true)
-                ->columnSpan(2),
+                ->columnSpan(1),
         ];
     }
 
     public static function filters(): array
     {
         return [
-            Filter::make('company_group_id', 'Company Group')
+            Filter::make('company_group_id', 'Group Perusahaan')
                 ->type('searchable')
-                ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
-            Filter::make('region_id', 'Region')
+                ->options(fn () => \App\Models\CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('region_id', 'Wilayah (Region)')
                 ->type('searchable')
-                ->options(fn () => Region::orderBy('name')->pluck('name', 'id')->toArray()),
-            Filter::make('is_active', 'Status Status')
+                ->options(fn () => \App\Models\Region::orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('is_used', 'Status Sistem')
+                ->options([
+                    '1' => 'Digunakan (Ya)',
+                    '0' => 'Tidak Digunakan',
+                ]),
+            Filter::make('is_active', 'Status Portal')
                 ->options([
                     '1' => 'Aktif',
                     '0' => 'Nonaktif',

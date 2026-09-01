@@ -31,6 +31,7 @@ export interface NavItem {
     description?: string | null;
     icon?: LucideIcon | null;
     isActive?: boolean;
+    badge?: number | string | null;
 }
 
 export interface SharedData {

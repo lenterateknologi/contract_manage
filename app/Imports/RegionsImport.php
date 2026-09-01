@@ -34,8 +34,11 @@ class RegionsImport implements ToCollection, WithHeadingRow
                 throw new \Exception("Kesalahan di baris {$rowCount}: Nama Region wajib diisi.");
             }
 
-            $statusRaw = isset($row['status_aktif']) ? strtolower(trim((string) $row['status_aktif'])) : '';
+            $statusRaw = isset($row['portal']) ? strtolower(trim((string) $row['portal'])) : (isset($row['status_aktif']) ? strtolower(trim((string) $row['status_aktif'])) : '');
             $isActive = in_array($statusRaw, ['aktif', '1', 'true', 'yes', 'y', '']);
+
+            $usedRaw = isset($row['sistem']) ? strtolower(trim((string) $row['sistem'])) : (isset($row['digunakan_di_sistem']) ? strtolower(trim((string) $row['digunakan_di_sistem'])) : '');
+            $isUsed = $usedRaw !== '' ? in_array($usedRaw, ['ya', '1', 'true', 'yes', 'y', 'aktif']) : true;
 
             $id = isset($row['id']) ? trim((string) $row['id']) : '';
             $region = null;
@@ -53,7 +56,8 @@ class RegionsImport implements ToCollection, WithHeadingRow
                     'code' => $code,
                     'name' => $name,
                     'alias' => isset($row['alias']) ? trim((string) $row['alias']) : $region->alias,
-                    'description' => isset($row['deskripsi']) ? trim((string) $row['deskripsi']) : $region->description,
+                    'region_ad' => isset($row['region_ad']) ? trim((string) $row['region_ad']) : $region->region_ad,
+                    'is_used' => $isUsed,
                     'is_active' => $isActive,
                     'updated_by' => $admin,
                 ]);
@@ -62,7 +66,8 @@ class RegionsImport implements ToCollection, WithHeadingRow
                     'code' => $code,
                     'name' => $name,
                     'alias' => isset($row['alias']) ? trim((string) $row['alias']) : null,
-                    'description' => isset($row['deskripsi']) ? trim((string) $row['deskripsi']) : null,
+                    'region_ad' => isset($row['region_ad']) ? trim((string) $row['region_ad']) : null,
+                    'is_used' => $isUsed,
                     'is_active' => $isActive,
                     'created_by' => $admin,
                     'updated_by' => $admin,

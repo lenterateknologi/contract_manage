@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
-import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield, RefreshCw, MoreVertical } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { ExcelActions } from '@/components/ui/tables/ExcelActions';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
 import { Label } from '@/components/ui/forms/Label';
 import { Input } from '@/components/ui/inputs/Input';
 import { Textarea } from '@/components/ui/inputs/Textarea';
@@ -17,6 +18,7 @@ import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { SideFilterCard } from '@/components/ui/selection/SideFilterCard';
+import { useToast } from '@/components/ui/feedback/Toast';
 
 interface Props {
     resourceSlug: string;
@@ -28,6 +30,7 @@ interface Props {
     activeFilters?: Record<string, any>;
     hasExport?: boolean;
     hasImport?: boolean;
+    hasPortalSync?: boolean;
 }
 
 // Recursively builds a flattened tree array with depth indicators
@@ -80,19 +83,25 @@ function flattenTreeFromParents(parents: any[], depth = 0): any[] {
     return result;
 }
 
-const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'dashboard-types'];
+const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'dashboard-types', 'locations', 'business-units'];
 
 export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [selectedRows, setSelectedRows] = useState<any[]>([]);
     const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+    const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
     const [bulkSelectedFields, setBulkSelectedFields] = useState<Record<string, boolean>>({});
     const [bulkFieldValues, setBulkFieldValues] = useState<Record<string, any>>({});
     const [bulkProcessing, setBulkProcessing] = useState(false);
 
+    const { showProgress, hideProgress } = useToast();
     const [isDeptDialogOpen, setIsDeptDialogOpen] = useState(false);
     const [editDataId, setEditDataId] = useState<string | null>(null);
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [showSyncConfirm, setShowSyncConfirm] = useState(false);
 
     // Dynamic initial form fields from formSchema
     const initialFormData = React.useMemo(() => {
@@ -112,6 +121,46 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     }, [formSchema]);
 
     const deptForm = useForm(initialFormData);
+
+    const handleOpenEdit = (row: any) => {
+        if (resourceSlug === 'vendors') {
+            router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
+        } else if (DIALOG_RESOURCES.includes(resourceSlug)) {
+            const editValues: Record<string, any> = {};
+            formSchema.forEach((field) => {
+                if (field.isGroup && Array.isArray(field.schema)) {
+                    field.schema.forEach((subField: any) => {
+                        editValues[subField.name] = row[subField.name] ?? (subField.type === 'switch' ? false : '');
+                    });
+                } else {
+                    editValues[field.name] = row[field.name] ?? (field.type === 'switch' ? false : '');
+                }
+            });
+            const initialTypes: Record<string, string> = {};
+            const DIMENSIONS = [
+                { key: 'company_group', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
+                { key: 'region', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
+                { key: 'company', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
+                { key: 'division', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
+                { key: 'department', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
+            ];
+            DIMENSIONS.forEach(dim => {
+                const canChange = row[dim.toggleName] === true || row[dim.toggleName] === 1 || String(row[dim.toggleName]) === 'true';
+                const allowed = row[dim.allowedName] || [];
+                if (!canChange) {
+                    initialTypes[dim.key] = 'user_data';
+                } else {
+                    initialTypes[dim.key] = allowed.length > 0 ? 'custom' : 'full_access';
+                }
+            });
+            setLocalAccessTypes(initialTypes);
+            deptForm.setData(editValues);
+            setEditDataId(row.id);
+            setIsDeptDialogOpen(true);
+        } else {
+            router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
+        }
+    };
 
     const handleDeptSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -140,8 +189,44 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
 
     const handleDelete = () => {
         if (!deleteId) return;
+        setIsDeleting(true);
         router.delete(`/admin/core/${resourceSlug}/${deleteId}`, {
-            onSuccess: () => setDeleteId(null),
+            preserveScroll: true,
+            onFinish: () => {
+                setIsDeleting(false);
+                setDeleteId(null);
+            },
+        });
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedRows.length === 0) return;
+        setIsBulkDeleting(true);
+        router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
+            ids: selectedRows.map((r: any) => r.id)
+        }, {
+            preserveScroll: true,
+            onFinish: () => {
+                setIsBulkDeleting(false);
+                setShowBulkDeleteConfirm(false);
+                setSelectedRows([]);
+            }
+        });
+    };
+
+    // Quick bulk update for is_used toggle
+    const handleQuickBulkToggleIsUsed = (active: boolean) => {
+        if (selectedRows.length === 0) return;
+        setIsBulkDeleting(true); // show loader indicator
+        router.post(`/admin/core/${resourceSlug}/bulk-update`, {
+            ids: selectedRows.map(r => r.id),
+            values: { is_used: active }
+        }, {
+            preserveScroll: true,
+            onFinish: () => {
+                setIsBulkDeleting(false);
+                setSelectedRows([]);
+            }
         });
     };
 
@@ -167,7 +252,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         let hasSelection = false;
         Object.keys(bulkSelectedFields).forEach(name => {
             if (bulkSelectedFields[name]) {
-                valuesToUpdate[name] = bulkFieldValues[name] ?? '';
+                const val = bulkFieldValues[name];
+                valuesToUpdate[name] = val !== undefined ? val : '';
                 hasSelection = true;
             }
         });
@@ -209,11 +295,14 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     }, [data?.data, resourceSlug]);
 
     // Map schema to DataTable columns
-    const columns = tableSchema.map((col: any) => ({
-        header: col.label,
-        accessorKey: col.name,
-        sortable: col.sortable,
-        cell: (row: any) => {
+    const columns = tableSchema.map((col: any) => {
+        const isStatusCol = col.type === 'boolean' || col.name === 'is_used' || col.name === 'is_active';
+        return {
+            header: col.label,
+            accessorKey: col.name,
+            sortable: col.sortable,
+            className: isStatusCol ? 'w-20 text-center px-2 py-2 whitespace-nowrap' : undefined,
+            cell: (row: any) => {
             const val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
 
             // Render merged username and email column for users resource
@@ -279,6 +368,219 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 );
             }
 
+            // ponytail: custom render for compact merged user columns
+            if (resourceSlug === 'users') {
+                if (col.name === 'name') {
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold text-xs text-text-main">{row.name || '—'}</span>
+                                {row.nik && (
+                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded font-mono border border-slate-200/60 dark:border-slate-700">
+                                        {row.nik}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
+                                {row.email && <span>{row.email}</span>}
+                                {row.username && row.username !== row.nik && (
+                                    <span className="text-[10px] text-slate-400">(@{row.username})</span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                }
+                if (col.name === 'jobtitle_name') {
+                    const roleName = row.role_relation?.name || row.roleRelation?.name || row.role?.name;
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <span className="font-medium text-xs text-text-main">
+                                {row.jobtitle_name || '—'}
+                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                {row.joblevel_name && (
+                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium border border-primary/20">
+                                        {row.joblevel_name}
+                                    </span>
+                                )}
+                                {roleName && (
+                                    <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium border border-emerald-200 dark:border-emerald-800/40">
+                                        {roleName}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                }
+                if (col.name === 'company_name') {
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold text-xs text-text-main">
+                                    {row.company_name || row.company?.name || '—'}
+                                </span>
+                                {row.location_name && (
+                                    <span className="text-[10px] text-text-muted bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-200/40 dark:border-slate-700 font-medium">
+                                        {row.location_name}
+                                    </span>
+                                )}
+                            </div>
+                            {row.org_name && (
+                                <span className="text-[11px] text-text-muted">
+                                    Org: {row.org_name}
+                                </span>
+                            )}
+                        </div>
+                    );
+                }
+            }
+
+            // ponytail: custom render for compact merged company columns
+            if (resourceSlug === 'companies') {
+                if (col.name === 'company_identity') {
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold text-xs text-text-main">{row.name || '—'}</span>
+                                {row.alias && (
+                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium border border-primary/20">
+                                        {row.alias}
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[11px] text-text-muted">
+                                {row.code && <span className="font-mono text-slate-500 dark:text-slate-400">Kode: {row.code}</span>}
+                            </div>
+                        </div>
+                    );
+                }
+                if (col.name === 'org_structure') {
+                    const groupName = row.company_group_name || row.group?.name;
+                    const regionName = row.region_name || row.region?.name;
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <span className="font-semibold text-xs text-text-main">
+                                {groupName || '—'}
+                            </span>
+                            <span className="text-[11px] text-text-muted">
+                                Region: {regionName || '—'}
+                            </span>
+                        </div>
+                    );
+                }
+                if (col.name === 'legal_integration') {
+                    const npwp = row.npwp;
+                    const city = row.city_name;
+                    const oracle = row.oracle_code;
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <div className="flex items-center gap-1.5 flex-wrap text-xs text-text-main font-medium">
+                                {npwp && <span>NPWP: {npwp}</span>}
+                                {npwp && city && <span className="text-slate-300 dark:text-slate-700">•</span>}
+                                {city && <span className="text-text-muted">{city}</span>}
+                                {!npwp && !city && <span>—</span>}
+                            </div>
+                            {oracle && (
+                                <div className="text-[11px] text-text-muted font-mono">
+                                    Oracle: {oracle}
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+            }
+
+            // ponytail: custom render for compact merged location columns
+            if (resourceSlug === 'locations') {
+                if (col.name === 'location_identity') {
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <span className="font-semibold text-xs text-text-main">{row.name || '—'}</span>
+                            <div className="flex items-center gap-2 text-[11px] text-text-muted">
+                                {row.code && <span className="font-mono text-slate-500 dark:text-slate-400">Kode: {row.code}</span>}
+                                {row.code && row.oracle_code && <span className="text-slate-300 dark:text-slate-700">•</span>}
+                                {row.oracle_code && <span className="font-mono">Oracle: {row.oracle_code}</span>}
+                            </div>
+                        </div>
+                    );
+                }
+                if (col.name === 'company_group_name') {
+                    const companyGroup = row.company_group_name || row.group?.name;
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <span className="font-semibold text-xs text-text-main">
+                                {companyGroup || '—'}
+                            </span>
+                        </div>
+                    );
+                }
+                if (col.name === 'location_group' || col.name === 'region_group') {
+                    const locationGroup = row.location_group_name;
+                    const locationArea = [row.city_name, row.province_name].filter(Boolean).join(', ');
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <span className="font-semibold text-xs text-text-main">
+                                {locationGroup || '—'}
+                            </span>
+                            {locationArea && (
+                                <span className="text-[11px] text-text-muted">
+                                    {locationArea}
+                                </span>
+                            )}
+                        </div>
+                    );
+                }
+            }
+
+            // ponytail: custom render for compact merged business units columns
+            if (resourceSlug === 'business-units') {
+                if (col.name === 'bu_identity') {
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <span className="font-semibold text-xs text-text-main">{row.name || '—'}</span>
+                            <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-text-muted">
+                                {row.code && <span className="font-mono text-slate-500 dark:text-slate-400">Kode: {row.code}</span>}
+                                {row.komoditi_name && (
+                                    <>
+                                        <span className="text-slate-300 dark:text-slate-700">•</span>
+                                        <span>{row.komoditi_name}</span>
+                                    </>
+                                )}
+                                {row.kebun && (
+                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300">
+                                        Kebun: {row.kebun}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                }
+                if (col.name === 'company_placement') {
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <span className="font-semibold text-xs text-text-main">
+                                {row.company_name || '—'}
+                            </span>
+                            <span className="text-[11px] text-text-muted">
+                                Lokasi: {row.location_name || '—'}
+                            </span>
+                        </div>
+                    );
+                }
+                if (col.name === 'org_structure') {
+                    return (
+                        <div className="flex flex-col gap-0.5 text-left py-0.5">
+                            <span className="font-semibold text-xs text-text-main">
+                                {row.company_group_name || '—'}
+                            </span>
+                            <span className="text-[11px] text-text-muted">
+                                Region: {row.region_name || '—'}
+                            </span>
+                        </div>
+                    );
+                }
+            }
+
             // ponytail: custom render for merged mechanism and template details in contract-types
             if (resourceSlug === 'contract-types') {
                 if (col.name === 'f1_details') {
@@ -295,7 +597,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                 templateName ? (
                                     <span className="text-[10px] text-text-main font-normal">{templateName}</span>
                                 ) : (
-                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">Belum Pilih Template</span>
                                 )
                             )}
                         </div>
@@ -315,7 +617,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                 templateName ? (
                                     <span className="text-[10px] text-text-main font-normal">{templateName}</span>
                                 ) : (
-                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">Belum Pilih Template</span>
                                 )
                             )}
                         </div>
@@ -335,7 +637,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                 templateName ? (
                                     <span className="text-[10px] text-text-main font-normal">{templateName}</span>
                                 ) : (
-                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">⚠️ Belum Pilih Template</span>
+                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">Belum Pilih Template</span>
                                 )
                             )}
                         </div>
@@ -419,15 +721,23 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             }
 
             if (col.type === 'boolean') {
+                if (col.name === 'is_used') {
+                    return (
+                        <span className={`inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider ${val ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
+                            {val ? 'Ya' : 'Tidak'}
+                        </span>
+                    );
+                }
                 return (
-                    <span className={`px-2 py-1 text-[10px] font-normal uppercase rounded-full ${val ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                    <span className={`inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider ${val ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`}>
                         {val ? 'Aktif' : 'Nonaktif'}
                     </span>
                 );
             }
             return val;
         }
-    }));
+    };
+});
 
     const resourceIcons: Record<string, React.ComponentType<any>> = {
         departments: Building2,
@@ -438,6 +748,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         users: Users,
         vendors: Handshake,
         'contract-types': FileText,
+        locations: MapPin,
+        'business-units': Layers,
     };
     const HeaderIcon = resourceIcons[resourceSlug] || Database;
 
@@ -486,35 +798,6 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                         </Button>
                                     </Link>
                                 ) : null}
-
-                                {selectedRows.length > 0 && resourceSlug !== 'vendors' && (
-                                    <>
-                                        <Button
-                                            type="button"
-                                            variant="white"
-                                            onClick={() => setShowBulkEditModal(true)}
-                                            className="gap-1.5 font-semibold shadow-none"
-                                        >
-                                            <LucideIcons.Edit2 size={14} className="text-primary" /> Ubah ({selectedRows.length})
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="white"
-                                            onClick={() => {
-                                                if (confirm(`Hapus ${selectedRows.length} data terpilih?`)) {
-                                                    router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
-                                                        ids: selectedRows.map((r: any) => r.id)
-                                                    }, {
-                                                        onSuccess: () => setSelectedRows([])
-                                                    });
-                                                }
-                                            }}
-                                            className="gap-1.5 font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 dark:border-zinc-700 shadow-none"
-                                        >
-                                            <Trash2 size={14} /> Hapus ({selectedRows.length})
-                                        </Button>
-                                    </>
-                                )}
                             </div>
                         }
                         pagination={{
@@ -539,7 +822,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                             onSelectionChange={(selected: any[]) => setSelectedRows(selected)}
                             selectedRows={selectedRows}
                             bulkActions={(selected: any[]) => resourceSlug === 'vendors' ? null : (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <Button
                                         type="button"
                                         variant="primary"
@@ -549,89 +832,114 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     >
                                         <LucideIcons.Edit2 size={13} /> Ubah ({selected.length})
                                     </Button>
+
+                                    {/* Quick bulk action for is_used (Sistem) */}
+                                    {['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users'].includes(resourceSlug) && (
+                                        <div className="flex items-center bg-surface-muted/40 p-0.5 rounded-lg border border-surface-border gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleQuickBulkToggleIsUsed(true)}
+                                                className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-md transition-all flex items-center gap-1 cursor-pointer"
+                                                title="Set is_used ke Ya (Aktif di Sistem)"
+                                            >
+                                                <LucideIcons.CheckCircle2 size={12} className="text-emerald-500" />
+                                                <span>Aktifkan Sistem ({selected.length})</span>
+                                            </button>
+                                            <div className="w-px h-3.5 bg-surface-border" />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleQuickBulkToggleIsUsed(false)}
+                                                className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all flex items-center gap-1 cursor-pointer"
+                                                title="Set is_used ke Tidak (Nonaktif di Sistem)"
+                                            >
+                                                <LucideIcons.XCircle size={12} className="text-slate-400" />
+                                                <span>Nonaktifkan Sistem ({selected.length})</span>
+                                            </button>
+                                        </div>
+                                    )}
+
                                     <Button
                                         type="button"
                                         variant="white"
                                         size="sm"
-                                        onClick={() => {
-                                            if (confirm(`Hapus ${selected.length} data terpilih?`)) {
-                                                router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
-                                                    ids: selected.map((r: any) => r.id)
-                                                }, {
-                                                    onSuccess: () => setSelectedRows([])
-                                                });
-                                            }
-                                        }}
+                                        onClick={() => setShowBulkDeleteConfirm(true)}
                                         className="h-8 gap-1.5 px-3 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-slate-200 dark:border-zinc-700 rounded-lg shadow-xs"
                                     >
                                         <Trash2 size={13} /> Hapus ({selected.length})
                                     </Button>
                                 </div>
                             )}
-                            onRowClick={(row) => {
-                                if (resourceSlug === 'vendors') {
-                                    router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
-                                } else if (DIALOG_RESOURCES.includes(resourceSlug)) {
-                                    const editValues: Record<string, any> = {};
-                                    formSchema.forEach((field) => {
-                                        if (field.isGroup && Array.isArray(field.schema)) {
-                                            field.schema.forEach((subField: any) => {
-                                                editValues[subField.name] = row[subField.name] ?? (subField.type === 'switch' ? false : '');
-                                            });
-                                        } else {
-                                            editValues[field.name] = row[field.name] ?? (field.type === 'switch' ? false : '');
-                                        }
-                                    });
-                                    const initialTypes: Record<string, string> = {};
-                                    const DIMENSIONS = [
-                                        { key: 'company_group', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
-                                        { key: 'region', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
-                                        { key: 'company', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
-                                        { key: 'division', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
-                                        { key: 'department', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
-                                    ];
-                                    DIMENSIONS.forEach(dim => {
-                                        const canChange = row[dim.toggleName] === true || row[dim.toggleName] === 1 || String(row[dim.toggleName]) === 'true';
-                                        const allowed = row[dim.allowedName] || [];
-                                        if (!canChange) {
-                                            initialTypes[dim.key] = 'user_data';
-                                        } else {
-                                            initialTypes[dim.key] = allowed.length > 0 ? 'custom' : 'full_access';
-                                        }
-                                    });
-                                    setLocalAccessTypes(initialTypes);
-                                    deptForm.setData(editValues);
-                                    setEditDataId(row.id);
-                                    setIsDeptDialogOpen(true);
-                                } else {
-                                    router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
-                                }
-                            }}
+                            onRowClick={(row) => handleOpenEdit(row)}
                             rowActions={resourceSlug === 'vendors' ? undefined : (row) => (
-                                <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                                    <Button variant="white" size="icon" className="h-8 w-8 hover:bg-rose-50 hover:border-rose-200" onClick={() => setDeleteId(row.id)}>
-                                        <Trash2 size={14} className="text-rose-500" />
-                                    </Button>
+                                <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer border border-transparent hover:border-surface-border focus:outline-none"
+                                                title="Opsi & Aksi"
+                                            >
+                                                <MoreVertical size={15} />
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="border-surface-border bg-surface-base w-44 rounded-xl p-1 shadow-xl backdrop-blur-xl z-[9999]">
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleOpenEdit(row);
+                                                }}
+                                                className="text-text-main hover:text-primary hover:bg-primary/[0.06] flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                                            >
+                                                <Edit2 size={13} className="text-primary" />
+                                                <span>Ubah Data</span>
+                                            </DropdownMenuItem>
+                                            <div className="bg-surface-border/40 my-1 h-px" />
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteId(row.id);
+                                                }}
+                                                className="text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                                            >
+                                                <Trash2 size={13} className="text-rose-500" />
+                                                <span>Hapus Data</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                             )}
                         />
                     </PageTable>
                 </FloatingPanel>
 
-                {filters && filters.length > 0 && (
+                {((filters && filters.length > 0) || hasExport || hasImport || ['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users'].includes(resourceSlug)) && (
                     <FloatingPanel padded shrink>
                         <SideFilterCard
-                            categories={filters}
+                            categories={filters || []}
                             activeFilters={activeFilters}
                             actions={
-                                (hasExport || hasImport) ? (
-                                    <ExcelActions
-                                        exportRoute={`/admin/core/${resourceSlug}/export`}
-                                        importRoute={hasImport ? `/admin/core/${resourceSlug}/import` : undefined}
-                                        label={title}
-                                        inline={true}
-                                    />
-                                ) : null
+                                <div className="flex flex-col gap-1.5 w-full">
+                                    {['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users'].includes(resourceSlug) && (
+                                        <button
+                                            type="button"
+                                            disabled={isSyncing}
+                                            onClick={() => setShowSyncConfirm(true)}
+                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-text-main hover:bg-surface-muted rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                                        >
+                                            <RefreshCw size={15} className={isSyncing ? 'animate-spin text-primary shrink-0' : 'text-primary shrink-0'} />
+                                            <span>{isSyncing ? 'Menyinkronkan...' : 'Sinkron Portal'}</span>
+                                        </button>
+                                    )}
+
+                                    {(hasExport || hasImport) ? (
+                                        <ExcelActions
+                                            exportRoute={`/admin/core/${resourceSlug}/export`}
+                                            importRoute={hasImport ? `/admin/core/${resourceSlug}/import` : undefined}
+                                            label={title}
+                                            inline={true}
+                                        />
+                                    ) : null}
+                                </div>
                             }
                             onFilterChange={(keyOrObj, val) => {
                                 let nextFilters = { ...activeFilters, page: 1 };
@@ -653,15 +961,59 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 )}
             </MasterPageLayout>
 
+            {/* ponytail: Single Delete Confirmation Modal */}
             <ConfirmationModal
                 open={!!deleteId}
-                onClose={() => setDeleteId(null)}
+                onClose={() => !isDeleting && setDeleteId(null)}
                 onConfirm={handleDelete}
-                title="Hapus Data"
-                description="Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan."
-                confirmText="Ya, Hapus"
-                cancelText="Batal"
+                title={`Hapus Data ${title}`}
+                description="Apakah Anda yakin ingin menghapus data ini dari sistem? Data yang dihapus tidak akan dapat diakses kembali."
+                confirmText={isDeleting ? "Menghapus..." : "Ya, Hapus"}
+                cancelText={isDeleting ? "" : "Batal"}
                 variant="danger"
+                processing={isDeleting}
+            />
+
+            {/* ponytail: Bulk Delete Confirmation Modal */}
+            <ConfirmationModal
+                open={showBulkDeleteConfirm}
+                onClose={() => !isBulkDeleting && setShowBulkDeleteConfirm(false)}
+                onConfirm={handleBulkDelete}
+                title={`Hapus ${selectedRows.length} Data ${title}`}
+                description={`Apakah Anda yakin ingin menghapus sekaligus ${selectedRows.length} data terpilih? Tindakan ini tidak dapat dibatalkan.`}
+                confirmText={isBulkDeleting ? "Menghapus..." : "Ya, Hapus Semua"}
+                cancelText={isBulkDeleting ? "" : "Batal"}
+                variant="danger"
+                processing={isBulkDeleting}
+            />
+
+            {/* ponytail: Portal Sync Confirmation Modal */}
+            <ConfirmationModal
+                open={showSyncConfirm}
+                onClose={() => !isSyncing && setShowSyncConfirm(false)}
+                onConfirm={() => {
+                    setIsSyncing(true);
+                    showProgress('portal_sync', `Sedang menyinkronkan data ${title} dari Portal...`, 40);
+                    router.post(`/admin/core/${resourceSlug}/sync-portal`, {}, {
+                        preserveScroll: true,
+                        onFinish: () => {
+                            setIsSyncing(false);
+                            setShowSyncConfirm(false);
+                            hideProgress('portal_sync');
+                        },
+                    });
+                }}
+                title="Sinkronisasi Data Portal"
+                description={
+                    isSyncing
+                        ? `Sedang memproses sinkronisasi data ${title} dari Portal... Mohon tunggu sejenak.`
+                        : `Apakah Anda yakin ingin mengambil dan memperbarui data ${title} langsung dari API Portal? Data yang sudah ada akan diperbarui secara otomatis.`
+                }
+                confirmText={isSyncing ? "Menyinkronkan..." : "Ya, Sinkron Sekarang"}
+                cancelText={isSyncing ? "" : "Batal"}
+                variant="info"
+                processing={isSyncing}
+                icon={<RefreshCw size={24} className={isSyncing ? "animate-spin text-primary" : "text-primary"} />}
             />
 
             {/* ponytail: Bulk Edit Modal */}
@@ -732,7 +1084,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                         </select>
                                                     )}
                                                     {field.type === 'switch' && (
-                                                        <div className="flex items-center h-10">
+                                                        <div className="flex items-center gap-3 h-10">
                                                             <button
                                                                 type="button"
                                                                 role="switch"
@@ -748,6 +1100,9 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                                     }`}
                                                                 />
                                                             </button>
+                                                            <span className="text-xs font-medium text-text-main">
+                                                                {bulkFieldValues[field.name] ? 'Ya (Aktif)' : 'Tidak (Nonaktif)'}
+                                                            </span>
                                                         </div>
                                                     )}
                                                     {field.type === 'text' && (
@@ -999,17 +1354,19 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     }
 
                                     if (field.type === 'switch' || field.type === 'toggle') {
+                                        const isUsedField = field.name === 'is_used';
+                                        const isChecked = !!deptForm.data[field.name];
                                         return (
                                             <div key={field.name} className="grid gap-1.5">
                                                 <Label className="text-xs font-medium text-foreground">{field.label}</Label>
                                                 <div className="border-border bg-muted/40 flex h-10 items-center gap-2.5 rounded-lg border px-3">
                                                     <Checkbox
                                                         id={`dept_${field.name}_check`}
-                                                        checked={!!deptForm.data[field.name]}
+                                                        checked={isChecked}
                                                         onCheckedChange={(checked) => deptForm.setData(field.name as any, !!checked)}
                                                     />
                                                     <Label htmlFor={`dept_${field.name}_check`} className="cursor-pointer text-xs font-medium text-muted-foreground">
-                                                        {deptForm.data[field.name] ? 'Aktif' : 'Nonaktif'}
+                                                        {isUsedField ? (isChecked ? 'Ya (Digunakan)' : 'Tidak (Tidak Digunakan)') : (isChecked ? 'Aktif' : 'Nonaktif')}
                                                     </Label>
                                                 </div>
                                             </div>

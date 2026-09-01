@@ -1466,6 +1466,7 @@ function ContractPage({
                                     onReset={() => handleFilterChange(Object.keys(filters).reduce((acc, k) => ({ ...acc, [k]: [] }), {}))}
                                     totalResults={contractsPaged.total}
                                     defaultExpanded={false}
+                                    storageKey="contracts_side_filter"
                                 />
                             </FloatingPanel>
                         )}

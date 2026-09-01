@@ -11,7 +11,7 @@ import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor,
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Bookmark, CheckCircle2, CheckSquare2, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Edit3, GitBranch, LayoutTemplate, MinusSquare, PlusCircle, Shield, Square, Trash2, Users as UsersIcon } from 'lucide-react';
+import { Bookmark, CheckCircle2, CheckSquare2, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Edit3, GitBranch, LayoutTemplate, MinusSquare, Pencil, PlusCircle, Shield, Square, Trash2, Users as UsersIcon } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import AuthorityTableManager from './components/AuthorityTableManager';
 import ContractTypeTableManager from './components/ContractTypeTableManager';
@@ -49,6 +49,20 @@ export default function WorkflowEditor({
     const [presetModalOpen, setPresetModalOpen] = useState(false);
     const [presetNameInput, setPresetNameInput] = useState('');
     const [targetPresetStep, setTargetPresetStep] = useState<any>(null);
+
+    // Edit Preset State
+    const [editingPreset, setEditingPreset] = useState<any>(null);
+    const [editPresetModalOpen, setEditPresetModalOpen] = useState(false);
+    const [editPresetName, setEditPresetName] = useState('');
+    const [editPresetDescription, setEditPresetDescription] = useState('');
+
+    const handleEditPreset = (preset: any) => {
+        const stepData = preset.step_data || {};
+        setEditingPreset(preset);
+        setEditPresetName(preset.name || '');
+        setEditPresetDescription(stepData.description || stepData.name || stepData.label || '');
+        setEditPresetModalOpen(true);
+    };
 
     useEffect(() => {
         if (stepPresets) {
@@ -814,9 +828,9 @@ export default function WorkflowEditor({
                                                                         <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
                                                                             {preset.name}
                                                                         </span>
-                                                                        {stepData.name && (
+                                                                        {(stepData.description || stepData.name || stepData.label) && (
                                                                             <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                                                                                {stepData.name}
+                                                                                {stepData.description || stepData.name || stepData.label}
                                                                             </span>
                                                                         )}
                                                                     </div>
@@ -839,6 +853,17 @@ export default function WorkflowEditor({
                                                                         title="Gunakan Preset Ini"
                                                                     >
                                                                         <PlusCircle size={15} />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleEditPreset(preset);
+                                                                        }}
+                                                                        className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-200 dark:border-slate-800 hover:border-primary/40 rounded-lg transition-colors cursor-pointer"
+                                                                        title="Ubah Preset"
+                                                                    >
+                                                                        <Pencil size={12} />
                                                                     </button>
                                                                     <button
                                                                         type="button"
@@ -1035,8 +1060,8 @@ export default function WorkflowEditor({
                                                 Preset
                                             </span>
                                         </div>
-                                        <span className="text-[10px] text-slate-400 uppercase font-medium">
-                                            {stepData.name || `Role: ${stepData.approver_type || 'Custom'}`}
+                                        <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                            {stepData.description || stepData.name || stepData.label || `Role: ${stepData.approver_type || 'Custom'}`}
                                         </span>
 
                                         {/* Action Step Pills Preview */}
@@ -1065,22 +1090,35 @@ export default function WorkflowEditor({
                                         )}
                                     </div>
 
-                                    <Button
-                                        type="button"
-                                        onClick={() => {
-                                            const newStep = {
-                                                ...JSON.parse(JSON.stringify(preset.step_data)),
-                                                id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                                                step: form.data.steps.length + 1,
-                                            };
-                                            form.setData('steps', [...form.data.steps, newStep]);
-                                            setPresetSelectModalOpen(false);
-                                            showToast(`Tahap dari preset "${preset.name}" berhasil ditambahkan!`, 'success');
-                                        }}
-                                        className="w-full h-7 text-[11px] font-bold bg-primary hover:bg-primary/90 text-white border-none"
-                                    >
-                                        + Gunakan Preset Ini
-                                    </Button>
+                                    <div className="flex items-center gap-1.5 pt-1">
+                                        <Button
+                                            type="button"
+                                            onClick={() => {
+                                                const newStep = {
+                                                    ...JSON.parse(JSON.stringify(preset.step_data)),
+                                                    id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                                    step: form.data.steps.length + 1,
+                                                };
+                                                form.setData('steps', [...form.data.steps, newStep]);
+                                                setPresetSelectModalOpen(false);
+                                                showToast(`Tahap dari preset "${preset.name}" berhasil ditambahkan!`, 'success');
+                                            }}
+                                            className="flex-1 h-7 text-[11px] font-bold bg-primary hover:bg-primary/90 text-white border-none"
+                                        >
+                                            + Gunakan Preset Ini
+                                        </Button>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEditPreset(preset);
+                                            }}
+                                            className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-200 dark:border-slate-800 hover:border-primary/40 rounded-lg transition-colors cursor-pointer shrink-0"
+                                            title="Ubah Preset"
+                                        >
+                                            <Pencil size={12} />
+                                        </button>
+                                    </div>
                                 </div>
                             );
                         })}
@@ -1151,6 +1189,75 @@ export default function WorkflowEditor({
                         className="h-10 px-5 text-xs font-bold bg-primary text-white hover:bg-primary/90 border-none"
                     >
                         Simpan Preset
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+
+        {/* --- Custom Modal Ubah Preset --- */}
+        <Modal
+            isOpen={editPresetModalOpen}
+            onClose={() => setEditPresetModalOpen(false)}
+            title={
+                <div className="flex items-center gap-2">
+                    <Bookmark size={18} className="text-primary" />
+                    <span>Ubah Preset Tahapan</span>
+                </div>
+            }
+            description="Perbarui nama atau deskripsi tahapan untuk preset ini."
+            maxWidth="md"
+        >
+            <div className="p-6 space-y-4">
+                <FormInput
+                    label="Nama Preset"
+                    value={editPresetName}
+                    onChange={(e) => setEditPresetName(e.target.value)}
+                    placeholder="Contoh: Approval Direksi & Finance"
+                    required
+                    autoFocus
+                />
+
+                <FormInput
+                    label="Deskripsi / Judul Tahap"
+                    value={editPresetDescription}
+                    onChange={(e) => setEditPresetDescription(e.target.value)}
+                    placeholder="Contoh: Review Legal Staff & Finance"
+                />
+
+                <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setEditPresetModalOpen(false)}
+                        className="h-10 px-4 text-xs font-bold"
+                    >
+                        Batal
+                    </Button>
+                    <Button
+                        type="button"
+                        onClick={() => {
+                            if (!editPresetName.trim() || !editingPreset) return;
+                            const updatedStepData = {
+                                ...(editingPreset.step_data || {}),
+                                name: editPresetDescription.trim(),
+                                description: editPresetDescription.trim(),
+                                label: editPresetDescription.trim(),
+                            };
+                            router.put(
+                                route('admin.workflows.presets.update', editingPreset.id),
+                                { name: editPresetName.trim(), step_data: updatedStepData },
+                                {
+                                    preserveScroll: true,
+                                    onSuccess: () => {
+                                        setEditPresetModalOpen(false);
+                                        showToast(`Preset "${editPresetName.trim()}" berhasil diperbarui!`, 'success');
+                                    },
+                                }
+                            );
+                        }}
+                        className="h-10 px-5 text-xs font-bold bg-primary text-white hover:bg-primary/90 border-none"
+                    >
+                        Simpan Perubahan
                     </Button>
                 </div>
             </div>

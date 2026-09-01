@@ -84,6 +84,7 @@ interface Module {
 interface Group {
     id: string;
     name: string;
+    icon?: string | null;
     sequence: number;
     modules: Module[];
 }
@@ -243,14 +244,14 @@ const SortableModuleItem = ({
                     {module.icon &&
                         SELECTABLE_ICONS[module.icon] &&
                         React.createElement(SELECTABLE_ICONS[module.icon], {
-                            size: 14,
-                            className: 'text-text-main shrink-0',
+                            size: 13,
+                            className: 'text-text-main/70 shrink-0',
                         })}
-                    <p className="text-foreground truncate text-sm font-normal ">{module.name}</p>
+                    <p className="text-text-main truncate text-xs font-semibold">{module.name}</p>
                 </div>
-                <p className="text-text-main mt-0.5 truncate text-xs font-normal ">{module.route || 'SYSTEM_INTERNAL'}</p>
+                <p className="text-text-desc/60 mt-0.5 truncate font-mono text-[9px] font-normal">{module.route || 'SYSTEM_INTERNAL'}</p>
                 {module.description && (
-                    <p className="text-text-main mt-1 text-sm leading-relaxed font-normal whitespace-pre-wrap">{module.description}</p>
+                    <p className="text-text-desc/70 mt-0.5 truncate text-[10px] font-normal">{module.description}</p>
                 )}
             </div>
             <DropdownMenu>
@@ -571,16 +572,16 @@ const AvailableModuleItem = ({
                         {module.icon &&
                             SELECTABLE_ICONS[module.icon] &&
                             React.createElement(SELECTABLE_ICONS[module.icon], {
-                                size: 14,
-                                className: 'text-text-main shrink-0',
+                                size: 13,
+                                className: 'text-text-main/70 shrink-0',
                             })}
-                        <span className="text-foreground block truncate text-sm font-normal  ">{module.name}</span>
+                        <span className="text-text-main block truncate text-xs font-semibold">{module.name}</span>
                     </div>
-                    <span className="text-text-main mt-0.5 block truncate text-xs font-normal  ">
+                    <span className="text-text-desc/60 mt-0.5 block truncate font-mono text-[9px] font-normal">
                         {module.route || 'NO_PATH'}
                     </span>
                     {module.description && (
-                        <p className="text-text-main mt-1 text-sm leading-relaxed font-normal whitespace-pre-wrap">
+                        <p className="text-text-desc/70 mt-0.5 truncate text-[10px] font-normal">
                             {module.description}
                         </p>
                     )}
@@ -639,6 +640,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
     const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
     const [editingGroup, setEditingGroup] = useState<Group | null>(null);
     const [groupName, setGroupName] = useState('');
+    const [groupIcon, setGroupIcon] = useState('Folder');
     const [isProcessingGroup, setIsGroupProcessing] = useState(false);
 
     // Sync state when props change
@@ -651,6 +653,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
     const openGroupModal = (group: Group | null = null) => {
         setEditingGroup(group);
         setGroupName(group ? group.name : '');
+        setGroupIcon(group?.icon || 'Folder');
         setIsGroupModalOpen(true);
     };
 
@@ -660,10 +663,10 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
         try {
             if (editingGroup) {
-                setNavItems((prev) => prev.map((g) => (g.id === editingGroup.id ? { ...g, name: groupName } : g)));
+                setNavItems((prev) => prev.map((g) => (g.id === editingGroup.id ? { ...g, name: groupName, icon: groupIcon } : g)));
                 router.put(
                     `/admin/module-groups/${editingGroup.id}`,
-                    { name: groupName },
+                    { name: groupName, icon: groupIcon },
                     {
                         onSuccess: () => showToast('Grup navigasi berhasil diperbarui', 'success'),
                         onFinish: () => setIsGroupProcessing(false),
@@ -672,7 +675,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             } else {
                 router.post(
                     `/admin/module-groups`,
-                    { name: groupName, icon: 'LayoutGrid', role_id: role.id },
+                    { name: groupName, icon: groupIcon, role_id: role.id },
                     {
                         onSuccess: () => showToast('Grup navigasi berhasil dibuat', 'success'),
                         onFinish: () => setIsGroupProcessing(false),
@@ -1485,6 +1488,14 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                         >
                                             <div className="flex items-center gap-3 min-w-0">
                                                 <span className="font-normal text-xs shrink-0 opacity-55">{index + 1}</span>
+                                                {group.icon && SELECTABLE_ICONS[group.icon] && (
+                                                    <div className={cn(
+                                                        "flex h-6 w-6 items-center justify-center rounded-md shrink-0",
+                                                        selectedGroupId === group.id ? "bg-primary/20 text-primary" : "bg-foreground/8 text-text-main"
+                                                    )}>
+                                                        {React.createElement(SELECTABLE_ICONS[group.icon], { size: 13 })}
+                                                    </div>
+                                                )}
                                                 <div className="flex flex-col min-w-0">
                                                     <span className="text-xs font-normal truncate">{group.name}</span>
                                                     <span className={cn(
@@ -1663,7 +1674,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                             {editingGroup ? 'Ganti nama grup navigasi yang sudah ada.' : 'Buat kontainer baru untuk mengelompokkan menu sidebar.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="py-4">
+                    <div className="space-y-4 py-4">
                         <div className="flex flex-col gap-2">
                             <label className="text-text-main text-sm font-normal  ">Nama Grup</label>
                             <input
@@ -1672,6 +1683,27 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 placeholder="Contoh: Manajemen Aset"
                                 className="border-surface-border bg-muted/30 focus:ring-primary/20 h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2"
                             />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <label className="text-text-main text-sm font-normal  ">Icon Grup</label>
+                            <Select value={groupIcon} onValueChange={setGroupIcon}>
+                                <SelectTrigger className="border-surface-border bg-muted/30 focus:ring-primary/20 text-foreground h-11 w-full rounded-xl border px-4 text-sm font-normal outline-hidden transition-all focus:ring-2">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="border-surface-border bg-card max-h-60 overflow-y-auto rounded-xl shadow-2xl">
+                                    {Object.keys(SELECTABLE_ICONS).map((iconName) => {
+                                        const IconComponent = SELECTABLE_ICONS[iconName];
+                                        return (
+                                            <SelectItem key={iconName} value={iconName} className="py-2.5 text-xs font-normal ">
+                                                <div className="flex items-center gap-2">
+                                                    {IconComponent && <IconComponent size={14} className="text-text-main/50" />}
+                                                    <span>{iconName}</span>
+                                                </div>
+                                            </SelectItem>
+                                        );
+                                    })}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                     <DialogFooter>
