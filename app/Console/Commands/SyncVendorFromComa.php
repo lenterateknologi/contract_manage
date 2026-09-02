@@ -16,6 +16,7 @@ class SyncVendorFromComa extends Command
     protected $description = 'Sync data vendor dari API COMA ke database lokal';
 
     private string $baseUrl;
+
     private string $token;
 
     public function handle(): int
@@ -25,11 +26,12 @@ class SyncVendorFromComa extends Command
         $this->info('🔐 Authenticating ke COMA API...');
         if (! $this->authenticate()) {
             $this->error('Gagal autentikasi. Cek COMA_API_USERNAME / COMA_API_PASSWORD di .env');
+
             return self::FAILURE;
         }
         $this->info('✅ Token berhasil didapat.');
 
-        $key    = $this->option('key');
+        $key = $this->option('key');
         $dryRun = $this->option('dry-run');
 
         $this->info("🔍 Mencari vendor dengan key=\"{$key}\"...");
@@ -37,18 +39,20 @@ class SyncVendorFromComa extends Command
 
         if (empty($vendors)) {
             $this->warn('Tidak ada vendor ditemukan.');
+
             return self::SUCCESS;
         }
 
-        $this->info('📋 Ditemukan ' . count($vendors) . ' vendor. Mulai fetch detail...');
+        $this->info('📋 Ditemukan '.count($vendors).' vendor. Mulai fetch detail...');
 
-        $bar  = $this->output->createProgressBar(count($vendors));
+        $bar = $this->output->createProgressBar(count($vendors));
         $synced = $failed = 0;
 
         foreach ($vendors as $item) {
             $vendorCode = $item['vendorCode'] ?? null;
             if (! $vendorCode) {
                 $bar->advance();
+
                 continue;
             }
 
@@ -58,13 +62,15 @@ class SyncVendorFromComa extends Command
                 $this->warn("  ⚠ Gagal fetch detail untuk {$vendorCode}");
                 $failed++;
                 $bar->advance();
+
                 continue;
             }
 
             if ($dryRun) {
                 $this->newLine();
-                $this->line("  [dry-run] {$vendorCode} — " . ($detail['name'] ?? $item['vendorName'] ?? ''));
+                $this->line("  [dry-run] {$vendorCode} — ".($detail['name'] ?? $item['vendorName'] ?? ''));
                 $bar->advance();
+
                 continue;
             }
 
@@ -102,6 +108,7 @@ class SyncVendorFromComa extends Command
         }
 
         $this->token = $resp->json('data');
+
         return (bool) $this->token;
     }
 
@@ -129,10 +136,10 @@ class SyncVendorFromComa extends Command
         $vendorName = $detail['name'] ?? $listItem['vendorName'] ?? '';
 
         $payload = [
-            'vendor_code'   => $vendorCode,
-            'vendor_name'   => $vendorName,
+            'vendor_code' => $vendorCode,
+            'vendor_name' => $vendorName,
             'vendor_detail' => $detail,
-            'is_active'     => true,
+            'is_active' => true,
         ];
 
         $existing = Vendor::withTrashed()->where('vendor_code', $vendorCode)->first();

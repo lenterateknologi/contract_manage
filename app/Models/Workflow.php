@@ -141,6 +141,7 @@ class Workflow extends Model
         if (! $this->relationLoaded('initiatorAuthorities')) {
             return [];
         }
+
         return $this->initiatorAuthorities->pluck('role.name')->filter()->unique()->values()->toArray();
     }
 
@@ -149,6 +150,7 @@ class Workflow extends Model
         if (! $this->relationLoaded('initiatorAuthorities')) {
             return [];
         }
+
         return $this->initiatorAuthorities->pluck('department_id')->filter()->unique()->values()->toArray();
     }
 
@@ -157,6 +159,7 @@ class Workflow extends Model
         if (! $this->relationLoaded('initiatorAuthorities')) {
             return [];
         }
+
         return $this->initiatorAuthorities->pluck('user_id')->filter()->unique()->values()->toArray();
     }
 
@@ -165,20 +168,22 @@ class Workflow extends Model
         if (! $this->relationLoaded('initiatorAuthorities')) {
             return [];
         }
+
         return $this->initiatorAuthorities->pluck('division_id')->filter()->unique()->values()->toArray();
     }
 
     public function getContractTypeNameAttribute()
     {
-        if (!empty($this->attributes['contract_type_id'])) {
+        if (! empty($this->attributes['contract_type_id'])) {
             if (! $this->relationLoaded('contractType')) {
                 return null;
             }
+
             return $this->contractType?->name;
         }
 
         $ids = $this->contract_type_ids;
-        if (!empty($ids)) {
+        if (! empty($ids)) {
             return ContractType::whereIn('id', $ids)->pluck('name')->implode(', ');
         }
 

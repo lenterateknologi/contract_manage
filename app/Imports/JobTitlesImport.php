@@ -64,14 +64,14 @@ class JobTitlesImport implements ToCollection, WithHeadingRow
             $idjobtitle = isset($row['id_job_portal']) ? $row['id_job_portal'] : (isset($row['idjobtitle']) ? $row['idjobtitle'] : null);
 
             $attributes = [
-                'idjobtitle'      => ! empty($idjobtitle) ? (int) $idjobtitle : null,
-                'code'            => $code,
-                'name'            => $name,
-                'job_level_id'    => $jobLevelId,
-                'job_level_name'  => ! empty($jobLevelName) ? $jobLevelName : null,
-                'is_used'         => $isUsed,
-                'is_active'       => $isActive,
-                'updated_by'      => $admin,
+                'idjobtitle' => ! empty($idjobtitle) ? (int) $idjobtitle : null,
+                'code' => $code,
+                'name' => $name,
+                'job_level_id' => $jobLevelId,
+                'job_level_name' => ! empty($jobLevelName) ? $jobLevelName : null,
+                'is_used' => $isUsed,
+                'is_active' => $isActive,
+                'updated_by' => $admin,
             ];
 
             if ($jobTitle) {

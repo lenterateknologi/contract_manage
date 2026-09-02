@@ -64,6 +64,7 @@ class JobLevelResource extends Resource
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Grup / Kosong)'];
                     $groups = JobLevel::whereNotNull('group_name')->where('group_name', '!=', '')->distinct()->orderBy('group_name')->pluck('group_name', 'group_name')->toArray();
+
                     return $options + $groups;
                 }),
             Filter::make('is_used', 'Status Sistem')

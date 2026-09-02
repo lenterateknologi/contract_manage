@@ -72,17 +72,17 @@ class CompaniesImport implements ToCollection, WithHeadingRow
             }
 
             $attributes = [
-                'code'             => $code,
-                'name'             => $name,
-                'alias'            => isset($row['alias']) ? trim((string) $row['alias']) : null,
-                'npwp'             => isset($row['npwp']) ? trim((string) $row['npwp']) : null,
-                'oracle_code'      => isset($row['oracle_code']) ? trim((string) $row['oracle_code']) : null,
-                'address'          => isset($row['alamat']) ? trim((string) $row['alamat']) : null,
+                'code' => $code,
+                'name' => $name,
+                'alias' => isset($row['alias']) ? trim((string) $row['alias']) : null,
+                'npwp' => isset($row['npwp']) ? trim((string) $row['npwp']) : null,
+                'oracle_code' => isset($row['oracle_code']) ? trim((string) $row['oracle_code']) : null,
+                'address' => isset($row['alamat']) ? trim((string) $row['alamat']) : null,
                 'company_group_id' => $groupId,
-                'region_id'        => $regionId,
-                'is_used'          => $isUsed,
-                'is_active'        => $isActive,
-                'updated_by'       => $admin,
+                'region_id' => $regionId,
+                'is_used' => $isUsed,
+                'is_active' => $isActive,
+                'updated_by' => $admin,
             ];
 
             if ($company) {

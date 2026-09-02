@@ -141,8 +141,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'is_active'         => 'boolean',
+            'password' => 'hashed',
+            'is_active' => 'boolean',
         ];
     }
 
@@ -161,6 +161,7 @@ class User extends Authenticatable
         if (! array_key_exists('role_id', $this->attributes)) {
             return null;
         }
+
         return $this->roleRelation?->name;
     }
 
@@ -169,6 +170,7 @@ class User extends Authenticatable
         if (! $this->relationLoaded('division')) {
             return null;
         }
+
         return $this->division?->name;
     }
 
@@ -177,12 +179,16 @@ class User extends Authenticatable
         if (! $this->relationLoaded('department')) {
             return null;
         }
+
         return $this->department?->name;
     }
 
     private static array $companyGroupMemoryCache = [];
+
     private static array $companyMemoryCache = [];
+
     private static array $regionMemoryCache = [];
+
     private static array $templateMemoryCache = [];
 
     public function getCompanyGroupNameAttribute(): ?string
@@ -198,16 +204,18 @@ class User extends Authenticatable
         $companyGroupId = $this->getAttributeFromArray('company_group_id');
         if (! empty($companyGroupId)) {
             if (! array_key_exists($companyGroupId, self::$companyGroupMemoryCache)) {
-                self::$companyGroupMemoryCache[$companyGroupId] = \App\Models\CompanyGroup::find($companyGroupId)?->name;
+                self::$companyGroupMemoryCache[$companyGroupId] = CompanyGroup::find($companyGroupId)?->name;
             }
+
             return self::$companyGroupMemoryCache[$companyGroupId];
         }
 
         $companyName = $this->getAttributeFromArray('company_name');
         if (! empty($companyName)) {
             if (! array_key_exists($companyName, self::$companyMemoryCache)) {
-                self::$companyMemoryCache[$companyName] = \App\Models\Company::where('name', $companyName)->value('company_group_name');
+                self::$companyMemoryCache[$companyName] = Company::where('name', $companyName)->value('company_group_name');
             }
+
             return self::$companyMemoryCache[$companyName];
         }
 
@@ -224,8 +232,9 @@ class User extends Authenticatable
         if (! empty($companyGroupId)) {
             $cacheKey = "code_{$companyGroupId}";
             if (! array_key_exists($cacheKey, self::$companyGroupMemoryCache)) {
-                self::$companyGroupMemoryCache[$cacheKey] = \App\Models\CompanyGroup::find($companyGroupId)?->code;
+                self::$companyGroupMemoryCache[$cacheKey] = CompanyGroup::find($companyGroupId)?->code;
             }
+
             return self::$companyGroupMemoryCache[$cacheKey];
         }
 
@@ -243,8 +252,9 @@ class User extends Authenticatable
             if (! empty($groupId)) {
                 $cacheKey = "code_{$groupId}";
                 if (! array_key_exists($cacheKey, self::$companyGroupMemoryCache)) {
-                    self::$companyGroupMemoryCache[$cacheKey] = \App\Models\CompanyGroup::find($groupId)?->code;
+                    self::$companyGroupMemoryCache[$cacheKey] = CompanyGroup::find($groupId)?->code;
                 }
+
                 return self::$companyGroupMemoryCache[$cacheKey];
             }
         }
@@ -265,8 +275,9 @@ class User extends Authenticatable
         $regionId = $this->getAttributeFromArray('region_id');
         if (! empty($regionId)) {
             if (! array_key_exists($regionId, self::$regionMemoryCache)) {
-                self::$regionMemoryCache[$regionId] = \App\Models\Region::find($regionId)?->name;
+                self::$regionMemoryCache[$regionId] = Region::find($regionId)?->name;
             }
+
             return self::$regionMemoryCache[$regionId];
         }
 
@@ -274,8 +285,9 @@ class User extends Authenticatable
         if (! empty($companyName)) {
             $cacheKey = "reg_{$companyName}";
             if (! array_key_exists($cacheKey, self::$companyMemoryCache)) {
-                self::$companyMemoryCache[$cacheKey] = \App\Models\Company::where('name', $companyName)->value('region_name');
+                self::$companyMemoryCache[$cacheKey] = Company::where('name', $companyName)->value('region_name');
             }
+
             return self::$companyMemoryCache[$cacheKey];
         }
 
@@ -344,11 +356,12 @@ class User extends Authenticatable
 
     public function getInitialsAttribute(): string
     {
-        $name  = $this->name ?? '';
+        $name = $this->name ?? '';
         $words = explode(' ', trim($name));
         if (count($words) >= 2) {
-            return strtoupper(substr($words[0], 0, 1) . substr($words[1], 0, 1));
+            return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
         }
+
         return strtoupper(substr($name, 0, 2));
     }
 
@@ -375,68 +388,129 @@ class User extends Authenticatable
             if ($template) {
                 $this->contractFilterSettingsCache = [
                     'can_change_company_group' => (bool) $template->can_change_company_group,
-                    'allowed_company_groups'   => (array) ($template->allowed_company_groups ?? []),
-                    'can_change_region'        => (bool) $template->can_change_region,
-                    'allowed_regions'          => (array) ($template->allowed_regions ?? []),
-                    'can_change_company'       => (bool) $template->can_change_company,
-                    'allowed_companies'        => (array) ($template->allowed_companies ?? []),
-                    'can_change_division'      => (bool) $template->can_change_division,
-                    'allowed_divisions'        => (array) ($template->allowed_divisions ?? []),
-                    'can_change_department'    => (bool) $template->can_change_department,
-                    'allowed_departments'      => (array) ($template->allowed_departments ?? []),
+                    'allowed_company_groups' => (array) ($template->allowed_company_groups ?? []),
+                    'can_change_region' => (bool) $template->can_change_region,
+                    'allowed_regions' => (array) ($template->allowed_regions ?? []),
+                    'can_change_company' => (bool) $template->can_change_company,
+                    'allowed_companies' => (array) ($template->allowed_companies ?? []),
+                    'can_change_division' => (bool) $template->can_change_division,
+                    'allowed_divisions' => (array) ($template->allowed_divisions ?? []),
+                    'can_change_department' => (bool) $template->can_change_department,
+                    'allowed_departments' => (array) ($template->allowed_departments ?? []),
                 ];
+
                 return $this->contractFilterSettingsCache;
             }
         }
 
         // Fallback default berdasarkan nama role
-        $roleName    = $this->role;
+        $roleName = $this->role;
         $isHighLevel = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
 
         $this->contractFilterSettingsCache = [
             'can_change_company_group' => $isHighLevel,
-            'allowed_company_groups'   => [],
-            'can_change_region'        => $isHighLevel,
-            'allowed_regions'          => [],
-            'can_change_company'       => $isHighLevel,
-            'allowed_companies'        => [],
-            'can_change_division'      => $isHighLevel || in_array($roleName, ['Manager']),
-            'allowed_divisions'        => [],
-            'can_change_department'    => $isHighLevel || in_array($roleName, ['Manager']),
-            'allowed_departments'      => [],
+            'allowed_company_groups' => [],
+            'can_change_region' => $isHighLevel,
+            'allowed_regions' => [],
+            'can_change_company' => $isHighLevel,
+            'allowed_companies' => [],
+            'can_change_division' => $isHighLevel || in_array($roleName, ['Manager']),
+            'allowed_divisions' => [],
+            'can_change_department' => $isHighLevel || in_array($roleName, ['Manager']),
+            'allowed_departments' => [],
         ];
 
         return $this->contractFilterSettingsCache;
     }
 
     // Getters delegasi ke getContractFilterSettings()
-    public function getCanChangeCompanyGroupAttribute() { return $this->getContractFilterSettings()['can_change_company_group'] ?? false; }
-    public function setCanChangeCompanyGroupAttribute($v) { /* no-op — dikelola via template */ }
+    public function getCanChangeCompanyGroupAttribute()
+    {
+        return $this->getContractFilterSettings()['can_change_company_group'] ?? false;
+    }
 
-    public function getAllowedCompanyGroupsAttribute() { return $this->getContractFilterSettings()['allowed_company_groups'] ?? []; }
-    public function setAllowedCompanyGroupsAttribute($v) { /* no-op */ }
+    public function setCanChangeCompanyGroupAttribute($v)
+    { /* no-op — dikelola via template */
+    }
 
-    public function getCanChangeRegionAttribute() { return $this->getContractFilterSettings()['can_change_region'] ?? false; }
-    public function setCanChangeRegionAttribute($v) { /* no-op */ }
+    public function getAllowedCompanyGroupsAttribute()
+    {
+        return $this->getContractFilterSettings()['allowed_company_groups'] ?? [];
+    }
 
-    public function getAllowedRegionsAttribute() { return $this->getContractFilterSettings()['allowed_regions'] ?? []; }
-    public function setAllowedRegionsAttribute($v) { /* no-op */ }
+    public function setAllowedCompanyGroupsAttribute($v)
+    { /* no-op */
+    }
 
-    public function getCanChangeCompanyAttribute() { return $this->getContractFilterSettings()['can_change_company'] ?? false; }
-    public function setCanChangeCompanyAttribute($v) { /* no-op */ }
+    public function getCanChangeRegionAttribute()
+    {
+        return $this->getContractFilterSettings()['can_change_region'] ?? false;
+    }
 
-    public function getAllowedCompaniesAttribute() { return $this->getContractFilterSettings()['allowed_companies'] ?? []; }
-    public function setAllowedCompaniesAttribute($v) { /* no-op */ }
+    public function setCanChangeRegionAttribute($v)
+    { /* no-op */
+    }
 
-    public function getCanChangeDivisionAttribute() { return $this->getContractFilterSettings()['can_change_division'] ?? false; }
-    public function setCanChangeDivisionAttribute($v) { /* no-op */ }
+    public function getAllowedRegionsAttribute()
+    {
+        return $this->getContractFilterSettings()['allowed_regions'] ?? [];
+    }
 
-    public function getAllowedDivisionsAttribute() { return $this->getContractFilterSettings()['allowed_divisions'] ?? []; }
-    public function setAllowedDivisionsAttribute($v) { /* no-op */ }
+    public function setAllowedRegionsAttribute($v)
+    { /* no-op */
+    }
 
-    public function getCanChangeDepartmentAttribute() { return $this->getContractFilterSettings()['can_change_department'] ?? false; }
-    public function setCanChangeDepartmentAttribute($v) { /* no-op */ }
+    public function getCanChangeCompanyAttribute()
+    {
+        return $this->getContractFilterSettings()['can_change_company'] ?? false;
+    }
 
-    public function getAllowedDepartmentsAttribute() { return $this->getContractFilterSettings()['allowed_departments'] ?? []; }
-    public function setAllowedDepartmentsAttribute($v) { /* no-op */ }
+    public function setCanChangeCompanyAttribute($v)
+    { /* no-op */
+    }
+
+    public function getAllowedCompaniesAttribute()
+    {
+        return $this->getContractFilterSettings()['allowed_companies'] ?? [];
+    }
+
+    public function setAllowedCompaniesAttribute($v)
+    { /* no-op */
+    }
+
+    public function getCanChangeDivisionAttribute()
+    {
+        return $this->getContractFilterSettings()['can_change_division'] ?? false;
+    }
+
+    public function setCanChangeDivisionAttribute($v)
+    { /* no-op */
+    }
+
+    public function getAllowedDivisionsAttribute()
+    {
+        return $this->getContractFilterSettings()['allowed_divisions'] ?? [];
+    }
+
+    public function setAllowedDivisionsAttribute($v)
+    { /* no-op */
+    }
+
+    public function getCanChangeDepartmentAttribute()
+    {
+        return $this->getContractFilterSettings()['can_change_department'] ?? false;
+    }
+
+    public function setCanChangeDepartmentAttribute($v)
+    { /* no-op */
+    }
+
+    public function getAllowedDepartmentsAttribute()
+    {
+        return $this->getContractFilterSettings()['allowed_departments'] ?? [];
+    }
+
+    public function setAllowedDepartmentsAttribute($v)
+    { /* no-op */
+    }
 }

@@ -45,6 +45,7 @@ class Vendor extends Model
     public function getDocumentsAttribute(): array
     {
         $detail = $this->vendor_detail ?? [];
+
         return $detail['documents'] ?? $detail['berkas'] ?? $detail['files'] ?? [];
     }
 

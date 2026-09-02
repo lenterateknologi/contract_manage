@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,7 +17,7 @@ return new class extends Migration
         });
 
         // Set all existing rows to false as requested
-        \Illuminate\Support\Facades\DB::table('m_regions')->update(['is_used' => false]);
+        DB::table('m_regions')->update(['is_used' => false]);
     }
 
     /**

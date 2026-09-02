@@ -456,8 +456,14 @@ function ContractPage({
         dashboard: 'Dashboard Kontrak',
         contracts: 'Daftar Dokumen',
         mine: 'Kontrak Saya',
-        pending: 'Persetujuan Tertunda',
-        expiry: 'Masa Berlaku Kontrak',
+        pending: filters?.pending_tab === 'history' ? 'Riwayat Persetujuan' : 'Perlu Persetujuan',
+        expiry: filters?.expiry_tab === 'kontrak'
+            ? 'Masa Berlaku - Kontrak'
+            : filters?.expiry_tab === 'non_kontrak'
+                ? 'Masa Berlaku - Non Kontrak'
+                : filters?.expiry_tab === 'nda'
+                    ? 'Masa Berlaku - NDA'
+                    : 'Masa Berlaku Kontrak',
         archived: 'Arsip Dokumen',
         in_progress: 'On Progress',
         f1: 'Dokumen Formulir F1',
@@ -468,8 +474,14 @@ function ContractPage({
         dashboard: 'Statistik dan ringkasan aktivitas kontrak.',
         contracts: 'Daftar seluruh dokumen dalam sistem.',
         mine: 'Daftar kontrak yang Anda buat.',
-        pending: 'Kontrak yang menunggu persetujuan Anda.',
-        expiry: 'Kontrak yang akan atau telah berakhir.',
+        pending: filters?.pending_tab === 'history' ? 'Riwayat dokumen yang pernah Anda proses.' : 'Kontrak yang menunggu persetujuan Anda.',
+        expiry: filters?.expiry_tab === 'kontrak'
+            ? 'Daftar dokumen kontrak yang akan atau telah berakhir masa berlakunya.'
+            : filters?.expiry_tab === 'non_kontrak'
+                ? 'Daftar dokumen non kontrak yang akan atau telah berakhir masa berlakunya.'
+                : filters?.expiry_tab === 'nda'
+                    ? 'Daftar dokumen NDA yang akan atau telah berakhir masa berlakunya.'
+                    : 'Kontrak yang akan atau telah berakhir.',
         archived: 'Daftar seluruh dokumen kontrak yang diarsipkan.',
         in_progress: 'Daftar seluruh kontrak dalam proses pengerjaan.',
         f1: 'Daftar kontrak dengan dokumen F1.',
@@ -1178,110 +1190,6 @@ function ContractPage({
                                                     totalResults={contractsPaged.total}
                                                 />
                                             )}
-                                            {view === 'pending' && (
-                                                <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
-                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full">
-                                                        <div className="flex items-center gap-1.5">
-                                                            {[
-                                                                { key: 'pending', label: 'Perlu Persetujuan', icon: Clock },
-                                                                { key: 'history', label: 'Riwayat Persetujuan', icon: History },
-                                                            ].map((tabItem) => {
-                                                                const activeTab = filters?.pending_tab || 'pending';
-                                                                const isActive = activeTab === tabItem.key;
-                                                                const countVal = pendingCounts ? (pendingCounts as any)[tabItem.key] : undefined;
-                                                                const IconComp = tabItem.icon;
-
-                                                                return (
-                                                                    <button
-                                                                        key={tabItem.key}
-                                                                        type="button"
-                                                                        onClick={() => handleFilterChange({ pending_tab: tabItem.key, page: 1 })}
-                                                                        className={cn(
-                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
-                                                                            isActive
-                                                                                ? 'bg-primary text-primary-foreground'
-                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
-                                                                        )}
-                                                                    >
-                                                                        <IconComp size={14} />
-                                                                        <span>{tabItem.label}</span>
-                                                                        {countVal !== undefined && (
-                                                                            <span
-                                                                                className={cn(
-                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
-                                                                                    isActive
-                                                                                        ? 'bg-white/20 text-primary-foreground'
-                                                                                        : 'bg-surface-muted text-text-soft'
-                                                                                )}
-                                                                            >
-                                                                                {countVal}
-                                                                            </span>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </Card>
-                                                </div>
-                                            )}
-
-                                            {view === 'expiry' && (
-                                                <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
-                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full overflow-x-auto">
-                                                        <div className="flex items-center gap-1.5">
-                                                            {[
-                                                                { key: 'all', label: 'Semua', icon: Layers },
-                                                                { key: 'kontrak', label: 'Dokumen', icon: FileText },
-                                                                { key: 'non_kontrak', label: 'Non Dokumen', icon: FileCheck },
-                                                                { key: 'nda', label: 'NDA', icon: Zap },
-                                                            ].map((tabItem) => {
-                                                                const activeTab = filters?.expiry_tab || 'all';
-                                                                const isActive = activeTab === tabItem.key;
-                                                                const countVal = expiryCategoryCounts ? (expiryCategoryCounts as any)[tabItem.key] : undefined;
-                                                                const IconComp = tabItem.icon;
-
-                                                                return (
-                                                                    <button
-                                                                        key={tabItem.key}
-                                                                        type="button"
-                                                                        onClick={() => handleFilterChange({ expiry_tab: tabItem.key, page: 1 })}
-                                                                        className={cn(
-                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
-                                                                            isActive
-                                                                                ? 'bg-primary text-primary-foreground'
-                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
-                                                                        )}
-                                                                    >
-                                                                        <IconComp size={14} />
-                                                                        <span>{tabItem.label}</span>
-                                                                        {countVal !== undefined && (
-                                                                            <span
-                                                                                className={cn(
-                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
-                                                                                    isActive
-                                                                                        ? 'bg-white/20 text-primary-foreground'
-                                                                                        : 'bg-surface-muted text-text-soft'
-                                                                                )}
-                                                                            >
-                                                                                {countVal}
-                                                                            </span>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                        {expiryCategoryCounts && (
-                                                            <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-text-soft bg-surface-muted/40 border border-surface-border/40 rounded-lg mr-1 select-none">
-                                                                <span>Total Dokumen:</span>
-                                                                <span className="text-text-main font-black">
-                                                                    {expiryCategoryCounts.all || 0}
-                                                                </span>
-                                                            </div>
-                                                        )}
-                                                    </Card>
-                                                </div>
-                                            )}
-
                                             <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
                                                 {layout === 'table' ? (
                                                     <TableContract

@@ -91,7 +91,7 @@ class LocationResource extends Resource
                 ->options(fn () => CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('idlocation_group', 'Group Lokasi')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Location::whereNotNull('idlocation_group')->whereNotNull('location_group_name')->orderBy('location_group_name')->pluck('location_group_name', 'idlocation_group')->unique()->toArray()),
+                ->options(fn () => Location::whereNotNull('idlocation_group')->whereNotNull('location_group_name')->orderBy('location_group_name')->pluck('location_group_name', 'idlocation_group')->unique()->toArray()),
             Filter::make('is_used', 'Status Sistem')
                 ->options([
                     '1' => 'Digunakan (Ya)',

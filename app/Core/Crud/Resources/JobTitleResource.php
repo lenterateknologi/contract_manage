@@ -72,6 +72,7 @@ class JobTitleResource extends Resource
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Level / Belum Ditentukan)'];
                     $levels = JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+
                     return $options + $levels;
                 }),
             Filter::make('is_used', 'Status Sistem')

@@ -6,11 +6,11 @@ use App\Exports\AuditReportExport;
 use App\Exports\ContractReportExport;
 use App\Http\Controllers\Controller;
 use App\Http\Queries\Master\UserQuery;
-use App\Models\Approval;
 use App\Models\CompanyGroup;
 use App\Models\Contract;
 use App\Models\ContractHistory;
 use App\Models\ContractType;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -74,8 +74,8 @@ class ReportController extends Controller
                     return 0;
                 }
 
-                $firstSent = \Carbon\Carbon::parse($c->first_sent_at);
-                $updatedAt = \Carbon\Carbon::parse($c->updated_at);
+                $firstSent = Carbon::parse($c->first_sent_at);
+                $updatedAt = Carbon::parse($c->updated_at);
 
                 return $firstSent->diffInHours($updatedAt) / 24;
             });

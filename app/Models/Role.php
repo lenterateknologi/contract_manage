@@ -27,15 +27,15 @@ class Role extends Model
     {
         return [
             'can_change_company_group' => false,
-            'allowed_company_groups'   => [],
-            'can_change_region'        => false,
-            'allowed_regions'          => [],
-            'can_change_company'       => false,
-            'allowed_companies'        => [],
-            'can_change_division'      => false,
-            'allowed_divisions'        => [],
-            'can_change_department'    => false,
-            'allowed_departments'      => [],
+            'allowed_company_groups' => [],
+            'can_change_region' => false,
+            'allowed_regions' => [],
+            'can_change_company' => false,
+            'allowed_companies' => [],
+            'can_change_division' => false,
+            'allowed_divisions' => [],
+            'can_change_department' => false,
+            'allowed_departments' => [],
         ];
     }
 

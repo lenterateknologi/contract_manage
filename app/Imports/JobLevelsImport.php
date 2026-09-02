@@ -52,12 +52,12 @@ class JobLevelsImport implements ToCollection, WithHeadingRow
             }
 
             $attributes = [
-                'code'        => $code,
-                'name'        => $name,
-                'group_name'  => isset($row['grup_level']) ? trim((string) $row['grup_level']) : (isset($row['group_name']) ? trim((string) $row['group_name']) : null),
-                'is_used'     => $isUsed,
-                'is_active'   => $isActive,
-                'updated_by'  => $admin,
+                'code' => $code,
+                'name' => $name,
+                'group_name' => isset($row['grup_level']) ? trim((string) $row['grup_level']) : (isset($row['group_name']) ? trim((string) $row['group_name']) : null),
+                'is_used' => $isUsed,
+                'is_active' => $isActive,
+                'updated_by' => $admin,
             ];
 
             if ($jobLevel) {

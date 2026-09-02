@@ -4,7 +4,6 @@ namespace App\Core\Crud\Resources;
 
 use App\Core\Crud\Columns\BooleanColumn;
 use App\Core\Crud\Columns\TextColumn;
-use App\Core\Crud\Fields\SelectInput;
 use App\Core\Crud\Fields\TextareaInput;
 use App\Core\Crud\Fields\TextInput;
 use App\Core\Crud\Fields\ToggleInput;
@@ -102,10 +101,10 @@ class CompanyResource extends Resource
         return [
             Filter::make('company_group_id', 'Group Perusahaan')
                 ->type('searchable')
-                ->options(fn () => \App\Models\CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Wilayah (Region)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('is_used', 'Status Sistem')
                 ->options([
                     '1' => 'Digunakan (Ya)',

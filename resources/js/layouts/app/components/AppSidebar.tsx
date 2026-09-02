@@ -493,7 +493,14 @@ export const AppSidebar = memo(function AppSidebar() {
             const itemParams = new URLSearchParams(itemQuery);
             const currentParams = new URLSearchParams(currentQuery || '');
             for (const [key, val] of itemParams.entries()) {
-                if (currentParams.get(key) !== val) return false;
+                let currentVal = currentParams.get(key);
+                if (!currentVal) {
+                    if (key === 'pending_tab' && val === 'pending') currentVal = 'pending';
+                    else if (key === 'parent_tab' && val === 'kontrak') currentVal = 'kontrak';
+                    else if (key === 'mine_tab' && val === 'kontrak') currentVal = 'kontrak';
+                    else if (key === 'expiry_tab' && val === 'all') currentVal = 'all';
+                }
+                if (currentVal !== val) return false;
             }
             return true;
         }
@@ -502,9 +509,9 @@ export const AppSidebar = memo(function AppSidebar() {
         const [currentPathname, currentQuery] = page.url.split('?');
         if (currentPathname === itemPath) {
             const currentParams = new URLSearchParams(currentQuery || '');
-            const hasTab = currentParams.has('parent_tab') || currentParams.has('mine_tab');
+            const hasTab = currentParams.has('parent_tab') || currentParams.has('mine_tab') || currentParams.has('pending_tab') || currentParams.has('expiry_tab');
             if (hasTab) {
-                const tabVal = currentParams.get('parent_tab') || currentParams.get('mine_tab');
+                const tabVal = currentParams.get('parent_tab') || currentParams.get('mine_tab') || currentParams.get('pending_tab') || currentParams.get('expiry_tab');
                 return tabVal === 'all' || !tabVal;
             }
             return true;

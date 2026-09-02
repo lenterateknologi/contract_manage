@@ -11,6 +11,9 @@ use App\Core\Crud\Resource;
 use App\Exports\BusinessUnitsExport;
 use App\Imports\BusinessUnitsImport;
 use App\Models\BusinessUnit;
+use App\Models\Company;
+use App\Models\CompanyGroup;
+use App\Models\Region;
 
 class BusinessUnitResource extends Resource
 {
@@ -91,13 +94,13 @@ class BusinessUnitResource extends Resource
         return [
             Filter::make('company_group_id', 'Group Perusahaan')
                 ->type('searchable')
-                ->options(fn () => \App\Models\CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Wilayah (Region)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('company_id', 'Perusahaan (Company)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('is_used', 'Status Sistem')
                 ->options([
                     '1' => 'Digunakan (Ya)',

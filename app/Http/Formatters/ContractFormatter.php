@@ -3,6 +3,7 @@
 namespace App\Http\Formatters;
 
 use App\Enums\WorkflowAction;
+use App\Http\Controllers\Chat\ChatController;
 use App\Models\Contract;
 use App\Models\Role;
 use App\Models\WorkflowStep;
@@ -216,7 +217,7 @@ class ContractFormatter
                 'user_id' => $m->user_id,
                 'message' => $m->message,
                 'read_by' => $m->read_by ?? [],
-                'reactions' => \App\Http\Controllers\Chat\ChatController::enrichReactionsWithUser($m->reactions),
+                'reactions' => ChatController::enrichReactionsWithUser($m->reactions),
                 'created_at' => $m->created_at->format('Y-m-d H:i'),
                 'attachment_url' => $m->attachment_url,
                 'attachment_name' => $m->attachment_name,

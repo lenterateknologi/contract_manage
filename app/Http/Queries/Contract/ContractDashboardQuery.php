@@ -5,10 +5,16 @@ namespace App\Http\Queries\Contract;
 use App\Enums\ContractStatusEnum;
 use App\Http\Formatters\ContractFormatter;
 use App\Models\Approval;
+use App\Models\Company;
+use App\Models\CompanyGroup;
 use App\Models\ContractType;
+use App\Models\DashboardType;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\SubmissionType;
 use App\Models\User;
+use App\Models\Vendor;
+use App\Services\ContractFilterScopeService;
 use Carbon\Carbon;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\Request;
@@ -26,7 +32,7 @@ class ContractDashboardQuery
     {
         $user = Auth::user();
         if ($user) {
-            (new \App\Services\ContractFilterScopeService)->applyToRequest($request, $user);
+            (new ContractFilterScopeService)->applyToRequest($request, $user);
         }
 
         $roleName = $user->role;
@@ -80,7 +86,7 @@ class ContractDashboardQuery
             ->count();
         $pendingApprovalsForMe = Approval::where('user_id', Auth::id())
             ->where('status', 'pending')
-            ->whereHas('contract', function ($q) use ($statuses, $contractTypeIds, $vendorIds, $picIds, $departmentIds, $regionIds, $companyGroupIds, $companyIds) {
+            ->whereHas('contract', function ($q) use ($statuses, $contractTypeIds) {
                 if (! empty($statuses)) {
                     $q->whereIn('status', $statuses);
                 } else {
@@ -249,29 +255,29 @@ class ContractDashboardQuery
 
         $todayTotal = $todayContracts->count();
         $todayInProcess = $todayContracts->whereIn('status', [
-            'draft', 'in_review', 'pending', 'revision'
+            'draft', 'in_review', 'pending', 'revision',
         ])->count();
         $todayCompleted = $todayUpdatedContracts->whereIn('status', [
-            'approved', 'locked'
+            'approved', 'locked',
         ])->count();
         $todayRejected = $todayUpdatedContracts->where('status', 'rejected')->count();
         $todayApproved = $todayUpdatedContracts->where('status', 'approved')->count();
 
         // Resolve matching dashboard type configuration based on role and department
-        $dashboardConfig = \App\Models\DashboardType::where(function ($q) use ($user) {
+        $dashboardConfig = DashboardType::where(function ($q) use ($user) {
             $q->where('role_id', $user->role_id)
-              ->where('department_id', $user->department_id);
+                ->where('department_id', $user->department_id);
         })->orWhere(function ($q) use ($user) {
             $q->where('role_id', $user->role_id)
-              ->whereNull('department_id');
+                ->whereNull('department_id');
         })->orWhere(function ($q) use ($user) {
             $q->whereNull('role_id')
-              ->where('department_id', $user->department_id);
+                ->where('department_id', $user->department_id);
         })->orWhere(function ($q) {
             $q->whereNull('role_id')
-              ->whereNull('department_id');
+                ->whereNull('department_id');
         })->orderByRaw('role_id IS NOT NULL DESC, department_id IS NOT NULL DESC')
-          ->first();
+            ->first();
 
         return [
             'dashboardConfig' => [
@@ -340,11 +346,11 @@ class ContractDashboardQuery
         $groupFull = $hasFullAccess || ($settings['can_change_company_group'] ?? false);
         $companyGroupIds = $groupFull ? null : (array_filter([$user->company_group_id], fn ($v) => ! empty($v)));
 
-        $userQuery = \App\Models\User::query();
-        $groupQuery = \App\Models\CompanyGroup::query();
-        $companyQuery = \App\Models\Company::query();
-        $deptQuery = \App\Models\Department::query();
-        $divQuery = \App\Models\Division::query();
+        $userQuery = User::query();
+        $groupQuery = CompanyGroup::query();
+        $companyQuery = Company::query();
+        $deptQuery = Department::query();
+        $divQuery = Division::query();
 
         if (! empty($companyGroupIds)) {
             $userQuery->whereIn('company_group_id', $companyGroupIds);
@@ -359,22 +365,22 @@ class ContractDashboardQuery
         }
 
         // ponytail: tambahkan statistik distribusi jumlah user per group dan per company
-        $usersByGroupQuery = \Illuminate\Support\Facades\DB::table('m_users as u')
+        $usersByGroupQuery = DB::table('m_users as u')
             ->leftJoin('m_company_groups as cg', 'u.company_group_id', '=', 'cg.id')
             ->select(
-                \Illuminate\Support\Facades\DB::raw("COALESCE(cg.name, 'Tanpa Group') as name"),
-                \Illuminate\Support\Facades\DB::raw('count(u.id) as user_count')
+                DB::raw("COALESCE(cg.name, 'Tanpa Group') as name"),
+                DB::raw('count(u.id) as user_count')
             )
             ->whereNull('u.deleted_at')
             ->groupBy('cg.name', 'cg.id');
 
-        $usersByCompanyQuery = \Illuminate\Support\Facades\DB::table('m_users as u')
+        $usersByCompanyQuery = DB::table('m_users as u')
             ->leftJoin('m_companies as c', 'u.company_id', '=', 'c.id')
             ->leftJoin('m_company_groups as cg', 'u.company_group_id', '=', 'cg.id')
             ->select(
-                \Illuminate\Support\Facades\DB::raw("COALESCE(c.name, 'Tanpa Perusahaan') as company_name"),
-                \Illuminate\Support\Facades\DB::raw("COALESCE(cg.name, '-') as group_name"),
-                \Illuminate\Support\Facades\DB::raw('count(u.id) as user_count')
+                DB::raw("COALESCE(c.name, 'Tanpa Perusahaan') as company_name"),
+                DB::raw("COALESCE(cg.name, '-') as group_name"),
+                DB::raw('count(u.id) as user_count')
             )
             ->whereNull('u.deleted_at')
             ->groupBy('c.name', 'c.id', 'cg.name');
@@ -393,7 +399,7 @@ class ContractDashboardQuery
             'companies' => $companyQuery->count(),
             'departments' => $deptQuery->count(),
             'divisions' => $divQuery->count(),
-            'vendors' => \App\Models\Vendor::count(),
+            'vendors' => Vendor::count(),
             'organizationTree' => $this->getOrganizationTree($companyGroupIds),
             'usersByGroup' => $usersByGroup,
             'usersByCompany' => $usersByCompany,
@@ -402,7 +408,7 @@ class ContractDashboardQuery
 
     private function getOrganizationTree(?array $companyGroupIds = null)
     {
-        $groupQuery = \App\Models\CompanyGroup::with(['companies.region']);
+        $groupQuery = CompanyGroup::with(['companies.region']);
         if (! empty($companyGroupIds)) {
             $groupQuery->whereIn('id', $companyGroupIds);
         }
@@ -810,8 +816,8 @@ class ContractDashboardQuery
     private function getOverviewDailyTrend(QueryBuilder $baseQuery): array
     {
         $startDate = now()->subMonth()->startOfMonth();
-        $endDate   = now();
-        $userId    = Auth::id();
+        $endDate = now();
+        $userId = Auth::id();
 
         // 1. Semua Dokumen (non-draft, non-archived) — grouped by created_at date
         $allDocsByDay = (clone $baseQuery)
@@ -860,21 +866,21 @@ class ContractDashboardQuery
             ->pluck('total', 'day')
             ->all();
 
-        $trend   = [];
+        $trend = [];
         $current = $startDate->copy();
         while ($current->lte($endDate)) {
             $dateKey = $current->toDateString();
 
             $trend[] = [
-                'date'                       => $current->format('d M'),
-                'raw_date'                   => $dateKey,
-                'full_date'                  => $current->translatedFormat('d M Y'),
-                'month_key'                  => $current->format('Y-m'),
-                'Semua Dokumen'              => (int) ($allDocsByDay[$dateKey] ?? 0),
-                'Menunggu Persetujuan Saya'  => (int) ($pendingByDay[$dateKey] ?? 0),
-                'Dokumen Saya'               => (int) ($myDocsByDay[$dateKey] ?? 0),
-                'Dokumen Arsip'              => (int) ($archivedByDay[$dateKey] ?? 0),
-                'On Progress'               => (int) ($inProgressByDay[$dateKey] ?? 0),
+                'date' => $current->format('d M'),
+                'raw_date' => $dateKey,
+                'full_date' => $current->translatedFormat('d M Y'),
+                'month_key' => $current->format('Y-m'),
+                'Semua Dokumen' => (int) ($allDocsByDay[$dateKey] ?? 0),
+                'Menunggu Persetujuan Saya' => (int) ($pendingByDay[$dateKey] ?? 0),
+                'Dokumen Saya' => (int) ($myDocsByDay[$dateKey] ?? 0),
+                'Dokumen Arsip' => (int) ($archivedByDay[$dateKey] ?? 0),
+                'On Progress' => (int) ($inProgressByDay[$dateKey] ?? 0),
             ];
 
             $current->addDay();
@@ -892,11 +898,12 @@ class ContractDashboardQuery
         $contracts = (clone $baseQuery)
             ->get(['created_at', 'contract_type_id'])
             ->map(function ($c) {
-                $c->date_key = \Carbon\Carbon::parse($c->created_at)->toDateString();
+                $c->date_key = Carbon::parse($c->created_at)->toDateString();
+
                 return $c;
             });
 
-        $allTypes = \App\Models\ContractType::all();
+        $allTypes = ContractType::all();
 
         $trend = [];
         $current = $startDate->copy();
@@ -916,12 +923,12 @@ class ContractDashboardQuery
             ];
 
             foreach ($allTypes as $type) {
-                $dayData['type_' . $type->id] = 0;
+                $dayData['type_'.$type->id] = 0;
             }
             $dayData['type_null'] = 0;
 
             foreach ($contractsUpToDay as $contract) {
-                $typeKey = $contract->contract_type_id ? 'type_' . $contract->contract_type_id : 'type_null';
+                $typeKey = $contract->contract_type_id ? 'type_'.$contract->contract_type_id : 'type_null';
                 $dayData[$typeKey] = ($dayData[$typeKey] ?? 0) + 1;
             }
 

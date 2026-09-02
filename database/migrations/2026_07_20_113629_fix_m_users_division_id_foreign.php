@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (\DB::getDriverName() !== 'sqlite') {
+        if (DB::getDriverName() !== 'sqlite') {
             Schema::table('m_users', function (Blueprint $table) {
                 $table->dropForeign(['division_id']);
                 $table->foreign('division_id')->references('id')->on('m_division')->nullOnDelete();

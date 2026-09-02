@@ -34,7 +34,7 @@ return new class extends Migration
         }
 
         // 1. Drop materialized view & legacy vendor tables
-        DB::statement("DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_contracts");
+        DB::statement('DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_contracts');
 
         Schema::dropIfExists('m_vendor_taxes');
         Schema::dropIfExists('m_vendor_legalities');
@@ -44,7 +44,7 @@ return new class extends Migration
         Schema::dropIfExists('m_vendor_documents');
 
         // 2. Re-create / Restructure tabel m_vendors dengan CASCADE
-        DB::statement("DROP TABLE IF EXISTS m_vendors CASCADE");
+        DB::statement('DROP TABLE IF EXISTS m_vendors CASCADE');
 
         Schema::create('m_vendors', function (Blueprint $table) {
             $table->uuid('id')->primary();
@@ -59,7 +59,7 @@ return new class extends Migration
         });
 
         // 3. Re-create materialized view mv_dashboard_contracts using vendor_name column
-        DB::statement("
+        DB::statement('
             CREATE MATERIALIZED VIEW mv_dashboard_contracts AS
             SELECT 
                 c.id,
@@ -105,7 +105,7 @@ return new class extends Migration
             LEFT JOIN m_contract_types ct ON c.contract_type_id = ct.id
             LEFT JOIN m_vendors v ON c.vendor_id = v.id
             WHERE c.deleted_at IS NULL
-        ");
+        ');
 
         DB::statement('CREATE UNIQUE INDEX mv_dashboard_contracts_id ON mv_dashboard_contracts (id)');
         DB::statement('CREATE INDEX mv_dashboard_contracts_status ON mv_dashboard_contracts (status)');

@@ -3,26 +3,31 @@
 namespace App\Http\Controllers\Core;
 
 use App\Core\Crud\Fields\Section;
+use App\Core\Crud\Resources\BusinessUnitResource;
 use App\Core\Crud\Resources\CompanyGroupResource;
 use App\Core\Crud\Resources\CompanyResource;
 use App\Core\Crud\Resources\ContractFilterTemplateResource;
 use App\Core\Crud\Resources\ContractStatusResource;
 use App\Core\Crud\Resources\ContractTypeResource;
+use App\Core\Crud\Resources\DashboardTypeResource;
 use App\Core\Crud\Resources\DepartmentResource;
 use App\Core\Crud\Resources\DivisionResource;
+use App\Core\Crud\Resources\JobLevelResource;
+use App\Core\Crud\Resources\JobTitleResource;
+use App\Core\Crud\Resources\LocationResource;
 use App\Core\Crud\Resources\RegionResource;
 use App\Core\Crud\Resources\RoleResource;
 use App\Core\Crud\Resources\UserResource;
 use App\Core\Crud\Resources\VendorResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Common\ImportFileRequest;
-use App\Models\Company;
 use App\Models\CompanyGroup;
-use App\Models\Region;
-use App\Services\ContractFilterScopeService;
 use App\Services\PortalSyncService;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -31,6 +36,7 @@ class ResourceController extends Controller
     public function __construct(
         protected PortalSyncService $portalSyncService,
     ) {}
+
     /**
      * Map of slugs to their respective Resource classes.
      * In a real app, this can be auto-discovered.
@@ -47,11 +53,11 @@ class ResourceController extends Controller
         'vendors' => VendorResource::class,
         'divisions' => DivisionResource::class,
         'contract-filter-templates' => ContractFilterTemplateResource::class,
-        'dashboard-types' => \App\Core\Crud\Resources\DashboardTypeResource::class,
-        'locations' => \App\Core\Crud\Resources\LocationResource::class,
-        'business-units' => \App\Core\Crud\Resources\BusinessUnitResource::class,
-        'job-levels' => \App\Core\Crud\Resources\JobLevelResource::class,
-        'job-titles' => \App\Core\Crud\Resources\JobTitleResource::class,
+        'dashboard-types' => DashboardTypeResource::class,
+        'locations' => LocationResource::class,
+        'business-units' => BusinessUnitResource::class,
+        'job-levels' => JobLevelResource::class,
+        'job-titles' => JobTitleResource::class,
     ];
 
     /**
@@ -112,11 +118,11 @@ class ResourceController extends Controller
                         }
                     })->pluck('id')->toArray();
 
-                    if (!empty($matchingIds)) {
+                    if (! empty($matchingIds)) {
                         // Collect all ancestor IDs (walk up parent_id chain)
                         $ancestorIds = [];
                         $toCheck = $matchingIds;
-                        while (!empty($toCheck)) {
+                        while (! empty($toCheck)) {
                             $parents = $modelClass::whereIn('id', $toCheck)->whereNotNull('parent_id')->pluck('parent_id')->toArray();
                             $newParents = array_diff($parents, $ancestorIds, $matchingIds);
                             $ancestorIds = array_merge($ancestorIds, $newParents);
@@ -126,7 +132,7 @@ class ResourceController extends Controller
                         // Collect all descendant IDs (walk down children)
                         $descendantIds = [];
                         $toCheck = $matchingIds;
-                        while (!empty($toCheck)) {
+                        while (! empty($toCheck)) {
                             $children = $modelClass::whereIn('parent_id', $toCheck)->pluck('id')->toArray();
                             $newChildren = array_diff($children, $descendantIds, $matchingIds);
                             $descendantIds = array_merge($descendantIds, $newChildren);
@@ -165,7 +171,7 @@ class ResourceController extends Controller
 
         // Filter config
         $filterConfig = collect($resourceClass::filters())->map(fn ($f) => $f->toArray())->toArray();
-        $tableColumns = \Illuminate\Support\Facades\Schema::getColumnListing((new $modelClass)->getTable());
+        $tableColumns = Schema::getColumnListing((new $modelClass)->getTable());
         $hasIsUsedColumn = in_array('is_used', $tableColumns);
         $hasIsActiveColumn = in_array('is_active', $tableColumns);
 
@@ -196,7 +202,7 @@ class ResourceController extends Controller
                     if (! empty($vals)) {
                         if ($key === 'is_used' || $key === 'is_active') {
                             $boolVals = array_map(function ($v) {
-                                return ($v === '1' || $v === 1 || $v === true || $v === 'true');
+                                return $v === '1' || $v === 1 || $v === true || $v === 'true';
                             }, $vals);
                             $query->whereIn($key, $boolVals);
                         } elseif ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
@@ -212,9 +218,9 @@ class ResourceController extends Controller
                                 }
                                 if ($hasEmpty) {
                                     $q->orWhereNull('company_group_id')
-                                      ->orWhere(DB::raw('CAST(company_group_id AS text)'), '')
-                                      ->orWhereNull('company_group_name')
-                                      ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
+                                        ->orWhere(DB::raw('CAST(company_group_id AS text)'), '')
+                                        ->orWhereNull('company_group_name')
+                                        ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
                                 }
                             });
                         } else {
@@ -224,13 +230,13 @@ class ResourceController extends Controller
                             if ($hasEmpty && ! empty($concreteVals)) {
                                 $query->where(function ($q) use ($key, $concreteVals) {
                                     $q->whereIn($key, $concreteVals)
-                                      ->orWhereNull($key)
-                                      ->orWhere(DB::raw("CAST({$key} AS text)"), '');
+                                        ->orWhereNull($key)
+                                        ->orWhere(DB::raw("CAST({$key} AS text)"), '');
                                 });
                             } elseif ($hasEmpty) {
                                 $query->where(function ($q) use ($key) {
                                     $q->whereNull($key)
-                                      ->orWhere(DB::raw("CAST({$key} AS text)"), '');
+                                        ->orWhere(DB::raw("CAST({$key} AS text)"), '');
                                 });
                             } else {
                                 $query->whereIn($key, $concreteVals);
@@ -245,9 +251,9 @@ class ResourceController extends Controller
                         if (in_array($val, ['__empty__', 'empty', 'null', '-'], true)) {
                             $query->where(function ($q) {
                                 $q->whereNull('company_group_id')
-                                  ->orWhere(DB::raw('CAST(company_group_id AS text)'), '')
-                                  ->orWhereNull('company_group_name')
-                                  ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
+                                    ->orWhere(DB::raw('CAST(company_group_id AS text)'), '')
+                                    ->orWhereNull('company_group_name')
+                                    ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
                             });
                         } else {
                             $groupName = CompanyGroup::find($val)?->name;
@@ -262,7 +268,7 @@ class ResourceController extends Controller
                         if (in_array($val, ['__empty__', 'empty', 'null', '-'], true)) {
                             $query->where(function ($q) use ($key) {
                                 $q->whereNull($key)
-                                  ->orWhere(DB::raw("CAST({$key} AS text)"), '');
+                                    ->orWhere(DB::raw("CAST({$key} AS text)"), '');
                             });
                         } else {
                             $query->where($key, $val);
@@ -285,27 +291,27 @@ class ResourceController extends Controller
         $sortDir = $request->input('sort_dir', 'asc');
         if ($sortBy) {
             $sortColumnMap = [
-                'user_identity'      => 'name',
-                'position_access'    => 'jobtitle_name',
-                'placement_org'      => 'company_name',
-                'company_identity'   => 'name',
-                'org_structure'      => 'company_group_name',
-                'legal_integration'  => 'npwp',
-                'location_identity'  => 'name',
-                'location_group'     => 'location_group_name',
-                'region_group'       => 'location_group_name',
-                'bu_identity'        => 'name',
-                'company_placement'  => 'company_name',
+                'user_identity' => 'name',
+                'position_access' => 'jobtitle_name',
+                'placement_org' => 'company_name',
+                'company_identity' => 'name',
+                'org_structure' => 'company_group_name',
+                'legal_integration' => 'npwp',
+                'location_identity' => 'name',
+                'location_group' => 'location_group_name',
+                'region_group' => 'location_group_name',
+                'bu_identity' => 'name',
+                'company_placement' => 'company_name',
             ];
             $actualSortBy = $sortColumnMap[$sortBy] ?? $sortBy;
 
             if (str_contains($actualSortBy, '.')) {
                 [$relation, $relColumn] = explode('.', $actualSortBy, 2);
                 $modelInstance = new $modelClass;
-                $method = method_exists($modelInstance, $relation) ? $relation : \Illuminate\Support\Str::camel($relation);
+                $method = method_exists($modelInstance, $relation) ? $relation : Str::camel($relation);
                 if (method_exists($modelInstance, $method)) {
                     $relationInstance = $modelInstance->{$method}();
-                    if ($relationInstance instanceof \Illuminate\Database\Eloquent\Relations\BelongsTo) {
+                    if ($relationInstance instanceof BelongsTo) {
                         $relatedTable = $relationInstance->getRelated()->getTable();
                         $foreignKey = $relationInstance->getForeignKeyName();
                         $ownerKey = $relationInstance->getOwnerKeyName();
@@ -385,7 +391,7 @@ class ResourceController extends Controller
             unset($validated['password']);
         }
 
-        $columns = \Illuminate\Support\Facades\Schema::getColumnListing((new $modelClass)->getTable());
+        $columns = Schema::getColumnListing((new $modelClass)->getTable());
         $saveData = array_intersect_key($validated, array_flip($columns));
 
         $modelClass::create($saveData);
@@ -445,7 +451,7 @@ class ResourceController extends Controller
             unset($validated['password']);
         }
 
-        $columns = \Illuminate\Support\Facades\Schema::getColumnListing($record->getTable());
+        $columns = Schema::getColumnListing($record->getTable());
         $saveData = array_intersect_key($validated, array_flip($columns));
 
         $record->update($saveData);
@@ -510,7 +516,7 @@ class ResourceController extends Controller
         });
 
         if (! empty($fieldsToUpdate)) {
-            $columns = \Illuminate\Support\Facades\Schema::getColumnListing((new $modelClass)->getTable());
+            $columns = Schema::getColumnListing((new $modelClass)->getTable());
             $safeFields = array_intersect_key($fieldsToUpdate, array_flip($columns));
             if (! empty($safeFields)) {
                 $modelClass::whereIn('id', $request->input('ids'))->update($safeFields);

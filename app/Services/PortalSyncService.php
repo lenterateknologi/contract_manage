@@ -2,11 +2,24 @@
 
 namespace App\Services;
 
+use App\Models\BusinessUnit;
+use App\Models\Company;
+use App\Models\CompanyGroup;
+use App\Models\ContractFilterTemplate;
+use App\Models\Department;
+use App\Models\JobLevel;
+use App\Models\JobTitle;
+use App\Models\Location;
 use App\Models\Region;
+use App\Models\Role;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class PortalSyncService
 {
@@ -41,7 +54,8 @@ class PortalSyncService
             $response = Http::timeout(30)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal region sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal region sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -76,7 +90,7 @@ class PortalSyncService
                 ->get()
                 ->keyBy('code');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdRegion, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdRegion, $existingByCode) {
                 foreach ($data as $item) {
                     $idRegion = $item['idregion'] ?? null;
                     $regionCode = isset($item['regionCode']) ? trim((string) $item['regionCode']) : '';
@@ -99,16 +113,16 @@ class PortalSyncService
                     }
 
                     $attributes = [
-                        'idregion'             => $idRegion,
-                        'code'                 => $regionCode,
-                        'name'                 => $regionName,
-                        'alias'                => $item['regionCodeAlias'] ?? $item['alias'] ?? null,
-                        'region_ad'            => $item['regionAd'] ?? null,
-                        'created_by_name'      => $item['createdBy'] ?? null,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
-                        'portal_created_date'  => $createdDate,
+                        'idregion' => $idRegion,
+                        'code' => $regionCode,
+                        'name' => $regionName,
+                        'alias' => $item['regionCodeAlias'] ?? $item['alias'] ?? null,
+                        'region_ad' => $item['regionAd'] ?? null,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
                         'portal_modified_date' => $modifiedDate,
-                        'is_active'            => $isActive,
+                        'is_active' => $isActive,
                     ];
 
                     if ($region) {
@@ -124,8 +138,12 @@ class PortalSyncService
                         $newRegion = Region::create($attributes);
 
                         // Cache in memory for loop uniqueness
-                        if (! empty($idRegion)) $existingByIdRegion[$idRegion] = $newRegion;
-                        if (! empty($regionCode)) $existingByCode[$regionCode] = $newRegion;
+                        if (! empty($idRegion)) {
+                            $existingByIdRegion[$idRegion] = $newRegion;
+                        }
+                        if (! empty($regionCode)) {
+                            $existingByCode[$regionCode] = $newRegion;
+                        }
                     }
 
                     $syncedCount++;
@@ -135,16 +153,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Region dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal region sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal region sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }
@@ -164,7 +183,8 @@ class PortalSyncService
             $response = Http::timeout(30)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal company group sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal company group sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -189,17 +209,17 @@ class PortalSyncService
             $userId = Auth::id();
 
             // Preload existing company groups in 1 query
-            $existingById = \App\Models\CompanyGroup::withTrashed()
+            $existingById = CompanyGroup::withTrashed()
                 ->whereNotNull('idcompany_group')
                 ->get()
                 ->keyBy('idcompany_group');
 
-            $existingByCode = \App\Models\CompanyGroup::withTrashed()
+            $existingByCode = CompanyGroup::withTrashed()
                 ->whereNotNull('code')
                 ->get()
                 ->keyBy('code');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode) {
                 foreach ($data as $item) {
                     $idGroup = $item['idcompanyGroup'] ?? null;
                     $groupCode = isset($item['companyGroupCode']) ? trim((string) $item['companyGroupCode']) : '';
@@ -222,14 +242,14 @@ class PortalSyncService
                     }
 
                     $attributes = [
-                        'idcompany_group'      => $idGroup,
-                        'code'                 => $groupCode,
-                        'name'                 => $groupName,
-                        'created_by_name'      => $item['createdBy'] ?? null,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
-                        'portal_created_date'  => $createdDate,
+                        'idcompany_group' => $idGroup,
+                        'code' => $groupCode,
+                        'name' => $groupName,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
                         'portal_modified_date' => $modifiedDate,
-                        'is_active'            => $isActive,
+                        'is_active' => $isActive,
                     ];
 
                     if ($group) {
@@ -242,10 +262,14 @@ class PortalSyncService
                         $attributes['is_used'] = false; // default false for system
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
-                        $newGroup = \App\Models\CompanyGroup::create($attributes);
+                        $newGroup = CompanyGroup::create($attributes);
 
-                        if (! empty($idGroup)) $existingById[$idGroup] = $newGroup;
-                        if (! empty($groupCode)) $existingByCode[$groupCode] = $newGroup;
+                        if (! empty($idGroup)) {
+                            $existingById[$idGroup] = $newGroup;
+                        }
+                        if (! empty($groupCode)) {
+                            $existingByCode[$groupCode] = $newGroup;
+                        }
                     }
 
                     $syncedCount++;
@@ -255,16 +279,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Group Perusahaan dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal company group sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal company group sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }
@@ -284,7 +309,8 @@ class PortalSyncService
             $response = Http::timeout(45)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal location sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal location sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -309,17 +335,17 @@ class PortalSyncService
             $userId = Auth::id();
 
             // Preload existing locations in 1 query
-            $existingById = \App\Models\Location::withTrashed()
+            $existingById = Location::withTrashed()
                 ->whereNotNull('idlocation')
                 ->get()
                 ->keyBy('idlocation');
 
-            $existingByCode = \App\Models\Location::withTrashed()
+            $existingByCode = Location::withTrashed()
                 ->whereNotNull('code')
                 ->get()
                 ->keyBy('code');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode) {
                 foreach ($data as $item) {
                     $idLocation = $item['idlocation'] ?? null;
                     $locationCode = isset($item['locationCode']) ? trim((string) $item['locationCode']) : '';
@@ -342,31 +368,31 @@ class PortalSyncService
                     }
 
                     $attributes = [
-                        'idlocation'           => $idLocation,
-                        'code'                 => $locationCode,
-                        'name'                 => $locationName,
-                        'idlocation_group'     => $item['idlocationGroup'] ?? null,
-                        'location_group_name'  => $item['locationGroupName'] ?? null,
-                        'phone'                => $item['phone'] ?? null,
-                        'fax'                  => $item['fax'] ?? null,
-                        'idcountry'            => $item['idcountry'] ?? null,
-                        'country_name'         => $item['countryName'] ?? null,
-                        'idprovince'           => $item['idprovince'] ?? null,
-                        'province_name'        => $item['provinceName'] ?? null,
-                        'idcity'               => $item['idcity'] ?? null,
-                        'city_name'            => $item['cityName'] ?? null,
-                        'idsub_district'       => $item['idsubDistrict'] ?? null,
-                        'sub_district_name'    => $item['subDistrictName'] ?? null,
-                        'idvillage'            => $item['idvillage'] ?? null,
-                        'village_name'         => $item['villageName'] ?? null,
-                        'address'              => $item['address'] ?? null,
-                        'zip_code'             => $item['zipCode'] ?? null,
-                        'oracle_code'          => $item['oracleCode'] ?? null,
-                        'created_by_name'      => $item['createdBy'] ?? null,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
-                        'portal_created_date'  => $createdDate,
+                        'idlocation' => $idLocation,
+                        'code' => $locationCode,
+                        'name' => $locationName,
+                        'idlocation_group' => $item['idlocationGroup'] ?? null,
+                        'location_group_name' => $item['locationGroupName'] ?? null,
+                        'phone' => $item['phone'] ?? null,
+                        'fax' => $item['fax'] ?? null,
+                        'idcountry' => $item['idcountry'] ?? null,
+                        'country_name' => $item['countryName'] ?? null,
+                        'idprovince' => $item['idprovince'] ?? null,
+                        'province_name' => $item['provinceName'] ?? null,
+                        'idcity' => $item['idcity'] ?? null,
+                        'city_name' => $item['cityName'] ?? null,
+                        'idsub_district' => $item['idsubDistrict'] ?? null,
+                        'sub_district_name' => $item['subDistrictName'] ?? null,
+                        'idvillage' => $item['idvillage'] ?? null,
+                        'village_name' => $item['villageName'] ?? null,
+                        'address' => $item['address'] ?? null,
+                        'zip_code' => $item['zipCode'] ?? null,
+                        'oracle_code' => $item['oracleCode'] ?? null,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
                         'portal_modified_date' => $modifiedDate,
-                        'is_active'            => $isActive,
+                        'is_active' => $isActive,
                     ];
 
                     if ($location) {
@@ -379,10 +405,14 @@ class PortalSyncService
                         $attributes['is_used'] = false; // default false for system
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
-                        $newLocation = \App\Models\Location::create($attributes);
+                        $newLocation = Location::create($attributes);
 
-                        if (! empty($idLocation)) $existingById[$idLocation] = $newLocation;
-                        if (! empty($locationCode)) $existingByCode[$locationCode] = $newLocation;
+                        if (! empty($idLocation)) {
+                            $existingById[$idLocation] = $newLocation;
+                        }
+                        if (! empty($locationCode)) {
+                            $existingByCode[$locationCode] = $newLocation;
+                        }
                     }
 
                     $syncedCount++;
@@ -392,16 +422,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Lokasi dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal location sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal location sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }
@@ -421,7 +452,8 @@ class PortalSyncService
             $response = Http::timeout(60)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal company sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal company sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -446,27 +478,27 @@ class PortalSyncService
             $userId = Auth::id();
 
             // Preload existing relations & records in 1 query
-            $existingById = \App\Models\Company::withTrashed()
+            $existingById = Company::withTrashed()
                 ->whereNotNull('idcompany')
                 ->get()
                 ->keyBy('idcompany');
 
-            $existingByCode = \App\Models\Company::withTrashed()
+            $existingByCode = Company::withTrashed()
                 ->whereNotNull('code')
                 ->get()
                 ->keyBy('code');
 
-            $groupsById = \App\Models\CompanyGroup::withTrashed()
+            $groupsById = CompanyGroup::withTrashed()
                 ->whereNotNull('idcompany_group')
                 ->get()
                 ->keyBy('idcompany_group');
 
-            $regionsById = \App\Models\Region::withTrashed()
+            $regionsById = Region::withTrashed()
                 ->whereNotNull('idregion')
                 ->get()
                 ->keyBy('idregion');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $groupsById, $regionsById) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $groupsById, $regionsById) {
                 foreach ($data as $item) {
                     $idCompany = $item['idcompany'] ?? null;
                     $companyCode = isset($item['companyCode']) ? trim((string) $item['companyCode']) : '';
@@ -495,41 +527,41 @@ class PortalSyncService
                     $regionId = ! empty($idReg) && isset($regionsById[$idReg]) ? $regionsById[$idReg]->id : null;
 
                     $attributes = [
-                        'idcompany'            => $idCompany,
-                        'code'                 => $companyCode,
-                        'name'                 => $companyName,
-                        'alias'                => $item['companyAlias'] ?? null,
-                        'npwp'                 => $item['npwp'] ?? null,
-                        'idcompany_group'      => $idGroup,
-                        'company_group_name'   => $item['companyGroupName'] ?? null,
-                        'company_group_id'     => $groupId,
-                        'idcountry'            => $item['idcountry'] ?? null,
-                        'country_name'         => $item['countryName'] ?? null,
-                        'idprovince'           => $item['idprovince'] ?? null,
-                        'province_name'        => $item['provinceName'] ?? null,
-                        'idcity'               => $item['idcity'] ?? null,
-                        'city_name'            => $item['cityName'] ?? null,
-                        'idsub_district'       => $item['idsubDistrict'] ?? null,
-                        'sub_district_name'    => $item['subDistrictName'] ?? null,
-                        'idvillage'            => $item['idvillage'] ?? null,
-                        'village_name'         => $item['villageName'] ?? null,
-                        'address'              => $item['address'] ?? null,
-                        'zip_code'             => $item['zipCode'] ?? null,
-                        'phone'                => $item['phone'] ?? null,
-                        'fax'                  => $item['fax'] ?? null,
-                        'email'                => $item['email'] ?? null,
-                        'oracle_code'          => $item['oracleCode'] ?? null,
-                        'idregion'             => $idReg,
-                        'region_name'          => $item['regionName'] ?? null,
-                        'region_id'            => $regionId,
-                        'reg_no'               => $item['regNo'] ?? null,
-                        'bank_account'         => $item['bankAccount'] ?? null,
-                        'npp'                  => $item['npp'] ?? null,
-                        'created_by_name'      => $item['createdBy'] ?? null,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
-                        'portal_created_date'  => $createdDate,
+                        'idcompany' => $idCompany,
+                        'code' => $companyCode,
+                        'name' => $companyName,
+                        'alias' => $item['companyAlias'] ?? null,
+                        'npwp' => $item['npwp'] ?? null,
+                        'idcompany_group' => $idGroup,
+                        'company_group_name' => $item['companyGroupName'] ?? null,
+                        'company_group_id' => $groupId,
+                        'idcountry' => $item['idcountry'] ?? null,
+                        'country_name' => $item['countryName'] ?? null,
+                        'idprovince' => $item['idprovince'] ?? null,
+                        'province_name' => $item['provinceName'] ?? null,
+                        'idcity' => $item['idcity'] ?? null,
+                        'city_name' => $item['cityName'] ?? null,
+                        'idsub_district' => $item['idsubDistrict'] ?? null,
+                        'sub_district_name' => $item['subDistrictName'] ?? null,
+                        'idvillage' => $item['idvillage'] ?? null,
+                        'village_name' => $item['villageName'] ?? null,
+                        'address' => $item['address'] ?? null,
+                        'zip_code' => $item['zipCode'] ?? null,
+                        'phone' => $item['phone'] ?? null,
+                        'fax' => $item['fax'] ?? null,
+                        'email' => $item['email'] ?? null,
+                        'oracle_code' => $item['oracleCode'] ?? null,
+                        'idregion' => $idReg,
+                        'region_name' => $item['regionName'] ?? null,
+                        'region_id' => $regionId,
+                        'reg_no' => $item['regNo'] ?? null,
+                        'bank_account' => $item['bankAccount'] ?? null,
+                        'npp' => $item['npp'] ?? null,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
                         'portal_modified_date' => $modifiedDate,
-                        'is_active'            => $isActive,
+                        'is_active' => $isActive,
                     ];
 
                     if ($company) {
@@ -542,10 +574,14 @@ class PortalSyncService
                         $attributes['is_used'] = false; // default false for system
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
-                        $newCompany = \App\Models\Company::create($attributes);
+                        $newCompany = Company::create($attributes);
 
-                        if (! empty($idCompany)) $existingById[$idCompany] = $newCompany;
-                        if (! empty($companyCode)) $existingByCode[$companyCode] = $newCompany;
+                        if (! empty($idCompany)) {
+                            $existingById[$idCompany] = $newCompany;
+                        }
+                        if (! empty($companyCode)) {
+                            $existingByCode[$companyCode] = $newCompany;
+                        }
                     }
 
                     $syncedCount++;
@@ -555,16 +591,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Perusahaan dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal company sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal company sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }
@@ -584,7 +621,8 @@ class PortalSyncService
             $response = Http::timeout(60)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal business unit sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal business unit sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -609,37 +647,37 @@ class PortalSyncService
             $userId = Auth::id();
 
             // Preload existing relations & records in 1 query
-            $existingById = \App\Models\BusinessUnit::withTrashed()
+            $existingById = BusinessUnit::withTrashed()
                 ->whereNotNull('idbusiness_unit')
                 ->get()
                 ->keyBy('idbusiness_unit');
 
-            $existingByCode = \App\Models\BusinessUnit::withTrashed()
+            $existingByCode = BusinessUnit::withTrashed()
                 ->whereNotNull('code')
                 ->get()
                 ->keyBy('code');
 
-            $companiesById = \App\Models\Company::withTrashed()
+            $companiesById = Company::withTrashed()
                 ->whereNotNull('idcompany')
                 ->get()
                 ->keyBy('idcompany');
 
-            $locationsById = \App\Models\Location::withTrashed()
+            $locationsById = Location::withTrashed()
                 ->whereNotNull('idlocation')
                 ->get()
                 ->keyBy('idlocation');
 
-            $groupsById = \App\Models\CompanyGroup::withTrashed()
+            $groupsById = CompanyGroup::withTrashed()
                 ->whereNotNull('idcompany_group')
                 ->get()
                 ->keyBy('idcompany_group');
 
-            $regionsById = \App\Models\Region::withTrashed()
+            $regionsById = Region::withTrashed()
                 ->whereNotNull('idregion')
                 ->get()
                 ->keyBy('idregion');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $companiesById, $locationsById, $groupsById, $regionsById) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $companiesById, $locationsById, $groupsById, $regionsById) {
                 foreach ($data as $item) {
                     $idUnit = $item['idbusinessUnit'] ?? null;
                     $unitCode = isset($item['kodeBisnisUnit']) ? trim((string) $item['kodeBisnisUnit']) : '';
@@ -675,41 +713,41 @@ class PortalSyncService
                     $regionId = ! empty($idReg) && isset($regionsById[$idReg]) ? $regionsById[$idReg]->id : null;
 
                     $attributes = [
-                        'idbusiness_unit'      => $idUnit,
-                        'code'                 => $unitCode,
-                        'name'                 => $unitName,
-                        'idcompany'            => $idCompany,
-                        'company_name'         => $item['companyName'] ?? null,
-                        'company_oracle_code'  => $item['companyOracleCode'] ?? null,
-                        'company_id'           => $companyId,
-                        'idlocation'           => $idLocation,
-                        'location_name'        => $item['locationName'] ?? null,
+                        'idbusiness_unit' => $idUnit,
+                        'code' => $unitCode,
+                        'name' => $unitName,
+                        'idcompany' => $idCompany,
+                        'company_name' => $item['companyName'] ?? null,
+                        'company_oracle_code' => $item['companyOracleCode'] ?? null,
+                        'company_id' => $companyId,
+                        'idlocation' => $idLocation,
+                        'location_name' => $item['locationName'] ?? null,
                         'location_oracle_code' => $item['locationOracleCode'] ?? null,
-                        'location_id'          => $locationId,
-                        'idcompany_group'      => $idGroup,
-                        'company_group_code'   => $item['companyGroupCode'] ?? null,
-                        'company_group_name'   => $item['companyGroupName'] ?? null,
-                        'company_group_id'     => $groupId,
-                        'idregion'             => $idReg,
-                        'region_code'          => $item['regionCode'] ?? null,
-                        'region_name'          => $item['regionName'] ?? null,
-                        'region_id'            => $regionId,
-                        'idkomoditi'           => $item['idkomoditi'] ?? null,
-                        'komoditi_name'        => $item['komoditiName'] ?? null,
-                        'kebun'                => $item['kebun'] ?? null,
-                        'last_req_date'        => $lastReqDate,
-                        'rice_exclude'         => isset($item['riceExclude']) ? (int) $item['riceExclude'] : 0,
-                        'is_downstream'        => isset($item['isDownstream']) ? (int) $item['isDownstream'] : 0,
-                        'ktu'                  => $item['ktu'] ?? null,
-                        'kpp'                  => $item['kpp'] ?? null,
-                        'dppjamsostek'         => $item['dppjamsostek'] ?? null,
-                        'latitude'             => $item['latitude'] ?? null,
-                        'longitude'            => $item['longitude'] ?? null,
-                        'created_by_name'      => $item['createdBy'] ?? null,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
-                        'portal_created_date'  => $createdDate,
+                        'location_id' => $locationId,
+                        'idcompany_group' => $idGroup,
+                        'company_group_code' => $item['companyGroupCode'] ?? null,
+                        'company_group_name' => $item['companyGroupName'] ?? null,
+                        'company_group_id' => $groupId,
+                        'idregion' => $idReg,
+                        'region_code' => $item['regionCode'] ?? null,
+                        'region_name' => $item['regionName'] ?? null,
+                        'region_id' => $regionId,
+                        'idkomoditi' => $item['idkomoditi'] ?? null,
+                        'komoditi_name' => $item['komoditiName'] ?? null,
+                        'kebun' => $item['kebun'] ?? null,
+                        'last_req_date' => $lastReqDate,
+                        'rice_exclude' => isset($item['riceExclude']) ? (int) $item['riceExclude'] : 0,
+                        'is_downstream' => isset($item['isDownstream']) ? (int) $item['isDownstream'] : 0,
+                        'ktu' => $item['ktu'] ?? null,
+                        'kpp' => $item['kpp'] ?? null,
+                        'dppjamsostek' => $item['dppjamsostek'] ?? null,
+                        'latitude' => $item['latitude'] ?? null,
+                        'longitude' => $item['longitude'] ?? null,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
                         'portal_modified_date' => $modifiedDate,
-                        'is_active'            => $isActive,
+                        'is_active' => $isActive,
                     ];
 
                     if ($unit) {
@@ -722,10 +760,14 @@ class PortalSyncService
                         $attributes['is_used'] = false; // default false for system
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
-                        $newUnit = \App\Models\BusinessUnit::create($attributes);
+                        $newUnit = BusinessUnit::create($attributes);
 
-                        if (! empty($idUnit)) $existingById[$idUnit] = $newUnit;
-                        if (! empty($unitCode)) $existingByCode[$unitCode] = $newUnit;
+                        if (! empty($idUnit)) {
+                            $existingById[$idUnit] = $newUnit;
+                        }
+                        if (! empty($unitCode)) {
+                            $existingByCode[$unitCode] = $newUnit;
+                        }
                     }
 
                     $syncedCount++;
@@ -735,16 +777,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Bisnis Unit dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal business unit sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal business unit sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }
@@ -764,7 +807,8 @@ class PortalSyncService
             $response = Http::timeout(90)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal employee sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal employee sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -789,84 +833,84 @@ class PortalSyncService
             $userId = Auth::id();
 
             // Default fallback role: Staff
-            $staffRoleId = \App\Models\Role::where('name', 'Staff')->value('id');
-            $defaultFilterTemplateId = \App\Models\ContractFilterTemplate::where('name', 'like', '%staff biasa%')->value('id');
+            $staffRoleId = Role::where('name', 'Staff')->value('id');
+            $defaultFilterTemplateId = ContractFilterTemplate::where('name', 'like', '%staff biasa%')->value('id');
 
             // Preload existing relations & records in 1 query
-            $existingByIdEmployee = \App\Models\User::withTrashed()
+            $existingByIdEmployee = User::withTrashed()
                 ->whereNotNull('idemployee')
                 ->get()
                 ->keyBy('idemployee');
 
-            $existingByEmail = \App\Models\User::withTrashed()
+            $existingByEmail = User::withTrashed()
                 ->whereNotNull('email')
                 ->get()
                 ->keyBy(fn ($u) => strtolower(trim($u->email)));
 
-            $existingByNik = \App\Models\User::withTrashed()
+            $existingByNik = User::withTrashed()
                 ->whereNotNull('nik')
                 ->get()
                 ->keyBy('nik');
 
-            $existingByUsername = \App\Models\User::withTrashed()
+            $existingByUsername = User::withTrashed()
                 ->whereNotNull('username')
                 ->get()
                 ->keyBy('username');
 
-            $existingByCode = \App\Models\User::withTrashed()
+            $existingByCode = User::withTrashed()
                 ->whereNotNull('code')
                 ->get()
                 ->keyBy('code');
 
-            $companiesById = \App\Models\Company::withTrashed()
+            $companiesById = Company::withTrashed()
                 ->whereNotNull('idcompany')
                 ->get()
                 ->keyBy('idcompany');
 
-            $locationsById = \App\Models\Location::withTrashed()
+            $locationsById = Location::withTrashed()
                 ->whereNotNull('idlocation')
                 ->get()
                 ->keyBy('idlocation');
 
-            $locationsByName = \App\Models\Location::withTrashed()
+            $locationsByName = Location::withTrashed()
                 ->whereNotNull('name')
                 ->get()
                 ->keyBy(fn ($l) => strtolower(trim($l->name)));
 
-            $departmentsByIdOrg = \App\Models\Department::withTrashed()
+            $departmentsByIdOrg = Department::withTrashed()
                 ->whereNotNull('idorganization')
                 ->get()
                 ->keyBy('idorganization');
 
-            $departmentsByName = \App\Models\Department::withTrashed()
+            $departmentsByName = Department::withTrashed()
                 ->whereNotNull('name')
                 ->get()
                 ->keyBy(fn ($d) => strtolower(trim($d->name)));
 
-            $jobTitlesById = \App\Models\JobTitle::withTrashed()
+            $jobTitlesById = JobTitle::withTrashed()
                 ->whereNotNull('idjobtitle')
                 ->get()
                 ->keyBy('idjobtitle');
 
-            $jobTitlesByName = \App\Models\JobTitle::withTrashed()
+            $jobTitlesByName = JobTitle::withTrashed()
                 ->whereNotNull('name')
                 ->get()
                 ->keyBy(fn ($jt) => strtolower(trim($jt->name)));
 
-            $jobLevelsById = \App\Models\JobLevel::withTrashed()
+            $jobLevelsById = JobLevel::withTrashed()
                 ->whereNotNull('idjoblevel')
                 ->get()
                 ->keyBy('idjoblevel');
 
-            $jobLevelsByName = \App\Models\JobLevel::withTrashed()
+            $jobLevelsByName = JobLevel::withTrashed()
                 ->whereNotNull('name')
                 ->get()
                 ->keyBy(fn ($jl) => strtolower(trim($jl->name)));
 
-            $defaultPasswordHash = \Illuminate\Support\Facades\Hash::make('Password@123');
+            $defaultPasswordHash = Hash::make('Password@123');
             $now = now();
 
-            \Illuminate\Support\Facades\DB::transaction(function () use (
+            DB::transaction(function () use (
                 $data,
                 $userId,
                 $staffRoleId,
@@ -963,48 +1007,48 @@ class PortalSyncService
                     $username = $nik ?: (! empty($officeMail) ? explode('@', $officeMail)[0] : "user_{$idEmployee}");
 
                     $attributes = [
-                        'idemployee'           => $idEmployee,
-                        'nik'                  => $nik ?: null,
-                        'username'             => $username,
-                        'name'                 => $name,
-                        'email'                => $officeMail ?: ($nik ? "{$nik}@local.sys" : "user_{$idEmployee}@local.sys"),
-                        'gender'               => $item['gender'] ?? null,
-                        'mobile_no'            => $item['mobileNo'] ?? null,
-                        'department_id'        => $departmentId,
-                        'idorganization'       => $idOrg,
-                        'org_name'             => $orgName,
-                        'company_id'           => $companyId,
-                        'company_group_id'     => $companyGroupId,
-                        'region_id'            => $regionId,
-                        'idcompany'            => $idCompany,
-                        'company_name'         => $item['companyName'] ?? null,
-                        'location_id'          => $locationId,
-                        'idlocation'           => $idLocation,
-                        'location_name'        => $item['locationName'] ?? null,
-                        'job_position_id'      => $jobPositionId,
-                        'idjobtitle'           => $idJobTitle,
-                        'jobtitle_name'        => $jobTitleName,
-                        'job_level_id'         => $jobLevelId,
-                        'idjoblevel'           => $idJobLevel,
-                        'joblevel_name'        => $jobLevelName,
-                        'idemployment_type'    => $item['idemploymentType'] ?? null,
-                        'idreporting_to'       => $item['idreportingTo'] ?? null,
-                        'reporting_to'         => $item['reportingTo'] ?? null,
-                        'start_date'           => $startDate,
-                        'join_date'            => $joinDate,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
+                        'idemployee' => $idEmployee,
+                        'nik' => $nik ?: null,
+                        'username' => $username,
+                        'name' => $name,
+                        'email' => $officeMail ?: ($nik ? "{$nik}@local.sys" : "user_{$idEmployee}@local.sys"),
+                        'gender' => $item['gender'] ?? null,
+                        'mobile_no' => $item['mobileNo'] ?? null,
+                        'department_id' => $departmentId,
+                        'idorganization' => $idOrg,
+                        'org_name' => $orgName,
+                        'company_id' => $companyId,
+                        'company_group_id' => $companyGroupId,
+                        'region_id' => $regionId,
+                        'idcompany' => $idCompany,
+                        'company_name' => $item['companyName'] ?? null,
+                        'location_id' => $locationId,
+                        'idlocation' => $idLocation,
+                        'location_name' => $item['locationName'] ?? null,
+                        'job_position_id' => $jobPositionId,
+                        'idjobtitle' => $idJobTitle,
+                        'jobtitle_name' => $jobTitleName,
+                        'job_level_id' => $jobLevelId,
+                        'idjoblevel' => $idJobLevel,
+                        'joblevel_name' => $jobLevelName,
+                        'idemployment_type' => $item['idemploymentType'] ?? null,
+                        'idreporting_to' => $item['idreportingTo'] ?? null,
+                        'reporting_to' => $item['reportingTo'] ?? null,
+                        'start_date' => $startDate,
+                        'join_date' => $joinDate,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
                         'portal_modified_date' => $modifiedDate,
-                        'is_employee'          => true,
-                        'is_active'            => $isActive,
+                        'is_employee' => true,
+                        'is_active' => $isActive,
                     ];
 
                     if ($user) {
                         $attributes['updated_by'] = $userId;
                         $attributes['updated_at'] = $now;
                         $attributes['deleted_at'] = null;
-                        \Illuminate\Support\Facades\DB::table('m_users')->where('id', $user->id)->update($attributes);
+                        DB::table('m_users')->where('id', $user->id)->update($attributes);
                     } else {
-                        $newId = (string) \Illuminate\Support\Str::uuid();
+                        $newId = (string) Str::uuid();
                         $attributes['id'] = $newId;
                         $attributes['password'] = $defaultPasswordHash;
                         $attributes['role_id'] = $staffRoleId;
@@ -1014,11 +1058,15 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $attributes['created_at'] = $now;
                         $attributes['updated_at'] = $now;
-                        \Illuminate\Support\Facades\DB::table('m_users')->insert($attributes);
+                        DB::table('m_users')->insert($attributes);
 
                         $obj = (object) ['id' => $newId, 'nik' => $nik, 'email' => $attributes['email'], 'username' => $username];
-                        if (! empty($idEmployee)) $existingByIdEmployee[$idEmployee] = $obj;
-                        if (! empty($officeMail)) $existingByEmail[$officeMail] = $obj;
+                        if (! empty($idEmployee)) {
+                            $existingByIdEmployee[$idEmployee] = $obj;
+                        }
+                        if (! empty($officeMail)) {
+                            $existingByEmail[$officeMail] = $obj;
+                        }
                         if (! empty($nik)) {
                             $existingByNik[$nik] = $obj;
                             $existingByUsername[$nik] = $obj;
@@ -1032,16 +1080,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Karyawan / Pengguna dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal employee sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal employee sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }
@@ -1061,7 +1110,8 @@ class PortalSyncService
             $response = Http::timeout(60)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal department sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal department sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -1086,17 +1136,17 @@ class PortalSyncService
             $userId = Auth::id();
 
             // Preload existing records in 1 query
-            $existingByIdOrg = \App\Models\Department::withTrashed()
+            $existingByIdOrg = Department::withTrashed()
                 ->whereNotNull('idorganization')
                 ->get()
                 ->keyBy('idorganization');
 
-            $existingByCode = \App\Models\Department::withTrashed()
+            $existingByCode = Department::withTrashed()
                 ->whereNotNull('code')
                 ->get()
                 ->keyBy('code');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdOrg, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdOrg, $existingByCode) {
                 foreach ($data as $item) {
                     $idOrganization = $item['idorganization'] ?? null;
                     $orgCode = isset($item['orgCode']) ? trim((string) $item['orgCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
@@ -1119,19 +1169,19 @@ class PortalSyncService
                     }
 
                     $attributes = [
-                        'idorganization'       => $idOrganization,
-                        'code'                 => $orgCode,
-                        'name'                 => $orgName,
-                        'idorg_group'          => $item['idorgGroup'] ?? null,
-                        'org_group_name'       => $item['orgGroupName'] ?? null,
-                        'idorg_level'          => $item['idorgLevel'] ?? null,
-                        'org_level_name'       => $item['orgLevelName'] ?? null,
-                        'description'          => $item['description'] ?? null,
-                        'created_by_name'      => $item['createdBy'] ?? null,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
-                        'portal_created_date'  => $createdDate,
+                        'idorganization' => $idOrganization,
+                        'code' => $orgCode,
+                        'name' => $orgName,
+                        'idorg_group' => $item['idorgGroup'] ?? null,
+                        'org_group_name' => $item['orgGroupName'] ?? null,
+                        'idorg_level' => $item['idorgLevel'] ?? null,
+                        'org_level_name' => $item['orgLevelName'] ?? null,
+                        'description' => $item['description'] ?? null,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
                         'portal_modified_date' => $modifiedDate,
-                        'is_active'            => $isActive,
+                        'is_active' => $isActive,
                     ];
 
                     if ($dept) {
@@ -1144,10 +1194,14 @@ class PortalSyncService
                         $attributes['is_used'] = false; // default false for system
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
-                        $newDept = \App\Models\Department::create($attributes);
+                        $newDept = Department::create($attributes);
 
-                        if (! empty($idOrganization)) $existingByIdOrg[$idOrganization] = $newDept;
-                        if (! empty($orgCode)) $existingByCode[$orgCode] = $newDept;
+                        if (! empty($idOrganization)) {
+                            $existingByIdOrg[$idOrganization] = $newDept;
+                        }
+                        if (! empty($orgCode)) {
+                            $existingByCode[$orgCode] = $newDept;
+                        }
                     }
 
                     $syncedCount++;
@@ -1157,16 +1211,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Organisasi / Departemen dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal department sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal department sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }
@@ -1186,7 +1241,8 @@ class PortalSyncService
             $response = Http::timeout(30)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal job level sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal job level sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -1211,17 +1267,17 @@ class PortalSyncService
             $userId = Auth::id();
 
             // Preload existing job levels in 1 query
-            $existingByIdJobLevel = \App\Models\JobLevel::withTrashed()
+            $existingByIdJobLevel = JobLevel::withTrashed()
                 ->whereNotNull('idjoblevel')
                 ->get()
                 ->keyBy('idjoblevel');
 
-            $existingByCode = \App\Models\JobLevel::withTrashed()
+            $existingByCode = JobLevel::withTrashed()
                 ->whereNotNull('code')
                 ->get()
                 ->keyBy('code');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdJobLevel, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdJobLevel, $existingByCode) {
                 foreach ($data as $item) {
                     $idJobLevel = $item['idjoblevel'] ?? null;
                     $code = isset($item['joblevelCode']) ? trim((string) $item['joblevelCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
@@ -1244,16 +1300,16 @@ class PortalSyncService
                     }
 
                     $attributes = [
-                        'idjoblevel'           => $idJobLevel,
-                        'code'                 => $code,
-                        'name'                 => $name,
-                        'id_job_level_group'   => $item['idjobLevelGroup'] ?? null,
-                        'group_name'           => $item['groupName'] ?? null,
-                        'created_by_name'      => $item['createdBy'] ?? null,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
-                        'portal_created_date'  => $createdDate,
+                        'idjoblevel' => $idJobLevel,
+                        'code' => $code,
+                        'name' => $name,
+                        'id_job_level_group' => $item['idjobLevelGroup'] ?? null,
+                        'group_name' => $item['groupName'] ?? null,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
                         'portal_modified_date' => $modifiedDate,
-                        'is_active'            => $isActive,
+                        'is_active' => $isActive,
                     ];
 
                     if ($jobLevel) {
@@ -1266,10 +1322,14 @@ class PortalSyncService
                         $attributes['is_used'] = $isActive;
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
-                        $newJobLevel = \App\Models\JobLevel::create($attributes);
+                        $newJobLevel = JobLevel::create($attributes);
 
-                        if (! empty($idJobLevel)) $existingByIdJobLevel[$idJobLevel] = $newJobLevel;
-                        if (! empty($code)) $existingByCode[$code] = $newJobLevel;
+                        if (! empty($idJobLevel)) {
+                            $existingByIdJobLevel[$idJobLevel] = $newJobLevel;
+                        }
+                        if (! empty($code)) {
+                            $existingByCode[$code] = $newJobLevel;
+                        }
                     }
 
                     $syncedCount++;
@@ -1279,16 +1339,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Job Level dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal job level sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal job level sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }
@@ -1308,7 +1369,8 @@ class PortalSyncService
             $response = Http::timeout(30)->get($fullUrl);
 
             if (! $response->successful()) {
-                Log::warning('Portal job title sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                Log::warning('Portal job title sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
                 return [
                     'success' => false,
                     'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
@@ -1333,21 +1395,21 @@ class PortalSyncService
             $userId = Auth::id();
 
             // Preload job levels to resolve foreign key relation
-            $jobLevelsById = \App\Models\JobLevel::whereNotNull('idjoblevel')->get()->keyBy('idjoblevel');
-            $jobLevelsByName = \App\Models\JobLevel::all()->keyBy(fn ($jl) => strtolower(trim($jl->name)));
+            $jobLevelsById = JobLevel::whereNotNull('idjoblevel')->get()->keyBy('idjoblevel');
+            $jobLevelsByName = JobLevel::all()->keyBy(fn ($jl) => strtolower(trim($jl->name)));
 
             // Preload existing job titles in 1 query
-            $existingByIdJobTitle = \App\Models\JobTitle::withTrashed()
+            $existingByIdJobTitle = JobTitle::withTrashed()
                 ->whereNotNull('idjobtitle')
                 ->get()
                 ->keyBy('idjobtitle');
 
-            $existingByCode = \App\Models\JobTitle::withTrashed()
+            $existingByCode = JobTitle::withTrashed()
                 ->whereNotNull('code')
                 ->get()
                 ->keyBy('code');
 
-            \Illuminate\Support\Facades\DB::transaction(function () use (
+            DB::transaction(function () use (
                 $data,
                 $userId,
                 &$syncedCount,
@@ -1388,17 +1450,17 @@ class PortalSyncService
                     }
 
                     $attributes = [
-                        'idjobtitle'           => $idJobTitle,
-                        'code'                 => $code,
-                        'name'                 => $name,
-                        'job_level_id'         => $jobLevelId,
-                        'idjoblevel'           => $idJobLevel,
-                        'job_level_name'       => $jobLevelName,
-                        'created_by_name'      => $item['createdBy'] ?? null,
-                        'modified_by_name'     => $item['modifiedBy'] ?? null,
-                        'portal_created_date'  => $createdDate,
+                        'idjobtitle' => $idJobTitle,
+                        'code' => $code,
+                        'name' => $name,
+                        'job_level_id' => $jobLevelId,
+                        'idjoblevel' => $idJobLevel,
+                        'job_level_name' => $jobLevelName,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
                         'portal_modified_date' => $modifiedDate,
-                        'is_active'            => $isActive,
+                        'is_active' => $isActive,
                     ];
 
                     if ($jobTitle) {
@@ -1411,10 +1473,14 @@ class PortalSyncService
                         $attributes['is_used'] = $isActive;
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
-                        $newJobTitle = \App\Models\JobTitle::create($attributes);
+                        $newJobTitle = JobTitle::create($attributes);
 
-                        if (! empty($idJobTitle)) $existingByIdJobTitle[$idJobTitle] = $newJobTitle;
-                        if (! empty($code)) $existingByCode[$code] = $newJobTitle;
+                        if (! empty($idJobTitle)) {
+                            $existingByIdJobTitle[$idJobTitle] = $newJobTitle;
+                        }
+                        if (! empty($code)) {
+                            $existingByCode[$code] = $newJobTitle;
+                        }
                     }
 
                     $syncedCount++;
@@ -1424,16 +1490,17 @@ class PortalSyncService
             return [
                 'success' => true,
                 'message' => "Berhasil sinkronisasi {$syncedCount} data Job Title dari Portal.",
-                'synced'  => $syncedCount,
-                'total'   => count($data),
+                'synced' => $syncedCount,
+                'total' => count($data),
             ];
         } catch (\Throwable $e) {
-            Log::error('Portal job title sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            Log::error('Portal job title sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
             return [
                 'success' => false,
-                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
-                'synced'  => 0,
-                'total'   => 0,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
             ];
         }
     }

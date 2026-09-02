@@ -18,10 +18,10 @@ return new class extends Migration
             if (DB::getDriverName() !== 'sqlite') {
                 try {
                     $table->foreign('contract_filter_template_id')
-                          ->references('id')
-                          ->on('m_contract_filter_templates')
-                          ->nullOnDelete();
-                } catch (\Throwable $e) {
+                        ->references('id')
+                        ->on('m_contract_filter_templates')
+                        ->nullOnDelete();
+                } catch (Throwable $e) {
                     // Ignore if constraint already exists
                 }
             }

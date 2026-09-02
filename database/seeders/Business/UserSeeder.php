@@ -4,7 +4,6 @@ namespace Database\Seeders\Business;
 
 use App\Models\Company;
 use App\Models\Department;
-use App\Models\Division;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;

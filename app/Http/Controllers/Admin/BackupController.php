@@ -15,12 +15,12 @@ class BackupController extends Controller
         $backupFiles = [];
         $dumpPath = base_path('database_dumps');
 
-        if (!File::exists($dumpPath)) {
+        if (! File::exists($dumpPath)) {
             File::makeDirectory($dumpPath, 0755, true);
         }
 
         $files = File::files($dumpPath);
-        
+
         foreach ($files as $file) {
             if ($file->getExtension() === 'sql') {
                 $backupFiles[] = [
@@ -34,7 +34,7 @@ class BackupController extends Controller
         }
 
         // Sort by last modified descending
-        usort($backupFiles, fn($a, $b) => $b['timestamp'] - $a['timestamp']);
+        usort($backupFiles, fn ($a, $b) => $b['timestamp'] - $a['timestamp']);
 
         return Inertia::render('admin/Backups/Index', [
             'backups' => $backupFiles,
@@ -52,7 +52,7 @@ class BackupController extends Controller
         ]);
 
         $type = $request->input('script');
-        
+
         $scriptMap = [
             'db' => 'export_db.sh',
             'data' => 'export_data.sh',
@@ -63,7 +63,7 @@ class BackupController extends Controller
         $scriptName = $scriptMap[$type];
         $scriptPath = base_path("script/{$scriptName}");
 
-        if (!File::exists($scriptPath)) {
+        if (! File::exists($scriptPath)) {
             return back()->withErrors(['error' => "Skrip export tidak ditemukan di {$scriptPath}"]);
         }
 
@@ -73,7 +73,7 @@ class BackupController extends Controller
             return back()->with('success', "Proses ekspor data [{$type}] berhasil dijalankan.");
         }
 
-        return back()->withErrors(['error' => "Gagal menjalankan skrip: " . $result->errorOutput()]);
+        return back()->withErrors(['error' => 'Gagal menjalankan skrip: '.$result->errorOutput()]);
     }
 
     public function download($filename)
@@ -81,8 +81,8 @@ class BackupController extends Controller
         $filename = basename($filename);
         $filePath = base_path("database_dumps/{$filename}");
 
-        if (!File::exists($filePath) || File::extension($filePath) !== 'sql') {
-            abort(404, "File backup tidak ditemukan atau tidak valid.");
+        if (! File::exists($filePath) || File::extension($filePath) !== 'sql') {
+            abort(404, 'File backup tidak ditemukan atau tidak valid.');
         }
 
         return response()->download($filePath);
@@ -95,10 +95,11 @@ class BackupController extends Controller
 
         if (File::exists($filePath) && File::extension($filePath) === 'sql') {
             File::delete($filePath);
+
             return back()->with('success', "File backup '{$filename}' berhasil dihapus.");
         }
 
-        return back()->withErrors(['error' => "File backup tidak ditemukan atau tidak valid."]);
+        return back()->withErrors(['error' => 'File backup tidak ditemukan atau tidak valid.']);
     }
 
     public function restore(Request $request)
@@ -110,8 +111,8 @@ class BackupController extends Controller
         $filename = basename($request->input('filename'));
         $filePath = base_path("database_dumps/{$filename}");
 
-        if (!File::exists($filePath) || File::extension($filePath) !== 'sql') {
-            return back()->withErrors(['error' => "File backup tidak ditemukan atau tidak valid."]);
+        if (! File::exists($filePath) || File::extension($filePath) !== 'sql') {
+            return back()->withErrors(['error' => 'File backup tidak ditemukan atau tidak valid.']);
         }
 
         $result = Process::path(base_path())->run("bash script/import.sh database_dumps/{$filename}");
@@ -120,7 +121,7 @@ class BackupController extends Controller
             return back()->with('success', "Proses restore database menggunakan file '{$filename}' sukses.");
         }
 
-        return back()->withErrors(['error' => "Gagal melakukan restore: " . $result->errorOutput()]);
+        return back()->withErrors(['error' => 'Gagal melakukan restore: '.$result->errorOutput()]);
     }
 
     private function formatBytes($bytes, $precision = 2)
@@ -130,6 +131,7 @@ class BackupController extends Controller
         $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
         $pow = min($pow, count($units) - 1);
         $bytes /= (1024 ** $pow);
-        return round($bytes, $precision) . ' ' . $units[$pow];
+
+        return round($bytes, $precision).' '.$units[$pow];
     }
 }

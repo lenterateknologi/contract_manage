@@ -46,4 +46,5 @@ cosmos-export/
 resources/js/cosmos.decorator.tsx
 index.html
 chrome
+database_dumps/
 

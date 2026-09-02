@@ -38,10 +38,10 @@ class DownloadFileAction
 
             $mimeTypes = [
                 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'doc'  => 'application/msword',
-                'pdf'  => 'application/pdf',
+                'doc' => 'application/msword',
+                'pdf' => 'application/pdf',
                 'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'xls'  => 'application/vnd.ms-excel',
+                'xls' => 'application/vnd.ms-excel',
             ];
 
             $contentType = $mimeTypes[$ext] ?? (mime_content_type($fullPath) ?: 'application/octet-stream');
@@ -64,10 +64,12 @@ class DownloadFileAction
 
     private function updateDocxMetadata(string $filePath, ?string $userName, ?string $userId = null, ?string $docNumber = null): void
     {
-        if (!class_exists('ZipArchive')) return;
+        if (! class_exists('ZipArchive')) {
+            return;
+        }
 
         try {
-            $zip = new \ZipArchive();
+            $zip = new \ZipArchive;
             if ($zip->open($filePath) === true) {
                 $coreXml = $zip->getFromName('docProps/core.xml');
                 if ($coreXml) {

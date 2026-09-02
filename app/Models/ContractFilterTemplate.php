@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class ContractFilterTemplate extends Model
 {
@@ -43,13 +43,14 @@ class ContractFilterTemplate extends Model
     // Returns: null = "Sesuai Data User", [] = "Semua", [name,…] = list of names
     private function resolveStatus(bool $canChange, string $column): mixed
     {
-        if (!$canChange) {
+        if (! $canChange) {
             return null; // "Sesuai Data User"
         }
         $raw = $this->getRawAllowed($column);
         if (empty($raw)) {
             return []; // "Semua"
         }
+
         return collect($raw)->pluck('name')->toArray();
     }
 
@@ -59,15 +60,17 @@ class ContractFilterTemplate extends Model
         if (is_string($raw)) {
             return json_decode($raw, true) ?: [];
         }
+
         return is_array($raw) ? $raw : [];
     }
 
     private function parseIds(mixed $value): array
     {
         $decoded = is_string($value) ? json_decode($value, true) : $value;
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             return [];
         }
+
         return array_map(function ($item) {
             return is_array($item) ? ($item['id'] ?? '') : (string) $item;
         }, $decoded);
@@ -81,7 +84,7 @@ class ContractFilterTemplate extends Model
         if (is_string($value)) {
             $value = json_decode($value, true) ?: [$value];
         }
-        if (!is_array($value)) {
+        if (! is_array($value)) {
             $value = [$value];
         }
 
@@ -131,7 +134,7 @@ class ContractFilterTemplate extends Model
     {
         return Attribute::make(
             get: fn ($value) => $this->parseIds($value),
-            set: fn ($value) => json_encode($this->formatJson($value, \App\Models\CompanyGroup::class)),
+            set: fn ($value) => json_encode($this->formatJson($value, CompanyGroup::class)),
         );
     }
 
@@ -139,7 +142,7 @@ class ContractFilterTemplate extends Model
     {
         return Attribute::make(
             get: fn ($value) => $this->parseIds($value),
-            set: fn ($value) => json_encode($this->formatJson($value, \App\Models\Region::class)),
+            set: fn ($value) => json_encode($this->formatJson($value, Region::class)),
         );
     }
 
@@ -147,7 +150,7 @@ class ContractFilterTemplate extends Model
     {
         return Attribute::make(
             get: fn ($value) => $this->parseIds($value),
-            set: fn ($value) => json_encode($this->formatJson($value, \App\Models\Company::class)),
+            set: fn ($value) => json_encode($this->formatJson($value, Company::class)),
         );
     }
 
@@ -155,7 +158,7 @@ class ContractFilterTemplate extends Model
     {
         return Attribute::make(
             get: fn ($value) => $this->parseIds($value),
-            set: fn ($value) => json_encode($this->formatJson($value, \App\Models\Division::class)),
+            set: fn ($value) => json_encode($this->formatJson($value, Division::class)),
         );
     }
 
@@ -163,7 +166,7 @@ class ContractFilterTemplate extends Model
     {
         return Attribute::make(
             get: fn ($value) => $this->parseIds($value),
-            set: fn ($value) => json_encode($this->formatJson($value, \App\Models\Department::class)),
+            set: fn ($value) => json_encode($this->formatJson($value, Department::class)),
         );
     }
 
@@ -211,10 +214,10 @@ class ContractFilterTemplate extends Model
     {
         return [
             'can_change_company_group' => 'boolean',
-            'can_change_region'        => 'boolean',
-            'can_change_company'       => 'boolean',
-            'can_change_division'      => 'boolean',
-            'can_change_department'    => 'boolean',
+            'can_change_region' => 'boolean',
+            'can_change_company' => 'boolean',
+            'can_change_division' => 'boolean',
+            'can_change_department' => 'boolean',
         ];
     }
 

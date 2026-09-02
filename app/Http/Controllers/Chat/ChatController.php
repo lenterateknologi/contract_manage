@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Chat;
 
 use App\Http\Controllers\Controller;
-use App\Http\Formatters\ContractFormatter;
 use App\Models\Contract;
 use App\Models\ContractMessage;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -54,11 +54,11 @@ class ChatController extends Controller
             ->withCount(['messages as unread_count' => function ($q) use ($user) {
                 $q->whereJsonDoesntContain('read_by', $user->id);
             }])
-            ->orderByRaw('COALESCE((' . $lastMessageQuery->toSql() . '), t_contracts.updated_at) DESC')
+            ->orderByRaw('COALESCE(('.$lastMessageQuery->toSql().'), t_contracts.updated_at) DESC')
             ->get()
             ->map(function ($c) {
                 $effectiveTimestamp = $c->last_message_at
-                    ? \Carbon\Carbon::parse($c->last_message_at)
+                    ? Carbon::parse($c->last_message_at)
                     : ($c->updated_at ?? $c->created_at);
 
                 return [
@@ -102,6 +102,7 @@ class ChatController extends Controller
                         ]);
                 }
             }
+
             return $c;
         });
 
@@ -284,6 +285,7 @@ class ChatController extends Controller
 
         return collect($reactions)->map(function ($r) use ($users, $currentUserId) {
             $u = $users->get($r['user_id'] ?? null);
+
             return [
                 'emoji' => $r['emoji'] ?? '',
                 'react' => true,

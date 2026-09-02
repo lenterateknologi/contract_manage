@@ -2,7 +2,6 @@
 
 namespace App\Exports;
 
-use App\Models\JobLevel;
 use App\Models\JobTitle;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;

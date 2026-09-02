@@ -52,17 +52,17 @@ class BusinessUnitsImport implements ToCollection, WithHeadingRow
             }
 
             $attributes = [
-                'code'               => $code,
-                'name'               => $name,
-                'company_name'       => isset($row['company']) ? trim((string) $row['company']) : null,
-                'location_name'      => isset($row['lokasi']) ? trim((string) $row['lokasi']) : null,
+                'code' => $code,
+                'name' => $name,
+                'company_name' => isset($row['company']) ? trim((string) $row['company']) : null,
+                'location_name' => isset($row['lokasi']) ? trim((string) $row['lokasi']) : null,
                 'company_group_name' => isset($row['group']) ? trim((string) $row['group']) : null,
-                'region_name'        => isset($row['region']) ? trim((string) $row['region']) : null,
-                'komoditi_name'      => isset($row['komoditi']) ? trim((string) $row['komoditi']) : null,
-                'kebun'              => isset($row['kebun']) ? trim((string) $row['kebun']) : null,
-                'is_used'            => $isUsed,
-                'is_active'          => $isActive,
-                'updated_by'         => $admin,
+                'region_name' => isset($row['region']) ? trim((string) $row['region']) : null,
+                'komoditi_name' => isset($row['komoditi']) ? trim((string) $row['komoditi']) : null,
+                'kebun' => isset($row['kebun']) ? trim((string) $row['kebun']) : null,
+                'is_used' => $isUsed,
+                'is_active' => $isActive,
+                'updated_by' => $admin,
             ];
 
             if ($unit) {

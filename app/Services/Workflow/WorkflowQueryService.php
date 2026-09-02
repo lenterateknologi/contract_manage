@@ -52,11 +52,11 @@ class WorkflowQueryService
             if ($typeId) {
                 $query->where(function ($q) use ($typeId) {
                     $q->where('contract_type_id', $typeId)
-                      ->orWhereJsonContains('meta->contract_type_ids', $typeId)
-                      ->orWhere(function ($dq) {
-                          $dq->whereNull('contract_type_id')
-                             ->where(fn ($sub) => $sub->whereNull('meta->contract_type_ids')->orWhereJsonLength('meta->contract_type_ids', 0));
-                      });
+                        ->orWhereJsonContains('meta->contract_type_ids', $typeId)
+                        ->orWhere(function ($dq) {
+                            $dq->whereNull('contract_type_id')
+                                ->where(fn ($sub) => $sub->whereNull('meta->contract_type_ids')->orWhereJsonLength('meta->contract_type_ids', 0));
+                        });
                 });
             }
         }
@@ -65,7 +65,7 @@ class WorkflowQueryService
             // Workflows that have NO initiatorAuthorities records are available to all (when initiator_type is 'all')
             $q->where(function ($allQ) {
                 $allQ->where('initiator_type', 'all')
-                     ->whereDoesntHave('initiatorAuthorities');
+                    ->whereDoesntHave('initiatorAuthorities');
             });
 
             if ($user) {

@@ -30,6 +30,7 @@ use App\Models\Module;
 use App\Models\ModuleGroup;
 use App\Models\NumberingFormat;
 use App\Models\Role;
+use App\Models\RoleModuleGroup;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -298,8 +299,8 @@ class MasterConfigController extends Controller
         $group = ModuleGroup::create($data);
 
         if ($roleId) {
-            $maxSeq = \App\Models\RoleModuleGroup::where('role_id', $roleId)->max('sequence') ?? 0;
-            \App\Models\RoleModuleGroup::create([
+            $maxSeq = RoleModuleGroup::where('role_id', $roleId)->max('sequence') ?? 0;
+            RoleModuleGroup::create([
                 'role_id' => $roleId,
                 'module_group_id' => $group->id,
                 'sequence' => $maxSeq + 1,

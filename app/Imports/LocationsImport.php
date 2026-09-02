@@ -52,17 +52,17 @@ class LocationsImport implements ToCollection, WithHeadingRow
             }
 
             $attributes = [
-                'code'                => $code,
-                'name'                => $name,
+                'code' => $code,
+                'name' => $name,
                 'location_group_name' => isset($row['group_lokasi']) ? trim((string) $row['group_lokasi']) : null,
-                'city_name'           => isset($row['kota_kabupaten']) ? trim((string) $row['kota_kabupaten']) : null,
-                'province_name'       => isset($row['provinsi']) ? trim((string) $row['provinsi']) : null,
-                'address'             => isset($row['alamat']) ? trim((string) $row['alamat']) : null,
-                'zip_code'            => isset($row['kode_pos']) ? trim((string) $row['kode_pos']) : null,
-                'oracle_code'         => isset($row['oracle_code']) ? trim((string) $row['oracle_code']) : null,
-                'is_used'             => $isUsed,
-                'is_active'           => $isActive,
-                'updated_by'          => $admin,
+                'city_name' => isset($row['kota_kabupaten']) ? trim((string) $row['kota_kabupaten']) : null,
+                'province_name' => isset($row['provinsi']) ? trim((string) $row['provinsi']) : null,
+                'address' => isset($row['alamat']) ? trim((string) $row['alamat']) : null,
+                'zip_code' => isset($row['kode_pos']) ? trim((string) $row['kode_pos']) : null,
+                'oracle_code' => isset($row['oracle_code']) ? trim((string) $row['oracle_code']) : null,
+                'is_used' => $isUsed,
+                'is_active' => $isActive,
+                'updated_by' => $admin,
             ];
 
             if ($location) {

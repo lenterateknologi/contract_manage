@@ -165,6 +165,7 @@ class ContractWorkflowService
                 if ($existing->status === 'waiting' && ! $hasAdhoc) {
                     $existing->update(['status' => 'pending']);
                 }
+
                 continue;
             }
 
@@ -326,7 +327,9 @@ class ContractWorkflowService
 
                     if ($a->role_use_initiator) {
                         $roleId = data_get($contract->initiator, 'role_id');
-                        if (! $roleId) $invalidInitiatorFilter = true;
+                        if (! $roleId) {
+                            $invalidInitiatorFilter = true;
+                        }
                     } else {
                         $roleId = $a->role_id;
                     }
@@ -338,7 +341,9 @@ class ContractWorkflowService
 
                     if ($a->department_use_initiator) {
                         $departmentId = data_get($contract->initiator, 'department_id') ?: data_get($contract->initiator, 'division_id');
-                        if (! $departmentId) $invalidInitiatorFilter = true;
+                        if (! $departmentId) {
+                            $invalidInitiatorFilter = true;
+                        }
                     } else {
                         $departmentId = $a->department_id;
                     }
@@ -346,14 +351,16 @@ class ContractWorkflowService
                     if ($departmentId && ($isGroup || $a->authority_type === 'department')) {
                         $query->where(function ($q) use ($departmentId) {
                             $q->where('department_id', $departmentId)
-                              ->orWhere('division_id', $departmentId);
+                                ->orWhere('division_id', $departmentId);
                         });
                         $hasFilters = true;
                     }
 
                     if ($a->division_use_initiator) {
                         $divisionId = data_get($contract->initiator, 'division_id') ?: data_get($contract->initiator, 'department_id');
-                        if (! $divisionId) $invalidInitiatorFilter = true;
+                        if (! $divisionId) {
+                            $invalidInitiatorFilter = true;
+                        }
                     } else {
                         $divisionId = $a->division_id;
                     }
@@ -361,14 +368,16 @@ class ContractWorkflowService
                     if ($divisionId && ($isGroup || $a->authority_type === 'division')) {
                         $query->where(function ($q) use ($divisionId) {
                             $q->where('division_id', $divisionId)
-                              ->orWhere('department_id', $divisionId);
+                                ->orWhere('department_id', $divisionId);
                         });
                         $hasFilters = true;
                     }
 
                     if ($a->company_group_use_initiator) {
                         $companyGroupId = data_get($contract->initiator, 'company_group_id') ?: data_get($contract->initiator, 'company.company_group_id');
-                        if (! $companyGroupId) $invalidInitiatorFilter = true;
+                        if (! $companyGroupId) {
+                            $invalidInitiatorFilter = true;
+                        }
                     } else {
                         $companyGroupId = $a->company_group_id;
                     }
@@ -376,14 +385,16 @@ class ContractWorkflowService
                     if (($a->company_group_use_initiator || $companyGroupId) && ($isGroup || $a->authority_type === 'company_group')) {
                         $query->where(function ($q) use ($companyGroupId) {
                             $q->where('company_group_id', $companyGroupId)
-                              ->orWhereHas('company', fn ($cq) => $cq->where('company_group_id', $companyGroupId));
+                                ->orWhereHas('company', fn ($cq) => $cq->where('company_group_id', $companyGroupId));
                         });
                         $hasFilters = true;
                     }
 
                     if ($a->company_use_initiator) {
                         $companyId = data_get($contract->initiator, 'company_id');
-                        if (! $companyId) $invalidInitiatorFilter = true;
+                        if (! $companyId) {
+                            $invalidInitiatorFilter = true;
+                        }
                     } else {
                         $companyId = $a->company_id;
                     }
@@ -395,7 +406,9 @@ class ContractWorkflowService
 
                     if ($a->region_use_initiator) {
                         $regionId = data_get($contract->initiator, 'region_id') ?: data_get($contract->initiator, 'company.region_id');
-                        if (! $regionId) $invalidInitiatorFilter = true;
+                        if (! $regionId) {
+                            $invalidInitiatorFilter = true;
+                        }
                     } else {
                         $regionId = $a->region_id;
                     }
@@ -403,7 +416,7 @@ class ContractWorkflowService
                     if (($a->region_use_initiator || $regionId) && ($isGroup || $a->authority_type === 'region')) {
                         $query->where(function ($q) use ($regionId) {
                             $q->where('region_id', $regionId)
-                              ->orWhereHas('company', fn ($cq) => $cq->where('region_id', $regionId));
+                                ->orWhereHas('company', fn ($cq) => $cq->where('region_id', $regionId));
                         });
                         $hasFilters = true;
                     }
@@ -412,7 +425,7 @@ class ContractWorkflowService
                         $query = $this->applyStepFilters($query, $step, $contract);
                         $rawSql = $query->toSql();
                         foreach ($query->getBindings() as $binding) {
-                            $val = is_numeric($binding) ? $binding : "'".addslashes((string)$binding)."'";
+                            $val = is_numeric($binding) ? $binding : "'".addslashes((string) $binding)."'";
                             $rawSql = preg_replace('/\?/', $val, $rawSql, 1);
                         }
                         $executedQueries[] = $rawSql;
@@ -426,7 +439,7 @@ class ContractWorkflowService
                     $uQuery = User::whereIn('id', $stepUsers);
                     $rawSql = $uQuery->toSql();
                     foreach ($uQuery->getBindings() as $binding) {
-                        $val = is_numeric($binding) ? $binding : "'".addslashes((string)$binding)."'";
+                        $val = is_numeric($binding) ? $binding : "'".addslashes((string) $binding)."'";
                         $rawSql = preg_replace('/\?/', $val, $rawSql, 1);
                     }
                     $executedQueries[] = $rawSql;
@@ -506,7 +519,7 @@ class ContractWorkflowService
                         if ($hasFilters) {
                             $rawSql = $query->toSql();
                             foreach ($query->getBindings() as $binding) {
-                                $val = is_numeric($binding) ? $binding : "'".addslashes((string)$binding)."'";
+                                $val = is_numeric($binding) ? $binding : "'".addslashes((string) $binding)."'";
                                 $rawSql = preg_replace('/\?/', $val, $rawSql, 1);
                             }
                             $executedQueries[] = $rawSql;

@@ -83,6 +83,7 @@ class DepartmentResource extends Resource
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Group / Kosong)'];
                     $groups = Department::whereNotNull('org_group_name')->where('org_group_name', '!=', '')->distinct()->orderBy('org_group_name')->pluck('org_group_name', 'org_group_name')->toArray();
+
                     return $options + $groups;
                 }),
             Filter::make('org_level_name', 'Level Organisasi')
@@ -90,6 +91,7 @@ class DepartmentResource extends Resource
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Level / Kosong)'];
                     $levels = Department::whereNotNull('org_level_name')->where('org_level_name', '!=', '')->distinct()->orderBy('org_level_name')->pluck('org_level_name', 'org_level_name')->toArray();
+
                     return $options + $levels;
                 }),
             Filter::make('is_used', 'Status Sistem')

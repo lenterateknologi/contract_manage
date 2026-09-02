@@ -141,11 +141,11 @@ class ContractController extends Controller
 
         switch ($view) {
             case 'contracts':
-                $baseContractsQuery = \Illuminate\Support\Facades\DB::table('t_contracts')
+                $baseContractsQuery = DB::table('t_contracts')
                     ->whereNull('deleted_at')
                     ->whereRaw('UPPER(status) != ?', ['DRAFT']);
 
-                $parents = \Illuminate\Support\Facades\DB::table('m_contract_types')->whereNull('parent_id')->get();
+                $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
                 $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
                 $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
                 $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
@@ -155,7 +155,7 @@ class ContractController extends Controller
                         return [];
                     }
                     $ids = [$parentId];
-                    $children = \Illuminate\Support\Facades\DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                    $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
                     foreach ($children as $childId) {
                         $ids = array_merge($ids, $getDescendantIds($childId));
                     }
@@ -198,11 +198,11 @@ class ContractController extends Controller
                 $viewDesc = 'Daftar dokumen yang Anda buat.';
                 $viewIcon = 'FileEdit';
 
-                $baseMineQuery = \Illuminate\Support\Facades\DB::table('t_contracts')
-                    ->where('created_by', \Illuminate\Support\Facades\Auth::id())
+                $baseMineQuery = DB::table('t_contracts')
+                    ->where('created_by', Auth::id())
                     ->whereNull('deleted_at');
 
-                $parents = \Illuminate\Support\Facades\DB::table('m_contract_types')->whereNull('parent_id')->get();
+                $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
                 $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
                 $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
                 $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
@@ -212,7 +212,7 @@ class ContractController extends Controller
                         return [];
                     }
                     $ids = [$parentId];
-                    $children = \Illuminate\Support\Facades\DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                    $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
                     foreach ($children as $childId) {
                         $ids = array_merge($ids, $getDescendantIds($childId));
                     }
@@ -249,16 +249,16 @@ class ContractController extends Controller
                 $viewDesc = 'Kontrak yang menunggu atau telah diproses persetujuan Anda.';
                 $viewIcon = 'Clock';
 
-                $userId = \Illuminate\Support\Facades\Auth::id();
+                $userId = Auth::id();
 
                 $props['pendingCounts'] = [
-                    'pending' => \App\Models\Contract::whereRaw("UPPER(status) != 'DRAFT'")
+                    'pending' => Contract::whereRaw("UPPER(status) != 'DRAFT'")
                         ->whereHas('approvals', function ($q) use ($userId) {
                             $q->where('user_id', $userId)
                                 ->where('status', 'pending')
                                 ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
                         })->count(),
-                    'history' => \App\Models\Contract::whereRaw("UPPER(status) != 'DRAFT'")
+                    'history' => Contract::whereRaw("UPPER(status) != 'DRAFT'")
                         ->whereHas('approvals', function ($q) use ($userId) {
                             $q->where('user_id', $userId)
                                 ->whereIn('status', ['approved', 'rejected', 'revision']);
@@ -271,12 +271,12 @@ class ContractController extends Controller
                 $viewDesc = 'Dokumen yang akan atau telah berakhir masa berlakunya.';
                 $viewIcon = 'History';
 
-                $baseExpiryQuery = \Illuminate\Support\Facades\DB::table('t_contracts')
+                $baseExpiryQuery = DB::table('t_contracts')
                     ->whereNull('deleted_at')
                     ->whereRaw("UPPER(status) != 'DRAFT'")
                     ->whereNotNull('end_date');
 
-                $parents = \Illuminate\Support\Facades\DB::table('m_contract_types')->whereNull('parent_id')->get();
+                $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
                 $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
                 $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
                 $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
@@ -286,7 +286,7 @@ class ContractController extends Controller
                         return [];
                     }
                     $ids = [$parentId];
-                    $children = \Illuminate\Support\Facades\DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
+                    $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
                     foreach ($children as $childId) {
                         $ids = array_merge($ids, $getDescendantIds($childId));
                     }

@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -20,7 +21,7 @@ return new class extends Migration
         });
 
         // Backfill company_group_id from m_business_units where location is matched
-        \Illuminate\Support\Facades\DB::statement("
+        DB::statement('
             UPDATE m_locations
             SET company_group_id = sub.company_group_id,
                 company_group_name = sub.company_group_name,
@@ -32,7 +33,7 @@ return new class extends Migration
                 ORDER BY location_id, created_at DESC
             ) AS sub
             WHERE m_locations.id = sub.location_id
-        ");
+        ');
     }
 
     /**

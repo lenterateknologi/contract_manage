@@ -86,8 +86,6 @@ class ContractFileController extends Controller
         return $action->execute($contract, $atId);
     }
 
-
-
     public function uploadAttachment(UploadAttachmentRequest $request, string $id, UploadAttachmentAction $action): JsonResponse
     {
         $contract = $this->contractDetailQuery->find($id);

@@ -14,8 +14,8 @@ use App\Exports\UsersExport;
 use App\Imports\UsersImport;
 use App\Models\Company;
 use App\Models\CompanyGroup;
+use App\Models\ContractFilterTemplate;
 use App\Models\Department;
-use App\Models\Division;
 use App\Models\JobLevel;
 use App\Models\JobTitle;
 use App\Models\Location;
@@ -104,7 +104,7 @@ class UserResource extends Resource
                     ->options(fn () => Company::where('is_used', true)->orderBy('name')->whereNotNull('name')->pluck('name', 'name')->toArray())
                     ->meta([
                         'company_map' => Company::where('is_used', true)->whereNotNull('name')->get()->keyBy('name')->map(fn ($c) => [
-                            'group_name'  => $c->company_group_name,
+                            'group_name' => $c->company_group_name,
                             'region_name' => $c->region_name,
                         ])->toArray(),
                     ])
@@ -152,7 +152,7 @@ class UserResource extends Resource
                     ->placeholder('Kosongkan jika tidak ingin mengubah password')
                     ->helperText('Minimal 8 karakter.'),
                 SelectInput::make('contract_filter_template_id', 'Template Filter Kontrak')
-                    ->options(fn () => \App\Models\ContractFilterTemplate::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->options(fn () => ContractFilterTemplate::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih Template Filter...')
                     ->helperText('Template pembatasan akses dokumen kontrak.'),
             ])->icon('Settings2'),
@@ -166,43 +166,50 @@ class UserResource extends Resource
                 ->type('searchable')
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Departemen / Kosong)'];
+
                     return $options + Department::where('is_used', true)->orderBy('name')->whereNotNull('name')->pluck('name', 'id')->toArray();
                 }),
             Filter::make('job_position_id', 'Jabatan (Job Title)')
                 ->type('searchable')
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Jabatan / Kosong)'];
+
                     return $options + JobTitle::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
                 }),
             Filter::make('job_level_id', 'Level Jabatan (Job Level)')
                 ->type('searchable')
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Level / Kosong)'];
+
                     return $options + JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
                 }),
             Filter::make('location_id', 'Lokasi Kerja')
                 ->type('searchable')
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Lokasi / Kosong)'];
+
                     return $options + Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
                 }),
             Filter::make('company_group_id', 'Grup Perusahaan')
                 ->type('searchable')
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Grup / Kosong)'];
-                    return $options + \App\Models\CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+
+                    return $options + CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
                 }),
             Filter::make('region_id', 'Wilayah (Region)')
                 ->type('searchable')
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Wilayah / Kosong)'];
-                    return $options + \App\Models\Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+
+                    return $options + Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
                 }),
             Filter::make('company_id', 'Perusahaan (Company)')
                 ->type('searchable')
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Perusahaan / Kosong)'];
-                    return $options + \App\Models\Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+
+                    return $options + Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
                 }),
             Filter::make('role_id', 'Role Akses')
                 ->type('searchable')

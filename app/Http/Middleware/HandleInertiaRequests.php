@@ -8,6 +8,7 @@ use App\Models\Role;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -149,8 +150,8 @@ class HandleInertiaRequests extends Middleware
 
         // compute is_used AND is_active counts for Portal master data
         $getPortalCount = function (string $table): string {
-            $hasIsUsed = \Illuminate\Support\Facades\Schema::hasColumn($table, 'is_used');
-            $hasIsActive = \Illuminate\Support\Facades\Schema::hasColumn($table, 'is_active');
+            $hasIsUsed = Schema::hasColumn($table, 'is_used');
+            $hasIsActive = Schema::hasColumn($table, 'is_active');
 
             $condition = '1=1';
             if ($hasIsUsed && $hasIsActive) {
@@ -230,6 +231,42 @@ class HandleInertiaRequests extends Middleware
                                 'url' => '/contracts/mine?mine_tab=nda',
                                 'icon' => 'Zap',
                                 'description' => 'NDA Saya',
+                            ],
+                        ];
+                    } elseif ($route === '/contracts/pending') {
+                        $children = [
+                            [
+                                'title' => 'Perlu Persetujuan',
+                                'url' => '/contracts/pending?pending_tab=pending',
+                                'icon' => 'Clock',
+                                'description' => 'Dokumen menunggu persetujuan Anda',
+                            ],
+                            [
+                                'title' => 'Riwayat Persetujuan',
+                                'url' => '/contracts/pending?pending_tab=history',
+                                'icon' => 'History',
+                                'description' => 'Riwayat persetujuan dokumen Anda',
+                            ],
+                        ];
+                    } elseif ($route === '/contracts/expiry') {
+                        $children = [
+                            [
+                                'title' => 'Kontrak',
+                                'url' => '/contracts/expiry?expiry_tab=kontrak',
+                                'icon' => 'FileText',
+                                'description' => 'Masa berlaku dokumen kontrak',
+                            ],
+                            [
+                                'title' => 'Non Kontrak',
+                                'url' => '/contracts/expiry?expiry_tab=non_kontrak',
+                                'icon' => 'FileCheck',
+                                'description' => 'Masa berlaku dokumen non kontrak',
+                            ],
+                            [
+                                'title' => 'NDA',
+                                'url' => '/contracts/expiry?expiry_tab=nda',
+                                'icon' => 'Zap',
+                                'description' => 'Masa berlaku NDA',
                             ],
                         ];
                     }
