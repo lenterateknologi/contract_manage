@@ -21,6 +21,8 @@ interface PageHeaderProps {
     onFilterChange?: (key: string, value: any) => void;
     onResetFilters?: () => void;
     totalResults?: number;
+    isFilterExpanded?: boolean;
+    onToggleFilter?: () => void;
 
     // Actions
     actions?: React.ReactNode;
@@ -38,6 +40,8 @@ export function PageHeader({
     onFilterChange,
     onResetFilters,
     totalResults,
+    isFilterExpanded,
+    onToggleFilter,
     actions
 }: PageHeaderProps) {
     const [localSearch, setLocalSearch] = React.useState(searchValue || '');
@@ -50,7 +54,11 @@ export function PageHeader({
         let count = 0;
         filters.forEach(f => {
             const val = activeFilters[f.key];
-            if (Array.isArray(val)) {
+            const fromVal = activeFilters[`${f.key}_from`];
+            const toVal = activeFilters[`${f.key}_to`];
+            if (fromVal || toVal) {
+                count += 1;
+            } else if (Array.isArray(val)) {
                 count += val.filter(v => v !== '' && v !== null).length;
             } else if (val !== undefined && val !== '' && val !== null) {
                 count += 1;
@@ -95,6 +103,29 @@ export function PageHeader({
                             className="h-9 text-xs"
                         />
                     </div>
+                )}
+
+                {/* Filter Toggle Button */}
+                {filters && filters.length > 0 && onToggleFilter && (
+                    <Button
+                        type="button"
+                        variant={isFilterExpanded ? 'primary' : 'outline'}
+                        size="sm"
+                        onClick={onToggleFilter}
+                        className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                        title="Filter Data"
+                    >
+                        <SlidersHorizontal size={13} />
+                        <span>Filter</span>
+                        {activeCount > 0 && (
+                            <span className={cn(
+                                "rounded-full px-1.5 py-0.2 text-[10px] font-bold",
+                                isFilterExpanded ? "bg-white/20 text-white" : "bg-primary text-primary-foreground"
+                            )}>
+                                {activeCount}
+                            </span>
+                        )}
+                    </Button>
                 )}
 
                 {/* Actions */}

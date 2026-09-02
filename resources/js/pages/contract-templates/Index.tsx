@@ -1,34 +1,43 @@
-import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
-import { Label } from '@/components/ui/forms/Label';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
-import { SideFilterCard, FilterCategory } from '@/components/ui/selection/SideFilterCard';
-import { cn } from '@/lib/utils';
+import React, { useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
+import { PageTable } from '@/components/ui/navigation/PageTable';
+import { DataTable, Column } from '@/components/ui/tables/DataTable';
+import { Button } from '@/components/ui/buttons/Button';
+import { Input } from '@/components/ui/inputs/Input';
+import { Label } from '@/components/ui/forms/Label';
+import { FilterCategory } from '@/components/ui/navigation/PageFilter';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialogs/Dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/selection/DropdownMenu';
+import { cn } from '@/lib/utils';
 import {
     AlertTriangle,
     ArrowLeft,
-    ChevronDown,
     ChevronRight,
-    ChevronsDown,
-    ChevronsUp,
-    File,
+    Download,
+    Edit3,
+    FileSpreadsheet,
     FileText,
-    Filter,
     Folder,
+    FolderInput,
     FolderPlus,
-    LayoutGrid,
-    List,
     MoreHorizontal,
-    MoreVertical,
-    Plus,
-    Search,
+    Trash2,
     Upload,
 } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
 
 interface TemplateFolder {
     id: string;
@@ -47,6 +56,8 @@ interface ContractTemplate {
     file_size: number;
     file_type: string;
     creator?: { name: string };
+    folder?: { name: string };
+    created_at?: string;
 }
 
 interface Props {
@@ -54,13 +65,24 @@ interface Props {
     templates: ContractTemplate[];
 }
 
+interface TableRowItem {
+    id: string;
+    itemType: 'folder' | 'template';
+    name: string;
+    description?: string | null;
+    file_type: string;
+    file_size?: number;
+    file_name?: string;
+    templates_count?: number;
+    creator_name?: string;
+    folder_name?: string;
+    raw: any;
+}
+
 export default function Templates({ folders, templates }: Props) {
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [fileTypeFilter, setFileTypeFilter] = useState<string | null>(null);
-    const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [fileTypeFilter, setFileTypeFilter] = useState<string[]>([]);
 
     // Dialog States
     const [isFolderModalOpen, setIsFolderModalOpen] = useState(false);
@@ -70,56 +92,41 @@ export default function Templates({ folders, templates }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
     // Selection/Item States
-    const [selectedItem, setSelectedItem] = useState<{ type: 'folder' | 'template' | 'background'; id: string; name: string } | null>(null);
+    const [selectedItem, setSelectedItem] = useState<{ type: 'folder' | 'template'; id: string; name: string } | null>(null);
     const [newFolderName, setNewFolderName] = useState('');
     const [uploadData, setUploadData] = useState({ name: '', description: '', file: null as File | null });
     const [targetFolderId, setTargetFolderId] = useState<string | null>(null);
 
-    // Context Menu State
-    const [contextMenu, setContextMenu] = useState<{
-        x: number;
-        y: number;
-        isOpen: boolean;
-        item: { type: 'folder' | 'template' | 'background'; id: string; name: string } | null;
-    }>({ x: 0, y: 0, isOpen: false, item: null });
-
-    const handleContextMenu = (e: React.MouseEvent, type: 'folder' | 'template' | 'background', id: string, name: string) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setContextMenu({
-            x: e.clientX,
-            y: e.clientY,
-            isOpen: true,
-            item: { type, id, name },
-        });
+    // Helpers
+    const formatSize = (bytes: number) => {
+        if (!bytes || bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     };
 
-    // Computed Data
+    const getFolderPath = (folderId: string | null): TemplateFolder[] => {
+        const path: TemplateFolder[] = [];
+        let currId = folderId;
+        while (currId) {
+            const f = folders.find((folder) => folder.id === currId);
+            if (f) {
+                path.unshift(f);
+                currId = f.parent_id;
+            } else break;
+        }
+        return path;
+    };
+
     const currentFolder = useMemo(() => folders.find((f) => f.id === currentFolderId), [folders, currentFolderId]);
+    const folderPath = useMemo(() => getFolderPath(currentFolderId), [folders, currentFolderId]);
 
-    const filteredFolders = useMemo(
-        () => folders.filter((f) => f.parent_id === currentFolderId && f.name.toLowerCase().includes(searchQuery.toLowerCase())),
-        [folders, currentFolderId, searchQuery],
-    );
-
-    const filteredTemplates = useMemo(
-        () =>
-            templates.filter(
-                (t) =>
-                    t.template_folder_id === currentFolderId &&
-                    t.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-                    (fileTypeFilter ? t.file_type === fileTypeFilter : true),
-            ),
-        [templates, currentFolderId, searchQuery, fileTypeFilter],
-    );
-
-    const [isRightFilterOpen, setIsRightFilterOpen] = useState(false);
-
-    // Get unique file types from all templates for the filter dropdown
+    // Available File Types for Filter
     const availableFileTypes = useMemo(() => {
         const types = new Set<string>();
         templates.forEach((t) => {
-            if (t.file_type) types.add(t.file_type);
+            if (t.file_type) types.add(t.file_type.toLowerCase());
         });
         return Array.from(types).sort();
     }, [templates]);
@@ -128,39 +135,83 @@ export default function Templates({ folders, templates }: Props) {
         () => [
             {
                 key: 'file_type',
-                label: 'Tipe File',
+                label: 'Tipe Dokumen',
                 type: 'multiselect',
-                options: availableFileTypes.map((type) => ({
-                    label: type.toUpperCase(),
-                    value: type,
-                })),
+                options: [
+                    { label: 'FOLDER', value: 'folder' },
+                    ...availableFileTypes.map((type) => ({
+                        label: type.toUpperCase(),
+                        value: type,
+                    })),
+                ],
             },
         ],
         [availableFileTypes],
     );
 
-    const expandAllFolders = () => {
-        const expanded: Record<string, boolean> = {};
-        folders.forEach((f) => {
-            expanded[f.id] = true;
-        });
-        setExpandedFolders(expanded);
-    };
+    // Filtered data combined into a unified list
+    const processedRows = useMemo(() => {
+        const q = searchQuery.toLowerCase().trim();
 
-    const collapseAllFolders = () => {
-        setExpandedFolders({});
-    };
+        // If searching across all or viewing specific folder
+        const folderRows: TableRowItem[] = folders
+            .filter((f) => {
+                if (q) {
+                    return f.name.toLowerCase().includes(q);
+                }
+                return f.parent_id === currentFolderId;
+            })
+            .map((f) => ({
+                id: f.id,
+                itemType: 'folder',
+                name: f.name,
+                file_type: 'folder',
+                templates_count: f.templates_count,
+                raw: f,
+            }));
 
-    const toggleFolder = (id: string) => {
-        setExpandedFolders((prev) => ({ ...prev, [id]: !prev[id] }));
-    };
+        const templateRows: TableRowItem[] = templates
+            .filter((t) => {
+                const matchesFolder = q ? true : t.template_folder_id === currentFolderId;
+                const matchesSearch = q
+                    ? t.name.toLowerCase().includes(q) ||
+                      (t.description && t.description.toLowerCase().includes(q)) ||
+                      (t.file_name && t.file_name.toLowerCase().includes(q))
+                    : true;
+                return matchesFolder && matchesSearch;
+            })
+            .map((t) => {
+                const parentFolder = folders.find((f) => f.id === t.template_folder_id);
+                return {
+                    id: t.id,
+                    itemType: 'template',
+                    name: t.name,
+                    description: t.description,
+                    file_type: t.file_type?.toLowerCase() || 'docx',
+                    file_size: t.file_size,
+                    file_name: t.file_name,
+                    creator_name: t.creator?.name || '-',
+                    folder_name: parentFolder ? parentFolder.name : 'Root',
+                    raw: t,
+                };
+            });
 
+        let all = [...folderRows, ...templateRows];
+
+        if (fileTypeFilter.length > 0) {
+            all = all.filter((r) => fileTypeFilter.includes(r.file_type));
+        }
+
+        return all;
+    }, [folders, templates, currentFolderId, searchQuery, fileTypeFilter]);
+
+    // Actions
     const handleCreateFolder = () => {
-        if (!newFolderName) return;
+        if (!newFolderName.trim()) return;
         router.post(
             route('admin.templates.folders.store'),
             {
-                name: newFolderName,
+                name: newFolderName.trim(),
                 parent_id: currentFolderId,
             },
             {
@@ -170,20 +221,6 @@ export default function Templates({ folders, templates }: Props) {
                 },
             },
         );
-    };
-
-    const handleDirectFileUpload = (file: File, folderId: string | null) => {
-        const formData = new FormData();
-        const fileNameWithoutExt = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
-        formData.append('name', fileNameWithoutExt);
-        formData.append('description', 'Uploaded via Drag & Drop');
-        formData.append('template_folder_id', folderId || '');
-        formData.append('file', file);
-
-        router.post(route('admin.templates.store'), formData, {
-            preserveState: true,
-            preserveScroll: true,
-        });
     };
 
     const handleUploadTemplate = (e: React.FormEvent) => {
@@ -221,7 +258,7 @@ export default function Templates({ folders, templates }: Props) {
     };
 
     const handleRename = () => {
-        if (!selectedItem || !newFolderName) return;
+        if (!selectedItem || !newFolderName.trim()) return;
 
         const url =
             selectedItem.type === 'folder'
@@ -230,7 +267,7 @@ export default function Templates({ folders, templates }: Props) {
 
         router.put(
             url,
-            { name: newFolderName },
+            { name: newFolderName.trim() },
             {
                 onSuccess: () => {
                     setNewFolderName('');
@@ -241,700 +278,370 @@ export default function Templates({ folders, templates }: Props) {
         );
     };
 
-    const handleMoveItem = (type: 'folder' | 'template', itemId: string, destinationFolderId: string | null) => {
-        const url = type === 'folder' ? route('admin.templates.folders.move', itemId) : route('admin.templates.move', itemId);
-        const data = type === 'folder' ? { parent_id: destinationFolderId } : { template_folder_id: destinationFolderId };
+    const handleMove = () => {
+        if (!selectedItem) return;
+        const url = selectedItem.type === 'folder' ? route('admin.templates.folders.move', selectedItem.id) : route('admin.templates.move', selectedItem.id);
+        const data = selectedItem.type === 'folder' ? { parent_id: targetFolderId } : { template_folder_id: targetFolderId };
 
         router.patch(url, data, {
-            preserveState: true,
-            preserveScroll: true,
+            onSuccess: () => {
+                setIsMoveModalOpen(false);
+                setSelectedItem(null);
+                setTargetFolderId(null);
+            },
         });
     };
 
-    const handleMove = () => {
-        if (!selectedItem) return;
-        handleMoveItem(selectedItem.type as 'folder' | 'template', selectedItem.id, targetFolderId);
-        setIsMoveModalOpen(false);
-        setSelectedItem(null);
-        setTargetFolderId(null);
-    };
+    // Table Columns Configuration
+    const columns: Column<TableRowItem>[] = [
+        {
+            header: 'Nama Dokumen / Folder',
+            accessorKey: 'name',
+            cell: (row) => {
+                if (row.itemType === 'folder') {
+                    return (
+                        <div className="flex items-center gap-3 py-0.5">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200/70 dark:bg-amber-950/40 dark:border-amber-800/60 dark:text-amber-400">
+                                <Folder size={18} className="fill-current opacity-80" />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <button
+                                    type="button"
+                                    onClick={() => setCurrentFolderId(row.id)}
+                                    className="text-left font-semibold text-xs text-text-main hover:text-primary transition-colors cursor-pointer truncate max-w-md"
+                                >
+                                    {row.name}
+                                </button>
+                                <span className="text-[10.5px] text-text-desc font-medium">
+                                    {row.templates_count || 0} item di dalam folder
+                                </span>
+                            </div>
+                        </div>
+                    );
+                }
 
-    const formatSize = (bytes: number) => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
+                const isPdf = row.file_type === 'pdf';
+                const isExcel = ['xls', 'xlsx'].includes(row.file_type);
 
-    const getFolderPath = (folderId: string | null): TemplateFolder[] => {
-        const path: TemplateFolder[] = [];
-        let currId = folderId;
-        while (currId) {
-            const f = folders.find((folder) => folder.id === currId);
-            if (f) {
-                path.unshift(f);
-                currId = f.parent_id;
-            } else break;
-        }
-        return path;
-    };
+                return (
+                    <div className="flex items-center gap-3 py-0.5">
+                        <div
+                            className={cn(
+                                'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
+                                isPdf
+                                    ? 'bg-rose-50 text-rose-600 border-rose-200/70 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-400'
+                                    : isExcel
+                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200/70 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-400'
+                                    : 'bg-blue-50 text-blue-600 border-blue-200/70 dark:bg-blue-950/40 dark:border-blue-800/60 dark:text-blue-400',
+                            )}
+                        >
+                            <FileText size={18} />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                            <span className="font-semibold text-xs text-text-main truncate max-w-md">
+                                {row.name}
+                            </span>
+                            {row.description ? (
+                                <span className="text-[10.5px] text-text-desc truncate max-w-md">
+                                    {row.description}
+                                </span>
+                            ) : (
+                                <span className="text-[10.5px] text-text-desc font-mono truncate max-w-md">
+                                    {row.file_name}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            header: 'Tipe',
+            accessorKey: 'file_type',
+            className: 'w-32',
+            cell: (row) => {
+                if (row.itemType === 'folder') {
+                    return (
+                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold tracking-tight bg-amber-50 text-amber-700 border border-amber-200/70 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50 uppercase">
+                            Folder
+                        </span>
+                    );
+                }
 
-    const folderPath = getFolderPath(currentFolderId);
+                const isPdf = row.file_type === 'pdf';
+                const isExcel = ['xls', 'xlsx'].includes(row.file_type);
+
+                return (
+                    <span
+                        className={cn(
+                            'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold tracking-tight border uppercase',
+                            isPdf
+                                ? 'bg-rose-50 text-rose-700 border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50'
+                                : isExcel
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50'
+                                : 'bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50',
+                        )}
+                    >
+                        {row.file_type}
+                    </span>
+                );
+            },
+        },
+        {
+            header: 'Lokasi Folder',
+            accessorKey: 'folder_name',
+            className: 'w-44',
+            cell: (row) => (
+                <span className="text-xs text-text-desc font-medium">
+                    {row.itemType === 'folder' ? 'Sub-Folder' : row.folder_name || 'Root'}
+                </span>
+            ),
+        },
+        {
+            header: 'Ukuran File',
+            accessorKey: 'file_size',
+            className: 'w-32',
+            cell: (row) => (
+                <span className="text-xs text-text-desc font-medium">
+                    {row.itemType === 'folder' ? '-' : formatSize(row.file_size || 0)}
+                </span>
+            ),
+        },
+        {
+            header: 'Pengunggah',
+            accessorKey: 'creator_name',
+            className: 'w-40',
+            cell: (row) => (
+                <span className="text-xs text-text-desc font-medium">
+                    {row.itemType === 'folder' ? '-' : row.creator_name || '-'}
+                </span>
+            ),
+        },
+        {
+            header: 'Aksi',
+            accessorKey: 'id',
+            className: 'w-20 text-center',
+            cell: (row) => (
+                <div className="flex items-center justify-center">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-lg text-text-desc hover:text-text-main hover:bg-surface-muted transition-all cursor-pointer"
+                            >
+                                <MoreHorizontal size={15} />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44 p-1.5 shadow-xl border-surface-border">
+                            {row.itemType === 'template' && (
+                                <DropdownMenuItem asChild>
+                                    <a
+                                        href={route('admin.templates.download', row.id)}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                    >
+                                        <Download size={13} className="text-primary" />
+                                        <span>Download</span>
+                                    </a>
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
+                                    setNewFolderName(row.name);
+                                    setIsRenameModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                            >
+                                <Edit3 size={13} className="text-amber-500" />
+                                <span>Ubah Nama</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
+                                    setTargetFolderId(row.itemType === 'folder' ? row.raw.parent_id : row.raw.template_folder_id);
+                                    setIsMoveModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                            >
+                                <FolderInput size={13} className="text-blue-500" />
+                                <span>Pindahkan</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={() => {
+                                    setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
+                                    setIsDeleteModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-colors cursor-pointer"
+                            >
+                                <Trash2 size={13} className="text-rose-500" />
+                                <span>Hapus</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            ),
+        },
+    ];
 
     return (
         <>
             <Head title="Template Kontrak" />
-
             <MasterPageLayout>
-                {/* Floating Left Sidebar for Tree Navigation */}
-                <div
-                    className={cn(
-                        'flex flex-col shrink-0 rounded-2xl border border-border bg-card dark:bg-zinc-900/95 overflow-hidden transition-all duration-300',
-                        isSidebarCollapsed ? 'w-14 p-3 gap-3 items-center' : 'w-72 p-5 gap-5',
-                    )}
-                >
-                    <div className={cn('flex items-center w-full', isSidebarCollapsed ? 'flex-col gap-2 justify-center' : 'justify-between px-1')}>
-                        {!isSidebarCollapsed && (
-                            <div className="space-y-0.5">
-                                <h3 className="text-xs font-bold text-text-main tracking-tight">Struktur Folder</h3>
-                                <p className="text-[10px] text-text-soft uppercase tracking-wider">Hierarchy Explorer</p>
-                            </div>
-                        )}
-
-                        <div className="flex items-center gap-1">
-                            {!isSidebarCollapsed && (
-                                <>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 rounded-lg text-text-soft hover:text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all"
-                                        onClick={expandAllFolders}
-                                        title="Expand All Folder"
-                                    >
-                                        <ChevronsDown size={14} />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 rounded-lg text-text-soft hover:text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all"
-                                        onClick={collapseAllFolders}
-                                        title="Minimize / Collapse All Folder"
-                                    >
-                                        <ChevronsUp size={14} />
-                                    </Button>
-                                </>
-                            )}
-                            {/* Soft Amber Minimize Button */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200/60 dark:border-amber-800/60 transition-all shadow-2xs"
-                                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                                title={isSidebarCollapsed ? 'Buka Struktur Folder' : 'Minimize Sidebar'}
-                            >
-                                <ChevronRight
-                                    size={14}
-                                    className={cn('transition-transform duration-300', isSidebarCollapsed ? 'rotate-0' : 'rotate-180')}
-                                />
-                            </Button>
-                        </div>
-                    </div>
-
-                    {!isSidebarCollapsed ? (
-                        <div
-                            className="space-y-1 flex-1 overflow-y-auto custom-scrollbar pr-1 w-full"
-                            onContextMenu={(e) => handleContextMenu(e, 'background', currentFolderId || 'root', 'Struktur Folder')}
-                        >
-                            <div
-                                className={cn(
-                                    'group flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 text-xs transition-all active:scale-[0.98]',
-                                    currentFolderId === null
-                                        ? 'bg-primary border-primary text-white shadow-xs font-extrabold'
-                                        : 'border-transparent text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800/80 hover:text-foreground font-medium',
-                                )}
-                                onClick={() => setCurrentFolderId(null)}
-                                onContextMenu={(e) => handleContextMenu(e, 'background', 'root', 'Repository Root')}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const itemData = e.dataTransfer.getData('text/plain');
-                                    if (!itemData) return;
-                                    try {
-                                        const parsed = JSON.parse(itemData);
-                                        if (parsed.id) {
-                                            handleMoveItem(parsed.type, parsed.id, null);
-                                        }
-                                    } catch (err) {}
-                                }}
-                            >
-                                <Folder
-                                    size={15}
-                                    className={cn('transition-colors', currentFolderId === null ? 'text-white fill-white/20' : 'text-text-soft')}
-                                />
-                                Repository Root
-                            </div>
-                            <div className="mt-2 pl-1.5 space-y-0.5">
-                                {folders
-                                    .filter((f) => !f.parent_id)
-                                    .sort((a, b) => a.name.localeCompare(b.name))
-                                    .map((folder, idx, arr) => (
-                                        <FolderTreeItem
-                                            key={folder.id}
-                                            folder={folder}
-                                            allFolders={folders}
-                                            currentId={currentFolderId}
-                                            onSelect={setCurrentFolderId}
-                                            expandedFolders={expandedFolders}
-                                            toggleFolder={toggleFolder}
-                                            isLast={idx === arr.length - 1}
-                                            onContextMenu={handleContextMenu}
-                                            onMoveItem={handleMoveItem}
-                                            onDirectFileUpload={handleDirectFileUpload}
-                                        />
-                                    ))}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center gap-2 w-full pt-2">
-                            <Button
-                                variant={currentFolderId === null ? 'primary' : 'ghost'}
-                                size="icon"
-                                className="h-9 w-9 rounded-xl"
-                                onClick={() => setCurrentFolderId(null)}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const itemData = e.dataTransfer.getData('text/plain');
-                                    if (!itemData) return;
-                                    try {
-                                        const parsed = JSON.parse(itemData);
-                                        if (parsed.id) {
-                                            handleMoveItem(parsed.type, parsed.id, null);
-                                        }
-                                    } catch (err) {}
-                                }}
-                                title="Repository Root"
-                            >
-                                <Folder size={16} />
-                            </Button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Floating Main Content Area */}
-                <FloatingPanel className="flex flex-col flex-1 min-w-0">
-                    {/* Floating Header Toolbar with Primary Blue */}
-                    <div className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-primary/20 px-6 bg-primary text-white dark:bg-zinc-800/95">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                            <Button
-                                variant="white"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 rounded-lg border border-border shadow-2xs disabled:opacity-40"
-                                onClick={() => setCurrentFolderId(currentFolder?.parent_id || null)}
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    const itemData = e.dataTransfer.getData('text/plain');
-                                    if (!itemData) return;
-                                    try {
-                                        const parsed = JSON.parse(itemData);
-                                        if (parsed.id) {
-                                            handleMoveItem(parsed.type, parsed.id, currentFolder?.parent_id || null);
-                                        }
-                                    } catch (err) {}
-                                }}
-                                disabled={currentFolderId === null}
-                                title="Kembali ke Folder Induk"
-                            >
-                                <ArrowLeft size={14} className="text-slate-800 dark:text-zinc-200" />
-                            </Button>
-
-                            <nav className="flex items-center gap-1.5 overflow-hidden text-xs text-white">
-                                <button
-                                    className={cn(
-                                        'hover:text-white/80 transition-colors flex items-center gap-1 font-medium cursor-pointer',
-                                        currentFolderId === null ? 'text-white font-bold' : 'text-white/70',
-                                    )}
-                                    onClick={() => setCurrentFolderId(null)}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        const itemData = e.dataTransfer.getData('text/plain');
-                                        if (!itemData) return;
-                                        try {
-                                            const parsed = JSON.parse(itemData);
-                                            if (parsed.id) {
-                                                handleMoveItem(parsed.type, parsed.id, null);
-                                            }
-                                        } catch (err) {}
-                                    }}
-                                >
-                                    <Folder size={14} /> Repository Root
-                                </button>
-
-                                {folderPath.map((folder, idx) => (
-                                    <React.Fragment key={folder.id}>
-                                        <ChevronRight size={12} className="text-white/60 shrink-0" />
-                                        <button
-                                            className={cn(
-                                                'hover:text-white/80 truncate max-w-[120px] transition-colors font-medium cursor-pointer',
-                                                idx === folderPath.length - 1 ? 'text-white font-bold' : 'text-white/70',
-                                            )}
-                                            onClick={() => setCurrentFolderId(folder.id)}
-                                            onDragOver={(e) => e.preventDefault()}
-                                            onDrop={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                const itemData = e.dataTransfer.getData('text/plain');
-                                                if (!itemData) return;
-                                                try {
-                                                    const parsed = JSON.parse(itemData);
-                                                    if (parsed.id && parsed.id !== folder.id) {
-                                                        handleMoveItem(parsed.type, parsed.id, folder.id);
-                                                    }
-                                                } catch (err) {}
-                                            }}
-                                        >
-                                            {folder.name}
-                                        </button>
-                                    </React.Fragment>
-                                ))}
-                            </nav>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <div className="relative hidden w-56 md:block">
-                                <Search className="text-text-soft absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 z-10 pointer-events-none" />
-                                <Input
-                                    type="search"
-                                    placeholder="Cari asset..."
-                                    className="h-9 rounded-lg border-none bg-white text-slate-900 dark:bg-zinc-900 dark:text-white pl-9 text-xs font-normal transition-all"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-
-                            {/* View Switcher: Grid / List */}
-                            <div className="flex items-center rounded-lg border border-border bg-slate-100/80 dark:bg-zinc-800/80 p-0.5 shadow-2xs">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={cn(
-                                        'h-7 w-7 rounded-md transition-all',
-                                        viewMode === 'grid'
-                                            ? 'bg-card text-primary shadow-xs font-semibold'
-                                            : 'text-text-soft hover:text-text-main hover:bg-slate-200/50 dark:hover:bg-zinc-700/50',
-                                    )}
-                                    onClick={() => setViewMode('grid')}
-                                    title="Tampilan Grid"
-                                >
-                                    <LayoutGrid size={14} />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className={cn(
-                                        'h-7 w-7 rounded-md transition-all',
-                                        viewMode === 'list'
-                                            ? 'bg-card text-primary shadow-xs font-semibold'
-                                            : 'text-text-soft hover:text-text-main hover:bg-slate-200/50 dark:hover:bg-zinc-700/50',
-                                    )}
-                                    onClick={() => setViewMode('list')}
-                                    title="Tampilan List"
-                                >
-                                    <List size={14} />
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* File List / Grid */}
-                    <div
-                        className="custom-scrollbar flex-1 overflow-y-auto p-6 bg-slate-50/40 dark:bg-zinc-950/30"
-                        onContextMenu={(e) => handleContextMenu(e, 'background', currentFolderId || 'root', 'Background')}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                                Array.from(e.dataTransfer.files).forEach((file) => {
-                                    handleDirectFileUpload(file, currentFolderId);
-                                });
-                                return;
-                            }
-                            const itemData = e.dataTransfer.getData('text/plain');
-                            if (!itemData) return;
-                            try {
-                                const parsed = JSON.parse(itemData);
-                                if (parsed.id && parsed.type) {
-                                    handleMoveItem(parsed.type, parsed.id, currentFolderId);
-                                }
-                            } catch (err) {}
-                        }}
-                    >
-                        <div
-                            className={cn(
-                                viewMode === 'grid'
-                                    ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5'
-                                    : 'grid auto-rows-max grid-cols-1 gap-2.5',
-                            )}
-                        >
-                            {/* Folders First */}
-                            {filteredFolders.map((folder) => (
-                                <div
-                                    key={folder.id}
-                                    draggable
-                                    onDragStart={(e) => {
-                                        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'folder', id: folder.id }));
-                                    }}
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                                            Array.from(e.dataTransfer.files).forEach((file) => {
-                                                handleDirectFileUpload(file, folder.id);
-                                            });
-                                            return;
-                                        }
-                                        const itemData = e.dataTransfer.getData('text/plain');
-                                        if (!itemData) return;
-                                        try {
-                                            const parsed = JSON.parse(itemData);
-                                            if (parsed.id && parsed.id !== folder.id) {
-                                                handleMoveItem(parsed.type, parsed.id, folder.id);
-                                            }
-                                        } catch (err) {}
-                                    }}
-                                    className={cn(
-                                        'group border-border bg-card dark:bg-zinc-900/90 hover:bg-slate-50 dark:hover:bg-zinc-800/70 hover:border-slate-300 dark:hover:border-zinc-700 relative cursor-grab active:cursor-grabbing rounded-xl border transition-all duration-150 select-none shadow-2xs',
-                                        viewMode === 'grid' ? 'flex flex-col p-4 items-start justify-between min-h-[110px]' : 'flex h-14 items-center gap-3 px-4 py-3',
-                                        contextMenu.item?.id === folder.id && contextMenu.isOpen ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : '',
-                                    )}
-                                    onClick={() => setCurrentFolderId(folder.id)}
-                                    onContextMenu={(e) => handleContextMenu(e, 'folder', folder.id, folder.name)}
-                                >
-                                    {viewMode === 'grid' ? (
-                                        <>
-                                            <div className="flex items-center justify-between w-full">
-                                                <div className="bg-primary/10 text-primary flex h-9 w-9 items-center justify-center rounded-lg border border-primary/20 transition-all">
-                                                    <Folder size={18} className="fill-current" fillOpacity={0.15} />
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="hover:bg-slate-200/60 dark:hover:bg-zinc-700 h-7 w-7 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleContextMenu(e as any, 'folder', folder.id, folder.name);
-                                                    }}
-                                                >
-                                                    <MoreVertical size={14} className="text-text-soft" />
-                                                </Button>
-                                            </div>
-                                            <div className="mt-3 min-w-0 w-full">
-                                                <h4 className="text-text-main truncate text-xs font-semibold leading-tight">{folder.name}</h4>
-                                                <p className="text-text-soft text-[10px] font-medium tracking-wide uppercase mt-1">
-                                                    {folder.templates_count} items
-                                                </p>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 transition-all">
-                                                <Folder size={16} className="fill-current" fillOpacity={0.15} />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h4 className="text-text-main truncate text-xs font-semibold leading-tight">{folder.name}</h4>
-                                                <p className="text-text-soft text-[10px] font-medium tracking-wide uppercase mt-0.5">
-                                                    {folder.templates_count} items
-                                                </p>
-                                            </div>
-
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="hover:bg-slate-200/60 dark:hover:bg-zinc-700 h-7 w-7 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleContextMenu(e as any, 'folder', folder.id, folder.name);
-                                                }}
-                                            >
-                                                <MoreVertical size={14} className="text-text-soft" />
-                                            </Button>
-                                        </>
-                                    )}
-                                </div>
-                            ))}
-
-                            {/* Templates Next */}
-                            {filteredTemplates.map((template) => (
-                                <div
-                                    key={template.id}
-                                    draggable
-                                    onDragStart={(e) => {
-                                        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'template', id: template.id }));
-                                    }}
-                                    className={cn(
-                                        'group border-border bg-card dark:bg-zinc-900/90 hover:bg-slate-50 dark:hover:bg-zinc-800/70 hover:border-slate-300 dark:hover:border-zinc-700 relative cursor-grab active:cursor-grabbing rounded-xl border transition-all duration-150 select-none shadow-2xs',
-                                        viewMode === 'grid' ? 'flex flex-col p-4 items-start justify-between min-h-[120px]' : 'flex h-14 items-center gap-3 px-4 py-3',
-                                        contextMenu.item?.id === template.id && contextMenu.isOpen ? 'bg-primary/5 border-primary/40 ring-1 ring-primary/40' : '',
-                                    )}
-                                    onContextMenu={(e) => handleContextMenu(e, 'template', template.id, template.name)}
-                                >
-                                    {viewMode === 'grid' ? (
-                                        <>
-                                            <div className="flex items-center justify-between w-full">
-                                                <div className="bg-slate-100 dark:bg-zinc-800 text-text-main group-hover:bg-primary/10 group-hover:text-primary flex h-9 w-9 items-center justify-center rounded-lg border border-border transition-all">
-                                                    <FileText size={18} />
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <a
-                                                        href={route('admin.templates.download', template.id)}
-                                                        className="text-primary text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-md hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        Download
-                                                    </a>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="hover:bg-slate-200/60 dark:hover:bg-zinc-700 h-7 w-7 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleContextMenu(e as any, 'template', template.id, template.name);
-                                                        }}
-                                                    >
-                                                        <MoreHorizontal size={14} className="text-text-soft" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <div className="mt-3 min-w-0 w-full">
-                                                <h4 className="text-text-main truncate text-xs font-semibold leading-tight">{template.name}</h4>
-                                                <p className="text-text-soft text-[10px] font-medium tracking-wide uppercase mt-1">
-                                                    {template.file_type} • {formatSize(template.file_size)}
-                                                </p>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="bg-slate-100 dark:bg-zinc-800 text-text-main group-hover:bg-primary/10 group-hover:text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border transition-all">
-                                                <FileText size={16} />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h4 className="text-text-main truncate text-xs font-semibold leading-tight">{template.name}</h4>
-                                                <p className="text-text-soft text-[10px] font-medium tracking-wide uppercase mt-0.5">
-                                                    {template.file_type} • {formatSize(template.file_size)}
-                                                </p>
-                                            </div>
-
-                                            <div className="flex items-center gap-1 shrink-0">
-                                                <a
-                                                    href={route('admin.templates.download', template.id)}
-                                                    className="text-primary text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-md hover:bg-primary/10 transition-colors opacity-0 group-hover:opacity-100"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    Download
-                                                </a>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="hover:bg-slate-200/60 dark:hover:bg-zinc-700 h-7 w-7 rounded-lg opacity-0 transition-opacity group-hover:opacity-100"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        handleContextMenu(e as any, 'template', template.id, template.name);
-                                                    }}
-                                                >
-                                                    <MoreHorizontal size={14} className="text-text-soft" />
-                                                </Button>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            ))}
-
-                            {filteredFolders.length === 0 && filteredTemplates.length === 0 && (
-                                <div className="col-span-full flex flex-col items-center justify-center py-24 opacity-75 select-none">
-                                    <div className="border-border bg-card dark:bg-zinc-900 mb-4 rounded-2xl border border-dashed p-6 shadow-2xs">
-                                        <Folder className="text-text-soft h-12 w-12" strokeWidth={1.25} />
-                                    </div>
-                                    <p className="text-text-main text-xs font-bold tracking-wide uppercase">Repository Kosong</p>
-                                    <p className="text-text-soft mt-1 text-[11px] font-normal italic">
-                                        Klik kanan atau gunakan toolbar untuk menambahkan item
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </FloatingPanel>
-
-                {/* Floating Right Sidebar for Filter on Templates Page */}
-                <FloatingPanel padded shrink>
-                    <SideFilterCard
-                        categories={filterCategories}
-                        activeFilters={{ file_type: fileTypeFilter ? [fileTypeFilter] : [] }}
-                        onFilterChange={(keyOrObj, value) => {
+                <FloatingPanel className="flex-1 min-w-0 flex flex-col">
+                    <PageTable
+                        standalone={false}
+                        title="Template Kontrak"
+                        subtitle="Kelola berkas templat kontrak, formulir, dan struktur folder dokumen"
+                        icon={FileSpreadsheet}
+                        searchValue={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        searchPlaceholder="Cari nama template, folder, atau berkas..."
+                        filters={filterCategories}
+                        activeFilters={{ file_type: fileTypeFilter }}
+                        onFilterChange={(keyOrObj, val) => {
                             if (typeof keyOrObj === 'string' && keyOrObj === 'file_type') {
-                                const selectedArr = Array.isArray(value) ? value : [];
-                                setFileTypeFilter(selectedArr.length > 0 ? selectedArr[0] : null);
+                                setFileTypeFilter(Array.isArray(val) ? val : [val]);
+                            } else if (typeof keyOrObj === 'object' && keyOrObj.file_type) {
+                                setFileTypeFilter(Array.isArray(keyOrObj.file_type) ? keyOrObj.file_type : [keyOrObj.file_type]);
                             }
                         }}
-                        onReset={() => setFileTypeFilter(null)}
-                        totalResults={filteredFolders.length + filteredTemplates.length}
-                        defaultExpanded={false}
-                    />
+                        onResetFilters={() => setFileTypeFilter([])}
+                        totalResults={processedRows.length}
+                        actions={
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setNewFolderName('');
+                                        setIsFolderModalOpen(true);
+                                    }}
+                                    className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                                >
+                                    <FolderPlus size={15} className="text-amber-500" />
+                                    <span>Buat Folder</span>
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={() => {
+                                        setUploadData({ name: '', description: '', file: null });
+                                        setIsUploadModalOpen(true);
+                                    }}
+                                    className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                                >
+                                    <Upload size={15} />
+                                    <span>Upload Template</span>
+                                </Button>
+                            </div>
+                        }
+                    >
+                        {/* Folder Breadcrumbs Navigation Trail */}
+                        <div className="flex items-center justify-between border-b border-surface-border bg-surface-card/40 px-5 py-2.5 text-xs text-text-desc shrink-0">
+                            <div className="flex items-center gap-2 min-w-0 overflow-x-auto custom-scrollbar">
+                                {currentFolderId !== null && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentFolderId(currentFolder?.parent_id || null)}
+                                        className="inline-flex items-center gap-1 rounded-md bg-surface-muted hover:bg-surface-border px-2 py-1 text-[11px] font-semibold text-text-main transition-colors cursor-pointer mr-1 shrink-0"
+                                        title="Kembali ke Folder Sebelumnya"
+                                    >
+                                        <ArrowLeft size={12} />
+                                        <span>Kembali</span>
+                                    </button>
+                                )}
+
+                                <div className="flex items-center gap-1.5 font-medium shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentFolderId(null)}
+                                        className={cn(
+                                            'hover:text-primary transition-colors flex items-center gap-1 cursor-pointer',
+                                            currentFolderId === null ? 'text-primary font-bold' : 'text-text-desc',
+                                        )}
+                                    >
+                                        <Folder size={13} className="text-amber-500" />
+                                        <span>Repository Root</span>
+                                    </button>
+
+                                    {folderPath.map((folder, idx) => (
+                                        <React.Fragment key={folder.id}>
+                                            <ChevronRight size={11} className="text-text-desc/60 shrink-0" />
+                                            <button
+                                                type="button"
+                                                onClick={() => setCurrentFolderId(folder.id)}
+                                                className={cn(
+                                                    'hover:text-primary truncate max-w-[140px] transition-colors cursor-pointer',
+                                                    idx === folderPath.length - 1 ? 'text-primary font-bold' : 'text-text-desc',
+                                                )}
+                                            >
+                                                {folder.name}
+                                            </button>
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <span className="text-[11px] font-semibold text-text-desc shrink-0 pl-2">
+                                {processedRows.length} item ditampilkan
+                            </span>
+                        </div>
+
+                        {/* Standard Master Data Table */}
+                        <div className="flex-1 min-h-0 overflow-auto">
+                            <DataTable
+                                columns={columns}
+                                data={processedRows}
+                                borderless={true}
+                            />
+                        </div>
+                    </PageTable>
                 </FloatingPanel>
             </MasterPageLayout>
 
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-                <DialogContent className="bg-card border-border overflow-hidden rounded-xl border p-8 shadow-2xl sm:max-w-[400px]">
-                    <div className="flex flex-col items-center text-center">
-                        <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/30">
-                            <AlertTriangle size={28} />
-                        </div>
-                        <DialogHeader className="p-0">
-                            <DialogTitle className="text-foreground mb-2 text-base font-normal tracking-tight">
-                                Hapus {selectedItem?.type === 'folder' ? 'Folder' : 'Item'}?
-                            </DialogTitle>
-                            <DialogDescription className="text-text-main max-w-[280px] text-xs leading-relaxed font-normal">
-                                Apakah Anda yakin ingin menghapus <span className="font-normal text-rose-500">"{selectedItem?.name}"</span>?
-                                {selectedItem?.type === 'folder' && ' Semua isi di dalamnya akan terhapus permanen.'}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="mt-8 grid w-full grid-cols-2 gap-3">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-border bg-card hover:bg-muted h-11 rounded-xl text-xs font-normal"
-                                onClick={() => setIsDeleteModalOpen(false)}
-                            >
-                                Batal
-                            </Button>
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                className="h-11 rounded-xl bg-rose-600 text-xs font-normal uppercase transition-all hover:bg-rose-700 active:scale-95"
-                                onClick={handleDelete}
-                            >
-                                Hapus Sekarang
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            {/* Move Dialog */}
-            <Dialog open={isMoveModalOpen} onOpenChange={setIsMoveModalOpen}>
-                <DialogContent className="border-border bg-card overflow-hidden border p-0 shadow-2xl sm:max-w-[450px]">
-                    <DialogHeader className="bg-muted/40 border-border border-b p-6">
-                        <DialogTitle className="text-base font-normal">Pindahkan Asset</DialogTitle>
-                        <DialogDescription className="text-text-main mt-1 text-xs font-normal">
-                            Pilih folder tujuan untuk memindahkan <strong>{selectedItem?.name}</strong>.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="p-6">
-                        <Label className="text-text-main mb-3 block text-xs font-normal tracking-wide">Folder Tujuan</Label>
-                        <div className="border-border bg-muted/10 overflow-hidden rounded-xl border">
-                            <div className="custom-scrollbar h-64 overflow-y-auto p-2">
-                                <div
-                                    className={cn(
-                                        'mb-1 flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-normal transition-all active:scale-[0.98]',
-                                        targetFolderId === null
-                                            ? 'bg-primary text-primary-foreground font-normal'
-                                            : 'text-text-main hover:bg-muted hover:text-foreground',
-                                    )}
-                                    onClick={() => setTargetFolderId(null)}
-                                >
-                                    <Folder
-                                        size={16}
-                                        className={cn('transition-colors', targetFolderId === null ? 'fill-current' : 'text-text-main')}
-                                    />
-                                    Repository Root
-                                </div>
-                                {folders
-                                    .filter((f) => f.id !== selectedItem?.id) // Prevent moving to self
-                                    .sort((a, b) => a.name.localeCompare(b.name))
-                                    .map((folder) => (
-                                        <div
-                                            key={folder.id}
-                                            className={cn(
-                                                'mb-1 flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-normal transition-all active:scale-[0.98]',
-                                                targetFolderId === folder.id
-                                                    ? 'bg-primary text-primary-foreground font-normal'
-                                                    : 'text-text-main hover:bg-muted hover:text-foreground',
-                                            )}
-                                            onClick={() => setTargetFolderId(folder.id)}
-                                        >
-                                            <Folder
-                                                size={16}
-                                                className={cn(
-                                                    'transition-colors',
-                                                    targetFolderId === folder.id ? 'fill-current' : 'text-text-main',
-                                                )}
-                                            />
-                                            {folder.name}
-                                        </div>
-                                    ))}
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter className="border-border/10 gap-3 border-t px-6 pt-4 pb-6">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-muted h-10 rounded-xl px-4 text-xs font-normal"
-                            onClick={() => setIsMoveModalOpen(false)}
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            size="sm"
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-6 text-xs font-normal shadow-sm transition-all active:scale-95"
-                            onClick={handleMove}
-                        >
-                            Pindahkan Sekarang
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Buat Folder Modal */}
             <Dialog open={isFolderModalOpen} onOpenChange={setIsFolderModalOpen}>
-                <DialogContent className="border-border bg-card overflow-hidden border p-0 shadow-2xl sm:max-w-[420px]">
-                    <DialogHeader className="bg-muted/40 border-border border-b p-6">
-                        <DialogTitle className="text-base font-normal">Buat Folder</DialogTitle>
-                        <DialogDescription className="text-text-main mt-1 text-xs font-normal">
-                            Tambahkan folder baru untuk mengelompokkan template.
+                <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[420px]">
+                    <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
+                        <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                            <FolderPlus size={16} className="text-amber-500" /> Buat Folder Baru
+                        </DialogTitle>
+                        <DialogDescription className="text-text-desc mt-0.5 text-xs">
+                            Tambahkan folder baru pada direktori saat ini.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="p-6">
-                        <Label htmlFor="name" className="text-text-main mb-3 block text-xs font-normal tracking-wide">
+                    <div className="p-5">
+                        <Label htmlFor="folder-name-input" className="text-text-main mb-2 block text-xs font-semibold">
                             Nama Folder
                         </Label>
                         <Input
-                            id="name"
-                            className="border-border bg-muted/20 focus-visible:ring-primary focus-visible:border-primary h-11 rounded-xl border text-sm font-normal shadow-sm transition-all focus-visible:ring-1"
+                            id="folder-name-input"
+                            className="h-10 text-xs"
                             value={newFolderName}
                             onChange={(e) => setNewFolderName(e.target.value)}
-                            placeholder="Contoh: Perjanjian Kerja Sama"
+                            placeholder="Contoh: Perjanjian Kerjasama (PKS)"
                             autoFocus
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleCreateFolder();
+                            }}
                         />
                     </div>
-                    <DialogFooter className="border-border/10 gap-3 border-t px-6 pt-4 pb-6">
+                    <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="hover:bg-muted h-10 rounded-xl px-4 text-xs font-normal"
+                            className="h-9 px-4 text-xs font-semibold"
                             onClick={() => setIsFolderModalOpen(false)}
                         >
                             Batal
                         </Button>
                         <Button
+                            variant="primary"
                             size="sm"
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-6 text-xs font-normal transition-all active:scale-95"
+                            className="h-9 px-5 text-xs font-semibold"
                             onClick={handleCreateFolder}
                         >
                             Simpan Folder
@@ -943,122 +650,93 @@ export default function Templates({ folders, templates }: Props) {
                 </DialogContent>
             </Dialog>
 
-            {/* Rename Modal */}
-            <Dialog open={isRenameModalOpen} onOpenChange={setIsRenameModalOpen}>
-                <DialogContent className="border-border bg-card overflow-hidden border p-0 shadow-2xl sm:max-w-[420px]">
-                    <DialogHeader className="bg-muted/40 border-border border-b p-6">
-                        <DialogTitle className="text-base font-normal">Ubah Nama</DialogTitle>
-                        <DialogDescription className="text-text-main mt-1 text-xs font-normal">
-                            Ubah nama untuk "<strong>{selectedItem?.name}</strong>".
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="p-6">
-                        <Label htmlFor="rename-input" className="text-text-main mb-3 block text-xs font-normal tracking-wide">
-                            Nama Baru
-                        </Label>
-                        <Input
-                            id="rename-input"
-                            className="border-border bg-muted/20 focus-visible:ring-primary focus-visible:border-primary h-11 rounded-xl border text-sm font-normal shadow-sm transition-all focus-visible:ring-1"
-                            value={newFolderName}
-                            onChange={(e) => setNewFolderName(e.target.value)}
-                            autoFocus
-                        />
-                    </div>
-                    <DialogFooter className="border-border/10 gap-3 border-t px-6 pt-4 pb-6">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-muted h-10 rounded-xl px-4 text-xs font-normal"
-                            onClick={() => setIsRenameModalOpen(false)}
-                        >
-                            Batal
-                        </Button>
-                        <Button
-                            size="sm"
-                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-6 text-xs font-normal transition-all active:scale-95"
-                            onClick={handleRename}
-                        >
-                            Terapkan Perubahan
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Upload Modal */}
+            {/* Upload Template Modal */}
             <Dialog open={isUploadModalOpen} onOpenChange={setIsUploadModalOpen}>
-                <DialogContent className="border-border bg-card overflow-hidden border p-0 shadow-2xl sm:max-w-[450px]">
+                <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[460px]">
                     <form onSubmit={handleUploadTemplate}>
-                        <DialogHeader className="bg-muted/40 border-border border-b p-6">
-                            <DialogTitle className="text-base font-normal">Unggah Asset</DialogTitle>
-                            <DialogDescription className="text-text-main mt-1 text-xs font-normal">
-                                Tambahkan file baru ke dalam repository.
+                        <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
+                            <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                                <Upload size={16} className="text-primary" /> Unggah Template Kontrak
+                            </DialogTitle>
+                            <DialogDescription className="text-text-desc mt-0.5 text-xs">
+                                Unggah dokumen templat (.docx, .pdf, .xlsx) ke repository.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 p-6">
+                        <div className="space-y-4 p-5">
                             <div className="grid gap-1.5">
-                                <Label htmlFor="tpl-name" className="text-text-main text-xs font-normal tracking-wide">
-                                    Nama Tampilan
+                                <Label htmlFor="tpl-name" className="text-text-main text-xs font-semibold">
+                                    Nama Template <span className="text-rose-500">*</span>
                                 </Label>
                                 <Input
                                     id="tpl-name"
-                                    className="border-border bg-muted/20 focus-visible:ring-primary focus-visible:border-primary h-11 rounded-xl border text-xs font-normal shadow-sm transition-all focus-visible:ring-1"
+                                    className="h-10 text-xs"
                                     value={uploadData.name}
                                     onChange={(e) => setUploadData({ ...uploadData, name: e.target.value })}
-                                    placeholder="Contoh: Kontrak Pihak Ketiga"
+                                    placeholder="Contoh: Surat Perjanjian Vendor Standar"
                                     required
                                 />
                             </div>
                             <div className="grid gap-1.5">
-                                <Label htmlFor="tpl-desc" className="text-text-main text-xs font-normal tracking-wide">
+                                <Label htmlFor="tpl-desc" className="text-text-main text-xs font-semibold">
                                     Deskripsi (Opsional)
                                 </Label>
                                 <Input
                                     id="tpl-desc"
-                                    className="border-border bg-muted/20 focus-visible:ring-primary focus-visible:border-primary h-11 rounded-xl border text-xs font-normal shadow-sm transition-all focus-visible:ring-1"
+                                    className="h-10 text-xs"
                                     value={uploadData.description}
                                     onChange={(e) => setUploadData({ ...uploadData, description: e.target.value })}
+                                    placeholder="Keterangan singkat peruntukan template"
                                 />
                             </div>
                             <div className="grid gap-1.5">
-                                <Label htmlFor="tpl-file" className="text-text-main text-xs font-normal tracking-wide">
-                                    File Sumber
+                                <Label htmlFor="tpl-file" className="text-text-main text-xs font-semibold">
+                                    File Template <span className="text-rose-500">*</span>
                                 </Label>
-                                <div className="group/field border-border hover:border-primary hover:bg-primary/5 relative cursor-pointer rounded-2xl border border-dashed p-6 text-center shadow-inner transition-all">
+                                <div className="group/field border-surface-border hover:border-primary hover:bg-primary/5 relative cursor-pointer rounded-xl border border-dashed p-5 text-center transition-all">
                                     <Input
                                         id="tpl-file"
                                         type="file"
                                         className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-                                        onChange={(e) => setUploadData({ ...uploadData, file: e.target.files?.[0] || null })}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0] || null;
+                                            if (file && !uploadData.name) {
+                                                const rawName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+                                                setUploadData({ ...uploadData, name: rawName, file });
+                                            } else {
+                                                setUploadData({ ...uploadData, file });
+                                            }
+                                        }}
                                         required
                                     />
-                                    <div className="space-y-2">
-                                        <div className="bg-muted text-text-main group-hover/field:bg-primary/10 group-hover/field:text-primary mx-auto flex h-11 w-11 items-center justify-center rounded-xl transition-all">
+                                    <div className="space-y-1.5">
+                                        <div className="bg-surface-muted text-text-desc group-hover/field:bg-primary/10 group-hover/field:text-primary mx-auto flex h-10 w-10 items-center justify-center rounded-xl transition-all">
                                             <Upload size={18} />
                                         </div>
-                                        <p className="text-foreground mx-auto max-w-[300px] truncate text-xs font-normal">
+                                        <p className="text-text-main mx-auto max-w-[300px] truncate text-xs font-semibold">
                                             {uploadData.file ? uploadData.file.name : 'Pilih atau Seret File di Sini'}
                                         </p>
-                                        <p className="text-text-main text-[10px] font-normal tracking-wide uppercase">
-                                            MAX 10MB • DOCX, PDF, XLSX
+                                        <p className="text-text-desc text-[10.5px]">
+                                            Maksimal 10MB • DOCX, PDF, XLSX
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <DialogFooter className="border-border/10 gap-3 border-t px-6 pt-4 pb-6">
+                        <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 size="sm"
-                                className="hover:bg-muted h-10 rounded-xl px-4 text-xs font-normal"
+                                className="h-9 px-4 text-xs font-semibold"
                                 onClick={() => setIsUploadModalOpen(false)}
                             >
                                 Batal
                             </Button>
                             <Button
                                 type="submit"
+                                variant="primary"
                                 size="sm"
-                                className="bg-primary text-primary-foreground hover:bg-primary/90 h-10 rounded-xl px-6 text-xs font-normal transition-all active:scale-95"
+                                className="h-9 px-5 text-xs font-semibold"
                             >
                                 Konfirmasi Unggah
                             </Button>
@@ -1067,234 +745,163 @@ export default function Templates({ folders, templates }: Props) {
                 </DialogContent>
             </Dialog>
 
-            {/* Custom Floating File Explorer Context Menu Popup */}
-            {contextMenu.isOpen && (
-                <>
-                    <div
-                        className="fixed inset-0 z-50 bg-transparent"
-                        onClick={() => setContextMenu((prev) => ({ ...prev, isOpen: false }))}
-                        onContextMenu={(e) => {
-                            e.preventDefault();
-                            setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                        }}
-                    />
-                    <div
-                        style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-                        className="fixed z-50 w-52 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 p-1.5 shadow-xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-100 select-none"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        {contextMenu.item?.type === 'background' ? (
-                            <>
-                                <div className="px-2 py-1 text-[10px] font-bold text-text-soft uppercase tracking-wider">
-                                    File Explorer
-                                </div>
-                                <button
-                                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                                    onClick={() => {
-                                        setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                                        setIsFolderModalOpen(true);
-                                    }}
-                                >
-                                    <FolderPlus size={14} className="text-primary" /> Folder Baru
-                                </button>
-                                <button
-                                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                                    onClick={() => {
-                                        setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                                        setIsUploadModalOpen(true);
-                                    }}
-                                >
-                                    <Upload size={14} className="text-primary" /> Upload Asset
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <div className="px-2 py-1 text-[10px] font-bold text-text-soft uppercase tracking-wider truncate">
-                                    {contextMenu.item?.name}
-                                </div>
-                                <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
-                                {contextMenu.item?.type === 'folder' && (
-                                    <button
-                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                                        onClick={() => {
-                                            if (contextMenu.item?.id) {
-                                                setCurrentFolderId(contextMenu.item.id);
-                                            }
-                                            setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                                        }}
-                                    >
-                                        <Folder size={14} className="text-primary" /> Buka Folder
-                                    </button>
-                                )}
-                                {contextMenu.item?.type === 'template' && (
-                                    <a
-                                        href={route('admin.templates.download', contextMenu.item.id)}
-                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                                        onClick={() => setContextMenu((prev) => ({ ...prev, isOpen: false }))}
-                                    >
-                                        <Upload size={14} className="text-primary rotate-180" /> Download
-                                    </a>
-                                )}
-                                <button
-                                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                                    onClick={() => {
-                                        if (contextMenu.item) {
-                                            setSelectedItem(contextMenu.item);
-                                            setNewFolderName(contextMenu.item.name);
-                                            setIsRenameModalOpen(true);
-                                        }
-                                        setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                                    }}
-                                >
-                                    <FileText size={14} className="text-text-soft" /> Ubah Nama
-                                </button>
-                                <button
-                                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                                    onClick={() => {
-                                        if (contextMenu.item) {
-                                            setSelectedItem(contextMenu.item);
-                                            setIsMoveModalOpen(true);
-                                        }
-                                        setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                                    }}
-                                >
-                                    <FolderPlus size={14} className="text-text-soft" /> Pindahkan
-                                </button>
-                                <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
-                                <button
-                                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                                    onClick={() => {
-                                        if (contextMenu.item) {
-                                            setSelectedItem(contextMenu.item);
-                                            setIsDeleteModalOpen(true);
-                                        }
-                                        setContextMenu((prev) => ({ ...prev, isOpen: false }));
-                                    }}
-                                >
-                                    <AlertTriangle size={14} /> Hapus
-                                </button>
-                            </>
-                        )}
+            {/* Rename Modal */}
+            <Dialog open={isRenameModalOpen} onOpenChange={setIsRenameModalOpen}>
+                <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[420px]">
+                    <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
+                        <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                            <Edit3 size={16} className="text-amber-500" /> Ubah Nama
+                        </DialogTitle>
+                        <DialogDescription className="text-text-desc mt-0.5 text-xs">
+                            Ubah nama untuk "{selectedItem?.name}".
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="p-5">
+                        <Label htmlFor="rename-input" className="text-text-main mb-2 block text-xs font-semibold">
+                            Nama Baru
+                        </Label>
+                        <Input
+                            id="rename-input"
+                            className="h-10 text-xs"
+                            value={newFolderName}
+                            onChange={(e) => setNewFolderName(e.target.value)}
+                            autoFocus
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleRename();
+                            }}
+                        />
                     </div>
-                </>
-            )}
+                    <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 px-4 text-xs font-semibold"
+                            onClick={() => setIsRenameModalOpen(false)}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            className="h-9 px-5 text-xs font-semibold"
+                            onClick={handleRename}
+                        >
+                            Terapkan Perubahan
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Move Modal */}
+            <Dialog open={isMoveModalOpen} onOpenChange={setIsMoveModalOpen}>
+                <DialogContent className="border-surface-border bg-surface-base overflow-hidden border p-0 shadow-2xl sm:max-w-[450px]">
+                    <DialogHeader className="bg-surface-muted/40 border-surface-border border-b p-5">
+                        <DialogTitle className="text-sm font-bold text-text-main flex items-center gap-2">
+                            <FolderInput size={16} className="text-blue-500" /> Pindahkan Dokumen / Folder
+                        </DialogTitle>
+                        <DialogDescription className="text-text-desc mt-0.5 text-xs">
+                            Pilih folder tujuan untuk <strong>{selectedItem?.name}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="p-5">
+                        <Label className="text-text-main mb-2 block text-xs font-semibold">
+                            Folder Tujuan
+                        </Label>
+                        <div className="border-surface-border bg-surface-card/50 overflow-hidden rounded-xl border">
+                            <div className="custom-scrollbar max-h-56 overflow-y-auto p-1.5 space-y-1">
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all cursor-pointer text-left',
+                                        targetFolderId === null
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-text-main hover:bg-surface-muted',
+                                    )}
+                                    onClick={() => setTargetFolderId(null)}
+                                >
+                                    <Folder size={14} className={cn(targetFolderId === null ? 'fill-current' : 'text-amber-500')} />
+                                    <span>Repository Root (Utama)</span>
+                                </button>
+                                {folders
+                                    .filter((f) => f.id !== selectedItem?.id)
+                                    .sort((a, b) => a.name.localeCompare(b.name))
+                                    .map((folder) => (
+                                        <button
+                                            key={folder.id}
+                                            type="button"
+                                            className={cn(
+                                                'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all cursor-pointer text-left',
+                                                targetFolderId === folder.id
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'text-text-main hover:bg-surface-muted',
+                                            )}
+                                            onClick={() => setTargetFolderId(folder.id)}
+                                        >
+                                            <Folder size={14} className={cn(targetFolderId === folder.id ? 'fill-current' : 'text-amber-500')} />
+                                            <span className="truncate">{folder.name}</span>
+                                        </button>
+                                    ))}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter className="border-surface-border/60 gap-2 border-t px-5 py-3.5 bg-surface-card/30">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 px-4 text-xs font-semibold"
+                            onClick={() => setIsMoveModalOpen(false)}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            variant="primary"
+                            size="sm"
+                            className="h-9 px-5 text-xs font-semibold"
+                            onClick={handleMove}
+                        >
+                            Pindahkan Sekarang
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Modal */}
+            <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                <DialogContent className="border-surface-border bg-surface-base overflow-hidden rounded-2xl border p-6 shadow-2xl sm:max-w-[400px]">
+                    <div className="flex flex-col items-center text-center">
+                        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50">
+                            <AlertTriangle size={24} />
+                        </div>
+                        <DialogHeader className="p-0 text-center">
+                            <DialogTitle className="text-text-main text-base font-bold">
+                                Hapus {selectedItem?.type === 'folder' ? 'Folder' : 'Template'}?
+                            </DialogTitle>
+                            <DialogDescription className="text-text-desc mt-1 text-xs">
+                                Apakah Anda yakin ingin menghapus <strong className="text-rose-600">"{selectedItem?.name}"</strong>?
+                                {selectedItem?.type === 'folder' && ' Seluruh template di dalamnya akan ikut terhapus permanen.'}
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="mt-6 grid w-full grid-cols-2 gap-2.5">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-10 text-xs font-semibold"
+                                onClick={() => setIsDeleteModalOpen(false)}
+                            >
+                                Batal
+                            </Button>
+                            <Button
+                                variant="danger"
+                                size="sm"
+                                className="h-10 text-xs font-semibold"
+                                onClick={handleDelete}
+                            >
+                                Hapus
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
-    );
-}
-
-function FolderTreeItem({ folder, allFolders, currentId, onSelect, expandedFolders, toggleFolder, isLast = false, onContextMenu, onMoveItem, onDirectFileUpload }: any) {
-    const children = allFolders.filter((f: any) => f.parent_id === folder.id);
-    const hasChildren = children.length > 0;
-    const isExpanded = expandedFolders[folder.id];
-    const isSelected = currentId === folder.id;
-
-    return (
-        <div className="relative pl-4">
-            {/* Vertical Guide Line shifted to left-2 */}
-            <div className={cn(
-                "absolute left-2 top-0 w-[1.5px] bg-slate-300 dark:bg-zinc-700",
-                isLast ? "h-3.5" : "h-full"
-            )} />
-
-            {/* Horizontal branch connector line */}
-            <div className="absolute left-2 top-3.5 w-2.5 h-[1.5px] bg-slate-300 dark:bg-zinc-700" />
-            
-            <div
-                draggable
-                onDragStart={(e) => {
-                    e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'folder', id: folder.id }));
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0 && onDirectFileUpload) {
-                        Array.from(e.dataTransfer.files).forEach((file) => {
-                            onDirectFileUpload(file, folder.id);
-                        });
-                        return;
-                    }
-                    const itemData = e.dataTransfer.getData('text/plain');
-                    if (!itemData) return;
-                    try {
-                        const parsed = JSON.parse(itemData);
-                        if (parsed.id && parsed.id !== folder.id && onMoveItem) {
-                            onMoveItem(parsed.type, parsed.id, folder.id);
-                        }
-                    } catch (err) {}
-                }}
-                className={cn(
-                    'group flex cursor-grab active:cursor-grabbing items-center gap-1.5 rounded-lg px-2 py-1.5 text-[11px] transition-all select-none leading-none my-0.5 border',
-                    isSelected 
-                        ? 'bg-primary border-primary text-white shadow-xs font-extrabold' 
-                        : 'border-transparent text-text-main hover:bg-slate-100 dark:hover:bg-zinc-800/80 hover:text-foreground font-medium',
-                )}
-                onClick={() => onSelect(folder.id)}
-                onContextMenu={(e) => onContextMenu && onContextMenu(e, 'folder', folder.id, folder.name)}
-            >
-                <div
-                    className={cn(
-                        "p-0.5 rounded transition-colors",
-                        isSelected ? "hover:bg-white/20 text-white" : "hover:bg-slate-200/70 dark:hover:bg-zinc-700/70 text-text-soft"
-                    )}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (hasChildren) toggleFolder(folder.id);
-                    }}
-                >
-                    {hasChildren ? (
-                        isExpanded ? (
-                            <ChevronDown size={12} className={isSelected ? "text-white" : "text-text-soft"} />
-                        ) : (
-                            <ChevronRight size={12} className={isSelected ? "text-white" : "text-text-soft"} />
-                        )
-                    ) : (
-                        <div className="w-[12px]" />
-                    )}
-                </div>
-                <Folder
-                    size={14}
-                    className={cn(
-                        'shrink-0 transition-colors',
-                        isSelected ? 'text-white fill-white/20 font-bold' : 'text-text-soft group-hover:text-primary',
-                    )}
-                />
-                <span className={cn("truncate tracking-tight", isSelected ? "text-white font-bold" : "")}>
-                    {folder.name}
-                </span>
-                {folder.templates_count > 0 && (
-                    <span className={cn(
-                        "ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full transition-colors",
-                        isSelected
-                            ? "bg-white text-primary font-extrabold shadow-xs"
-                            : "bg-slate-100 dark:bg-zinc-800/80 text-text-soft"
-                    )}>
-                        {folder.templates_count}
-                    </span>
-                )}
-            </div>
-
-            {isExpanded && hasChildren && (
-                <div className="relative ml-2 pl-0.5 my-0.5">
-                    {children
-                        .sort((a: any, b: any) => a.name.localeCompare(b.name))
-                        .map((child: any, idx: number) => (
-                            <FolderTreeItem
-                                key={child.id}
-                                folder={child}
-                                allFolders={allFolders}
-                                currentId={currentId}
-                                onSelect={onSelect}
-                                expandedFolders={expandedFolders}
-                                toggleFolder={toggleFolder}
-                                isLast={idx === children.length - 1}
-                                onContextMenu={onContextMenu}
-                                onMoveItem={onMoveItem}
-                                onDirectFileUpload={onDirectFileUpload}
-                            />
-                        ))}
-                </div>
-            )}
-        </div>
     );
 }

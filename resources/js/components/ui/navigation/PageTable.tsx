@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { PageHeader } from './PageHeader';
 import { PageFooter } from './PageFooter';
+import { PageFilter } from './PageFilter';
 
 interface PageTableProps {
     // Header props
@@ -12,10 +13,12 @@ interface PageTableProps {
     searchPlaceholder?: string;
     filters?: any[];
     activeFilters?: Record<string, any>;
-    onFilterChange?: (key: string, value: any) => void;
+    onFilterChange?: (keyOrObj: string | Record<string, any>, value?: any) => void;
     onResetFilters?: () => void;
     totalResults?: number;
     actions?: React.ReactNode;
+    isFilterExpanded?: boolean;
+    onToggleFilter?: () => void;
 
     // Content props
     children: React.ReactNode;
@@ -49,15 +52,34 @@ export function PageTable({
     onSearchChange,
     searchPlaceholder,
     filters,
-    activeFilters,
+    activeFilters = {},
     onFilterChange,
     onResetFilters,
     totalResults,
     actions,
+    isFilterExpanded: controlledIsFilterExpanded,
+    onToggleFilter: controlledOnToggleFilter,
     children,
     pagination,
     standalone = true,
 }: PageTableProps) {
+    const hasActiveFilters = React.useMemo(() => {
+        if (!filters || filters.length === 0) return false;
+        return filters.some(f => {
+            const val = activeFilters[f.key];
+            const fromVal = activeFilters[`${f.key}_from`];
+            const toVal = activeFilters[`${f.key}_to`];
+            if (fromVal || toVal) return true;
+            if (Array.isArray(val)) return val.some(v => v !== '' && v !== null);
+            return val !== undefined && val !== '' && val !== null;
+        });
+    }, [activeFilters, filters]);
+
+    const [internalFilterExpanded, setInternalFilterExpanded] = React.useState(hasActiveFilters);
+
+    const isExpanded = controlledIsFilterExpanded !== undefined ? controlledIsFilterExpanded : internalFilterExpanded;
+    const handleToggle = controlledOnToggleFilter || (() => setInternalFilterExpanded(prev => !prev));
+
     const inner = (
         <div className="flex flex-col flex-1 min-h-0 w-full h-full overflow-hidden">
             <PageHeader
@@ -72,8 +94,23 @@ export function PageTable({
                 onFilterChange={onFilterChange}
                 onResetFilters={onResetFilters}
                 totalResults={totalResults}
+                isFilterExpanded={isExpanded}
+                onToggleFilter={filters && filters.length > 0 ? handleToggle : undefined}
                 actions={actions}
             />
+
+            {/* Expandable Page Filter Banner (Identical to Contract Page) */}
+            {isExpanded && filters && filters.length > 0 && onFilterChange && onResetFilters && (
+                <PageFilter
+                    categories={filters}
+                    activeFilters={activeFilters}
+                    onFilterChange={onFilterChange}
+                    onReset={onResetFilters}
+                    totalResults={totalResults}
+                    title={`Filter Data ${title}`}
+                />
+            )}
+
             <div className="flex-1 min-h-0 w-full p-0 m-0 flex flex-col overflow-hidden">
                 {children}
             </div>

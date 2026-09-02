@@ -767,8 +767,13 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                         onSearchChange={(v) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, search: v, page: 1 }, { preserveState: true, replace: true })}
                         filters={filters}
                         activeFilters={activeFilters}
-                        onFilterChange={(key, val) => {
-                            const nextFilters = { ...activeFilters, [key]: val, page: 1 };
+                        onFilterChange={(keyOrObj, val) => {
+                            let nextFilters = { ...activeFilters, page: 1 };
+                            if (typeof keyOrObj === 'object') {
+                                nextFilters = { ...nextFilters, ...keyOrObj };
+                            } else {
+                                nextFilters = { ...nextFilters, [keyOrObj]: val };
+                            }
                             router.get(`/admin/core/${resourceSlug}`, nextFilters, { preserveState: true, replace: true });
                         }}
                         onResetFilters={() => {
@@ -778,10 +783,32 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                         totalResults={data.total}
                         actions={
                             <div className="flex items-center gap-2">
+                                {['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users'].includes(resourceSlug) && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={isSyncing}
+                                        onClick={() => setShowSyncConfirm(true)}
+                                        className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer disabled:opacity-50"
+                                    >
+                                        <RefreshCw size={14} className={isSyncing ? 'animate-spin text-primary shrink-0' : 'text-primary shrink-0'} />
+                                        <span>{isSyncing ? 'Menyinkronkan...' : 'Sinkron Portal'}</span>
+                                    </Button>
+                                )}
+
+                                {(hasExport || hasImport) && (
+                                    <ExcelActions
+                                        exportRoute={`/admin/core/${resourceSlug}/export`}
+                                        importRoute={hasImport ? `/admin/core/${resourceSlug}/import` : undefined}
+                                        label={title}
+                                    />
+                                )}
+
                                 {DIALOG_RESOURCES.includes(resourceSlug) ? (
                                     <Button 
                                         variant="primary" 
-                                        className="gap-2"
+                                        className="h-9 gap-2 text-xs font-semibold"
                                         onClick={() => {
                                             setLocalAccessTypes({});
                                             deptForm.setData(initialFormData);
@@ -793,7 +820,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     </Button>
                                 ) : resourceSlug !== 'vendors' ? (
                                     <Link href={`/admin/core/${resourceSlug}/create`}>
-                                        <Button variant="primary" className="gap-2">
+                                        <Button variant="primary" className="h-9 gap-2 text-xs font-semibold">
                                             <Plus size={16} /> Tambah Baru
                                         </Button>
                                     </Link>
@@ -911,54 +938,6 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                         />
                     </PageTable>
                 </FloatingPanel>
-
-                {((filters && filters.length > 0) || hasExport || hasImport || ['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users'].includes(resourceSlug)) && (
-                    <FloatingPanel padded shrink>
-                        <SideFilterCard
-                            categories={filters || []}
-                            activeFilters={activeFilters}
-                            actions={
-                                <div className="flex flex-col gap-1.5 w-full">
-                                    {['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users'].includes(resourceSlug) && (
-                                        <button
-                                            type="button"
-                                            disabled={isSyncing}
-                                            onClick={() => setShowSyncConfirm(true)}
-                                            className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-text-main hover:bg-surface-muted rounded-lg transition-all cursor-pointer disabled:opacity-50"
-                                        >
-                                            <RefreshCw size={15} className={isSyncing ? 'animate-spin text-primary shrink-0' : 'text-primary shrink-0'} />
-                                            <span>{isSyncing ? 'Menyinkronkan...' : 'Sinkron Portal'}</span>
-                                        </button>
-                                    )}
-
-                                    {(hasExport || hasImport) ? (
-                                        <ExcelActions
-                                            exportRoute={`/admin/core/${resourceSlug}/export`}
-                                            importRoute={hasImport ? `/admin/core/${resourceSlug}/import` : undefined}
-                                            label={title}
-                                            inline={true}
-                                        />
-                                    ) : null}
-                                </div>
-                            }
-                            onFilterChange={(keyOrObj, val) => {
-                                let nextFilters = { ...activeFilters, page: 1 };
-                                if (typeof keyOrObj === 'object') {
-                                    nextFilters = { ...nextFilters, ...keyOrObj };
-                                } else {
-                                    nextFilters = { ...nextFilters, [keyOrObj]: val };
-                                }
-                                router.get(`/admin/core/${resourceSlug}`, nextFilters, { preserveState: true, replace: true });
-                            }}
-                            onReset={() => {
-                                const clear = Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {});
-                                router.get(`/admin/core/${resourceSlug}`, { ...clear, page: 1 }, { preserveState: true, replace: true });
-                            }}
-                            totalResults={data.total}
-                            defaultExpanded={false}
-                        />
-                    </FloatingPanel>
-                )}
             </MasterPageLayout>
 
             {/* ponytail: Single Delete Confirmation Modal */}

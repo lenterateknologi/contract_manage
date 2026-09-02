@@ -166,7 +166,20 @@ class ResourceController extends Controller
         // Implement filtration
         foreach ($resourceClass::filters() as $filter) {
             $key = $filter->getName();
-            if ($request->has($key) && $request->input($key) !== '' && $request->input($key) !== null) {
+            $fromKey = "{$key}_from";
+            $toKey = "{$key}_to";
+
+            if ($request->filled($fromKey) || $request->filled($toKey)) {
+                $from = $request->input($fromKey);
+                $to = $request->input($toKey);
+                if ($from && $to) {
+                    $query->whereBetween(DB::raw("DATE({$key})"), [$from, $to]);
+                } elseif ($from) {
+                    $query->whereDate($key, '>=', $from);
+                } elseif ($to) {
+                    $query->whereDate($key, '<=', $to);
+                }
+            } elseif ($request->has($key) && $request->input($key) !== '' && $request->input($key) !== null) {
                 $val = $request->input($key);
                 if (is_array($val)) {
                     $vals = array_values(array_filter($val, fn ($v) => $v !== '' && $v !== null));
@@ -228,21 +241,28 @@ class ResourceController extends Controller
                         $relatedTable = $relationInstance->getRelated()->getTable();
                         $foreignKey = $relationInstance->getForeignKeyName();
                         $ownerKey = $relationInstance->getOwnerKeyName();
-                        $parentTable = $modelInstance->getTable();
 
-                        $query->join($relatedTable, "{$parentTable}.{$foreignKey}", '=', "{$relatedTable}.{$ownerKey}")
-                            ->select("{$parentTable}.*")
-                            ->orderBy("{$relatedTable}.{$relColumn}", $sortDir);
+                        $query->leftJoin($relatedTable, "{$modelInstance->getTable()}.{$foreignKey}", '=', "{$relatedTable}.{$ownerKey}")
+                            ->orderBy("{$relatedTable}.{$relColumn}", $sortDir)
+                            ->select("{$modelInstance->getTable()}.*");
+                    } else {
+                        $query->orderBy($actualSortBy, $sortDir);
                     }
+                } else {
+                    $query->orderBy($actualSortBy, $sortDir);
                 }
             } else {
                 $query->orderBy($actualSortBy, $sortDir);
             }
+        } else {
+            $query->latest('id');
         }
 
-        $defaultLimit = $resourceSlug === 'contract-types' ? 100 : 15;
-        $perPage = $request->integer('per_page', $defaultLimit);
+        // Execute pagination
+        $perPage = $request->input('per_page', 15);
         $data = $query->paginate($perPage)->withQueryString();
+
+        $filterKeys = collect($resourceClass::filters())->flatMap(fn ($f) => [$f->getName(), "{$f->getName()}_from", "{$f->getName()}_to"])->toArray();
 
         return Inertia::render('Core/ResourceIndex', [
             'resourceSlug' => $resourceSlug,
@@ -251,7 +271,7 @@ class ResourceController extends Controller
             'formSchema' => $resourceClass::form(),
             'data' => $data,
             'filters' => $filterConfig,
-            'activeFilters' => $request->only(array_merge(['search', 'sort_by', 'sort_dir', 'per_page'], collect($resourceClass::filters())->map(fn ($f) => $f->getName())->toArray())),
+            'activeFilters' => $request->only(array_merge(['search', 'sort_by', 'sort_dir', 'per_page'], $filterKeys)),
             'hasExport' => ! empty($resourceClass::$exportClass),
             'hasImport' => ! empty($resourceClass::$importClass),
             'hasPortalSync' => in_array($resourceSlug, ['regions', 'company-groups', 'locations', 'companies', 'business-units', 'departments', 'users']),

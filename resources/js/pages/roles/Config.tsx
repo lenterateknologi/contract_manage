@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
+import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
+import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { cn } from '@/lib/utils';
 import {
     defaultDropAnimationSideEffects,
@@ -1204,30 +1206,42 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
         <>
             <Head title={activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'} />
 
-            <div className="flex flex-col gap-4 p-6 w-full font-sans antialiased text-text-main">
-                {/* Unified Card Header & Table Container */}
-                <div className="border border-surface-border rounded-xl bg-card overflow-hidden">
-                    {/* Top Unified Toolbar with Primary Blue Header */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 bg-primary text-white dark:bg-zinc-800/95 border-b border-primary/20">
-                        <div className="flex items-center gap-3">
+            <MasterPageLayout>
+                <FloatingPanel className="flex-1 min-w-0 flex flex-col">
+                    {/* Master Data Page Header Toolbar */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border-b border-surface-border bg-surface-card shrink-0">
+                        <div className="flex items-center gap-3.5">
                             <button
+                                type="button"
                                 onClick={() => window.history.back()}
-                                className="p-1.5 rounded-lg bg-white hover:bg-slate-100 transition-all text-primary shrink-0 cursor-pointer shadow-xs"
+                                className="p-2 rounded-xl bg-surface-muted hover:bg-surface-border text-text-main transition-colors cursor-pointer shadow-xs border border-surface-border"
                                 title="Kembali"
                             >
-                                <ArrowLeft size={15} />
+                                <ArrowLeft size={16} />
                             </button>
-                            <div className="flex flex-col">
-                                <h1 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <span>{activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'}</span>
-                                    <span className="text-[10px] font-bold text-primary bg-white px-2 py-0.5 rounded-full shadow-xs">
-                                        Role: {role.name}
-                                    </span>
-                                </h1>
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                                    {activeTab === 'access' ? <Key size={20} /> : <LayoutGrid size={20} />}
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                        <h1 className="text-base font-bold text-text-main">
+                                            {activeTab === 'access' ? 'Pemetaan Hak Akses' : 'Pemetaan Navigasi'}
+                                        </h1>
+                                        <span className="text-[11px] font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full">
+                                            Role: {role.name}
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-text-desc font-normal">
+                                        {activeTab === 'access'
+                                            ? 'Konfigurasi matriks perizinan CRUD, persetujuan, dan visibilitas modul'
+                                            : 'Atur hierarki grup menu dan urutan modul navigasi aplikasi'}
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2.5">
                             {/* Role Switcher Selector */}
                             <Select
                                 value={role.id}
@@ -1238,18 +1252,18 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                     }
                                 }}
                             >
-                                <SelectTrigger className="bg-white/10 hover:bg-white/20 border-white/20 h-8 w-[180px] rounded-lg px-2.5 text-xs font-semibold text-white">
-                                    <div className="flex items-center gap-1.5 truncate text-white">
-                                        <ShieldAlert className="text-white h-3.5 w-3.5 shrink-0" />
+                                <SelectTrigger className="bg-surface-muted hover:bg-surface-border/80 border-surface-border h-9 w-[180px] rounded-lg px-2.5 text-xs font-semibold text-text-main">
+                                    <div className="flex items-center gap-1.5 truncate text-text-main">
+                                        <ShieldAlert className="text-primary h-3.5 w-3.5 shrink-0" />
                                         <SelectValue placeholder="Pilih Role" />
                                     </div>
                                 </SelectTrigger>
-                                <SelectContent className="w-[180px] rounded-lg p-1 shadow-md">
+                                <SelectContent className="w-[180px] rounded-lg p-1 shadow-md border-surface-border">
                                     {roles.map((r) => (
                                         <SelectItem
                                             key={r.id}
                                             value={r.id}
-                                            className="cursor-pointer rounded-md pl-2 pr-2 py-1 text-xs font-medium"
+                                            className="cursor-pointer rounded-md pl-2 pr-2 py-1.5 text-xs font-medium"
                                         >
                                             {r.name}
                                         </SelectItem>
@@ -1259,52 +1273,52 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
                             {/* Mapping Type Switcher */}
                             {!isIndependent && (
-                                <div className="bg-black/20 flex rounded-lg p-0.5 border border-white/10">
+                                <div className="bg-surface-muted flex rounded-lg p-0.5 border border-surface-border">
                                     <button
                                         onClick={() => setActiveTab('access')}
                                         type="button"
                                         className={cn(
-                                            'flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px] font-bold transition-all cursor-pointer',
+                                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
                                             activeTab === 'access'
-                                                ? 'bg-white text-primary shadow-xs'
-                                                : 'text-white/80 hover:text-white hover:bg-white/10',
+                                                ? 'bg-surface-base text-primary shadow-xs border border-surface-border'
+                                                : 'text-text-desc hover:text-text-main hover:bg-surface-card/60',
                                         )}
                                     >
-                                        <Key size={12} /> Hak Akses
+                                        <Key size={13} /> <span>Hak Akses</span>
                                     </button>
                                     <button
                                         onClick={() => setActiveTab('navigation')}
                                         type="button"
                                         className={cn(
-                                            'flex items-center gap-1.5 rounded-md px-3 py-1 text-[11px] font-bold transition-all cursor-pointer',
+                                            'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer',
                                             activeTab === 'navigation'
-                                                ? 'bg-white text-primary shadow-xs'
-                                                : 'text-white/80 hover:text-white hover:bg-white/10',
+                                                ? 'bg-surface-base text-primary shadow-xs border border-surface-border'
+                                                : 'text-text-desc hover:text-text-main hover:bg-surface-card/60',
                                         )}
                                     >
-                                        <LayoutGrid size={12} /> Navigasi
+                                        <LayoutGrid size={13} /> <span>Navigasi</span>
                                     </button>
                                 </div>
                             )}
 
                             {/* Access Quick Controls */}
                             {activeTab === 'access' && (
-                                <div className="bg-black/20 flex rounded-lg p-0.5 border border-white/10">
+                                <div className="flex items-center gap-1.5">
                                     <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
-                                        className="h-7 px-2.5 rounded-md text-[11px] font-bold text-white hover:bg-white/20 hover:text-white cursor-pointer"
+                                        className="h-9 px-3 rounded-lg text-xs font-semibold cursor-pointer"
                                         onClick={() => setAll(true)}
                                     >
-                                        <CheckSquare className="mr-1 h-3 w-3" /> Pilih Semua
+                                        <CheckSquare className="mr-1 h-3.5 w-3.5 text-primary" /> Pilih Semua
                                     </Button>
                                     <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
-                                        className="h-7 px-2.5 rounded-md text-[11px] font-bold text-white hover:bg-white/20 hover:text-white cursor-pointer"
+                                        className="h-9 px-3 rounded-lg text-xs font-semibold cursor-pointer"
                                         onClick={() => setAll(false)}
                                     >
-                                        <Square className="mr-1 h-3 w-3" /> Bersihkan
+                                        <Square className="mr-1 h-3.5 w-3.5 text-text-desc" /> Bersihkan
                                     </Button>
                                 </div>
                             )}
@@ -1313,141 +1327,141 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                 variant="primary"
                                 onClick={activeTab === 'access' ? handleAccessSubmit : handleNavSave}
                                 disabled={accessForm.processing || isSavingNav}
-                                className="h-8 rounded-lg px-4 text-xs font-bold shadow-xs bg-white text-primary hover:bg-white/90 border border-white"
+                                className="h-9 rounded-lg px-4 text-xs font-bold shadow-xs cursor-pointer"
                             >
                                 {accessForm.processing || isSavingNav ? (
-                                    <Loader2 size={13} className="animate-spin text-primary" />
+                                    <Loader2 size={14} className="animate-spin" />
                                 ) : (
-                                    <div className="flex items-center gap-1.5 text-primary font-bold">
-                                        <Save size={13} />
-                                        <span>Simpan</span>
+                                    <div className="flex items-center gap-1.5 font-bold">
+                                        <Save size={14} />
+                                        <span>Simpan Perubahan</span>
                                     </div>
                                 )}
                             </Button>
                         </div>
                     </div>
 
-                    {/* Table Area */}
+                    {/* Table Area for Access Mapping */}
                     {activeTab === 'access' ? (
-                        <div className="scrollbar-hide overflow-x-auto">
+                        <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
                             <table className="w-full min-w-[800px] border-collapse text-left">
-                                    <thead className="bg-primary text-white dark:bg-zinc-800/90 select-none">
-                                        <tr className="border-b border-primary/20 dark:border-zinc-700/80 bg-primary text-white dark:bg-zinc-800/90 select-none">
-                                            <th className="border-r border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 sticky left-0 z-30 min-w-[200px] px-3 py-2 text-left text-[11px] font-bold uppercase">
-                                                Scope Modul
-                                            </th>
-                                            {PERMISSIONS.map((p) => {
-                                                const isAllChecked = accessForm.data.accesses.every((a) => (a as any)[p]);
-                                                return (
-                                                    <th
-                                                        key={p}
-                                                        className="border-r border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 w-16 min-w-[60px] px-0.5 py-1.5 text-center text-[10px] font-bold uppercase last:border-r-0"
-                                                    >
-                                                        <div className="flex flex-col items-center gap-0.5">
-                                                            <span className="truncate max-w-[55px]">{permissionLabels[p]}</span>
-                                                            <Checkbox
-                                                                className="border-white/50 dark:border-zinc-500 data-[state=checked]:bg-white data-[state=checked]:text-primary h-3.5 w-3.5 rounded transition-all active:scale-90"
-                                                                checked={isAllChecked}
-                                                                onCheckedChange={(checked) => setColumn(p, !!checked)}
-                                                            />
-                                                        </div>
-                                                    </th>
-                                                );
-                                            })}
-                                            <th className="border-l border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 w-12 min-w-[48px] px-0.5 py-1.5 text-center text-[10px] font-bold uppercase">
-                                                Full
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-surface-border">
-                                        {Object.entries(groupedModules).map(([groupId, group]) => {
-                                            const groupModuleIds = group.modules.map((m) => m.id);
-                                            const groupAccesses = accessForm.data.accesses.filter((a) => groupModuleIds.includes(a.module_id));
-                                            const isGroupFullControlChecked = groupAccesses.every(
-                                                (a) =>
-                                                    a.can_read &&
-                                                    a.can_create &&
-                                                    a.can_update &&
-                                                    a.can_delete &&
-                                                    a.can_approve &&
-                                                    a.can_bulk_approve &&
-                                                    a.can_bulk_delete,
-                                            );
-
+                                <thead className="bg-surface-muted text-text-desc select-none sticky top-0 z-20 border-b border-surface-border">
+                                    <tr className="border-b border-surface-border bg-surface-muted select-none">
+                                        <th className="border-r border-surface-border bg-surface-muted text-text-main sticky left-0 z-30 min-w-[220px] px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider">
+                                            Scope Modul
+                                        </th>
+                                        {PERMISSIONS.map((p) => {
+                                            const isAllChecked = accessForm.data.accesses.every((a) => (a as any)[p]);
                                             return (
-                                                <React.Fragment key={groupId}>
-                                                    <tr className="border-y border-surface-border bg-slate-100/80 dark:bg-zinc-800/60 transition-colors">
-                                                         <td className="bg-slate-100/90 dark:bg-zinc-800/80 border-r border-surface-border sticky left-0 z-10 px-3 py-1.5">
-                                                             <div className="flex items-center gap-2">
-                                                                 <div className="bg-primary/10 text-primary rounded-md p-1">
-                                                                     <LayoutGrid className="h-3 w-3" />
-                                                                 </div>
-                                                                 <span className="text-text-main text-xs font-extrabold uppercase tracking-wide">
-                                                                     {group.name}
-                                                                 </span>
-                                                             </div>
-                                                         </td>
-                                                         {PERMISSIONS.map((p) => {
-                                                             const isGroupColumnChecked = groupAccesses.every((a) => (a as any)[p]);
-                                                             return (
-                                                                 <td
-                                                                     key={p}
-                                                                     className="border-r border-surface-border px-1 py-1.5 text-center transition-colors"
-                                                                 >
-                                                                     <div className="flex justify-center">
-                                                                         <Checkbox
-                                                                             className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded transition-all active:scale-90"
-                                                                             checked={isGroupColumnChecked}
-                                                                             onCheckedChange={(checked) => setGroupColumn(groupId, p, !!checked)}
-                                                                         />
-                                                                     </div>
-                                                                 </td>
-                                                             );
-                                                         })}
-                                                         <td className="bg-slate-100/50 dark:bg-zinc-800/50 border-l border-surface-border px-1 py-1.5 text-center">
-                                                            <div className="flex justify-center">
-                                                                <Checkbox
-                                                                    className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded-md border transition-all active:scale-90"
-                                                                    checked={isGroupFullControlChecked}
-                                                                    onCheckedChange={(checked) => {
-                                                                        accessForm.setData(
-                                                                            'accesses',
-                                                                            accessForm.data.accesses.map((access) =>
-                                                                                groupModuleIds.includes(access.module_id)
-                                                                                    ? {
-                                                                                        ...access,
-                                                                                        can_read: !!checked,
-                                                                                        can_create: !!checked,
-                                                                                        can_update: !!checked,
-                                                                                        can_delete: !!checked,
-                                                                                        can_approve: !!checked,
-                                                                                        can_bulk_approve: !!checked,
-                                                                                        can_bulk_delete: !!checked,
-                                                                                    }
-                                                                                    : access,
-                                                                            ),
-                                                                        );
-                                                                    }}
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    {group.modules.map((module) => (
-                                                        <ModuleRow
-                                                            key={module.id}
-                                                            module={module}
-                                                            access={accessForm.data.accesses.find((a) => a.module_id === module.id)}
-                                                            onToggle={updateAccess}
-                                                            onSetRow={setRow}
+                                                <th
+                                                    key={p}
+                                                    className="border-r border-surface-border bg-surface-muted text-text-desc w-20 min-w-[70px] px-1 py-2 text-center text-[10.5px] font-bold uppercase tracking-wider last:border-r-0"
+                                                >
+                                                    <div className="flex flex-col items-center gap-1">
+                                                        <span className="truncate max-w-[65px]">{permissionLabels[p]}</span>
+                                                        <Checkbox
+                                                            className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded transition-all active:scale-90"
+                                                            checked={isAllChecked}
+                                                            onCheckedChange={(checked) => setColumn(p, !!checked)}
                                                         />
-                                                    ))}
-                                                </React.Fragment>
+                                                    </div>
+                                                </th>
                                             );
                                         })}
-                                    </tbody>
-                                </table>
-                            </div>
-            ) : (
+                                        <th className="border-l border-surface-border bg-surface-muted text-text-desc w-16 min-w-[55px] px-1 py-2 text-center text-[10.5px] font-bold uppercase tracking-wider">
+                                            Full
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-surface-border">
+                                    {Object.entries(groupedModules).map(([groupId, group]) => {
+                                        const groupModuleIds = group.modules.map((m) => m.id);
+                                        const groupAccesses = accessForm.data.accesses.filter((a) => groupModuleIds.includes(a.module_id));
+                                        const isGroupFullControlChecked = groupAccesses.every(
+                                            (a) =>
+                                                a.can_read &&
+                                                a.can_create &&
+                                                a.can_update &&
+                                                a.can_delete &&
+                                                a.can_approve &&
+                                                a.can_bulk_approve &&
+                                                a.can_bulk_delete,
+                                        );
+
+                                        return (
+                                            <React.Fragment key={groupId}>
+                                                <tr className="border-y border-surface-border bg-surface-card/80 transition-colors">
+                                                    <td className="bg-surface-card border-r border-surface-border sticky left-0 z-10 px-4 py-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="bg-primary/10 text-primary rounded-md p-1">
+                                                                <LayoutGrid className="h-3.5 w-3.5" />
+                                                            </div>
+                                                            <span className="text-text-main text-xs font-bold uppercase tracking-wide">
+                                                                {group.name}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    {PERMISSIONS.map((p) => {
+                                                        const isGroupColumnChecked = groupAccesses.every((a) => (a as any)[p]);
+                                                        return (
+                                                            <td
+                                                                key={p}
+                                                                className="border-r border-surface-border px-1 py-2 text-center transition-colors"
+                                                            >
+                                                                <div className="flex justify-center">
+                                                                    <Checkbox
+                                                                        className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded transition-all active:scale-90"
+                                                                        checked={isGroupColumnChecked}
+                                                                        onCheckedChange={(checked) => setGroupColumn(groupId, p, !!checked)}
+                                                                    />
+                                                                </div>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                    <td className="bg-surface-card/60 border-l border-surface-border px-1 py-2 text-center">
+                                                        <div className="flex justify-center">
+                                                            <Checkbox
+                                                                className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-3.5 w-3.5 rounded-md border transition-all active:scale-90"
+                                                                checked={isGroupFullControlChecked}
+                                                                onCheckedChange={(checked) => {
+                                                                    accessForm.setData(
+                                                                        'accesses',
+                                                                        accessForm.data.accesses.map((access) =>
+                                                                            groupModuleIds.includes(access.module_id)
+                                                                                ? {
+                                                                                      ...access,
+                                                                                      can_read: !!checked,
+                                                                                      can_create: !!checked,
+                                                                                      can_update: !!checked,
+                                                                                      can_delete: !!checked,
+                                                                                      can_approve: !!checked,
+                                                                                      can_bulk_approve: !!checked,
+                                                                                      can_bulk_delete: !!checked,
+                                                                                  }
+                                                                                : access,
+                                                                        ),
+                                                                    );
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {group.modules.map((module) => (
+                                                    <ModuleRow
+                                                        key={module.id}
+                                                        module={module}
+                                                        access={accessForm.data.accesses.find((a) => a.module_id === module.id)}
+                                                        onToggle={updateAccess}
+                                                        onSetRow={setRow}
+                                                    />
+                                                ))}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
                 <div className="p-4">
                 <DndContext
                     sensors={sensors}
@@ -1661,7 +1675,6 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                 </DndContext>
                 </div>
             )}
-            </div>
 
             {/* Group CRUD Modal */}
             <Dialog open={isGroupModalOpen} onOpenChange={setIsGroupModalOpen}>
@@ -1872,7 +1885,8 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
             `,
                 }}
             />
-            </div>
+                </FloatingPanel>
+            </MasterPageLayout>
         </>
     );
 }
