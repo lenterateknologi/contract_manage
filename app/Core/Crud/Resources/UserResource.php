@@ -86,12 +86,12 @@ class UserResource extends Resource
                     ->placeholder('Pilih Jenis Kelamin (M / F)...')
                     ->rules(['nullable', 'string', 'max:10']),
                 SelectInput::make('job_position_id', 'Jabatan (Job Title)')
-                    ->options(fn () => JobTitle::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->options(fn () => JobTitle::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
                     ->searchable()
                     ->placeholder('Pilih Jabatan...')
                     ->helperText('Posisi jabatan terhubung ke Master Job Title.'),
                 SelectInput::make('job_level_id', 'Level Jabatan (Job Level)')
-                    ->options(fn () => JobLevel::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->options(fn () => JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
                     ->searchable()
                     ->placeholder('Pilih Level Jabatan...')
                     ->helperText('Tingkat jabatan terhubung ke Master Job Level.'),
@@ -101,9 +101,9 @@ class UserResource extends Resource
 
             Section::make('Penempatan & Organisasi', [
                 SelectInput::make('company_name', 'Perusahaan (Company)')
-                    ->options(fn () => Company::orderBy('name')->whereNotNull('name')->pluck('name', 'name')->toArray())
+                    ->options(fn () => Company::where('is_used', true)->orderBy('name')->whereNotNull('name')->pluck('name', 'name')->toArray())
                     ->meta([
-                        'company_map' => Company::whereNotNull('name')->get()->keyBy('name')->map(fn ($c) => [
+                        'company_map' => Company::where('is_used', true)->whereNotNull('name')->get()->keyBy('name')->map(fn ($c) => [
                             'group_name'  => $c->company_group_name,
                             'region_name' => $c->region_name,
                         ])->toArray(),
@@ -121,12 +121,12 @@ class UserResource extends Resource
                     ->helperText('Otomatis terisi dari master bisnis unit/perusahaan.')
                     ->columnSpan(1),
                 SelectInput::make('location_id', 'Lokasi Kerja')
-                    ->options(fn () => Location::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->options(fn () => Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
                     ->searchable()
                     ->placeholder('Pilih Lokasi Kerja...')
                     ->helperText('Lokasi penempatan kerja terhubung ke Master Lokasi.'),
                 SelectInput::make('department_id', 'Departemen / Unit Organisasi')
-                    ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->options(fn () => Department::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
                     ->searchable()
                     ->placeholder('Pilih Departemen...')
                     ->helperText('Unit organisasi terhubung ke Master Departemen.'),

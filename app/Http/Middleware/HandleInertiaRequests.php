@@ -147,11 +147,23 @@ class HandleInertiaRequests extends Middleware
             )
             ->get();
 
-        // ponytail: compute is_used / total counts for Portal master data
+        // compute is_used AND is_active counts for Portal master data
         $getPortalCount = function (string $table): string {
+            $hasIsUsed = \Illuminate\Support\Facades\Schema::hasColumn($table, 'is_used');
+            $hasIsActive = \Illuminate\Support\Facades\Schema::hasColumn($table, 'is_active');
+
+            $condition = '1=1';
+            if ($hasIsUsed && $hasIsActive) {
+                $condition = 'is_used = true AND is_active = true';
+            } elseif ($hasIsUsed) {
+                $condition = 'is_used = true';
+            } elseif ($hasIsActive) {
+                $condition = 'is_active = true';
+            }
+
             $res = DB::table($table)
                 ->whereNull('deleted_at')
-                ->selectRaw('COUNT(*) as total, COUNT(CASE WHEN is_used THEN 1 END) as used')
+                ->selectRaw("COUNT(*) as total, COUNT(CASE WHEN {$condition} THEN 1 END) as used")
                 ->first();
 
             return ($res->used ?? 0).'/'.($res->total ?? 0);

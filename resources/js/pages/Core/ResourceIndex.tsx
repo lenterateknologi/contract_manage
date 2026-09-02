@@ -192,11 +192,13 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     const handleDeptSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
+        deptForm.transform((data) => ({
+            ...data,
+            return_url: currentUrl
+        }));
+
         if (editDataId) {
-            deptForm.transform((data) => ({
-                ...data,
-                return_url: currentUrl
-            })).put(`/admin/core/${resourceSlug}/${editDataId}`, {
+            deptForm.put(`/admin/core/${resourceSlug}/${editDataId}`, {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
@@ -205,10 +207,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 }
             });
         } else {
-            deptForm.transform((data) => ({
-                ...data,
-                return_url: currentUrl
-            })).post(`/admin/core/${resourceSlug}`, {
+            deptForm.post(`/admin/core/${resourceSlug}`, {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
@@ -1015,22 +1014,31 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                             </label>
                                             {isFieldChecked ? (
                                                 <div className="w-full">
-                                                    {field.type === 'select' && (
-                                                        <select
-                                                            value={bulkFieldValues[field.name] ?? ''}
-                                                            onChange={(e) => setBulkFieldValues(prev => ({ ...prev, [field.name]: e.target.value }))}
-                                                            className="flex h-10 w-full appearance-none rounded-lg border border-surface-border bg-surface-base pl-3 pr-10 py-2 text-xs font-normal focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
-                                                        >
-                                                            <option value="">Pilih...</option>
-                                                            {(Array.isArray(field.options) ? field.options : Object.entries(field.options || {})).map((option: any) => {
-                                                                const val = Array.isArray(field.options) ? option : option[0];
-                                                                const label = Array.isArray(field.options) ? option : option[1];
-                                                                return (
-                                                                    <option key={val} value={val}>{label}</option>
-                                                                );
-                                                            })}
-                                                        </select>
-                                                    )}
+                                                    {field.type === 'select' && (() => {
+                                                        let selectOptions: { value: string; label: string }[] = [];
+                                                        if (field.options) {
+                                                            if (Array.isArray(field.options)) {
+                                                                selectOptions = field.options.map((opt: any) => ({
+                                                                    value: typeof opt === 'object' && opt !== null ? String(opt.value ?? opt.id) : String(opt),
+                                                                    label: typeof opt === 'object' && opt !== null ? String(opt.label ?? opt.name) : String(opt),
+                                                                }));
+                                                            } else {
+                                                                selectOptions = Object.entries(field.options).map(([val, label]) => ({
+                                                                    value: String(val),
+                                                                    label: String(label),
+                                                                }));
+                                                            }
+                                                        }
+                                                        return (
+                                                            <SearchableSelect
+                                                                value={bulkFieldValues[field.name] !== undefined ? String(bulkFieldValues[field.name]) : ''}
+                                                                onValueChange={(val) => setBulkFieldValues(prev => ({ ...prev, [field.name]: val }))}
+                                                                options={selectOptions}
+                                                                placeholder={`Pilih ${field.label}...`}
+                                                                searchPlaceholder={`Cari ${field.label.toLowerCase()}...`}
+                                                            />
+                                                        );
+                                                    })()}
                                                     {field.type === 'switch' && (
                                                         <div className="flex items-center gap-3 h-10">
                                                             <button
