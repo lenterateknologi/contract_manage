@@ -135,8 +135,10 @@ class WorkflowAdminController extends Controller
 
                 return [
                     'id' => $action->id,
-                    'master_action_id' => $action->action_code ? $action->action_code->value : null,
-                    'master_action_name' => $action->action_code ? $action->action_code->label() : ($action->alias ?: 'Action'),
+                    'action_code' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
+                    'code' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
+                    'master_action_id' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->value : (string) $action->action_code) : null,
+                    'master_action_name' => $action->action_code ? (is_object($action->action_code) ? $action->action_code->label() : ($action->alias ?: 'Action')) : ($action->alias ?: 'Action'),
                     'master_action' => null,
                     'next_step_id' => $action->next_step_id,
                     'next_workflow_id' => $action->next_workflow_id,

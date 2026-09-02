@@ -230,7 +230,23 @@ class User extends Authenticatable
         }
 
         if ($this->relationLoaded('company') && $this->company) {
-            return $this->company->company_group_code ?? $this->company->group?->code;
+            if (array_key_exists('company_group_code', $this->company->getAttributes()) && ! empty($this->company->getAttributes()['company_group_code'])) {
+                return $this->company->getAttributes()['company_group_code'];
+            }
+            if ($this->company->relationLoaded('group') && $this->company->group) {
+                return $this->company->group->code;
+            }
+            if ($this->company->relationLoaded('companyGroup') && $this->company->companyGroup) {
+                return $this->company->companyGroup->code;
+            }
+            $groupId = $this->company->getAttributeFromArray('company_group_id');
+            if (! empty($groupId)) {
+                $cacheKey = "code_{$groupId}";
+                if (! array_key_exists($cacheKey, self::$companyGroupMemoryCache)) {
+                    self::$companyGroupMemoryCache[$cacheKey] = \App\Models\CompanyGroup::find($groupId)?->code;
+                }
+                return self::$companyGroupMemoryCache[$cacheKey];
+            }
         }
 
         return null;

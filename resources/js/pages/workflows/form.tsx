@@ -20,6 +20,8 @@ import { Modal } from '@/components/ui/dialogs/Modal';
 import SortableStepItem from './components/SortableStepItem';
 import { DraggablePresetCard } from './components/DraggablePresetCard';
 import { MASTER_ACTIONS, APPROVER_TYPE_STYLES, getActionTheme } from './constants';
+import { WorkflowFlowVisualizer } from './components/WorkflowFlowVisualizer';
+import { Activity } from 'lucide-react';
 
 // --- Sortable Step Item (Compact) ---
 
@@ -88,15 +90,15 @@ export default function WorkflowEditor({
         });
     };
 
-    const [mainTab, setMainTab] = useState<'settings' | 'categories' | 'authorities' | 'steps'>(() => {
+    const [mainTab, setMainTab] = useState<'settings' | 'categories' | 'authorities' | 'steps' | 'visualizer'>(() => {
         if (typeof window !== 'undefined') {
             const tab = new URLSearchParams(window.location.search).get('tab');
-            if (tab === 'settings' || tab === 'categories' || tab === 'authorities' || tab === 'steps') return tab;
+            if (tab === 'settings' || tab === 'categories' || tab === 'authorities' || tab === 'steps' || tab === 'visualizer') return tab;
         }
         return 'settings';
     });
 
-    const handleTabChange = (tab: 'settings' | 'categories' | 'authorities' | 'steps') => {
+    const handleTabChange = (tab: 'settings' | 'categories' | 'authorities' | 'steps' | 'visualizer') => {
         setMainTab(tab);
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
@@ -410,6 +412,19 @@ export default function WorkflowEditor({
                                     )}>
                                         {form.data.steps.length}
                                     </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleTabChange('visualizer')}
+                                    className={cn(
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
+                                        mainTab === 'visualizer'
+                                            ? 'bg-primary text-white font-bold shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                    )}
+                                >
+                                    <Activity size={13} />
+                                    Visualisasi Diagram
                                 </button>
                             </div>
                         }
@@ -937,6 +952,11 @@ export default function WorkflowEditor({
                                         )}
                                     </div>
                                 </div>
+                            </div>
+                        )}
+                        {mainTab === 'visualizer' && (
+                            <div className="p-1">
+                                <WorkflowFlowVisualizer steps={form.data.steps} workflow={workflow} />
                             </div>
                         )}
                     </div>

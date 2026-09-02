@@ -141,8 +141,8 @@ export default function AdminIndex({
         <ToastProvider>
             <Head title={`Admin - ${viewTitle}`} />
 
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                <div>{renderView()}</div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden h-full">
+                <div className="flex-1 min-h-0 flex flex-col h-full">{renderView()}</div>
             </div>
         </ToastProvider>
     );

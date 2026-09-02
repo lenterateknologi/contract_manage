@@ -140,8 +140,9 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                     )
             }}
         >
-            <table className="w-full text-xs">
-                <thead className="bg-primary text-white dark:bg-zinc-800/90 select-none">
+            <div className="flex-1 min-h-0 w-full overflow-auto">
+                <table className="w-full text-xs">
+                    <thead className="bg-primary text-white dark:bg-zinc-800/90 select-none sticky top-0 z-10">
                     <tr className="border-b border-primary/20 dark:border-zinc-700/80 bg-primary text-white dark:bg-zinc-800/90 select-none">
                         <th className="w-10 px-4 py-3 bg-primary dark:bg-zinc-800/90 text-white">
                             <input
@@ -383,7 +384,8 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                         ))
                     )}
                 </tbody>
-            </table>
+                </table>
+            </div>
         </PageTable>
     );
 }
