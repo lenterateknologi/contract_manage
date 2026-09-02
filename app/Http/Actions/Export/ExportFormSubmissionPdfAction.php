@@ -5,6 +5,7 @@ namespace App\Http\Actions\Export;
 use App\Models\Contract;
 use App\Models\FormSubmission;
 use App\Models\FormTemplate;
+use App\Services\Utils\PdfMetadataService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
@@ -44,17 +45,27 @@ class ExportFormSubmissionPdfAction
         $pdfFileName = "{$type}_v{$vno}.pdf";
         $pdfPath = "{$pdfDir}/{$pdfFileName}";
 
+        $user = auth()->user();
+        $docNumber = $contract->contract_no ?: ($contract->form_no ?: $contract->id);
+
         if (Storage::disk('local')->exists($pdfPath)) {
             $content = Storage::disk('local')->get($pdfPath);
+            $processedContent = PdfMetadataService::injectMetadata($content, $user?->name, $user?->id, $docNumber);
 
-            return response($content)
+            return response($processedContent)
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
         }
 
         try {
             // ponytail: Browsershot visits the same React page as the preview → 100% identical output
-            $routeParams = ['id' => $contract->id, 'type' => $type];
+            $routeParams = [
+                'id' => $contract->id,
+                'type' => $type,
+                'user_id' => $user?->id,
+                'user_name' => $user?->name,
+                'user_email' => $user?->email,
+            ];
             if ($versionNo !== null) {
                 $routeParams['version'] = $versionNo;
             }
@@ -98,7 +109,9 @@ class ExportFormSubmissionPdfAction
             }
             Storage::disk('local')->put($pdfPath, $finalPdf);
 
-            return response($finalPdf)
+            $processedPdf = PdfMetadataService::injectMetadata($finalPdf, $user?->name, $user?->id, $docNumber);
+
+            return response($processedPdf)
                 ->header('Content-Type', 'application/pdf')
                 ->header('Content-Disposition', "$disposition; filename=\"{$pdfFileName}\"");
 

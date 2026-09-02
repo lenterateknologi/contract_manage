@@ -18,6 +18,7 @@ use App\Models\Vendor;
 use App\Models\Workflow;
 use App\Services\ContractFilterScopeService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class ContractOptionsQuery
 {
@@ -118,7 +119,7 @@ class ContractOptionsQuery
 
             // ── Templates & Meta ─────────────────────────────────────────────
 
-            'formTemplates' => fn () => FormTemplate::where('is_active', true)
+            'formTemplates' => fn () => Cache::remember('contract_opts_form_templates', now()->addMinutes(10), fn () => FormTemplate::where('is_active', true)
                 ->with('contractType')
                 ->withCount('fields')
                 ->get()
@@ -131,45 +132,47 @@ class ContractOptionsQuery
                     'contract_type_name' => $ft->contractType?->name,
                     'fields_count' => $ft->fields_count,
                 ])
-                ->toArray(),
+                ->toArray()),
 
-            'roles' => fn () => Role::orderBy('name')->get(),
-            'contractStatuses' => fn () => ContractStatus::all(),
+            'roles' => fn () => Cache::remember('contract_opts_roles', now()->addMinutes(10), fn () => Role::orderBy('name')->get()),
+            'contractStatuses' => fn () => Cache::remember('contract_opts_statuses', now()->addMinutes(10), fn () => ContractStatus::all()),
 
             'types' => function () {
-                $workflows = Workflow::where('is_active', true)->where('is_selectable', true)->get();
-                $globalExists = $workflows->contains(
-                    fn ($w) => empty($w->contract_type_id) && empty($w->meta['contract_type_ids'])
-                );
+                return Cache::remember('contract_opts_types', now()->addMinutes(10), function () {
+                    $workflows = Workflow::where('is_active', true)->where('is_selectable', true)->get();
+                    $globalExists = $workflows->contains(
+                        fn ($w) => empty($w->contract_type_id) && empty($w->meta['contract_type_ids'])
+                    );
 
-                if ($globalExists) {
-                    return ContractType::all();
-                }
-
-                $allowedTypeIds = collect();
-                foreach ($workflows as $w) {
-                    if ($w->contract_type_id) {
-                        $allowedTypeIds->push($w->contract_type_id);
+                    if ($globalExists) {
+                        return ContractType::all();
                     }
-                    if (! empty($w->meta['contract_type_ids']) && is_array($w->meta['contract_type_ids'])) {
-                        foreach ($w->meta['contract_type_ids'] as $id) {
-                            $allowedTypeIds->push($id);
+
+                    $allowedTypeIds = collect();
+                    foreach ($workflows as $w) {
+                        if ($w->contract_type_id) {
+                            $allowedTypeIds->push($w->contract_type_id);
+                        }
+                        if (! empty($w->meta['contract_type_ids']) && is_array($w->meta['contract_type_ids'])) {
+                            foreach ($w->meta['contract_type_ids'] as $id) {
+                                $allowedTypeIds->push($id);
+                            }
                         }
                     }
-                }
 
-                $ids = $allowedTypeIds->unique()->filter()->values()->toArray();
+                    $ids = $allowedTypeIds->unique()->filter()->values()->toArray();
 
-                return ContractType::whereIn('id', $ids)
-                    ->orWhereIn('id', fn ($q) => $q->select('parent_id')
-                        ->from('m_contract_types')
-                        ->whereIn('id', $ids)
-                        ->whereNotNull('parent_id')
-                    )
-                    ->get();
+                    return ContractType::whereIn('id', $ids)
+                        ->orWhereIn('id', fn ($q) => $q->select('parent_id')
+                            ->from('m_contract_types')
+                            ->whereIn('id', $ids)
+                            ->whereNotNull('parent_id')
+                        )
+                        ->get();
+                });
             },
 
-            'submissionTypes' => fn () => SubmissionType::where('is_active', true)->get(),
+            'submissionTypes' => fn () => Cache::remember('contract_opts_submission_types', now()->addMinutes(10), fn () => SubmissionType::where('is_active', true)->get()),
         ];
     }
 }

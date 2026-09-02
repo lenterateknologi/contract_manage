@@ -98,24 +98,26 @@ const NavTreeItem = memo(function NavTreeItem({
     setOpenMobile,
     checkActive,
     isAnyChildActive,
+    onNavigate,
 }: {
     item: NavItem;
     isMobile: boolean;
     setOpenMobile: (open: boolean) => void;
     checkActive: (url: string) => boolean;
     isAnyChildActive: (item: NavItem) => boolean;
+    onNavigate?: () => void;
 }) {
     const hasChildren = Boolean(item.children && item.children.length > 0);
     const isChildActive = hasChildren ? isAnyChildActive(item) : false;
     const isSelfActive = checkActive(item.url);
 
-    const [isExpanded, setIsExpanded] = useState<boolean>(true);
+    // Default minimized, only expand when this specific item or its child is selected/active
+    const [isExpanded, setIsExpanded] = useState<boolean>(() => isChildActive || isSelfActive);
 
+    // When active selection changes (user navigates to another menu), collapse this item if not active
     useEffect(() => {
-        if (isChildActive) {
-            setIsExpanded(true);
-        }
-    }, [isChildActive]);
+        setIsExpanded(isChildActive || isSelfActive);
+    }, [isChildActive, isSelfActive]);
 
     const ItemIcon = item.icon ?? FileText;
 
@@ -126,6 +128,7 @@ const NavTreeItem = memo(function NavTreeItem({
                     href={item.url}
                     onClick={() => {
                         if (isMobile) setOpenMobile(false);
+                        onNavigate?.();
                     }}
                     className={cn(
                         'group relative flex flex-1 items-start gap-3 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-200 min-w-0',
@@ -150,7 +153,7 @@ const NavTreeItem = memo(function NavTreeItem({
                         <span className="truncate tracking-tight leading-tight">
                             {item.title}
                         </span>
-                        {item.description && !hasChildren && (
+                        {item.description && (
                             <span
                                 className={cn(
                                     'text-[11px] leading-tight truncate mt-0.5 font-normal',
@@ -207,9 +210,10 @@ const NavTreeItem = memo(function NavTreeItem({
                                 href={child.url}
                                 onClick={() => {
                                     if (isMobile) setOpenMobile(false);
+                                    onNavigate?.();
                                 }}
                                 className={cn(
-                                    'relative group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-all duration-150 min-w-0',
+                                    'relative group flex items-start gap-2.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-all duration-150 min-w-0',
                                     'before:absolute before:-left-[15px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/80 before:rounded-full',
                                     isSubActive
                                         ? 'bg-primary text-primary-foreground shadow-xs font-semibold before:bg-primary'
@@ -218,15 +222,40 @@ const NavTreeItem = memo(function NavTreeItem({
                             >
                                 <ChildIcon
                                     className={cn(
-                                        'size-3.5 shrink-0 transition-colors',
+                                        'size-3.5 shrink-0 transition-colors mt-0.5',
                                         isSubActive
                                             ? 'text-primary-foreground'
                                             : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80',
                                     )}
                                 />
-                                <span className="truncate flex-1 tracking-tight">
-                                    {child.title}
-                                </span>
+                                <div className="flex flex-col flex-1 min-w-0">
+                                    <span className="truncate tracking-tight leading-tight">
+                                        {child.title}
+                                    </span>
+                                    {child.description && (
+                                        <span
+                                            className={cn(
+                                                'text-[10px] leading-tight truncate mt-0.5 font-normal',
+                                                isSubActive ? 'text-primary-foreground/80' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70',
+                                            )}
+                                        >
+                                            {child.description}
+                                        </span>
+                                    )}
+                                </div>
+                                {child.badge !== undefined && child.badge !== null && (
+                                    <span
+                                        className={cn(
+                                            'ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
+                                            isSubActive
+                                                ? 'bg-primary-foreground/20 text-primary-foreground'
+                                                : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                        )}
+                                        title={`${child.badge} data aktif`}
+                                    >
+                                        {child.badge}
+                                    </span>
+                                )}
                             </Link>
                         );
                     })}
@@ -369,7 +398,7 @@ export const AppSidebar = memo(function AppSidebar() {
         prevDetailActiveRef.current = detailSidebar?.isActive;
     }, [detailSidebar?.isActive]);
 
-    // Persisted state for secondary sub-sidebar (default true: terbuka)
+    // Persisted state for secondary sub-sidebar (default true)
     const [isSubOpen, setIsSubOpen] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('sub_sidebar_open');
@@ -477,43 +506,48 @@ export const AppSidebar = memo(function AppSidebar() {
         return groups.find((g) => g.title === selectedGroupTitle) ?? groups[0] ?? null;
     }, [groups, selectedGroupTitle]);
 
-    const allUrls = useMemo(() => {
-        const collectUrls = (items: NavItem[]): string[] => {
-            return items.flatMap((item) => [item.url.split('?')[0], ...(item.children ? collectUrls(item.children) : [])]);
+    const allItems = useMemo(() => {
+        const collectItems = (items: NavItem[]): NavItem[] => {
+            return items.flatMap((item) => [item, ...(item.children ? collectItems(item.children) : [])]);
         };
-        return groups.flatMap((g) => collectUrls(g.items));
+        return groups.flatMap((g) => collectItems(g.items));
     }, [groups]);
 
+    const allUrls = useMemo(() => {
+        return allItems.map((item) => item.url.split('?')[0]);
+    }, [allItems]);
+
     const checkActive = (itemUrl: string) => {
+        const [currentPathname, currentQuery] = page.url.split('?');
+        const currentParams = new URLSearchParams(currentQuery || '');
+
         if (itemUrl.includes('?')) {
             const [itemPath, itemQuery] = itemUrl.split('?');
-            const [currentPathname, currentQuery] = page.url.split('?');
             if (currentPathname !== itemPath) return false;
 
             const itemParams = new URLSearchParams(itemQuery);
-            const currentParams = new URLSearchParams(currentQuery || '');
             for (const [key, val] of itemParams.entries()) {
-                let currentVal = currentParams.get(key);
-                if (!currentVal) {
-                    if (key === 'pending_tab' && val === 'pending') currentVal = 'pending';
-                    else if (key === 'parent_tab' && val === 'kontrak') currentVal = 'kontrak';
-                    else if (key === 'mine_tab' && val === 'kontrak') currentVal = 'kontrak';
-                    else if (key === 'expiry_tab' && val === 'all') currentVal = 'all';
-                }
+                const currentVal = currentParams.get(key);
                 if (currentVal !== val) return false;
             }
             return true;
         }
 
         const itemPath = itemUrl.split('?')[0];
-        const [currentPathname, currentQuery] = page.url.split('?');
         if (currentPathname === itemPath) {
-            const currentParams = new URLSearchParams(currentQuery || '');
-            const hasTab = currentParams.has('parent_tab') || currentParams.has('mine_tab') || currentParams.has('pending_tab') || currentParams.has('expiry_tab');
-            if (hasTab) {
-                const tabVal = currentParams.get('parent_tab') || currentParams.get('mine_tab') || currentParams.get('pending_tab') || currentParams.get('expiry_tab');
-                return tabVal === 'all' || !tabVal;
-            }
+            // Check if there is another nav item with the exact same path that specifically matches the query string
+            const hasMoreSpecificMatchingItem = allItems.some((other) => {
+                if (other.url === itemUrl || !other.url.includes('?')) return false;
+                const [oPath, oQuery] = other.url.split('?');
+                if (oPath !== currentPathname) return false;
+                const oParams = new URLSearchParams(oQuery);
+                for (const [k, v] of oParams.entries()) {
+                    if (currentParams.get(k) !== v) return false;
+                }
+                return true;
+            });
+
+            if (hasMoreSpecificMatchingItem) return false;
             return true;
         }
 
@@ -624,8 +658,12 @@ export const AppSidebar = memo(function AppSidebar() {
                                             <button
                                                 type="button"
                                                 onClick={() => {
-                                                    setSubMode((prev) => (prev === 'detail' ? 'main' : 'detail'));
-                                                    if (!isSubOpen) setIsSubOpen(true);
+                                                    if (subMode === 'detail' && isSubOpen) {
+                                                        setIsSubOpen(false);
+                                                    } else {
+                                                        setSubMode('detail');
+                                                        setIsSubOpen(true);
+                                                    }
                                                 }}
                                                 className={cn(
                                                     'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-2 px-1 transition-all duration-200 cursor-pointer',
@@ -668,16 +706,21 @@ export const AppSidebar = memo(function AppSidebar() {
                                                             if (subMode === 'detail') {
                                                                 setSelectedGroupTitle(group.title);
                                                                 setSubMode('main');
-                                                                if (!isSubOpen) setIsSubOpen(true);
-                                                            } else if (selectedGroupTitle === group.title) {
-                                                                // Clicking the active group again toggles back to contract detail!
-                                                                setSubMode('detail');
+                                                                setIsSubOpen(true);
+                                                            } else if (selectedGroupTitle === group.title && isSubOpen) {
+                                                                setIsSubOpen(false);
                                                             } else {
                                                                 setSelectedGroupTitle(group.title);
+                                                                setSubMode('main');
+                                                                setIsSubOpen(true);
                                                             }
                                                         } else {
-                                                            setSelectedGroupTitle(group.title);
-                                                            if (!isSubOpen) setIsSubOpen(true);
+                                                            if (selectedGroupTitle === group.title && isSubOpen) {
+                                                                setIsSubOpen(false);
+                                                            } else {
+                                                                setSelectedGroupTitle(group.title);
+                                                                setIsSubOpen(true);
+                                                            }
                                                         }
                                                     }}
                                                     className={cn(
@@ -789,7 +832,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                     </span>
                                 </div>
 
-                                {/* Detail Tab Items with Tree hierarchy */}
+                                 {/* Detail Tab Items with Tree hierarchy */}
                                 <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1 custom-scrollbar">
                                     {detailSidebar.tabs.map((tab) => (
                                         <DetailNavTreeItem

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Utils\ShortIdService;
 use App\Traits\HasContractMeta;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -41,6 +42,18 @@ class Contract extends Model
         } catch (\Throwable $e) {
             DB::statement('REFRESH MATERIALIZED VIEW mv_dashboard_contracts');
         }
+    }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        $id = ShortIdService::decode($value);
+
+        return parent::resolveRouteBinding($id, $field);
+    }
+
+    public function getShortIdAttribute(): ?string
+    {
+        return ShortIdService::encode($this->id);
     }
 
     protected $with = ['meta'];

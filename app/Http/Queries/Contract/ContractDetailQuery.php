@@ -3,6 +3,7 @@
 namespace App\Http\Queries\Contract;
 
 use App\Models\Contract;
+use App\Services\Utils\ShortIdService;
 
 class ContractDetailQuery
 {
@@ -63,9 +64,11 @@ class ContractDetailQuery
      */
     public function find(string $id): Contract
     {
+        $decodedId = ShortIdService::decode($id);
+
         return Contract::query()
             ->select(self::SELECT)
             ->with(self::WITH)
-            ->findOrFail($id);
+            ->findOrFail($decodedId);
     }
 }

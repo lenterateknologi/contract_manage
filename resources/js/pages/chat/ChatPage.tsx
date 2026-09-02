@@ -3,13 +3,12 @@ import { AppSidebarHeader } from '@/layouts/app/components/AppSidebarHeader';
 import { SidebarInset, SidebarProvider } from '@/components/ui/navigation/Sidebar';
 import { Head, usePage, usePoll } from '@inertiajs/react';
 import { useState, useMemo, useEffect } from 'react';
-import { Building2, Calendar, ExternalLink, FileText, MessageSquare, Search, X, Info, Users, Paperclip } from 'lucide-react';
+import { Building2, Calendar, ExternalLink, FileText, MessageSquare, Search, X } from 'lucide-react';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import ContractChat from '@/pages/contracts/components/tabs/ContractChat';
 import { Contract } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
 import { ContractListItem } from './ui/ContractListItem';
-import { ChatRightPanel } from './ui/ChatRightPanel';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
 
 interface Props {
@@ -118,24 +117,35 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                 <div className="flex h-screen w-full overflow-hidden font-sans bg-background">
                     {/* Full edge-to-edge Container for Chat Interface (No margin, padding or card effect) */}
                     <div className="flex flex-1 w-full h-full overflow-hidden min-w-0 bg-background">
-                        {/* Sidebar: Left Panel (Daftar Percakapan) */}
-                        <div className="flex w-80 flex-col border-r border-border shrink-0 bg-background">
-                            {/* Search & Header */}
-                            <div className="px-3.5 py-2.5 border-b border-border bg-sidebar text-sidebar-foreground h-16 flex flex-col justify-between shrink-0">
-                                <div className="flex items-center justify-between gap-2">
-                                    <h2 className="text-xs font-bold text-foreground flex items-center gap-1.5 shrink-0">
-                                        <MessageSquare className="h-3.5 w-3.5 text-primary" />
-                                        <span>Percakapan</span>
-                                    </h2>
-                                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-bold shrink-0">
-                                        {filteredContracts.length}
-                                    </span>
+                        {/* Sidebar: Left Panel (Daftar Percakapan - Matching Sub Side Nav Style) */}
+                        <div className="flex w-80 flex-col border-r border-sidebar-border/60 bg-sidebar/20 backdrop-blur-xs shrink-0 h-full">
+                            {/* Top Header (Daftar Percakapan & Count Badge) */}
+                            <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border/40 shrink-0">
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                                        <MessageSquare className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div className="flex flex-col justify-center truncate">
+                                        <span className="text-sidebar-foreground text-[14px] leading-tight font-bold tracking-tight truncate">
+                                            Daftar Percakapan
+                                        </span>
+                                        <span className="text-sidebar-foreground/50 text-[10px] leading-tight font-medium truncate mt-0.5">
+                                            Diskusi pengajuan kontrak
+                                        </span>
+                                    </div>
                                 </div>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted text-foreground font-bold border border-border shrink-0">
+                                    {filteredContracts.length} room
+                                </span>
+                            </div>
+
+                            {/* Search Bar (Positioned directly below top header) */}
+                            <div className="px-3 py-2 border-b border-sidebar-border/40 bg-sidebar/30 backdrop-blur-xs shrink-0 flex items-center">
                                 <SearchInput
-                                    placeholder="Cari kontrak..."
+                                    placeholder="Cari percakapan..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="h-7 text-xs font-normal bg-background text-foreground placeholder:text-muted-foreground border-border rounded-lg"
+                                    className="h-8 w-full text-xs font-normal bg-background text-foreground placeholder:text-muted-foreground border-border rounded-lg"
                                 />
                             </div>
 
@@ -144,7 +154,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                 {filteredContracts.length === 0 ? (
                                     <div className="p-6 text-center">
                                         <Search size={18} className="mx-auto mb-2 text-muted-foreground" />
-                                        <p className="text-xs font-medium text-muted-foreground">Tidak ada kontrak</p>
+                                        <p className="text-xs font-medium text-muted-foreground">Tidak ada percakapan ditemukan</p>
                                     </div>
                                 ) : (
                                     Object.entries(groupedContracts).map(([groupLabel, items]) => (
@@ -255,68 +265,38 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                                         />
                                     </div>
                                 </div>
-                                {/* Right Panel: Member & Media */}
-                                <ChatRightPanel contract={selectedContract} />
                             </>
                         ) : (
-                            <>
-                                <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
-                                    {/* Header for Empty State */}
-                                    <div className="px-5 py-2.5 border-b border-border flex items-center justify-between bg-card text-card-foreground z-10 h-16 shrink-0">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-9 w-9 rounded-xl bg-white/20 text-white flex items-center justify-center shrink-0 font-semibold border border-white/30">
-                                                <MessageSquare className="w-4 h-4 text-white" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <h3 className="text-xs font-bold text-white tracking-tight leading-none mb-1">
-                                                    Ruang Percakapan
-                                                </h3>
-                                                <p className="text-[11px] text-white/80">
-                                                    Pilih percakapan untuk memulai diskusi
-                                                </p>
-                                            </div>
+                            <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+                                {/* Header for Empty State */}
+                                <div className="px-5 py-2.5 border-b border-border flex items-center justify-between bg-card text-card-foreground z-10 h-16 shrink-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-semibold border border-primary/20">
+                                            <MessageSquare className="w-4.5 h-4.5 text-primary" />
                                         </div>
-                                    </div>
-
-                                    <div className="flex-1 flex flex-col items-center justify-center h-full gap-3 text-slate-500 bg-white/50 dark:bg-zinc-900/50">
-                                        <div className="bg-primary/10 p-5 rounded-2xl text-primary border border-primary/20">
-                                            <MessageSquare size={36} strokeWidth={1.5} />
-                                        </div>
-                                        <div className="text-center max-w-xs px-4">
-                                            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 tracking-tight mb-1">Chat Center</h3>
-                                            <p className="text-xs text-slate-500 leading-relaxed">
-                                                Pilih percakapan dari daftar kontrak di sebelah kiri untuk melihat pesan dan memulai diskusi.
+                                        <div className="flex flex-col">
+                                            <h3 className="text-xs font-semibold text-foreground tracking-tight leading-none mb-1">
+                                                Ruang Percakapan
+                                            </h3>
+                                            <p className="text-[11px] text-muted-foreground">
+                                                Pilih percakapan dari daftar di sebelah kiri untuk memulai diskusi
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Empty Right Panel: Informasi Percakapan */}
-                                <div className="w-72 flex flex-col border-l border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 h-full overflow-hidden shrink-0">
-                                    <div className="px-3.5 py-2.5 border-b border-primary/20 bg-primary text-white h-[72px] shrink-0 flex flex-col justify-between">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                                                <Info size={14} className="text-white shrink-0" />
-                                                <span>Informasi Percakapan</span>
-                                            </h3>
-                                        </div>
-                                        <div className="flex gap-1 bg-white/10 p-0.5 rounded-lg border border-white/20">
-                                            <div className="flex-1 py-1 px-2 text-[10.5px] font-bold rounded-md flex items-center justify-center gap-1.5 bg-white text-primary shadow-xs">
-                                                <Users size={12} />
-                                                <span>Member (0)</span>
-                                            </div>
-                                            <div className="flex-1 py-1 px-2 text-[10.5px] font-bold rounded-md flex items-center justify-center gap-1.5 text-white/80">
-                                                <Paperclip size={12} />
-                                                <span>Media (0)</span>
-                                            </div>
-                                        </div>
+                                <div className="flex-1 flex flex-col items-center justify-center h-full gap-3 text-muted-foreground bg-background/50">
+                                    <div className="bg-primary/10 p-5 rounded-2xl text-primary border border-primary/20">
+                                        <MessageSquare size={36} strokeWidth={1.5} />
                                     </div>
-                                    <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-slate-400 gap-2">
-                                        <Info size={24} className="text-slate-300 dark:text-slate-700 stroke-1" />
-                                        <p className="text-xs">Tidak ada informasi percakapan yang dipilih.</p>
+                                    <div className="text-center max-w-xs px-4">
+                                        <h3 className="text-sm font-semibold text-foreground tracking-tight mb-1">Chat Center</h3>
+                                        <p className="text-xs text-muted-foreground leading-relaxed">
+                                            Pilih percakapan dari daftar kontrak di sebelah kiri untuk melihat pesan dan memulai diskusi.
+                                        </p>
                                     </div>
                                 </div>
-                            </>
+                            </div>
                         )}
                     </div>
                 </div>

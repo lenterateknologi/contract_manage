@@ -214,8 +214,8 @@ export function DraftEditableInfoCard({
         <div className="flex flex-col gap-4 relative">
 
             {/* Card 1: Informasi Kontrak */}
-            <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
-                <div className={cn("bg-primary flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4", minimized ? "rounded-xl" : "rounded-t-xl border-b border-primary/80")}>
+            <div className="flex flex-col gap-3">
+                <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
                         <Info size={15} className="text-primary-foreground/90" /> Informasi Kontrak
                     </div>
@@ -231,7 +231,7 @@ export function DraftEditableInfoCard({
                 </div>
 
                 {!minimized && (
-                    <div className="p-3.5 flex flex-col gap-3">
+                    <div className="bg-surface-base text-text-main border border-surface-border rounded-xl shadow-xs p-4 flex flex-col gap-3">
                         <ContractInfoForm
                             isDraft={isDraft}
                             title={title}
@@ -260,8 +260,6 @@ export function DraftEditableInfoCard({
                                 setTaxRequired(newVal);
                             }}
                         />
-
-
                     </div>
                 )}
             </div>
@@ -368,7 +366,7 @@ export function RequesterInfoCard({ selected, isTabView = false }: { selected: C
     if (isTabView) {
         return (
             <div className="flex flex-col flex-1 p-3 lg:p-4 gap-3">
-                <div className="bg-primary flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl shadow-xs">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
                         <User size={15} className="text-primary-foreground/90" /> Informasi Pengaju
                     </div>
@@ -381,8 +379,8 @@ export function RequesterInfoCard({ selected, isTabView = false }: { selected: C
     }
 
     return (
-        <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
-            <div className={cn("bg-primary flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4", minimized ? "rounded-xl" : "rounded-t-xl border-b border-primary/80")}>
+        <div className="flex flex-col gap-3">
+            <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
                     <User size={15} className="text-primary-foreground/90" /> Informasi Pengaju
                 </div>
@@ -395,7 +393,11 @@ export function RequesterInfoCard({ selected, isTabView = false }: { selected: C
                 </button>
             </div>
 
-            {!minimized && content}
+            {!minimized && (
+                <div className="bg-surface-base text-text-main border border-surface-border rounded-xl shadow-xs">
+                    {content}
+                </div>
+            )}
         </div>
     );
 }
@@ -451,7 +453,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
     if (isTabView) {
         return (
             <div className="flex flex-col flex-1 p-3 lg:p-4 gap-3">
-                <div className="bg-primary flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl shadow-xs">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
                         <Building2 size={15} className="text-primary-foreground/90" /> Detail Pihak Kedua / Vendor
                     </div>
@@ -476,8 +478,8 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
     }
 
     return (
-        <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
-            <div className={cn("bg-primary flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4", minimized ? "rounded-xl" : "rounded-t-xl border-b border-primary/80")}>
+        <div className="flex flex-col gap-3">
+            <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
                     <Building2 size={15} className="text-primary-foreground/90" /> Detail Pihak Kedua / Vendor
                 </div>
@@ -504,7 +506,11 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                 </div>
             </div>
 
-            {!minimized && content}
+            {!minimized && (
+                <div className="bg-surface-base text-text-main border border-surface-border rounded-xl shadow-xs">
+                    {content}
+                </div>
+            )}
         </div>
     );
 }

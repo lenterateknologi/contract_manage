@@ -48,7 +48,7 @@
             <td class="label">Judul Kontrak</td>
             <td class="value">: {{ $contract->title }}</td>
             <td class="label">Dicetak Oleh</td>
-            <td class="value">: {{ $generated_by }}</td>
+            <td class="value">: {{ $generated_by }} @if(!empty($generated_by_id) && $generated_by_id !== '-') (ID: {{ $generated_by_id }}) @endif</td>
         </tr>
         <tr>
             <td class="label">Initiator</td>
@@ -133,7 +133,7 @@
     </table>
 
     <div class="footer">
-        Halaman <span class="page-number"></span> &bull; Dicetak melalui Contract Management System
+        Halaman <span class="page-number"></span> &bull; Dicetak melalui CMS oleh: {{ $generated_by }} @if(!empty($generated_by_id) && $generated_by_id !== '-') (User ID: {{ $generated_by_id }}) @endif &bull; Waktu: {{ $generated_at }}
     </div>
     <div id="pdf-render-complete"></div>
 </body>

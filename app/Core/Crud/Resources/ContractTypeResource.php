@@ -14,12 +14,13 @@ use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
 use App\Models\ContractType;
 use App\Models\FormTemplate;
+use Illuminate\Support\Facades\Cache;
 
 class ContractTypeResource extends Resource
 {
     public static string $model = ContractType::class;
 
-    public static array $with = ['parent', 'f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate'];
+    public static array $with = ['parent.f1FormTemplate', 'parent.f2FormTemplate', 'parent.contractFormTemplate', 'f1FormTemplate', 'f2FormTemplate', 'contractFormTemplate'];
 
     public static ?string $title = 'Kategori Kontrak';
 
@@ -50,7 +51,7 @@ class ContractTypeResource extends Resource
                     ->required()
                     ->rules(['string', 'max:255']),
                 TreeSelectInput::make('parent_id', 'Parent Kategori')
-                    ->options(fn () => ContractType::orderBy('name')->get(['id', 'name', 'parent_id'])->toArray()),
+                    ->options(fn () => Cache::remember('options_contract_types_tree', now()->addMinutes(10), fn () => ContractType::orderBy('name')->get(['id', 'name', 'parent_id'])->toArray())),
                 ToggleInput::make('is_active', 'Status Aktif')
                     ->default(true),
                 TextareaInput::make('description', 'Deskripsi')
@@ -66,7 +67,7 @@ class ContractTypeResource extends Resource
                         'none' => 'Tidak Aktif (Disable)',
                     ]),
                 SelectInput::make('f1_form_template_id', 'Template Form F1')
-                    ->options(fn () => FormTemplate::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Cache::remember('options_form_templates_f1', now()->addMinutes(10), fn () => FormTemplate::where('document_type', 'f1')->orWhereNull('document_type')->orderBy('name')->pluck('name', 'id')->toArray())),
             ])->icon('FileText'),
 
             Section::make('Konfigurasi Formulir F2', [
@@ -77,7 +78,7 @@ class ContractTypeResource extends Resource
                         'none' => 'Tidak Aktif (Disable)',
                     ]),
                 SelectInput::make('f2_form_template_id', 'Template Form F2')
-                    ->options(fn () => FormTemplate::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Cache::remember('options_form_templates_f2', now()->addMinutes(10), fn () => FormTemplate::where('document_type', 'f2')->orWhereNull('document_type')->orderBy('name')->pluck('name', 'id')->toArray())),
             ])->icon('FileCheck'),
 
             Section::make('Konfigurasi Draft Perjanjian', [
@@ -88,7 +89,7 @@ class ContractTypeResource extends Resource
                         'none' => 'Tidak Aktif (Disable)',
                     ]),
                 SelectInput::make('contract_form_template_id', 'Template Form Agreement')
-                    ->options(fn () => FormTemplate::orderBy('name')->pluck('name', 'id')->toArray()),
+                    ->options(fn () => Cache::remember('options_form_templates_contract', now()->addMinutes(10), fn () => FormTemplate::orderBy('name')->pluck('name', 'id')->toArray())),
             ])->icon('FileSpreadsheet'),
         ];
     }

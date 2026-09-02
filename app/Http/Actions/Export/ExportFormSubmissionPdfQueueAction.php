@@ -61,11 +61,18 @@ class ExportFormSubmissionPdfQueueAction
         try {
             $jobId = (string) Str::uuid();
             $cacheKey = 'pdf_adhoc_'.$jobId;
+            $user = Auth::user();
 
             Log::info("Prepping PDF Cache: {$cacheKey}");
             Cache::put($cacheKey, [
                 'template' => $template->toArray() + ['fields' => $template->fields->toArray()],
                 'formData' => $formData,
+                'printedBy' => [
+                    'name' => $user?->name ?? 'System',
+                    'id' => $user?->id ?? '-',
+                    'email' => $user?->email ?? '',
+                    'timestamp' => now()->format('d/m/Y H:i:s'),
+                ],
             ], 1800);
 
             $printUrl = URL::temporarySignedRoute(

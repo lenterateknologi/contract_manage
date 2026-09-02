@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Eye, FileEdit, MoreVertical, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -218,8 +218,31 @@ export const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => (
     </div>
 );
 
+export const ContractPeriodCell = ({ c }: Readonly<{ c: Contract }>) => {
+    const startDate = c.contract_date ? formatDate(c.contract_date, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+    const endDate = c.end_date ? formatDate(c.end_date, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+
+    if (!startDate && !endDate) {
+        return <span className="text-text-soft text-[11px] font-normal">—</span>;
+    }
+
+    return (
+        <div className="flex flex-col gap-0.5 py-0.5 min-w-[130px]">
+            <div className="flex items-center gap-1.5 text-[11px] leading-tight font-medium text-text-normal">
+                <span className="text-text-desc text-[10px] uppercase font-semibold">Mulai:</span>
+                <span>{startDate || '—'}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] leading-tight font-medium text-text-normal">
+                <span className="text-text-desc text-[10px] uppercase font-semibold">S/d:</span>
+                <span className={cn(c.end_date ? 'font-semibold text-text-main' : '')}>{endDate || '—'}</span>
+            </div>
+        </div>
+    );
+};
+
 export const renderContractNoAndTitle = (c: Contract) => <ContractNoAndTitleCell c={c} />;
 export const renderInitiator = (c: Contract) => <InitiatorCell c={c} />;
+export const renderContractPeriod = (c: Contract) => <ContractPeriodCell c={c} />;
 export const renderStatusAndStep = (c: Contract) => <StatusAndStepCell c={c} />;
 export const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 export const renderAssignedBy = (c: Contract) => <AssignedByCell c={c} />;

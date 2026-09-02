@@ -23,6 +23,7 @@ import {
     Quote,
     RefreshCw,
     Save,
+    Search,
     Send,
     Smile,
     Strikethrough,
@@ -418,6 +419,8 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     const { showToast } = useToast();
     const [input, setInput] = useState('');
     const [search, setSearch] = useState('');
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [sending, setSending] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
@@ -579,11 +582,28 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         }
     };
 
+    const involvedParticipants = useMemo(() => {
+        const map = new Map<string, any>();
+        if (contract.creator) map.set(contract.creator.id, contract.creator);
+        if (contract.initiator) map.set(contract.initiator.id, contract.initiator);
+        if (contract.assigned_pic) map.set(contract.assigned_pic.id, contract.assigned_pic);
+        if (contract.assigned_by) map.set(contract.assigned_by.id, contract.assigned_by);
+        contract.approvals?.forEach((a) => {
+            if (a.approver) map.set(a.approver.id, a.approver);
+        });
+        messages.forEach((m) => {
+            if (m.user) map.set(m.user.id, m.user);
+        });
+        return Array.from(map.values());
+    }, [contract, messages]);
+
     const filteredUsers = useMemo(() => {
-        if (!mentionSearch) return allUsers;
+        if (!mentionSearch) {
+            return involvedParticipants.length > 0 ? involvedParticipants : allUsers;
+        }
         const s = mentionSearch.toLowerCase();
         return allUsers.filter((u) => u.name.toLowerCase().includes(s));
-    }, [allUsers, mentionSearch]);
+    }, [allUsers, involvedParticipants, mentionSearch]);
 
     const [activeFormats, setActiveFormats] = useState<Record<string, boolean>>({});
 
@@ -795,11 +815,104 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 text-[11px] text-white/80 font-medium">
-                        <Users size={13} className="text-white/80" />
-                        <span>{users.length || 1} Partisipan</span>
-                    </div>
+                <div className="flex items-center gap-2.5">
+                    {!isSearchOpen && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-white/80 font-medium">
+                            <Users size={13} className="text-white/80" />
+                            <span>{involvedParticipants.length || 1} Partisipan</span>
+                        </div>
+                    )}
+
+                    {!isSearchOpen ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsSearchOpen(true);
+                                setTimeout(() => searchInputRef.current?.focus(), 60);
+                            }}
+                            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-7 px-2.5 flex items-center gap-1.5 rounded-lg text-xs font-medium transition-all active:scale-95 cursor-pointer shadow-2xs"
+                            title="Cari & temukan pesan dalam chat"
+                        >
+                            <Search size={13} />
+                            <span>Cari</span>
+                        </button>
+                    ) : (
+                        <div className="animate-in fade-in zoom-in-95 duration-150 flex items-center gap-1.5 bg-white/15 border border-white/25 rounded-lg p-0.5 shadow-inner">
+                            <div className="relative flex items-center">
+                                <Search className="absolute left-2 size-3.5 text-white/70 pointer-events-none" />
+                                <input
+                                    ref={searchInputRef}
+                                    type="text"
+                                    placeholder="Cari pesan dalam chat..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            if (e.shiftKey) handlePrevMatch();
+                                            else handleNextMatch();
+                                        }
+                                        if (e.key === 'Escape') {
+                                            setSearch('');
+                                            setIsSearchOpen(false);
+                                        }
+                                    }}
+                                    className="h-6 w-44 sm:w-60 md:w-72 rounded-md bg-transparent pl-7 pr-6 text-xs text-white placeholder:text-white/60 focus:outline-hidden"
+                                />
+                                {search && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearch('')}
+                                        className="absolute right-1 text-white/70 hover:text-white p-0.5 rounded transition-colors cursor-pointer"
+                                        title="Hapus kata kunci"
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Match navigation counter */}
+                            {search && (
+                                <div className="flex items-center gap-1 border-l border-white/20 pl-1.5 pr-1 text-[10px] text-white font-medium">
+                                    <span className="whitespace-nowrap tabular-nums">
+                                        {matchingMessages.length > 0 ? `${currentMatchIndex + 1}/${matchingMessages.length}` : '0 hasil'}
+                                    </span>
+                                    {matchingMessages.length > 0 && (
+                                        <div className="flex items-center">
+                                            <button
+                                                type="button"
+                                                onClick={handlePrevMatch}
+                                                className="hover:bg-white/20 rounded p-0.5 transition-colors cursor-pointer"
+                                                title="Sebelumnya (Shift+Enter)"
+                                            >
+                                                <ChevronUp size={11} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleNextMatch}
+                                                className="hover:bg-white/20 rounded p-0.5 transition-colors cursor-pointer"
+                                                title="Selanjutnya (Enter)"
+                                            >
+                                                <ChevronDown size={11} />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Close button */}
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSearch('');
+                                    setIsSearchOpen(false);
+                                }}
+                                className="hover:bg-white/20 text-white/80 hover:text-white h-6 w-6 flex items-center justify-center rounded-md transition-colors cursor-pointer"
+                                title="Tutup pencarian (Esc)"
+                            >
+                                <X size={13} />
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -203,6 +203,7 @@ class FormTemplateController extends Controller
         return Inertia::render('form-management/Print', [
             'template' => $templateData,
             'formData' => $data['formData'],
+            'printedBy' => $data['printedBy'] ?? null,
         ]);
     }
 

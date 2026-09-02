@@ -5,9 +5,15 @@ import React from 'react';
 interface Props {
     template: FormTemplate;
     formData: Record<string, any>;
+    printedBy?: {
+        name?: string;
+        id?: string;
+        email?: string;
+        timestamp?: string;
+    };
 }
 
-export default function FormPrint({ template, formData }: Props) {
+export default function FormPrint({ template, formData, printedBy }: Props) {
     const [ready, setReady] = React.useState(false);
 
     React.useEffect(() => {
@@ -22,7 +28,7 @@ export default function FormPrint({ template, formData }: Props) {
     }, []);
 
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-white flex flex-col justify-between">
             <Head>
                 <title>{`Print: ${template.name}`}</title>
                 <link rel="preconnect" href="https://fonts.bunny.net" />
@@ -36,6 +42,17 @@ export default function FormPrint({ template, formData }: Props) {
             <div className="form-print-container mx-auto w-[210mm]">
                 <InteractiveForm template={template} formData={formData} readOnly={true} className="w-full border-none shadow-none ring-0" />
             </div>
+
+            {/* Audit / User Remark Footer */}
+            {printedBy && (
+                <div className="form-print-footer mx-auto w-[210mm] px-6 py-3 text-[9px] text-slate-400 flex items-center justify-between border-t border-slate-200/80 font-mono">
+                    <span>
+                        Dokumen dicetak / diunduh oleh: <strong className="text-slate-600">{printedBy.name || 'System'}</strong>
+                        {printedBy.id && printedBy.id !== '-' && <span> (User ID: <strong className="text-slate-600">{printedBy.id}</strong>)</span>}
+                    </span>
+                    <span>{printedBy.timestamp || new Date().toLocaleString('id-ID')}</span>
+                </div>
+            )}
 
             {/* Signal for Browsershot that React has finished mounting and rendering */}
             {ready && <div id="pdf-render-complete" style={{ display: 'none' }} aria-hidden="true" />}

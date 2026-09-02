@@ -5,6 +5,7 @@ namespace App\Http\Actions\File;
 use App\Http\Actions\Export\ExportFormSubmissionPdfAction;
 use App\Models\Contract;
 use App\Models\ContractVersion;
+use App\Services\Utils\PdfMetadataService;
 use App\Services\Utils\PdfService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -39,10 +40,14 @@ class PdfPreviewAction
         $pdfPath = $pdfDir.'/'.pathinfo($version->file_path, PATHINFO_FILENAME).'.pdf';
 
         if ($this->pdfService->convertToPdf($sourcePath, $pdfDir, $pdfPath, (string) $contract->id)) {
-            return response()->file($pdfPath, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="'.basename($pdfPath).'"',
-            ]);
+            $user = auth()->user();
+            $docNumber = $contract->contract_no ?: ($contract->form_no ?: $contract->id);
+            $rawContent = file_get_contents($pdfPath);
+            $processedContent = PdfMetadataService::injectMetadata($rawContent, $user?->name, $user?->id, $docNumber);
+
+            return response($processedContent)
+                ->header('Content-Type', 'application/pdf')
+                ->header('Content-Disposition', 'inline; filename="'.basename($pdfPath).'"');
         }
 
         return response()->json(['message' => 'Failed to generate PDF.'], 500);

@@ -18,11 +18,14 @@ class ExportApprovalTimelinePdfQueueAction
 
         try {
             $jobId = (string) Str::uuid();
-            $userName = Auth::user() ? Auth::user()->name : 'System';
+            $user = Auth::user();
+            $userName = $user ? $user->name : 'System';
+            $userId = $user ? $user->id : '-';
 
             $params = array_merge($request->only(['status', 'role', 'department']), [
                 'id' => $contract->id,
                 'generated_by' => $userName,
+                'generated_by_id' => $userId,
             ]);
 
             if (app()->environment('local')) {

@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { Contract, ContractAttachment } from '@/pages/contracts/types';
 import axios from 'axios';
 import { renderAsync } from 'docx-preview';
-import { ArrowLeft, Download, FileCheck, FileIcon, FolderOpen, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, FileCheck, FileIcon, FolderOpen, Loader2, Paperclip, Plus, Trash2 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 interface Props {
@@ -246,17 +246,17 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
         return (
             <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500 p-3 lg:p-4 gap-3">
                 <style>{DOCX_STYLES}</style>
-                <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="bg-muted/40 dark:bg-muted/20 shrink-0 flex h-10 items-center justify-between px-4 rounded-xl border border-surface-border shadow-xs">
                     <div className="flex items-center gap-3">
-                        <Paperclip size={15} className="text-primary-foreground/90 shrink-0" />
+                        <Paperclip size={15} className="text-primary shrink-0" />
                         <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-semibold uppercase tracking-tight text-primary-foreground">{previewAt.label}</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">{previewAt.label}</h4>
                             <span
-                                className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[8.5px] font-bold text-white uppercase"
+                                className="rounded bg-muted border border-border px-1.5 py-0.5 text-[8.5px] font-bold text-muted-foreground uppercase"
                             >
                                 {(previewAt as any).is_vendor_doc ? 'Vendor Doc' : 'Attachment'}
                             </span>
-                            <span className="hidden sm:inline text-white/70 text-[10px] truncate max-w-[200px]">
+                            <span className="hidden sm:inline text-muted-foreground text-[10px] truncate max-w-[200px]">
                                 ({previewAt.file_name})
                             </span>
                         </div>
@@ -265,7 +265,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setPreviewAt(null)}
-                            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[10.5px] font-medium uppercase transition-all active:scale-95 cursor-pointer"
+                            className="bg-background hover:bg-muted text-foreground border border-surface-border flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[10.5px] font-medium uppercase transition-all active:scale-95 cursor-pointer shadow-2xs"
                         >
                             <ArrowLeft size={13} /> KEMBALI
                         </button>
@@ -273,7 +273,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                         <a
                             href={downloadUrl}
                             download
-                            className="bg-white text-primary hover:bg-white/90 shadow-xs flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[10.5px] font-bold uppercase transition-all active:scale-95 cursor-pointer"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[10.5px] font-bold uppercase transition-all active:scale-95 cursor-pointer"
                         >
                             <Download size={13} /> UNDUH
                         </a>
@@ -315,15 +315,15 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
         <div className="bg-surface-base flex flex-1 flex-col overflow-hidden p-3 lg:p-4 gap-3">
             <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
 
-            {/* Compact Primary Header */}
-            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+            {/* Compact Header */}
+            <div className="bg-muted/40 dark:bg-muted/20 shrink-0 flex h-10 items-center justify-between px-4 rounded-xl border border-surface-border shadow-xs">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
-                        <Paperclip size={15} className="text-primary-foreground/90" />
-                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
+                        <Paperclip size={15} className="text-primary" />
+                        <h4 className="text-xs font-bold tracking-wider text-foreground uppercase">
                             Dokumen & Lampiran
                         </h4>
-                        <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                        <span className="rounded bg-background border border-border px-1.5 py-0.5 text-[9px] font-bold text-foreground">
                             {allItems.length} Berkas
                         </span>
                     </div>
@@ -334,7 +334,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                         <button
                             type="button"
                             onClick={() => setShowManualUpload(true)}
-                            className="bg-white text-primary hover:bg-white/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                         >
                             <Plus size={13} />
                             <span>Tambah Lampiran</span>

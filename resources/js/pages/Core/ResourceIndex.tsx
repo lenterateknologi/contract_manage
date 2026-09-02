@@ -7,6 +7,7 @@ import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield, RefreshCw, MoreVertical } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
+import { cn } from '@/lib/utils';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { ExcelActions } from '@/components/ui/tables/ExcelActions';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialogs/Dialog';
@@ -542,6 +543,42 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                             )}
                             <span>{val || '—'}</span>
                         </span>
+                    );
+                }
+
+                // Contract type mechanism & template custom badge render
+                if ((col.name === 'f1_details' || col.name === 'f2_details' || col.name === 'agreement_details') && resourceSlug === 'contract-types') {
+                    const rawVal = String(val || '');
+                    if (!rawVal || rawVal === '—') return <span className="text-slate-400">—</span>;
+
+                    const isManual = rawVal.toLowerCase().includes('manual');
+                    const isDisable = rawVal.toLowerCase().includes('disable') || rawVal.toLowerCase().includes('none');
+
+                    const parts = rawVal.split('•').map((p) => p.trim());
+                    const mechTitle = parts[0] || rawVal;
+                    const templateName = parts[1];
+
+                    return (
+                        <div className="flex flex-col gap-1 items-start py-0.5">
+                            <span
+                                className={cn(
+                                    'inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-medium border whitespace-nowrap',
+                                    isManual
+                                        ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800'
+                                        : isDisable
+                                          ? 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-900/40 dark:text-slate-400 dark:border-slate-800'
+                                          : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800',
+                                )}
+                            >
+                                <span className={cn('size-1.5 rounded-full', isManual ? 'bg-blue-500' : isDisable ? 'bg-slate-400' : 'bg-emerald-500')} />
+                                {mechTitle}
+                            </span>
+                            {templateName && (
+                                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-200 line-clamp-1 max-w-[220px]" title={templateName}>
+                                    {templateName}
+                                </span>
+                            )}
+                        </div>
                     );
                 }
 

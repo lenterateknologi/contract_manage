@@ -4,6 +4,7 @@ namespace App\Http\Actions\File;
 
 use App\Models\Contract;
 use App\Models\ContractVersion;
+use App\Services\Utils\PdfMetadataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -46,6 +47,25 @@ class FileContentAction
             if ($ext === 'docx') {
                 $docNumber = $contract->contract_no ?: ($contract->form_no ?: $contract->id);
                 $this->updateDocxMetadata($fullPath, $userName, $user?->id, $docNumber);
+            }
+
+            // 3. Inject Internal .pdf File Properties & Metadata for Download
+            if ($ext === 'pdf') {
+                $docNumber = $contract->contract_no ?: ($contract->form_no ?: $contract->id);
+                $rawContent = file_get_contents($fullPath);
+                $processedContent = PdfMetadataService::injectMetadata($rawContent, $userName, $user?->id, $docNumber);
+
+                if (ob_get_level()) {
+                    ob_end_clean();
+                }
+
+                return response($processedContent, 200, [
+                    'Content-Type' => 'application/pdf',
+                    'Content-Length' => strlen($processedContent),
+                    'Content-Disposition' => 'attachment; filename="'.addslashes($downloadName).'"',
+                    'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                    'Pragma' => 'public',
+                ]);
             }
 
             $mimeTypes = [
@@ -155,6 +175,77 @@ class FileContentAction
             }
         } catch (\Throwable $e) {
             // Silently fail metadata update if zip archive is locked
+        }
+    }
+
+    private function updatePdfMetadata(string $filePath, ?string $userName, ?string $userId = null, ?string $docNumber = null): void
+    {
+        try {
+            $content = file_get_contents($filePath);
+            if (! $content || ! str_starts_with($content, '%PDF-')) {
+                return;
+            }
+
+            $userSafe = str_replace(['(', ')', '\\'], '', $userName ?: 'System');
+            $idSafe = str_replace(['(', ')', '\\'], '', $userId ?: 'N/A');
+            $docNoSafe = str_replace(['(', ')', '\\'], '', $docNumber ?: 'N/A');
+            $nowFormatted = now()->format('Y-m-d H:i:s T');
+            $pdfDate = 'D:'.date('YmdHisO');
+
+            $newObjNum = 999999;
+            if (preg_match_all('/(\d+)\s+0\s+obj/i', $content, $matches)) {
+                $newObjNum = max($matches[1]) + 1;
+            }
+
+            $infoContent = "{$newObjNum} 0 obj\n<<\n".
+                "/Title (Dokumen Kontrak: {$docNoSafe})\n".
+                "/Author ({$userSafe} [User ID: {$idSafe}])\n".
+                "/Subject (Downloaded by: {$userSafe} [User ID: {$idSafe}] on {$nowFormatted})\n".
+                "/Keywords (Contract, CMS, UserID: {$idSafe}, DownloadedAt: {$nowFormatted})\n".
+                "/Creator (Contract Management System)\n".
+                "/Producer (Contract Management System - Downloaded by {$userSafe} [ID: {$idSafe}])\n".
+                "/CreationDate ({$pdfDate})\n".
+                "/ModDate ({$pdfDate})\n".
+                "/DownloadedBy ({$userSafe})\n".
+                "/DownloadedUserID ({$idSafe})\n".
+                "/DownloadedAt ({$nowFormatted})\n".
+                "/DocumentNumber ({$docNoSafe})\n".
+                ">>\nendobj\n";
+
+            $fileLength = strlen($content);
+            $startxrefPos = strrpos($content, 'startxref');
+            $prevXref = 0;
+            if ($startxrefPos !== false && preg_match('/startxref\s+(\d+)/s', substr($content, $startxrefPos), $m)) {
+                $prevXref = (int) $m[1];
+            }
+
+            $rootObj = '';
+            if (preg_match('/\/Root\s+(\d+\s+\d+\s+R)/i', $content, $mRoot)) {
+                $rootObj = "/Root {$mRoot[1]}\n";
+            }
+
+            $newXrefPos = $fileLength + strlen($infoContent);
+            $xrefOffset = sprintf('%010d', $fileLength);
+
+            $incrementalUpdate = $infoContent.
+                "xref\n".
+                "0 1\n".
+                "0000000000 65535 f \n".
+                "{$newObjNum} 1\n".
+                "{$xrefOffset} 00000 n \n".
+                "trailer\n".
+                "<<\n".
+                $rootObj.
+                "/Info {$newObjNum} 0 R\n".
+                ($prevXref > 0 ? "/Prev {$prevXref}\n" : '').
+                ">>\n".
+                "startxref\n".
+                "{$newXrefPos}\n".
+                "%%EOF\n";
+
+            file_put_contents($filePath, $content.$incrementalUpdate);
+        } catch (\Throwable $e) {
+            // Silently fail if PDF cannot be updated to avoid disrupting user download
         }
     }
 }

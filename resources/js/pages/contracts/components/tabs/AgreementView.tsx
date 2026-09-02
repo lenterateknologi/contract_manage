@@ -241,9 +241,7 @@ export default function AgreementView({
         const v1 = versions.length > 1 ? versions[1].version_no : selectedVno;
         const v2 = selectedVno;
 
-        const url = isRevision
-            ? `/admin/contracts/${contract.id}/form-submissions/${effectiveDocType}/compare?v1=${v1}&v2=${v2}`
-            : `/admin/contracts/${contract.id}/agreement/compare?v1=${v1}&v2=${v2}`;
+        const url = `/admin/contracts/${contract.id}/agreement/compare?v1=${v1}&v2=${v2}&type=${effectiveDocType}`;
 
         window.open(url, '_blank');
     };

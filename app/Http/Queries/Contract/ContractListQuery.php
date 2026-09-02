@@ -120,9 +120,9 @@ class ContractListQuery
 
                             $allDescendantIds = $getDescendantIds($targetParent->id);
 
-                            $query->where(function (Builder $q) use ($allDescendantIds, $targetParent) {
+                            $query->where(function (Builder $q) use ($allDescendantIds) {
                                 $q->whereIn('contract_type_id', $allDescendantIds)
-                                    ->orWhere('contract_type_parent_id', $targetParent->id);
+                                    ->orWhereIn('contract_type_parent_id', $allDescendantIds);
                             });
                         }
                     }
@@ -178,9 +178,9 @@ class ContractListQuery
 
                         $allDescendantIds = $getDescendantIds($targetParent->id);
 
-                        $query->where(function (Builder $q) use ($allDescendantIds, $targetParent) {
+                        $query->where(function (Builder $q) use ($allDescendantIds) {
                             $q->whereIn('contract_type_id', $allDescendantIds)
-                                ->orWhere('contract_type_parent_id', $targetParent->id);
+                                ->orWhereIn('contract_type_parent_id', $allDescendantIds);
                         });
                     }
                 }
@@ -245,9 +245,9 @@ class ContractListQuery
 
                             $allDescendantIds = $getDescendantIds($targetParent->id);
 
-                            $query->where(function (Builder $q) use ($allDescendantIds, $targetParent) {
+                            $query->where(function (Builder $q) use ($allDescendantIds) {
                                 $q->whereIn('contract_type_id', $allDescendantIds)
-                                    ->orWhere('contract_type_parent_id', $targetParent->id);
+                                    ->orWhereIn('contract_type_parent_id', $allDescendantIds);
                             });
                         }
                     }

@@ -109,10 +109,18 @@ class ContractExportController extends Controller
 
         $histories = $query->orderBy('created_at', 'asc')->get();
 
+        $printedBy = [
+            'name' => $request->query('user_name') ?: (Auth::user()?->name ?: 'System'),
+            'id' => $request->query('user_id') ?: (Auth::user()?->id ?: '-'),
+            'email' => $request->query('user_email') ?: (Auth::user()?->email ?: ''),
+            'timestamp' => now()->format('d/m/Y H:i:s'),
+        ];
+
         return Inertia::render('contracts/AuditTrailDocument', [
             'contract' => ContractFormatter::formatContract($contract),
             'histories' => $histories,
             'filters' => $request->only(['search', 'actor_id', 'date_from', 'date_to']),
+            'printedBy' => $printedBy,
         ]);
     }
 
@@ -138,9 +146,17 @@ class ContractExportController extends Controller
 
         $formData = $targetVersion ? ($targetVersion->form_data ?? []) : [];
 
+        $printedBy = [
+            'name' => $request->query('user_name') ?: (Auth::user()?->name ?: 'System'),
+            'id' => $request->query('user_id') ?: (Auth::user()?->id ?: '-'),
+            'email' => $request->query('user_email') ?: (Auth::user()?->email ?: ''),
+            'timestamp' => now()->format('d/m/Y H:i:s'),
+        ];
+
         return Inertia::render('form-management/Print', [
             'template' => $template,
             'formData' => $formData,
+            'printedBy' => $printedBy,
         ]);
     }
 

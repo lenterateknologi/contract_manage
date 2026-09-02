@@ -117,7 +117,8 @@ class ContractFileController extends Controller
     public function compareAgreementVersions(Request $request, string $id, CompareVersionsAction $action): Response
     {
         $contract = $this->contractDetailQuery->find($id);
+        $type = $request->query('type', 'agreement');
 
-        return $action->execute($contract, 'agreement', $request);
+        return $action->execute($contract, $type, $request);
     }
 }

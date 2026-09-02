@@ -4,7 +4,6 @@ namespace App\Http\Actions\Export;
 
 use App\Models\Contract;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -37,11 +36,13 @@ class ExportApprovalTimelinePdfAction
 
             $approvals = $approvalsQuery->get();
 
+            $user = auth()->user();
             $html = view('pdf.contract-approval', [
                 'contract' => $contract,
                 'approvals' => $approvals,
                 'generated_at' => now()->format('d/m/Y H:i'),
-                'generated_by' => $request->generated_by ?? (Auth::user() ? Auth::user()->name : 'System'),
+                'generated_by' => $request->generated_by ?? ($user ? $user->name : 'System'),
+                'generated_by_id' => $request->generated_by_id ?? ($user ? $user->id : '-'),
             ])->render();
 
             $chromePaths = [

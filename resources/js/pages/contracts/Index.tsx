@@ -88,6 +88,7 @@ import {
     renderAssignedBy,
     renderAssignedPic,
     renderContractNoAndTitle,
+    renderContractPeriod,
     renderInitiator,
     renderStatusAndStep,
     TypeAndVendorCell,
@@ -454,9 +455,21 @@ function ContractPage({
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const viewTitleMap: Record<string, string> = {
         dashboard: 'Dashboard Kontrak',
-        contracts: 'Daftar Dokumen',
-        mine: 'Kontrak Saya',
-        pending: filters?.pending_tab === 'history' ? 'Riwayat Persetujuan' : 'Perlu Persetujuan',
+        contracts: filters?.parent_tab === 'kontrak'
+            ? 'Semua Pengajuan - Kontrak'
+            : filters?.parent_tab === 'non_kontrak'
+                ? 'Semua Pengajuan - Non Kontrak'
+                : filters?.parent_tab === 'nda'
+                    ? 'Semua Pengajuan - NDA'
+                    : 'Semua Pengajuan',
+        mine: filters?.mine_tab === 'kontrak'
+            ? 'Pengajuan Saya - Kontrak'
+            : filters?.mine_tab === 'non_kontrak'
+                ? 'Pengajuan Saya - Non Kontrak'
+                : filters?.mine_tab === 'nda'
+                    ? 'Pengajuan Saya - NDA'
+                    : 'Pengajuan Saya',
+        pending: filters?.pending_tab === 'history' ? 'Persetujuan Saya - Riwayat Persetujuan' : 'Persetujuan Saya - Perlu Persetujuan',
         expiry: filters?.expiry_tab === 'kontrak'
             ? 'Masa Berlaku - Kontrak'
             : filters?.expiry_tab === 'non_kontrak'
@@ -472,9 +485,9 @@ function ContractPage({
     };
     const viewDescMap: Record<string, string> = {
         dashboard: 'Statistik dan ringkasan aktivitas kontrak.',
-        contracts: 'Daftar seluruh dokumen dalam sistem.',
-        mine: 'Daftar kontrak yang Anda buat.',
-        pending: filters?.pending_tab === 'history' ? 'Riwayat dokumen yang pernah Anda proses.' : 'Kontrak yang menunggu persetujuan Anda.',
+        contracts: 'Daftar seluruh arsip dokumen pengajuan dalam sistem.',
+        mine: 'Daftar dokumen pengajuan yang Anda buat.',
+        pending: filters?.pending_tab === 'history' ? 'Riwayat dokumen pengajuan yang pernah Anda proses.' : 'Dokumen pengajuan yang menunggu persetujuan Anda.',
         expiry: filters?.expiry_tab === 'kontrak'
             ? 'Daftar dokumen kontrak yang akan atau telah berakhir masa berlakunya.'
             : filters?.expiry_tab === 'non_kontrak'
@@ -521,7 +534,12 @@ function ContractPage({
                         return v !== undefined && v !== null && v !== '' && (Array.isArray(v) ? v.length > 0 : true);
                     })
             ) as any;
-            router.get(globalThis.location.pathname, cleaned, { preserveState: true, preserveScroll: true, replace: true });
+            router.get(globalThis.location.pathname, cleaned, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+                only: ['contracts', 'filters', 'parentCategoryCounts', 'mineCounts', 'pendingCounts', 'expiryCategoryCounts'],
+            });
         },
         [filters],
     );
@@ -669,7 +687,8 @@ function ContractPage({
 
     const openDetail = useCallback((c: Contract) => {
         setSelected(c);
-        router.get(route('contracts.show', c.id), {}, { preserveState: true, preserveScroll: true });
+        const targetId = (c as any).short_id || c.id;
+        router.get(route('contracts.show', targetId), {}, { preserveState: true, preserveScroll: true });
     }, []);
 
     const closeDetail = useCallback(() => {
@@ -886,8 +905,15 @@ function ContractPage({
         }
     };
 
-    const canBulkApprove = useMemo(() => meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin, [meUser]);
-    const canBulkDelete = useMemo(() => meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin, [meUser]);
+    const currentModuleKey = useMemo(() => {
+        if (currentView === 'mine') return 'MY_CTC';
+        if (currentView === 'pending') return 'PENDING';
+        if (currentView === 'expiry') return 'EXPIRY';
+        return 'CONTRACTS';
+    }, [currentView]);
+
+    const { canBulkApprove, canBulkDelete } = usePermissions(currentModuleKey);
+    const hasAnyBulkAction = Boolean(canBulkApprove || canBulkDelete);
 
     const handleBulkApprove = useCallback(async (rows: Contract[]) => {
         if (!confirm(`Setujui ${rows.length} kontrak terpilih?`)) return;
@@ -953,16 +979,19 @@ function ContractPage({
     };
 
     const renderBulkActions = useCallback(
-        (selectedRows: Contract[]) => (
-            <BulkActions
-                selectedRows={selectedRows}
-                canBulkApprove={canBulkApprove}
-                handleBulkApprove={handleBulkApprove}
-                canBulkDelete={canBulkDelete}
-                handleBulkDelete={handleBulkDelete}
-            />
-        ),
-        [canBulkApprove, handleBulkApprove, canBulkDelete, handleBulkDelete],
+        (selectedRows: Contract[]) => {
+            if (!hasAnyBulkAction) return null;
+            return (
+                <BulkActions
+                    selectedRows={selectedRows}
+                    canBulkApprove={!!canBulkApprove}
+                    handleBulkApprove={handleBulkApprove}
+                    canBulkDelete={!!canBulkDelete}
+                    handleBulkDelete={handleBulkDelete}
+                />
+            );
+        },
+        [hasAnyBulkAction, canBulkApprove, handleBulkApprove, canBulkDelete, handleBulkDelete],
     );
 
     const renderTypeAndVendor = useCallback((c: Contract) => <TypeAndVendorCell c={c} types={types} />, [types]);
@@ -988,6 +1017,16 @@ function ContractPage({
                     </div>
                 ),
                 cell: renderTypeAndVendor,
+            },
+            {
+                accessorKey: 'period',
+                header: (
+                    <div className="flex items-center gap-2">
+                        <Calendar size={14} className="text-text-desc" />
+                        <span>Masa Berlaku</span>
+                    </div>
+                ),
+                cell: renderContractPeriod,
             },
             {
                 accessorKey: 'initiator',
@@ -1032,6 +1071,99 @@ function ContractPage({
         ],
         [types, renderTypeAndVendor],
     );
+
+    const renderCategoryTabs = () => {
+        let tabs: { key: string; label: string; count: number; icon?: any; isActive: boolean }[] = [];
+        const activeView = (currentView || view) as string;
+
+        if (activeView === 'contracts' || activeView === 'admin.contracts' || activeView === 'admin/contracts') {
+            const activeKey = filters?.parent_tab || '';
+            tabs = [
+                { key: '', label: 'Semua', count: parentCategoryCounts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
+                { key: 'kontrak', label: 'Kontrak', count: parentCategoryCounts?.kontrak ?? 0, icon: FileText, isActive: activeKey === 'kontrak' },
+                { key: 'non_kontrak', label: 'Non Kontrak', count: parentCategoryCounts?.non_kontrak ?? 0, icon: FileCheck, isActive: activeKey === 'non_kontrak' },
+                { key: 'nda', label: 'NDA', count: parentCategoryCounts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
+            ];
+        } else if (activeView === 'mine') {
+            const activeKey = filters?.mine_tab || '';
+            tabs = [
+                { key: '', label: 'Semua', count: mineCounts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
+                { key: 'kontrak', label: 'Kontrak', count: mineCounts?.kontrak ?? 0, icon: FileText, isActive: activeKey === 'kontrak' },
+                { key: 'non_kontrak', label: 'Non Kontrak', count: mineCounts?.non_kontrak ?? 0, icon: FileCheck, isActive: activeKey === 'non_kontrak' },
+                { key: 'nda', label: 'NDA', count: mineCounts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
+            ];
+        } else if (activeView === 'pending') {
+            const activeKey = filters?.pending_tab === 'history' ? 'history' : 'pending';
+            tabs = [
+                { key: 'pending', label: 'Perlu Persetujuan', count: pendingCounts?.pending ?? 0, icon: Clock, isActive: activeKey === 'pending' },
+                { key: 'history', label: 'Riwayat Persetujuan', count: pendingCounts?.history ?? 0, icon: History, isActive: activeKey === 'history' },
+            ];
+        } else if (activeView === 'expiry') {
+            const activeKey = filters?.expiry_tab || '';
+            tabs = [
+                { key: '', label: 'Semua', count: expiryCategoryCounts?.all ?? 0, icon: LayoutGrid, isActive: !activeKey },
+                { key: 'kontrak', label: 'Kontrak', count: expiryCategoryCounts?.kontrak ?? 0, icon: FileText, isActive: activeKey === 'kontrak' },
+                { key: 'non_kontrak', label: 'Non Kontrak', count: expiryCategoryCounts?.non_kontrak ?? 0, icon: FileCheck, isActive: activeKey === 'non_kontrak' },
+                { key: 'nda', label: 'NDA', count: expiryCategoryCounts?.nda ?? 0, icon: Zap, isActive: activeKey === 'nda' },
+            ];
+        }
+
+        if (tabs.length === 0) return null;
+
+        const onTabClick = (tabKey: string) => {
+            if (activeView === 'contracts' || activeView === 'admin.contracts' || activeView === 'admin/contracts') {
+                handleFilterChange({ parent_tab: tabKey || '', page: 1 });
+            } else if (activeView === 'mine') {
+                handleFilterChange({ mine_tab: tabKey || '', page: 1 });
+            } else if (activeView === 'pending') {
+                handleFilterChange({ pending_tab: tabKey, page: 1 });
+            } else if (activeView === 'expiry') {
+                handleFilterChange({ expiry_tab: tabKey || '', page: 1 });
+            }
+        };
+
+        return (
+            <div className="flex items-center gap-1.5 px-4 h-12 border-b border-surface-border bg-card shrink-0 overflow-x-auto custom-scrollbar">
+                {tabs.map((tab) => {
+                    const TabIcon = tab.icon;
+                    return (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => onTabClick(tab.key)}
+                            className={cn(
+                                'group relative flex items-center gap-2 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer shrink-0 select-none',
+                                tab.isActive
+                                    ? 'bg-primary text-primary-foreground shadow-xs font-bold'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70',
+                            )}
+                        >
+                            {TabIcon && (
+                                <TabIcon
+                                    size={14}
+                                    className={cn(
+                                        'shrink-0 transition-colors',
+                                        tab.isActive ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground',
+                                    )}
+                                />
+                            )}
+                            <span>{tab.label}</span>
+                            <span
+                                className={cn(
+                                    'text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
+                                    tab.isActive
+                                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground group-hover:text-foreground',
+                                )}
+                            >
+                                {tab.count}
+                            </span>
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    };
 
     return (
         <>
@@ -1157,9 +1289,17 @@ function ContractPage({
                                     to: contractsPaged.to,
                                     perPage: contractsPaged.per_page,
                                     onPageChange: (page: number) =>
-                                        router.get(globalThis.location.pathname, { ...filters, page }, { preserveState: true }),
+                                        router.get(globalThis.location.pathname, { ...filters, page }, {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                            only: ['contracts', 'filters', 'parentCategoryCounts', 'mineCounts', 'pendingCounts', 'expiryCategoryCounts'],
+                                        }),
                                     onPerPageChange: (perPage: number) =>
-                                        router.get(globalThis.location.pathname, { ...filters, page: 1, per_page: perPage }, { preserveState: true }),
+                                        router.get(globalThis.location.pathname, { ...filters, page: 1, per_page: perPage }, {
+                                            preserveState: true,
+                                            preserveScroll: true,
+                                            only: ['contracts', 'filters', 'parentCategoryCounts', 'mineCounts', 'pendingCounts', 'expiryCategoryCounts'],
+                                        }),
                                 } : undefined}
                             >
                                 <div className="flex-1 overflow-auto">
@@ -1171,6 +1311,7 @@ function ContractPage({
                                     {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                                     {view !== 'profile' && view !== 'dashboard' && (
                                         <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden h-full">
+                                            {renderCategoryTabs()}
                                             {isFilterExpanded && (
                                                 <PageFilter
                                                     categories={filterCategories}
@@ -1198,9 +1339,9 @@ function ContractPage({
                                                         loading={processing}
                                                         skeleton={<ContractTableSkeleton />}
                                                         onRowClick={openDetail}
-                                                        onSelectionChange={setSelectedRows}
-                                                        selectedRows={selectedRows}
-                                                        bulkActions={renderBulkActions(selectedRows)}
+                                                        onSelectionChange={hasAnyBulkAction ? setSelectedRows : undefined}
+                                                        selectedRows={hasAnyBulkAction ? selectedRows : []}
+                                                        bulkActions={hasAnyBulkAction ? renderBulkActions(selectedRows) : undefined}
                                                     />
                                                 ) : processing ? (
                                                     <ContractCardSkeleton />
@@ -1359,6 +1500,10 @@ export default function ContractsIndex({
     regions = [],
     companies = [],
     organizationTree = [],
+    mineCounts,
+    parentCategoryCounts,
+    pendingCounts,
+    expiryCategoryCounts,
 }: Readonly<{
     currentView?: View;
     contracts?: PaginatedData<Contract>;
@@ -1376,6 +1521,10 @@ export default function ContractsIndex({
     regions?: any[];
     companies?: any[];
     organizationTree?: any[];
+    mineCounts?: any;
+    parentCategoryCounts?: any;
+    pendingCounts?: any;
+    expiryCategoryCounts?: any;
 }>) {
     const { auth } = usePage<{ auth: { user: any } }>().props;
     const meId = auth?.user?.id ?? '';
@@ -1475,6 +1624,10 @@ export default function ContractsIndex({
                         regions={regions}
                         companies={companies}
                         organizationTree={organizationTree}
+                        mineCounts={mineCounts}
+                        parentCategoryCounts={parentCategoryCounts}
+                        pendingCounts={pendingCounts}
+                        expiryCategoryCounts={expiryCategoryCounts}
                     />
                 )}
             </ToastProvider>

@@ -39,6 +39,9 @@ Route::controller(ContractController::class)->group(function () {
     Route::get('my-contracts', 'contractsView')->defaults('view', 'mine'); // Backward compat
 });
 
+// Short URL Route Alias
+Route::get('/c/{id}', [ContractController::class, 'showView'])->name('contracts.short');
+
 // Version Comparison
 Route::get('/admin/contracts/{id}/form-submissions/{type}/compare', [ContractFormController::class, 'compareFormVersions'])->name('contracts.form-submissions.compare');
 Route::get('/admin/contracts/{id}/agreement/compare', [ContractFileController::class, 'compareAgreementVersions'])->name('contracts.agreement.compare');

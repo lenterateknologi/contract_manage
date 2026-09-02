@@ -107,9 +107,8 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 >
                     <Bell className="size-4.5 transition-transform group-hover:rotate-12 text-white/80 group-hover:text-white" />
                     {unreadNotifications.length > 0 && (
-                        <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                            <span className="bg-red-400 absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
-                            <span className="bg-red-500 relative inline-flex h-2 w-2 rounded-full ring-2 ring-primary"></span>
+                        <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white shadow-xs ring-2 ring-primary leading-none">
+                            {unreadNotifications.length > 99 ? '99+' : unreadNotifications.length}
                         </span>
                     )}
                     <span className="sr-only">Notifications</span>
@@ -117,11 +116,22 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-80 p-0 border border-border shadow-2xl rounded-2xl z-[99999]" side="right" align="end" sideOffset={14}>
                 <div className="flex items-center justify-between px-4 py-3">
-                    <DropdownMenuLabel className="text-text-main text-xs uppercase font-medium">Notifikasi Terbaru</DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-text-main text-xs uppercase font-medium flex items-center gap-1.5">
+                        <span>Notifikasi</span>
+                        {unreadNotifications.length > 0 ? (
+                            <span className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">
+                                {unreadNotifications.length} Baru
+                            </span>
+                        ) : notifications.length > 0 ? (
+                            <span className="bg-muted text-muted-foreground text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none">
+                                {notifications.length}
+                            </span>
+                        ) : null}
+                    </DropdownMenuLabel>
                     {unreadNotifications.length > 0 && (
                         <button
                             onClick={markAllRead}
-                            className="text-[10px] text-primary hover:underline uppercase font-medium"
+                            className="text-[10px] text-primary hover:underline uppercase font-medium cursor-pointer"
                         >
                             Tandai semua dibaca
                         </button>

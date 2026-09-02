@@ -24,6 +24,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -135,56 +136,104 @@ class ContractController extends Controller
             ]),
         ];
 
-        $viewTitle = 'Manajemen Dokumen';
-        $viewDesc = 'Daftar seluruh dokumen dalam sistem.';
+        $viewTitle = 'Semua Pengajuan';
+        $viewDesc = 'Daftar seluruh dokumen pengajuan dalam sistem.';
         $viewIcon = 'FileText';
+
+        $userId = Auth::id();
+        $cachedCounts = Cache::remember("contract_category_counts_{$userId}", now()->addSeconds(30), function () use ($userId) {
+            $allTypes = DB::table('m_contract_types')->whereNull('deleted_at')->get();
+
+            $getDescendantIds = function ($parentId) use (&$getDescendantIds, $allTypes) {
+                if (! $parentId) {
+                    return [];
+                }
+                $children = $allTypes->where('parent_id', $parentId)->pluck('id')->all();
+                $descendants = $children;
+                foreach ($children as $childId) {
+                    $descendants = array_merge($descendants, $getDescendantIds($childId));
+                }
+
+                return array_values(array_unique(array_merge([$parentId], $descendants)));
+            };
+
+            $roots = $allTypes->whereNull('parent_id');
+            $kontrakParent = $roots->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
+            $nonKontrakParent = $roots->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
+            $ndaParent = $roots->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
+
+            $kontrakIds = $getDescendantIds($kontrakParent?->id);
+            $nonKontrakIds = $getDescendantIds($nonKontrakParent?->id);
+            $ndaIds = $getDescendantIds($ndaParent?->id);
+
+            $baseContractsQuery = DB::table('t_contracts')->whereNull('deleted_at')->whereRaw('UPPER(status) != ?', ['DRAFT']);
+            $activeContractsQuery = (clone $baseContractsQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+
+            $parentCategoryCounts = [
+                'all' => (clone $activeContractsQuery)->count(),
+                'kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
+                'non_kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
+                'nda' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
+                'in_progress' => (clone $baseContractsQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
+                'archived' => (clone $baseContractsQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
+            ];
+
+            $myActiveQuery = (clone $activeContractsQuery)->where('created_by', $userId);
+            $myBaseQuery = (clone $baseContractsQuery)->where('created_by', $userId);
+
+            $mineCounts = [
+                'all' => (clone $myActiveQuery)->count(),
+                'kontrak' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
+                'non_kontrak' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
+                'nda' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
+                'in_progress' => (clone $myBaseQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
+                'archived' => (clone $myBaseQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
+            ];
+
+            $pendingCounts = [
+                'pending' => DB::table('t_approvals')
+                    ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
+                    ->where('t_approvals.user_id', $userId)
+                    ->where('t_approvals.status', 'pending')
+                    ->whereNull('t_contracts.deleted_at')
+                    ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+                    ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
+                    ->count(),
+                'history' => DB::table('t_approvals')
+                    ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
+                    ->where('t_approvals.user_id', $userId)
+                    ->whereIn('t_approvals.status', ['approved', 'rejected', 'revision'])
+                    ->whereNull('t_contracts.deleted_at')
+                    ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+                    ->count(),
+            ];
+
+            $baseExpiryQuery = (clone $baseContractsQuery)->whereNotNull('end_date');
+            $expiryCategoryCounts = [
+                'all' => (clone $baseExpiryQuery)->count(),
+                'kontrak' => (clone $baseExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
+                'non_kontrak' => (clone $baseExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
+                'nda' => (clone $baseExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
+            ];
+
+            return [
+                'parentCategoryCounts' => $parentCategoryCounts,
+                'mineCounts' => $mineCounts,
+                'pendingCounts' => $pendingCounts,
+                'expiryCategoryCounts' => $expiryCategoryCounts,
+            ];
+        });
+
+        $data['parentCategoryCounts'] = $cachedCounts['parentCategoryCounts'];
+        $data['mineCounts'] = $cachedCounts['mineCounts'];
+        $data['pendingCounts'] = $cachedCounts['pendingCounts'];
+        $data['expiryCategoryCounts'] = $cachedCounts['expiryCategoryCounts'];
 
         switch ($view) {
             case 'contracts':
-                $baseContractsQuery = DB::table('t_contracts')
-                    ->whereNull('deleted_at')
-                    ->whereRaw('UPPER(status) != ?', ['DRAFT']);
-
-                $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
-                $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
-                $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
-                $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
-
-                $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
-                    if (! $parentId) {
-                        return [];
-                    }
-                    $ids = [$parentId];
-                    $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
-                    foreach ($children as $childId) {
-                        $ids = array_merge($ids, $getDescendantIds($childId));
-                    }
-
-                    return array_unique($ids);
-                };
-
-                $activeContractsQuery = (clone $baseContractsQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
-
-                $getCategoryCount = function ($targetParent) use ($activeContractsQuery, $getDescendantIds) {
-                    if (! $targetParent) {
-                        return 0;
-                    }
-                    $allDescendantIds = $getDescendantIds($targetParent->id);
-
-                    return (clone $activeContractsQuery)->where(function ($q) use ($allDescendantIds, $targetParent) {
-                        $q->whereIn('contract_type_id', $allDescendantIds)
-                            ->orWhere('contract_type_parent_id', $targetParent->id);
-                    })->count();
-                };
-
-                $props['parentCategoryCounts'] = [
-                    'all' => (clone $activeContractsQuery)->count(),
-                    'kontrak' => $getCategoryCount($kontrakParent),
-                    'non_kontrak' => $getCategoryCount($nonKontrakParent),
-                    'nda' => $getCategoryCount($ndaParent),
-                    'in_progress' => (clone $baseContractsQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
-                    'archived' => (clone $baseContractsQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
-                ];
+                $viewTitle = 'Semua Pengajuan';
+                $viewDesc = 'Daftar seluruh dokumen pengajuan dalam sistem.';
+                $viewIcon = 'FileText';
 
                 break;
             case 'dashboard':
@@ -194,124 +243,21 @@ class ContractController extends Controller
 
                 break;
             case 'mine':
-                $viewTitle = 'Dokumen Saya';
-                $viewDesc = 'Daftar dokumen yang Anda buat.';
+                $viewTitle = 'Pengajuan Saya';
+                $viewDesc = 'Daftar dokumen pengajuan yang Anda buat.';
                 $viewIcon = 'FileEdit';
-
-                $baseMineQuery = DB::table('t_contracts')
-                    ->where('created_by', Auth::id())
-                    ->whereNull('deleted_at');
-
-                $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
-                $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
-                $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
-                $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
-
-                $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
-                    if (! $parentId) {
-                        return [];
-                    }
-                    $ids = [$parentId];
-                    $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
-                    foreach ($children as $childId) {
-                        $ids = array_merge($ids, $getDescendantIds($childId));
-                    }
-
-                    return array_unique($ids);
-                };
-
-                $activeMineQuery = (clone $baseMineQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
-
-                $getCategoryCount = function ($targetParent) use ($activeMineQuery, $getDescendantIds) {
-                    if (! $targetParent) {
-                        return 0;
-                    }
-                    $allDescendantIds = $getDescendantIds($targetParent->id);
-
-                    return (clone $activeMineQuery)->where(function ($q) use ($allDescendantIds, $targetParent) {
-                        $q->whereIn('contract_type_id', $allDescendantIds)
-                            ->orWhere('contract_type_parent_id', $targetParent->id);
-                    })->count();
-                };
-
-                $props['mineCounts'] = [
-                    'all' => (clone $activeMineQuery)->count(),
-                    'kontrak' => $getCategoryCount($kontrakParent),
-                    'non_kontrak' => $getCategoryCount($nonKontrakParent),
-                    'nda' => $getCategoryCount($ndaParent),
-                    'in_progress' => (clone $baseMineQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
-                    'archived' => (clone $baseMineQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
-                ];
 
                 break;
             case 'pending':
-                $viewTitle = 'Pending Approval';
-                $viewDesc = 'Kontrak yang menunggu atau telah diproses persetujuan Anda.';
+                $viewTitle = 'Persetujuan Saya';
+                $viewDesc = 'Dokumen pengajuan yang menunggu atau telah diproses persetujuan Anda.';
                 $viewIcon = 'Clock';
-
-                $userId = Auth::id();
-
-                $props['pendingCounts'] = [
-                    'pending' => Contract::whereRaw("UPPER(status) != 'DRAFT'")
-                        ->whereHas('approvals', function ($q) use ($userId) {
-                            $q->where('user_id', $userId)
-                                ->where('status', 'pending')
-                                ->whereColumn('workflow_step_id', 't_contracts.workflow_step_id');
-                        })->count(),
-                    'history' => Contract::whereRaw("UPPER(status) != 'DRAFT'")
-                        ->whereHas('approvals', function ($q) use ($userId) {
-                            $q->where('user_id', $userId)
-                                ->whereIn('status', ['approved', 'rejected', 'revision']);
-                        })->count(),
-                ];
 
                 break;
             case 'expiry':
                 $viewTitle = 'Masa Berlaku Dokumen';
                 $viewDesc = 'Dokumen yang akan atau telah berakhir masa berlakunya.';
                 $viewIcon = 'History';
-
-                $baseExpiryQuery = DB::table('t_contracts')
-                    ->whereNull('deleted_at')
-                    ->whereRaw("UPPER(status) != 'DRAFT'")
-                    ->whereNotNull('end_date');
-
-                $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
-                $kontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-1' || (stripos($p->name, 'non') === false && stripos($p->name, 'kontrak') !== false));
-                $nonKontrakParent = $parents->first(fn ($p) => strtoupper($p->code) === 'A-2' || stripos($p->name, 'non') !== false);
-                $ndaParent = $parents->first(fn ($p) => strtoupper($p->code) === 'NDA' || stripos($p->name, 'nda') !== false || stripos($p->name, 'kerahasiaan') !== false);
-
-                $getDescendantIds = function ($parentId) use (&$getDescendantIds) {
-                    if (! $parentId) {
-                        return [];
-                    }
-                    $ids = [$parentId];
-                    $children = DB::table('m_contract_types')->where('parent_id', $parentId)->pluck('id')->toArray();
-                    foreach ($children as $childId) {
-                        $ids = array_merge($ids, $getDescendantIds($childId));
-                    }
-
-                    return array_unique($ids);
-                };
-
-                $getCategoryCount = function ($targetParent) use ($baseExpiryQuery, $getDescendantIds) {
-                    if (! $targetParent) {
-                        return 0;
-                    }
-                    $allDescendantIds = $getDescendantIds($targetParent->id);
-
-                    return (clone $baseExpiryQuery)->where(function ($q) use ($allDescendantIds, $targetParent) {
-                        $q->whereIn('contract_type_id', $allDescendantIds)
-                            ->orWhere('contract_type_parent_id', $targetParent->id);
-                    })->count();
-                };
-
-                $props['expiryCategoryCounts'] = [
-                    'all' => (clone $baseExpiryQuery)->count(),
-                    'kontrak' => $getCategoryCount($kontrakParent),
-                    'non_kontrak' => $getCategoryCount($nonKontrakParent),
-                    'nda' => $getCategoryCount($ndaParent),
-                ];
 
                 break;
             case 'archived':

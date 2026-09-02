@@ -123,4 +123,11 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Short / Obfuscated URL Feature Toggle
+    |--------------------------------------------------------------------------
+    */
+    'short_url_enabled' => (bool) env('SHORT_URL_ENABLED', true),
+
 ];

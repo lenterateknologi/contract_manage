@@ -18,6 +18,7 @@ class ExportAuditPdfQueueAction
 
         try {
             $jobId = (string) Str::uuid();
+            $user = Auth::user();
 
             $printUrl = URL::temporarySignedRoute(
                 'contracts.audit.document.print',
@@ -28,6 +29,8 @@ class ExportAuditPdfQueueAction
                     'actor_id' => $request->actor_id,
                     'date_from' => $request->date_from,
                     'date_to' => $request->date_to,
+                    'user_id' => $user?->id,
+                    'user_name' => $user?->name,
                 ],
             );
 

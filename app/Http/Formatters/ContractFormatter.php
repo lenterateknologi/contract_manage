@@ -7,6 +7,7 @@ use App\Http\Controllers\Chat\ChatController;
 use App\Models\Contract;
 use App\Models\Role;
 use App\Models\WorkflowStep;
+use App\Services\Utils\ShortIdService;
 use App\Services\Workflow\ContractWorkflowService;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,8 +29,12 @@ class ContractFormatter
         $effectiveStep = $c->workflowStep ?: ($c->workflow ? $c->workflow->steps->first() : null);
         $progress = $c->progressData();
 
+        $shortId = ShortIdService::encode($c->id);
+
         return [
             'id' => $c->id,
+            'short_id' => $shortId,
+            'short_url' => ShortIdService::isEnabled() ? url("/contracts/{$shortId}") : url("/contracts/{$c->id}"),
             'form_no' => $c->form_no,
             'contract_no' => $c->contract_no,
             'title' => $c->title,

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Cache;
 
 class FormTemplate extends Model
 {
@@ -63,5 +64,22 @@ class FormTemplate extends Model
     public function contractType(): BelongsTo
     {
         return $this->belongsTo(ContractType::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            Cache::forget('options_form_templates');
+            Cache::forget('options_form_templates_f1');
+            Cache::forget('options_form_templates_f2');
+            Cache::forget('options_form_templates_contract');
+        });
+
+        static::deleted(function () {
+            Cache::forget('options_form_templates');
+            Cache::forget('options_form_templates_f1');
+            Cache::forget('options_form_templates_f2');
+            Cache::forget('options_form_templates_contract');
+        });
     }
 }

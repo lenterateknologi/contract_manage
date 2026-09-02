@@ -706,7 +706,7 @@ const ContractDetailView = ({
 
                                     return (
                                         <div className="flex-1 min-h-0 flex flex-col">
-                                            {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={vendors} onUpdate={onUpdate} />}
+                                            {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={users} onUpdate={onUpdate} />}
                                             {activeSub === 'members' && <MembersTab contract={contract} users={users} />}
                                         </div>
                                     );

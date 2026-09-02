@@ -395,14 +395,31 @@ class ContractFormController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
+        $submission = FormSubmission::where('contract_id', $contract->id)
+            ->where('document_type', $type)
+            ->first();
+
         $contract->loadMissing('contractType');
         $templateId = $type === 'f1'
             ? $contract->contractType?->f1_form_template_id
             : ($type === 'f2' ? $contract->contractType?->f2_form_template_id : $contract->contractType?->contract_form_template_id);
 
         $matchingTemplate = null;
-        if ($templateId) {
+        if ($submission && $submission->form_template_id) {
+            $matchingTemplate = FormTemplate::find($submission->form_template_id);
+        }
+
+        if (! $matchingTemplate && $templateId) {
             $matchingTemplate = FormTemplate::find($templateId);
+        }
+
+        if (! $matchingTemplate) {
+            $typeIds = array_values(array_filter([$contract->contract_type_id, $contract->contract_type_parent_id]));
+            if (! empty($typeIds)) {
+                $matchingTemplate = FormTemplate::where('document_type', $type)
+                    ->whereIn('contract_type_id', $typeIds)
+                    ->first();
+            }
         }
 
         if (! $matchingTemplate) {
@@ -415,9 +432,9 @@ class ContractFormController extends Controller
                 ->first();
         }
 
-        $submission = FormSubmission::where('contract_id', $contract->id)
-            ->where('document_type', $type)
-            ->first();
+        if (! $matchingTemplate) {
+            $matchingTemplate = FormTemplate::where('document_type', $type)->first();
+        }
 
         $versions = [];
         if ($submission) {
@@ -432,9 +449,22 @@ class ContractFormController extends Controller
             ]);
         }
 
+        if (empty($versions) || (is_object($versions) && method_exists($versions, 'isEmpty') && $versions->isEmpty())) {
+            $prefillData = $this->applyInheritance([], $contract);
+            $versions = collect([[
+                'id' => 'v1',
+                'version_no' => 1,
+                'form_data' => $prefillData,
+                'created_at' => $contract->created_at->format('Y-m-d H:i'),
+                'created_by' => $contract->creator?->name ?? 'System',
+            ]]);
+        }
+
         return Inertia::render('contracts/compare-forms', [
             'contract' => ContractFormatter::formatContract($contract),
             'docType' => $type,
+            'initialV1' => request()->filled('v1') ? (int) request('v1') : null,
+            'initialV2' => request()->filled('v2') ? (int) request('v2') : null,
             'template' => $matchingTemplate ? [
                 'id' => $matchingTemplate->id,
                 'name' => $matchingTemplate->name,
