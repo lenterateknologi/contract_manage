@@ -68,6 +68,7 @@ class ResourceController extends Controller
 
     public function index(Request $request, string $resourceSlug)
     {
+        ini_set('memory_limit', '512M');
         $resourceClass = $this->getResourceClass($resourceSlug);
         $modelClass = $resourceClass::$model;
 
@@ -164,6 +165,13 @@ class ResourceController extends Controller
 
         // Filter config
         $filterConfig = collect($resourceClass::filters())->map(fn ($f) => $f->toArray())->toArray();
+        $tableColumns = \Illuminate\Support\Facades\Schema::getColumnListing((new $modelClass)->getTable());
+        $hasIsUsedColumn = in_array('is_used', $tableColumns);
+        $hasIsActiveColumn = in_array('is_active', $tableColumns);
+
+        // Check if is_used or is_active filter was explicitly requested in URL query
+        $isUsedRequested = $request->has('is_used');
+        $isActiveRequested = $request->has('is_active');
 
         // Implement filtration
         foreach ($resourceClass::filters() as $filter) {
@@ -186,32 +194,90 @@ class ResourceController extends Controller
                 if (is_array($val)) {
                     $vals = array_values(array_filter($val, fn ($v) => $v !== '' && $v !== null));
                     if (! empty($vals)) {
-                        if ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
-                            $groupNames = CompanyGroup::whereIn('id', $vals)->pluck('name')->toArray();
-                            $query->where(function ($q) use ($vals, $groupNames) {
-                                $q->whereIn('company_group_id', $vals);
-                                if (! empty($groupNames)) {
-                                    $q->orWhereIn('company_group_name', $groupNames);
+                        if ($key === 'is_used' || $key === 'is_active') {
+                            $boolVals = array_map(function ($v) {
+                                return ($v === '1' || $v === 1 || $v === true || $v === 'true');
+                            }, $vals);
+                            $query->whereIn($key, $boolVals);
+                        } elseif ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
+                            $hasEmpty = in_array('__empty__', $vals, true) || in_array('empty', $vals, true) || in_array('-', $vals, true);
+                            $concreteVals = array_values(array_filter($vals, fn ($v) => ! in_array($v, ['__empty__', 'empty', 'null', '-'], true)));
+                            $groupNames = ! empty($concreteVals) ? CompanyGroup::whereIn('id', $concreteVals)->pluck('name')->toArray() : [];
+                            $query->where(function ($q) use ($concreteVals, $groupNames, $hasEmpty) {
+                                if (! empty($concreteVals)) {
+                                    $q->whereIn('company_group_id', $concreteVals);
+                                    if (! empty($groupNames)) {
+                                        $q->orWhereIn('company_group_name', $groupNames);
+                                    }
+                                }
+                                if ($hasEmpty) {
+                                    $q->orWhereNull('company_group_id')
+                                      ->orWhere(DB::raw('CAST(company_group_id AS text)'), '')
+                                      ->orWhereNull('company_group_name')
+                                      ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
                                 }
                             });
                         } else {
-                            $query->whereIn($key, $vals);
+                            $hasEmpty = in_array('__empty__', $vals, true) || in_array('empty', $vals, true) || in_array('null', $vals, true) || in_array('-', $vals, true);
+                            $concreteVals = array_values(array_filter($vals, fn ($v) => ! in_array($v, ['__empty__', 'empty', 'null', '-'], true)));
+
+                            if ($hasEmpty && ! empty($concreteVals)) {
+                                $query->where(function ($q) use ($key, $concreteVals) {
+                                    $q->whereIn($key, $concreteVals)
+                                      ->orWhereNull($key)
+                                      ->orWhere(DB::raw("CAST({$key} AS text)"), '');
+                                });
+                            } elseif ($hasEmpty) {
+                                $query->where(function ($q) use ($key) {
+                                    $q->whereNull($key)
+                                      ->orWhere(DB::raw("CAST({$key} AS text)"), '');
+                                });
+                            } else {
+                                $query->whereIn($key, $concreteVals);
+                            }
                         }
                     }
                 } else {
-                    if ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
-                        $groupName = CompanyGroup::find($val)?->name;
-                        $query->where(function ($q) use ($val, $groupName) {
-                            $q->where('company_group_id', $val);
-                            if ($groupName) {
-                                $q->orWhere('company_group_name', $groupName);
-                            }
-                        });
+                    if ($key === 'is_used' || $key === 'is_active') {
+                        $boolVal = ($val === '1' || $val === 1 || $val === true || $val === 'true');
+                        $query->where($key, $boolVal);
+                    } elseif ($key === 'company_group_id' && in_array($resourceSlug, ['companies', 'business-units', 'locations'])) {
+                        if (in_array($val, ['__empty__', 'empty', 'null', '-'], true)) {
+                            $query->where(function ($q) {
+                                $q->whereNull('company_group_id')
+                                  ->orWhere(DB::raw('CAST(company_group_id AS text)'), '')
+                                  ->orWhereNull('company_group_name')
+                                  ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
+                            });
+                        } else {
+                            $groupName = CompanyGroup::find($val)?->name;
+                            $query->where(function ($q) use ($val, $groupName) {
+                                $q->where('company_group_id', $val);
+                                if ($groupName) {
+                                    $q->orWhere('company_group_name', $groupName);
+                                }
+                            });
+                        }
                     } else {
-                        $query->where($key, $val);
+                        if (in_array($val, ['__empty__', 'empty', 'null', '-'], true)) {
+                            $query->where(function ($q) use ($key) {
+                                $q->whereNull($key)
+                                  ->orWhere(DB::raw("CAST({$key} AS text)"), '');
+                            });
+                        } else {
+                            $query->where($key, $val);
+                        }
                     }
                 }
             }
+        }
+
+        // Apply default is_used = true and is_active = true if not explicitly provided and column exists on table
+        if (! $isUsedRequested && $hasIsUsedColumn) {
+            $query->where('is_used', true);
+        }
+        if (! $isActiveRequested && $hasIsActiveColumn) {
+            $query->where('is_active', true);
         }
 
         // Implement sorting
@@ -265,6 +331,13 @@ class ResourceController extends Controller
         $data = $query->paginate($perPage)->withQueryString();
 
         $filterKeys = collect($resourceClass::filters())->flatMap(fn ($f) => [$f->getName(), "{$f->getName()}_from", "{$f->getName()}_to"])->toArray();
+        $activeFilters = $request->only(array_merge(['search', 'sort_by', 'sort_dir', 'per_page'], $filterKeys));
+        if (! $isUsedRequested && $hasIsUsedColumn) {
+            $activeFilters['is_used'] = ['1'];
+        }
+        if (! $isActiveRequested && $hasIsActiveColumn) {
+            $activeFilters['is_active'] = ['1'];
+        }
 
         return Inertia::render('Core/ResourceIndex', [
             'resourceSlug' => $resourceSlug,
@@ -273,7 +346,7 @@ class ResourceController extends Controller
             'formSchema' => $resourceClass::form(),
             'data' => $data,
             'filters' => $filterConfig,
-            'activeFilters' => $request->only(array_merge(['search', 'sort_by', 'sort_dir', 'per_page'], $filterKeys)),
+            'activeFilters' => $activeFilters,
             'hasExport' => ! empty($resourceClass::$exportClass),
             'hasImport' => ! empty($resourceClass::$importClass),
             'hasPortalSync' => in_array($resourceSlug, ['regions', 'company-groups', 'locations', 'companies', 'business-units', 'departments', 'users', 'job-levels', 'job-titles']),
@@ -312,7 +385,10 @@ class ResourceController extends Controller
             unset($validated['password']);
         }
 
-        $modelClass::create($validated);
+        $columns = \Illuminate\Support\Facades\Schema::getColumnListing((new $modelClass)->getTable());
+        $saveData = array_intersect_key($validated, array_flip($columns));
+
+        $modelClass::create($saveData);
 
         $returnUrl = $request->input('return_url') ?: $request->query('return_url');
         if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {
@@ -369,7 +445,10 @@ class ResourceController extends Controller
             unset($validated['password']);
         }
 
-        $record->update($validated);
+        $columns = \Illuminate\Support\Facades\Schema::getColumnListing($record->getTable());
+        $saveData = array_intersect_key($validated, array_flip($columns));
+
+        $record->update($saveData);
 
         $returnUrl = $request->input('return_url') ?: $request->query('return_url');
         if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {
@@ -379,14 +458,19 @@ class ResourceController extends Controller
         return redirect()->route('core.index', $resourceSlug)->with('success', $resourceClass::getTitle().' updated successfully.');
     }
 
-    public function destroy(string $resourceSlug, $id)
+    public function destroy(Request $request, string $resourceSlug, $id)
     {
         $resourceClass = $this->getResourceClass($resourceSlug);
         $modelClass = $resourceClass::$model;
 
         $modelClass::findOrFail($id)->delete();
 
-        return redirect()->route('core.index', $resourceSlug)->with('success', $resourceClass::getTitle().' deleted successfully.');
+        $returnUrl = $request->input('return_url') ?: $request->query('return_url');
+        if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {
+            return redirect($returnUrl)->with('success', $resourceClass::getTitle().' deleted successfully.');
+        }
+
+        return redirect()->back()->with('success', $resourceClass::getTitle().' deleted successfully.');
     }
 
     public function bulkDestroy(string $resourceSlug, Request $request)
@@ -401,7 +485,12 @@ class ResourceController extends Controller
 
         $modelClass::whereIn('id', $request->input('ids'))->delete();
 
-        return redirect()->route('core.index', $resourceSlug)->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil dihapus.');
+        $returnUrl = $request->input('return_url') ?: $request->query('return_url');
+        if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {
+            return redirect($returnUrl)->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil dihapus.');
+        }
+
+        return redirect()->back()->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil dihapus.');
     }
 
     public function bulkUpdate(string $resourceSlug, Request $request)
@@ -421,10 +510,19 @@ class ResourceController extends Controller
         });
 
         if (! empty($fieldsToUpdate)) {
-            $modelClass::whereIn('id', $request->input('ids'))->update($fieldsToUpdate);
+            $columns = \Illuminate\Support\Facades\Schema::getColumnListing((new $modelClass)->getTable());
+            $safeFields = array_intersect_key($fieldsToUpdate, array_flip($columns));
+            if (! empty($safeFields)) {
+                $modelClass::whereIn('id', $request->input('ids'))->update($safeFields);
+            }
         }
 
-        return redirect()->route('core.index', $resourceSlug)->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil diperbarui.');
+        $returnUrl = $request->input('return_url') ?: $request->query('return_url');
+        if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {
+            return redirect($returnUrl)->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil diperbarui.');
+        }
+
+        return redirect()->back()->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil diperbarui.');
     }
 
     public function export(string $resourceSlug)

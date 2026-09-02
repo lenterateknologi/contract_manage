@@ -64,9 +64,16 @@ class JobTitleResource extends Resource
     public static function filters(): array
     {
         return [
+            Filter::make('name', 'Nama Posisi / Jabatan')
+                ->type('searchable')
+                ->options(fn () => JobTitle::whereNotNull('name')->where('name', '!=', '')->distinct()->orderBy('name')->pluck('name', 'name')->toArray()),
             Filter::make('job_level_id', 'Job Level')
                 ->type('searchable')
-                ->options(fn () => JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Level / Belum Ditentukan)'];
+                    $levels = JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                    return $options + $levels;
+                }),
             Filter::make('is_used', 'Status Sistem')
                 ->options([
                     '1' => 'Digunakan (Ya)',

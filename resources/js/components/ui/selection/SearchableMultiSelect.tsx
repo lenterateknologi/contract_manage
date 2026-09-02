@@ -99,7 +99,7 @@ export function SearchableMultiSelect({
                             triggerClassName
                         )}
                     >
-                        <div className="flex flex-wrap gap-1.5 pr-2 min-w-0 flex-1">
+                        <div className="flex flex-wrap gap-1.5 pr-2 min-w-0 flex-1 max-h-[54px] overflow-y-auto custom-scrollbar">
                             {values.length === 0 ? (
                                 <span className="text-slate-400 dark:text-slate-500 py-0.5 text-sm font-medium truncate">{placeholder}</span>
                             ) : (

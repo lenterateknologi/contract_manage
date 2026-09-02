@@ -56,6 +56,16 @@ class JobLevelResource extends Resource
     public static function filters(): array
     {
         return [
+            Filter::make('name', 'Nama Level')
+                ->type('searchable')
+                ->options(fn () => JobLevel::whereNotNull('name')->where('name', '!=', '')->distinct()->orderBy('name')->pluck('name', 'name')->toArray()),
+            Filter::make('group_name', 'Grup Level')
+                ->type('searchable')
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Grup / Kosong)'];
+                    $groups = JobLevel::whereNotNull('group_name')->where('group_name', '!=', '')->distinct()->orderBy('group_name')->pluck('group_name', 'group_name')->toArray();
+                    return $options + $groups;
+                }),
             Filter::make('is_used', 'Status Sistem')
                 ->options([
                     '1' => 'Digunakan (Ya)',

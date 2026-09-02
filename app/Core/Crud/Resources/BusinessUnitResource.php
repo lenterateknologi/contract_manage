@@ -29,9 +29,14 @@ class BusinessUnitResource extends Resource
     public static function table(): array
     {
         return [
-            TextColumn::make('bu_identity', 'Bisnis Unit & Deskripsi')->sortable()->searchable(),
-            TextColumn::make('company_placement', 'Perusahaan & Penempatan')->sortable()->searchable(),
-            TextColumn::make('org_structure', 'Group & Region')->sortable()->searchable(),
+            TextColumn::make('code', 'Kode Bisnis Unit')->sortable()->searchable(),
+            TextColumn::make('name', 'Nama Bisnis Unit')->sortable()->searchable(),
+            TextColumn::make('company_name', 'Perusahaan')->sortable()->searchable(),
+            TextColumn::make('location_name', 'Lokasi Kerja')->sortable()->searchable(),
+            TextColumn::make('company_group_name', 'Grup Perusahaan')->sortable()->searchable(),
+            TextColumn::make('region_name', 'Wilayah (Region)')->sortable()->searchable(),
+            TextColumn::make('komoditi_name', 'Komoditi')->sortable()->searchable(),
+            TextColumn::make('kebun', 'Kebun / Mill')->sortable()->searchable(),
             BooleanColumn::make('is_used', 'Sistem'),
             BooleanColumn::make('is_active', 'Portal'),
         ];

@@ -19,6 +19,7 @@ import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMulti
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { SideFilterCard } from '@/components/ui/selection/SideFilterCard';
 import { useToast } from '@/components/ui/feedback/Toast';
+import { ColumnVisibilityDropdown } from '@/components/ui/selection/ColumnVisibilityDropdown';
 
 interface Props {
     resourceSlug: string;
@@ -83,6 +84,12 @@ function flattenTreeFromParents(parents: any[], depth = 0): any[] {
     return result;
 }
 
+function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+    return match ? decodeURIComponent(match[3]) : null;
+}
+
 const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'dashboard-types', 'locations', 'business-units', 'job-levels', 'job-titles'];
 
 export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false, hasPortalSync = false }: Props) {
@@ -106,9 +113,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
 
     const handleSingleToggle = (rowId: string, colName: string, currentVal: boolean) => {
         setUpdatingRowId(rowId);
+        const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
         router.post(`/admin/core/${resourceSlug}/bulk-update`, {
             ids: [rowId],
-            values: { [colName]: !currentVal }
+            values: { [colName]: !currentVal },
+            return_url: currentUrl
         }, {
             preserveScroll: true,
             preserveState: true,
@@ -182,8 +191,12 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
 
     const handleDeptSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
         if (editDataId) {
-            deptForm.put(`/admin/core/${resourceSlug}/${editDataId}`, {
+            deptForm.transform((data) => ({
+                ...data,
+                return_url: currentUrl
+            })).put(`/admin/core/${resourceSlug}/${editDataId}`, {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
@@ -192,7 +205,10 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 }
             });
         } else {
-            deptForm.post(`/admin/core/${resourceSlug}`, {
+            deptForm.transform((data) => ({
+                ...data,
+                return_url: currentUrl
+            })).post(`/admin/core/${resourceSlug}`, {
                 preserveScroll: true,
                 preserveState: true,
                 onSuccess: () => {
@@ -207,13 +223,34 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         setSelectedRows([]);
         setBulkSelectedFields({});
         setBulkFieldValues({});
+
+        // Auto-apply saved filter from cookie on initial visit if no custom filter query present in URL
+        if (typeof window !== 'undefined') {
+            const currentSearch = window.location.search;
+            if (!currentSearch || currentSearch === '' || currentSearch === '?') {
+                const storageKey = `saved_filter_${resourceSlug}`;
+                const raw = getCookie(storageKey) || localStorage.getItem(storageKey);
+                if (raw) {
+                    try {
+                        const saved = JSON.parse(raw);
+                        if (saved && typeof saved === 'object' && Object.keys(saved).length > 0) {
+                            router.get(`/admin/core/${resourceSlug}`, { ...saved, page: 1 }, { preserveState: true, replace: true });
+                        }
+                    } catch (e) {
+                        // Ignore parse errors
+                    }
+                }
+            }
+        }
     }, [resourceSlug]);
 
     const handleDelete = () => {
         if (!deleteId) return;
         setIsDeleting(true);
-        router.delete(`/admin/core/${resourceSlug}/${deleteId}`, {
+        const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
+        router.delete(`/admin/core/${resourceSlug}/${deleteId}${currentUrl ? `?return_url=${encodeURIComponent(currentUrl)}` : ''}`, {
             preserveScroll: true,
+            preserveState: true,
             onFinish: () => {
                 setIsDeleting(false);
                 setDeleteId(null);
@@ -224,10 +261,13 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     const handleBulkDelete = () => {
         if (selectedRows.length === 0) return;
         setIsBulkDeleting(true);
+        const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
         router.post(`/admin/core/${resourceSlug}/bulk-delete`, {
-            ids: selectedRows.map((r: any) => r.id)
+            ids: selectedRows.map((r: any) => r.id),
+            return_url: currentUrl
         }, {
             preserveScroll: true,
+            preserveState: true,
             onFinish: () => {
                 setIsBulkDeleting(false);
                 setShowBulkDeleteConfirm(false);
@@ -236,15 +276,18 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         });
     };
 
-    // Quick bulk update for is_used toggle
-    const handleQuickBulkToggleIsUsed = (active: boolean) => {
+    // Quick bulk update for is_used or is_active toggle
+    const handleQuickBulkToggle = (colName: 'is_used' | 'is_active', active: boolean) => {
         if (selectedRows.length === 0) return;
         setIsBulkDeleting(true); // show loader indicator
+        const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
         router.post(`/admin/core/${resourceSlug}/bulk-update`, {
             ids: selectedRows.map(r => r.id),
-            values: { is_used: active }
+            values: { [colName]: active },
+            return_url: currentUrl
         }, {
             preserveScroll: true,
+            preserveState: true,
             onFinish: () => {
                 setIsBulkDeleting(false);
                 setSelectedRows([]);
@@ -286,10 +329,14 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         }
 
         setBulkProcessing(true);
+        const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
         router.post(`/admin/core/${resourceSlug}/bulk-update`, {
             ids: selectedRows.map(r => r.id),
-            values: valuesToUpdate
+            values: valuesToUpdate,
+            return_url: currentUrl
         }, {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 setShowBulkEditModal(false);
                 setSelectedRows([]);
@@ -316,471 +363,317 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         return rawItems;
     }, [data?.data, resourceSlug]);
 
+    const columnOptions = React.useMemo(() => {
+        return (tableSchema || []).map((col: any) => ({
+            key: col.name,
+            label: col.label,
+        }));
+    }, [tableSchema]);
+
+    const hasIsUsedCol = React.useMemo(() => (tableSchema || []).some((c: any) => c.name === 'is_used'), [tableSchema]);
+    const hasIsActiveCol = React.useMemo(() => (tableSchema || []).some((c: any) => c.name === 'is_active'), [tableSchema]);
+
+    const [visibleColumnKeys, setVisibleColumnKeys] = useState<string[]>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const storageKey = `resource_cols_${resourceSlug}`;
+                const saved = getCookie(storageKey) || localStorage.getItem(storageKey);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        const validKeys = new Set((tableSchema || []).map((c: any) => c.name));
+                        const filtered = parsed.filter((k: string) => validKeys.has(k));
+                        if (filtered.length > 0) return filtered;
+                    }
+                }
+            } catch {}
+        }
+        return (tableSchema || []).map((c: any) => c.name);
+    });
+
+    const [pinnedColumnKeys, setPinnedColumnKeys] = useState<string[]>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const storagePinKey = `resource_pinned_${resourceSlug}`;
+                const saved = getCookie(storagePinKey) || localStorage.getItem(storagePinKey);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed)) {
+                        const validKeys = new Set((tableSchema || []).map((c: any) => c.name));
+                        return parsed.filter((k: string) => validKeys.has(k));
+                    }
+                }
+            } catch {}
+        }
+        if (resourceSlug === 'users') {
+            return ['nik'];
+        }
+        return [];
+    });
+
+    React.useEffect(() => {
+        try {
+            const storageKey = `resource_cols_${resourceSlug}`;
+            const saved = getCookie(storageKey) || localStorage.getItem(storageKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    const validKeys = new Set((tableSchema || []).map((c: any) => c.name));
+                    const filtered = parsed.filter((k: string) => validKeys.has(k));
+                    if (filtered.length > 0) {
+                        setVisibleColumnKeys(filtered);
+                        return;
+                    }
+                }
+            }
+        } catch {}
+        setVisibleColumnKeys((tableSchema || []).map((c: any) => c.name));
+    }, [resourceSlug, tableSchema]);
+
+    React.useEffect(() => {
+        try {
+            const storagePinKey = `resource_pinned_${resourceSlug}`;
+            const saved = getCookie(storagePinKey) || localStorage.getItem(storagePinKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    const validKeys = new Set((tableSchema || []).map((c: any) => c.name));
+                    setPinnedColumnKeys(parsed.filter((k: string) => validKeys.has(k)));
+                    return;
+                }
+            }
+        } catch {}
+        if (resourceSlug === 'users') {
+            setPinnedColumnKeys(['nik']);
+        } else {
+            setPinnedColumnKeys([]);
+        }
+    }, [resourceSlug, tableSchema]);
+
+    const filteredTableSchema = React.useMemo(() => {
+        return (tableSchema || []).filter((col: any) => visibleColumnKeys.includes(col.name));
+    }, [tableSchema, visibleColumnKeys]);
+
+    const COLUMN_WIDTHS: Record<string, number> = {
+        nik: 130,
+        code: 130,
+        name: 200,
+        email: 180,
+        username: 130,
+        org_name: 180,
+        department_name: 180,
+        division_name: 180,
+        jobtitle_name: 180,
+        joblevel_name: 150,
+        role_name: 130,
+        company_name: 200,
+        company_group_code: 130,
+        company_group_name: 160,
+        location_name: 160,
+        region_name: 140,
+        alias: 120,
+        city_name: 140,
+        province_name: 140,
+        npwp: 160,
+        oracle_code: 140,
+        is_used: 96,
+        is_active: 96,
+    };
+
+    // Calculate pinning layout for columns
+    let currentPinOffset = 40; // Starts after checkbox column
+    const pinnedSet = new Set(pinnedColumnKeys);
+    const pinnedColsInOrder = filteredTableSchema.filter((c: any) => pinnedSet.has(c.name));
+    const lastPinnedKey = pinnedColsInOrder.length > 0 ? pinnedColsInOrder[pinnedColsInOrder.length - 1].name : null;
+
+    const pinOffsetsMap: Record<string, number> = {};
+    pinnedColsInOrder.forEach((col: any) => {
+        pinOffsetsMap[col.name] = currentPinOffset;
+        currentPinOffset += COLUMN_WIDTHS[col.name] || 150;
+    });
+
     // Map schema to DataTable columns
-    const columns = tableSchema.map((col: any) => {
+    const columns = filteredTableSchema.map((col: any) => {
         const isStatusCol = col.type === 'boolean' || col.name === 'is_used' || col.name === 'is_active';
+        const isPinned = pinnedSet.has(col.name);
+        const pinOffset = isPinned ? pinOffsetsMap[col.name] : undefined;
+        const isLastPinned = col.name === lastPinnedKey;
+
         return {
             header: col.label,
             accessorKey: col.name,
             sortable: col.sortable,
-            className: isStatusCol ? 'w-20 text-center px-2 py-2 whitespace-nowrap' : undefined,
+            pinned: isPinned,
+            pinOffset,
+            isLastPinned,
+            className: isStatusCol ? 'w-24 text-center px-2 py-2 whitespace-nowrap' : 'whitespace-nowrap px-4 py-2.5 text-xs',
             cell: (row: any) => {
-            const val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
+                let val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
 
-            // Render merged username and email column for users resource
-            if (resourceSlug === 'users' && (col.name === 'username' || col.name === 'user_identity')) {
-                return (
-                    <div className="flex flex-col gap-0.5 text-left">
-                        <span className="font-semibold text-xs text-text-main">@{row.username || '—'}</span>
-                        <span className="text-[11px] text-text-soft font-medium">{row.email || '—'}</span>
-                    </div>
-                );
-            }
+                // Dynamic fallbacks for relation attributes
+                if (val === undefined || val === null || val === '') {
+                    if (col.name === 'role_name') val = row.role_relation?.name || row.roleRelation?.name || row.role?.name;
+                    else if (col.name === 'company_group_code') val = row.company_group_code || row.company_group?.code || row.companyGroup?.code || row.company?.company_group?.code;
+                    else if (col.name === 'company_group_name') val = row.company_group_name || row.company_group?.name || row.companyGroup?.name || row.group?.name;
+                    else if (col.name === 'region_name') val = row.region?.name || row.region_name;
+                    else if (col.name === 'division_name') val = row.division?.name || row.division_name;
+                    else if (col.name === 'org_name' || col.name === 'department_name') val = row.org_name || row.department?.name;
+                    else if (col.name === 'location_name') val = row.location_name || row.location?.name;
+                    else if (col.name === 'company_name') val = row.company_name || row.company?.name;
+                    else if (col.name === 'location_group_name') val = row.location_group_name || row.location_group?.name;
+                }
 
-            // Render merged role, division, and department column for users resource (3 lines)
-            if (resourceSlug === 'users' && (col.name === 'role_unit' || col.name === 'role_relation.name')) {
-                const roleName = row.role_relation?.name || row.roleRelation?.name || row.role?.name || '—';
-                const divName = row.division?.name;
-                const deptName = row.department?.name;
+                // Tree structure render for contract types
+                if (col.name === 'name' && resourceSlug === 'contract-types') {
+                    const depth = row._depth || 0;
+                    return (
+                        <span 
+                            style={{ paddingLeft: `${depth * 20}px` }} 
+                            className="flex items-center gap-1.5 font-normal text-text-main whitespace-nowrap"
+                        >
+                            {depth > 0 && (
+                                <span className="text-text-main font-mono select-none">
+                                    └─
+                                </span>
+                            )}
+                            {row.code && (
+                                <span className="text-[10px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 text-text-main font-mono uppercase tracking-wider">
+                                    {row.code}
+                                </span>
+                            )}
+                            <span>{val || '—'}</span>
+                        </span>
+                    );
+                }
 
-                return (
-                    <div className="flex flex-col gap-0.5 text-left">
-                        <span className="font-semibold text-xs text-text-main">{roleName}</span>
-                        {divName && <span className="text-[11px] text-text-soft font-medium">{divName}</span>}
-                        {deptName && <span className="text-[10.5px] text-text-soft/80 font-medium">{deptName}</span>}
-                    </div>
-                );
-            }
+                // Contract status custom badge
+                if (col.name === 'label' && resourceSlug === 'contract-statuses') {
+                    const IconComp = row.icon && (LucideIcons as any)[row.icon]
+                        ? (LucideIcons as any)[row.icon]
+                        : null;
+                    return (
+                        <span 
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-normal uppercase tracking-wider shadow-xs border whitespace-nowrap"
+                            style={{ 
+                                color: row.color || '#ffffff', 
+                                backgroundColor: row.bg_color || '#4f46e5',
+                                borderColor: `${row.color || '#ffffff'}22`
+                            }}
+                        >
+                            {IconComp && <IconComp className="h-3 w-3 mr-1.5 shrink-0" />}
+                            {val || '—'}
+                        </span>
+                    );
+                }
 
-            // Render merged company, group, and region column for users resource (3 lines)
-            if (resourceSlug === 'users' && (col.name === 'company_entity' || col.name === 'company.name')) {
-                const companyName = row.company?.name || '—';
-                const groupName = row.company_group?.name || row.companyGroup?.name || row.company?.company_group?.name || row.company?.companyGroup?.name;
-                const regionName = row.region?.name;
+                // Color render
+                if (col.name === 'color' || col.name === 'bg_color' || col.name === 'text_color') {
+                    const colorVal = val || '#ffffff';
+                    return (
+                        <span className="flex items-center gap-2 font-mono text-xs font-normal whitespace-nowrap">
+                            <span 
+                                className="h-4.5 w-4.5 rounded-md border border-surface-border/80 shadow-xs shrink-0" 
+                                style={{ backgroundColor: colorVal }}
+                            />
+                            <span>{val || '—'}</span>
+                        </span>
+                    );
+                }
 
-                return (
-                    <div className="flex flex-col gap-0.5 text-left">
-                        <span className="font-semibold text-xs text-text-main">{companyName}</span>
-                        {groupName && <span className="text-[11px] text-text-soft font-medium">{groupName}</span>}
-                        {regionName && <span className="text-[10.5px] text-primary/90 font-medium">{regionName}</span>}
-                    </div>
-                );
-            }
+                // Specific badge formats
+                if (col.name === 'role_name') {
+                    return val ? (
+                        <span className="inline-flex items-center text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-medium border border-emerald-200 dark:border-emerald-800/40 whitespace-nowrap">
+                            {val}
+                        </span>
+                    ) : <span className="text-text-muted">—</span>;
+                }
 
-            // Custom render for name column if resource is contract-types (showing tree structure)
-            if (col.name === 'name' && resourceSlug === 'contract-types') {
-                const depth = row._depth || 0;
-                return (
-                    <span 
-                        style={{ paddingLeft: `${depth * 20}px` }} 
-                        className="flex items-center gap-1.5 font-normal text-text-main"
-                    >
-                        {depth > 0 && (
-                            <span className="text-text-main font-mono select-none">
-                                └─
-                            </span>
-                        )}
-                        {row.code && (
-                            <span className="text-[10px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 text-text-main font-normal uppercase tracking-wider">
-                                {row.code}
-                            </span>
-                        )}
-                        <span>{val}</span>
-                    </span>
-                );
-            }
+                if (col.name === 'joblevel_name' || col.name === 'alias') {
+                    return val ? (
+                        <span className="inline-flex items-center text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium border border-primary/20 whitespace-nowrap">
+                            {val}
+                        </span>
+                    ) : <span className="text-text-muted">—</span>;
+                }
 
-            // ponytail: custom render for compact merged user columns
-            if (resourceSlug === 'users') {
+                if (col.name === 'company_group_code') {
+                    return val ? (
+                        <span className="inline-flex items-center text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded border border-primary/20 font-mono whitespace-nowrap">
+                            {val}
+                        </span>
+                    ) : <span className="text-text-muted">—</span>;
+                }
+
+                if (col.name === 'nik' || col.name === 'code' || col.name === 'oracle_code' || col.name === 'npwp') {
+                    return (
+                        <span className="font-mono text-xs font-semibold text-text-main whitespace-nowrap">
+                            {val || '—'}
+                        </span>
+                    );
+                }
+
+                if (col.name === 'username') {
+                    return (
+                        <span className="font-mono text-xs font-medium text-text-main whitespace-nowrap">
+                            {val ? `@${val}` : '—'}
+                        </span>
+                    );
+                }
+
+                if (col.name === 'email') {
+                    return (
+                        <span className="text-xs text-text-muted whitespace-nowrap">
+                            {val || '—'}
+                        </span>
+                    );
+                }
+
                 if (col.name === 'name') {
                     return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-semibold text-xs text-text-main">{row.name || '—'}</span>
-                                {row.nik && (
-                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded font-mono border border-slate-200/60 dark:border-slate-700">
-                                        {row.nik}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
-                                {row.email && <span>{row.email}</span>}
-                                {row.username && row.username !== row.nik && (
-                                    <span className="text-[10px] text-slate-400">(@{row.username})</span>
-                                )}
-                            </div>
-                        </div>
-                    );
-                }
-                if (col.name === 'jobtitle_name') {
-                    const roleName = row.role_relation?.name || row.roleRelation?.name || row.role?.name;
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <span className="font-medium text-xs text-text-main">
-                                {row.jobtitle_name || '—'}
-                            </span>
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                {row.joblevel_name && (
-                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium border border-primary/20">
-                                        {row.joblevel_name}
-                                    </span>
-                                )}
-                                {roleName && (
-                                    <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium border border-emerald-200 dark:border-emerald-800/40">
-                                        {roleName}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    );
-                }
-                if (col.name === 'company_name') {
-                    const groupCode = row.company_group_code || row.company_group?.code || row.companyGroup?.code || row.company?.company_group?.code || row.company?.company_group_code;
-
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                {groupCode && (
-                                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded border border-primary/20 font-mono">
-                                        {groupCode}
-                                    </span>
-                                )}
-                                <span className="font-semibold text-xs text-text-main">
-                                    {row.company_name || row.company?.name || '—'}
-                                </span>
-                                {row.location_name && (
-                                    <span className="text-[10px] text-text-muted bg-slate-100 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-200/40 dark:border-slate-700 font-medium">
-                                        {row.location_name}
-                                    </span>
-                                )}
-                            </div>
-                            {row.org_name && (
-                                <span className="text-[11px] text-text-muted">
-                                    Org: {row.org_name}
-                                </span>
-                            )}
-                        </div>
-                    );
-                }
-            }
-
-            // ponytail: custom render for compact merged company columns
-            if (resourceSlug === 'companies') {
-                if (col.name === 'company_identity') {
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-semibold text-xs text-text-main">{row.name || '—'}</span>
-                                {row.alias && (
-                                    <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium border border-primary/20">
-                                        {row.alias}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-2 text-[11px] text-text-muted">
-                                {row.code && <span className="font-mono text-slate-500 dark:text-slate-400">Kode: {row.code}</span>}
-                            </div>
-                        </div>
-                    );
-                }
-                if (col.name === 'org_structure') {
-                    const groupName = row.company_group_name || row.group?.name;
-                    const regionName = row.region_name || row.region?.name;
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <span className="font-semibold text-xs text-text-main">
-                                {groupName || '—'}
-                            </span>
-                            <span className="text-[11px] text-text-muted">
-                                Region: {regionName || '—'}
-                            </span>
-                        </div>
-                    );
-                }
-                if (col.name === 'legal_integration') {
-                    const npwp = row.npwp;
-                    const city = row.city_name;
-                    const oracle = row.oracle_code;
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <div className="flex items-center gap-1.5 flex-wrap text-xs text-text-main font-medium">
-                                {npwp && <span>NPWP: {npwp}</span>}
-                                {npwp && city && <span className="text-slate-300 dark:text-slate-700">•</span>}
-                                {city && <span className="text-text-muted">{city}</span>}
-                                {!npwp && !city && <span>—</span>}
-                            </div>
-                            {oracle && (
-                                <div className="text-[11px] text-text-muted font-mono">
-                                    Oracle: {oracle}
-                                </div>
-                            )}
-                        </div>
-                    );
-                }
-            }
-
-            // ponytail: custom render for compact merged location columns
-            if (resourceSlug === 'locations') {
-                if (col.name === 'location_identity') {
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <span className="font-semibold text-xs text-text-main">{row.name || '—'}</span>
-                            <div className="flex items-center gap-2 text-[11px] text-text-muted">
-                                {row.code && <span className="font-mono text-slate-500 dark:text-slate-400">Kode: {row.code}</span>}
-                                {row.code && row.oracle_code && <span className="text-slate-300 dark:text-slate-700">•</span>}
-                                {row.oracle_code && <span className="font-mono">Oracle: {row.oracle_code}</span>}
-                            </div>
-                        </div>
-                    );
-                }
-                if (col.name === 'company_group_name') {
-                    const companyGroup = row.company_group_name || row.group?.name;
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <span className="font-semibold text-xs text-text-main">
-                                {companyGroup || '—'}
-                            </span>
-                        </div>
-                    );
-                }
-                if (col.name === 'location_group' || col.name === 'region_group') {
-                    const locationGroup = row.location_group_name;
-                    const locationArea = [row.city_name, row.province_name].filter(Boolean).join(', ');
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <span className="font-semibold text-xs text-text-main">
-                                {locationGroup || '—'}
-                            </span>
-                            {locationArea && (
-                                <span className="text-[11px] text-text-muted">
-                                    {locationArea}
-                                </span>
-                            )}
-                        </div>
-                    );
-                }
-            }
-
-            // ponytail: custom render for compact merged business units columns
-            if (resourceSlug === 'business-units') {
-                if (col.name === 'bu_identity') {
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <span className="font-semibold text-xs text-text-main">{row.name || '—'}</span>
-                            <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-text-muted">
-                                {row.code && <span className="font-mono text-slate-500 dark:text-slate-400">Kode: {row.code}</span>}
-                                {row.komoditi_name && (
-                                    <>
-                                        <span className="text-slate-300 dark:text-slate-700">•</span>
-                                        <span>{row.komoditi_name}</span>
-                                    </>
-                                )}
-                                {row.kebun && (
-                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300">
-                                        Kebun: {row.kebun}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    );
-                }
-                if (col.name === 'company_placement') {
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <span className="font-semibold text-xs text-text-main">
-                                {row.company_name || '—'}
-                            </span>
-                            <span className="text-[11px] text-text-muted">
-                                Lokasi: {row.location_name || '—'}
-                            </span>
-                        </div>
-                    );
-                }
-                if (col.name === 'org_structure') {
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left py-0.5">
-                            <span className="font-semibold text-xs text-text-main">
-                                {row.company_group_name || '—'}
-                            </span>
-                            <span className="text-[11px] text-text-muted">
-                                Region: {row.region_name || '—'}
-                            </span>
-                        </div>
-                    );
-                }
-            }
-
-            // ponytail: custom render for merged mechanism and template details in contract-types
-            if (resourceSlug === 'contract-types') {
-                if (col.name === 'f1_details') {
-                    if (!row.f1_input_mechanism || row.f1_input_mechanism === 'none') {
-                        return <span className="text-text-main">—</span>;
-                    }
-                    const isManual = row.f1_input_mechanism === 'manual';
-                    const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
-                    const templateName = row.f1_form_template?.name || row.f1FormTemplate?.name;
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left">
-                            <span className="font-normal text-xs text-text-main">{mech}</span>
-                            {isManual && (
-                                templateName ? (
-                                    <span className="text-[10px] text-text-main font-normal">{templateName}</span>
-                                ) : (
-                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">Belum Pilih Template</span>
-                                )
-                            )}
-                        </div>
-                    );
-                }
-                if (col.name === 'f2_details') {
-                    if (!row.f2_input_mechanism || row.f2_input_mechanism === 'none') {
-                        return <span className="text-text-main">—</span>;
-                    }
-                    const isManual = row.f2_input_mechanism === 'manual';
-                    const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
-                    const templateName = row.f2_form_template?.name || row.f2FormTemplate?.name;
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left">
-                            <span className="font-normal text-xs text-text-main">{mech}</span>
-                            {isManual && (
-                                templateName ? (
-                                    <span className="text-[10px] text-text-main font-normal">{templateName}</span>
-                                ) : (
-                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">Belum Pilih Template</span>
-                                )
-                            )}
-                        </div>
-                    );
-                }
-                if (col.name === 'agreement_details') {
-                    if (!row.contract_input_mechanism || row.contract_input_mechanism === 'none') {
-                        return <span className="text-text-main">—</span>;
-                    }
-                    const isManual = row.contract_input_mechanism === 'manual';
-                    const mech = isManual ? 'Manual (Form)' : 'Digital (Upload)';
-                    const templateName = row.contract_form_template?.name || row.contractFormTemplate?.name;
-                    return (
-                        <div className="flex flex-col gap-0.5 text-left">
-                            <span className="font-normal text-xs text-text-main">{mech}</span>
-                            {isManual && (
-                                templateName ? (
-                                    <span className="text-[10px] text-text-main font-normal">{templateName}</span>
-                                ) : (
-                                    <span className="text-[10px] text-rose-500 font-normal uppercase tracking-wider">Belum Pilih Template</span>
-                                )
-                            )}
-                        </div>
-                    );
-                }
-            }
-
-            if (col.name === 'label' && resourceSlug === 'contract-statuses') {
-                const IconComp = row.icon && (LucideIcons as any)[row.icon]
-                    ? (LucideIcons as any)[row.icon]
-                    : null;
-                return (
-                    <span 
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-normal uppercase tracking-wider shadow-xs border"
-                        style={{ 
-                            color: row.color || '#ffffff', 
-                            backgroundColor: row.bg_color || '#4f46e5',
-                            borderColor: `${row.color || '#ffffff'}22`
-                        }}
-                    >
-                        {IconComp && <IconComp className="h-3 w-3 mr-1.5 shrink-0" />}
-                        {val}
-                    </span>
-                );
-            }
-
-            if (col.name === 'color' || col.name === 'bg_color' || col.name === 'text_color') {
-                const colorVal = val || '#ffffff';
-                return (
-                    <span className="flex items-center gap-2 font-mono text-xs font-normal">
-                        <span 
-                            className="h-4.5 w-4.5 rounded-md border border-surface-border/80 shadow-xs shrink-0" 
-                            style={{ backgroundColor: colorVal }}
-                        />
-                        <span>{val || '—'}</span>
-                    </span>
-                );
-            }
-
-            if (col.name.endsWith('_status') && resourceSlug === 'contract-filter-templates') {
-                // null = Sesuai Data User, [] = Semua (full access), [...names] = custom list
-                if (val === null || val === undefined || val === 'Sesuai Data User') {
-                    return (
-                        <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 border border-slate-200/20 uppercase tracking-wider">
-                            Sesuai User
+                        <span className="font-semibold text-xs text-text-main whitespace-nowrap">
+                            {val || '—'}
                         </span>
                     );
                 }
-                if (Array.isArray(val) && val.length === 0) {
+
+                if (col.type === 'boolean') {
+                    const isToggling = updatingRowId === row.id;
+                    if (col.name === 'is_used') {
+                        return (
+                            <button
+                                type="button"
+                                disabled={isToggling}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleSingleToggle(row.id, 'is_used', Boolean(val));
+                                }}
+                                title={`Klik untuk mengubah status sistem (${val ? 'Ya -> Tidak' : 'Tidak -> Ya'})`}
+                                className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider transition-all cursor-pointer hover:scale-105 active:scale-95 ${val ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'} ${isToggling ? 'opacity-50 pointer-events-none' : ''}`}
+                            >
+                                {isToggling ? (
+                                    <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+                                ) : (
+                                    val ? 'Ya' : 'Tidak'
+                                )}
+                            </button>
+                        );
+                    }
                     return (
-                        <span className="inline-flex items-center rounded-md bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
-                            Semua
+                        <span className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider ${val ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`}>
+                            {val ? 'Aktif' : 'Nonaktif'}
                         </span>
                     );
                 }
-                if (Array.isArray(val) && val.length > 0) {
-                    const MAX_SHOW = 2;
-                    const visible = val.slice(0, MAX_SHOW);
-                    const overflow = val.length - MAX_SHOW;
-                    return (
-                        <div className="flex flex-wrap gap-1">
-                            {visible.map((name: string) => (
-                                <span key={name} className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary border border-primary/20">
-                                    {name}
-                                </span>
-                            ))}
-                            {overflow > 0 && (
-                                <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-500 border border-slate-200/20">
-                                    +{overflow} lainnya
-                                </span>
-                            )}
-                        </div>
-                    );
-                }
-                // fallback: string (legacy)
-                return (
-                    <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary border border-primary/20">
-                        {val}
-                    </span>
-                );
-            }
 
-            if (col.type === 'boolean') {
-                const isToggling = updatingRowId === row.id;
-                if (col.name === 'is_used') {
-                    return (
-                        <button
-                            type="button"
-                            disabled={isToggling}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleSingleToggle(row.id, 'is_used', Boolean(val));
-                            }}
-                            title={`Klik untuk mengubah status sistem (${val ? 'Ya -> Tidak' : 'Tidak -> Ya'})`}
-                            className={`inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider transition-all cursor-pointer hover:scale-105 active:scale-95 ${val ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'} ${isToggling ? 'opacity-50 pointer-events-none' : ''}`}
-                        >
-                            {isToggling ? (
-                                <RefreshCw className="h-3 w-3 animate-spin text-primary" />
-                            ) : (
-                                val ? 'Ya' : 'Tidak'
-                            )}
-                        </button>
-                    );
-                }
                 return (
-                    <span className={`inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider ${val ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`}>
-                        {val ? 'Aktif' : 'Nonaktif'}
+                    <span className="text-xs text-text-main whitespace-nowrap">
+                        {val || '—'}
                     </span>
                 );
             }
-            return val;
-        }
-    };
-});
+        };
+    });
 
     const resourceIcons: Record<string, React.ComponentType<any>> = {
         departments: Building2,
@@ -803,6 +696,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 <FloatingPanel className="flex-1 min-w-0 flex flex-col">
                     <PageTable
                         standalone={false}
+                        resourceKey={resourceSlug}
                         title={title}
                         subtitle={`Kelola daftar data master ${title.toLowerCase()} dalam sistem`}
                         icon={HeaderIcon}
@@ -820,12 +714,27 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                             router.get(`/admin/core/${resourceSlug}`, nextFilters, { preserveState: true, replace: true });
                         }}
                         onResetFilters={() => {
+                            const storageKey = `saved_filter_${resourceSlug}`;
+                            if (typeof document !== 'undefined') {
+                                document.cookie = `${storageKey}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
+                                localStorage.removeItem(storageKey);
+                            }
                             const clear = Object.keys(activeFilters).reduce((acc, key) => ({ ...acc, [key]: [] }), {});
-                            router.get(`/admin/core/${resourceSlug}`, { ...clear, page: 1 }, { preserveState: true, replace: true });
+                            router.get(`/admin/core/${resourceSlug}`, { ...clear, is_used: '', is_active: '', page: 1 }, { preserveState: true, replace: true });
                         }}
                         totalResults={data.total}
                         actions={
                             <div className="flex items-center gap-2">
+                                <ColumnVisibilityDropdown
+                                    columns={columnOptions}
+                                    visibleKeys={visibleColumnKeys}
+                                    onChange={setVisibleColumnKeys}
+                                    pinnedKeys={pinnedColumnKeys}
+                                    onPinnedChange={setPinnedColumnKeys}
+                                    storageKey={`resource_cols_${resourceSlug}`}
+                                    storagePinKey={`resource_pinned_${resourceSlug}`}
+                                />
+
                                 {(hasExport || hasImport || hasPortalSync || ['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users', 'job-levels', 'job-titles'].includes(resourceSlug)) && (
                                     <ExcelActions
                                         exportRoute={hasExport ? `/admin/core/${resourceSlug}/export` : undefined}
@@ -892,11 +801,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     </Button>
 
                                     {/* Quick bulk action for is_used (Sistem) */}
-                                    {['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users'].includes(resourceSlug) && (
+                                    {hasIsUsedCol && (
                                         <div className="flex items-center bg-surface-muted/40 p-0.5 rounded-lg border border-surface-border gap-1">
                                             <button
                                                 type="button"
-                                                onClick={() => handleQuickBulkToggleIsUsed(true)}
+                                                onClick={() => handleQuickBulkToggle('is_used', true)}
                                                 className="px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-md transition-all flex items-center gap-1 cursor-pointer"
                                                 title="Set is_used ke Ya (Aktif di Sistem)"
                                             >
@@ -906,12 +815,37 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                             <div className="w-px h-3.5 bg-surface-border" />
                                             <button
                                                 type="button"
-                                                onClick={() => handleQuickBulkToggleIsUsed(false)}
+                                                onClick={() => handleQuickBulkToggle('is_used', false)}
                                                 className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all flex items-center gap-1 cursor-pointer"
                                                 title="Set is_used ke Tidak (Nonaktif di Sistem)"
                                             >
                                                 <LucideIcons.XCircle size={12} className="text-slate-400" />
                                                 <span>Nonaktifkan Sistem ({selected.length})</span>
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Quick bulk action for is_active (Portal) */}
+                                    {hasIsActiveCol && (
+                                        <div className="flex items-center bg-surface-muted/40 p-0.5 rounded-lg border border-surface-border gap-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleQuickBulkToggle('is_active', true)}
+                                                className="px-2.5 py-1 text-[11px] font-semibold text-sky-700 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded-md transition-all flex items-center gap-1 cursor-pointer"
+                                                title="Set is_active ke Ya (Aktif di Portal)"
+                                            >
+                                                <LucideIcons.CheckCircle2 size={12} className="text-sky-500" />
+                                                <span>Aktifkan Portal ({selected.length})</span>
+                                            </button>
+                                            <div className="w-px h-3.5 bg-surface-border" />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleQuickBulkToggle('is_active', false)}
+                                                className="px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-all flex items-center gap-1 cursor-pointer"
+                                                title="Set is_active ke Tidak (Nonaktif di Portal)"
+                                            >
+                                                <LucideIcons.XCircle size={12} className="text-slate-400" />
+                                                <span>Nonaktifkan Portal ({selected.length})</span>
                                             </button>
                                         </div>
                                     )}
@@ -1064,7 +998,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                 checked={isFieldChecked}
                                                 onChange={(e) => {
                                                     setBulkSelectedFields(prev => ({ ...prev, [field.name]: e.target.checked }));
-                                                    if (!e.target.checked) {
+                                                    if (e.target.checked) {
+                                                        if (field.type === 'switch' || field.type === 'toggle') {
+                                                            setBulkFieldValues(prev => ({ ...prev, [field.name]: prev[field.name] ?? true }));
+                                                        }
+                                                    } else {
                                                         setBulkFieldValues(prev => ({ ...prev, [field.name]: undefined }));
                                                     }
                                                 }}

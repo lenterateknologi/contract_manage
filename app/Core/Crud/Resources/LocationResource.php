@@ -30,9 +30,13 @@ class LocationResource extends Resource
     public static function table(): array
     {
         return [
-            TextColumn::make('location_identity', 'Lokasi & Identitas')->sortable()->searchable(),
-            TextColumn::make('company_group_name', 'Group Perusahaan')->sortable()->searchable(),
-            TextColumn::make('location_group', 'Group Lokasi & Wilayah')->sortable()->searchable(),
+            TextColumn::make('code', 'Kode Lokasi')->sortable()->searchable(),
+            TextColumn::make('name', 'Nama Lokasi')->sortable()->searchable(),
+            TextColumn::make('company_group_name', 'Grup Perusahaan')->sortable()->searchable(),
+            TextColumn::make('location_group_name', 'Grup Lokasi')->sortable()->searchable(),
+            TextColumn::make('city_name', 'Kota / Kabupaten')->sortable()->searchable(),
+            TextColumn::make('province_name', 'Provinsi')->sortable()->searchable(),
+            TextColumn::make('oracle_code', 'Kode Oracle')->sortable()->searchable(),
             BooleanColumn::make('is_used', 'Sistem'),
             BooleanColumn::make('is_active', 'Portal'),
         ];

@@ -31,7 +31,7 @@ class UserResource extends Resource
 
     public static ?string $importClass = UsersImport::class;
 
-    public static array $with = ['roleRelation', 'department', 'division', 'company', 'companyGroup', 'region', 'jobTitle', 'jobLevel', 'location'];
+    public static array $with = ['roleRelation'];
 
     public static ?string $title = 'Registri Otoritas Pengguna';
 
@@ -42,9 +42,19 @@ class UserResource extends Resource
     public static function table(): array
     {
         return [
-            TextColumn::make('name', 'Karyawan & Akun')->sortable()->searchable(),
-            TextColumn::make('jobtitle_name', 'Jabatan & Akses')->sortable()->searchable(),
-            TextColumn::make('company_name', 'Penempatan & Organisasi')->sortable()->searchable(),
+            TextColumn::make('nik', 'NIK')->sortable()->searchable(),
+            TextColumn::make('name', 'Nama Karyawan')->sortable()->searchable(),
+            TextColumn::make('email', 'Email')->sortable()->searchable(),
+            TextColumn::make('username', 'Username')->sortable()->searchable(),
+            TextColumn::make('org_name', 'Departemen')->sortable()->searchable(),
+            TextColumn::make('division_name', 'Divisi')->sortable()->searchable(),
+            TextColumn::make('jobtitle_name', 'Jabatan (Job Title)')->sortable()->searchable(),
+            TextColumn::make('joblevel_name', 'Level (Job Level)')->sortable()->searchable(),
+            TextColumn::make('role_name', 'Role Akses')->sortable()->searchable(),
+            TextColumn::make('company_name', 'Perusahaan')->sortable()->searchable(),
+            TextColumn::make('company_group_code', 'Grup Perusahaan')->sortable()->searchable(),
+            TextColumn::make('location_name', 'Lokasi Kerja')->sortable()->searchable(),
+            TextColumn::make('region_name', 'Wilayah (Region)')->sortable()->searchable(),
             BooleanColumn::make('is_used', 'Sistem'),
             BooleanColumn::make('is_active', 'Portal'),
         ];
@@ -154,25 +164,46 @@ class UserResource extends Resource
         return [
             Filter::make('department_id', 'Departemen')
                 ->type('searchable')
-                ->options(fn () => Department::where('is_used', true)->orderBy('name')->whereNotNull('name')->pluck('name', 'id')->toArray()),
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Departemen / Kosong)'];
+                    return $options + Department::where('is_used', true)->orderBy('name')->whereNotNull('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('job_position_id', 'Jabatan (Job Title)')
                 ->type('searchable')
-                ->options(fn () => JobTitle::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Jabatan / Kosong)'];
+                    return $options + JobTitle::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('job_level_id', 'Level Jabatan (Job Level)')
                 ->type('searchable')
-                ->options(fn () => JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Level / Kosong)'];
+                    return $options + JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('location_id', 'Lokasi Kerja')
                 ->type('searchable')
-                ->options(fn () => Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Lokasi / Kosong)'];
+                    return $options + Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('company_group_id', 'Grup Perusahaan')
                 ->type('searchable')
-                ->options(fn () => \App\Models\CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Grup / Kosong)'];
+                    return $options + \App\Models\CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('region_id', 'Wilayah (Region)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Wilayah / Kosong)'];
+                    return $options + \App\Models\Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('company_id', 'Perusahaan (Company)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Perusahaan / Kosong)'];
+                    return $options + \App\Models\Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('role_id', 'Role Akses')
                 ->type('searchable')
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),

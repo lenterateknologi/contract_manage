@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/buttons/Button';
-import { Calendar, ChevronDown, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Calendar, Check, ChevronDown, RotateCcw, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
@@ -29,6 +29,24 @@ export interface PageFilterProps {
     totalResults?: number;
     title?: string;
     className?: string;
+    resourceKey?: string;
+}
+
+function setCookie(name: string, value: string, days: number = 365) {
+    if (typeof document === 'undefined') return;
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie.match(new RegExp('(^|;\\s*)(' + name + ')=([^;]*)'));
+    return match ? decodeURIComponent(match[3]) : null;
+}
+
+function deleteCookie(name: string) {
+    if (typeof document === 'undefined') return;
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`;
 }
 
 const ensureArray = (val: any): string[] => {
@@ -126,7 +144,17 @@ export function PageFilter({
     totalResults,
     title = 'Filter Data',
     className,
+    resourceKey,
 }: PageFilterProps) {
+    const storageKey = `saved_filter_${resourceKey || 'default'}`;
+    const [hasSavedCookie, setHasSavedCookie] = React.useState<boolean>(() => {
+        if (typeof window === 'undefined') return false;
+        const cookieVal = getCookie(storageKey);
+        const localVal = localStorage.getItem(storageKey);
+        return Boolean(cookieVal || localVal);
+    });
+    const [isSavedFeedback, setIsSavedFeedback] = React.useState(false);
+
     const activeCount = useMemo(() => {
         let count = 0;
         categories.forEach((cat) => {
@@ -142,9 +170,59 @@ export function PageFilter({
         return count;
     }, [activeFilters, categories]);
 
+    // Save active filters to Cookie & LocalStorage
+    const handleSaveFilter = () => {
+        try {
+            const filterToSave: Record<string, any> = {};
+            Object.keys(activeFilters).forEach((key) => {
+                const val = activeFilters[key];
+                if (val !== undefined && val !== null && val !== '') {
+                    if (Array.isArray(val) && val.length > 0) {
+                        filterToSave[key] = val;
+                    } else if (!Array.isArray(val)) {
+                        filterToSave[key] = val;
+                    }
+                }
+            });
+
+            const serialized = JSON.stringify(filterToSave);
+            setCookie(storageKey, serialized, 365);
+            localStorage.setItem(storageKey, serialized);
+            setHasSavedCookie(true);
+            setIsSavedFeedback(true);
+            setTimeout(() => {
+                setIsSavedFeedback(false);
+            }, 2500);
+        } catch (e) {
+            console.error('Failed to save filter cookie:', e);
+        }
+    };
+
+    // Apply saved filter from Cookie / LocalStorage
+    const handleApplySavedFilter = () => {
+        try {
+            const raw = getCookie(storageKey) || localStorage.getItem(storageKey);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (typeof onFilterChange === 'function' && typeof parsed === 'object') {
+                    onFilterChange(parsed);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to apply saved filter:', e);
+        }
+    };
+
+    // Clear saved cookie
+    const handleClearSavedCookie = () => {
+        deleteCookie(storageKey);
+        localStorage.removeItem(storageKey);
+        setHasSavedCookie(false);
+    };
+
     return (
         <div className={cn('border-b border-surface-border bg-surface-card/70 dark:bg-zinc-900/70 backdrop-blur-sm p-4 animate-in fade-in slide-in-from-top-2 duration-200 shrink-0', className)}>
-            <div className="flex items-center justify-between gap-3 mb-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2">
                     <SlidersHorizontal size={14} className="text-primary" />
                     <span className="text-xs font-bold text-text-main tracking-tight uppercase">{title}</span>
@@ -155,20 +233,48 @@ export function PageFilter({
                     )}
                 </div>
 
-                {activeCount > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                    {/* Save Filter to Cookie Button */}
                     <button
                         type="button"
-                        onClick={onReset}
-                        className="inline-flex items-center gap-1.5 text-xs text-danger hover:text-danger/80 transition-colors font-semibold cursor-pointer"
+                        onClick={handleSaveFilter}
+                        title="Simpan konfigurasi filter saat ini ke Cookie browser agar langsung diterapkan saat membuka halaman"
+                        className={cn(
+                            "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-md border transition-all cursor-pointer shadow-xs",
+                            isSavedFeedback 
+                                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold"
+                                : "bg-surface-card hover:bg-surface-border/50 text-text-main border-surface-border"
+                        )}
                     >
-                        <RotateCcw size={12} />
-                        <span>Reset Semua Filter ({activeCount})</span>
+                        {isSavedFeedback ? (
+                            <>
+                                <Check size={12} className="text-emerald-600 dark:text-emerald-400" />
+                                <span>Tersimpan!</span>
+                            </>
+                        ) : (
+                            <>
+                                <Bookmark size={12} className="text-text-muted" />
+                                <span>Simpan</span>
+                            </>
+                        )}
                     </button>
-                )}
+
+                    {/* Reset Button */}
+                    {activeCount > 0 && (
+                        <button
+                            type="button"
+                            onClick={onReset}
+                            className="inline-flex items-center gap-1.5 px-2 py-1 text-xs text-danger hover:text-danger/80 transition-colors font-semibold cursor-pointer"
+                        >
+                            <RotateCcw size={12} />
+                            <span>Reset Semua Filter ({activeCount})</span>
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Filter Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 {categories.map((category) => {
                     if (category.type === 'date-range') {
                         return (

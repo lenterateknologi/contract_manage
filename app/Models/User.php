@@ -43,8 +43,10 @@ class User extends Authenticatable
         'region_id',
         'idjobtitle',
         'jobtitle_name',
+        'job_position_id',
         'idjoblevel',
         'joblevel_name',
+        'job_level_id',
         'idemployment_type',
         'idreporting_to',
         'reporting_to',
@@ -100,15 +102,6 @@ class User extends Authenticatable
         'company_group_name',
         'company_group_code',
         'region_name',
-        'can_change_company_group',
-        'allowed_company_groups',
-        'can_change_region',
-        'allowed_regions',
-        'can_change_company',
-        'allowed_companies',
-        'can_change_division',
-        'can_change_department',
-        'allowed_departments',
     ];
 
     protected static function booted(): void
@@ -187,6 +180,11 @@ class User extends Authenticatable
         return $this->department?->name;
     }
 
+    private static array $companyGroupMemoryCache = [];
+    private static array $companyMemoryCache = [];
+    private static array $regionMemoryCache = [];
+    private static array $templateMemoryCache = [];
+
     public function getCompanyGroupNameAttribute(): ?string
     {
         if ($this->relationLoaded('companyGroup') && $this->companyGroup) {
@@ -197,12 +195,20 @@ class User extends Authenticatable
             return $this->company->getAttributes()['company_group_name'];
         }
 
-        if (! empty($this->company_group_id)) {
-            return \App\Models\CompanyGroup::find($this->company_group_id)?->name;
+        $companyGroupId = $this->getAttributeFromArray('company_group_id');
+        if (! empty($companyGroupId)) {
+            if (! array_key_exists($companyGroupId, self::$companyGroupMemoryCache)) {
+                self::$companyGroupMemoryCache[$companyGroupId] = \App\Models\CompanyGroup::find($companyGroupId)?->name;
+            }
+            return self::$companyGroupMemoryCache[$companyGroupId];
         }
 
-        if (! empty($this->company_name)) {
-            return \App\Models\Company::where('name', $this->company_name)->value('company_group_name');
+        $companyName = $this->getAttributeFromArray('company_name');
+        if (! empty($companyName)) {
+            if (! array_key_exists($companyName, self::$companyMemoryCache)) {
+                self::$companyMemoryCache[$companyName] = \App\Models\Company::where('name', $companyName)->value('company_group_name');
+            }
+            return self::$companyMemoryCache[$companyName];
         }
 
         return null;
@@ -214,8 +220,13 @@ class User extends Authenticatable
             return $this->companyGroup->code;
         }
 
-        if ($this->company_group_id) {
-            return \App\Models\CompanyGroup::find($this->company_group_id)?->code;
+        $companyGroupId = $this->getAttributeFromArray('company_group_id');
+        if (! empty($companyGroupId)) {
+            $cacheKey = "code_{$companyGroupId}";
+            if (! array_key_exists($cacheKey, self::$companyGroupMemoryCache)) {
+                self::$companyGroupMemoryCache[$cacheKey] = \App\Models\CompanyGroup::find($companyGroupId)?->code;
+            }
+            return self::$companyGroupMemoryCache[$cacheKey];
         }
 
         if ($this->relationLoaded('company') && $this->company) {
@@ -235,12 +246,21 @@ class User extends Authenticatable
             return $this->company->getAttributes()['region_name'];
         }
 
-        if (! empty($this->region_id)) {
-            return \App\Models\Region::find($this->region_id)?->name;
+        $regionId = $this->getAttributeFromArray('region_id');
+        if (! empty($regionId)) {
+            if (! array_key_exists($regionId, self::$regionMemoryCache)) {
+                self::$regionMemoryCache[$regionId] = \App\Models\Region::find($regionId)?->name;
+            }
+            return self::$regionMemoryCache[$regionId];
         }
 
-        if (! empty($this->company_name)) {
-            return \App\Models\Company::where('name', $this->company_name)->value('region_name');
+        $companyName = $this->getAttributeFromArray('company_name');
+        if (! empty($companyName)) {
+            $cacheKey = "reg_{$companyName}";
+            if (! array_key_exists($cacheKey, self::$companyMemoryCache)) {
+                self::$companyMemoryCache[$cacheKey] = \App\Models\Company::where('name', $companyName)->value('region_name');
+            }
+            return self::$companyMemoryCache[$cacheKey];
         }
 
         return null;
@@ -329,16 +349,13 @@ class User extends Authenticatable
             return $this->contractFilterSettingsCache;
         }
 
-        // Coba ambil dari template — aman saat user di-load sebagai partial relation
-        $templateId = null;
-        if (array_key_exists('contract_filter_template_id', $this->attributes)) {
-            $templateId = $this->attributes['contract_filter_template_id'];
-        } elseif ($this->relationLoaded('contractFilterTemplate')) {
-            $templateId = $this->contractFilterTemplate?->id;
-        }
+        $templateId = $this->getAttributeFromArray('contract_filter_template_id');
 
         if ($templateId) {
-            $template = ContractFilterTemplate::find($templateId);
+            if (! isset(self::$templateMemoryCache[$templateId])) {
+                self::$templateMemoryCache[$templateId] = ContractFilterTemplate::find($templateId);
+            }
+            $template = self::$templateMemoryCache[$templateId];
             if ($template) {
                 $this->contractFilterSettingsCache = [
                     'can_change_company_group' => (bool) $template->can_change_company_group,

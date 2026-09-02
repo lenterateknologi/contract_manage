@@ -35,6 +35,8 @@ interface PageTableProps {
         onPerPageChange?: (perPage: number) => void;
     };
 
+    resourceKey?: string;
+
     /**
      * standalone (default: true)
      * When true  → PageTable owns the outer bg/height/padding (legacy standalone usage).
@@ -61,6 +63,7 @@ export function PageTable({
     onToggleFilter: controlledOnToggleFilter,
     children,
     pagination,
+    resourceKey,
     standalone = true,
 }: PageTableProps) {
     const hasActiveFilters = React.useMemo(() => {
@@ -75,7 +78,7 @@ export function PageTable({
         });
     }, [activeFilters, filters]);
 
-    const [internalFilterExpanded, setInternalFilterExpanded] = React.useState(hasActiveFilters);
+    const [internalFilterExpanded, setInternalFilterExpanded] = React.useState(false);
 
     const isExpanded = controlledIsFilterExpanded !== undefined ? controlledIsFilterExpanded : internalFilterExpanded;
     const handleToggle = controlledOnToggleFilter || (() => setInternalFilterExpanded(prev => !prev));
@@ -108,6 +111,7 @@ export function PageTable({
                     onReset={onResetFilters}
                     totalResults={totalResults}
                     title={`Filter Data ${title}`}
+                    resourceKey={resourceKey}
                 />
             )}
 

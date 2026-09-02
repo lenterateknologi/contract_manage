@@ -35,9 +35,14 @@ class CompanyResource extends Resource
     public static function table(): array
     {
         return [
-            TextColumn::make('company_identity', 'Perusahaan & Identitas')->sortable()->searchable(),
-            TextColumn::make('org_structure', 'Struktur Organisasi')->sortable()->searchable(),
-            TextColumn::make('legal_integration', 'Legal, Lokasi & Oracle')->sortable()->searchable(),
+            TextColumn::make('code', 'Kode Perusahaan')->sortable()->searchable(),
+            TextColumn::make('name', 'Nama Perusahaan')->sortable()->searchable(),
+            TextColumn::make('alias', 'Alias')->sortable()->searchable(),
+            TextColumn::make('company_group_name', 'Grup Perusahaan')->sortable()->searchable(),
+            TextColumn::make('region_name', 'Wilayah (Region)')->sortable()->searchable(),
+            TextColumn::make('city_name', 'Kota / Lokasi')->sortable()->searchable(),
+            TextColumn::make('npwp', 'NPWP')->sortable()->searchable(),
+            TextColumn::make('oracle_code', 'Kode Oracle')->sortable()->searchable(),
             BooleanColumn::make('is_used', 'Sistem'),
             BooleanColumn::make('is_active', 'Portal'),
         ];

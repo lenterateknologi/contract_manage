@@ -19,6 +19,10 @@ export interface Column<T> {
     cell?: (row: T) => React.ReactNode;
     className?: string;
     sortable?: boolean;
+    pinned?: 'left' | 'right' | boolean;
+    pinOffset?: number;
+    isLastPinned?: boolean;
+    width?: number | string;
 }
 
 /**
@@ -102,11 +106,6 @@ export function DataTable<T extends Record<string, any>>({
     const [localSearch, setLocalSearch] = React.useState(searchValue);
     const debouncedSearch = useDebounce(localSearch, 500);
     const [internalSelectedRows, setInternalSelectedRows] = React.useState<T[]>([]);
-    const [confirmAction, setConfirmAction] = React.useState<{
-        label: string;
-        onClick: () => void;
-        count: number;
-    } | null>(null);
 
     const hasSelectionFromProps = typeof onSelectionChange === 'function';
     const activeSelectedRows = hasSelectionFromProps ? selectedRows : internalSelectedRows;
@@ -148,44 +147,21 @@ export function DataTable<T extends Record<string, any>>({
     };
 
     const isAllSelected = data.length > 0 && activeSelectedRows.length === data.length;
-    const filterKeys = React.useMemo(() => filters.map(f => f.key), [filters]);
-    const activeCount = React.useMemo(() => {
-        let count = 0;
-        filterKeys.forEach(key => {
-            const val = activeFilters[key];
-            if (Array.isArray(val)) {
-                count += val.filter(v => v !== '' && v !== null).length;
-            } else if (val !== undefined && val !== '' && val !== null) {
-                count += 1;
-            }
-        });
-        return count;
-    }, [activeFilters, filterKeys]);
 
-    // Fallback client-side filter
-    const displayData = React.useMemo(() => {
-        if (onSearchChange || !localSearch) return data;
-        const query = localSearch.toLowerCase();
-        return data.filter((row) => {
-            const val = row[searchKey];
-            if (typeof val === 'string') return val.toLowerCase().includes(query);
-            return false;
-        });
-    }, [data, localSearch, searchKey, onSearchChange]);
+    // Ensure safe array rendering
+    const displayData = Array.isArray(data) ? data : [];
 
     return (
-        <div className="flex flex-col flex-1 min-h-0 h-full antialiased text-foreground select-none animate-in fade-in duration-200">
-            {/* ponytail: Bulk Actions Toolbar between Header and Table */}
-            {bulkActions && activeSelectedRows.length > 0 && (
-                <div className="flex items-center justify-between gap-3 px-4 py-2 bg-primary/5 dark:bg-primary/10 border-b border-primary/15 dark:border-primary/20 animate-in slide-in-from-top-1 duration-150 shrink-0">
-                    <div className="flex items-center gap-2">
-                        <span className="inline-flex items-center justify-center bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-md shadow-xs">
-                            {activeSelectedRows.length}
-                        </span>
-                        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
-                            data dipilih
-                        </span>
-                    </div>
+        <div className={cn(
+            "flex flex-col flex-1 min-h-0 w-full bg-surface-base border-surface-border",
+            !borderless && "rounded-none"
+        )}>
+            {/* --- BULK ACTION BAR --- */}
+            {activeSelectedRows.length > 0 && bulkActions && (
+                <div className="flex items-center justify-between px-6 py-2 bg-primary/10 border-b border-primary/20 animate-in fade-in duration-200">
+                    <span className="text-xs font-semibold text-primary">
+                        {activeSelectedRows.length} baris dipilih
+                    </span>
                     <div className="flex items-center gap-2">
                         {typeof bulkActions === 'function' ? bulkActions(activeSelectedRows) : bulkActions}
                     </div>
@@ -197,11 +173,11 @@ export function DataTable<T extends Record<string, any>>({
                 "flex-1 min-h-0 bg-surface-base/40 backdrop-blur-sm flex flex-col overflow-hidden",
             )}>
                 <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
-                    <table className="w-full text-left border-collapse min-w-[800px]">
+                    <table className="w-full text-left border-collapse min-w-full w-max">
                         <thead className="bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
                             <tr className="h-11 border-b border-primary/20 dark:border-zinc-700/80 select-none bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
                                 {onSelectionChange && (
-                                    <th className="h-11 py-2 px-4 w-10 sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 align-middle">
+                                    <th className="h-11 py-2 px-4 w-10 sticky top-0 left-0 z-30 bg-primary dark:bg-zinc-800 text-white dark:text-zinc-200 align-middle">
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
@@ -212,11 +188,25 @@ export function DataTable<T extends Record<string, any>>({
                                 {columns.map((col, idx) => {
                                     const isSortable = col.sortable;
                                     const isSorted = sortBy === col.accessorKey;
+                                    const isPinned = Boolean(col.pinned);
+                                    const pinOffset = col.pinOffset;
+                                    const isLastPinned = col.isLastPinned;
+
+                                    const thStyles: React.CSSProperties = isPinned ? {
+                                        position: 'sticky',
+                                        left: pinOffset !== undefined ? `${pinOffset}px` : undefined,
+                                        zIndex: 25,
+                                    } : {};
+
                                     return (
                                         <th
                                             key={idx}
+                                            style={thStyles}
                                             className={cn(
-                                                "h-11 py-2 px-4 text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80 align-middle",
+                                                "h-11 py-2 px-4 text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 bg-primary dark:bg-zinc-800 border-b border-primary/20 dark:border-zinc-700/80 align-middle whitespace-nowrap",
+                                                !isPinned && "z-10",
+                                                isPinned && "z-25 bg-primary dark:bg-zinc-800",
+                                                isLastPinned && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.18)] border-r border-white/20",
                                                 isSortable && "cursor-pointer hover:text-white/80 dark:hover:text-white transition-colors",
                                                 col.className
                                             )}
@@ -239,21 +229,17 @@ export function DataTable<T extends Record<string, any>>({
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="h-11 py-2 px-2 w-14 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80 align-middle">Aksi</th>}
+                                {rowActions && <th className="h-11 py-2 px-3 w-16 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 right-0 z-30 bg-primary dark:bg-zinc-800 border-b border-primary/20 dark:border-zinc-700/80 align-middle shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.18)]">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">
                             {loading && (
                                 <tr>
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0)} className="p-0">
-                                        {skeleton ? (
-                                            <div className="animate-in fade-in duration-500">{skeleton}</div>
-                                        ) : (
-                                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface-base/80 backdrop-blur-sm py-10 gap-3">
-                                                <LoadingLottie width={80} height={80} />
-                                                <p className="text-xs font-semibold uppercase tracking-wide text-primary animate-pulse">Memuat data...</p>
-                                            </div>
-                                        )}
+                                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface-base/80 backdrop-blur-sm py-10 gap-3">
+                                            <LoadingLottie width={80} height={80} />
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-primary animate-pulse">Memuat data...</p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}
@@ -263,39 +249,23 @@ export function DataTable<T extends Record<string, any>>({
                                     <td colSpan={columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0)} className="p-16 text-center">
                                         <div className="flex flex-col items-center gap-3 opacity-40 select-none">
                                             <Search size={40} strokeWidth={1} className="text-text-desc" />
-                                            <p className="text-xs font-medium uppercase  text-text-desc">Tidak ada data ditemukan</p>
+                                            <p className="text-xs font-medium uppercase text-text-desc">Tidak ada data ditemukan</p>
                                         </div>
                                     </td>
                                 </tr>
                             ) : (
                                 displayData.map((row, rowIdx) => {
-                                    if (row.isParent) {
-                                        return (
-                                            <tr
-                                                key={row.id || rowIdx}
-                                                onClick={() => onRowClick?.(row)}
-                                                className="border-y border-surface-border/40 transition-all hover:bg-surface-muted/30 cursor-pointer group select-none bg-surface-muted/20"
-                                            >
-                                                <td
-                                                    colSpan={columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0)}
-                                                    className="py-2 px-4 align-middle text-sm font-semibold text-text-main"
-                                                >
-                                                    {columns[0].cell ? columns[0].cell(row) : (row.name || '')}
-                                                </td>
-                                            </tr>
-                                        );
-                                    }
                                     return (
                                         <tr
                                             key={row.id || rowIdx}
                                             onClick={() => onRowClick?.(row)}
                                             className={cn(
-                                                "border-b border-surface-border/30 transition-all hover:bg-surface-muted/30 cursor-pointer group select-none",
-                                                activeSelectedRows.some(r => r.id === row.id) ? "bg-surface-muted/50" : ""
+                                                "border-b border-surface-border/30 transition-all hover:bg-slate-50 dark:hover:bg-zinc-800/60 cursor-pointer group select-none [content-visibility:auto] [contain-intrinsic-size:0_45px]",
+                                                activeSelectedRows.some(r => r.id === row.id) ? "bg-primary/5 dark:bg-primary/10" : "bg-white dark:bg-zinc-900"
                                             )}
                                         >
                                             {onSelectionChange && (
-                                                <td className="py-3.5 px-4 w-10" onClick={(e) => e.stopPropagation()}>
+                                                <td className="py-3.5 px-4 w-10 sticky left-0 z-20 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors" onClick={(e) => e.stopPropagation()}>
                                                     {(!isRowSelectable || isRowSelectable(row)) ? (
                                                         <Checkbox
                                                             checked={activeSelectedRows.some(r => r.id === row.id)}
@@ -307,13 +277,34 @@ export function DataTable<T extends Record<string, any>>({
                                                     )}
                                                 </td>
                                             )}
-                                            {columns.map((col, colIdx) => (
-                                                <td key={colIdx} className={cn("py-3.5 px-4 align-middle text-sm font-normal text-text-main", col.className)}>
-                                                    {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
-                                                </td>
-                                            ))}
+                                            {columns.map((col, colIdx) => {
+                                                const isPinned = Boolean(col.pinned);
+                                                const pinOffset = col.pinOffset;
+                                                const isLastPinned = col.isLastPinned;
+
+                                                const tdStyles: React.CSSProperties = isPinned ? {
+                                                    position: 'sticky',
+                                                    left: pinOffset !== undefined ? `${pinOffset}px` : undefined,
+                                                    zIndex: 15,
+                                                } : {};
+
+                                                return (
+                                                    <td
+                                                        key={colIdx}
+                                                        style={tdStyles}
+                                                        className={cn(
+                                                            "py-3.5 px-4 align-middle text-sm font-normal text-text-main whitespace-nowrap",
+                                                            isPinned && "sticky z-15 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors",
+                                                            isLastPinned && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.12)] border-r border-surface-border",
+                                                            col.className
+                                                        )}
+                                                    >
+                                                        {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
+                                                    </td>
+                                                );
+                                            })}
                                             {rowActions && (
-                                                <td className="py-2 px-2 w-14 text-center align-middle" onClick={(e) => e.stopPropagation()}>
+                                                <td className="py-2 px-3 w-16 text-center align-middle sticky right-0 z-20 bg-white dark:bg-zinc-900 border-l border-surface-border/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.12)] group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors" onClick={(e) => e.stopPropagation()}>
                                                     {rowActions(row)}
                                                 </td>
                                             )}
