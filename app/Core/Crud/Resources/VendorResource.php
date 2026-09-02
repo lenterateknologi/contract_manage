@@ -21,7 +21,7 @@ class VendorResource extends Resource
 
     public static ?string $slug = 'vendors';
 
-    public static int $formColumns = 2;
+    public static int $formColumns = 3;
 
     public static ?string $exportClass = VendorsExport::class;
 

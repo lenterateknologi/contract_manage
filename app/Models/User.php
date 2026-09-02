@@ -98,6 +98,7 @@ class User extends Authenticatable
         'division_name',
         'department_name',
         'company_group_name',
+        'company_group_code',
         'region_name',
         'can_change_company_group',
         'allowed_company_groups',
@@ -207,6 +208,23 @@ class User extends Authenticatable
         return null;
     }
 
+    public function getCompanyGroupCodeAttribute(): ?string
+    {
+        if ($this->relationLoaded('companyGroup') && $this->companyGroup) {
+            return $this->companyGroup->code;
+        }
+
+        if ($this->company_group_id) {
+            return \App\Models\CompanyGroup::find($this->company_group_id)?->code;
+        }
+
+        if ($this->relationLoaded('company') && $this->company) {
+            return $this->company->company_group_code ?? $this->company->group?->code;
+        }
+
+        return null;
+    }
+
     public function getRegionNameAttribute(): ?string
     {
         if ($this->relationLoaded('region') && $this->region) {
@@ -246,6 +264,26 @@ class User extends Authenticatable
     public function region(): BelongsTo
     {
         return $this->belongsTo(Region::class, 'region_id');
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
+
+    public function jobPosition(): BelongsTo
+    {
+        return $this->belongsTo(JobTitle::class, 'job_position_id');
+    }
+
+    public function jobTitle(): BelongsTo
+    {
+        return $this->belongsTo(JobTitle::class, 'job_position_id');
+    }
+
+    public function jobLevel(): BelongsTo
+    {
+        return $this->belongsTo(JobLevel::class, 'job_level_id');
     }
 
     public function workflowSteps(): BelongsToMany

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { router } from '@inertiajs/react';
-import { FileSpreadsheet, Loader2, Upload, MoreVertical } from 'lucide-react';
+import { FileSpreadsheet, Loader2, Upload, MoreVertical, RefreshCw } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import {
@@ -15,9 +15,13 @@ declare function route(name: string, params?: Record<string, unknown>): string;
 
 interface ExcelActionsProps {
     /** Named route for GET export, e.g. 'admin.company-groups.export' */
-    exportRoute: string;
+    exportRoute?: string;
     /** Named route for POST import, e.g. 'admin.company-groups.import' */
     importRoute?: string;
+    /** Callback to trigger Portal synchronization */
+    onSyncPortal?: () => void;
+    /** Whether Portal synchronization is currently running */
+    isSyncingPortal?: boolean;
     /** Label shown next to buttons, e.g. 'Group' */
     label?: string;
     /** Render action items inline without More dropdown trigger */
@@ -31,13 +35,14 @@ interface ExcelActionsProps {
  * - Export: triggers a direct file download via window.location.
  * - Import: opens a hidden <input type="file"> and POSTs with Inertia.
  */
-export function ExcelActions({ exportRoute, importRoute, label, inline = false, className }: Readonly<ExcelActionsProps>) {
+export function ExcelActions({ exportRoute, importRoute, onSyncPortal, isSyncingPortal = false, label, inline = false, className }: Readonly<ExcelActionsProps>) {
     const { showToast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const handleExport = () => {
+        if (!exportRoute) return;
         const url = exportRoute.includes('/') ? exportRoute : route(exportRoute);
         window.location.href = url;
         showToast(`Mengunduh file Excel${label ? ` ${label}` : ''}...`, 'success');
@@ -60,6 +65,7 @@ export function ExcelActions({ exportRoute, importRoute, label, inline = false, 
     };
 
     const submitImport = (file: File) => {
+        if (!importRoute) return;
         setUploading(true);
 
         const formData = new FormData();
@@ -97,14 +103,27 @@ export function ExcelActions({ exportRoute, importRoute, label, inline = false, 
                     onChange={handleFileChange}
                     disabled={uploading}
                 />
-                <button
-                    type="button"
-                    onClick={handleExport}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-text-main hover:bg-surface-muted rounded-lg transition-all cursor-pointer"
-                >
-                    <FileSpreadsheet size={15} className="text-emerald-600 shrink-0" />
-                    <span>Export Excel</span>
-                </button>
+                {onSyncPortal && (
+                    <button
+                        type="button"
+                        onClick={onSyncPortal}
+                        disabled={isSyncingPortal}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-text-main hover:bg-surface-muted rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                    >
+                        <RefreshCw size={15} className={cn("text-primary shrink-0", isSyncingPortal && "animate-spin")} />
+                        <span>{isSyncingPortal ? 'Menyinkronkan...' : 'Sinkron Portal'}</span>
+                    </button>
+                )}
+                {exportRoute && (
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-text-main hover:bg-surface-muted rounded-lg transition-all cursor-pointer"
+                    >
+                        <FileSpreadsheet size={15} className="text-emerald-600 shrink-0" />
+                        <span>Export Excel</span>
+                    </button>
+                )}
                 {importRoute && (
                     <button
                         type="button"
@@ -141,10 +160,10 @@ export function ExcelActions({ exportRoute, importRoute, label, inline = false, 
                     <Button
                         variant="white"
                         size="icon"
-                        disabled={uploading}
-                        title={`Aksi Excel${label ? ` ${label}` : ''}`}
+                        disabled={uploading || isSyncingPortal}
+                        title={`Aksi Lainnya${label ? ` ${label}` : ''}`}
                     >
-                        {uploading ? (
+                        {uploading || isSyncingPortal ? (
                             <Loader2 size={14} className="animate-spin text-primary" />
                         ) : (
                             <MoreVertical size={14} className="text-text-soft" />
@@ -153,22 +172,35 @@ export function ExcelActions({ exportRoute, importRoute, label, inline = false, 
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                     align="end"
-                    className="w-44 rounded-xl p-1.5 shadow-xl bg-surface-base border border-surface-border"
+                    className="w-48 rounded-xl p-1.5 shadow-xl bg-surface-base border border-surface-border"
                 >
-                    <DropdownMenuItem
-                        onClick={handleExport}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg py-2 px-3 text-xs font-semibold text-text-main hover:bg-muted focus:bg-muted transition-all"
-                    >
-                        <FileSpreadsheet size={14} className="text-emerald-600" />
-                        <span>Export Excel</span>
-                    </DropdownMenuItem>
+                    {onSyncPortal && (
+                        <DropdownMenuItem
+                            onClick={onSyncPortal}
+                            disabled={isSyncingPortal}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg py-2 px-3 text-xs font-semibold text-text-main hover:bg-muted focus:bg-muted transition-all"
+                        >
+                            <RefreshCw size={14} className={cn("text-primary shrink-0", isSyncingPortal && "animate-spin")} />
+                            <span>{isSyncingPortal ? 'Menyinkronkan...' : 'Sinkron Portal'}</span>
+                        </DropdownMenuItem>
+                    )}
+
+                    {exportRoute && (
+                        <DropdownMenuItem
+                            onClick={handleExport}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg py-2 px-3 text-xs font-semibold text-text-main hover:bg-muted focus:bg-muted transition-all"
+                        >
+                            <FileSpreadsheet size={14} className="text-emerald-600 shrink-0" />
+                            <span>Export Excel</span>
+                        </DropdownMenuItem>
+                    )}
                     
                     {importRoute && (
                         <DropdownMenuItem
                             onClick={() => fileInputRef.current?.click()}
                             className="flex cursor-pointer items-center gap-2 rounded-lg py-2 px-3 text-xs font-semibold text-text-main hover:bg-muted focus:bg-muted transition-all"
                         >
-                            <Upload size={14} className="text-primary" />
+                            <Upload size={14} className="text-primary shrink-0" />
                             <span>Import Excel</span>
                         </DropdownMenuItem>
                     )}

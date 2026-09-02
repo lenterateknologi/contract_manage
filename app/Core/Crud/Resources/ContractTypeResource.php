@@ -23,7 +23,7 @@ class ContractTypeResource extends Resource
 
     public static ?string $title = 'Kategori Kontrak';
 
-    public static int $formColumns = 2;
+    public static int $formColumns = 3;
 
     public static ?string $slug = 'contract-types';
 

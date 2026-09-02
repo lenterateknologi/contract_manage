@@ -30,7 +30,7 @@ class ContractStatusResource extends Resource
         ];
     }
 
-    public static int $formColumns = 2;
+    public static int $formColumns = 3;
 
     public static function form(): array
     {

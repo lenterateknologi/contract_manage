@@ -41,20 +41,20 @@ export function ManagementForm({
             style={{ maxHeight: flat ? '100%' : 'calc(100svh - 2.5rem)' }}
         >
             {/* COMPACT STICKY HEADER */}
-            <div className="border-surface-border bg-surface-muted/95 sticky top-0 z-50 flex shrink-0 items-center justify-between border-b px-6 py-2.5 backdrop-blur">
+            <div className="border-surface-border bg-background sticky top-0 z-50 flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between border-b px-6 box-border">
                 <div className="flex items-center gap-3">
-                    <div className="flex shrink-0 items-center justify-center rounded-xl border border-slate-200/80 dark:border-zinc-700/80 bg-slate-100/90 dark:bg-zinc-800/90 p-1 shadow-2xs">
-                        <Button variant="ghost" size="icon" className="hover:bg-slate-200 dark:hover:bg-zinc-700 h-8 w-8 rounded-lg text-slate-800 dark:text-zinc-200 transition-all" onClick={onClose}>
+                    <div className="flex shrink-0 items-center justify-center rounded-xl border border-surface-border bg-surface-muted/60 p-1 shadow-2xs">
+                        <Button variant="ghost" size="icon" className="hover:bg-surface-muted h-8 w-8 rounded-lg text-text-main transition-all" onClick={onClose}>
                             <ArrowLeft size={16} />
                         </Button>
                     </div>
 
-                    <div className="flex flex-col gap-0.5">
+                    <div className="flex flex-col gap-0.5 justify-center">
                         <div className="flex items-center gap-2">
-                            <h1 className="text-text-main text-sm font-normal">{title}</h1>
+                            <h1 className="text-text-main text-[13.5px] font-bold tracking-tight">{title}</h1>
                             {isEdit && <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />}
                         </div>
-                        {subtitle && <p className="text-text-desc text-xs font-medium">{subtitle}</p>}
+                        {subtitle && <p className="text-text-muted text-[10.5px] font-medium">{subtitle}</p>}
                     </div>
                 </div>
 

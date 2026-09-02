@@ -19,5 +19,7 @@ return [
         'organizations' => 'Organization/GetAllDataOrganization',
         'users' => 'Employee/GetAllDataEmployeeAllColumnBystatusActive',
         'employees' => 'Employee/GetAllDataEmployeeAllColumnBystatusActive',
+        'job_levels' => 'JobLevel/GetAllDataJobLevel',
+        'job_titles' => 'JobTitle/GetAllDataJobTitle',
     ],
 ];

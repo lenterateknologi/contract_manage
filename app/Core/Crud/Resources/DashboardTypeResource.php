@@ -22,7 +22,7 @@ class DashboardTypeResource extends Resource
 
     public static ?string $title = 'Tipe Dashboard';
 
-    public static int $formColumns = 2;
+    public static int $formColumns = 3;
 
     public static ?string $slug = 'dashboard-types';
 
@@ -76,7 +76,7 @@ class DashboardTypeResource extends Resource
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('department_id', 'Departemen')
                 ->type('searchable')
-                ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => Department::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
         ];
     }
 }

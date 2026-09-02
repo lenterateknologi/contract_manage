@@ -155,6 +155,8 @@ class HandleInertiaRequests extends Middleware
             '/admin/core/regions' => $getPortalCount('m_regions'),
             '/admin/core/business-units' => $getPortalCount('m_business_units'),
             '/admin/core/locations' => $getPortalCount('m_locations'),
+            '/admin/core/job-levels' => $getPortalCount('m_job_levels'),
+            '/admin/core/job-titles' => $getPortalCount('m_job_titles'),
         ];
 
         $groups = $modules->groupBy(fn ($item) => trim($item->group_title))

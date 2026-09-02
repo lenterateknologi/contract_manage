@@ -828,10 +828,67 @@ class PortalSyncService
                 ->get()
                 ->keyBy('idlocation');
 
+            $locationsByName = \App\Models\Location::withTrashed()
+                ->whereNotNull('name')
+                ->get()
+                ->keyBy(fn ($l) => strtolower(trim($l->name)));
+
+            $departmentsByIdOrg = \App\Models\Department::withTrashed()
+                ->whereNotNull('idorganization')
+                ->get()
+                ->keyBy('idorganization');
+
+            $departmentsByName = \App\Models\Department::withTrashed()
+                ->whereNotNull('name')
+                ->get()
+                ->keyBy(fn ($d) => strtolower(trim($d->name)));
+
+            $jobTitlesById = \App\Models\JobTitle::withTrashed()
+                ->whereNotNull('idjobtitle')
+                ->get()
+                ->keyBy('idjobtitle');
+
+            $jobTitlesByName = \App\Models\JobTitle::withTrashed()
+                ->whereNotNull('name')
+                ->get()
+                ->keyBy(fn ($jt) => strtolower(trim($jt->name)));
+
+            $jobLevelsById = \App\Models\JobLevel::withTrashed()
+                ->whereNotNull('idjoblevel')
+                ->get()
+                ->keyBy('idjoblevel');
+
+            $jobLevelsByName = \App\Models\JobLevel::withTrashed()
+                ->whereNotNull('name')
+                ->get()
+                ->keyBy(fn ($jl) => strtolower(trim($jl->name)));
+
             $defaultPasswordHash = \Illuminate\Support\Facades\Hash::make('Password@123');
             $now = now();
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, $staffRoleId, $defaultFilterTemplateId, $defaultPasswordHash, $now, &$syncedCount, $existingByIdEmployee, $existingByEmail, $existingByNik, $existingByUsername, $existingByCode, $companiesById, $locationsById) {
+            \Illuminate\Support\Facades\DB::transaction(function () use (
+                $data,
+                $userId,
+                $staffRoleId,
+                $defaultFilterTemplateId,
+                $defaultPasswordHash,
+                $now,
+                &$syncedCount,
+                $existingByIdEmployee,
+                $existingByEmail,
+                $existingByNik,
+                $existingByUsername,
+                $existingByCode,
+                $companiesById,
+                $locationsById,
+                $locationsByName,
+                $departmentsByIdOrg,
+                $departmentsByName,
+                $jobTitlesById,
+                $jobTitlesByName,
+                $jobLevelsById,
+                $jobLevelsByName
+            ) {
                 foreach ($data as $item) {
                     $idEmployee = $item['idemployee'] ?? null;
                     $nik = isset($item['nik']) ? trim((string) $item['nik']) : '';
@@ -862,10 +919,46 @@ class PortalSyncService
                     }
 
                     $idCompany = $item['idcompany'] ?? null;
-                    $companyId = ! empty($idCompany) && isset($companiesById[$idCompany]) ? $companiesById[$idCompany]->id : null;
+                    $company = ! empty($idCompany) && isset($companiesById[$idCompany]) ? $companiesById[$idCompany] : null;
+                    $companyId = $company?->id;
+                    $companyGroupId = $company?->company_group_id;
+                    $regionId = $company?->region_id;
 
                     $idLocation = $item['idlocation'] ?? null;
-                    $locationId = ! empty($idLocation) && isset($locationsById[$idLocation]) ? $locationsById[$idLocation]->id : null;
+                    $locationName = isset($item['locationName']) ? trim((string) $item['locationName']) : null;
+                    $locationId = null;
+                    if (! empty($idLocation) && isset($locationsById[$idLocation])) {
+                        $locationId = $locationsById[$idLocation]->id;
+                    } elseif (! empty($locationName) && isset($locationsByName[strtolower($locationName)])) {
+                        $locationId = $locationsByName[strtolower($locationName)]->id;
+                    }
+
+                    $idOrg = $item['idorganization'] ?? null;
+                    $orgName = isset($item['orgName']) ? trim((string) $item['orgName']) : null;
+                    $departmentId = null;
+                    if (! empty($idOrg) && isset($departmentsByIdOrg[$idOrg])) {
+                        $departmentId = $departmentsByIdOrg[$idOrg]->id;
+                    } elseif (! empty($orgName) && isset($departmentsByName[strtolower($orgName)])) {
+                        $departmentId = $departmentsByName[strtolower($orgName)]->id;
+                    }
+
+                    $idJobTitle = $item['idjobtitle'] ?? null;
+                    $jobTitleName = isset($item['jobtitleName']) ? trim((string) $item['jobtitleName']) : null;
+                    $jobPositionId = null;
+                    if (! empty($idJobTitle) && isset($jobTitlesById[$idJobTitle])) {
+                        $jobPositionId = $jobTitlesById[$idJobTitle]->id;
+                    } elseif (! empty($jobTitleName) && isset($jobTitlesByName[strtolower($jobTitleName)])) {
+                        $jobPositionId = $jobTitlesByName[strtolower($jobTitleName)]->id;
+                    }
+
+                    $idJobLevel = $item['idjoblevel'] ?? null;
+                    $jobLevelName = isset($item['joblevelName']) ? trim((string) $item['joblevelName']) : null;
+                    $jobLevelId = null;
+                    if (! empty($idJobLevel) && isset($jobLevelsById[$idJobLevel])) {
+                        $jobLevelId = $jobLevelsById[$idJobLevel]->id;
+                    } elseif (! empty($jobLevelName) && isset($jobLevelsByName[strtolower($jobLevelName)])) {
+                        $jobLevelId = $jobLevelsByName[strtolower($jobLevelName)]->id;
+                    }
 
                     $username = $nik ?: (! empty($officeMail) ? explode('@', $officeMail)[0] : "user_{$idEmployee}");
 
@@ -877,18 +970,23 @@ class PortalSyncService
                         'email'                => $officeMail ?: ($nik ? "{$nik}@local.sys" : "user_{$idEmployee}@local.sys"),
                         'gender'               => $item['gender'] ?? null,
                         'mobile_no'            => $item['mobileNo'] ?? null,
-                        'idorganization'       => $item['idorganization'] ?? null,
-                        'org_name'             => $item['orgName'] ?? null,
+                        'department_id'        => $departmentId,
+                        'idorganization'       => $idOrg,
+                        'org_name'             => $orgName,
+                        'company_id'           => $companyId,
+                        'company_group_id'     => $companyGroupId,
+                        'region_id'            => $regionId,
                         'idcompany'            => $idCompany,
                         'company_name'         => $item['companyName'] ?? null,
-                        'company_id'           => $companyId,
+                        'location_id'          => $locationId,
                         'idlocation'           => $idLocation,
                         'location_name'        => $item['locationName'] ?? null,
-                        'location_id'          => $locationId,
-                        'idjobtitle'           => $item['idjobtitle'] ?? null,
-                        'jobtitle_name'        => $item['jobtitleName'] ?? null,
-                        'idjoblevel'           => $item['idjoblevel'] ?? null,
-                        'joblevel_name'        => $item['joblevelName'] ?? null,
+                        'job_position_id'      => $jobPositionId,
+                        'idjobtitle'           => $idJobTitle,
+                        'jobtitle_name'        => $jobTitleName,
+                        'job_level_id'         => $jobLevelId,
+                        'idjoblevel'           => $idJobLevel,
+                        'joblevel_name'        => $jobLevelName,
                         'idemployment_type'    => $item['idemploymentType'] ?? null,
                         'idreporting_to'       => $item['idreportingTo'] ?? null,
                         'reporting_to'         => $item['reportingTo'] ?? null,
@@ -1064,6 +1162,273 @@ class PortalSyncService
             ];
         } catch (\Throwable $e) {
             Log::error('Portal department sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return [
+                'success' => false,
+                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
+                'synced'  => 0,
+                'total'   => 0,
+            ];
+        }
+    }
+
+    /**
+     * Synchronize Job Levels from Portal API.
+     *
+     * @return array{success: bool, message: string, synced: int, total: int}
+     */
+    public function syncJobLevels(): array
+    {
+        $baseUrl = $this->getBaseUrl();
+        $endpoint = $this->getEndpoint('job_levels');
+        $fullUrl = "{$baseUrl}/{$endpoint}";
+
+        try {
+            $response = Http::timeout(30)->get($fullUrl);
+
+            if (! $response->successful()) {
+                Log::warning('Portal job level sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                return [
+                    'success' => false,
+                    'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $json = $response->json();
+            $data = $json['data'] ?? [];
+
+            if (! is_array($data)) {
+                return [
+                    'success' => false,
+                    'message' => 'Format respon API Portal tidak valid (data bukan array).',
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $syncedCount = 0;
+            $userId = Auth::id();
+
+            // Preload existing job levels in 1 query
+            $existingByIdJobLevel = \App\Models\JobLevel::withTrashed()
+                ->whereNotNull('idjoblevel')
+                ->get()
+                ->keyBy('idjoblevel');
+
+            $existingByCode = \App\Models\JobLevel::withTrashed()
+                ->whereNotNull('code')
+                ->get()
+                ->keyBy('code');
+
+            \Illuminate\Support\Facades\DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdJobLevel, $existingByCode) {
+                foreach ($data as $item) {
+                    $idJobLevel = $item['idjoblevel'] ?? null;
+                    $code = isset($item['joblevelCode']) ? trim((string) $item['joblevelCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
+                    $name = isset($item['joblevelName']) ? trim((string) $item['joblevelName']) : (isset($item['name']) ? trim((string) $item['name']) : '');
+
+                    if (empty($code) && empty($name)) {
+                        continue;
+                    }
+
+                    $isActive = isset($item['isActive']) ? (bool) $item['isActive'] : true;
+                    $createdDate = ! empty($item['createdDate']) ? Carbon::parse($item['createdDate']) : null;
+                    $modifiedDate = ! empty($item['modifiedDate']) ? Carbon::parse($item['modifiedDate']) : null;
+
+                    // Match in-memory: 1) idjoblevel, 2) code
+                    $jobLevel = null;
+                    if (! empty($idJobLevel) && isset($existingByIdJobLevel[$idJobLevel])) {
+                        $jobLevel = $existingByIdJobLevel[$idJobLevel];
+                    } elseif (! empty($code) && isset($existingByCode[$code])) {
+                        $jobLevel = $existingByCode[$code];
+                    }
+
+                    $attributes = [
+                        'idjoblevel'           => $idJobLevel,
+                        'code'                 => $code,
+                        'name'                 => $name,
+                        'id_job_level_group'   => $item['idjobLevelGroup'] ?? null,
+                        'group_name'           => $item['groupName'] ?? null,
+                        'created_by_name'      => $item['createdBy'] ?? null,
+                        'modified_by_name'     => $item['modifiedBy'] ?? null,
+                        'portal_created_date'  => $createdDate,
+                        'portal_modified_date' => $modifiedDate,
+                        'is_active'            => $isActive,
+                    ];
+
+                    if ($jobLevel) {
+                        if ($jobLevel->trashed()) {
+                            $jobLevel->restore();
+                        }
+                        $attributes['updated_by'] = $userId;
+                        $jobLevel->update($attributes);
+                    } else {
+                        $attributes['is_used'] = $isActive;
+                        $attributes['created_by'] = $userId;
+                        $attributes['updated_by'] = $userId;
+                        $newJobLevel = \App\Models\JobLevel::create($attributes);
+
+                        if (! empty($idJobLevel)) $existingByIdJobLevel[$idJobLevel] = $newJobLevel;
+                        if (! empty($code)) $existingByCode[$code] = $newJobLevel;
+                    }
+
+                    $syncedCount++;
+                }
+            });
+
+            return [
+                'success' => true,
+                'message' => "Berhasil sinkronisasi {$syncedCount} data Job Level dari Portal.",
+                'synced'  => $syncedCount,
+                'total'   => count($data),
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Portal job level sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return [
+                'success' => false,
+                'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),
+                'synced'  => 0,
+                'total'   => 0,
+            ];
+        }
+    }
+
+    /**
+     * Synchronize Job Titles from Portal API.
+     *
+     * @return array{success: bool, message: string, synced: int, total: int}
+     */
+    public function syncJobTitles(): array
+    {
+        $baseUrl = $this->getBaseUrl();
+        $endpoint = $this->getEndpoint('job_titles');
+        $fullUrl = "{$baseUrl}/{$endpoint}";
+
+        try {
+            $response = Http::timeout(30)->get($fullUrl);
+
+            if (! $response->successful()) {
+                Log::warning('Portal job title sync failed with HTTP status: ' . $response->status(), ['url' => $fullUrl]);
+                return [
+                    'success' => false,
+                    'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $json = $response->json();
+            $data = $json['data'] ?? [];
+
+            if (! is_array($data)) {
+                return [
+                    'success' => false,
+                    'message' => 'Format respon API Portal tidak valid (data bukan array).',
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $syncedCount = 0;
+            $userId = Auth::id();
+
+            // Preload job levels to resolve foreign key relation
+            $jobLevelsById = \App\Models\JobLevel::whereNotNull('idjoblevel')->get()->keyBy('idjoblevel');
+            $jobLevelsByName = \App\Models\JobLevel::all()->keyBy(fn ($jl) => strtolower(trim($jl->name)));
+
+            // Preload existing job titles in 1 query
+            $existingByIdJobTitle = \App\Models\JobTitle::withTrashed()
+                ->whereNotNull('idjobtitle')
+                ->get()
+                ->keyBy('idjobtitle');
+
+            $existingByCode = \App\Models\JobTitle::withTrashed()
+                ->whereNotNull('code')
+                ->get()
+                ->keyBy('code');
+
+            \Illuminate\Support\Facades\DB::transaction(function () use (
+                $data,
+                $userId,
+                &$syncedCount,
+                $jobLevelsById,
+                $jobLevelsByName,
+                $existingByIdJobTitle,
+                $existingByCode
+            ) {
+                foreach ($data as $item) {
+                    $idJobTitle = $item['idjobtitle'] ?? null;
+                    $code = isset($item['jobtitleCode']) ? trim((string) $item['jobtitleCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
+                    $name = isset($item['jobtitleName']) ? trim((string) $item['jobtitleName']) : (isset($item['name']) ? trim((string) $item['name']) : '');
+
+                    if (empty($code) && empty($name)) {
+                        continue;
+                    }
+
+                    $idJobLevel = $item['idjoblevel'] ?? null;
+                    $jobLevelName = isset($item['joblevelName']) ? trim((string) $item['joblevelName']) : null;
+
+                    $jobLevelId = null;
+                    if (! empty($idJobLevel) && isset($jobLevelsById[$idJobLevel])) {
+                        $jobLevelId = $jobLevelsById[$idJobLevel]->id;
+                    } elseif (! empty($jobLevelName) && isset($jobLevelsByName[strtolower($jobLevelName)])) {
+                        $jobLevelId = $jobLevelsByName[strtolower($jobLevelName)]->id;
+                    }
+
+                    $isActive = isset($item['isActive']) ? (bool) $item['isActive'] : true;
+                    $createdDate = ! empty($item['createdDate']) ? Carbon::parse($item['createdDate']) : null;
+                    $modifiedDate = ! empty($item['modifiedDate']) ? Carbon::parse($item['modifiedDate']) : null;
+
+                    // Match in-memory: 1) idjobtitle, 2) code
+                    $jobTitle = null;
+                    if (! empty($idJobTitle) && isset($existingByIdJobTitle[$idJobTitle])) {
+                        $jobTitle = $existingByIdJobTitle[$idJobTitle];
+                    } elseif (! empty($code) && isset($existingByCode[$code])) {
+                        $jobTitle = $existingByCode[$code];
+                    }
+
+                    $attributes = [
+                        'idjobtitle'           => $idJobTitle,
+                        'code'                 => $code,
+                        'name'                 => $name,
+                        'job_level_id'         => $jobLevelId,
+                        'idjoblevel'           => $idJobLevel,
+                        'job_level_name'       => $jobLevelName,
+                        'created_by_name'      => $item['createdBy'] ?? null,
+                        'modified_by_name'     => $item['modifiedBy'] ?? null,
+                        'portal_created_date'  => $createdDate,
+                        'portal_modified_date' => $modifiedDate,
+                        'is_active'            => $isActive,
+                    ];
+
+                    if ($jobTitle) {
+                        if ($jobTitle->trashed()) {
+                            $jobTitle->restore();
+                        }
+                        $attributes['updated_by'] = $userId;
+                        $jobTitle->update($attributes);
+                    } else {
+                        $attributes['is_used'] = $isActive;
+                        $attributes['created_by'] = $userId;
+                        $attributes['updated_by'] = $userId;
+                        $newJobTitle = \App\Models\JobTitle::create($attributes);
+
+                        if (! empty($idJobTitle)) $existingByIdJobTitle[$idJobTitle] = $newJobTitle;
+                        if (! empty($code)) $existingByCode[$code] = $newJobTitle;
+                    }
+
+                    $syncedCount++;
+                }
+            });
+
+            return [
+                'success' => true,
+                'message' => "Berhasil sinkronisasi {$syncedCount} data Job Title dari Portal.",
+                'synced'  => $syncedCount,
+                'total'   => count($data),
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Portal job title sync exception: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return [
                 'success' => false,
                 'message' => 'Gagal melakukan sinkronisasi: ' . $e->getMessage(),

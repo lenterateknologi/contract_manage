@@ -48,7 +48,7 @@ class ContractOptionsQuery
             // ── Organisasi ──────────────────────────────────────────────────
 
             'companyGroups' => function () use ($allowedGroups) {
-                $q = CompanyGroup::query();
+                $q = CompanyGroup::query()->where('is_used', true);
                 if ($allowedGroups !== null) {
                     $q->whereIn('id', $allowedGroups);
                 }
@@ -57,7 +57,7 @@ class ContractOptionsQuery
             },
 
             'regions' => function () use ($allowedRegions) {
-                $q = Region::query();
+                $q = Region::query()->where('is_used', true);
                 if ($allowedRegions !== null) {
                     $q->whereIn('id', $allowedRegions);
                 }
@@ -66,7 +66,7 @@ class ContractOptionsQuery
             },
 
             'companies' => function () use ($allowedCompanies, $isManager, $userCompany) {
-                $q = Company::query();
+                $q = Company::query()->where('is_used', true);
                 if ($allowedCompanies !== null) {
                     $q->whereIn('id', $allowedCompanies);
                 } elseif ($isManager && $userCompany) {
@@ -86,7 +86,7 @@ class ContractOptionsQuery
             },
 
             'departments' => function () use ($allowedDepts, $isManager, $user) {
-                $q = Department::query();
+                $q = Department::query()->where('is_used', true);
                 if ($allowedDepts !== null) {
                     $q->whereIn('id', $allowedDepts);
                 } elseif ($isManager) {

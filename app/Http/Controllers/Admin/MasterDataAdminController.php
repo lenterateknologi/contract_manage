@@ -60,6 +60,8 @@ class MasterDataAdminController extends Controller
                 'companies' => Company::count(),
                 'departments' => Department::count(),
                 'divisions' => Division::count(),
+                'job_levels' => \App\Models\JobLevel::count(),
+                'job_titles' => \App\Models\JobTitle::count(),
                 'contract_statuses' => ContractStatus::count(),
                 'contract_types' => ContractType::count(),
                 'workflows' => Workflow::count(),

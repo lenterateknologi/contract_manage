@@ -327,8 +327,8 @@ export default function WorkflowEditor({
         <>
             <Head title={workflow ? 'Edit Workflow' : 'Registrasi Workflow Baru'} />
 
-            <div className="flex flex-col h-[calc(100svh-76px)] overflow-hidden bg-slate-100/60 dark:bg-zinc-950 w-full p-4">
-                <div className="flex flex-col flex-1 min-h-0 w-full rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
+            <div className="flex flex-col h-svh max-h-svh overflow-hidden bg-background w-full p-0 m-0">
+                <div className="flex flex-col flex-1 min-h-0 w-full rounded-none border-0 bg-background shadow-none overflow-hidden">
                     <ManagementForm
                         title={workflow ? `Konfigurasi tahapan untuk ${form.data.name}` : 'Konfigurasi Tahapan Workflow Baru'}
                         onClose={() => router.visit(route('admin.workflows'))}

@@ -83,9 +83,9 @@ function flattenTreeFromParents(parents: any[], depth = 0): any[] {
     return result;
 }
 
-const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'dashboard-types', 'locations', 'business-units'];
+const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'dashboard-types', 'locations', 'business-units', 'job-levels', 'job-titles'];
 
-export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false }: Props) {
+export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false, hasPortalSync = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [selectedRows, setSelectedRows] = useState<any[]>([]);
@@ -102,6 +102,21 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
     const [isSyncing, setIsSyncing] = useState(false);
     const [showSyncConfirm, setShowSyncConfirm] = useState(false);
+    const [updatingRowId, setUpdatingRowId] = useState<string | null>(null);
+
+    const handleSingleToggle = (rowId: string, colName: string, currentVal: boolean) => {
+        setUpdatingRowId(rowId);
+        router.post(`/admin/core/${resourceSlug}/bulk-update`, {
+            ids: [rowId],
+            values: { [colName]: !currentVal }
+        }, {
+            preserveScroll: true,
+            preserveState: true,
+            onFinish: () => {
+                setUpdatingRowId(null);
+            }
+        });
+    };
 
     // Dynamic initial form fields from formSchema
     const initialFormData = React.useMemo(() => {
@@ -123,8 +138,11 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     const deptForm = useForm(initialFormData);
 
     const handleOpenEdit = (row: any) => {
+        const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
+        const returnParam = currentUrl ? `?return_url=${encodeURIComponent(currentUrl)}` : '';
+
         if (resourceSlug === 'vendors') {
-            router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
+            router.visit(`/admin/core/${resourceSlug}/${row.id}/edit${returnParam}`);
         } else if (DIALOG_RESOURCES.includes(resourceSlug)) {
             const editValues: Record<string, any> = {};
             formSchema.forEach((field) => {
@@ -158,7 +176,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             setEditDataId(row.id);
             setIsDeptDialogOpen(true);
         } else {
-            router.visit(`/admin/core/${resourceSlug}/${row.id}/edit`);
+            router.visit(`/admin/core/${resourceSlug}/${row.id}/edit${returnParam}`);
         }
     };
 
@@ -166,6 +184,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         e.preventDefault();
         if (editDataId) {
             deptForm.put(`/admin/core/${resourceSlug}/${editDataId}`, {
+                preserveScroll: true,
+                preserveState: true,
                 onSuccess: () => {
                     setIsDeptDialogOpen(false);
                     deptForm.reset();
@@ -173,6 +193,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             });
         } else {
             deptForm.post(`/admin/core/${resourceSlug}`, {
+                preserveScroll: true,
+                preserveState: true,
                 onSuccess: () => {
                     setIsDeptDialogOpen(false);
                     deptForm.reset();
@@ -413,9 +435,16 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     );
                 }
                 if (col.name === 'company_name') {
+                    const groupCode = row.company_group_code || row.company_group?.code || row.companyGroup?.code || row.company?.company_group?.code || row.company?.company_group_code;
+
                     return (
                         <div className="flex flex-col gap-0.5 text-left py-0.5">
                             <div className="flex items-center gap-1.5 flex-wrap">
+                                {groupCode && (
+                                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded border border-primary/20 font-mono">
+                                        {groupCode}
+                                    </span>
+                                )}
                                 <span className="font-semibold text-xs text-text-main">
                                     {row.company_name || row.company?.name || '—'}
                                 </span>
@@ -721,11 +750,25 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             }
 
             if (col.type === 'boolean') {
+                const isToggling = updatingRowId === row.id;
                 if (col.name === 'is_used') {
                     return (
-                        <span className={`inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider ${val ? 'bg-primary/10 text-primary border-primary/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'}`}>
-                            {val ? 'Ya' : 'Tidak'}
-                        </span>
+                        <button
+                            type="button"
+                            disabled={isToggling}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleSingleToggle(row.id, 'is_used', Boolean(val));
+                            }}
+                            title={`Klik untuk mengubah status sistem (${val ? 'Ya -> Tidak' : 'Tidak -> Ya'})`}
+                            className={`inline-flex items-center justify-center px-2 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider transition-all cursor-pointer hover:scale-105 active:scale-95 ${val ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'} ${isToggling ? 'opacity-50 pointer-events-none' : ''}`}
+                        >
+                            {isToggling ? (
+                                <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+                            ) : (
+                                val ? 'Ya' : 'Tidak'
+                            )}
+                        </button>
                     );
                 }
                 return (
@@ -783,24 +826,12 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                         totalResults={data.total}
                         actions={
                             <div className="flex items-center gap-2">
-                                {['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users'].includes(resourceSlug) && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        disabled={isSyncing}
-                                        onClick={() => setShowSyncConfirm(true)}
-                                        className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer disabled:opacity-50"
-                                    >
-                                        <RefreshCw size={14} className={isSyncing ? 'animate-spin text-primary shrink-0' : 'text-primary shrink-0'} />
-                                        <span>{isSyncing ? 'Menyinkronkan...' : 'Sinkron Portal'}</span>
-                                    </Button>
-                                )}
-
-                                {(hasExport || hasImport) && (
+                                {(hasExport || hasImport || hasPortalSync || ['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users', 'job-levels', 'job-titles'].includes(resourceSlug)) && (
                                     <ExcelActions
-                                        exportRoute={`/admin/core/${resourceSlug}/export`}
+                                        exportRoute={hasExport ? `/admin/core/${resourceSlug}/export` : undefined}
                                         importRoute={hasImport ? `/admin/core/${resourceSlug}/import` : undefined}
+                                        onSyncPortal={(hasPortalSync || ['regions', 'companies', 'departments', 'company-groups', 'company_groups', 'locations', 'business-units', 'users', 'job-levels', 'job-titles'].includes(resourceSlug)) ? () => setShowSyncConfirm(true) : undefined}
+                                        isSyncingPortal={isSyncing}
                                         label={title}
                                     />
                                 )}
@@ -819,7 +850,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                         <Plus size={16} /> Tambah Baru
                                     </Button>
                                 ) : resourceSlug !== 'vendors' ? (
-                                    <Link href={`/admin/core/${resourceSlug}/create`}>
+                                    <Link href={`/admin/core/${resourceSlug}/create${typeof window !== 'undefined' && window.location.search ? `?return_url=${encodeURIComponent(window.location.pathname + window.location.search)}` : ''}`}>
                                         <Button variant="primary" className="h-9 gap-2 text-xs font-semibold">
                                             <Plus size={16} /> Tambah Baru
                                         </Button>

@@ -92,8 +92,8 @@ export function SearchableSelect({
                         </div>
                     )}
 
-                    {/* Items */}
-                    <div className="max-h-52 overflow-y-auto p-1">
+                    {/* Items (Max ~3 items visible, rest scrollable) */}
+                    <div className="max-h-[115px] overflow-y-auto p-1 custom-scrollbar">
                         {filtered.length === 0 ? (
                             <div className="py-6 text-center text-sm text-muted-foreground">{emptyText}</div>
                         ) : (

@@ -72,18 +72,47 @@ function SearchableCategoryOptions({
         return filteredOptions.slice(0, pageSize);
     }, [filteredOptions, pageSize]);
 
+    const allFilteredSelected = filteredOptions.length > 0 && filteredOptions.every(opt => activeValues.includes(String(opt.value)));
+
+    const handleToggleAllFiltered = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (allFilteredSelected) {
+            const filteredVals = new Set(filteredOptions.map(o => String(o.value)));
+            onToggle(activeValues.filter(v => !filteredVals.has(v)));
+        } else {
+            const newVals = Array.from(new Set([...activeValues, ...filteredOptions.map(o => String(o.value))]));
+            onToggle(newVals);
+        }
+    };
+
     return (
         <div className="space-y-2">
-            {/* Label + count */}
+            {/* Label + count + select all */}
             <div className="flex items-center justify-between">
                 <Label className="text-[10px] font-bold text-text-desc uppercase ">
                     {category.label}
                 </Label>
-                {activeValues.length > 0 && (
-                    <span className="text-[9px] font-bold text-primary bg-primary-muted px-1.5 py-0.5 rounded-md">
-                        {activeValues.length} Terpilih
-                    </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                    {filteredOptions.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={handleToggleAllFiltered}
+                            className="text-[9px] font-bold text-primary hover:underline cursor-pointer"
+                        >
+                            {allFilteredSelected
+                                ? 'Batal Semua'
+                                : query
+                                ? `Pilih Semua (${filteredOptions.length})`
+                                : 'Pilih Semua'}
+                        </button>
+                    )}
+                    {activeValues.length > 0 && (
+                        <span className="text-[9px] font-bold text-primary bg-primary-muted px-1.5 py-0.5 rounded-md">
+                            {activeValues.length} Terpilih
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* Selected chips — always visible */}
@@ -125,8 +154,8 @@ function SearchableCategoryOptions({
                 />
             </div>
 
-            {/* Options List - Rendered Inline (Always Visible) */}
-            <div className="border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5 max-h-36 overflow-y-auto space-y-0.5 custom-scrollbar flex flex-col">
+            {/* Options List - Rendered Inline (Max 3 visible items, rest scrollable) */}
+            <div className="border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5 max-h-[105px] overflow-y-auto space-y-0.5 custom-scrollbar flex flex-col">
                 {filteredOptions.length === 0 && (
                     <div className="py-4 text-center">
                         <p className="text-[10px] text-text-soft font-bold uppercase">
@@ -134,7 +163,7 @@ function SearchableCategoryOptions({
                         </p>
                     </div>
                 )}
-                {paginatedOptions.map((opt) => {
+                {filteredOptions.map((opt) => {
                     const isSelected = activeValues.includes(String(opt.value));
                     return (
                         <button
@@ -166,18 +195,6 @@ function SearchableCategoryOptions({
                         </button>
                     );
                 })}
-                {filteredOptions.length > pageSize && (
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setPageSize(prev => prev + 10);
-                        }}
-                        className="text-[9px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-1 mt-1 cursor-pointer bg-slate-50 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 rounded-md shrink-0"
-                    >
-                        Tampilkan Lebih Banyak... (+{filteredOptions.length - pageSize} Data)
-                    </button>
-                )}
             </div>
         </div>
     );
@@ -400,7 +417,7 @@ export function FilterPopover({
                                                         onFilterChange={onFilterChange}
                                                     />
                                                 ) : (
-                                                    <div className="grid grid-cols-1 gap-1 border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5">
+                                                    <div className="grid grid-cols-1 gap-1 border border-surface-border/40 rounded-lg p-1 bg-surface-muted/5 max-h-[105px] overflow-y-auto custom-scrollbar">
                                                         {category.options?.map((opt) => {
                                                             const isSelected = currentVals.map(String).includes(String(opt.value));
                                                             return (

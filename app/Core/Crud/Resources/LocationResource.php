@@ -84,7 +84,7 @@ class LocationResource extends Resource
         return [
             Filter::make('company_group_id', 'Group Perusahaan')
                 ->type('searchable')
-                ->options(fn () => CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('idlocation_group', 'Group Lokasi')
                 ->type('searchable')
                 ->options(fn () => \App\Models\Location::whereNotNull('idlocation_group')->whereNotNull('location_group_name')->orderBy('location_group_name')->pluck('location_group_name', 'idlocation_group')->unique()->toArray()),

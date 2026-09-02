@@ -16,6 +16,9 @@ use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\Department;
 use App\Models\Division;
+use App\Models\JobLevel;
+use App\Models\JobTitle;
+use App\Models\Location;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
@@ -28,11 +31,11 @@ class UserResource extends Resource
 
     public static ?string $importClass = UsersImport::class;
 
-    public static array $with = ['roleRelation', 'department', 'division', 'company', 'companyGroup', 'region'];
+    public static array $with = ['roleRelation', 'department', 'division', 'company', 'companyGroup', 'region', 'jobTitle', 'jobLevel', 'location'];
 
     public static ?string $title = 'Registri Otoritas Pengguna';
 
-    public static int $formColumns = 2;
+    public static int $formColumns = 3;
 
     public static ?string $slug = 'users';
 
@@ -65,12 +68,23 @@ class UserResource extends Resource
                 TextInput::make('mobile_no', 'No. Handphone')
                     ->rules(['nullable', 'string', 'max:50'])
                     ->helperText('Nomor ponsel / mobile.'),
-                TextInput::make('gender', 'Jenis Kelamin (L/P)')
+                SelectInput::make('gender', 'Jenis Kelamin')
+                    ->options([
+                        'M' => 'M - Laki-Laki (Male)',
+                        'F' => 'F - Perempuan (Female)',
+                    ])
+                    ->placeholder('Pilih Jenis Kelamin (M / F)...')
                     ->rules(['nullable', 'string', 'max:10']),
-                TextInput::make('jobtitle_name', 'Jabatan (Job Title)')
-                    ->rules(['nullable', 'string', 'max:255']),
-                TextInput::make('joblevel_name', 'Level Jabatan (Job Level)')
-                    ->rules(['nullable', 'string', 'max:255']),
+                SelectInput::make('job_position_id', 'Jabatan (Job Title)')
+                    ->options(fn () => JobTitle::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Jabatan...')
+                    ->helperText('Posisi jabatan terhubung ke Master Job Title.'),
+                SelectInput::make('job_level_id', 'Level Jabatan (Job Level)')
+                    ->options(fn () => JobLevel::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Level Jabatan...')
+                    ->helperText('Tingkat jabatan terhubung ke Master Job Level.'),
                 TextInput::make('reporting_to', 'Atasan Langsung (Reporting To)')
                     ->rules(['nullable', 'string', 'max:255']),
             ])->icon('User'),
@@ -96,10 +110,16 @@ class UserResource extends Resource
                     ->type('readonly')
                     ->helperText('Otomatis terisi dari master bisnis unit/perusahaan.')
                     ->columnSpan(1),
-                TextInput::make('location_name', 'Lokasi Kerja')
-                    ->rules(['nullable', 'string', 'max:255']),
-                TextInput::make('org_name', 'Unit Organisasi')
-                    ->rules(['nullable', 'string', 'max:255']),
+                SelectInput::make('location_id', 'Lokasi Kerja')
+                    ->options(fn () => Location::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Lokasi Kerja...')
+                    ->helperText('Lokasi penempatan kerja terhubung ke Master Lokasi.'),
+                SelectInput::make('department_id', 'Departemen / Unit Organisasi')
+                    ->options(fn () => Department::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Departemen...')
+                    ->helperText('Unit organisasi terhubung ke Master Departemen.'),
                 SelectInput::make('role_id', 'Role Akses Sistem')
                     ->required()
                     ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
@@ -132,18 +152,35 @@ class UserResource extends Resource
     public static function filters(): array
     {
         return [
+            Filter::make('department_id', 'Departemen')
+                ->type('searchable')
+                ->options(fn () => Department::where('is_used', true)->orderBy('name')->whereNotNull('name')->pluck('name', 'id')->toArray()),
+            Filter::make('job_position_id', 'Jabatan (Job Title)')
+                ->type('searchable')
+                ->options(fn () => JobTitle::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('job_level_id', 'Level Jabatan (Job Level)')
+                ->type('searchable')
+                ->options(fn () => JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('location_id', 'Lokasi Kerja')
+                ->type('searchable')
+                ->options(fn () => Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('company_group_id', 'Grup Perusahaan')
                 ->type('searchable')
-                ->options(fn () => \App\Models\CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => \App\Models\CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Wilayah (Region)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Region::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => \App\Models\Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('company_id', 'Perusahaan (Company)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Company::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => \App\Models\Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('role_id', 'Role Akses')
                 ->type('searchable')
                 ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray()),
+            Filter::make('gender', 'Jenis Kelamin')
+                ->options([
+                    'M' => 'M - Laki-Laki (Male)',
+                    'F' => 'F - Perempuan (Female)',
+                ]),
             Filter::make('is_used', 'Status Sistem')
                 ->options([
                     '1' => 'Digunakan (Ya)',

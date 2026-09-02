@@ -20,7 +20,7 @@ class BusinessUnitResource extends Resource
 
     public static ?string $slug = 'business-units';
 
-    public static int $formColumns = 2;
+    public static int $formColumns = 3;
 
     public static ?string $exportClass = BusinessUnitsExport::class;
 
@@ -86,13 +86,13 @@ class BusinessUnitResource extends Resource
         return [
             Filter::make('company_group_id', 'Group Perusahaan')
                 ->type('searchable')
-                ->options(fn () => \App\Models\CompanyGroup::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => \App\Models\CompanyGroup::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('region_id', 'Wilayah (Region)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Region::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => \App\Models\Region::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('company_id', 'Perusahaan (Company)')
                 ->type('searchable')
-                ->options(fn () => \App\Models\Company::orderBy('name')->pluck('name', 'id')->toArray()),
+                ->options(fn () => \App\Models\Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray()),
             Filter::make('is_used', 'Status Sistem')
                 ->options([
                     '1' => 'Digunakan (Ya)',

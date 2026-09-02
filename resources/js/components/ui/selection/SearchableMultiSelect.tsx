@@ -56,6 +56,20 @@ export function SearchableMultiSelect({
         return mergedOptions.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
     }, [mergedOptions, search]);
 
+    const allFilteredSelected = filtered.length > 0 && filtered.every(opt => values.includes(opt.value));
+
+    const handleSelectAllFiltered = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (allFilteredSelected) {
+            const filteredSet = new Set(filtered.map(o => o.value));
+            onValuesChange(values.filter(v => !filteredSet.has(v)));
+        } else {
+            const newValues = Array.from(new Set([...values, ...filtered.map(o => o.value)]));
+            onValuesChange(newValues);
+        }
+    };
+
     const toggleOption = (val: string) => {
         if (values.includes(val)) {
             onValuesChange(values.filter(v => v !== val));
@@ -133,8 +147,28 @@ export function SearchableMultiSelect({
                                 </div>
                             )}
 
-                            {/* Option list */}
-                            <div className="max-h-52 overflow-y-auto bg-white dark:bg-slate-950 custom-scrollbar">
+                            {/* Select All Toolbar */}
+                            {filtered.length > 0 && (
+                                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-[10px] font-semibold">
+                                    <span className="text-slate-500 dark:text-slate-400">
+                                        {search ? `${filtered.length} hasil ditemukan` : `${options.length} opsi`}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleSelectAllFiltered}
+                                        className="text-primary hover:text-primary/80 font-bold transition-colors cursor-pointer"
+                                    >
+                                        {allFilteredSelected
+                                            ? 'Batal Pilih Semua'
+                                            : search
+                                            ? `Pilih Semua (${filtered.length})`
+                                            : 'Pilih Semua'}
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Option list (Max ~3 items visible, rest scrollable) */}
+                            <div className="max-h-[115px] overflow-y-auto bg-white dark:bg-slate-950 custom-scrollbar">
                                 {filtered.length === 0 && (
                                     <div className="py-6 text-center text-[9px] font-semibold uppercase text-slate-300 dark:text-slate-700 italic">{emptyText}</div>
                                 )}

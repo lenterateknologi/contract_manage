@@ -50,6 +50,8 @@ class ResourceController extends Controller
         'dashboard-types' => \App\Core\Crud\Resources\DashboardTypeResource::class,
         'locations' => \App\Core\Crud\Resources\LocationResource::class,
         'business-units' => \App\Core\Crud\Resources\BusinessUnitResource::class,
+        'job-levels' => \App\Core\Crud\Resources\JobLevelResource::class,
+        'job-titles' => \App\Core\Crud\Resources\JobTitleResource::class,
     ];
 
     /**
@@ -103,7 +105,7 @@ class ResourceController extends Controller
                             $lowerTerm = strtolower($term);
                             $q->orWhere(function ($subQ) use ($searchableColumns, $lowerTerm) {
                                 foreach ($searchableColumns as $column) {
-                                    $subQ->orWhere(DB::raw("LOWER({$column})"), 'like', "%{$lowerTerm}%");
+                                    $subQ->orWhere(DB::raw("LOWER(COALESCE(CAST({$column} AS text), ''))"), 'like', "%{$lowerTerm}%");
                                 }
                             });
                         }
@@ -151,7 +153,7 @@ class ResourceController extends Controller
                             $lowerTerm = strtolower($term);
                             $q->orWhere(function ($subQ) use ($searchColumns, $lowerTerm) {
                                 foreach ($searchColumns as $column) {
-                                    $subQ->orWhere(DB::raw("LOWER(COALESCE({$column}, ''))"), 'like', "%{$lowerTerm}%");
+                                    $subQ->orWhere(DB::raw("LOWER(COALESCE(CAST({$column} AS text), ''))"), 'like', "%{$lowerTerm}%");
                                 }
                             });
                         }
@@ -274,13 +276,14 @@ class ResourceController extends Controller
             'activeFilters' => $request->only(array_merge(['search', 'sort_by', 'sort_dir', 'per_page'], $filterKeys)),
             'hasExport' => ! empty($resourceClass::$exportClass),
             'hasImport' => ! empty($resourceClass::$importClass),
-            'hasPortalSync' => in_array($resourceSlug, ['regions', 'company-groups', 'locations', 'companies', 'business-units', 'departments', 'users']),
+            'hasPortalSync' => in_array($resourceSlug, ['regions', 'company-groups', 'locations', 'companies', 'business-units', 'departments', 'users', 'job-levels', 'job-titles']),
         ]);
     }
 
     public function create(Request $request, string $resourceSlug)
     {
         $resourceClass = $this->getResourceClass($resourceSlug);
+        $returnUrl = $request->query('return_url');
 
         return Inertia::render('Core/ResourceForm', [
             'resourceSlug' => $resourceSlug,
@@ -288,6 +291,7 @@ class ResourceController extends Controller
             'formSchema' => $resourceClass::form(),
             'formColumns' => $resourceClass::$formColumns ?? 1,
             'record' => null,
+            'returnUrl' => $returnUrl,
         ]);
     }
 
@@ -310,6 +314,11 @@ class ResourceController extends Controller
 
         $modelClass::create($validated);
 
+        $returnUrl = $request->input('return_url') ?: $request->query('return_url');
+        if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {
+            return redirect($returnUrl)->with('success', $resourceClass::getTitle().' created successfully.');
+        }
+
         return redirect()->route('core.index', $resourceSlug)->with('success', $resourceClass::getTitle().' created successfully.');
     }
 
@@ -319,6 +328,7 @@ class ResourceController extends Controller
         $modelClass = $resourceClass::$model;
         $withRelations = $resourceClass::$with ?? [];
         $record = ! empty($withRelations) ? $modelClass::with($withRelations)->findOrFail($id) : $modelClass::findOrFail($id);
+        $returnUrl = $request->query('return_url');
 
         return Inertia::render('Core/ResourceForm', [
             'resourceSlug' => $resourceSlug,
@@ -326,6 +336,7 @@ class ResourceController extends Controller
             'formSchema' => $resourceClass::form(),
             'formColumns' => $resourceClass::$formColumns ?? 1,
             'record' => $record,
+            'returnUrl' => $returnUrl,
         ]);
     }
 
@@ -359,6 +370,11 @@ class ResourceController extends Controller
         }
 
         $record->update($validated);
+
+        $returnUrl = $request->input('return_url') ?: $request->query('return_url');
+        if ($returnUrl && (str_starts_with($returnUrl, '/admin/core/') || str_starts_with($returnUrl, url('/admin/core/')))) {
+            return redirect($returnUrl)->with('success', $resourceClass::getTitle().' updated successfully.');
+        }
 
         return redirect()->route('core.index', $resourceSlug)->with('success', $resourceClass::getTitle().' updated successfully.');
     }
@@ -511,6 +527,26 @@ class ResourceController extends Controller
 
         if ($resourceSlug === 'users') {
             $result = $this->portalSyncService->syncEmployees();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'job-levels') {
+            $result = $this->portalSyncService->syncJobLevels();
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'job-titles') {
+            $result = $this->portalSyncService->syncJobTitles();
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);

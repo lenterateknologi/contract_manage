@@ -31,7 +31,7 @@ export function PageForm({
     cancelLabel = 'Batal',
 }: PageFormProps) {
     return (
-        <div className="flex flex-col h-[calc(100svh-88px)] overflow-hidden bg-background w-full animate-in fade-in duration-200">
+        <div className="flex flex-col h-svh max-h-svh overflow-hidden bg-background w-full animate-in fade-in duration-200">
             <PageHeader
                 title={title}
                 subtitle={subtitle}

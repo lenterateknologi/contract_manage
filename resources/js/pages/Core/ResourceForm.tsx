@@ -858,9 +858,10 @@ interface Props {
     formColumns?: number;
     record: any | null;
     organizationTree?: any[] | null;
+    returnUrl?: string | null;
 }
 
-export default function ResourceForm({ resourceSlug, title, formSchema, formColumns = 1, record, organizationTree }: Props) {
+export default function ResourceForm({ resourceSlug, title, formSchema, formColumns = 1, record, organizationTree, returnUrl }: Props) {
     const isEdit = !!record;
     const [activeTab, setActiveTab] = useState<'info' | 'detail'>('info');
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
@@ -972,29 +973,33 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        const endpoint = returnUrl
+            ? `/admin/core/${resourceSlug}${isEdit ? `/${record.id}` : ''}?return_url=${encodeURIComponent(returnUrl)}`
+            : `/admin/core/${resourceSlug}${isEdit ? `/${record.id}` : ''}`;
+
         if (isEdit) {
-            put(`/admin/core/${resourceSlug}/${record.id}`);
+            put(endpoint);
         } else {
-            post(`/admin/core/${resourceSlug}`);
+            post(endpoint);
         }
     };
 
     // Dynamic grid columns configuration
     const getGridClass = () => {
-        if (formColumns === 2) return 'grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 w-full';
-        if (formColumns === 3) return 'grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5 w-full';
-        if (formColumns >= 4) return 'grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-5 w-full';
-        return 'flex flex-col gap-5 w-full';
+        if (formColumns === 2) return 'grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 w-full';
+        if (formColumns === 3) return 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-4 w-full';
+        if (formColumns >= 4) return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-4 w-full';
+        return 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-x-6 gap-y-4 w-full';
     };
 
     const getSpanClass = (field: any) => {
-        if (formColumns <= 1) return 'w-full';
         if (['allowed_company_groups', 'allowed_regions', 'allowed_companies', 'allowed_divisions', 'allowed_departments'].includes(field.name)) {
             return 'col-span-full';
         }
-        if (!field.columnSpan || field.columnSpan === 1) return 'col-span-1';
-        if (field.columnSpan >= formColumns) return 'col-span-full';
-        return `md:col-span-${field.columnSpan}`;
+        if (field.columnSpan === 'full' || field.columnSpan >= formColumns) return 'col-span-full';
+        if (field.columnSpan === 2) return 'col-span-1 md:col-span-2';
+        if (field.columnSpan === 3) return 'col-span-1 md:col-span-2 xl:col-span-3';
+        return 'col-span-1';
     };
 
     const renderField = (field: any) => {
@@ -1215,23 +1220,23 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         <>
             <Head title={isEdit ? `Edit ${title}` : `Tambah ${title}`} />
 
-            <div className="flex flex-col h-[calc(100svh-76px)] overflow-hidden bg-slate-100/60 dark:bg-zinc-950 w-full p-4">
-                <div className="flex flex-col flex-1 min-h-0 w-full rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 shadow-sm backdrop-blur-md overflow-hidden">
+            <div className="flex flex-col h-svh max-h-svh overflow-hidden bg-background w-full p-0 m-0">
+                <div className="flex flex-col flex-1 min-h-0 w-full rounded-none border-0 bg-background shadow-none overflow-hidden">
                     {/* Sticky Header with Tabs */}
-                    <div className="flex flex-col border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 shrink-0">
-                        <div className="flex items-center justify-between px-6 py-4">
-                            <div className="flex items-center gap-4">
+                    <div className="flex flex-col border-b border-surface-border bg-background shrink-0">
+                        <div className="flex h-16 min-h-[64px] max-h-[64px] items-center justify-between px-6 box-border">
+                            <div className="flex items-center gap-3">
                                 <Link
-                                    href={`/admin/core/${resourceSlug}`}
-                                    className="p-2 border border-slate-200 dark:border-zinc-700 rounded-xl hover:bg-white dark:hover:bg-zinc-800 transition-all text-slate-700 dark:text-slate-200"
+                                    href={returnUrl || `/admin/core/${resourceSlug}`}
+                                    className="p-2 border border-surface-border rounded-xl hover:bg-surface-muted transition-all text-text-main"
                                 >
                                     <ArrowLeft size={16} />
                                 </Link>
-                                <div>
-                                    <h1 className="text-base font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                                <div className="flex flex-col justify-center">
+                                    <h1 className="text-[13.5px] font-bold text-text-main tracking-tight leading-tight">
                                          {isEdit ? `Edit ${title}` : `Tambah ${title}`}
                                     </h1>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    <p className="text-[10.5px] text-text-muted leading-tight mt-0.5">
                                         {isEdit ? 'Ubah informasi data yang sudah ada.' : 'Tambahkan data master baru ke sistem.'}
                                     </p>
                                 </div>
@@ -1240,7 +1245,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
                         {/* Navigation Tabs for Vendors */}
                         {resourceSlug === 'vendors' && isEdit && (
-                            <div className="flex items-center gap-2 px-6 border-t border-slate-200/60 dark:border-zinc-800/60 pt-2">
+                            <div className="flex items-center gap-2 px-6 border-t border-surface-border/60 pt-2">
                                 <button
                                     type="button"
                                     onClick={() => setActiveTab('info')}
@@ -1272,7 +1277,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                     {activeTab === 'info' && (
                         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden animate-in fade-in duration-200">
                             {/* Scrollable Form Body */}
-                            <div className="flex-1 overflow-y-auto p-6 pb-48 space-y-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                            <div className="flex-1 overflow-y-auto p-6 pb-8 space-y-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                                 <div className={getGridClass()}>
                                     {formSchema.map((field: any) => {
                                         if (field.isGroup) {
@@ -1282,13 +1287,13 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
                                             return (
                                                 <div key={field.label} className="col-span-full flex flex-col gap-4 pt-2">
-                                                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800 gap-4">
+                                                    <div className="flex items-center justify-between pb-2 border-b border-surface-border gap-4">
                                                         <div className="flex items-center gap-2">
                                                             {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
                                                             <div>
-                                                                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">{field.label}</h3>
+                                                                <h3 className="text-xs font-semibold uppercase tracking-wider text-text-main">{field.label}</h3>
                                                                 {field.description && (
-                                                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{field.description}</p>
+                                                                    <p className="text-[11px] text-text-muted mt-0.5">{field.description}</p>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -1305,13 +1310,12 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                         return renderField(field);
                                     })}
                                 </div>
-                                <div className="h-16" /> {/* Extra bottom padding space for open dropdowns */}
                             </div>
 
                             {/* Sticky Footer */}
-                            <div className="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 shrink-0">
-                                <Link href={`/admin/core/${resourceSlug}`}>
-                                    <Button type="button" variant="white" className="h-9 text-xs rounded-xl border-slate-200 dark:border-zinc-700">
+                            <div className="flex items-center justify-end gap-3 px-6 py-3.5 border-t border-surface-border bg-surface-muted/30 shrink-0">
+                                <Link href={returnUrl || `/admin/core/${resourceSlug}`}>
+                                    <Button type="button" variant="white" className="h-9 text-xs rounded-xl border-surface-border">
                                         Batal
                                     </Button>
                                 </Link>
