@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/cards/Card';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { Column, DataTable as TableContract } from '@/components/ui/tables/DataTable';
 import { FilterPopover } from '@/components/ui/selection/FilterPopover';
-import { SideFilterCard } from '@/components/ui/selection/SideFilterCard';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { ContractCardSkeleton, ContractTableSkeleton } from '@/components/ui/feedback/ContractSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
@@ -537,6 +536,46 @@ function ContractPage({
     const [layout, setLayout] = useState<'table' | 'grid'>('table');
     const [selectedRows, setSelectedRows] = useState<Contract[]>([]);
 
+    const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(() => {
+        const saved = localStorage.getItem('contracts_filter_expanded');
+        return saved !== null ? saved === 'true' : false;
+    });
+
+    const toggleFilterExpanded = useCallback(() => {
+        setIsFilterExpanded((prev) => {
+            const next = !prev;
+            localStorage.setItem('contracts_filter_expanded', String(next));
+            return next;
+        });
+    }, []);
+
+    const activeFilterCount = useMemo(() => {
+        let count = 0;
+        if (filters) {
+            const arrayKeys = [
+                'company_group_id',
+                'region_id',
+                'company_id',
+                'division_id',
+                'department_id',
+                'contract_type_id',
+                'status',
+            ];
+            arrayKeys.forEach((k) => {
+                const v = (filters as any)[k];
+                if (Array.isArray(v)) {
+                    count += v.filter((item) => item !== '' && item !== null && item !== undefined).length;
+                } else if (v !== '' && v !== null && v !== undefined) {
+                    count += 1;
+                }
+            });
+            if (filters.created_from || filters.created_to) {
+                count += 1;
+            }
+        }
+        return count;
+    }, [filters]);
+
     interface DBContractType extends ContractType {
         parent_id?: string | null;
         level?: number;
@@ -738,15 +777,19 @@ function ContractPage({
         }
 
         list.push({
-            label: 'Status',
+            label: 'Status Pengajuan',
             key: 'status',
             type: 'multiselect',
             options: [
-                { label: 'Draft', value: 'DRAFT' },
-                { label: 'Proses Persetujuan', value: 'IN_APPROVAL' },
-                { label: 'Disetujui', value: 'APPROVED' },
-                { label: 'Ditolak', value: 'REJECTED' },
-                { label: 'Kadaluarsa', value: 'EXPIRED' },
+                { label: 'Draft', value: 'draft' },
+                { label: 'Dalam Review', value: 'in_review' },
+                { label: 'Menunggu', value: 'pending' },
+                { label: 'Revisi', value: 'revision' },
+                { label: 'Disetujui', value: 'approved' },
+                { label: 'Ditolak', value: 'rejected' },
+                { label: 'Terkunci', value: 'locked' },
+                { label: 'Diarsipkan', value: 'archived' },
+                { label: 'Dibatalkan', value: 'cancelled' },
             ],
         });
 
@@ -981,9 +1024,9 @@ function ContractPage({
     return (
         <>
             <Head title={view} />
-            <div className="flex min-h-0 flex-1 flex-col w-full h-full bg-slate-100/60 dark:bg-zinc-950">
+            <div className="flex min-h-0 flex-1 flex-col w-full h-full bg-slate-100/60 dark:bg-zinc-950 overflow-hidden">
                 {selected ? (
-                    <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 flex-col duration-300 ease-in-out">
+                    <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 min-h-0 flex-col duration-300 ease-in-out h-full overflow-hidden">
                         <ContractDetailView
                             contract={selected}
                             meId={meId}
@@ -1057,6 +1100,37 @@ function ContractPage({
                                     actions: (
                                         <>
                                             <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
+                                            <Button
+                                                variant={isFilterExpanded || activeFilterCount > 0 ? 'primary' : 'white'}
+                                                fontSize="11px"
+                                                className={cn(
+                                                    'h-9 px-3 gap-1.5 rounded-xl border shadow-none font-semibold transition-all cursor-pointer',
+                                                    isFilterExpanded
+                                                        ? 'bg-primary text-primary-foreground border-primary'
+                                                        : activeFilterCount > 0
+                                                            ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
+                                                            : 'border-border text-foreground hover:bg-surface-muted',
+                                                )}
+                                                onClick={toggleFilterExpanded}
+                                                title={isFilterExpanded ? 'Sembunyikan Filter' : 'Buka Filter'}
+                                            >
+                                                <Filter size={14} className={isFilterExpanded ? 'text-primary-foreground' : activeFilterCount > 0 ? 'text-primary' : 'text-text-desc'} />
+                                                <span>Filter</span>
+                                                {activeFilterCount > 0 && (
+                                                    <span
+                                                        className={cn(
+                                                            'flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[9px] font-black',
+                                                            isFilterExpanded ? 'bg-white text-primary' : 'bg-primary text-white',
+                                                        )}
+                                                    >
+                                                        {activeFilterCount}
+                                                    </span>
+                                                )}
+                                                <ChevronDown
+                                                    size={13}
+                                                    className={cn('transition-transform duration-200 opacity-70', isFilterExpanded && 'rotate-180')}
+                                                />
+                                            </Button>
                                             <Button variant="primary" fontSize="11px" className="shadow-none" onClick={() => setCreateOpen(true)}>
                                                 <FilePlus size={16} strokeWidth={2.2} /> Buat Pengajuan
                                             </Button>
@@ -1085,105 +1159,31 @@ function ContractPage({
                                     {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}
                                     {view !== 'profile' && view !== 'dashboard' && (
                                         <div className="bg-surface-base/20 border-surface-border flex min-h-0 flex-1 flex-col gap-0 overflow-hidden h-full">
-                                            {view === 'mine' && (
-                                                <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
-                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full overflow-x-auto">
-                                                        {/* Left side tabs: Category Tabs */}
-                                                        <div className="flex items-center gap-1.5">
-                                                            {[
-                                                                { key: 'all', label: 'Semua Dokumen', icon: Layers },
-                                                                { key: 'kontrak', label: 'Dokumen', icon: FileText },
-                                                                { key: 'non_kontrak', label: 'Non Dokumen', icon: FileCheck },
-                                                                { key: 'nda', label: 'NDA', icon: Zap },
-                                                            ].map((tabItem) => {
-                                                                const activeTab = filters?.mine_tab || 'all';
-                                                                const isActive = activeTab === tabItem.key;
-                                                                const countVal = mineCounts ? (mineCounts as any)[tabItem.key] : undefined;
-                                                                const IconComp = tabItem.icon;
-
-                                                                return (
-                                                                    <button
-                                                                        key={tabItem.key}
-                                                                        type="button"
-                                                                        onClick={() => handleFilterChange({ mine_tab: tabItem.key, page: 1 })}
-                                                                        className={cn(
-                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
-                                                                            isActive
-                                                                                ? 'bg-primary text-primary-foreground'
-                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
-                                                                        )}
-                                                                    >
-                                                                        <IconComp size={14} />
-                                                                        <span>{tabItem.label}</span>
-                                                                        {countVal !== undefined && (
-                                                                            <span
-                                                                                className={cn(
-                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
-                                                                                    isActive
-                                                                                        ? 'bg-white/20 text-primary-foreground'
-                                                                                        : 'bg-surface-muted text-text-soft'
-                                                                                )}
-                                                                            >
-                                                                                {countVal}
-                                                                            </span>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-
-                                                        {/* Right side tabs: Status Tabs (On Progress & Arsip) */}
-                                                        <div className="flex items-center gap-1.5 ml-auto">
-                                                            <div className="bg-border/60 hidden h-4 w-px md:block mr-1 shrink-0" />
-                                                            {[
-                                                                { key: 'in_progress', label: 'On Progress', icon: Clock },
-                                                                { key: 'archived', label: 'Arsip Dokumen', icon: Archive },
-                                                            ].map((tabItem) => {
-                                                                const activeTab = filters?.mine_tab || 'all';
-                                                                const isActive = activeTab === tabItem.key;
-                                                                const countVal = mineCounts ? (mineCounts as any)[tabItem.key] : undefined;
-                                                                const IconComp = tabItem.icon;
-
-                                                                return (
-                                                                    <button
-                                                                        key={tabItem.key}
-                                                                        type="button"
-                                                                        onClick={() => handleFilterChange({ mine_tab: tabItem.key, page: 1 })}
-                                                                        className={cn(
-                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
-                                                                            isActive
-                                                                                ? 'bg-primary text-primary-foreground'
-                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
-                                                                        )}
-                                                                    >
-                                                                        <IconComp size={14} />
-                                                                        <span>{tabItem.label}</span>
-                                                                        {countVal !== undefined && (
-                                                                            <span
-                                                                                className={cn(
-                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
-                                                                                    isActive
-                                                                                        ? 'bg-white/20 text-primary-foreground'
-                                                                                        : 'bg-surface-muted text-text-soft'
-                                                                                )}
-                                                                            >
-                                                                                {countVal}
-                                                                            </span>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </Card>
-                                                </div>
+                                            {isFilterExpanded && (
+                                                <PageFilter
+                                                    categories={filterCategories}
+                                                    activeFilters={filters}
+                                                    onFilterChange={(keyOrObj, value) => {
+                                                        if (typeof keyOrObj === 'object') {
+                                                            handleFilterChange(keyOrObj);
+                                                        } else {
+                                                            handleFilterChange({ [keyOrObj]: value, page: 1 });
+                                                        }
+                                                    }}
+                                                    onReset={() =>
+                                                        handleFilterChange(
+                                                            Object.keys(filters).reduce((acc, k) => ({ ...acc, [k]: [] }), { page: 1 }),
+                                                        )
+                                                    }
+                                                    totalResults={contractsPaged.total}
+                                                />
                                             )}
-
                                             {view === 'pending' && (
                                                 <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
                                                     <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full">
                                                         <div className="flex items-center gap-1.5">
                                                             {[
-                                                                { key: 'pending', label: 'Menunggu Persetujuan', icon: Clock },
+                                                                { key: 'pending', label: 'Perlu Persetujuan', icon: Clock },
                                                                 { key: 'history', label: 'Riwayat Persetujuan', icon: History },
                                                             ].map((tabItem) => {
                                                                 const activeTab = filters?.pending_tab || 'pending';
@@ -1197,7 +1197,7 @@ function ContractPage({
                                                                         type="button"
                                                                         onClick={() => handleFilterChange({ pending_tab: tabItem.key, page: 1 })}
                                                                         className={cn(
-                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer',
+                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
                                                                             isActive
                                                                                 ? 'bg-primary text-primary-foreground'
                                                                                 : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
@@ -1221,14 +1221,6 @@ function ContractPage({
                                                                 );
                                                             })}
                                                         </div>
-                                                        {pendingCounts && (
-                                                            <div className="flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-text-soft bg-surface-muted/40 border border-surface-border/40 rounded-lg mr-1 select-none">
-                                                                <span>Total Persetujuan:</span>
-                                                                <span className="text-text-main font-black">
-                                                                    {(pendingCounts.pending || 0) + (pendingCounts.history || 0)}
-                                                                </span>
-                                                            </div>
-                                                        )}
                                                     </Card>
                                                 </div>
                                             )}
@@ -1238,7 +1230,7 @@ function ContractPage({
                                                     <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full overflow-x-auto">
                                                         <div className="flex items-center gap-1.5">
                                                             {[
-                                                                { key: 'all', label: 'Semua Dokumen', icon: Layers },
+                                                                { key: 'all', label: 'Semua', icon: Layers },
                                                                 { key: 'kontrak', label: 'Dokumen', icon: FileText },
                                                                 { key: 'non_kontrak', label: 'Non Dokumen', icon: FileCheck },
                                                                 { key: 'nda', label: 'NDA', icon: Zap },
@@ -1290,98 +1282,6 @@ function ContractPage({
                                                 </div>
                                             )}
 
-                                            {view === 'contracts' && (
-                                                <div className="px-4 pt-3 pb-1 mb-2 shrink-0">
-                                                    <Card className="flex items-center justify-between gap-3 p-1.5 bg-surface-card border border-surface-border/80 rounded-xl w-full overflow-x-auto">
-                                                        {/* Left side tabs: Category Tabs */}
-                                                        <div className="flex items-center gap-1.5">
-                                                            {[
-                                                                { key: 'all', label: 'Semua Dokumen', icon: Layers },
-                                                                { key: 'kontrak', label: 'Dokumen', icon: FileText },
-                                                                { key: 'non_kontrak', label: 'Non Dokumen', icon: FileCheck },
-                                                                { key: 'nda', label: 'NDA', icon: Zap },
-                                                            ].map((tabItem) => {
-                                                                const activeTab = filters?.parent_tab || 'all';
-                                                                const isActive = activeTab === tabItem.key;
-                                                                const countVal = parentCategoryCounts ? (parentCategoryCounts as any)[tabItem.key] : undefined;
-                                                                const IconComp = tabItem.icon;
-
-                                                                return (
-                                                                    <button
-                                                                        key={tabItem.key}
-                                                                        type="button"
-                                                                        onClick={() => handleFilterChange({ parent_tab: tabItem.key, page: 1 })}
-                                                                        className={cn(
-                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
-                                                                            isActive
-                                                                                ? 'bg-primary text-primary-foreground'
-                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
-                                                                        )}
-                                                                    >
-                                                                        <IconComp size={14} />
-                                                                        <span>{tabItem.label}</span>
-                                                                        {countVal !== undefined && (
-                                                                            <span
-                                                                                className={cn(
-                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
-                                                                                    isActive
-                                                                                        ? 'bg-white/20 text-primary-foreground'
-                                                                                        : 'bg-surface-muted text-text-soft'
-                                                                                )}
-                                                                            >
-                                                                                {countVal}
-                                                                            </span>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-
-                                                        {/* Right side tabs: Status Tabs (On Progress & Arsip) */}
-                                                        <div className="flex items-center gap-1.5 ml-auto">
-                                                            <div className="bg-border/60 hidden h-4 w-px md:block mr-1 shrink-0" />
-                                                            {[
-                                                                { key: 'in_progress', label: 'On Progress', icon: Clock },
-                                                                { key: 'archived', label: 'Arsip Dokumen', icon: Archive },
-                                                            ].map((tabItem) => {
-                                                                const activeTab = filters?.parent_tab || 'all';
-                                                                const isActive = activeTab === tabItem.key;
-                                                                const countVal = parentCategoryCounts ? (parentCategoryCounts as any)[tabItem.key] : undefined;
-                                                                const IconComp = tabItem.icon;
-
-                                                                return (
-                                                                    <button
-                                                                        key={tabItem.key}
-                                                                        type="button"
-                                                                        onClick={() => handleFilterChange({ parent_tab: tabItem.key, page: 1 })}
-                                                                        className={cn(
-                                                                            'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap',
-                                                                            isActive
-                                                                                ? 'bg-primary text-primary-foreground'
-                                                                                : 'text-text-soft hover:bg-surface-muted hover:text-text-main'
-                                                                        )}
-                                                                    >
-                                                                        <IconComp size={14} />
-                                                                        <span>{tabItem.label}</span>
-                                                                        {countVal !== undefined && (
-                                                                            <span
-                                                                                className={cn(
-                                                                                    'px-1.5 py-0.5 text-[10px] font-black rounded-full transition-colors leading-none',
-                                                                                    isActive
-                                                                                        ? 'bg-white/20 text-primary-foreground'
-                                                                                        : 'bg-surface-muted text-text-soft'
-                                                                                )}
-                                                                            >
-                                                                                {countVal}
-                                                                            </span>
-                                                                        )}
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </Card>
-                                                </div>
-                                            )}
                                             <div className={cn('custom-scrollbar flex-1 overflow-auto', layout === 'grid' && 'p-4')}>
                                                 {layout === 'table' ? (
                                                     <TableContract
@@ -1449,27 +1349,6 @@ function ContractPage({
                                 </div>
                             </PageTable>
                         </FloatingPanel>
-
-                        {/* Side Filter Card floating outside PageTable card */}
-                        {view !== 'profile' && view !== 'dashboard' && (
-                            <FloatingPanel padded shrink>
-                                <SideFilterCard
-                                    categories={filterCategories}
-                                    activeFilters={filters}
-                                    onFilterChange={(keyOrObj, value) => {
-                                        if (typeof keyOrObj === 'object') {
-                                            handleFilterChange(keyOrObj);
-                                        } else {
-                                            handleFilterChange({ [keyOrObj]: value });
-                                        }
-                                    }}
-                                    onReset={() => handleFilterChange(Object.keys(filters).reduce((acc, k) => ({ ...acc, [k]: [] }), {}))}
-                                    totalResults={contractsPaged.total}
-                                    defaultExpanded={false}
-                                    storageKey="contracts_side_filter"
-                                />
-                            </FloatingPanel>
-                        )}
                     </MasterPageLayout>
                 )}
             </div>

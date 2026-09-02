@@ -244,48 +244,43 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
             : `/api/contracts/${contract.id}/attachment/${previewAt.id}/preview`;
 
         return (
-            <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500">
+            <div className="bg-card animate-in fade-in flex flex-1 flex-col overflow-hidden duration-500 p-3 lg:p-4 gap-3">
                 <style>{DOCX_STYLES}</style>
-                <div className="border-surface-border bg-surface-base/80 flex h-[72px] shrink-0 items-center justify-between border-b px-6 backdrop-blur-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="flex flex-col">
-                            <div className="flex items-center gap-2">
-                                <div className="bg-primary h-4 w-1 rounded-full" />
-                                <h4 className="text-text-main text-[11px] leading-none font-bold uppercase">{previewAt.label}</h4>
-                                <span
-                                    className={cn(
-                                        'rounded px-2 py-0.5 text-[8px] font-bold text-white uppercase',
-                                        (previewAt as any).is_vendor_doc ? 'bg-amber-600' : 'bg-indigo-600',
-                                    )}
-                                >
-                                    {(previewAt as any).is_vendor_doc ? 'Vendor Doc' : 'Attachment'}
-                                </span>
-                            </div>
-                            <span className="text-text-desc mt-1.5 text-[9px] font-bold tracking-[0.2em] uppercase">
-                                {previewAt.file_name} &bull; Document Preview
+                <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                    <div className="flex items-center gap-3">
+                        <Paperclip size={15} className="text-primary-foreground/90 shrink-0" />
+                        <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-semibold uppercase tracking-tight text-primary-foreground">{previewAt.label}</h4>
+                            <span
+                                className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[8.5px] font-bold text-white uppercase"
+                            >
+                                {(previewAt as any).is_vendor_doc ? 'Vendor Doc' : 'Attachment'}
+                            </span>
+                            <span className="hidden sm:inline text-white/70 text-[10px] truncate max-w-[200px]">
+                                ({previewAt.file_name})
                             </span>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={() => setPreviewAt(null)}
-                            className="bg-surface-base border-surface-border text-text-desc hover:bg-surface-muted flex h-8 items-center gap-2 rounded-lg border px-4 text-[10px] font-bold uppercase transition-all active:scale-95"
+                            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[10.5px] font-medium uppercase transition-all active:scale-95 cursor-pointer"
                         >
-                            <ArrowLeft size={14} /> BACK TO LIST
+                            <ArrowLeft size={13} /> KEMBALI
                         </button>
 
                         <a
                             href={downloadUrl}
                             download
-                            className="bg-primary text-primary-foreground flex h-8 items-center gap-2 rounded-lg px-4 text-[10px] font-bold uppercase transition-all hover:opacity-90 active:scale-95"
+                            className="bg-white text-primary hover:bg-white/90 shadow-xs flex h-7 items-center gap-1.5 rounded-lg px-2.5 text-[10.5px] font-bold uppercase transition-all active:scale-95 cursor-pointer"
                         >
-                            <Download size={14} /> DOWNLOAD
+                            <Download size={13} /> UNDUH
                         </a>
                     </div>
                 </div>
 
-                <div className="custom-scrollbar relative flex-1 overflow-y-auto bg-slate-100/50 p-8">
+                <div className="custom-scrollbar relative flex-1 overflow-y-auto bg-slate-100/50 p-6 rounded-xl border border-surface-border">
                     <div className="mx-auto max-w-[900px]">
                         {previewLoading && (
                             <div className="flex h-64 flex-col items-center justify-center gap-3">
@@ -317,25 +312,38 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
     }
 
     return (
-        <div className="bg-surface-base custom-scrollbar flex flex-1 flex-col overflow-y-auto p-4">
+        <div className="bg-surface-base flex flex-1 flex-col overflow-hidden p-3 lg:p-4 gap-3">
             <input type="file" ref={fileRef} className="hidden" onChange={handleFileChange} />
 
-            <div className="mb-4 flex items-center justify-between">
-                <div>
-                    <h4 className="text-text-main text-[11px] font-bold tracking-wider uppercase">Dokumen & Lampiran</h4>
-                    <p className="text-text-soft mt-0.5 text-[9.5px] font-medium">
-                        Daftar kelengkapan berkas vendor dan dokumen kontrak
-                    </p>
+            {/* Compact Primary Header */}
+            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <Paperclip size={15} className="text-primary-foreground/90" />
+                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
+                            Dokumen & Lampiran
+                        </h4>
+                        <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                            {allItems.length} Berkas
+                        </span>
+                    </div>
                 </div>
-                {canEdit && !showManualUpload && (
-                    <button
-                        onClick={() => setShowManualUpload(true)}
-                        className="bg-primary text-primary-foreground flex h-8 items-center gap-1.5 rounded-md px-3 text-[10px] font-bold uppercase transition-colors hover:opacity-90 cursor-pointer"
-                    >
-                        <Plus size={13} /> Tambah Lampiran
-                    </button>
-                )}
+
+                <div className="flex items-center gap-2">
+                    {canEdit && !showManualUpload && (
+                        <button
+                            type="button"
+                            onClick={() => setShowManualUpload(true)}
+                            className="bg-white text-primary hover:bg-white/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                            <Plus size={13} />
+                            <span>Tambah Lampiran</span>
+                        </button>
+                    )}
+                </div>
             </div>
+
+            <div className="custom-scrollbar flex-1 overflow-y-auto space-y-3">
 
             {canEdit && showManualUpload && (
                 <div className="mb-4">
@@ -488,6 +496,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 description={`Apakah Anda yakin ingin menghapus lampiran "${confirmDelete?.label}"? Berkas yang telah dihapus tidak dapat dipulihkan.`}
                 confirmText="Hapus Berkas"
             />
+            </div>
         </div>
     );
 }

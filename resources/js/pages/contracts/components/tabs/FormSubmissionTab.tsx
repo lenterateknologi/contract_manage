@@ -496,7 +496,7 @@ function GenericFormTab({
     } as any;
 
     return (
-        <div className="bg-surface-base animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300">
+        <div className="bg-surface-base animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300 p-3 lg:p-4 gap-3">
             {/* PDF Preview Overlay */}
             {pdfPreviewUrl && (
                 <div className="animate-in fade-in zoom-in-95 bg-surface-base/90 fixed inset-0 z-[100] flex flex-col backdrop-blur-md duration-300">
@@ -530,41 +530,40 @@ function GenericFormTab({
                 </div>
             )}
 
-            <div className="border-surface-border bg-surface-base/50 sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b px-6 backdrop-blur-md">
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-medium tracking-tight text-black uppercase dark:text-white">
-                                {docType === 'f1' ? 'F1 Internal' : 'F2 Summary'}
-                            </h4>
-                            <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-medium text-black/60 dark:bg-white/10 dark:text-white/60">
-                                V{submissionInfo?.current_version || 1}
-                            </span>
-                        </div>
+            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <FileText size={15} className="text-primary-foreground/90" />
+                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
+                            {docType === 'f1' ? 'F1 Internal (Permohonan)' : 'F2 Summary (Ringkasan)'}
+                        </h4>
+                        <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                            V{submissionInfo?.current_version || 1}
+                        </span>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3" ref={dropdownRef}>
+                <div className="flex items-center gap-2" ref={dropdownRef}>
                     <div className="relative">
-                        <Button
-                            variant={showVersions ? 'primary' : 'white'}
+                        <button
+                            type="button"
                             onClick={() => {
                                 setShowVersions(!showVersions);
                                 setShowMoreActions(false);
                             }}
+                            className={cn(
+                                "flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium transition-colors border cursor-pointer",
+                                showVersions 
+                                    ? "bg-white text-primary border-white shadow-xs font-bold" 
+                                    : "bg-white/15 hover:bg-white/25 text-white border-white/20"
+                            )}
                         >
-                            <History
-                                size={14}
-                                className={cn(
-                                    'transition-colors',
-                                    showVersions ? 'text-primary-foreground' : 'text-text-soft group-hover:text-primary',
-                                )}
-                            />
+                            <History size={13} />
                             <span>{versions.length || 0} Versi</span>
-                        </Button>
+                        </button>
 
                         {showVersions && (
-                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base absolute top-full right-0 z-[999] mt-2 w-80 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-md duration-200">
+                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base absolute top-full right-0 z-[999] mt-2 w-80 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-md duration-200 text-foreground">
                                 <div className="border-b border-black/5 p-3 dark:border-white/5">
                                     <SearchInput
                                         autoFocus
@@ -619,19 +618,24 @@ function GenericFormTab({
                     </div>
 
                     <div className="relative">
-                        <Button
-                            variant={showMoreActions ? 'primary' : 'white'}
-                            size="icon"
+                        <button
+                            type="button"
                             onClick={() => {
                                 setShowMoreActions(!showMoreActions);
                                 setShowVersions(false);
                             }}
+                            className={cn(
+                                "flex items-center justify-center h-7 w-7 rounded-lg text-xs transition-colors border cursor-pointer",
+                                showMoreActions 
+                                    ? "bg-white text-primary border-white shadow-xs" 
+                                    : "bg-white/15 hover:bg-white/25 text-white border-white/20"
+                            )}
                         >
                             <MoreVertical size={14} />
-                        </Button>
+                        </button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl duration-200">
+                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl duration-200 text-foreground">
                                 {versions.length > 1 && (
                                     <a
                                         href={`/admin/contracts/${selected.id}/form-submissions/${docType}/compare`}
@@ -665,14 +669,15 @@ function GenericFormTab({
                     </div>
 
                     {canEdit && isDirty && (
-                        <Button
+                        <button
+                            type="button"
                             onClick={() => handleSave(false)}
                             disabled={saving}
-                            className="bg-primary text-primary-foreground h-9 px-3.5 text-xs font-semibold shadow-none animate-in fade-in zoom-in-95"
+                            className="bg-white text-primary hover:bg-white/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
                         >
-                            {saving ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <Check size={14} className="mr-1.5" />}
+                            {saving ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
                             Simpan
-                        </Button>
+                        </button>
                     )}
 
                     {/* Simpan Versi Popup Modal */}
@@ -740,7 +745,7 @@ function GenericFormTab({
                 </div>
             </div>
 
-            <div className="dark:bg-sidebar force-light custom-scrollbar relative flex-1 overflow-y-auto bg-white/50">
+            <div className="dark:bg-sidebar force-light custom-scrollbar relative flex-1 overflow-y-auto bg-white/50 rounded-xl border border-surface-border">
                 {/* Visual Debug Banner */}
                 {/* <div className="flex justify-center pt-6 px-6">
                     <div className={cn(

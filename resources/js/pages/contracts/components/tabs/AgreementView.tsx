@@ -6,7 +6,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import axios from 'axios';
-import { ArrowRight, Diff, Download, ExternalLink, FileText, History, Loader2, Maximize2, Minimize2, MoreVertical, RefreshCw, Upload } from 'lucide-react';
+import { ArrowRight, Diff, Download, ExternalLink, FileText, History, Loader2, Maximize2, Minimize2, MoreVertical, PenTool, RefreshCw, Upload } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface AgreementVersion {
@@ -272,50 +272,40 @@ export default function AgreementView({
     const titleLabel = labelMapping[effectiveDocType] || 'Persetujuan';
 
     return (
-        <div className="bg-card animate-in fade-in custom-scrollbar flex flex-1 flex-col w-full min-h-[850px] h-[calc(100vh-140px)] overflow-hidden duration-300">
+        <div className="bg-card animate-in fade-in flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden duration-300 p-3 lg:p-4 gap-3">
             {/* Header Area */}
-            <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-black/5 bg-white/50 px-6 backdrop-blur-md dark:border-white/5 dark:bg-black/50">
-                <div className="flex items-center gap-4">
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            <h4 className="text-xs font-medium tracking-tight text-black uppercase dark:text-white">Preview {titleLabel}</h4>
-                            {selectedVno && (
-                                <span className="rounded bg-black/5 px-1.5 py-0.5 text-[9px] font-medium text-black/60 dark:bg-white/10 dark:text-white/60">
-                                    V{selectedVno}
-                                </span>
-                            )}
-                        </div>
+            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <PenTool size={15} className="text-primary-foreground/90" />
+                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">Preview {titleLabel}</h4>
+                        {selectedVno && (
+                            <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                                V{selectedVno}
+                            </span>
+                        )}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2.5" ref={dropdownRef}>
+                <div className="flex items-center gap-2" ref={dropdownRef}>
                     {versions.length > 0 && (
                         <div className="relative">
-                            <Button
-                                variant={showVersions ? 'primary' : 'outline'}
-                                size="sm"
+                            <button
+                                type="button"
                                 onClick={() => setShowVersions(!showVersions)}
                                 className={cn(
-                                    'gap-2 border px-3 transition-all',
-                                    showVersions
-                                        ? 'bg-black text-white dark:bg-white dark:text-black'
-                                        : 'border-black/5 bg-white text-black/60 hover:border-black/20 hover:text-black dark:border-white/5 dark:bg-transparent dark:text-white/60 dark:hover:text-white',
+                                    "flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium transition-colors border cursor-pointer",
+                                    showVersions 
+                                        ? "bg-white text-primary border-white shadow-xs font-bold" 
+                                        : "bg-white/15 hover:bg-white/25 text-white border-white/20"
                                 )}
                             >
-                                <History
-                                    size={14}
-                                    className={cn(
-                                        'transition-colors',
-                                        showVersions
-                                            ? 'text-white'
-                                            : 'text-black/40 group-hover:text-black dark:text-white/40 dark:group-hover:text-white',
-                                    )}
-                                />
+                                <History size={13} />
                                 <span>{versions.length} Versi</span>
-                            </Button>
+                            </button>
 
                             {showVersions && (
-                                <div className="animate-in fade-in zoom-in-95 dark:bg-sidebar absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-black/10 bg-white p-1 shadow-2xl duration-200 dark:border-white/10">
+                                <div className="animate-in fade-in zoom-in-95 bg-surface-base text-foreground absolute top-full left-0 z-[999] mt-2 w-72 origin-top-left rounded-xl border border-surface-border p-1 shadow-2xl duration-200">
                                     <div className="border-b border-black/5 p-2 dark:border-white/5">
                                         <SearchInput
                                             autoFocus
@@ -361,34 +351,32 @@ export default function AgreementView({
                         </div>
                     )}
 
-                    <Button
-                        variant="outline"
-                        size="sm"
+                    <button
+                        type="button"
                         onClick={toggleFullscreen}
                         title={isFullscreen ? 'Keluar Full Screen' : 'Layar Penuh (Full Screen)'}
-                        className="gap-2 border border-slate-200/80 dark:border-zinc-700/80 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-700 font-bold px-3 transition-all"
+                        className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium bg-white/15 hover:bg-white/25 text-white border border-white/20 transition-colors cursor-pointer"
                     >
-                        {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-                        <span className="hidden sm:inline text-xs">{isFullscreen ? 'Keluar Full Screen' : 'Full Screen'}</span>
-                    </Button>
+                        {isFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                        <span className="hidden sm:inline text-[11px]">{isFullscreen ? 'Keluar' : 'Full Screen'}</span>
+                    </button>
 
                     <div className="relative">
-                        <Button
-                            variant={showMoreActions ? 'primary' : 'outline'}
-                            size="sm"
+                        <button
+                            type="button"
                             onClick={() => setShowMoreActions(!showMoreActions)}
                             className={cn(
-                                'w-8 border px-0 transition-all',
-                                showMoreActions
-                                    ? 'bg-black text-white dark:bg-white dark:text-black'
-                                    : 'border-black/5 bg-white text-black/40 hover:bg-black/5 dark:border-white/5 dark:bg-transparent dark:text-white/40',
+                                "flex items-center justify-center h-7 w-7 rounded-lg text-xs transition-colors border cursor-pointer",
+                                showMoreActions 
+                                    ? "bg-white text-primary border-white shadow-xs" 
+                                    : "bg-white/15 hover:bg-white/25 text-white border-white/20"
                             )}
                         >
                             <MoreVertical size={14} />
-                        </Button>
+                        </button>
 
                         {showMoreActions && (
-                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl duration-200">
+                            <div className="animate-in fade-in zoom-in-95 border-surface-border bg-surface-base text-foreground absolute top-full right-0 z-[999] mt-2 w-64 origin-top-right rounded-2xl border p-1.5 shadow-2xl backdrop-blur-xl duration-200">
                                 <Button
                                     variant="ghost"
                                     onClick={() => {
@@ -447,7 +435,7 @@ export default function AgreementView({
                     </div>
 
                     {canEdit && (
-                        <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-1">
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -459,9 +447,9 @@ export default function AgreementView({
                                     (e.target as HTMLInputElement).value = '';
                                 }}
                             />
-                            <Button
-                                variant="primary"
-                                className="h-10 px-6 gap-2 font-bold cursor-pointer"
+                            <button
+                                type="button"
+                                className="bg-white text-primary hover:bg-white/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
                                 disabled={uploading}
                                 onClick={() => {
                                     if (isSigner && !stepDownloaded) {
@@ -471,19 +459,16 @@ export default function AgreementView({
                                     fileInputRef.current?.click();
                                 }}
                             >
-                                {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
                                 <span>Upload</span>
-                            </Button>
-                            {isSigner && !stepDownloaded && (
-                                <span className="text-amber-600 dark:text-amber-400 text-[9px] font-medium italic">Unduh dokumen sebelum upload</span>
-                            )}
+                            </button>
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Main Preview Area - PDF Iframe (Full Width & Height, No Padding/Margin) */}
-            <div ref={previewContainerRef} className="relative flex flex-1 flex-col w-full h-full min-h-[800px] overflow-hidden bg-white dark:bg-zinc-900 p-0 m-0">
+            <div ref={previewContainerRef} className="relative flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden bg-white dark:bg-zinc-900 rounded-xl border border-surface-border p-0 m-0">
                 {loading ? (
                     <div className="flex h-full w-full flex-col items-center justify-center gap-4 py-20">
                         <LoadingLottie width={120} height={120} />

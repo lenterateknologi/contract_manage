@@ -17,10 +17,10 @@ const PopoverContent = React.forwardRef<
   <Portal>
     <PopoverPanel
       ref={ref}
-      anchor={{ to: "bottom start", gap: 8, offset: 0 }}
+      anchor={{ to: "bottom start", gap: 4, offset: 0 }}
       transition
       className={cn(
-        "z-[9999] w-72 rounded-xl border border-slate-100 bg-white p-4 text-slate-900 shadow-2xl focus:outline-none",
+        "z-[9999] rounded-xl border border-slate-100 bg-white p-4 text-slate-900 shadow-2xl focus:outline-none",
         "transition data-[closed]:opacity-0 data-[enter]:duration-200 data-[leave]:duration-150",
         "data-[enter]:data-[closed]:translate-y-1 data-[leave]:data-[closed]:translate-y-1",
         className

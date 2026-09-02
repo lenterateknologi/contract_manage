@@ -1,3 +1,4 @@
+import { detailSidebarStore, type DetailSidebarTabItem, type DetailSidebarTabChild } from '@/stores/useDetailSidebarStore';
 import { Button } from '@/components/ui/buttons/Button';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/navigation/Tabs';
@@ -9,6 +10,7 @@ import { router } from '@inertiajs/react';
 import {
     AlertCircle,
     Archive,
+    Building2,
     Check,
     CheckCircle2,
     ChevronLeft,
@@ -28,6 +30,7 @@ import {
     ShieldCheck,
     Trash2,
     Upload,
+    User,
     UserCheck,
     UserPlus,
     Users,
@@ -35,7 +38,7 @@ import {
 } from 'lucide-react';
 import React, { useMemo, useState, lazy, Suspense, useEffect } from 'react';
 
-import { DraftEditableInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
+import { DraftEditableInfoCard, RequesterInfoCard, VendorInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
 
 // Lazy load modals
 const SharedAddhocModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
@@ -102,6 +105,7 @@ const ContractDetailView = ({
     const params = new URLSearchParams(window.location.search);
     const [detailTab, setDetailTabState] = useState((params.get('tab') as any) || 'documents');
     const [docSubTab, setDocSubTabState] = useState<'f1' | 'f2' | 'agreement'>((params.get('subtab') as any) || 'f1');
+    const [partySubTab, setPartySubTabState] = useState<'requester' | 'vendor'>((params.get('partysubtab') as any) || 'requester');
     const [discSubTab, setDiscSubTabState] = useState<'chat' | 'members'>((params.get('discsubtab') as any) || 'chat');
     const [historySubTab, setHistorySubTabState] = useState<'timeline' | 'audit'>((params.get('histsubtab') as any) || 'timeline');
 
@@ -109,6 +113,13 @@ const ContractDetailView = ({
         setDetailTabState(tab);
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('tab', tab);
+        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+    };
+
+    const setPartySubTab = (sub: 'requester' | 'vendor') => {
+        setPartySubTabState(sub);
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.set('partysubtab', sub);
         window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
     };
 
@@ -337,16 +348,135 @@ const ContractDetailView = ({
                 { id: 'attachments', label: 'Lampiran', icon: Paperclip, mode: meta.show_tab_attachments === false ? 'none' : 'always' },
                 { id: 'discussion', label: 'Diskusi & Member', icon: MessageSquare, mode: hasDiscussion ? 'always' : 'none' },
                 { id: 'references', label: 'Referensi', icon: Link2, mode: meta.show_tab_references === false ? 'none' : 'always' },
+                { id: 'parties', label: 'Pihak & Pengaju', icon: Users, mode: 'always' },
             ].filter((tab) => tab.mode !== 'none');
         },
         [contract],
     );
 
+    // Build hierarchical tree tabs for sub-sidebar
+    const detailSidebarTabs: DetailSidebarTabItem[] = useMemo(() => {
+        const meta = contract.workflow_step?.meta || {};
+        const result: DetailSidebarTabItem[] = [];
+
+        // 1. Dokumen Tab (with subtabs f1, f2, agreement)
+        const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
+        const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
+        const hasAgreement = meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
+
+        if (hasF1 || hasF2 || hasAgreement) {
+            const children: DetailSidebarTabChild[] = [];
+            if (hasF1) children.push({ id: 'f1', label: 'F1 (Permohonan)', icon: FileText });
+            if (hasF2) children.push({ id: 'f2', label: 'F2 (Ringkasan)', icon: FileCheck });
+            if (hasAgreement) children.push({ id: 'agreement', label: 'Draft Perjanjian', icon: PenTool });
+
+            result.push({
+                id: 'documents',
+                label: 'Dokumen',
+                icon: FileText,
+                children: children.length > 1 ? children : undefined,
+            });
+        }
+
+        // 2. Pihak Terkait Tab (with subtabs Informasi Pengaju & Pihak Kedua / Vendor)
+        result.push({
+            id: 'parties',
+            label: 'Pihak Terkait',
+            icon: Users,
+            children: [
+                { id: 'requester', label: 'Informasi Pengaju', icon: User },
+                { id: 'vendor', label: 'Pihak Kedua / Vendor', icon: Building2 },
+            ],
+        });
+
+        // 3. Riwayat & Alur Tab
+        const hasTimeline = meta.show_tab_timeline !== false;
+        result.push({
+            id: 'history',
+            label: 'Riwayat & Alur',
+            icon: History,
+            children: [
+                ...(hasTimeline ? [{ id: 'timeline', label: 'Alur Approval & Proses', icon: GitCommit }] : []),
+                { id: 'audit', label: 'Audit Log & Activity', icon: ShieldCheck },
+            ],
+        });
+
+        // 4. Lampiran Tab
+        if (meta.show_tab_attachments !== false) {
+            result.push({
+                id: 'attachments',
+                label: 'Lampiran',
+                icon: Paperclip,
+            });
+        }
+
+        // 5. Diskusi & Member Tab
+        const hasChat = meta.show_tab_chat !== false;
+        const hasMembers = meta.show_tab_members !== false;
+        if (hasChat || hasMembers) {
+            const children: DetailSidebarTabChild[] = [];
+            if (hasChat) children.push({ id: 'chat', label: 'Chat & Diskusi', icon: MessageSquare });
+            if (hasMembers) children.push({ id: 'members', label: 'Member / Anggota Tim', icon: Users });
+
+            result.push({
+                id: 'discussion',
+                label: 'Diskusi & Member',
+                icon: MessageSquare,
+                children: children.length > 1 ? children : undefined,
+            });
+        }
+
+        // 6. Referensi Tab
+        if (meta.show_tab_references !== false) {
+            result.push({
+                id: 'references',
+                label: 'Referensi',
+                icon: Link2,
+            });
+        }
+
+        return result;
+    }, [contract]);
+
+    // Synchronize detail state with sub-side menu
+    useEffect(() => {
+        let currentSub: string | undefined = undefined;
+        if (detailTab === 'documents') currentSub = docSubTab;
+        else if (detailTab === 'parties') currentSub = partySubTab;
+        else if (detailTab === 'history') currentSub = historySubTab;
+        else if (detailTab === 'discussion') currentSub = discSubTab;
+
+        detailSidebarStore.setState({
+            isActive: true,
+            contract: contract,
+            contractTitle: contract.title,
+            contractNumber: contract.form_no,
+            activeTab: detailTab,
+            activeSubTab: currentSub,
+            tabs: detailSidebarTabs,
+            onSelectTab: (tabId: string, subtabId?: string) => {
+                setDetailTab(tabId);
+                if (subtabId) {
+                    if (tabId === 'documents') setDocSubTab(subtabId as any);
+                    else if (tabId === 'parties') setPartySubTab(subtabId as any);
+                    else if (tabId === 'history') setHistorySubTab(subtabId as any);
+                    else if (tabId === 'discussion') setDiscSubTab(subtabId as any);
+                }
+            },
+            onClose: onClose,
+        });
+
+        return () => {
+            detailSidebarStore.setState(null);
+        };
+    }, [detailTab, docSubTab, partySubTab, discSubTab, historySubTab, detailSidebarTabs, contract, onClose]);
+
     useEffect(() => {
         const meta = contract.workflow_step?.meta || {};
         const isAudit = detailTab === 'audit';
         const isMembers = detailTab === 'members' && meta.show_tab_members !== false;
-        const isExternalTab = isAudit || isMembers;
+        const isParty = detailTab === 'parties' || detailTab === 'requester' || detailTab === 'vendor';
+        const isExternalTab = isAudit || isMembers || isParty;
 
         if (tabs.length > 0 && !tabs.some(t => t.id === detailTab) && !isExternalTab) {
             setDetailTab(tabs[0].id);
@@ -355,25 +485,38 @@ const ContractDetailView = ({
         }
     }, [tabs, detailTab, contract.workflow_step?.meta]);
 
+    const currentActiveTab = tabs.find((t) => t.id === detailTab) || detailSidebarTabs.find((t) => t.id === detailTab);
+    const currentActiveSubLabel = useMemo(() => {
+        if (detailTab === 'documents') {
+            if (docSubTab === 'f1') return 'F1 (Permohonan)';
+            if (docSubTab === 'f2') return 'F2 (Ringkasan)';
+            if (docSubTab === 'agreement') return 'Draft Perjanjian';
+        }
+        if (detailTab === 'parties') {
+            if (partySubTab === 'requester') return 'Informasi Pengaju';
+            if (partySubTab === 'vendor') return 'Pihak Kedua / Vendor';
+        }
+        if (detailTab === 'requester') return 'Informasi Pengaju';
+        if (detailTab === 'vendor') return 'Pihak Kedua / Vendor';
+        if (detailTab === 'history') {
+            if (historySubTab === 'timeline') return 'Alur Approval & Proses';
+            if (historySubTab === 'audit') return 'Audit Log & Activity';
+        }
+        if (detailTab === 'discussion') {
+            if (discSubTab === 'chat') return 'Chat & Diskusi';
+            if (discSubTab === 'members') return 'Member / Anggota Tim';
+        }
+        return undefined;
+    }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab]);
+
 
     return (
-        <div className="mx-auto flex w-full max-w-full flex-1 flex-col gap-6 p-4 relative">
-            {/* Stylish Sticky Header Bar */}
-            <div className="sticky top-0 z-50 flex items-center justify-between px-6 py-3 -mx-4 -mt-4 mb-2 bg-surface-base border-b border-surface-border backdrop-blur-2xl shadow-md transition-all duration-300">
-                <div className="flex items-center gap-3 min-w-0">
-                    <Button
-                        variant="ghost"
-                        onClick={onClose}
-                        className="text-text-main flex h-8 items-center gap-1.5 px-2 transition-all hover:bg-surface-muted active:scale-95 rounded-lg shrink-0"
-                    >
-                        <ChevronLeft size={18} strokeWidth={2.5} />
-                        <span className="text-xs font-semibold uppercase">Kembali</span>
-                    </Button>
-                    <div className="bg-surface-border h-6 w-px shrink-0" />
-                    <div className="flex flex-col gap-0.5 min-w-0">
-                        <span className="text-text-main text-xs font-bold tracking-wider uppercase">
-                            #{contract.form_no || 'NO-REQ'}
-                        </span>
+        <div className="mx-auto flex w-full max-w-full flex-1 flex-col relative h-full overflow-hidden">
+            {/* Action & Status Header Bar (h-16 matching sub side nav, no shadow) */}
+            <div className="sticky top-0 z-50 flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between px-5 bg-background border-b border-border transition-all duration-200 box-border">
+                {/* Left Side: Document Title (Editable) + Section Breadcrumb */}
+                <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex flex-col justify-center min-w-0">
                         {isEditingTitle && isDraftTitle ? (
                             <input
                                 autoFocus
@@ -381,18 +524,35 @@ const ContractDetailView = ({
                                 onChange={(e) => setHeaderTitle(e.target.value)}
                                 onBlur={handleTitleBlur}
                                 onKeyDown={(e) => { if (e.key === 'Enter') handleTitleBlur(); }}
-                                className="text-text-main text-base font-bold bg-surface-muted border-b border-primary focus:outline-none min-w-[280px] md:min-w-[400px] px-2 py-0.5 rounded"
-                                placeholder="Masukkan judul..."
+                                className="text-foreground text-[14px] font-bold bg-muted border-b border-primary focus:outline-none min-w-[280px] md:min-w-[450px] px-2 py-0.5 rounded leading-tight"
+                                placeholder="Masukkan judul dokumen..."
                             />
                         ) : (
-                            <h2 
-                                className={`text-text-main text-sm md:text-base font-bold tracking-tight truncate max-w-[300px] md:max-w-[550px] ${isDraftTitle ? 'cursor-pointer hover:text-primary transition-colors' : ''}`}
-                                onClick={() => { if (isDraftTitle) setIsEditingTitle(true); }}
-                                title={isDraftTitle ? "Klik untuk mengedit" : contract.title}
-                            >
-                                {contract.title || <span className="italic text-text-main">Tanpa Judul</span>}
-                            </h2>
+                            <div className="flex items-center gap-2 min-w-0">
+                                <h1 
+                                    className={cn(
+                                        'text-foreground text-[14px] font-bold tracking-tight truncate max-w-[360px] md:max-w-[550px] leading-tight',
+                                        isDraftTitle && 'cursor-pointer hover:text-primary transition-colors'
+                                    )}
+                                    onClick={() => { if (isDraftTitle) setIsEditingTitle(true); }}
+                                    title={isDraftTitle ? "Klik untuk mengedit judul" : contract.title}
+                                >
+                                    {contract.title || <span className="italic text-muted-foreground">Tanpa Judul</span>}
+                                </h1>
+                                {isDraftTitle && (
+                                    <span className="text-[10px] text-muted-foreground/60 font-normal select-none">(edit)</span>
+                                )}
+                            </div>
                         )}
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 leading-tight truncate">
+                            <span>{currentActiveTab?.label || 'Dokumen'}</span>
+                            {currentActiveSubLabel && (
+                                <>
+                                    <span className="opacity-40">/</span>
+                                    <span className="text-primary font-semibold">{currentActiveSubLabel}</span>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -405,67 +565,43 @@ const ContractDetailView = ({
                         <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-3 duration-200">
                             <button
                                 type="button"
-                            onClick={() => onResetInfoChanges?.()}
-                            disabled={infoSaving}
-                            className="px-3 py-1.5 text-xs font-semibold text-text-soft hover:text-text-main hover:bg-surface-muted rounded-lg transition-all cursor-pointer disabled:opacity-50"
-                        >
-                            Batal
-                        </button>
-                        <Button
-                            variant="primary"
-                            onClick={() => onSaveInfoChanges?.()}
-                            disabled={infoSaving}
-                            className="h-8 px-4 text-xs font-bold shadow-md shadow-primary/20 transition-all flex items-center gap-1.5"
-                        >
-                            {infoSaving ? (
-                                <>
-                                    <Loader2 size={14} className="animate-spin" />
-                                    <span>Menyimpan...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Check size={14} />
-                                    <span>Simpan Perubahan</span>
-                                </>
-                            )}
-                        </Button>
-                    </div>
-                )}
+                                onClick={() => onResetInfoChanges?.()}
+                                disabled={infoSaving}
+                                className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                            >
+                                Batal
+                            </button>
+                            <Button
+                                variant="primary"
+                                onClick={() => onSaveInfoChanges?.()}
+                                disabled={infoSaving}
+                                className="h-8 px-4 text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
+                            >
+                                {infoSaving ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        <span>Menyimpan...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Check size={14} />
+                                        <span>Simpan Perubahan</span>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[1fr_420px] items-start lg:h-[calc(100vh-100px)] lg:overflow-hidden">
-                {/* Left Column: Form / Document Detail (Scroll Independen) */}
-                <div className="flex flex-col gap-6 lg:h-full lg:overflow-y-auto lg:pr-1 custom-scrollbar">
-                    {contract.workflow_step?.meta?.show_document_detail !== false && (
-                        <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs">
-                            {/* Compact Header + Tabs */}
-                            <div className="bg-primary rounded-t-xl flex items-center gap-3 border-b border-primary/80 px-3 py-3 overflow-x-auto scrollbar-none">
-                                <Tabs value={detailTab} onValueChange={(val) => setDetailTab(val as any)} className="flex-1 min-w-0">
-                                    <TabsList className="bg-transparent h-auto p-0 gap-0.5 flex flex-nowrap overflow-x-auto scrollbar-none justify-start w-full">
-                                        {tabs.map((tab) => {
-                                            const TabIcon = tab.icon;
-                                            return (
-                                                <TabsTrigger
-                                                    key={tab.id}
-                                                    value={tab.id}
-                                                    className="h-6 px-2.5 text-[10px] font-semibold uppercase rounded transition-all whitespace-nowrap shrink-0 data-[state=active]:bg-primary-foreground data-[state=active]:text-primary data-[state=active]:shadow-xs text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/15 cursor-pointer inline-flex items-center gap-1.5"
-                                                >
-                                                    {TabIcon && <TabIcon size={12} className="shrink-0" />}
-                                                    <span>{tab.label}</span>
-                                                </TabsTrigger>
-                                            );
-                                        })}
-                                    </TabsList>
-                                </Tabs>
-                            </div>
-                        <div className={cn(
-                            'flex flex-1 flex-col min-h-0',
-                            ['history', 'discussion', 'chat', 'attachments', 'timeline', 'references', 'audit', 'members'].includes(detailTab)
-                                ? 'h-[calc(100vh-180px)] min-h-[600px]'
-                                : 'min-h-[600px]'
-                        )}>
-                            <Suspense fallback={<TabSkeleton />}>
+            <div className="flex-1 min-h-0 overflow-hidden p-3 lg:p-4 h-[calc(100vh-48px)]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_390px] h-full min-h-0 items-stretch">
+                    {/* Left Column: Form / Document Detail */}
+                    <div className="flex flex-col min-w-0 h-full min-h-0">
+                        {contract.workflow_step?.meta?.show_document_detail !== false && (
+                            <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs flex-1 flex flex-col min-h-0 h-full">
+                                <div className="flex flex-1 flex-col min-h-0 h-full overflow-hidden">
+                                    <Suspense fallback={<TabSkeleton />}>
                                 {detailTab === 'documents' && (() => {
                                     const meta = contract.workflow_step?.meta || {};
                                     const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
@@ -482,30 +618,6 @@ const ContractDetailView = ({
 
                                     return (
                                         <div className="flex flex-col flex-1">
-                                            {docSubTabs.length > 1 && (
-                                                <div className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200/80 dark:border-zinc-800 shrink-0 overflow-x-auto scrollbar-none">
-                                                    {docSubTabs.map((st) => {
-                                                        const SubIcon = st.icon;
-                                                        return (
-                                                            <button
-                                                                key={st.id}
-                                                                type="button"
-                                                                onClick={() => setDocSubTab(st.id as any)}
-                                                                className={cn(
-                                                                    "px-3 py-1 text-[11px] font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5",
-                                                                    activeSub === st.id
-                                                                        ? "bg-primary text-white shadow-2xs font-bold"
-                                                                        : "bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
-                                                                )}
-                                                            >
-                                                                {SubIcon && <SubIcon size={12} className="shrink-0" />}
-                                                                <span>{st.label}</span>
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-
                                             <div className="flex-1">
                                                 {activeSub === 'f1' && (
                                                     <F1Tab
@@ -546,58 +658,34 @@ const ContractDetailView = ({
                                         </div>
                                     );
                                 })()}
+                                {(detailTab === 'parties' || detailTab === 'requester' || detailTab === 'vendor') && (
+                                    <div className="flex-1 min-h-0 flex flex-col">
+                                        {(partySubTab === 'requester' || detailTab === 'requester') && (
+                                            <RequesterInfoCard selected={contract} isTabView={true} />
+                                        )}
+                                        {(partySubTab === 'vendor' || detailTab === 'vendor') && (
+                                            <VendorInfoCard selected={contract} isTabView={true} />
+                                        )}
+                                    </div>
+                                )}
                                 {detailTab === 'attachments' && (
                                     <AttachmentsTab contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} showToast={showToast} meUser={meUser} />
                                 )}
 
                                 {detailTab === 'history' && (() => {
-                                    const meta = contract.workflow_step?.meta || {};
-                                    const hasTimeline = meta.show_tab_timeline !== false;
-
-                                    const historySubTabs = [
-                                        { id: 'timeline', label: 'Alur Approval & Proses', icon: GitCommit, show: hasTimeline },
-                                        { id: 'audit', label: 'Audit Log & Activity', icon: ShieldCheck, show: true },
-                                    ].filter(t => t.show);
-
-                                    const activeSub = historySubTabs.some(t => t.id === historySubTab) ? historySubTab : (historySubTabs[0]?.id || 'timeline');
+                                    const activeSub = ['timeline', 'audit'].includes(historySubTab) ? historySubTab : 'timeline';
 
                                     return (
-                                        <div className="flex flex-col flex-1 min-h-0">
-                                            {historySubTabs.length > 1 && (
-                                                <div className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200/80 dark:border-zinc-800 shrink-0 overflow-x-auto scrollbar-none">
-                                                    {historySubTabs.map((st) => {
-                                                        const SubIcon = st.icon;
-                                                        return (
-                                                            <button
-                                                                key={st.id}
-                                                                type="button"
-                                                                onClick={() => setHistorySubTab(st.id as any)}
-                                                                className={cn(
-                                                                    "px-3 py-1 text-[11px] font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5",
-                                                                    activeSub === st.id
-                                                                        ? "bg-primary text-white shadow-2xs font-bold"
-                                                                        : "bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
-                                                                )}
-                                                            >
-                                                                {SubIcon && <SubIcon size={12} className="shrink-0" />}
-                                                                <span>{st.label}</span>
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
+                                        <div className="flex-1 min-h-0 flex flex-col">
+                                            {activeSub === 'timeline' && (
+                                                <TimelineTab
+                                                    contract={contract}
+                                                    meId={meId}
+                                                    onApprove={(note, file) => handleApprove(note, file)}
+                                                    showToast={showToast}
+                                                />
                                             )}
-
-                                            <div className="flex-1 min-h-0 flex flex-col">
-                                                {activeSub === 'timeline' && (
-                                                    <TimelineTab
-                                                        contract={contract}
-                                                        meId={meId}
-                                                        onApprove={(note, file) => handleApprove(note, file)}
-                                                        showToast={showToast}
-                                                    />
-                                                )}
-                                                {activeSub === 'audit' && <AuditTrailTab contract={contract} />}
-                                            </div>
+                                            {activeSub === 'audit' && <AuditTrailTab contract={contract} />}
                                         </div>
                                     );
                                 })()}
@@ -614,47 +702,12 @@ const ContractDetailView = ({
                                 )}
 
                                 {detailTab === 'discussion' && (() => {
-                                    const meta = contract.workflow_step?.meta || {};
-                                    const hasChat = meta.show_tab_chat !== false;
-                                    const hasMembers = meta.show_tab_members !== false;
-
-                                    const discSubTabs = [
-                                        { id: 'chat', label: 'Chat & Diskusi', icon: MessageSquare, show: hasChat },
-                                        { id: 'members', label: 'Member / Anggota Tim', icon: Users, show: hasMembers },
-                                    ].filter(t => t.show);
-
-                                    const activeSub = discSubTabs.some(t => t.id === discSubTab) ? discSubTab : (discSubTabs[0]?.id || 'chat');
+                                    const activeSub = ['chat', 'members'].includes(discSubTab) ? discSubTab : 'chat';
 
                                     return (
-                                        <div className="flex flex-col flex-1 min-h-0">
-                                            {discSubTabs.length > 1 && (
-                                                <div className="flex items-center gap-1.5 px-4 py-2 bg-slate-50 dark:bg-zinc-900 border-b border-slate-200/80 dark:border-zinc-800 shrink-0 overflow-x-auto scrollbar-none">
-                                                    {discSubTabs.map((st) => {
-                                                        const SubIcon = st.icon;
-                                                        return (
-                                                            <button
-                                                                key={st.id}
-                                                                type="button"
-                                                                onClick={() => setDiscSubTab(st.id as any)}
-                                                                className={cn(
-                                                                    "px-3 py-1 text-[11px] font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer inline-flex items-center gap-1.5",
-                                                                    activeSub === st.id
-                                                                        ? "bg-primary text-white shadow-2xs font-bold"
-                                                                        : "bg-white dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-zinc-700 border border-slate-200 dark:border-zinc-700"
-                                                                )}
-                                                            >
-                                                                {SubIcon && <SubIcon size={12} className="shrink-0" />}
-                                                                <span>{st.label}</span>
-                                                            </button>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-
-                                            <div className="flex-1 min-h-0 flex flex-col">
-                                                {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={vendors} onUpdate={onUpdate} />}
-                                                {activeSub === 'members' && <MembersTab contract={contract} users={users} />}
-                                            </div>
+                                        <div className="flex-1 min-h-0 flex flex-col">
+                                            {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={vendors} onUpdate={onUpdate} />}
+                                            {activeSub === 'members' && <MembersTab contract={contract} users={users} />}
                                         </div>
                                     );
                                 })()}
@@ -670,15 +723,15 @@ const ContractDetailView = ({
                     </div>
                     )}
                 </div>
-                {/* Right Column: Panel Informasi & Aksi (Scroll Independen) */}
-                <div className="flex flex-col gap-4 lg:h-full lg:overflow-y-auto lg:pr-1 custom-scrollbar">
+                {/* Right Column: Panel Informasi & Aksi */}
+                <div className="flex flex-col gap-4 min-w-0 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1">
                     {canApprove && contract.workflow_step?.meta?.show_action_panel !== false && (
                         <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs">
-                            <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
-                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-tight text-primary-foreground">
-                                    <Zap size={16} className="text-primary-foreground/80" /> {isSigner ? 'Upload Tanda Tangan Dibutuhkan' : 'Approval Dibutuhkan'}
+                            <div className="bg-primary rounded-t-xl flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between border-b border-primary/80 px-4">
+                                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+                                    <Zap size={15} className="text-primary-foreground/90" /> {isSigner ? 'Upload Tanda Tangan Dibutuhkan' : 'Approval Dibutuhkan'}
                                 </div>
-                                <span className="text-[10px] font-medium text-primary-foreground/80">
+                                <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase">
                                     {isSigner ? activeSignerApproval?.role : 'Reviewer'}
                                 </span>
                             </div>
@@ -979,6 +1032,7 @@ const ContractDetailView = ({
                     </div> */}
                 </div>
             </div>
+        </div>
 
             <Suspense fallback={null}>
                 <SharedApproveModal

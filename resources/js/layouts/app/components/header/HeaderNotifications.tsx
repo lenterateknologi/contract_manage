@@ -103,19 +103,19 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="text-sidebar-foreground/80 hover:text-sidebar-primary hover:bg-sidebar-accent group relative h-9 w-9 rounded-lg transition-all"
+                    className="text-white/80 hover:text-white hover:bg-white/15 group relative h-8 w-8 rounded-lg transition-all cursor-pointer"
                 >
-                    <Bell className="h-[1.2rem] w-[1.2rem] transition-transform group-hover:rotate-12" />
+                    <Bell className="size-4.5 transition-transform group-hover:rotate-12 text-white/80 group-hover:text-white" />
                     {unreadNotifications.length > 0 && (
-                        <span className="absolute top-2.5 right-2.5 flex h-2 w-2">
-                            <span className="bg-red-500 absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
-                            <span className="bg-red-500 relative inline-flex h-2 w-2 rounded-full"></span>
+                        <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                            <span className="bg-red-400 absolute inline-flex h-full w-full animate-ping rounded-full opacity-75"></span>
+                            <span className="bg-red-500 relative inline-flex h-2 w-2 rounded-full ring-2 ring-primary"></span>
                         </span>
                     )}
                     <span className="sr-only">Notifications</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="mt-1 w-80 p-0" align="end">
+            <DropdownMenuContent className="w-80 p-0 border border-border shadow-2xl rounded-2xl z-[99999]" side="right" align="end" sideOffset={14}>
                 <div className="flex items-center justify-between px-4 py-3">
                     <DropdownMenuLabel className="text-text-main text-xs uppercase font-medium">Notifikasi Terbaru</DropdownMenuLabel>
                     {unreadNotifications.length > 0 && (

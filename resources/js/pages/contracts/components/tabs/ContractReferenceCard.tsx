@@ -64,10 +64,39 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
     };
 
     return (
-        <div className={cn('animate-in fade-in flex flex-col gap-5 duration-500', !parent && 'flex-1 justify-center')}>
-            {!parent && canModifyRef && <div className="flex justify-end"></div>}
+        <div className="bg-surface-base flex flex-1 flex-col overflow-hidden p-3 lg:p-4 gap-3">
+            {/* Compact Primary Header */}
+            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <LinkIcon size={15} className="text-primary-foreground/90" />
+                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
+                            Referensi Dokumen & Kontrak Induk
+                        </h4>
+                        {parent && (
+                            <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                                1 Terhubung
+                            </span>
+                        )}
+                    </div>
+                </div>
 
-            <div className="relative">
+                <div className="flex items-center gap-2">
+                    {!parent && canModifyRef && !isEditing && (
+                        <button
+                            type="button"
+                            onClick={() => setIsEditing(true)}
+                            className="bg-white text-primary hover:bg-white/90 h-7 px-3 text-xs font-bold rounded-lg shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                            <Plus size={13} />
+                            <span>Hubungkan Kontrak</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className={cn('p-6 custom-scrollbar flex-1 overflow-y-auto flex flex-col gap-5', !parent && 'justify-center')}>
+                <div className="relative">
                 {parent ? (
                     <div className="group relative overflow-hidden rounded-2xl border border-black/5 bg-gradient-to-br from-white to-zinc-50/60 p-6 shadow-sm transition-all duration-300 hover:shadow-md dark:border-white/5 dark:from-slate-900/60 dark:to-slate-900/40">
                         <div className="flex flex-col justify-between gap-6 md:flex-row">
@@ -238,6 +267,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                     </div>
                 </div>
             )}
+            </div>
         </div>
     );
 }

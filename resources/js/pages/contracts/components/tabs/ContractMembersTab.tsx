@@ -1,6 +1,6 @@
 import { Avatar } from '@/pages/contracts/components/ui/ui';
 import { Contract, UserProfile } from '@/pages/contracts/types';
-import { Building2, Mail, ShieldCheck } from 'lucide-react';
+import { Building2, Mail, ShieldCheck, Users } from 'lucide-react';
 import React from 'react';
 
 interface ContractMembersTabProps {
@@ -54,13 +54,23 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
     const membersList = Array.from(members.values());
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-1 flex-col p-6 duration-500">
-            <div className="mb-6 flex flex-col gap-1 px-1">
-                <h3 className="text-text-main text-base font-semibold tracking-tight uppercase">Personil Terlibat</h3>
-                <p className="text-text-desc text-[10px] font-medium uppercase">
-                    Daftar pemangku kepentingan dalam siklus hidup kontrak
-                </p>
+        <div className="bg-surface-base flex flex-1 flex-col overflow-hidden p-3 lg:p-4 gap-3">
+            {/* Compact Primary Header */}
+            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <Users size={15} className="text-primary-foreground/90" />
+                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
+                            Anggota Tim & Personil Terlibat
+                        </h4>
+                        <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                            {membersList.length} Personil
+                        </span>
+                    </div>
+                </div>
             </div>
+
+            <div className="custom-scrollbar flex-1 overflow-y-auto p-4 rounded-xl border border-surface-border">
 
             {/* ponytail: flat minimal list layout, uniform text styles without bold/gray */}
             <div className="flex flex-col divide-y divide-surface-border/40">
@@ -108,6 +118,7 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
 
             <div className="border-surface-border/60 bg-surface-muted/20 text-text-soft mt-6 rounded-xl border p-4 text-[10px] leading-relaxed font-medium uppercase">
                 Note: Daftar ini hanya mencakup personil yang memiliki interaksi langsung atau otoritas formal terhadap dokumen ini.
+            </div>
             </div>
         </div>
     );

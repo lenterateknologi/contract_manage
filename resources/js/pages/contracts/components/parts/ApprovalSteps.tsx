@@ -3,7 +3,7 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
-import { Download } from 'lucide-react';
+import { Download, GitCommit } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
@@ -152,7 +152,22 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     ];
 
     return (
-        <div className="animate-in fade-in relative flex min-w-0 flex-col gap-4 overflow-x-hidden duration-500">
+        <div className="animate-in fade-in flex flex-col flex-1 min-h-0 h-full overflow-hidden duration-300 p-3 lg:p-4 gap-3">
+            {/* Compact Primary Header */}
+            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <GitCommit size={15} className="text-primary-foreground/90" />
+                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
+                            Alur Persetujuan
+                        </h4>
+                    </div>
+                </div>
+            </div>
+
+            {/* Scrollable Timeline Area */}
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar">
+
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-2 w-full">
                 {/* Tab buttons */}
@@ -417,6 +432,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         );
                     })}
                 </Timeline>
+                </div>
             </div>
         </div>
     );

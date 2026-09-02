@@ -17,7 +17,7 @@ export const TimelineTab = ({ contract, meId, onApprove, showToast }: TimelineTa
     };
 
     return (
-        <div className="flex flex-col gap-2 overflow-y-auto p-3.5">
+        <div >
             <div className="flex flex-col gap-4">
                 <ApprovalSteps
                     contract={contract}

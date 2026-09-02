@@ -34,7 +34,7 @@ export function FloatingPanel({
         <div
             style={style}
             className={cn(
-                'rounded-2xl border border-border bg-card dark:bg-zinc-900/95 overflow-hidden',
+                'rounded-none border-0 bg-background overflow-hidden p-0 m-0 w-full h-full flex flex-col',
                 padded && 'p-4',
                 shrink && 'shrink-0',
                 className,

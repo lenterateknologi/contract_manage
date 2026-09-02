@@ -7,7 +7,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
-import { Check, Clock, ExternalLink, FileSpreadsheet, FileText, ListFilter, Search, X } from 'lucide-react';
+import { Check, Clock, ExternalLink, FileSpreadsheet, FileText, ListFilter, Search, ShieldCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -90,70 +90,89 @@ export default function ContractAuditTrail({ contract }: Props) {
     const activeCount = (filters.actor_id ? 1 : 0) + (filters.date_from || filters.date_to ? 1 : 0);
 
     return (
-        <div className="animate-in fade-in relative flex flex-col gap-4 p-4 duration-300">
-            <div className="flex items-center gap-3">
-                <div className="flex-1">
-                    <SearchInput
-                        placeholder="CARI AKTIVITAS..."
-                        value={filters.search}
-                        onChange={(e) => {
-                            setFilters({ ...filters, search: e.target.value });
-                        }}
-                        className="h-9 text-[10px] uppercase"
-                    />
+        <div className="animate-in fade-in flex flex-col flex-1 min-h-0 h-full overflow-hidden duration-300 p-3 lg:p-4 gap-3">
+            {/* Compact Primary Header */}
+            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <ShieldCheck size={15} className="text-primary-foreground/90" />
+                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
+                            Audit Trail
+                        </h4>
+                    </div>
                 </div>
+            </div>
 
-                <div className="flex items-center gap-2">
-                    <FilterPopover
-                        categories={filterCategories}
-                        activeFilters={{
-                            actor_id: filters.actor_id ? [filters.actor_id] : [],
-                            date_from: filters.date_from,
-                            date_to: filters.date_to,
-                        }}
-                        onFilterChange={(key, val) => {
-                            const newFilters = { ...filters };
-                            if (key === 'actor_id') {
-                                newFilters.actor_id = Array.isArray(val) ? val[0] || '' : val;
-                            } else if (key === 'date_from' || key === 'date_to') {
-                                newFilters[key] = val;
-                            }
-                            setFilters(newFilters);
-                            fetchHistories(newFilters);
-                        }}
-                        onReset={() => {
-                            const r = { ...filters, actor_id: '', date_from: '', date_to: '' };
-                            setFilters(r);
-                            fetchHistories(r);
-                        }}
-                    >
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar">
+                {/* Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-2 w-full">
+                    <div className="flex items-center gap-2">
+                        <FilterPopover
+                            categories={filterCategories}
+                            activeFilters={{
+                                actor_id: filters.actor_id ? [filters.actor_id] : [],
+                                date_from: filters.date_from,
+                                date_to: filters.date_to,
+                            }}
+                            onFilterChange={(key, val) => {
+                                const newFilters = { ...filters };
+                                if (key === 'actor_id') {
+                                    newFilters.actor_id = Array.isArray(val) ? val[0] || '' : val;
+                                } else if (key === 'date_from' || key === 'date_to') {
+                                    newFilters[key] = val;
+                                }
+                                setFilters(newFilters);
+                                fetchHistories(newFilters);
+                            }}
+                            onReset={() => {
+                                const r = { ...filters, actor_id: '', date_from: '', date_to: '' };
+                                setFilters(r);
+                                fetchHistories(r);
+                            }}
+                        >
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className={cn(
+                                    'border-surface-border bg-surface-base text-text-main hover:bg-surface-muted h-8 gap-1.5 px-2.5 rounded-lg transition-all text-[10px] font-semibold uppercase',
+                                    activeCount > 0 && 'bg-primary text-white border-primary',
+                                )}
+                            >
+                                <ListFilter size={12} strokeWidth={2.5} />
+                                <span>Filter</span>
+                                {activeCount > 0 && (
+                                    <span className="ml-1 flex h-3.5 w-3.5 items-center justify-center rounded-md bg-white text-[8px] font-bold text-primary">
+                                        {activeCount}
+                                    </span>
+                                )}
+                            </Button>
+                        </FilterPopover>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="w-44 sm:w-56">
+                            <SearchInput
+                                placeholder="CARI AKTIVITAS..."
+                                value={filters.search}
+                                onChange={(e) => {
+                                    setFilters({ ...filters, search: e.target.value });
+                                }}
+                                className="h-8 text-[10px] uppercase"
+                            />
+                        </div>
+
                         <Button
                             variant="outline"
                             size="sm"
-                            className={cn(
-                                'h-9 gap-1.5 rounded-xl border-black/10 px-3 font-bold text-black transition-all hover:bg-black/5 dark:border-white/10 dark:text-white dark:hover:bg-white/5',
-                                activeCount > 0 && 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black',
-                            )}
+                            onClick={handleExportExcel}
+                            className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted h-8 gap-1.5 px-2.5 rounded-lg transition-all text-[10px] font-semibold uppercase"
+                            title="Ekspor Excel Riwayat Aktivitas"
                         >
-                            <ListFilter size={12} strokeWidth={3} />
-                            <span className="text-[10px] uppercase">Filter</span>
-                            {activeCount > 0 && (
-                                <span className="ml-1 flex h-3.5 w-3.5 items-center justify-center rounded-md bg-white text-[8px] font-bold text-black dark:bg-black dark:text-white">
-                                    {activeCount}
-                                </span>
-                            )}
+                            <FileSpreadsheet size={13} strokeWidth={2.5} />
+                            <span>Export</span>
                         </Button>
-                    </FilterPopover>
-
-                    <button
-                        onClick={handleExportExcel}
-                        className="dark:bg-sidebar flex h-9 w-9 items-center justify-center rounded-xl border border-black/10 bg-white text-black/40 shadow-sm transition-all hover:text-black active:scale-95 dark:border-white/10 dark:text-white/40 dark:hover:text-white"
-                        title="Ekspor Excel"
-                    >
-                        <FileSpreadsheet size={16} strokeWidth={2.5} />
-                    </button>
+                    </div>
                 </div>
-            </div>
 
             <div className="pb-4">
                 {/* Timeline View */}
@@ -213,6 +232,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                         </div>
                     </div>
                 )}
+            </div>
             </div>
         </div>
     );

@@ -199,9 +199,9 @@ export function DataTable<T extends Record<string, any>>({
                 <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
                     <table className="w-full text-left border-collapse min-w-[800px]">
                         <thead className="bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
-                            <tr className="border-b border-primary/20 dark:border-zinc-700/80 select-none bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
+                            <tr className="h-11 border-b border-primary/20 dark:border-zinc-700/80 select-none bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
                                 {onSelectionChange && (
-                                    <th className="py-3.5 px-4 w-10 sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
+                                    <th className="h-11 py-2 px-4 w-10 sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 align-middle">
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
@@ -216,7 +216,7 @@ export function DataTable<T extends Record<string, any>>({
                                         <th
                                             key={idx}
                                             className={cn(
-                                                "py-3.5 px-4 text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80",
+                                                "h-11 py-2 px-4 text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80 align-middle",
                                                 isSortable && "cursor-pointer hover:text-white/80 dark:hover:text-white transition-colors",
                                                 col.className
                                             )}
@@ -239,7 +239,7 @@ export function DataTable<T extends Record<string, any>>({
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="py-3 px-2 w-14 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80">Aksi</th>}
+                                {rowActions && <th className="h-11 py-2 px-2 w-14 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 z-10 bg-primary dark:bg-zinc-800/90 border-b border-primary/20 dark:border-zinc-700/80 align-middle">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">

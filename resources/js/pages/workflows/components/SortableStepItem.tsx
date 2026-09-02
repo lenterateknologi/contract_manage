@@ -835,7 +835,7 @@ export default function SortableStepItem({
                                         Belum ada aksi yang dikonfigurasi. Klik tombol di atas untuk menambah.
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 gap-4 py-2 md:grid-cols-2">
+                                    <div className="grid grid-cols-1 gap-4 py-2">
                                         {actions.map((act: any, actIdx: number) => {
                                             return (
                                                 <div key={act.id || actIdx} className="animate-in fade-in relative duration-300 focus-within:z-40 hover:z-30">

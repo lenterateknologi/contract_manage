@@ -113,10 +113,9 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
             <SidebarProvider>
                 <AppSidebar />
                 <SidebarInset className="bg-background font-sans overflow-hidden">
-                <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 <Head title="Chat Center" />
 
-                <div className="flex h-[calc(100vh-64px)] w-full overflow-hidden font-sans bg-background">
+                <div className="flex h-screen w-full overflow-hidden font-sans bg-background">
                     {/* Full edge-to-edge Container for Chat Interface (No margin, padding or card effect) */}
                     <div className="flex flex-1 w-full h-full overflow-hidden min-w-0 bg-background">
                         {/* Sidebar: Left Panel (Daftar Percakapan) */}

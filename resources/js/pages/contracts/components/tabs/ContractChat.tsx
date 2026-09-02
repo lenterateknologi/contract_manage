@@ -27,6 +27,7 @@ import {
     Smile,
     Strikethrough,
     Table,
+    Users,
     X,
 } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
@@ -779,17 +780,39 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
     }, [sortedMsgs]);
 
     return (
-        <div className="animate-in fade-in relative flex h-full flex-col p-5 duration-500">
+        <div className="bg-surface-base flex flex-1 flex-col overflow-hidden h-full p-3 lg:p-4 gap-3">
+            {/* Compact Primary Header */}
+            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                        <MessageSquare size={15} className="text-primary-foreground/90" />
+                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
+                            Diskusi & Komunikasi Kontrak
+                        </h4>
+                        <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                            {msgs.length} Pesan
+                        </span>
+                    </div>
+                </div>
 
-            <div
-                ref={scrollContainerRef}
-                onScroll={(e) => {
-                    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-                    const isAtBottom = scrollHeight - scrollTop - clientHeight < 120;
-                    setShowScrollDown(!isAtBottom);
-                }}
-                className="flex-1 [scrollbar-width:none] overflow-y-auto px-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            >
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 text-[11px] text-white/80 font-medium">
+                        <Users size={13} className="text-white/80" />
+                        <span>{users.length || 1} Partisipan</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="animate-in fade-in relative flex flex-1 flex-col duration-500 overflow-hidden">
+                <div
+                    ref={scrollContainerRef}
+                    onScroll={(e) => {
+                        const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+                        const isAtBottom = scrollHeight - scrollTop - clientHeight < 120;
+                        setShowScrollDown(!isAtBottom);
+                    }}
+                    className="flex-1 [scrollbar-width:none] overflow-y-auto px-1 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                >
                 <div className="flex flex-col py-3">
                     {msgs.length === 0 ? (
                         <div className="flex flex-col items-center justify-center gap-2 pt-20 text-center opacity-40">
@@ -1085,6 +1108,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     fileName={previewTarget?.name || ''}
                 />
             )}
+            </div>
         </div>
     );
 }

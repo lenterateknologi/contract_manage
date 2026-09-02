@@ -160,14 +160,66 @@ class HandleInertiaRequests extends Middleware
         $groups = $modules->groupBy(fn ($item) => trim($item->group_title))
             ->map(function ($items, $title) use ($portalUsedCounts) {
                 $first = $items->first();
-                $sortedItems = $items->map(fn ($module) => [
-                    'title' => $module->name,
-                    'url' => $module->route,
-                    'description' => $module->description,
-                    'icon' => $module->icon,
-                    'sequence' => $module->module_sequence,
-                    'badge' => $portalUsedCounts[$module->route] ?? null,
-                ])->values()->all();
+                $sortedItems = $items->map(function ($module) use ($portalUsedCounts) {
+                    $route = $module->route;
+                    $title = $module->name;
+                    $children = null;
+
+                    if ($route === '/contracts' || $route === '/admin/contracts') {
+                        $title = 'Pengajuan';
+                        $children = [
+                            [
+                                'title' => 'Kontrak',
+                                'url' => '/contracts?parent_tab=kontrak',
+                                'icon' => 'FileText',
+                                'description' => 'Dokumen Kontrak',
+                            ],
+                            [
+                                'title' => 'Non Kontrak',
+                                'url' => '/contracts?parent_tab=non_kontrak',
+                                'icon' => 'FileCheck',
+                                'description' => 'Dokumen Non Kontrak',
+                            ],
+                            [
+                                'title' => 'NDA',
+                                'url' => '/contracts?parent_tab=nda',
+                                'icon' => 'Zap',
+                                'description' => 'Non-Disclosure Agreement',
+                            ],
+                        ];
+                    } elseif ($route === '/contracts/mine') {
+                        $children = [
+                            [
+                                'title' => 'Kontrak',
+                                'url' => '/contracts/mine?mine_tab=kontrak',
+                                'icon' => 'FileText',
+                                'description' => 'Dokumen Kontrak Saya',
+                            ],
+                            [
+                                'title' => 'Non Kontrak',
+                                'url' => '/contracts/mine?mine_tab=non_kontrak',
+                                'icon' => 'FileCheck',
+                                'description' => 'Dokumen Non Kontrak Saya',
+                            ],
+                            [
+                                'title' => 'NDA',
+                                'url' => '/contracts/mine?mine_tab=nda',
+                                'icon' => 'Zap',
+                                'description' => 'NDA Saya',
+                            ],
+                        ];
+                    }
+
+                    return [
+                        'title' => $title,
+                        'url' => $route,
+                        'description' => $module->description,
+                        'icon' => $module->icon,
+                        'sequence' => $module->module_sequence,
+                        'badge' => $portalUsedCounts[$module->route] ?? null,
+                        'children' => $children,
+                    ];
+                })->values()->all();
 
                 usort($sortedItems, function ($a, $b) {
                     $orderA = $a['sequence'] ?? 9999;

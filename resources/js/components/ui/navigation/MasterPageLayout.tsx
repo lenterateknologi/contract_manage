@@ -27,11 +27,11 @@ interface MasterPageLayoutProps {
     padded?: boolean;
 }
 
-export function MasterPageLayout({ children, className, padded = true }: MasterPageLayoutProps) {
+export function MasterPageLayout({ children, className, padded = false }: MasterPageLayoutProps) {
     return (
         <div
             className={cn(
-                'flex h-[calc(100svh-76px)] overflow-hidden bg-slate-100/60 dark:bg-zinc-950 w-full gap-2',
+                'flex h-svh max-h-svh overflow-hidden bg-background w-full p-0 m-0 rounded-none border-0 gap-0',
                 padded && 'p-3',
                 className,
             )}

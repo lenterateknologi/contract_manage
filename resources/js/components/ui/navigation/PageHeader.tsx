@@ -60,48 +60,49 @@ export function PageHeader({
     }, [activeFilters, filters]);
 
     return (
-        <div className="flex flex-col gap-4 border-b border-border bg-white px-6 py-5 dark:bg-zinc-900/50">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                {/* Title and Icon */}
-                <div className="flex items-start gap-3">
-                    {Icon && (
-                        <Icon size={22} className="text-muted-foreground shrink-0 mt-0.5" />
-                    )}
-                    <div className="flex flex-col gap-0.5">
-                        <h1 className="text-base font-semibold tracking-tight text-foreground">
-                            {title}
-                        </h1>
-                        {subtitle && (
-                            <p className="text-xs text-muted-foreground">
-                                {subtitle}
-                            </p>
-                        )}
+        <div className="flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between border-b border-border bg-background px-5 dark:bg-zinc-900/50 box-border">
+            {/* Title and Icon */}
+            <div className="flex items-center gap-2.5 min-w-0 mr-4">
+                {Icon && (
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                        <Icon size={16} className="text-foreground/80" />
                     </div>
-                </div>
-
-                {/* Search, Filter & Actions Row */}
-                <div className="flex flex-wrap items-center gap-3 md:ml-auto">
-                    {/* Search Input */}
-                    {onSearchChange !== undefined && (
-                        <div className="w-full sm:w-64 md:w-80 lg:w-96">
-                            <SearchInput
-                                placeholder={searchPlaceholder}
-                                value={localSearch}
-                                onChange={(e) => {
-                                    setLocalSearch(e.target.value);
-                                    onSearchChange(e.target.value);
-                                }}
-                            />
-                        </div>
-                    )}
-
-                    {/* Actions */}
-                    {actions && (
-                        <div className="flex items-center gap-2">
-                            {actions}
-                        </div>
+                )}
+                <div className="flex flex-col justify-center min-w-0">
+                    <h1 className="text-[13.5px] font-bold tracking-tight text-foreground leading-tight truncate">
+                        {title}
+                    </h1>
+                    {subtitle && (
+                        <p className="text-[10.5px] text-muted-foreground leading-tight truncate mt-0.5">
+                            {subtitle}
+                        </p>
                     )}
                 </div>
+            </div>
+
+            {/* Search, Filter & Actions Row */}
+            <div className="flex items-center gap-2 md:ml-auto shrink-0">
+                {/* Search Input */}
+                {onSearchChange !== undefined && (
+                    <div className="w-48 sm:w-56 md:w-64 lg:w-72">
+                        <SearchInput
+                            placeholder={searchPlaceholder}
+                            value={localSearch}
+                            onChange={(e) => {
+                                setLocalSearch(e.target.value);
+                                onSearchChange(e.target.value);
+                            }}
+                            className="h-9 text-xs"
+                        />
+                    </div>
+                )}
+
+                {/* Actions */}
+                {actions && (
+                    <div className="flex items-center gap-2">
+                        {actions}
+                    </div>
+                )}
             </div>
         </div>
     );

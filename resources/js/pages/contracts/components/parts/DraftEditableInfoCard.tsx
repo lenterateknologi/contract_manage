@@ -1,3 +1,4 @@
+import { cn } from '@/lib/utils';
 import { Avatar } from '@/pages/contracts/components/ui/ui';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { Building2, Check, ChevronDown, ChevronUp, ExternalLink, Info, Loader2, User } from 'lucide-react';
@@ -214,13 +215,17 @@ export function DraftEditableInfoCard({
 
             {/* Card 1: Informasi Kontrak */}
             <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
-                <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
-                    <div className="flex items-center gap-2 text-xs font-normal uppercase tracking-tight text-primary-foreground">
-                        <Info size={16} className="text-primary-foreground/80" /> Informasi Kontrak
+                <div className={cn("bg-primary flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4", minimized ? "rounded-xl" : "rounded-t-xl border-b border-primary/80")}>
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+                        <Info size={15} className="text-primary-foreground/90" /> Informasi Kontrak
                     </div>
                     <div className="flex items-center gap-2">
-                        <button onClick={() => setMinimized(!minimized)} className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5 ml-1">
-                            {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+                        <button
+                            type="button"
+                            onClick={() => setMinimized(!minimized)}
+                            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 w-6 flex items-center justify-center rounded-md transition-all active:scale-95 cursor-pointer"
+                        >
+                            {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                         </button>
                     </div>
                 </div>
@@ -260,130 +265,142 @@ export function DraftEditableInfoCard({
                     </div>
                 )}
             </div>
-
-            {/* Card 2: Informasi Pengaju */}
-            <RequesterInfoCard selected={selected} />
-
-            {/* Card 3: Detail Pihak Kedua / Vendor */}
-            <VendorInfoCard selected={selected} />
         </div>
     );
 }
 
-export function RequesterInfoCard({ selected }: { selected: Contract }) {
+export function RequesterInfoCard({ selected, isTabView = false }: { selected: Contract; isTabView?: boolean }) {
     const [minimized, setMinimized] = useState(false);
     const user = selected.initiator || selected.creator;
 
+    const content = (
+        <div className="grid grid-cols-1 gap-4 p-5">
+            {/* Data Pengaju / Creator Detail */}
+            <div className="flex flex-col gap-3 border-b border-surface-border/60 pb-4">
+                <div className="text-foreground text-[11px] font-extrabold tracking-wider uppercase">
+                    Diajukan Oleh
+                </div>
+                <div className="flex items-start gap-3">
+                    <Avatar user={user} size="md" className="mt-0.5 shrink-0" />
+                    <div className="flex flex-col overflow-hidden min-w-0 flex-1">
+                        <span className="text-text-main text-sm font-bold truncate">
+                            {user?.name || '-'}
+                        </span>
+                        {user?.email && (
+                            <span className="text-text-soft text-xs font-medium truncate">
+                                {user.email}
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Hierarki Organisasi Pengaju */}
+                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Departemen :</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.department_name || '—'}</span>
+                    </div>
+                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Divisi :</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.division_name || '—'}</span>
+                    </div>
+                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Perusahaan (PT) :</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.company_name || '—'}</span>
+                    </div>
+                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Company Group :</span>
+                        <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.company_group_name || '—'}</span>
+                    </div>
+                </div>
+                <div className="leading-relaxed pt-1">
+                    <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider inline-block mr-1.5">Alamat Kantor / Pihak I :</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-normal text-xs break-words">
+                        {(user as any)?.address || selected.metadata?.meta_p1_alamat || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan'}
+                    </span>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-1 pt-1 border-b border-surface-border/60 pb-3">
+                <div className="flex items-center justify-between">
+                    <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
+                        Tgl Dibuat :
+                    </div>
+                    <MetaBadge name="created_at" />
+                </div>
+                <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.created_at}</span>
+            </div>
+
+            <div className="pt-1">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1 items-start">
+                        <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
+                            Disetujui Oleh :
+                        </div>
+                        {selected.assigned_by ? (
+                            <div className="flex items-center gap-2">
+                                <Avatar user={selected.assigned_by} size="sm" />
+                                <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.assigned_by.name}</span>
+                            </div>
+                        ) : (
+                            <span className="text-slate-400 text-xs font-medium italic opacity-60">Belum disetujui manager</span>
+                        )}
+                    </div>
+
+                    <div className="flex flex-col gap-1 items-start">
+                        <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
+                            Ditugaskan :
+                        </div>
+                        {selected.assigned_pic ? (
+                            <div className="flex items-center gap-2">
+                                <Avatar user={selected.assigned_pic} size="sm" />
+                                <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.assigned_pic.name}</span>
+                            </div>
+                        ) : (
+                            <span className="text-slate-400 text-xs font-medium italic opacity-60">Belum ditugaskan</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+
+    if (isTabView) {
+        return (
+            <div className="flex flex-col flex-1 p-3 lg:p-4 gap-3">
+                <div className="bg-primary flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl shadow-xs">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+                        <User size={15} className="text-primary-foreground/90" /> Informasi Pengaju
+                    </div>
+                </div>
+                <div className="rounded-xl border border-surface-border bg-surface-base flex-1 overflow-y-auto custom-scrollbar">
+                    {content}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
-            <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
-                <div className="flex items-center gap-2 text-xs font-normal uppercase tracking-tight text-primary-foreground">
-                    <User size={16} className="text-primary-foreground/80" /> Informasi Pengaju
+            <div className={cn("bg-primary flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4", minimized ? "rounded-xl" : "rounded-t-xl border-b border-primary/80")}>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+                    <User size={15} className="text-primary-foreground/90" /> Informasi Pengaju
                 </div>
                 <button
+                    type="button"
                     onClick={() => setMinimized(!minimized)}
-                    className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5"
+                    className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 w-6 flex items-center justify-center rounded-md transition-all active:scale-95 cursor-pointer"
                 >
-                    {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+                    {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                 </button>
             </div>
 
-            {!minimized && (
-                <div className="grid grid-cols-1 gap-3.5 p-3.5">
-                    {/* Data Pengaju / Creator Detail */}
-                    <div className="flex flex-col gap-2 border-b border-surface-border/60 pb-3">
-                        <div className="text-foreground text-[10.5px] font-extrabold tracking-wider uppercase">
-                            Diajukan Oleh
-                        </div>
-                        <div className="flex items-start gap-2.5">
-                            <Avatar user={user} size="sm" className="mt-0.5 shrink-0" />
-                            <div className="flex flex-col overflow-hidden min-w-0 flex-1">
-                                <span className="text-text-main text-xs font-bold truncate">
-                                    {user?.name || '-'}
-                                </span>
-                                {user?.email && (
-                                    <span className="text-text-soft text-[11px] font-medium truncate">
-                                        {user.email}
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Hierarki Organisasi Pengaju */}
-                        <div className="mt-1 flex flex-col gap-2.5 text-xs">
-                            <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Departemen :</span>
-                                <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.department_name || '—'}</span>
-                            </div>
-                            <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Divisi :</span>
-                                <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.division_name || '—'}</span>
-                            </div>
-                            <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Perusahaan (PT) :</span>
-                                <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.company_name || '—'}</span>
-                            </div>
-                            <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Company Group :</span>
-                                <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.company_group_name || '—'}</span>
-                            </div>
-                            <div className="leading-relaxed pt-0.5">
-                                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider inline-block mr-1.5">Alamat Kantor / Pihak I :</span>
-                                <span className="text-slate-900 dark:text-slate-100 font-normal text-xs break-words">
-                                    {(user as any)?.address || selected.metadata?.meta_p1_alamat || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
-                        <div className="flex items-center justify-between">
-                            <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
-                                Tgl Dibuat :
-                            </div>
-                            <MetaBadge name="created_at" />
-                        </div>
-                        <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.created_at}</span>
-                    </div>
-
-                    <div className="border-surface-border mt-1 border-t pt-3">
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="flex flex-col gap-1 items-start">
-                                <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
-                                    Disetujui Oleh :
-                                </div>
-                                {selected.assigned_by ? (
-                                    <div className="flex items-center gap-2">
-                                        <Avatar user={selected.assigned_by} size="sm" />
-                                        <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.assigned_by.name}</span>
-                                    </div>
-                                ) : (
-                                    <span className="text-slate-400 text-xs font-medium italic opacity-60">Belum disetujui manager</span>
-                                )}
-                            </div>
-
-                            <div className="flex flex-col gap-1 items-start">
-                                <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
-                                    Ditugaskan :
-                                </div>
-                                {selected.assigned_pic ? (
-                                    <div className="flex items-center gap-2">
-                                        <Avatar user={selected.assigned_pic} size="sm" />
-                                        <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.assigned_pic.name}</span>
-                                    </div>
-                                ) : (
-                                    <span className="text-slate-400 text-xs font-medium italic opacity-60">Belum ditugaskan</span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {!minimized && content}
         </div>
     );
 }
 
-export function VendorInfoCard({ selected }: { selected: Contract }) {
+export function VendorInfoCard({ selected, isTabView = false }: { selected: Contract; isTabView?: boolean }) {
     const [minimized, setMinimized] = useState(false);
     const vendor = (selected as any)?.vendor;
     const vendorName = vendor?.name || vendor?.vendor_name || selected.metadata?.meta_p2_entity || '—';
@@ -391,59 +408,103 @@ export function VendorInfoCard({ selected }: { selected: Contract }) {
     const picPosition = vendor?.pic_position || vendor?.detail?.pic_position || selected.metadata?.meta_p2_signer_position || '—';
     const address = vendor?.address || vendor?.detail?.address || selected.metadata?.meta_p2_alamat || '—';
 
-    return (
-        <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
-            <div className="bg-primary rounded-t-xl flex h-11 items-center justify-between border-b border-primary/80 px-4">
-                <div className="flex items-center gap-2 text-xs font-normal uppercase tracking-tight text-primary-foreground">
-                    <Building2 size={16} className="text-primary-foreground/80" /> Detail Pihak Kedua / Vendor
+    const content = (
+        <div className="grid grid-cols-1 gap-4 p-5">
+            <div className="flex flex-wrap items-baseline gap-2 border-b border-slate-200/80 dark:border-slate-800/80 pb-3">
+                <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase shrink-0">
+                    Nama Vendor / Pihak II :
+                </span>
+                <span className="text-slate-900 dark:text-slate-100 text-sm font-bold truncate">{vendorName}</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                    <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Nama PIC :</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-normal truncate">{picName}</span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
+                    <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Jabatan PIC :</span>
+                    <span className="text-slate-900 dark:text-slate-100 font-normal truncate">{picPosition}</span>
+                </div>
+            </div>
+            <div className="leading-relaxed pt-1">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider inline-block mr-1.5">Alamat Resmi :</span>
+                <span className="text-slate-900 dark:text-slate-100 font-normal text-xs break-words">{address}</span>
+            </div>
+
+            {vendor?.id && (
+                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                    <a
+                        href={`/admin/core/vendors/${vendor.id}/document`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                    >
+                        <span>Lihat Dokumen Legalitas Vendor Lengkap</span>
+                        <ExternalLink size={14} />
+                    </a>
+                </div>
+            )}
+        </div>
+    );
+
+    if (isTabView) {
+        return (
+            <div className="flex flex-col flex-1 p-3 lg:p-4 gap-3">
+                <div className="bg-primary flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl shadow-xs">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+                        <Building2 size={15} className="text-primary-foreground/90" /> Detail Pihak Kedua / Vendor
+                    </div>
                     {vendor?.id && (
                         <a
                             href={`/admin/core/vendors/${vendor.id}/document`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-2 py-1 text-[11px] font-medium text-white transition-all hover:bg-white/20 active:scale-95 cursor-pointer"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 px-2.5 py-1 text-[11px] font-medium text-white transition-all active:scale-95 cursor-pointer"
                             title="Buka Dokumen Resmi Vendor"
                         >
-                            <span>Detail Lengkap</span>
+                            <span>Detail Dokumen</span>
                             <ExternalLink size={13} />
                         </a>
                     )}
+                </div>
+                <div className="rounded-xl border border-surface-border bg-surface-base flex-1 overflow-y-auto custom-scrollbar">
+                    {content}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-surface-base text-text-main border-surface-border rounded-xl border shadow-xs">
+            <div className={cn("bg-primary flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4", minimized ? "rounded-xl" : "rounded-t-xl border-b border-primary/80")}>
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+                    <Building2 size={15} className="text-primary-foreground/90" /> Detail Pihak Kedua / Vendor
+                </div>
+                <div className="flex items-center gap-1.5">
+                    {vendor?.id && (
+                        <a
+                            href={`/admin/core/vendors/${vendor.id}/document`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 px-2 flex items-center gap-1 rounded-md text-[10px] font-medium transition-all active:scale-95 cursor-pointer"
+                            title="Buka Dokumen Resmi Vendor"
+                        >
+                            <span>Dokumen</span>
+                            <ExternalLink size={11} />
+                        </a>
+                    )}
                     <button
+                        type="button"
                         onClick={() => setMinimized(!minimized)}
-                        className="text-primary-foreground transition-all hover:opacity-80 active:scale-95 cursor-pointer p-0.5"
+                        className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 w-6 flex items-center justify-center rounded-md transition-all active:scale-95 cursor-pointer"
                     >
-                        {minimized ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+                        {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                     </button>
                 </div>
             </div>
 
-            {!minimized && (
-                <div className="grid grid-cols-1 gap-3.5 p-3.5">
-                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-slate-200/80 dark:border-slate-800/80 pb-2.5">
-                        <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase shrink-0">
-                            Nama Vendor / Pihak II :
-                        </span>
-                        <span className="text-slate-900 dark:text-slate-100 text-xs font-normal truncate">{vendorName}</span>
-                    </div>
-
-                    <div className="flex flex-col gap-2.5 text-xs">
-                        <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                            <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Nama PIC :</span>
-                            <span className="text-slate-900 dark:text-slate-100 font-normal truncate">{picName}</span>
-                        </div>
-                        <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                            <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Jabatan PIC :</span>
-                            <span className="text-slate-900 dark:text-slate-100 font-normal truncate">{picPosition}</span>
-                        </div>
-                        <div className="leading-relaxed pt-0.5">
-                            <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider inline-block mr-1.5">Alamat Resmi :</span>
-                            <span className="text-slate-900 dark:text-slate-100 font-normal text-xs break-words">{address}</span>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {!minimized && content}
         </div>
     );
 }

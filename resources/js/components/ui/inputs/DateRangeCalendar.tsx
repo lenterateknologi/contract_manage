@@ -136,28 +136,30 @@ function MonthGrid({ year, month, from, to, hovered, selecting, onDayClick, onDa
 }
 
 export function DateRangeCalendar({ from, to, onChange }: DateRangeCalendarProps) {
-    const today = new Date();
-    const [leftMonth, setLeftMonth] = useState({ year: today.getFullYear(), month: today.getMonth() });
-    const [hovered, setHovered] = useState<Date | null>(null);
-    const [pendingFrom, setPendingFrom] = useState<Date | null>(null);
-
     const fromDate = parseDate(from);
     const toDate = parseDate(to);
 
-    const rightMonth = leftMonth.month === 11
-        ? { year: leftMonth.year + 1, month: 0 }
-        : { year: leftMonth.year, month: leftMonth.month + 1 };
+    const [currentMonth, setCurrentMonth] = useState<{ year: number; month: number }>(() => {
+        const base = fromDate || new Date();
+        return { year: base.getFullYear(), month: base.getMonth() };
+    });
+    const [hovered, setHovered] = useState<Date | null>(null);
+    const [pendingFrom, setPendingFrom] = useState<Date | null>(null);
 
-    const goLeft = () => {
-        setLeftMonth(prev =>
+    const goLeft = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCurrentMonth(prev =>
             prev.month === 0
                 ? { year: prev.year - 1, month: 11 }
                 : { year: prev.year, month: prev.month - 1 }
         );
     };
 
-    const goRight = () => {
-        setLeftMonth(prev =>
+    const goRight = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setCurrentMonth(prev =>
             prev.month === 11
                 ? { year: prev.year + 1, month: 0 }
                 : { year: prev.year, month: prev.month + 1 }
@@ -181,96 +183,76 @@ export function DateRangeCalendar({ from, to, onChange }: DateRangeCalendarProps
 
     const formatDisplay = (d: Date | null) => {
         if (!d) return '—';
-        return `${String(d.getDate()).padStart(2,'0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+        return `${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()].slice(0, 3)} ${d.getFullYear()}`;
     };
 
     return (
-        <div className="flex flex-col gap-3 w-full">
-            {/* Sticky Month Navigator */}
-            <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2.5 select-none w-full">
+            {/* Month Navigator */}
+            <div className="flex items-center justify-between px-0.5">
                 <button
+                    type="button"
                     onClick={goLeft}
-                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-surface-border hover:bg-surface-muted transition-all cursor-pointer text-text-desc"
+                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer text-slate-500"
                 >
                     <ChevronLeft size={13} />
                 </button>
-                <div className="flex gap-4 flex-1 justify-around px-2">
-                    <span className="text-[11px] font-bold text-text-main text-center min-w-[100px]">
-                        {MONTHS[leftMonth.month]} {leftMonth.year}
-                    </span>
-                    <span className="text-[11px] font-bold text-text-main text-center min-w-[100px]">
-                        {MONTHS[rightMonth.month]} {rightMonth.year}
-                    </span>
-                </div>
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 text-center">
+                    {MONTHS[currentMonth.month]} {currentMonth.year}
+                </span>
                 <button
+                    type="button"
                     onClick={goRight}
-                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-surface-border hover:bg-surface-muted transition-all cursor-pointer text-text-desc"
+                    className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer text-slate-500"
                 >
                     <ChevronRight size={13} />
                 </button>
             </div>
 
-            {/* Two Month Grids */}
-            <div className="flex gap-3">
-                <div className="flex-1 min-w-0">
-                    <MonthGrid
-                        year={leftMonth.year}
-                        month={leftMonth.month}
-                        from={displayFrom}
-                        to={toDate}
-                        hovered={hovered}
-                        selecting={selecting}
-                        onDayClick={handleDayClick}
-                        onDayHover={setHovered}
-                    />
-                </div>
-                <div className="w-px bg-surface-border shrink-0 self-stretch" />
-                <div className="flex-1 min-w-0">
-                    <MonthGrid
-                        year={rightMonth.year}
-                        month={rightMonth.month}
-                        from={displayFrom}
-                        to={toDate}
-                        hovered={hovered}
-                        selecting={selecting}
-                        onDayClick={handleDayClick}
-                        onDayHover={setHovered}
-                    />
-                </div>
+            {/* Month Grid */}
+            <div className="w-full">
+                <MonthGrid
+                    year={currentMonth.year}
+                    month={currentMonth.month}
+                    from={displayFrom}
+                    to={toDate}
+                    hovered={hovered}
+                    selecting={selecting}
+                    onDayClick={handleDayClick}
+                    onDayHover={setHovered}
+                />
             </div>
 
             {/* Status bar */}
-            <div className="border-t border-surface-border pt-2 mt-1">
-                <div className="flex items-stretch gap-0 rounded-xl overflow-hidden border border-surface-border">
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-2 mt-0.5">
+                <div className="flex items-stretch gap-0 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 text-xs">
                     <div className={cn(
-                        'flex-1 flex flex-col px-3 py-2 transition-colors',
-                        selecting ? 'bg-primary/5' : 'bg-surface-base',
+                        'flex-1 flex flex-col px-2.5 py-1.5 transition-colors',
+                        selecting ? 'bg-primary/5' : 'bg-slate-50 dark:bg-slate-900',
                     )}>
-                        <span className="text-[9px] font-bold uppercase tracking-wider mb-0.5"
-                            style={{ color: 'var(--color-primary)' }}>
+                        <span className="text-[8px] font-bold uppercase tracking-wider mb-0.5 text-primary">
                             Mulai
                         </span>
                         <span className={cn(
-                            'text-[12px] font-semibold',
-                            displayFrom ? 'text-text-main' : 'text-text-desc'
+                            'text-[11px] font-semibold truncate',
+                            displayFrom ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400'
                         )}>
                             {formatDisplay(displayFrom)}
                         </span>
                     </div>
-                    <div className="w-px bg-surface-border" />
+                    <div className="w-px bg-slate-200 dark:bg-slate-800" />
                     <div className={cn(
-                        'flex-1 flex flex-col px-3 py-2 transition-colors',
-                        !selecting && toDate ? 'bg-primary/5' : 'bg-surface-base',
+                        'flex-1 flex flex-col px-2.5 py-1.5 transition-colors',
+                        !selecting && toDate ? 'bg-primary/5' : 'bg-slate-50 dark:bg-slate-900',
                     )}>
-                        <span className="text-[9px] font-bold uppercase tracking-wider mb-0.5"
-                            style={{ color: 'var(--color-primary)' }}>
+                        <span className="text-[8px] font-bold uppercase tracking-wider mb-0.5 text-primary">
                             Sampai
                         </span>
                         <span className={cn(
-                            'text-[12px] font-semibold',
-                            toDate && !selecting ? 'text-text-main' : 'text-text-desc'
+                            'text-[11px] font-semibold truncate',
+                            toDate && !selecting ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400'
                         )}>
-                            {toDate && !selecting ? formatDisplay(toDate) : selecting ? 'Pilih tanggal…' : '—'}
+                            {toDate && !selecting ? formatDisplay(toDate) : selecting ? 'Pilih...' : '—'}
                         </span>
                     </div>
                 </div>
