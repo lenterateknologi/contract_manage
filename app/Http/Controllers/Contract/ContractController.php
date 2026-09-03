@@ -115,6 +115,7 @@ class ContractController extends Controller
             'divisions' => Inertia::defer($loaders['divisions']),
             'roles' => Inertia::defer($loaders['roles']),
             'regions' => Inertia::defer($loaders['regions']),
+            'locations' => Inertia::defer($loaders['locations']),
             'companyGroups' => Inertia::defer($loaders['companyGroups']),
             'companies' => Inertia::defer($loaders['companies']),
             'organizationTree' => Inertia::defer(function () use ($loaders) {

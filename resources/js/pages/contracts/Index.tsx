@@ -357,6 +357,7 @@ function ContractPage({
     companyGroups = [],
     companies = [],
     regions = [],
+    locations = [],
     divisions = [],
     organizationTree = [],
     mineCounts,
@@ -429,6 +430,7 @@ function ContractPage({
     companyGroups?: any[];
     companies?: any[];
     regions?: any[];
+    locations?: any[];
     divisions?: any[];
     organizationTree?: any[];
 }>) {
@@ -1301,10 +1303,11 @@ function ContractPage({
                                             only: ['contracts', 'filters', 'parentCategoryCounts', 'mineCounts', 'pendingCounts', 'expiryCategoryCounts'],
                                         }),
                                 } : undefined}
+                                showFooter={view !== 'dashboard'}
                             >
-                                <div className="flex-1 overflow-auto">
+                                <div className="flex-1 min-h-0 h-full overflow-hidden flex flex-col">
                                     {view === 'dashboard' && (
-                                        <div className="p-5">
+                                        <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar p-5">
                                             <DashboardMetrics metrics={metrics} activeTab={dashboardTab} />
                                         </div>
                                     )}

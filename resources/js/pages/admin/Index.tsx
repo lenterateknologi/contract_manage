@@ -141,6 +141,7 @@ export default function AdminIndex({
                         masterDepartments={departments}
                         masterJobTitles={jobTitles}
                         masterJobLevels={jobLevels}
+                        masterRoles={rolesArray}
                     />
                 );
             }

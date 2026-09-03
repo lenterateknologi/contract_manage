@@ -10,6 +10,7 @@ use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\FormTemplate;
+use App\Models\Location;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\SubmissionType;
@@ -64,6 +65,10 @@ class ContractOptionsQuery
                 }
 
                 return $q->orderBy('name')->get();
+            },
+
+            'locations' => function () {
+                return Location::query()->where('is_used', true)->orderBy('name')->get();
             },
 
             'companies' => function () use ($allowedCompanies, $isManager, $userCompany) {

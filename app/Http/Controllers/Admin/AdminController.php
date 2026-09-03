@@ -141,10 +141,12 @@ class AdminController extends Controller
         $companies = Company::query()->orderBy('name')->get(['id', 'name', 'code', 'company_group_id', 'region_id', 'is_used']);
         $jobTitles = JobTitle::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
         $jobLevels = JobLevel::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
+        $roles = Role::query()->orderBy('name')->get(['id', 'name']);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'members',
             'users' => $users,
+            'roles' => $roles,
             'divisions' => $divisions,
             'departments' => $departments,
             'companyGroups' => $companyGroups,

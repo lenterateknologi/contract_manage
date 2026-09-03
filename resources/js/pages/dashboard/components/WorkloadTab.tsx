@@ -60,6 +60,10 @@ interface UserWorkload {
     text_color?: string;
     department_name?: string;
     department_id?: string | null;
+    division_name?: string;
+    division_id?: string | null;
+    location_name?: string;
+    location_id?: string | null;
     company_id?: string | number | null;
     company_group_id?: string | number | null;
     region_id?: string | number | null;
@@ -104,8 +108,7 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
         setIsMounted(true);
     }, []);
 
-    const { auth, departments = [], companyGroups = [], regions = [], companies = [] } = usePage<any>().props;
-    const userDeptId = auth?.user?.department_id;
+    const { auth, companyGroups = [], locations = [], divisions = [] } = usePage<any>().props;
     const loginUserRole = auth?.user?.role;
     const isAdmin = loginUserRole === 'Admin';
 
@@ -117,15 +120,11 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
     const renewalCompletionRate = data?.renewalCompletionRate ?? 0;
 
     const userGroupId = auth?.user?.company_group_id;
-    const userRegionId = auth?.user?.region_id;
-    const userCompanyId = auth?.user?.company_id;
+    const userLocationId = auth?.user?.location_id;
+    const userDivisionId = auth?.user?.division_id;
 
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearch = useDebounce(searchQuery, 500);
-    const [selectedGroupId, setSelectedGroupId] = useState<string>(userGroupId ? String(userGroupId) : 'all');
-    const [selectedRegionId, setSelectedRegionId] = useState<string>(userRegionId ? String(userRegionId) : 'all');
-    const [selectedCompanyId, setSelectedCompanyId] = useState<string>(userCompanyId ? String(userCompanyId) : 'all');
-    const [selectedDeptId, setSelectedDeptId] = useState<string>(userDeptId ? String(userDeptId) : 'all');
     const [statusFilter, setStatusFilter] = useState<'all' | 'ready' | 'sibuk'>('all');
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
@@ -136,41 +135,6 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
 
-    const filteredCompanies = useMemo(() => {
-        return companies.filter((c: any) => {
-            const matchGroup = selectedGroupId === 'all' || String(c.company_group_id) === selectedGroupId;
-            const matchRegion = selectedRegionId === 'all' || String(c.region_id) === selectedRegionId;
-            return matchGroup && matchRegion;
-        });
-    }, [companies, selectedGroupId, selectedRegionId]);
-
-    const filteredDepartments = useMemo(() => {
-        return departments.filter((d: any) => {
-            const matchCompany = selectedCompanyId === 'all' || String(d.company_id) === selectedCompanyId;
-            return matchCompany;
-        });
-    }, [departments, selectedCompanyId]);
-
-    const groupOptions = useMemo(() => [
-        { value: 'all', label: 'Semua Group' },
-        ...companyGroups.map((cg: any) => ({ value: String(cg.id), label: cg.name }))
-    ], [companyGroups]);
-
-    const regionOptions = useMemo(() => [
-        { value: 'all', label: 'Semua Region' },
-        ...regions.map((r: any) => ({ value: String(r.id), label: r.name }))
-    ], [regions]);
-
-    const companyOptions = useMemo(() => [
-        { value: 'all', label: 'Semua Perusahaan' },
-        ...filteredCompanies.map((c: any) => ({ value: String(c.id), label: c.name }))
-    ], [filteredCompanies]);
-
-    const deptOptions = useMemo(() => [
-        { value: 'all', label: 'Semua Divisi' },
-        ...filteredDepartments.map((dept: any) => ({ value: String(dept.id), label: dept.name }))
-    ], [filteredDepartments]);
-
     const statusOptions = useMemo(() => [
         { value: 'all', label: 'Semua Status' },
         { value: 'ready', label: 'Ready' },
@@ -179,35 +143,30 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
 
     const filteredWorkloads = useMemo(() => {
         return userWorkloads.filter((user) => {
-            const uGroupId = user.company_group_id != null ? String(user.company_group_id) : '';
-            const uRegionId = user.region_id != null ? String(user.region_id) : '';
-            const uCompanyId = user.company_id != null ? String(user.company_id) : '';
-            const uDeptIdStr = user.department_id != null ? String(user.department_id) : '';
-
-            // If non-admin, strictly enforce scope filtering: must match company_id AND department_id
-            if (!isAdmin) {
-                if (userCompanyId && uCompanyId !== String(userCompanyId)) return false;
-                if (userDeptId && uDeptIdStr !== String(userDeptId)) return false;
-                if (userGroupId && uGroupId && uGroupId !== String(userGroupId)) return false;
-                if (userRegionId && uRegionId && uRegionId !== String(userRegionId)) return false;
+            // Otomatis hardcode filter: jika non-admin dan user memiliki division_id, batasi ke division yang sama
+            if (!isAdmin && userDivisionId && user.division_id !== userDivisionId) {
+                return false;
             }
-
-            const matchesGroup = selectedGroupId === 'all' || uGroupId === selectedGroupId;
-            const matchesRegion = selectedRegionId === 'all' || uRegionId === selectedRegionId;
-            const matchesCompany = selectedCompanyId === 'all' || uCompanyId === selectedCompanyId;
-            const matchesDept = selectedDeptId === 'all' || uDeptIdStr === selectedDeptId;
+            if (!isAdmin && userLocationId && user.location_id && user.location_id !== userLocationId) {
+                return false;
+            }
+            if (!isAdmin && userGroupId && user.company_group_id && user.company_group_id !== userGroupId) {
+                return false;
+            }
 
             const matchesSearch =
                 user.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
                 user.role.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-                (user.department_name && user.department_name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+                (user.division_name && user.division_name.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
+                (user.department_name && user.department_name.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
+                (user.location_name && user.location_name.toLowerCase().includes(debouncedSearch.toLowerCase()));
             const matchesStatus =
                 statusFilter === 'all' ||
                 (statusFilter === 'ready' && user.load_status === 'Ready') ||
                 (statusFilter === 'sibuk' && user.load_status === 'Sibuk');
-            return matchesGroup && matchesRegion && matchesCompany && matchesDept && matchesSearch && matchesStatus;
+            return matchesSearch && matchesStatus;
         });
-    }, [userWorkloads, isAdmin, userGroupId, userRegionId, userCompanyId, userDeptId, selectedGroupId, selectedRegionId, selectedCompanyId, selectedDeptId, debouncedSearch, statusFilter]);
+    }, [userWorkloads, isAdmin, userDivisionId, userLocationId, userGroupId, debouncedSearch, statusFilter]);
 
     const selectedUser = useMemo(() => {
         if (!selectedUserId) return null;
@@ -348,68 +307,116 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
-                {/* Column 1-2: Kategori Kontrak (Contract Types) - Takes 2 of 3 columns */}
+                {/* Column 1-2: Donut Chart PIC & Kategori Kontrak (Contract Types) - Takes 2 of 3 columns */}
                 <div className="lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-[10px] font-bold text-text-soft uppercase tracking-widest">
-                            Kategori Kontrak
-                        </h3>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto max-h-[650px] pr-1">
-                        {contractTypesLevel0.length > 0 ? (
-                            contractTypesLevel0.map((type: any, index: number) => {
-                                const icons = [Layers, Briefcase, Calendar, Clock, UserCheck];
-                                const colors = ['text-primary', 'text-warning', 'text-cyan-500', 'text-success', 'text-purple-500'];
-                                const Icon = icons[index % icons.length];
-                                const colorClass = colors[index % colors.length];
-                                const isSelectedCategory = selectedParentId === type.id;
-                                const hasSubCategories = type.children && type.children.length > 0;
+                    {/* Donut Chart: Distribusi Kontrak Aktif per PIC */}
+                    <Card className="border border-surface-border/60 bg-white dark:bg-zinc-900/50 shadow-xs">
+                        <CardHeader className="p-3.5 pb-0 flex flex-row items-center justify-between space-y-0">
+                            <div className="space-y-0.5">
+                                <CardTitle className="text-xs font-bold text-text-main">
+                                    {selectedUser ? `Distribusi Status Kontrak — ${selectedUser.name}` : 'Distribusi Kontrak Aktif per PIC'}
+                                </CardTitle>
+                                <p className="text-[9.5px] text-text-soft">
+                                    {selectedUser 
+                                        ? `Rincian status kontrak yang ditangani oleh ${selectedUser.name}` 
+                                        : 'Proporsi pembagian beban kontrak aktif & pending antar anggota PIC'}
+                                </p>
+                            </div>
+                            {selectedUserId && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedUserId(null)}
+                                    className="text-[9px] font-bold text-primary hover:underline uppercase"
+                                >
+                                    Lihat Semua PIC
+                                </button>
+                            )}
+                        </CardHeader>
+                        <CardContent className="p-3.5 pt-2">
+                            <div className="h-[180px] w-full flex items-center justify-center">
+                                {(() => {
+                                    const pieData = selectedUser
+                                        ? [
+                                              { name: 'Pending (Tunggu Approval)', value: selectedUser.stats_this_month?.pending || 0, color: '#f59e0b' },
+                                              { name: 'Kontrak Selesai', value: selectedUser.stats_this_month?.completed || 0, color: '#10b981' },
+                                          ].filter((d) => d.value > 0)
+                                        : filteredWorkloads
+                                              .map((u) => ({
+                                                  name: u.name,
+                                                  value: (u.stats_this_month?.active || 0) + (u.stats_this_month?.pending || 0),
+                                              }))
+                                              .filter((d) => d.value > 0);
 
-                                return (
-                                    <Card 
-                                        key={type.id || index}
-                                        onClick={() => {
-                                            setSelectedParentId(isSelectedCategory ? null : type.id);
-                                        }}
-                                        className={cn(
-                                            "relative cursor-pointer transition-all duration-200 overflow-hidden border",
-                                            isSelectedCategory 
-                                                ? "border-primary bg-primary/5 shadow-md ring-2 ring-primary/20" 
-                                                : "border-surface-border/60 hover:border-primary/40 hover:shadow-xs bg-white dark:bg-zinc-900/50"
-                                        )}
-                                        title="Klik card untuk mengganti filter tren line chart"
-                                    >
-                                        <CardContent className="p-3.5 pt-3.5 space-y-2">
-                                            <MetricItem 
-                                                label={type.label} 
-                                                value={type.count || 0} 
-                                                icon={Icon} 
-                                                color={colorClass} 
-                                            />
+                                    const hasData = pieData.length > 0;
+                                    const displayData = hasData ? pieData : [{ name: 'Belum Ada Data', value: 1, color: 'rgba(156, 163, 175, 0.25)' }];
 
-                                            {hasSubCategories && (
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setDialogParent(type);
-                                                        setIsDialogOpen(true);
-                                                        setSelectedParentId(type.id);
-                                                    }}
-                                                    className="absolute bottom-2.5 right-2.5 z-10 flex items-center gap-1.5 rounded-lg border border-white/40 bg-white dark:bg-zinc-900 px-2.5 py-1 text-[9.5px] font-bold text-slate-800 dark:text-zinc-100 shadow-md hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all uppercase tracking-wider scale-100 hover:scale-105"
-                                                    title="Buka detail sub-kategori"
-                                                >
-                                                    <Layers size={11} className="text-primary" /> DETAIL
-                                                </button>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })
-                        ) : (
-                            <div className="text-center text-xs text-muted-foreground">Tidak ada data tipe kontrak</div>
-                        )}
-                    </div>
+                                    return (
+                                        <div className="relative h-full w-full flex items-center justify-center">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={displayData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={50}
+                                                        outerRadius={75}
+                                                        paddingAngle={hasData ? 2 : 0}
+                                                        dataKey="value"
+                                                    >
+                                                        {displayData.map((entry: any, index: number) => (
+                                                            <Cell
+                                                                key={`cell-${index}`}
+                                                                fill={
+                                                                    entry.color ||
+                                                                    [
+                                                                        '#3b82f6',
+                                                                        '#10b981',
+                                                                        '#f59e0b',
+                                                                        '#8b5cf6',
+                                                                        '#ec4899',
+                                                                        '#06b6d4',
+                                                                        '#f97316',
+                                                                        '#14b8a6',
+                                                                    ][index % 8]
+                                                                }
+                                                            />
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip
+                                                        content={({ active, payload }: any) => {
+                                                            if (active && payload && payload.length) {
+                                                                return (
+                                                                    <div className="rounded-xl border border-surface-border bg-white dark:bg-zinc-950 p-2 shadow-md text-xs">
+                                                                        <p className="font-bold text-text-main">{payload[0].name}</p>
+                                                                        <p className="text-primary font-semibold">
+                                                                            {hasData ? `${payload[0].value} Kontrak` : '0 Kontrak'}
+                                                                        </p>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        }}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+
+                                            {/* Centered Total Count Overlay */}
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                <span className="text-[14px] font-black leading-none text-text-main">
+                                                    {hasData ? pieData.reduce((acc, curr) => acc + (curr.value || 0), 0) : 0}
+                                                </span>
+                                                <span className="text-[7.5px] font-extrabold uppercase tracking-widest text-text-soft mt-0.5">
+                                                    Total Kontrak
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+
 
                     {/* Daily Trend Stepped Line Chart & Sub-type Selector Split 20 / 80 */}
                     <Card className="bg-white dark:bg-zinc-900/50 border border-surface-border/60 shadow-xs mt-4">
@@ -753,123 +760,39 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                     </Card>
                 </div>
 
-                {/* Column 3: Tabel PIC dengan Search & Filter Langsung (Group, Region, Company, Department, Status) */}
+                {/* Column 3: Tabel PIC dengan Search & Status Filter */}
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-[10px] font-bold text-text-soft uppercase tracking-widest">Beban Kerja PIC</h3>
-                        {(selectedGroupId !== 'all' || selectedRegionId !== 'all' || selectedCompanyId !== 'all' || selectedDeptId !== 'all' || statusFilter !== 'all') && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setSelectedGroupId('all');
-                                    setSelectedRegionId('all');
-                                    setSelectedCompanyId('all');
-                                    setSelectedDeptId(isAdmin ? 'all' : String(userDeptId || 'all'));
-                                    setStatusFilter('all');
-                                }}
-                                className="text-[10px] font-bold text-rose-500 hover:underline uppercase transition-all"
-                            >
-                                Reset Filter
-                            </button>
-                        )}
-                    </div>
-
-                    {/* Pie Chart: Kontrak Sedang Dikerjakan oleh Anggota PIC */}
-                    <Card className="border border-surface-border/60 bg-white dark:bg-zinc-900/50 shadow-xs">
-                        <CardHeader className="p-3.5 pb-0 flex flex-row items-center justify-between space-y-0">
-                            <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-text-soft">
-                                {selectedUser ? `Distribusi Status Kontrak — ${selectedUser.name}` : 'Distribusi Kontrak Aktif per PIC'}
-                            </CardTitle>
-                            {selectedUserId && (
+                    {/* Full List PIC / Pengguna */}
+                    <Card className="w-full border border-surface-border/60 bg-white dark:bg-zinc-900/50 shadow-xs flex flex-col overflow-hidden max-h-[820px]">
+                        <CardHeader className="p-3.5 pb-2 flex flex-row items-center justify-between space-y-0 border-b border-surface-border/60">
+                            <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                    <CardTitle className="text-xs font-bold text-text-main">
+                                        Beban Kerja PIC
+                                    </CardTitle>
+                                    <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[9.5px] font-bold text-primary">
+                                        {filteredWorkloads.length} PIC
+                                    </span>
+                                </div>
+                                <p className="text-[9.5px] text-text-soft">
+                                    Daftar PIC aktif divisi beserta status beban kerja
+                                </p>
+                            </div>
+                            {(searchQuery || statusFilter !== 'all' || selectedUserId) && (
                                 <button
                                     type="button"
-                                    onClick={() => setSelectedUserId(null)}
-                                    className="text-[9px] font-bold text-primary hover:underline uppercase"
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        setStatusFilter('all');
+                                        setSelectedUserId(null);
+                                    }}
+                                    className="text-[9px] font-bold text-rose-500 hover:underline uppercase transition-all"
                                 >
-                                    Lihat Semua PIC
+                                    Reset Filter
                                 </button>
                             )}
                         </CardHeader>
-                        <CardContent className="p-3.5 pt-2">
-                            <div className="h-[170px] w-full flex items-center justify-center">
-                                {(() => {
-                                    const pieData = selectedUser
-                                        ? [
-                                              { name: 'Pending (Tunggu Approval)', value: selectedUser.stats_this_month?.pending || 0, color: '#f59e0b' },
-                                              { name: 'Kontrak Selesai', value: selectedUser.stats_this_month?.completed || 0, color: '#10b981' },
-                                          ].filter((d) => d.value > 0)
-                                        : filteredWorkloads
-                                              .map((u) => ({
-                                                  name: u.name,
-                                                  value: (u.stats_this_month?.active || 0) + (u.stats_this_month?.pending || 0),
-                                              }))
-                                              .filter((d) => d.value > 0);
-
-                                    const hasData = pieData.length > 0;
-                                    const displayData = hasData ? pieData : [{ name: 'Belum Ada Data', value: 1, color: 'rgba(156, 163, 175, 0.25)' }];
-
-                                    return (
-                                        <div className="relative w-full h-full flex items-center justify-center">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Pie
-                                                        data={displayData}
-                                                        cx="50%"
-                                                        cy="50%"
-                                                        innerRadius={35}
-                                                        outerRadius={65}
-                                                        paddingAngle={hasData ? 3 : 0}
-                                                        dataKey="value"
-                                                    >
-                                                        {displayData.map((entry: any, index: number) => (
-                                                            <Cell
-                                                                key={`pic-cell-${index}`}
-                                                                fill={
-                                                                    hasData
-                                                                        ? entry.color || CHART_COLORS[index % CHART_COLORS.length]
-                                                                        : 'rgba(156, 163, 175, 0.25)'
-                                                                }
-                                                            />
-                                                        ))}
-                                                    </Pie>
-                                                    <RechartsTooltip
-                                                        content={({ active, payload }: any) => {
-                                                            if (active && payload && payload.length) {
-                                                                return (
-                                                                    <div className="rounded-xl border border-surface-border bg-white dark:bg-zinc-950 p-2 shadow-md text-xs">
-                                                                        <p className="font-bold text-text-main">{payload[0].name}</p>
-                                                                        <p className="text-primary font-semibold">
-                                                                            {hasData ? `${payload[0].value} Kontrak` : '0 Kontrak'}
-                                                                        </p>
-                                                                    </div>
-                                                                );
-                                                            }
-                                                            return null;
-                                                        }}
-                                                    />
-                                                </PieChart>
-                                            </ResponsiveContainer>
-
-                                            {/* Centered Total Count Overlay */}
-                                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                                <span className="text-[13px] font-black leading-none text-text-main">
-                                                    {hasData ? pieData.reduce((acc, curr) => acc + (curr.value || 0), 0) : 0}
-                                                </span>
-                                                <span className="text-[7.5px] font-extrabold uppercase tracking-widest text-text-soft mt-0.5">
-                                                    Total
-                                                </span>
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-
-                    
-                    <Card className="w-full border border-surface-border/60 bg-white dark:bg-zinc-900/50 shadow-xs max-h-[580px] overflow-y-auto">
-                        <CardContent className="p-0">
+                        <CardContent className="p-0 overflow-y-auto flex-1">
                             <table className="w-full table-fixed border-collapse text-left text-xs">
                                 <colgroup>
                                     <col className="w-[70%]" />
@@ -877,7 +800,9 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                 </colgroup>
                                 <thead>
                                     <tr className="border-b border-surface-border/40 bg-surface-muted/50 text-[9px] font-bold uppercase tracking-wider text-text-soft sticky top-0 bg-white dark:bg-zinc-900 z-10">
-                                        <th className="px-3 py-2.5">PIC / Pengguna</th>
+                                        <th className="px-3 py-2.5">
+                                            PIC / Pengguna ({filteredWorkloads.length})
+                                        </th>
                                         <th className="px-2 py-2.5 text-center" title="Format: [Pending] / [Selesai]">Pending / Selesai</th>
                                     </tr>
                                     <tr className="sticky top-[33px] z-10 bg-white dark:bg-zinc-900 border-b border-surface-border/60">
@@ -946,8 +871,8 @@ export function WorkloadTab({ data }: WorkloadTabProps) {
                                                                         {user.load_status || 'Ready'}
                                                                     </span>
                                                                 </div>
-                                                                <span className="text-text-soft block text-[8px] font-bold uppercase tracking-wider whitespace-normal break-words" title={`${user.position || user.role} • ${user.department_name || 'Umum'}`}>
-                                                                    {user.position || user.role} • {user.department_name || 'Umum'}
+                                                                <span className="text-text-soft block text-[8px] font-bold uppercase tracking-wider whitespace-normal break-words" title={`${user.position || user.role} • ${user.division_name || user.department_name || 'Divisi -'}${user.location_name ? ` • ${user.location_name}` : ''}`}>
+                                                                    {user.position || user.role} • {user.division_name || user.department_name || 'Divisi -'}{user.location_name ? ` • ${user.location_name}` : ''}
                                                                 </span>
                                                             </div>
                                                         </div>

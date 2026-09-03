@@ -39,6 +39,7 @@ import {
     Navigation,
     Network,
     Save,
+    Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -55,6 +56,7 @@ interface SavedHierarchySettings {
     selectedDepartments?: string[];
     selectedJobLevels?: string[];
     selectedJobTitles?: string[];
+    selectedRoles?: string[];
     isConfigOpen?: boolean;
 }
 
@@ -96,7 +98,7 @@ export interface HierarchyUser {
     role_name?: string;
 }
 
-export type HierarchyLevelKey = 'group' | 'region' | 'location' | 'company' | 'division' | 'department' | 'job_level' | 'job_title' | 'employee';
+export type HierarchyLevelKey = 'group' | 'region' | 'location' | 'company' | 'division' | 'department' | 'job_level' | 'job_title' | 'role' | 'employee';
 
 interface LevelConfig {
     key: HierarchyLevelKey;
@@ -116,6 +118,7 @@ const ALL_LEVELS: LevelConfig[] = [
     { key: 'department', label: 'Department', field: 'department_name', icon: Briefcase, color: 'text-purple-600 dark:text-purple-400', badgeBg: 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300' },
     { key: 'job_level', label: 'Job Level', field: 'job_level_name', icon: Layers, color: 'text-orange-600 dark:text-orange-400', badgeBg: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300' },
     { key: 'job_title', label: 'Job Title', field: 'job_title_name', icon: UserCheck, color: 'text-rose-600 dark:text-rose-400', badgeBg: 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300' },
+    { key: 'role', label: 'Role Akses', field: 'role_name', icon: Shield, color: 'text-violet-600 dark:text-violet-400', badgeBg: 'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/40 dark:border-violet-800 dark:text-violet-300' },
     { key: 'employee', label: 'List Employee (Orang)', icon: UserIcon, color: 'text-cyan-600 dark:text-cyan-400', badgeBg: 'bg-cyan-50 border-cyan-200 text-cyan-700 dark:bg-cyan-950/40 dark:border-cyan-800 dark:text-cyan-300' },
 ];
 
@@ -452,6 +455,7 @@ interface OrgHierarchyFlowProps {
     masterDepartments?: any[];
     masterJobLevels?: any[];
     masterJobTitles?: any[];
+    masterRoles?: any[];
 }
 
 export function OrgHierarchyFlow({
@@ -464,6 +468,7 @@ export function OrgHierarchyFlow({
     masterDepartments = [],
     masterJobLevels = [],
     masterJobTitles = [],
+    masterRoles = [],
 }: OrgHierarchyFlowProps) {
     const savedInitial = useMemo(() => loadSavedSettings(), []);
 
@@ -501,6 +506,7 @@ export function OrgHierarchyFlow({
     const [selectedDepartments, setSelectedDepartments] = useState<string[]>(() => savedInitial.selectedDepartments || []);
     const [selectedJobLevels, setSelectedJobLevels] = useState<string[]>(() => savedInitial.selectedJobLevels || []);
     const [selectedJobTitles, setSelectedJobTitles] = useState<string[]>(() => savedInitial.selectedJobTitles || []);
+    const [selectedRoles, setSelectedRoles] = useState<string[]>(() => savedInitial.selectedRoles || []);
 
     // Auto-save client-side cache to localStorage
     useEffect(() => {
@@ -516,6 +522,7 @@ export function OrgHierarchyFlow({
                 selectedDepartments,
                 selectedJobLevels,
                 selectedJobTitles,
+                selectedRoles,
                 isConfigOpen,
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
@@ -533,6 +540,7 @@ export function OrgHierarchyFlow({
         selectedDepartments,
         selectedJobLevels,
         selectedJobTitles,
+        selectedRoles,
         isConfigOpen,
     ]);
 
@@ -557,8 +565,9 @@ export function OrgHierarchyFlow({
             department: createMap(masterDepartments),
             job_level: createMap(masterJobLevels),
             job_title: createMap(masterJobTitles),
+            role: createMap(masterRoles),
         };
-    }, [masterGroups, masterRegions, masterLocations, masterCompanies, masterDivisions, masterDepartments, masterJobLevels, masterJobTitles]);
+    }, [masterGroups, masterRegions, masterLocations, masterCompanies, masterDivisions, masterDepartments, masterJobLevels, masterJobTitles, masterRoles]);
 
     // Available options filtered by usedFilter
     const getFilteredMaster = (items: any[]) => {
@@ -576,6 +585,7 @@ export function OrgHierarchyFlow({
     const optDepartments = useMemo(() => getFilteredMaster(masterDepartments), [masterDepartments, usedFilter]);
     const optJobLevels = useMemo(() => getFilteredMaster(masterJobLevels), [masterJobLevels, usedFilter]);
     const optJobTitles = useMemo(() => getFilteredMaster(masterJobTitles), [masterJobTitles, usedFilter]);
+    const optRoles = useMemo(() => masterRoles, [masterRoles]);
 
     // Reset all multiple filters & clear client-side saved cache
     const resetAllFilters = () => {
@@ -587,6 +597,7 @@ export function OrgHierarchyFlow({
         setSelectedDepartments([]);
         setSelectedJobLevels([]);
         setSelectedJobTitles([]);
+        setSelectedRoles([]);
         setSearchFilter('');
         try {
             localStorage.removeItem(STORAGE_KEY);
@@ -604,6 +615,7 @@ export function OrgHierarchyFlow({
         selectedDepartments.length > 0 ||
         selectedJobLevels.length > 0 ||
         selectedJobTitles.length > 0 ||
+        selectedRoles.length > 0 ||
         Boolean(searchFilter.trim());
 
     // Toggle level visibility (strictly show ONLY what is checked!)
@@ -627,7 +639,7 @@ export function OrgHierarchyFlow({
         } else if (type === 'company-employee') {
             setEnabledLevelKeys(['company', 'employee']);
         } else if (type === 'full') {
-            setEnabledLevelKeys(['group', 'region', 'location', 'company', 'division', 'department', 'job_level', 'job_title', 'employee']);
+            setEnabledLevelKeys(['group', 'region', 'location', 'company', 'division', 'department', 'job_level', 'job_title', 'role', 'employee']);
         }
     };
 
@@ -678,6 +690,10 @@ export function OrgHierarchyFlow({
             if (selectedJobTitles.length > 0 && !selectedJobTitles.some((j) => j.toLowerCase() === u.job_title_name?.toLowerCase())) {
                 return false;
             }
+            // Role Access Filter
+            if (selectedRoles.length > 0 && !selectedRoles.some((r) => r.toLowerCase() === (u.role_name || '').toLowerCase())) {
+                return false;
+            }
             // Global text search
             if (searchFilter.trim()) {
                 const q = searchFilter.toLowerCase();
@@ -691,7 +707,8 @@ export function OrgHierarchyFlow({
                     (u.division_name && u.division_name.toLowerCase().includes(q)) ||
                     u.department_name?.toLowerCase().includes(q) ||
                     (u.job_level_name && u.job_level_name.toLowerCase().includes(q)) ||
-                    u.job_title_name?.toLowerCase().includes(q);
+                    u.job_title_name?.toLowerCase().includes(q) ||
+                    (u.role_name && u.role_name.toLowerCase().includes(q));
                 if (!matches) return false;
             }
 
@@ -708,6 +725,7 @@ export function OrgHierarchyFlow({
         selectedDepartments,
         selectedJobLevels,
         selectedJobTitles,
+        selectedRoles,
         searchFilter,
     ]);
 
@@ -815,6 +833,7 @@ export function OrgHierarchyFlow({
             else if (firstLevel.key === 'department') masterList = masterDepartments;
             else if (firstLevel.key === 'job_level') masterList = masterJobLevels;
             else if (firstLevel.key === 'job_title') masterList = masterJobTitles;
+            else if (firstLevel.key === 'role') masterList = masterRoles;
 
             masterList.forEach((m) => {
                 const title = m.name || m.title;
@@ -1307,6 +1326,15 @@ export function OrgHierarchyFlow({
                             selectedValues={selectedJobTitles}
                             onChange={setSelectedJobTitles}
                             icon={UserCheck}
+                        />
+
+                        {/* Multi Select Role Akses */}
+                        <MultiSelectDropdown
+                            title="Role Akses"
+                            options={optRoles}
+                            selectedValues={selectedRoles}
+                            onChange={setSelectedRoles}
+                            icon={Shield}
                         />
 
                         {/* Reset All Filters Button */}

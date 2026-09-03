@@ -36,6 +36,7 @@ interface PageTableProps {
     };
 
     resourceKey?: string;
+    showFooter?: boolean;
 
     /**
      * standalone (default: true)
@@ -64,6 +65,7 @@ export function PageTable({
     children,
     pagination,
     resourceKey,
+    showFooter = true,
     standalone = true,
 }: PageTableProps) {
     const hasActiveFilters = React.useMemo(() => {
@@ -118,7 +120,7 @@ export function PageTable({
             <div className="flex-1 min-h-0 w-full p-0 m-0 flex flex-col overflow-hidden">
                 {children}
             </div>
-            <PageFooter pagination={pagination} />
+            {showFooter && <PageFooter pagination={pagination} />}
         </div>
     );
 

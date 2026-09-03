@@ -263,21 +263,57 @@ class ContractDashboardQuery
         $todayRejected = $todayUpdatedContracts->where('status', 'rejected')->count();
         $todayApproved = $todayUpdatedContracts->where('status', 'approved')->count();
 
-        // Resolve matching dashboard type configuration based on role and department
-        $dashboardConfig = DashboardType::where(function ($q) use ($user) {
-            $q->where('role_id', $user->role_id)
-                ->where('department_id', $user->department_id);
-        })->orWhere(function ($q) use ($user) {
-            $q->where('role_id', $user->role_id)
-                ->whereNull('department_id');
-        })->orWhere(function ($q) use ($user) {
-            $q->whereNull('role_id')
-                ->where('department_id', $user->department_id);
-        })->orWhere(function ($q) {
-            $q->whereNull('role_id')
-                ->whereNull('department_id');
-        })->orderByRaw('role_id IS NOT NULL DESC, department_id IS NOT NULL DESC')
-            ->first();
+        // Resolve matching dashboard type configuration based on role, division, and department (supports multiple / array matching)
+        $dashboardConfig = DashboardType::all()->filter(function ($dt) use ($user) {
+            $rawRoles = $dt->role_ids ?? $dt->getAttributeFromArray('role_ids');
+            $roleIds = DashboardType::normalizeIds($rawRoles);
+            if ($rawRoles === null && ! empty($dt->role_id)) {
+                $roleIds = [$dt->role_id];
+            }
+
+            $rawDivisions = $dt->division_ids ?? $dt->getAttributeFromArray('division_ids');
+            $divisionIds = DashboardType::normalizeIds($rawDivisions);
+            if ($rawDivisions === null && ! empty($dt->division_id)) {
+                $divisionIds = [$dt->division_id];
+            }
+
+            $rawDepartments = $dt->department_ids ?? $dt->getAttributeFromArray('department_ids');
+            $departmentIds = DashboardType::normalizeIds($rawDepartments);
+            if ($rawDepartments === null && ! empty($dt->department_id)) {
+                $departmentIds = [$dt->department_id];
+            }
+
+            $roleMatch = empty($roleIds) || in_array((string) $user->role_id, array_map('strval', $roleIds));
+            $divisionMatch = empty($divisionIds) || in_array((string) $user->division_id, array_map('strval', $divisionIds));
+            $departmentMatch = empty($departmentIds) || in_array((string) $user->department_id, array_map('strval', $departmentIds));
+
+            return $roleMatch && $divisionMatch && $departmentMatch;
+        })->sortByDesc(function ($dt) {
+            $rawRoles = $dt->role_ids ?? $dt->getAttributeFromArray('role_ids');
+            $roleIds = DashboardType::normalizeIds($rawRoles);
+            if ($rawRoles === null && ! empty($dt->role_id)) {
+                $roleIds = [$dt->role_id];
+            }
+
+            $rawDivisions = $dt->division_ids ?? $dt->getAttributeFromArray('division_ids');
+            $divisionIds = DashboardType::normalizeIds($rawDivisions);
+            if ($rawDivisions === null && ! empty($dt->division_id)) {
+                $divisionIds = [$dt->division_id];
+            }
+
+            $rawDepartments = $dt->department_ids ?? $dt->getAttributeFromArray('department_ids');
+            $departmentIds = DashboardType::normalizeIds($rawDepartments);
+            if ($rawDepartments === null && ! empty($dt->department_id)) {
+                $departmentIds = [$dt->department_id];
+            }
+
+            $score = 0;
+            if (! empty($roleIds)) $score += 4;
+            if (! empty($divisionIds)) $score += 2;
+            if (! empty($departmentIds)) $score += 1;
+
+            return $score;
+        })->first();
 
         return [
             'dashboardConfig' => [
@@ -1292,9 +1328,13 @@ class ContractDashboardQuery
         mixed $completedApprovalsThisMonth,
         mixed $completedContractsThisMonth
     ): array {
-        $userQuery = User::with(['department', 'company']);
+        $userQuery = User::where('is_used', true)
+            ->with(['department', 'company', 'division', 'location']);
 
-        if ($isManager && $user->company_id) {
+        // ponytail: Scope to user division if not full access
+        if (! $hasFullAccess && $user->division_id) {
+            $userQuery->where('division_id', $user->division_id);
+        } elseif ($isManager && $user->company_id) {
             $userQuery->where('company_id', $user->company_id);
         } elseif ($hasDepartmentAccess && $user->department_id) {
             $userQuery->where('department_id', $user->department_id);
@@ -1334,6 +1374,10 @@ class ContractDashboardQuery
                     'role' => $u->role,
                     'department_name' => $u->department?->name,
                     'department_id' => $u->department_id,
+                    'division_id' => $u->division_id,
+                    'division_name' => $u->division?->name,
+                    'location_id' => $u->location_id,
+                    'location_name' => $u->location?->name,
                     'company_id' => $u->company_id,
                     'company_group_id' => $u->company_group_id ?? $u->company?->company_group_id,
                     'region_id' => $u->region_id ?? $u->company?->region_id,
