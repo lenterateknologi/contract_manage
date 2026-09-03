@@ -16,6 +16,7 @@ use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\ContractFilterTemplate;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\JobLevel;
 use App\Models\JobTitle;
 use App\Models\Location;
@@ -31,7 +32,7 @@ class UserResource extends Resource
 
     public static ?string $importClass = UsersImport::class;
 
-    public static array $with = ['roleRelation'];
+    public static array $with = ['roleRelation', 'division', 'department', 'company'];
 
     public static ?string $title = 'Registri Otoritas Pengguna';
 
@@ -125,6 +126,11 @@ class UserResource extends Resource
                     ->searchable()
                     ->placeholder('Pilih Lokasi Kerja...')
                     ->helperText('Lokasi penempatan kerja terhubung ke Master Lokasi.'),
+                SelectInput::make('division_id', 'Divisi')
+                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Divisi...')
+                    ->helperText('Unit divisi organisasi.'),
                 SelectInput::make('department_id', 'Departemen / Unit Organisasi')
                     ->options(fn () => Department::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
                     ->searchable()
@@ -162,6 +168,13 @@ class UserResource extends Resource
     public static function filters(): array
     {
         return [
+            Filter::make('division_id', 'Divisi')
+                ->type('searchable')
+                ->options(function () {
+                    $options = ['__empty__' => '- (Tanpa Divisi / Kosong)'];
+
+                    return $options + Division::orderBy('name')->whereNotNull('name')->pluck('name', 'id')->toArray();
+                }),
             Filter::make('department_id', 'Departemen')
                 ->type('searchable')
                 ->options(function () {

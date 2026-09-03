@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 import { MasterDataSync } from '@/pages/admin/components/MasterDataSync';
 import { NavigationManagement } from '@/pages/admin/components/NavigationManagement';
 import { NumberingFormatManagement } from '@/pages/admin/components/NumberingFormatManagement';
+import { OrgHierarchyFlow } from '@/pages/admin/components/OrgHierarchyFlow';
 import { WorkflowManagement } from '@/pages/admin/components/WorkflowManagement';
 import { MembersPerDivision } from '@/pages/dashboard/components/MembersPerDivision';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
@@ -81,13 +82,16 @@ export default function AdminIndex({
     moduleGroups,
     formTemplates,
     contractTemplates,
-    contractStatuses,
     companyGroups,
     regions,
     companies,
+    locations,
+    divisions,
+    jobTitles,
+    jobLevels,
     filters = {},
     counts,
-}: Readonly<Props>) {
+}: Readonly<Props & { locations?: any; divisions?: any; jobTitles?: any; jobLevels?: any }>) {
     // View Metadata Mapping
     const viewTitleMap: Record<string, string> = {
         users: 'Manajemen Pengguna',
@@ -124,8 +128,22 @@ export default function AdminIndex({
                 return <NavigationManagement groups={navigationsArray} modules={modules} isModuleView={true} filters={filters} />;
             case 'numbering-formats':
                 return <NumberingFormatManagement formats={formats} />;
-            case 'members':
-                return <MembersPerDivision />;
+            case 'members': {
+                const usersList = Array.isArray(users) ? users : users?.data || [];
+                return (
+                    <OrgHierarchyFlow
+                        users={usersList}
+                        masterGroups={companyGroups}
+                        masterRegions={regions}
+                        masterLocations={locations}
+                        masterCompanies={companies}
+                        masterDivisions={divisions}
+                        masterDepartments={departments}
+                        masterJobTitles={jobTitles}
+                        masterJobLevels={jobLevels}
+                    />
+                );
+            }
             case 'master-data-sync':
                 return <MasterDataSync counts={counts} />;
             default:

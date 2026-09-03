@@ -165,22 +165,43 @@ class User extends Authenticatable
         return $this->roleRelation?->name;
     }
 
+    private static array $divisionMemoryCache = [];
+    private static array $departmentMemoryCache = [];
+
     public function getDivisionNameAttribute(): ?string
     {
-        if (! $this->relationLoaded('division')) {
-            return null;
+        if ($this->relationLoaded('division') && $this->division) {
+            return $this->division->name;
         }
 
-        return $this->division?->name;
+        $divisionId = $this->getAttributeFromArray('division_id');
+        if (! empty($divisionId)) {
+            if (! array_key_exists($divisionId, self::$divisionMemoryCache)) {
+                self::$divisionMemoryCache[$divisionId] = Division::find($divisionId)?->name;
+            }
+
+            return self::$divisionMemoryCache[$divisionId];
+        }
+
+        return null;
     }
 
     public function getDepartmentNameAttribute(): ?string
     {
-        if (! $this->relationLoaded('department')) {
-            return null;
+        if ($this->relationLoaded('department') && $this->department) {
+            return $this->department->name;
         }
 
-        return $this->department?->name;
+        $departmentId = $this->getAttributeFromArray('department_id');
+        if (! empty($departmentId)) {
+            if (! array_key_exists($departmentId, self::$departmentMemoryCache)) {
+                self::$departmentMemoryCache[$departmentId] = Department::find($departmentId)?->name;
+            }
+
+            return self::$departmentMemoryCache[$departmentId];
+        }
+
+        return $this->getAttributeFromArray('org_name');
     }
 
     private static array $companyGroupMemoryCache = [];

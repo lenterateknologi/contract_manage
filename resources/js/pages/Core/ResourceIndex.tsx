@@ -110,6 +110,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
     const [isSyncing, setIsSyncing] = useState(false);
     const [showSyncConfirm, setShowSyncConfirm] = useState(false);
+    const [syncIsUsedMode, setSyncIsUsedMode] = useState<'keep' | 'set_true' | 'set_false'>('keep');
     const [updatingRowId, setUpdatingRowId] = useState<string | null>(null);
 
     const handleSingleToggle = (rowId: string, colName: string, currentVal: boolean) => {
@@ -974,7 +975,9 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 onConfirm={() => {
                     setIsSyncing(true);
                     showProgress('portal_sync', `Sedang menyinkronkan data ${title} dari Portal...`, 40);
-                    router.post(`/admin/core/${resourceSlug}/sync-portal`, {}, {
+                    router.post(`/admin/core/${resourceSlug}/sync-portal`, {
+                        is_used_mode: syncIsUsedMode,
+                    }, {
                         preserveScroll: true,
                         onFinish: () => {
                             setIsSyncing(false);
@@ -987,14 +990,100 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 description={
                     isSyncing
                         ? `Sedang memproses sinkronisasi data ${title} dari Portal... Mohon tunggu sejenak.`
-                        : `Apakah Anda yakin ingin mengambil dan memperbarui data ${title} langsung dari API Portal? Data yang sudah ada akan diperbarui secara otomatis.`
+                        : `Pilih perlakuan status "Is Used" untuk data yang disinkronkan:`
                 }
                 confirmText={isSyncing ? "Menyinkronkan..." : "Ya, Sinkron Sekarang"}
                 cancelText={isSyncing ? "" : "Batal"}
                 variant="info"
                 processing={isSyncing}
+                className="max-w-md"
                 icon={<RefreshCw size={24} className={isSyncing ? "animate-spin text-primary" : "text-primary"} />}
-            />
+            >
+                {!isSyncing && (
+                    <div className="mt-4 text-left space-y-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-3.5 border border-slate-200/60 dark:border-slate-700/50">
+                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-2">
+                            Opsi Status Is Used
+                        </label>
+                        <div
+                            onClick={() => setSyncIsUsedMode('keep')}
+                            className={cn(
+                                "flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer border transition-all",
+                                syncIsUsedMode === 'keep'
+                                    ? "bg-primary/10 border-primary text-slate-900 dark:text-slate-100"
+                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                            )}
+                        >
+                            <input
+                                type="radio"
+                                name="syncIsUsedMode"
+                                checked={syncIsUsedMode === 'keep'}
+                                onChange={() => setSyncIsUsedMode('keep')}
+                                className="mt-0.5 text-primary focus:ring-primary h-3.5 w-3.5"
+                            />
+                            <div>
+                                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                    Pertahankan Nilai Saat Ini (Default)
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                                    Data lama tetap memakai status is_used yang ada. Data baru otomatis bernilai Tidak (False).
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            onClick={() => setSyncIsUsedMode('set_true')}
+                            className={cn(
+                                "flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer border transition-all",
+                                syncIsUsedMode === 'set_true'
+                                    ? "bg-primary/10 border-primary text-slate-900 dark:text-slate-100"
+                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                            )}
+                        >
+                            <input
+                                type="radio"
+                                name="syncIsUsedMode"
+                                checked={syncIsUsedMode === 'set_true'}
+                                onChange={() => setSyncIsUsedMode('set_true')}
+                                className="mt-0.5 text-primary focus:ring-primary h-3.5 w-3.5"
+                            />
+                            <div>
+                                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                    Setel Semua ke Is Used = Ya (True)
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                                    Semua data yang disinkronkan akan ditandai aktif digunakan (Is Used = True).
+                                </div>
+                            </div>
+                        </div>
+
+                        <div
+                            onClick={() => setSyncIsUsedMode('set_false')}
+                            className={cn(
+                                "flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer border transition-all",
+                                syncIsUsedMode === 'set_false'
+                                    ? "bg-primary/10 border-primary text-slate-900 dark:text-slate-100"
+                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
+                            )}
+                        >
+                            <input
+                                type="radio"
+                                name="syncIsUsedMode"
+                                checked={syncIsUsedMode === 'set_false'}
+                                onChange={() => setSyncIsUsedMode('set_false')}
+                                className="mt-0.5 text-primary focus:ring-primary h-3.5 w-3.5"
+                            />
+                            <div>
+                                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                                    Setel Semua ke Is Used = Tidak (False)
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
+                                    Semua data yang disinkronkan akan disetel tidak digunakan (Is Used = False).
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </ConfirmationModal>
 
             {/* ponytail: Bulk Edit Modal */}
             {showBulkEditModal && (

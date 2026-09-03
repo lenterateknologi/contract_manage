@@ -15,7 +15,7 @@ class UserQuery
     public function list(Request $request): Builder
     {
         return User::query()
-            ->with(['department', 'company'])
+            ->with(['division', 'department', 'company', 'roleRelation'])
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
                 $q->where(function ($qq) use ($search) {
@@ -27,8 +27,11 @@ class UserQuery
             ->when($request->role, function ($q, $role) {
                 $q->whereHas('roleRelation', fn ($qr) => $qr->whereIn('name', (array) $role));
             })
+            ->when($request->division_id, function ($q, $divId) {
+                $q->whereIn('division_id', (array) $divId);
+            })
             ->when($request->department_id, function ($q, $deptId) {
-                $q->whereIn('division_id', (array) $deptId);
+                $q->whereIn('department_id', (array) $deptId);
             })
             ->when($request->company_id, function ($q, $companyId) {
                 $q->whereIn('company_id', (array) $companyId);

@@ -42,9 +42,10 @@ class PortalSyncService
     /**
      * Synchronize Regions from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int, data?: array}
      */
-    public function syncRegions(): array
+    public function syncRegions(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('regions');
@@ -90,7 +91,7 @@ class PortalSyncService
                 ->get()
                 ->keyBy('code');
 
-            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdRegion, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdRegion, $existingByCode, $isUsedMode) {
                 foreach ($data as $item) {
                     $idRegion = $item['idregion'] ?? null;
                     $regionCode = isset($item['regionCode']) ? trim((string) $item['regionCode']) : '';
@@ -125,6 +126,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($region) {
                         if ($region->trashed()) {
                             $region->restore();
@@ -132,7 +139,9 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $region->update($attributes);
                     } else {
-                        $attributes['is_used'] = false; // default false for system
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = false; // default false for new records
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $newRegion = Region::create($attributes);
@@ -171,9 +180,10 @@ class PortalSyncService
     /**
      * Synchronize Company Groups from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
-    public function syncCompanyGroups(): array
+    public function syncCompanyGroups(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('company_groups');
@@ -219,7 +229,7 @@ class PortalSyncService
                 ->get()
                 ->keyBy('code');
 
-            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $isUsedMode) {
                 foreach ($data as $item) {
                     $idGroup = $item['idcompanyGroup'] ?? null;
                     $groupCode = isset($item['companyGroupCode']) ? trim((string) $item['companyGroupCode']) : '';
@@ -252,6 +262,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($group) {
                         if ($group->trashed()) {
                             $group->restore();
@@ -259,7 +275,9 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $group->update($attributes);
                     } else {
-                        $attributes['is_used'] = false; // default false for system
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = false; // default false for system
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $newGroup = CompanyGroup::create($attributes);
@@ -297,9 +315,10 @@ class PortalSyncService
     /**
      * Synchronize Locations from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
-    public function syncLocations(): array
+    public function syncLocations(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('locations');
@@ -345,7 +364,7 @@ class PortalSyncService
                 ->get()
                 ->keyBy('code');
 
-            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $isUsedMode) {
                 foreach ($data as $item) {
                     $idLocation = $item['idlocation'] ?? null;
                     $locationCode = isset($item['locationCode']) ? trim((string) $item['locationCode']) : '';
@@ -395,6 +414,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($location) {
                         if ($location->trashed()) {
                             $location->restore();
@@ -402,7 +427,9 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $location->update($attributes);
                     } else {
-                        $attributes['is_used'] = false; // default false for system
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = false; // default false for system
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $newLocation = Location::create($attributes);
@@ -440,9 +467,10 @@ class PortalSyncService
     /**
      * Synchronize Companies from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
-    public function syncCompanies(): array
+    public function syncCompanies(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('companies');
@@ -498,7 +526,7 @@ class PortalSyncService
                 ->get()
                 ->keyBy('idregion');
 
-            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $groupsById, $regionsById) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $groupsById, $regionsById, $isUsedMode) {
                 foreach ($data as $item) {
                     $idCompany = $item['idcompany'] ?? null;
                     $companyCode = isset($item['companyCode']) ? trim((string) $item['companyCode']) : '';
@@ -564,6 +592,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($company) {
                         if ($company->trashed()) {
                             $company->restore();
@@ -571,7 +605,9 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $company->update($attributes);
                     } else {
-                        $attributes['is_used'] = false; // default false for system
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = false; // default false for system
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $newCompany = Company::create($attributes);
@@ -609,9 +645,10 @@ class PortalSyncService
     /**
      * Synchronize Business Units from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
-    public function syncBusinessUnits(): array
+    public function syncBusinessUnits(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('business_units');
@@ -677,7 +714,7 @@ class PortalSyncService
                 ->get()
                 ->keyBy('idregion');
 
-            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $companiesById, $locationsById, $groupsById, $regionsById) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingById, $existingByCode, $companiesById, $locationsById, $groupsById, $regionsById, $isUsedMode) {
                 foreach ($data as $item) {
                     $idUnit = $item['idbusinessUnit'] ?? null;
                     $unitCode = isset($item['kodeBisnisUnit']) ? trim((string) $item['kodeBisnisUnit']) : '';
@@ -750,6 +787,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($unit) {
                         if ($unit->trashed()) {
                             $unit->restore();
@@ -757,7 +800,9 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $unit->update($attributes);
                     } else {
-                        $attributes['is_used'] = false; // default false for system
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = false; // default false for system
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $newUnit = BusinessUnit::create($attributes);
@@ -795,9 +840,10 @@ class PortalSyncService
     /**
      * Synchronize Employees/Users from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
-    public function syncEmployees(): array
+    public function syncEmployees(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('users');
@@ -931,7 +977,8 @@ class PortalSyncService
                 $jobTitlesById,
                 $jobTitlesByName,
                 $jobLevelsById,
-                $jobLevelsByName
+                $jobLevelsByName,
+                $isUsedMode
             ) {
                 foreach ($data as $item) {
                     $idEmployee = $item['idemployee'] ?? null;
@@ -1042,6 +1089,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($user) {
                         $attributes['updated_by'] = $userId;
                         $attributes['updated_at'] = $now;
@@ -1053,7 +1106,9 @@ class PortalSyncService
                         $attributes['password'] = $defaultPasswordHash;
                         $attributes['role_id'] = $staffRoleId;
                         $attributes['contract_filter_template_id'] = $defaultFilterTemplateId;
-                        $attributes['is_used'] = false; // default false for system
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = false; // default false for system
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $attributes['created_at'] = $now;
@@ -1098,9 +1153,10 @@ class PortalSyncService
     /**
      * Synchronize Departments / Organizations from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
-    public function syncDepartments(): array
+    public function syncDepartments(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('departments');
@@ -1146,7 +1202,7 @@ class PortalSyncService
                 ->get()
                 ->keyBy('code');
 
-            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdOrg, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdOrg, $existingByCode, $isUsedMode) {
                 foreach ($data as $item) {
                     $idOrganization = $item['idorganization'] ?? null;
                     $orgCode = isset($item['orgCode']) ? trim((string) $item['orgCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
@@ -1184,6 +1240,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($dept) {
                         if ($dept->trashed()) {
                             $dept->restore();
@@ -1191,7 +1253,9 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $dept->update($attributes);
                     } else {
-                        $attributes['is_used'] = false; // default false for system
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = false; // default false for system
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $newDept = Department::create($attributes);
@@ -1229,9 +1293,10 @@ class PortalSyncService
     /**
      * Synchronize Job Levels from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
-    public function syncJobLevels(): array
+    public function syncJobLevels(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('job_levels');
@@ -1277,7 +1342,7 @@ class PortalSyncService
                 ->get()
                 ->keyBy('code');
 
-            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdJobLevel, $existingByCode) {
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdJobLevel, $existingByCode, $isUsedMode) {
                 foreach ($data as $item) {
                     $idJobLevel = $item['idjoblevel'] ?? null;
                     $code = isset($item['joblevelCode']) ? trim((string) $item['joblevelCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
@@ -1312,6 +1377,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($jobLevel) {
                         if ($jobLevel->trashed()) {
                             $jobLevel->restore();
@@ -1319,7 +1390,9 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $jobLevel->update($attributes);
                     } else {
-                        $attributes['is_used'] = $isActive;
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = $isActive;
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $newJobLevel = JobLevel::create($attributes);
@@ -1357,9 +1430,10 @@ class PortalSyncService
     /**
      * Synchronize Job Titles from Portal API.
      *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
      * @return array{success: bool, message: string, synced: int, total: int}
      */
-    public function syncJobTitles(): array
+    public function syncJobTitles(string $isUsedMode = 'keep'): array
     {
         $baseUrl = $this->getBaseUrl();
         $endpoint = $this->getEndpoint('job_titles');
@@ -1416,7 +1490,8 @@ class PortalSyncService
                 $jobLevelsById,
                 $jobLevelsByName,
                 $existingByIdJobTitle,
-                $existingByCode
+                $existingByCode,
+                $isUsedMode
             ) {
                 foreach ($data as $item) {
                     $idJobTitle = $item['idjobtitle'] ?? null;
@@ -1463,6 +1538,12 @@ class PortalSyncService
                         'is_active' => $isActive,
                     ];
 
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
                     if ($jobTitle) {
                         if ($jobTitle->trashed()) {
                             $jobTitle->restore();
@@ -1470,7 +1551,9 @@ class PortalSyncService
                         $attributes['updated_by'] = $userId;
                         $jobTitle->update($attributes);
                     } else {
-                        $attributes['is_used'] = $isActive;
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = $isActive;
+                        }
                         $attributes['created_by'] = $userId;
                         $attributes['updated_by'] = $userId;
                         $newJobTitle = JobTitle::create($attributes);

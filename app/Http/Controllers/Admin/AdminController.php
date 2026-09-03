@@ -17,9 +17,15 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Imports\UsersImport;
 use App\Models\AccessModule;
 use App\Models\Company;
+use App\Models\CompanyGroup;
 use App\Models\Department;
+use App\Models\Division;
+use App\Models\JobLevel;
+use App\Models\JobTitle;
+use App\Models\Location;
 use App\Models\Module;
 use App\Models\ModuleGroup;
+use App\Models\Region;
 use App\Models\Role;
 use App\Models\RoleModuleGroup;
 use App\Models\User;
@@ -66,8 +72,9 @@ class AdminController extends Controller
             'users' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
             'roles' => Role::orderBy('name')->get(),
             'departments' => Department::orderBy('name')->get(),
+            'divisions' => Division::orderBy('name')->get(),
             'companies' => Company::with(['group', 'region'])->orderBy('name')->get(),
-            'filters' => $request->only(['search', 'role', 'department_id', 'company_id']),
+            'filters' => $request->only(['search', 'role', 'division_id', 'department_id', 'company_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Manajemen User', 'href' => route('core.index', 'users'), 'description' => 'Kelola akses dan profil pengguna sistem.', 'icon' => 'Users'],
@@ -77,18 +84,79 @@ class AdminController extends Controller
 
     public function members(Request $request)
     {
-        $users = $this->userQuery->options()->get();
-        $departments = $this->organizationQuery->departments()->get();
+        // ponytail: lightweight select with eager relations for organizational tree mapping
+        $users = User::query()
+            ->where('is_active', true)
+            ->select([
+                'id', 'name', 'email', 'nik', 'code', 'image_src', 'is_used',
+                'company_group_id', 'region_id', 'location_id', 'company_id', 'division_id', 'department_id', 'job_position_id', 'job_level_id', 'role_id'
+            ])
+            ->with([
+                'companyGroup:id,name,code,is_used',
+                'region:id,name,code,is_used',
+                'location:id,name,code,is_used',
+                'company:id,name,code,is_used',
+                'division:id,name,code',
+                'department:id,name,code,is_used',
+                'jobTitle:id,name,code,is_used',
+                'jobLevel:id,name,code,is_used',
+                'roleRelation:id,name',
+            ])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($u) {
+                return [
+                    'id' => $u->id,
+                    'name' => $u->name,
+                    'email' => $u->email,
+                    'nik' => $u->nik ?? $u->code ?? '-',
+                    'is_used' => (bool) $u->is_used,
+                    'group_id' => $u->company_group_id,
+                    'group_name' => $u->companyGroup?->name ?? 'No Group',
+                    'region_id' => $u->region_id,
+                    'region_name' => $u->region?->name ?? 'No Region',
+                    'location_id' => $u->location_id,
+                    'location_name' => $u->location?->name ?? 'No Location',
+                    'company_id' => $u->company_id,
+                    'company_name' => $u->company?->name ?? 'No Company',
+                    'division_id' => $u->division_id,
+                    'division_name' => $u->division?->name ?? $u->division_name ?? 'No Division',
+                    'department_id' => $u->department_id,
+                    'department_name' => $u->department?->name ?? 'No Department',
+                    'job_title_id' => $u->job_position_id,
+                    'job_title_name' => $u->jobTitle?->name ?? $u->jobtitle_name ?? 'No Job Title',
+                    'job_level_id' => $u->job_level_id,
+                    'job_level_name' => $u->jobLevel?->name ?? $u->joblevel_name ?? 'No Job Level',
+                    'role_name' => $u->roleRelation?->name ?? 'Member',
+                ];
+            });
+
+        $divisions = Division::query()->orderBy('name')->get(['id', 'name', 'code']);
+        $departments = Department::query()->orderBy('name')->get(['id', 'name', 'code', 'company_id', 'is_used']);
         $departmentTraffic = $this->organizationQuery->getDepartmentTraffic();
+
+        $companyGroups = CompanyGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
+        $regions = Region::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
+        $locations = Location::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
+        $companies = Company::query()->orderBy('name')->get(['id', 'name', 'code', 'company_group_id', 'region_id', 'is_used']);
+        $jobTitles = JobTitle::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
+        $jobLevels = JobLevel::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'members',
             'users' => $users,
+            'divisions' => $divisions,
             'departments' => $departments,
+            'companyGroups' => $companyGroups,
+            'regions' => $regions,
+            'locations' => $locations,
+            'companies' => $companies,
+            'jobTitles' => $jobTitles,
+            'jobLevels' => $jobLevels,
             'departmentTraffic' => $departmentTraffic,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
-                ['title' => 'Anggota Divisi', 'href' => route('admin.members'), 'description' => 'Kelola dan lihat anggota berdasarkan divisi/departemen.', 'icon' => 'Users'],
+                ['title' => 'Struktur & Anggota Organisasi', 'href' => route('admin.members'), 'description' => 'Visualisasi hierarki organisasi dan pemetaan anggota.', 'icon' => 'Network'],
             ],
         ]);
     }

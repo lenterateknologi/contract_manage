@@ -624,8 +624,10 @@ class ResourceController extends Controller
      */
     public function syncPortal(Request $request, string $resourceSlug)
     {
+        $isUsedMode = $request->input('is_used_mode', 'keep');
+
         if ($resourceSlug === 'regions') {
-            $result = $this->portalSyncService->syncRegions();
+            $result = $this->portalSyncService->syncRegions($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
@@ -635,7 +637,7 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'company-groups') {
-            $result = $this->portalSyncService->syncCompanyGroups();
+            $result = $this->portalSyncService->syncCompanyGroups($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
@@ -645,7 +647,7 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'locations') {
-            $result = $this->portalSyncService->syncLocations();
+            $result = $this->portalSyncService->syncLocations($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
@@ -655,7 +657,7 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'companies') {
-            $result = $this->portalSyncService->syncCompanies();
+            $result = $this->portalSyncService->syncCompanies($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
@@ -665,7 +667,7 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'business-units') {
-            $result = $this->portalSyncService->syncBusinessUnits();
+            $result = $this->portalSyncService->syncBusinessUnits($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
@@ -675,7 +677,7 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'departments') {
-            $result = $this->portalSyncService->syncDepartments();
+            $result = $this->portalSyncService->syncDepartments($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
@@ -685,7 +687,7 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'users') {
-            $result = $this->portalSyncService->syncEmployees();
+            $result = $this->portalSyncService->syncEmployees($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
@@ -695,7 +697,7 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'job-levels') {
-            $result = $this->portalSyncService->syncJobLevels();
+            $result = $this->portalSyncService->syncJobLevels($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
@@ -705,7 +707,7 @@ class ResourceController extends Controller
         }
 
         if ($resourceSlug === 'job-titles') {
-            $result = $this->portalSyncService->syncJobTitles();
+            $result = $this->portalSyncService->syncJobTitles($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);
