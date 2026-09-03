@@ -346,10 +346,11 @@ class ContractDashboardQuery
         $groupFull = $hasFullAccess || ($settings['can_change_company_group'] ?? false);
         $companyGroupIds = $groupFull ? null : (array_filter([$user->company_group_id], fn ($v) => ! empty($v)));
 
-        $userQuery = User::query();
-        $groupQuery = CompanyGroup::query();
-        $companyQuery = Company::query();
-        $deptQuery = Department::query();
+        // ponytail: filter master data yang is_used = true
+        $userQuery = User::query()->where('is_used', true);
+        $groupQuery = CompanyGroup::query()->where('is_used', true);
+        $companyQuery = Company::query()->where('is_used', true);
+        $deptQuery = Department::query()->where('is_used', true);
         $divQuery = Division::query();
 
         if (! empty($companyGroupIds)) {
@@ -364,13 +365,14 @@ class ContractDashboardQuery
             });
         }
 
-        // ponytail: tambahkan statistik distribusi jumlah user per group dan per company
+        // ponytail: tambahkan statistik distribusi jumlah user per group dan per company (hanya user is_used = true)
         $usersByGroupQuery = DB::table('m_users as u')
             ->leftJoin('m_company_groups as cg', 'u.company_group_id', '=', 'cg.id')
             ->select(
                 DB::raw("COALESCE(cg.name, 'Tanpa Group') as name"),
                 DB::raw('count(u.id) as user_count')
             )
+            ->where('u.is_used', true)
             ->whereNull('u.deleted_at')
             ->groupBy('cg.name', 'cg.id');
 
@@ -382,6 +384,7 @@ class ContractDashboardQuery
                 DB::raw("COALESCE(cg.name, '-') as group_name"),
                 DB::raw('count(u.id) as user_count')
             )
+            ->where('u.is_used', true)
             ->whereNull('u.deleted_at')
             ->groupBy('c.name', 'c.id', 'cg.name');
 
@@ -408,7 +411,12 @@ class ContractDashboardQuery
 
     private function getOrganizationTree(?array $companyGroupIds = null)
     {
-        $groupQuery = CompanyGroup::with(['companies.region']);
+        // ponytail: ambil group, company, dan region yang is_used = true
+        $groupQuery = CompanyGroup::where('is_used', true)
+            ->with(['companies' => function ($q) {
+                $q->where('is_used', true)->with(['region' => fn ($r) => $r->where('is_used', true)]);
+            }]);
+
         if (! empty($companyGroupIds)) {
             $groupQuery->whereIn('id', $companyGroupIds);
         }
