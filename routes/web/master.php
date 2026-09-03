@@ -156,12 +156,15 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('/{template}/download', 'downloadTemplate')->name('admin.templates.download');
         Route::patch('/folders/{folder}/move', 'moveFolder')->name('admin.templates.folders.move');
         Route::patch('/{template}/move', 'moveTemplate')->name('admin.templates.move');
+        Route::post('/bulk-delete', 'bulkDestroy')->name('admin.templates.bulk-destroy');
+        Route::post('/bulk-move', 'bulkMove')->name('admin.templates.bulk-move');
     });
 
     Route::post('/test-email', [EmailTestController::class, 'sendTestEmail'])->name('admin.test-email');
 
     // Dynamic CRUD Core engine (Mini-Filament)
     Route::prefix('core')->group(function () {
+        Route::get('vendors/file-download', [ResourceController::class, 'downloadVendorFile'])->name('admin.vendors.file-download');
         Route::get('vendors/{id}/document', [ResourceController::class, 'vendorDocument'])->name('admin.vendors.document');
         Route::post('{resource}/sync-portal', [ResourceController::class, 'syncPortal'])->name('core.sync-portal');
         Route::get('{resource}/export', [ResourceController::class, 'export'])->name('core.export');

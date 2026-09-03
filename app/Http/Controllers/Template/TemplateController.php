@@ -65,13 +65,38 @@ class TemplateController extends Controller
     }
 
     /**
-     * Remove the specified folder.
+     * Remove the specified folder and all its descendants.
      */
     public function destroyFolder(TemplateFolder $folder)
     {
-        $folder->delete();
+        $this->deleteFolderRecursively($folder);
 
         return back()->with('success', 'Folder berhasil dihapus.');
+    }
+
+    /**
+     * Helper to recursively delete folder and sub-folders
+     */
+    private function deleteFolderRecursively(TemplateFolder $folder)
+    {
+        $folder->loadMissing(['templates', 'children']);
+
+        // Delete template files
+        foreach ($folder->templates as $tpl) {
+            if (Storage::disk('public')->exists($tpl->file_path)) {
+                Storage::disk('public')->delete($tpl->file_path);
+            } elseif (Storage::exists($tpl->file_path)) {
+                Storage::delete($tpl->file_path);
+            }
+            $tpl->delete();
+        }
+
+        // Delete children subfolders recursively
+        foreach ($folder->children as $child) {
+            $this->deleteFolderRecursively($child);
+        }
+
+        $folder->delete();
     }
 
     /**
@@ -83,12 +108,12 @@ class TemplateController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'template_folder_id' => 'nullable|exists:m_template_folders,id',
-            'file' => 'required|file|extensions:docx,DOCX,doc,DOC,pdf,PDF,xls,XLS,xlsx,XLSX|max:10240', // 10MB max
+            'file' => 'required|file|mimes:docx,doc,pdf,xls,xlsx,txt,rtf,odt,ods,csv|max:20480', // 20MB max
         ]);
 
         $file = $request->file('file');
         $fileName = $file->getClientOriginalName();
-        $path = $file->store('contract_templates');
+        $path = $file->store('contract_templates', 'public');
 
         ContractTemplate::create([
             'name' => $request->name,
@@ -97,7 +122,7 @@ class TemplateController extends Controller
             'file_path' => $path,
             'file_name' => $fileName,
             'file_size' => $file->getSize(),
-            'file_type' => $file->getClientOriginalExtension(),
+            'file_type' => strtolower($file->getClientOriginalExtension()),
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
@@ -114,14 +139,31 @@ class TemplateController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'template_folder_id' => 'nullable|exists:m_template_folders,id',
+            'file' => 'nullable|file|mimes:docx,doc,pdf,xls,xlsx,txt,rtf,odt,ods,csv|max:20480',
         ]);
 
-        $template->update([
+        $data = [
             'name' => $request->name,
             'description' => $request->description,
             'template_folder_id' => $request->template_folder_id,
             'updated_by' => Auth::id(),
-        ]);
+        ];
+
+        if ($request->hasFile('file')) {
+            if (Storage::disk('public')->exists($template->file_path)) {
+                Storage::disk('public')->delete($template->file_path);
+            } elseif (Storage::exists($template->file_path)) {
+                Storage::delete($template->file_path);
+            }
+
+            $file = $request->file('file');
+            $data['file_path'] = $file->store('contract_templates', 'public');
+            $data['file_name'] = $file->getClientOriginalName();
+            $data['file_size'] = $file->getSize();
+            $data['file_type'] = strtolower($file->getClientOriginalExtension());
+        }
+
+        $template->update($data);
 
         return back()->with('success', 'Template berhasil diperbarui.');
     }
@@ -131,11 +173,15 @@ class TemplateController extends Controller
      */
     public function downloadTemplate(ContractTemplate $template)
     {
-        if (! Storage::exists($template->file_path)) {
-            abort(404, 'File tidak ditemukan.');
+        if (Storage::disk('public')->exists($template->file_path)) {
+            return Storage::disk('public')->download($template->file_path, $template->file_name);
         }
 
-        return Storage::download($template->file_path, $template->file_name);
+        if (Storage::exists($template->file_path)) {
+            return Storage::download($template->file_path, $template->file_name);
+        }
+
+        abort(404, 'File tidak ditemukan.');
     }
 
     /**
@@ -143,7 +189,9 @@ class TemplateController extends Controller
      */
     public function destroyTemplate(ContractTemplate $template)
     {
-        if (Storage::exists($template->file_path)) {
+        if (Storage::disk('public')->exists($template->file_path)) {
+            Storage::disk('public')->delete($template->file_path);
+        } elseif (Storage::exists($template->file_path)) {
             Storage::delete($template->file_path);
         }
 
@@ -178,6 +226,82 @@ class TemplateController extends Controller
         $template->update(['template_folder_id' => $request->template_folder_id]);
 
         return back()->with('success', 'Template berhasil dipindahkan.');
+    }
+
+    /**
+     * Bulk delete items (folders and templates).
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $request->validate([
+            'folder_ids' => 'nullable|array',
+            'folder_ids.*' => 'exists:m_template_folders,id',
+            'template_ids' => 'nullable|array',
+            'template_ids.*' => 'exists:m_contract_templates,id',
+        ]);
+
+        $folderIds = $request->input('folder_ids', []);
+        $templateIds = $request->input('template_ids', []);
+
+        // ponytail: bulk destroy templates and clean up files
+        if (!empty($templateIds)) {
+            $templates = ContractTemplate::whereIn('id', $templateIds)->get();
+            foreach ($templates as $template) {
+                if (Storage::disk('public')->exists($template->file_path)) {
+                    Storage::disk('public')->delete($template->file_path);
+                } elseif (Storage::exists($template->file_path)) {
+                    Storage::delete($template->file_path);
+                }
+                $template->delete();
+            }
+        }
+
+        // ponytail: bulk destroy folders (cascade deletes related templates & child folders)
+        if (!empty($folderIds)) {
+            $folders = TemplateFolder::whereIn('id', $folderIds)->get();
+            foreach ($folders as $folder) {
+                $this->deleteFolderRecursively($folder);
+            }
+        }
+
+        return back()->with('success', 'Item terpilih berhasil dihapus.');
+    }
+
+    /**
+     * Bulk move items (folders and templates) to a target folder.
+     */
+    public function bulkMove(Request $request)
+    {
+        $request->validate([
+            'target_folder_id' => 'nullable|exists:m_template_folders,id',
+            'folder_ids' => 'nullable|array',
+            'folder_ids.*' => 'exists:m_template_folders,id',
+            'template_ids' => 'nullable|array',
+            'template_ids.*' => 'exists:m_contract_templates,id',
+        ]);
+
+        $targetFolderId = $request->input('target_folder_id');
+        $folderIds = $request->input('folder_ids', []);
+        $templateIds = $request->input('template_ids', []);
+
+        // Move templates
+        if (!empty($templateIds)) {
+            ContractTemplate::whereIn('id', $templateIds)->update([
+                'template_folder_id' => $targetFolderId,
+            ]);
+        }
+
+        // Move folders (prevent moving a folder into itself)
+        if (!empty($folderIds)) {
+            $filteredFolderIds = array_filter($folderIds, fn($id) => $id !== $targetFolderId);
+            if (!empty($filteredFolderIds)) {
+                TemplateFolder::whereIn('id', $filteredFolderIds)->update([
+                    'parent_id' => $targetFolderId,
+                ]);
+            }
+        }
+
+        return back()->with('success', 'Item terpilih berhasil dipindahkan.');
     }
 
     /**

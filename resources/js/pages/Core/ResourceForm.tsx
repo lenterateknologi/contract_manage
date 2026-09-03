@@ -1353,7 +1353,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                             onClick={() => {
                                                 const fileUrl = valStr.startsWith('http') || valStr.startsWith('/') 
                                                     ? valStr 
-                                                    : `/storage/${valStr}`;
+                                                    : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
                                                 window.open(fileUrl, '_blank');
                                             }}
                                             className="inline-flex items-center gap-1.5 font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline hover:no-underline transition-all cursor-pointer text-left"

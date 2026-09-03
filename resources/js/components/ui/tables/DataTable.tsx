@@ -68,6 +68,7 @@ export interface DataTableProps<T> {
     sortDir?: 'asc' | 'desc';
     onSortChange?: (sortBy: string, sortDir: 'asc' | 'desc') => void;
     isRowSelectable?: (row: T) => boolean;
+    onRowContextMenu?: (row: T, event: React.MouseEvent) => void;
 }
 
 /**
@@ -100,6 +101,7 @@ export function DataTable<T extends Record<string, any>>({
     sortDir,
     onSortChange,
     isRowSelectable,
+    onRowContextMenu,
 }: DataTableProps<T>) {
 
     const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 15);
@@ -259,6 +261,13 @@ export function DataTable<T extends Record<string, any>>({
                                         <tr
                                             key={row.id || rowIdx}
                                             onClick={() => onRowClick?.(row)}
+                                            onContextMenu={(e) => {
+                                                if (onRowContextMenu) {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    onRowContextMenu(row, e);
+                                                }
+                                            }}
                                             className={cn(
                                                 "border-b border-surface-border/30 transition-all hover:bg-slate-50 dark:hover:bg-zinc-800/60 cursor-pointer group select-none [content-visibility:auto] [contain-intrinsic-size:0_45px]",
                                                 activeSelectedRows.some(r => r.id === row.id) ? "bg-primary/5 dark:bg-primary/10" : "bg-white dark:bg-zinc-900"

@@ -25,7 +25,9 @@ use App\Models\CompanyGroup;
 use App\Services\PortalSyncService;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -430,6 +432,59 @@ class ResourceController extends Controller
 
         return Inertia::render('Core/VendorDocument', [
             'vendor' => $record,
+        ]);
+    }
+
+    // ponytail: proxy download COMA file with base64 decode & token caching
+    public function downloadVendorFile(Request $request)
+    {
+        $fileName = $request->query('fileName');
+        if (! $fileName) {
+            abort(400, 'File name is required');
+        }
+
+        $baseUrl = rtrim(config('services.coma.base_url'), '/');
+        
+        $token = Cache::remember('coma_api_token', 300, function () use ($baseUrl) {
+            $resp = Http::timeout(15)->post("{$baseUrl}/api/Authentication/authenticate", [
+                'username' => config('services.coma.username'),
+                'password' => config('services.coma.password'),
+            ]);
+            return ($resp->successful() && $resp->json('status') === 'success') ? $resp->json('data') : null;
+        });
+
+        if (! $token) {
+            abort(502, 'Gagal terhubung ke layanan vendor COMA.');
+        }
+
+        $fileResp = Http::timeout(45)
+            ->withToken($token)
+            ->get("{$baseUrl}/api/FileUpload/DownloadFile", ['fileName' => $fileName]);
+
+        if (! $fileResp->successful()) {
+            abort(404, 'Dokumen tidak ditemukan di COMA.');
+        }
+
+        $body = $fileResp->json();
+        $rawBase64 = is_array($body) ? ($body['data'] ?? null) : null;
+        $binaryData = $rawBase64 ? base64_decode($rawBase64) : $fileResp->body();
+
+        $ext = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+        $mimeTypes = [
+            'pdf' => 'application/pdf',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ];
+        $contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
+
+        return response($binaryData, 200, [
+            'Content-Type' => $contentType,
+            'Content-Disposition' => 'inline; filename="'.basename($fileName).'"',
         ]);
     }
 
