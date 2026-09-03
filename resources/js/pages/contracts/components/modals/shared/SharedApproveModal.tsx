@@ -179,11 +179,17 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
 
         const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
 
+        const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');
         const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
         const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
         const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
 
         const missingDocs: string[] = [];
+
+        if (requirePic) {
+            const hasPic = !!(contract?.assigned_pic_id || contract?.metadata?.assigned_pic_id || (contract as any)?.assigned_pic || (contract as any)?.assignedPic);
+            if (!hasPic) missingDocs.push('Data PIC (Penanggung Jawab)');
+        }
 
         if (requireF1) {
             const hasF1 = !!(contract.f1_file || contract.metadata?.f1_file || contract.metadata?.f1_form_data || (contract.f1_items && contract.f1_items.length > 0));
@@ -201,7 +207,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         }
 
         if (missingDocs.length > 0) {
-            alert(`Tidak dapat melanjutkan persetujuan. Dokumen berikut wajib diisi/diunggah terlebih dahulu:\n- ${missingDocs.join('\n- ')}`);
+            alert(`Tidak dapat melanjutkan persetujuan. Data/dokumen berikut wajib diisi terlebih dahulu:\n- ${missingDocs.join('\n- ')}`);
             return;
         }
 
@@ -252,9 +258,20 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         stepMeta = stepMeta || {};
 
         const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
+        const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');
         const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
         const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
         const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+
+        if (requirePic) {
+            const hasPic = !!(
+                contract?.assigned_pic_id ||
+                contract?.metadata?.assigned_pic_id ||
+                (contract as any)?.assigned_pic ||
+                (contract as any)?.assignedPic
+            );
+            if (!hasPic) return true;
+        }
 
         // Waktu saat step persetujuan saat ini dimulai
         const currentApproval = (contract?.approvals || []).find((a: any) => a.status === 'pending');
@@ -373,7 +390,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                             : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
                     </p>
 
-                    {/* Check-list Syarat Dokumen Wajib Tahap Ini */}
+                    {/* Check-list Syarat Dokumen / Data Wajib Tahap Ini */}
                     {(() => {
                         let stepMeta = contract?.workflow_step?.meta;
                         let actions = contract?.workflow_step?.action_configs || contract?.workflow_step?.actions || [];
@@ -391,6 +408,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
 
                         const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
 
+                        const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');
                         const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
                         const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
                         const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
@@ -409,6 +427,15 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
 
                         const reqList: any[] = [];
 
+                        if (requirePic) {
+                            const isFilled = !!(
+                                contract.assigned_pic_id ||
+                                contract.metadata?.assigned_pic_id ||
+                                (contract as any)?.assigned_pic ||
+                                (contract as any)?.assignedPic
+                            );
+                            reqList.push({ label: 'Data PIC (Penanggung Jawab)', isFilled });
+                        }
                         if (requireF1) {
                             const isFilled = hasDocUploadedInCurrentStep('f1') || (contract?.current_step === 1 && !!(
                                 contract.f1_file ||
@@ -449,7 +476,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                             <div className="rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/60 p-2.5 space-y-2">
                                 <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
-                                        Checklist Syarat Dokumen Wajib
+                                        Checklist Syarat Wajib
                                     </span>
                                     <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
                                         {reqList.filter(r => r.isFilled).length} / {reqList.length} Terisi

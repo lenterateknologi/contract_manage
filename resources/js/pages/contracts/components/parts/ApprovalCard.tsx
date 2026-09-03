@@ -169,11 +169,17 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
 
                 // Ambil required fields dari stepMeta (checkbox Wajib Diisi) ATAU dari action_configs
                 const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
+                const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');
                 const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
                 const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
                 const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
 
                 const reqList = [];
+
+                if (requirePic) {
+                    const isFilled = !!(contract?.assigned_pic_id || contract?.metadata?.assigned_pic_id || (contract as any)?.assigned_pic || (contract as any)?.assignedPic);
+                    reqList.push({ label: 'Data PIC', isFilled });
+                }
 
                 // Untuk step yang sudah selesai/diproses atau sedang berlangsung, kita periksa apakah ada pengunggahan dokumen pada/setelah step tersebut dimulai
                 const stepStartTime = a.step_entry_at || a.created_at;

@@ -260,7 +260,13 @@ export function DataTable<T extends Record<string, any>>({
                                     return (
                                         <tr
                                             key={row.id || rowIdx}
-                                            onClick={() => onRowClick?.(row)}
+                                            onClick={(e) => {
+                                                const target = e.target as HTMLElement | null;
+                                                if (target?.closest('button, a, input, select, textarea, [data-interactive="true"], [role="button"], [role="menuitem"], [role="option"]')) {
+                                                    return;
+                                                }
+                                                onRowClick?.(row);
+                                            }}
                                             onContextMenu={(e) => {
                                                 if (onRowContextMenu) {
                                                     e.preventDefault();

@@ -52,6 +52,9 @@ interface TemplateFolder {
     parent_id: string | null;
     name: string;
     templates_count?: number;
+    creator?: { name: string };
+    created_at?: string;
+    updated_at?: string;
 }
 
 interface ContractTemplate {
@@ -66,6 +69,7 @@ interface ContractTemplate {
     creator?: { name: string };
     folder?: { name: string };
     created_at?: string;
+    updated_at?: string;
 }
 
 interface Props {
@@ -84,6 +88,8 @@ interface TableRowItem {
     templates_count?: number;
     creator_name?: string;
     folder_name?: string;
+    created_at?: string;
+    updated_at?: string;
     raw: any;
 }
 
@@ -280,6 +286,9 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                     name: f.name,
                     file_type: 'folder',
                     templates_count: directCount,
+                    creator_name: f.creator?.name || '-',
+                    created_at: f.created_at,
+                    updated_at: f.updated_at,
                     raw: f,
                 };
             });
@@ -306,6 +315,8 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                     file_name: t.file_name,
                     creator_name: t.creator?.name || '-',
                     folder_name: parentFolder ? parentFolder.name : 'Root Repository',
+                    created_at: t.created_at,
+                    updated_at: t.updated_at,
                     raw: t,
                 };
             });
@@ -642,52 +653,91 @@ export default function Templates({ folders = [], templates = [] }: Props) {
         {
             header: 'Pengunggah',
             accessorKey: 'creator_name',
-            className: 'w-40',
+            className: 'w-36',
             cell: (row) => (
-                <span className="text-xs text-text-desc font-medium">
-                    {row.itemType === 'folder' ? '-' : row.creator_name || '-'}
+                <span className="text-xs text-text-desc font-medium truncate block">
+                    {row.creator_name || '-'}
                 </span>
             ),
+        },
+        {
+            header: 'Tanggal Dibuat / Upload',
+            accessorKey: 'created_at',
+            className: 'w-44',
+            cell: (row) => {
+                if (!row.created_at) return <span className="text-xs text-text-desc font-medium">-</span>;
+                const dateObj = new Date(row.created_at);
+                const formattedDate = dateObj.toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                });
+                const formattedTime = dateObj.toLocaleTimeString('id-ID', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                });
+                return (
+                    <div className="flex flex-col">
+                        <span className="text-xs text-text-main font-medium">{formattedDate}</span>
+                        <span className="text-[10px] text-text-desc">{formattedTime} WIB</span>
+                    </div>
+                );
+            },
         },
         {
             header: 'Aksi',
             accessorKey: 'id',
             className: 'w-20 text-center',
             cell: (row) => (
-                <div className="flex items-center justify-center">
+                <div
+                    className="flex items-center justify-center"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                    }}
+                >
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
                                 size="icon"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
                                 className="h-8 w-8 rounded-lg text-text-desc hover:text-text-main hover:bg-surface-muted transition-all cursor-pointer"
                             >
                                 <MoreHorizontal size={15} />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44 p-1.5 shadow-xl border-surface-border">
+                        <DropdownMenuContent align="end" className="w-44 p-1.5 shadow-xl border-surface-border z-[9999]">
                             {row.itemType === 'template' ? (
                                 <>
                                     <DropdownMenuItem
-                                        onClick={() => setPreviewTemplate(row.raw)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setPreviewTemplate(row.raw);
+                                        }}
                                         className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
                                     >
                                         <Eye size={13} className="text-primary" />
                                         <span>Buka / Pratinjau</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem asChild>
-                                        <a
-                                            href={route('admin.templates.download', row.id)}
-                                            className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
-                                        >
-                                            <Download size={13} className="text-emerald-500" />
-                                            <span>Download</span>
-                                        </a>
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            window.location.href = route('admin.templates.download', row.id);
+                                        }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                    >
+                                        <Download size={13} className="text-emerald-500" />
+                                        <span>Download</span>
                                     </DropdownMenuItem>
                                 </>
                             ) : (
                                 <DropdownMenuItem
-                                    onClick={() => setCurrentFolderId(row.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCurrentFolderId(row.id);
+                                    }}
                                     className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
                                 >
                                     <FolderOpen size={13} className="text-amber-500" />
@@ -695,7 +745,8 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
-                                onClick={() => {
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
                                     setNewFolderName(row.name);
                                     setIsRenameModalOpen(true);
@@ -706,7 +757,8 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 <span>Ubah Nama</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                                onClick={() => {
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
                                     setTargetFolderId(row.itemType === 'folder' ? row.raw.parent_id : row.raw.template_folder_id);
                                     setIsMoveModalOpen(true);
@@ -717,7 +769,8 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 <span>Pindahkan</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                                onClick={() => {
+                                onClick={(e) => {
+                                    e.stopPropagation();
                                     setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
                                     setIsDeleteModalOpen(true);
                                 }}
@@ -1983,6 +2036,34 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 </a>
                             </div>
                         )}
+
+                        {/* Document Details Metadata Card */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 rounded-xl border border-surface-border/70 bg-surface-card/60 p-3.5 text-xs">
+                            <div>
+                                <span className="text-[10px] font-bold uppercase text-text-desc tracking-wider block mb-0.5">Ukuran File</span>
+                                <span className="font-semibold text-text-main">{formatSize(previewTemplate?.file_size || 0)}</span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold uppercase text-text-desc tracking-wider block mb-0.5">Pengunggah</span>
+                                <span className="font-semibold text-text-main truncate block">{previewTemplate?.creator?.name || '-'}</span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold uppercase text-text-desc tracking-wider block mb-0.5">Lokasi Folder</span>
+                                <span className="font-semibold text-text-main truncate block">{previewTemplate?.folder?.name || 'Root'}</span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] font-bold uppercase text-text-desc tracking-wider block mb-0.5">Tanggal Unggah</span>
+                                <span className="font-semibold text-text-main truncate block">
+                                    {previewTemplate?.created_at
+                                        ? new Date(previewTemplate.created_at).toLocaleDateString('id-ID', {
+                                              day: '2-digit',
+                                              month: 'short',
+                                              year: 'numeric',
+                                          })
+                                        : '-'}
+                                </span>
+                            </div>
+                        </div>
 
                         {previewTemplate?.description && (
                             <div className="rounded-xl border border-surface-border/70 bg-surface-card/60 p-3.5 space-y-1">

@@ -1,6 +1,7 @@
 import { CheckCircle2, FileSignature, Settings2, UserCheck, XCircle } from 'lucide-react';
 
 export const AVAILABLE_FIELDS = [
+    { value: 'pic', label: 'Data PIC (Penanggung Jawab)' },
     { value: 'f1', label: 'Sub-dokumen F1 (Permohonan)' },
     { value: 'f2', label: 'Sub-dokumen F2 (Ringkasan)' },
     { value: 'agreement', label: 'Sub-dokumen Perjanjian / Draft' },

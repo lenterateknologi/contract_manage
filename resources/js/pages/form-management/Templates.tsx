@@ -580,17 +580,34 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                     rowActions={(row: any) => {
                         if (row.isParent) return null;
                         return (
-                            <div className="flex items-center justify-end gap-1">
-                                <a href={route('admin.form-templates.builder', row.id)} target="_blank" title="Open Builder">
-                                    <Button variant="ghost" size="icon" className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all">
-                                        <Edit2 size={14} />
-                                    </Button>
-                                </a>
+                            <div
+                                className="flex items-center justify-end gap-1"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                }}
+                            >
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => openEditModal(row)}
-                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        window.open(route('admin.form-templates.builder', row.id), '_blank');
+                                    }}
+                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
+                                    title="Open Builder"
+                                >
+                                    <Edit2 size={14} />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        openEditModal(row);
+                                    }}
+                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
                                     title="Metadata"
                                 >
                                     <Settings size={14} />
@@ -598,8 +615,12 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => handleDuplicate(row.id)}
-                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDuplicate(row.id);
+                                    }}
+                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
                                     title="Clone Asset"
                                 >
                                     <Copy size={14} />
@@ -607,8 +628,12 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => handleExport(row.id)}
-                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleExport(row.id);
+                                    }}
+                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
                                     title="Export JSON"
                                 >
                                     <Download size={14} />
@@ -616,11 +641,13 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
                                         setSelectedTemplate(row);
                                         setIsDeleteModalOpen(true);
                                     }}
-                                    className="text-text-main/20 hover:bg-danger/5 hover:text-danger h-9 w-9 rounded-xl transition-all"
+                                    className="text-text-main/20 hover:bg-danger/5 hover:text-danger h-9 w-9 rounded-xl transition-all cursor-pointer"
                                     title="Purge Asset"
                                 >
                                     <Trash2 size={14} />

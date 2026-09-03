@@ -33,16 +33,22 @@ class AdminMiddleware
         $role = Role::firstWhere('name', $user->role);
         if ($role) {
             $currentPath = '/'.ltrim($request->path(), '/');
-            $hasAccess = AccessModule::where('role_id', $role->id)
-                ->where('can_read', true)
-                ->whereHas('module', function ($q) use ($currentPath) {
-                    $q->where('route', $currentPath)
-                        ->orWhere('route', ltrim($currentPath, '/'));
-                })
-                ->exists();
 
-            if ($hasAccess) {
-                return $next($request);
+            // Fetch accessible module routes for this role
+            $accessibleRoutes = AccessModule::where('role_id', $role->id)
+                ->where('can_read', true)
+                ->with('module')
+                ->get()
+                ->pluck('module.route')
+                ->filter()
+                ->map(fn ($r) => '/'.ltrim($r, '/'))
+                ->values();
+
+            foreach ($accessibleRoutes as $route) {
+                // Exact match or prefix match for sub-paths (e.g. /admin/templates/123/download under /admin/templates)
+                if ($currentPath === $route || str_starts_with($currentPath, $route.'/')) {
+                    return $next($request);
+                }
             }
         }
 

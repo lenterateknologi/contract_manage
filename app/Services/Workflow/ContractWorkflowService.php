@@ -579,6 +579,55 @@ class ContractWorkflowService
             return $this->handleSigningSetup($contract, $approval, $actionCode, $comment, $signerUserIdsParam, $targetStepId);
         }
 
+        // Validate required fields configured on step actions or step meta
+        $currentStep = $approval->workflowStep;
+        if ($currentStep) {
+            $actions = $currentStep->actions;
+            $actionReqFields = [];
+            foreach ($actions as $act) {
+                if (! empty($act->required_fields) && is_array($act->required_fields)) {
+                    $actionReqFields = array_merge($actionReqFields, $act->required_fields);
+                }
+            }
+            $stepMeta = $currentStep->meta ?? [];
+
+            // 1. PIC Validation
+            $requirePic = ! empty($stepMeta['require_pic']) || in_array('pic', $actionReqFields) || in_array('assigned_pic', $actionReqFields);
+            if ($requirePic) {
+                $hasPic = ! empty($contract->assigned_pic_id) || ! empty($assignedPicId) || ! empty($contract->metadata['assigned_pic_id']);
+                if (! $hasPic) {
+                    throw new \Exception('Tidak dapat melanjutkan persetujuan. Data PIC (Penanggung Jawab) wajib diisi / ditugaskan terlebih dahulu.');
+                }
+            }
+
+            // 2. F1 Validation
+            $requireF1 = ! empty($stepMeta['require_f1']) || in_array('f1', $actionReqFields);
+            if ($requireF1) {
+                $hasF1 = ! empty($contract->f1_file) || ! empty($contract->metadata['f1_file']) || ! empty($contract->metadata['f1_form_data']) || ! empty($contract->f1_items);
+                if (! $hasF1) {
+                    throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen F1 (Permohonan) wajib diisi/diunggah terlebih dahulu.');
+                }
+            }
+
+            // 3. F2 Validation
+            $requireF2 = ! empty($stepMeta['require_f2']) || in_array('f2', $actionReqFields);
+            if ($requireF2) {
+                $hasF2 = ! empty($contract->f2_file) || ! empty($contract->metadata['f2_file']) || ! empty($contract->metadata['f2_form_data']) || ! empty($contract->contract_no) || ! empty($contract->price);
+                if (! $hasF2) {
+                    throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen F2 (Ringkasan) wajib diisi/diunggah terlebih dahulu.');
+                }
+            }
+
+            // 4. Agreement Validation
+            $requireAgreement = ! empty($stepMeta['require_agreement']) || in_array('agreement', $actionReqFields);
+            if ($requireAgreement) {
+                $hasAgreement = ! empty($contract->agreement_file) || ! empty($contract->metadata['agreement_file']) || ! empty($contract->agreement_content);
+                if (! $hasAgreement) {
+                    throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen Perjanjian / Draft wajib diisi/diunggah terlebih dahulu.');
+                }
+            }
+        }
+
         $approval->approve($comment, $attachmentPath);
         $this->queryService->logHistory($contract, 'APPROVAL_APPROVED', "Disetujui oleh {$approval->approver_name} ({$approval->role})", Auth::id());
 
