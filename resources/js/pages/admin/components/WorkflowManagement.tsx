@@ -162,11 +162,6 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                         </th>
                         <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
                             <div className="flex items-center gap-1.5">
-                                <ShieldCheck size={13} /> Otoritas Inisiasi
-                            </div>
-                        </th>
-                        <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
-                            <div className="flex items-center gap-1.5">
                                 <Layers size={13} /> Tahapan
                             </div>
                         </th>
@@ -186,7 +181,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                 <tbody className="divide-y divide-border/40">
                     {grouped.size === 0 ? (
                         <tr>
-                            <td colSpan={7} className="py-16 text-center text-muted-foreground">
+                            <td colSpan={6} className="py-16 text-center text-muted-foreground">
                                 <GitBranch size={24} className="mx-auto mb-2 opacity-30" />
                                 <p>Belum ada alur kerja terdaftar</p>
                             </td>
@@ -196,7 +191,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                             <React.Fragment key={`group-${typeName}`}>
                                 {/* Category sub-header row */}
                                 <tr className="bg-muted/20 border-t border-border/50">
-                                    <td colSpan={7} className="px-4 py-2">
+                                    <td colSpan={6} className="px-4 py-2">
                                         <div className="flex items-center gap-2">
                                             <div className="h-1.5 w-1.5 rounded-full bg-primary/50" />
                                             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -249,18 +244,6 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                                         {row.description}
                                                     </span>
                                                 )}
-                                            </div>
-                                        </td>
-
-                                        {/* Initiator */}
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-border bg-muted/40">
-                                                    <UserCircle size={12} className="text-muted-foreground" />
-                                                </div>
-                                                <span className="text-[11px] text-foreground">
-                                                    {row.initiator_summary || INITIATOR_LABELS[row.initiator_type] || row.initiator_type || 'Seluruh Staff'}
-                                                </span>
                                             </div>
                                         </td>
 

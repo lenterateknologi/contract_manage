@@ -1,6 +1,8 @@
 import { useToast } from '@/components/ui/feedback/Toast';
 import { cn } from '@/lib/utils';
 import { MASTER_ACTIONS, getActionTheme } from '../constants';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/dialogs/Popover';
+import { Play, ChevronDown, Sparkles, ArrowRight } from 'lucide-react';
 
 interface StepSimulatorButtonsProps {
     actions: any[];
@@ -76,33 +78,86 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
     return (
         <div 
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 flex-wrap"
+            className="inline-flex items-center"
         >
-            {buttons.map((btn, bIdx) => (
-                <button
-                    key={bIdx}
-                    type="button"
-                    title={btn.tooltip}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (['approve', 'reject', 'assign_pic', 'sign', 'forward'].includes(btn.actionType)) {
-                            setActiveModal(btn.actionType as any);
-                        } else {
-                            showToast(
-                                `Simulasi: Menjalankan aksi "${btn.label}" (${btn.tooltip}). Kolom Wajib: ${(btn.act.required_fields || []).join(', ') || '-'}`,
-                                'success',
-                            );
-                        }
-                    }}
-                    className={cn(
-                        'inline-flex cursor-pointer items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-semibold text-white uppercase shadow-none transition-all hover:scale-105 active:scale-95',
-                        btn.color,
-                    )}
-                >
-                    <btn.icon size={10} className="opacity-90" />
-                    <span>{btn.label}</span>
-                </button>
-            ))}
+            <Popover className="relative">
+                {({ close }) => (
+                    <>
+                        <PopoverTrigger
+                            type="button"
+                            onClick={(e) => e.stopPropagation()}
+                            className="relative flex h-7 items-center justify-center gap-1 px-1.5 rounded-md text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all cursor-pointer select-none"
+                            title={`Simulasi Alur Aksi (${buttons.length} aksi)`}
+                        >
+                            <Play size={11} className="fill-current" />
+                            <span className="flex h-4 min-w-4 px-1 items-center justify-center rounded-md bg-emerald-500 text-[9.5px] font-medium text-white shadow-2xs leading-none">
+                                {buttons.length}
+                            </span>
+                        </PopoverTrigger>
+
+                        <PopoverContent
+                            align="end"
+                            className="w-72 p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl space-y-2 z-[9999]"
+                        >
+                            <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-zinc-800/80 px-1">
+                                <div className="flex items-center gap-1.5">
+                                    <Sparkles size={12} className="text-primary" />
+                                    <span className="text-xs font-bold text-slate-900 dark:text-zinc-100">
+                                        Simulasi Alur Aksi
+                                    </span>
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">
+                                    Tahap #{idx + 1}
+                                </span>
+                            </div>
+
+                            <p className="text-[11px] text-slate-500 dark:text-zinc-400 px-1">
+                                Klik salah satu aksi di bawah untuk menguji simulasi alur / form modal aksi:
+                            </p>
+
+                            <div className="space-y-1 pt-1 max-h-60 overflow-y-auto">
+                                {buttons.map((btn, bIdx) => (
+                                    <button
+                                        key={bIdx}
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            close();
+                                            if (['approve', 'reject', 'assign_pic', 'sign', 'forward'].includes(btn.actionType)) {
+                                                setActiveModal(btn.actionType as any);
+                                            } else {
+                                                showToast(
+                                                    `Simulasi: Menjalankan aksi "${btn.label}" (${btn.tooltip}). Kolom Wajib: ${(btn.act.required_fields || []).join(', ') || '-'}`,
+                                                    'success',
+                                                );
+                                            }
+                                        }}
+                                        className="w-full flex items-center justify-between gap-2 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors text-left group/item border border-transparent hover:border-slate-200/60 dark:hover:border-zinc-800 cursor-pointer"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <div className={cn(
+                                                "flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-white shadow-2xs",
+                                                btn.color
+                                            )}>
+                                                <btn.icon size={11} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate group-hover/item:text-primary transition-colors">
+                                                    {btn.label}
+                                                </div>
+                                                <div className="text-[10px] text-slate-500 dark:text-zinc-400 truncate">
+                                                    {btn.tooltip}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <ArrowRight size={12} className="text-slate-400 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0" />
+                                    </button>
+                                ))}
+                            </div>
+                        </PopoverContent>
+                    </>
+                )}
+            </Popover>
         </div>
     );
 }

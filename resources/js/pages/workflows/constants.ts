@@ -74,3 +74,180 @@ export function getActionTheme(code: string) {
         actionType: cleanCode,
     };
 }
+
+export const BUILTIN_STEP_TEMPLATES = [
+    {
+        id: 'template_atasan_approval',
+        name: 'Persetujuan Atasan Langsung',
+        category: 'Persetujuan',
+        description: 'Tahap verifikasi dan persetujuan dari atasan langsung inisiator sebelum diajukan ke unit terkait.',
+        step_data: {
+            description: 'Persetujuan Atasan Langsung',
+            approver_type: 'initiator',
+            approver_config: {
+                custom: ['atasan'],
+                roles: [],
+                departments: [],
+                users: [],
+                is_default: false,
+            },
+            actions: [
+                {
+                    action_code: 'approve',
+                    name: 'Setujui Pengajuan',
+                    transition_type: 'sequential',
+                    is_active: true,
+                },
+                {
+                    action_code: 'reject',
+                    name: 'Tolak / Minta Revisi',
+                    transition_type: 'back',
+                    is_active: true,
+                },
+            ],
+            meta: {
+                target_status: 'IN_REVIEW',
+            },
+        },
+    },
+    {
+        id: 'template_legal_review',
+        name: 'Penelaahan & Verifikasi Legal',
+        category: 'Legal',
+        description: 'Pemeriksaan kepatuhan hukum, syarat & ketentuan, serta klausul perjanjian oleh tim Legal.',
+        step_data: {
+            description: 'Penelaahan Dokumen oleh Tim Legal',
+            approver_type: 'role',
+            approver_config: {
+                custom: [],
+                roles: ['legal', 'manager_legal'],
+                departments: [],
+                users: [],
+                is_default: false,
+            },
+            role: ['legal', 'manager_legal'],
+            actions: [
+                {
+                    action_code: 'approve',
+                    name: 'Setujui Legalitas Draft',
+                    transition_type: 'sequential',
+                    is_active: true,
+                },
+                {
+                    action_code: 'reject',
+                    name: 'Kembalikan untuk Perbaikan',
+                    transition_type: 'back',
+                    is_active: true,
+                },
+                {
+                    action_code: 'assign',
+                    name: 'Tugaskan ke Legal Staff Spesifik',
+                    transition_type: 'stay',
+                    is_active: true,
+                },
+            ],
+            meta: {
+                target_status: 'LEGAL_REVIEW',
+            },
+        },
+    },
+    {
+        id: 'template_pic_assignment',
+        name: 'Penugasan PIC Penanggung Jawab',
+        category: 'Penugasan',
+        description: 'Tahap penunjukan PIC atau penanggung jawab kontrak untuk mengawal proses hingga selesai.',
+        step_data: {
+            description: 'Penugasan PIC Penanggung Jawab',
+            approver_type: 'role',
+            approver_config: {
+                custom: [],
+                roles: ['manager_legal', 'vp_legal'],
+                departments: [],
+                users: [],
+                is_default: false,
+            },
+            role: ['manager_legal', 'vp_legal'],
+            actions: [
+                {
+                    action_code: 'assign',
+                    name: 'Tugaskan PIC',
+                    transition_type: 'sequential',
+                    is_active: true,
+                },
+            ],
+            meta: {
+                target_status: 'ASSIGNED',
+            },
+        },
+    },
+    {
+        id: 'template_finance_review',
+        name: 'Verifikasi Finansial & Anggaran',
+        category: 'Keuangan',
+        description: 'Pemeriksaan kelayakan anggaran, nilai transaksi, dan termin pembayaran oleh Keuangan.',
+        step_data: {
+            description: 'Verifikasi Finansial & Anggaran',
+            approver_type: 'role',
+            approver_config: {
+                custom: [],
+                roles: ['finance', 'billing', 'accounting'],
+                departments: [],
+                users: [],
+                is_default: false,
+            },
+            role: ['finance', 'billing', 'accounting'],
+            actions: [
+                {
+                    action_code: 'approve',
+                    name: 'Setujui Aspek Keuangan',
+                    transition_type: 'sequential',
+                    is_active: true,
+                },
+                {
+                    action_code: 'reject',
+                    name: 'Tolak / Revisi Anggaran',
+                    transition_type: 'back',
+                    is_active: true,
+                },
+            ],
+            meta: {
+                target_status: 'FINANCE_REVIEW',
+            },
+        },
+    },
+    {
+        id: 'template_director_signing',
+        name: 'Penandatanganan Direksi / Signer',
+        category: 'Tanda Tangan',
+        description: 'Tahap final penandatanganan dokumen kontrak oleh Direksi atau pihak berwenang.',
+        step_data: {
+            description: 'Penandatanganan oleh Direksi / Authorized Signer',
+            approver_type: 'role',
+            approver_config: {
+                custom: [],
+                roles: ['director', 'vp_legal'],
+                departments: [],
+                users: [],
+                is_default: false,
+            },
+            role: ['director', 'vp_legal'],
+            actions: [
+                {
+                    action_code: 'signature',
+                    name: 'Tanda Tangani & Upload Dokumen',
+                    transition_type: 'sequential',
+                    is_active: true,
+                },
+                {
+                    action_code: 'reject',
+                    name: 'Tolak Penandatanganan',
+                    transition_type: 'back',
+                    is_active: true,
+                },
+            ],
+            meta: {
+                target_status: 'SIGNING',
+            },
+        },
+    },
+];

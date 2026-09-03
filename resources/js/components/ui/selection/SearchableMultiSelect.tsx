@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Popover, PopoverButton, PopoverPanel, Portal } from '@headlessui/react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronsUpDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -25,26 +25,31 @@ interface SearchableMultiSelectProps {
 export function SearchableMultiSelect({
     values = [],
     onValuesChange,
-    options,
+    options = [],
     placeholder = 'Pilih...',
-    searchPlaceholder = 'Cari...',
+    searchPlaceholder = 'Cari opsi...',
     className,
     triggerClassName,
-    emptyText = 'Tidak ada hasil',
+    emptyText = 'Tidak ada hasil ditemukan',
     disabled = false,
     showOrder = false,
 }: SearchableMultiSelectProps) {
+    const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
+    const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties>({});
+    const [mountNode, setMountNode] = React.useState<HTMLElement | null>(null);
+    const containerRef = React.useRef<HTMLDivElement>(null);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     // Merge values that are not in static options so they appear in the list
     const mergedOptions = React.useMemo(() => {
-        const list = [...options];
-        for (const val of values) {
+        const list = [...(options || [])];
+        for (const val of values || []) {
             if (!list.some(o => o.value === val)) {
                 list.push({
                     value: val,
                     label: val,
-                    italic: true
+                    italic: true,
                 });
             }
         }
@@ -56,153 +61,263 @@ export function SearchableMultiSelect({
         return mergedOptions.filter(o => o.label.toLowerCase().includes(search.toLowerCase()));
     }, [mergedOptions, search]);
 
-    const allFilteredSelected = filtered.length > 0 && filtered.every(opt => values.includes(opt.value));
+    const allFilteredSelected = filtered.length > 0 && filtered.every(opt => (values || []).includes(opt.value));
 
     const handleSelectAllFiltered = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
         if (allFilteredSelected) {
             const filteredSet = new Set(filtered.map(o => o.value));
-            onValuesChange(values.filter(v => !filteredSet.has(v)));
+            onValuesChange((values || []).filter(v => !filteredSet.has(v)));
         } else {
-            const newValues = Array.from(new Set([...values, ...filtered.map(o => o.value)]));
+            const newValues = Array.from(new Set([...(values || []), ...filtered.map(o => o.value)]));
             onValuesChange(newValues);
         }
     };
 
-    const toggleOption = (val: string) => {
-        if (values.includes(val)) {
-            onValuesChange(values.filter(v => v !== val));
+    const toggleOption = (val: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if ((values || []).includes(val)) {
+            onValuesChange((values || []).filter(v => v !== val));
         } else {
-            onValuesChange([...values, val]);
+            onValuesChange([...(values || []), val]);
         }
     };
 
     const removeOption = (e: React.MouseEvent, val: string) => {
         e.preventDefault();
         e.stopPropagation();
-        onValuesChange(values.filter(v => v !== val));
+        onValuesChange((values || []).filter(v => v !== val));
     };
 
+    // Calculate position for dropdown (portal to closest dialog or document.body)
+    React.useEffect(() => {
+        if (!open) return;
+        const updatePosition = () => {
+            if (containerRef.current) {
+                const dialogEl = containerRef.current.closest('[role="dialog"]') as HTMLElement | null;
+                setMountNode(dialogEl || document.body);
+
+                const rect = containerRef.current.getBoundingClientRect();
+
+                if (dialogEl) {
+                    const dialogRect = dialogEl.getBoundingClientRect();
+                    const spaceBelow = dialogRect.bottom - rect.bottom;
+                    const showAbove = spaceBelow < 240 && (rect.top - dialogRect.top) > 240;
+
+                    setDropdownStyle({
+                        position: 'absolute',
+                        left: `${rect.left - dialogRect.left}px`,
+                        width: `${rect.width}px`,
+                        minWidth: `${Math.max(rect.width, 260)}px`,
+                        zIndex: 99999,
+                        ...(showAbove
+                            ? { bottom: `${dialogRect.bottom - rect.top + 4}px` }
+                            : { top: `${rect.bottom - dialogRect.top + 4}px` }),
+                    });
+                } else {
+                    const spaceBelow = window.innerHeight - rect.bottom;
+                    const showAbove = spaceBelow < 240 && rect.top > 240;
+
+                    setDropdownStyle({
+                        position: 'fixed',
+                        left: `${rect.left}px`,
+                        width: `${rect.width}px`,
+                        minWidth: `${Math.max(rect.width, 260)}px`,
+                        zIndex: 9999999,
+                        ...(showAbove
+                            ? { bottom: `${window.innerHeight - rect.top + 4}px` }
+                            : { top: `${rect.bottom + 4}px` }),
+                    });
+                }
+            }
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [open]);
+
+    // Close dropdown on outside click
+    React.useEffect(() => {
+        function handleClickOutside(e: MouseEvent) {
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(e.target as Node) &&
+                (!dropdownRef.current || !dropdownRef.current.contains(e.target as Node))
+            ) {
+                setOpen(false);
+                setSearch('');
+            }
+        }
+        if (open) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [open]);
+
     return (
-        <Popover className={cn("relative w-full", disabled && "opacity-60 cursor-not-allowed", className)}>
-            {({ open }) => (
-                <>
-                    <PopoverButton
-                        disabled={disabled}
-                        as="div"
-                        className={cn(
-                            'flex min-h-[40px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-left text-sm font-semibold text-foreground transition-all outline-none',
-                            !disabled && 'cursor-pointer hover:border-primary/50 focus:border-primary focus:ring-1 focus:ring-primary',
-                            open && 'border-primary ring-1 ring-primary',
-                            disabled && 'bg-slate-50 border-slate-100 dark:bg-slate-950 dark:border-slate-900 dark:text-slate-500',
-                            triggerClassName
-                        )}
-                    >
-                        <div className="flex flex-wrap gap-1.5 pr-2 min-w-0 flex-1 max-h-[54px] overflow-y-auto custom-scrollbar">
-                            {values.length === 0 ? (
-                                <span className="text-slate-400 dark:text-slate-500 py-0.5 text-sm font-medium truncate">{placeholder}</span>
-                            ) : (
-                                values.map((val, idx) => {
-                                    const option = options.find(o => o.value === val);
-                                    const displayLabel = option ? option.label : val;
-                                    return (
-                                        <span
-                                            key={val}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="inline-flex items-center gap-1 bg-primary text-primary-foreground px-2 py-0.5 rounded text-[10px] hover:bg-primary/90 transition-colors"
-                                        >
-                                            {showOrder ? `${idx + 1}. ${displayLabel}` : displayLabel}
-                                            <button
-                                                type="button"
-                                                onClick={(e) => removeOption(e, val)}
-                                                className="text-white/70 hover:text-white dark:text-slate-900/70 dark:hover:text-slate-900 focus:outline-none ml-0.5"
-                                            >
-                                                <X size={10} />
-                                            </button>
-                                        </span>
-                                    );
-                                })
-                            )}
-                        </div>
-                        <ChevronsUpDown size={13} className="text-slate-400 shrink-0 ml-2" />
-                    </PopoverButton>
-
-                    <Portal>
-                        <PopoverPanel
-                            anchor={{ to: 'bottom start', gap: 4, offset: 0 }}
-                            className="z-[999999] min-w-[260px] w-[var(--button-width)] max-w-[90vw] border border-slate-200 bg-white shadow-2xl rounded-lg overflow-hidden dark:border-slate-800 dark:bg-slate-950 focus:outline-none"
-                        >
-                            {/* Search input (only shown if options > 5) */}
-                            {options.length > 5 && (
-                                <div className="relative border-b border-slate-100 dark:border-slate-800">
-                                    <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input
-                                        autoFocus
-                                        value={search}
-                                        onChange={e => setSearch(e.target.value)}
-                                        placeholder={searchPlaceholder}
-                                        className="h-10 w-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 pl-8 pr-3 text-sm font-medium uppercase tracking-tight outline-none placeholder:text-slate-300 dark:placeholder:text-slate-700"
-                                    />
-                                </div>
-                            )}
-
-                            {/* Select All Toolbar */}
-                            {filtered.length > 0 && (
-                                <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 text-[10px] font-semibold">
-                                    <span className="text-slate-500 dark:text-slate-400">
-                                        {search ? `${filtered.length} hasil ditemukan` : `${options.length} opsi`}
+        <div
+            ref={containerRef}
+            className={cn('relative w-full', disabled && 'opacity-60 cursor-not-allowed', className)}
+        >
+            {/* Trigger Button (shadcn style) */}
+            <div
+                role="button"
+                tabIndex={disabled ? -1 : 0}
+                onClick={() => {
+                    if (!disabled) {
+                        setOpen(prev => !prev);
+                        setSearch('');
+                    }
+                }}
+                className={cn(
+                    'flex min-h-[38px] w-full items-center justify-between rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-1.5 text-left text-xs font-medium text-slate-800 dark:text-zinc-100 transition-all outline-none select-none shadow-2xs',
+                    !disabled && 'cursor-pointer hover:border-slate-300 dark:hover:border-zinc-600 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary',
+                    open && 'border-primary ring-2 ring-primary/20 dark:border-primary',
+                    disabled && 'bg-slate-50 border-slate-100 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-500 opacity-60 cursor-not-allowed',
+                    triggerClassName
+                )}
+            >
+                <div className="flex flex-wrap gap-1.5 pr-2 min-w-0 flex-1 max-h-[58px] overflow-y-auto custom-scrollbar">
+                    {(!values || values.length === 0) ? (
+                        <span className="text-slate-400 dark:text-zinc-500 py-0.5 text-xs font-normal truncate">
+                            {placeholder}
+                        </span>
+                    ) : (
+                        values.map((val, idx) => {
+                            const option = mergedOptions.find(o => o.value === val);
+                            const displayLabel = option ? option.label : val;
+                            return (
+                                <span
+                                    key={val}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-1 rounded-md border border-slate-200/80 bg-slate-100 dark:border-zinc-700/80 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 px-2 py-0.5 text-[11px] font-medium transition-colors hover:bg-slate-200/70 dark:hover:bg-zinc-700/70 cursor-default"
+                                >
+                                    <span className="truncate max-w-[180px]">
+                                        {showOrder ? `${idx + 1}. ${displayLabel}` : displayLabel}
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={handleSelectAllFiltered}
-                                        className="text-primary hover:text-primary/80 font-bold transition-colors cursor-pointer"
+                                        onMouseDown={(e) => removeOption(e, val)}
+                                        onClick={(e) => removeOption(e, val)}
+                                        className="text-slate-400 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors focus:outline-none ml-0.5 cursor-pointer rounded-sm"
                                     >
-                                        {allFilteredSelected
-                                            ? 'Batal Pilih Semua'
-                                            : search
-                                            ? `Pilih Semua (${filtered.length})`
-                                            : 'Pilih Semua'}
+                                        <X size={11} />
                                     </button>
-                                </div>
-                            )}
+                                </span>
+                            );
+                        })
+                    )}
+                </div>
+                <ChevronsUpDown size={14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-60" />
+            </div>
 
-                            {/* Option list (Max ~3 items visible, rest scrollable) */}
-                            <div className="max-h-[115px] overflow-y-auto bg-white dark:bg-slate-950 custom-scrollbar">
-                                {filtered.length === 0 && (
-                                    <div className="py-6 text-center text-[9px] font-semibold uppercase text-slate-300 dark:text-slate-700 italic">{emptyText}</div>
-                                )}
-                                {filtered.map(opt => {
-                                    const isSelected = values.includes(opt.value);
-                                    return (
-                                        <div
-                                            key={opt.value}
-                                            role="button"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                toggleOption(opt.value);
-                                            }}
-                                            className={cn(
-                                                'flex w-full cursor-pointer items-center justify-between px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-tight transition-colors hover:bg-slate-50 dark:hover:bg-slate-900/50',
-                                                isSelected
-                                                    ? 'bg-primary text-white hover:bg-primary/90'
-                                                    : 'text-slate-900 dark:text-slate-100',
-                                                opt.italic && 'italic text-slate-500 dark:text-slate-500'
-                                            )}
-                                        >
-                                            <span className="truncate">{opt.label}</span>
-                                            {isSelected && <Check size={11} className="shrink-0 ml-2" />}
-                                        </div>
-                                    );
-                                })}
-                                {search && !mergedOptions.some(o => o.value.toLowerCase() === search.toLowerCase() || o.label.toLowerCase() === search.toLowerCase()) && (
-                                    <div className="py-6 text-center text-[9px] font-semibold uppercase text-slate-300 dark:text-slate-700 italic">data tidak ditemukan</div>
-                                )}
+            {/* Dropdown Panel via Portal (shadcn Popover / Command style) */}
+            {open && typeof document !== 'undefined' && createPortal(
+                <div
+                    ref={dropdownRef}
+                    style={dropdownStyle}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
+                    className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 shadow-xl overflow-hidden focus:outline-none animate-in fade-in-0 zoom-in-95 duration-150 p-1"
+                >
+                    {/* Search Input (Command header style) */}
+                    {mergedOptions.length > 3 && (
+                        <div className="flex items-center border-b border-slate-100 dark:border-zinc-800/80 px-2.5 py-1">
+                            <Search size={13} className="mr-2 shrink-0 opacity-40 text-slate-500 dark:text-zinc-400" />
+                            <input
+                                autoFocus
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                onKeyDown={(e) => e.stopPropagation()}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder={searchPlaceholder}
+                                className="h-7.5 w-full bg-transparent text-xs font-medium text-slate-900 dark:text-zinc-100 outline-none placeholder:text-slate-400 dark:placeholder:text-zinc-500"
+                            />
+                            {search && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSearch('');
+                                    }}
+                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-zinc-200 p-0.5 cursor-pointer"
+                                >
+                                    <X size={11} />
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Select All Toolbar */}
+                    {filtered.length > 0 && (
+                        <div className="flex items-center justify-between px-2.5 py-1 text-[10.5px] font-medium text-slate-500 dark:text-zinc-400 border-b border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-zinc-900/40 rounded-t-md">
+                            <span>
+                                {search ? `${filtered.length} ditemukan` : `${mergedOptions.length} opsi`}
+                            </span>
+                            <button
+                                type="button"
+                                onMouseDown={(e) => handleSelectAllFiltered(e)}
+                                className="text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer select-none"
+                            >
+                                {allFilteredSelected
+                                    ? 'Batal Pilih Semua'
+                                    : search
+                                    ? `Pilih Semua (${filtered.length})`
+                                    : 'Pilih Semua'}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Option list (Command Item style) */}
+                    <div className="max-h-[190px] overflow-y-auto p-1 custom-scrollbar space-y-0.5">
+                        {filtered.length === 0 && (
+                            <div className="py-6 text-center text-xs font-normal text-slate-400 dark:text-zinc-500">
+                                {emptyText}
                             </div>
-                        </PopoverPanel>
-                    </Portal>
-                </>
+                        )}
+                        {filtered.map(opt => {
+                            const isSelected = (values || []).includes(opt.value);
+                            return (
+                                <div
+                                    key={opt.value}
+                                    role="button"
+                                    onMouseDown={(e) => toggleOption(opt.value, e)}
+                                    className={cn(
+                                        'relative flex w-full cursor-pointer select-none items-center justify-between rounded-lg px-2.5 py-1.5 text-xs font-medium outline-hidden transition-colors',
+                                        isSelected
+                                            ? 'bg-primary/10 text-primary font-semibold dark:bg-primary/20 dark:text-primary-foreground'
+                                            : 'text-slate-700 dark:text-zinc-200 hover:bg-slate-100 dark:hover:bg-zinc-800/80',
+                                        opt.italic && 'italic text-slate-500 dark:text-zinc-400'
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                        <div className={cn(
+                                            "flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border transition-colors",
+                                            isSelected
+                                                ? "border-primary bg-primary text-white"
+                                                : "border-slate-300 dark:border-zinc-600 bg-transparent"
+                                        )}>
+                                            {isSelected && <Check size={11} className="stroke-[3]" />}
+                                        </div>
+                                        <span className="truncate">{opt.label}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>,
+                mountNode || document.body
             )}
-        </Popover>
+        </div>
     );
 }

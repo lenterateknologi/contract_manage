@@ -11,15 +11,16 @@ import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor,
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Head, router, useForm } from '@inertiajs/react';
-import { Bookmark, CheckCircle2, CheckSquare2, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Edit3, GitBranch, LayoutTemplate, MinusSquare, Pencil, PlusCircle, Shield, Square, Trash2, Users as UsersIcon } from 'lucide-react';
-import React, { useCallback, useEffect, useState } from 'react';
+import { ArrowDown, ArrowUp, Bookmark, Check, CheckCircle2, CheckSquare2, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Edit3, GitBranch, LayoutTemplate, MinusSquare, Pencil, PlusCircle, Search, Shield, Square, Trash2, UserCheck, Users, Users as UsersIcon, X } from 'lucide-react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import AuthorityTableManager from './components/AuthorityTableManager';
 import ContractTypeTableManager from './components/ContractTypeTableManager';
 import { Modal } from '@/components/ui/dialogs/Modal';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialogs/Dialog';
 
 import SortableStepItem from './components/SortableStepItem';
 import { DraggablePresetCard } from './components/DraggablePresetCard';
-import { MASTER_ACTIONS, APPROVER_TYPE_STYLES, getActionTheme } from './constants';
+import { MASTER_ACTIONS, APPROVER_TYPE_STYLES, getActionTheme, BUILTIN_STEP_TEMPLATES } from './constants';
 import { WorkflowFlowVisualizer } from './components/WorkflowFlowVisualizer';
 import { Activity } from 'lucide-react';
 
@@ -45,9 +46,10 @@ export default function WorkflowEditor({
     const { showToast } = useToast();
 
     const [presets, setPresets] = useState<any[]>(stepPresets);
-    const [isPresetsMinimized, setIsPresetsMinimized] = useState<boolean>(true);
-    const [addChoiceModalOpen, setAddChoiceModalOpen] = useState<boolean>(false);
     const [presetSelectModalOpen, setPresetSelectModalOpen] = useState<boolean>(false);
+    const [presetSearch, setPresetSearch] = useState('');
+    const [builtinTemplateModalOpen, setBuiltinTemplateModalOpen] = useState<boolean>(false);
+    const [templateSearch, setTemplateSearch] = useState('');
     const [presetModalOpen, setPresetModalOpen] = useState(false);
     const [presetNameInput, setPresetNameInput] = useState('');
     const [targetPresetStep, setTargetPresetStep] = useState<any>(null);
@@ -65,6 +67,32 @@ export default function WorkflowEditor({
         setEditPresetDescription(stepData.description || stepData.name || stepData.label || '');
         setEditPresetModalOpen(true);
     };
+
+    const filteredPresets = useMemo(() => {
+        if (!presetSearch) return presets;
+        const q = presetSearch.toLowerCase();
+        return presets.filter((p: any) => {
+            const stepData = p.step_data || {};
+            return (
+                p.name?.toLowerCase().includes(q) ||
+                stepData.description?.toLowerCase().includes(q) ||
+                stepData.name?.toLowerCase().includes(q) ||
+                stepData.label?.toLowerCase().includes(q)
+            );
+        });
+    }, [presets, presetSearch]);
+
+    const filteredBuiltinTemplates = useMemo(() => {
+        if (!templateSearch) return BUILTIN_STEP_TEMPLATES;
+        const q = templateSearch.toLowerCase();
+        return BUILTIN_STEP_TEMPLATES.filter(
+            (t) =>
+                t.name.toLowerCase().includes(q) ||
+                t.description.toLowerCase().includes(q) ||
+                t.category.toLowerCase().includes(q) ||
+                t.step_data.description.toLowerCase().includes(q)
+        );
+    }, [templateSearch]);
 
     useEffect(() => {
         if (stepPresets) {
@@ -106,7 +134,6 @@ export default function WorkflowEditor({
             window.history.replaceState({}, '', url.toString());
         }
     };
-
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -158,6 +185,132 @@ export default function WorkflowEditor({
         initiator_authorities: workflow?.initiator_authorities || [],
         meta: workflow?.meta || {},
     });
+
+    const isAllCollapsed = useMemo(() => {
+        if (!form.data?.steps || form.data.steps.length === 0) return false;
+        return form.data.steps.every((s: any) => expandedStepIds[s.id] === false);
+    }, [form.data?.steps, expandedStepIds]);
+
+    const toggleExpandCollapseAll = useCallback(() => {
+        const nextState: Record<string, boolean> = {};
+        const willExpand = isAllCollapsed;
+        form.data.steps.forEach((s: any) => {
+            nextState[s.id] = willExpand;
+        });
+        setExpandedStepIds(nextState);
+    }, [form.data?.steps, isAllCollapsed]);
+
+    // State Simulasi Aktor Khusus (Inisiator, PIC Ditugaskan, Pembuat Kontrak)
+    const [simActorModalOpen, setSimActorModalOpen] = useState(false);
+    const [simActorType, setSimActorType] = useState<'initiator' | 'assigned_pic' | 'creator'>('initiator');
+    const [simActorSearch, setSimActorSearch] = useState('');
+
+    // Key cache client-side untuk simulasi aktor
+    const SIM_STORAGE_KEY = `wf_sim_actors_${workflow?.id || 'new'}`;
+
+    // ID User yang terpilih untuk simulasi peran (tersimpan di client-side cache localStorage)
+    const [simInitiatorId, setSimInitiatorId] = useState<string>(() => {
+        try {
+            return localStorage.getItem(`${SIM_STORAGE_KEY}_initiator`) || '';
+        } catch {
+            return '';
+        }
+    });
+
+    const [simPicId, setSimPicId] = useState<string>(() => {
+        try {
+            return localStorage.getItem(`${SIM_STORAGE_KEY}_pic`) || '';
+        } catch {
+            return '';
+        }
+    });
+
+    const [simCreatorId, setSimCreatorId] = useState<string>(() => {
+        try {
+            return localStorage.getItem(`${SIM_STORAGE_KEY}_creator`) || '';
+        } catch {
+            return '';
+        }
+    });
+
+    // Simpan ke localStorage setiap kali user mengubah data simulasi
+    useEffect(() => {
+        try {
+            if (simInitiatorId) {
+                localStorage.setItem(`${SIM_STORAGE_KEY}_initiator`, simInitiatorId);
+            } else {
+                localStorage.removeItem(`${SIM_STORAGE_KEY}_initiator`);
+            }
+        } catch (e) {}
+    }, [simInitiatorId, SIM_STORAGE_KEY]);
+
+    useEffect(() => {
+        try {
+            if (simPicId) {
+                localStorage.setItem(`${SIM_STORAGE_KEY}_pic`, simPicId);
+            } else {
+                localStorage.removeItem(`${SIM_STORAGE_KEY}_pic`);
+            }
+        } catch (e) {}
+    }, [simPicId, SIM_STORAGE_KEY]);
+
+    useEffect(() => {
+        try {
+            if (simCreatorId) {
+                localStorage.setItem(`${SIM_STORAGE_KEY}_creator`, simCreatorId);
+            } else {
+                localStorage.removeItem(`${SIM_STORAGE_KEY}_creator`);
+            }
+        } catch (e) {}
+    }, [simCreatorId, SIM_STORAGE_KEY]);
+
+    const allUsersList = useMemo(() => {
+        return (users || []).filter((u: any) => {
+            // User aktif jika is_used !== false, !== 0, !== '0', !== null/undefined (atau secara eksplisit true/1)
+            if (u.is_used === false || u.is_used === 0 || String(u.is_used) === '0' || String(u.is_used) === 'false') {
+                return false;
+            }
+            return Boolean(u.is_used === true || u.is_used === 1 || String(u.is_used) === '1' || String(u.is_used) === 'true' || u.is_used !== undefined);
+        });
+    }, [users]);
+
+    // Menampilkan semua pengguna untuk simulasi tanpa filter otoritas
+    const activeSimActorUsers = useMemo(() => {
+        return allUsersList;
+    }, [allUsersList]);
+
+    const filteredSimActorUsers = useMemo(() => {
+        if (!simActorSearch.trim()) return activeSimActorUsers;
+        const q = simActorSearch.toLowerCase().trim();
+        return activeSimActorUsers.filter((u: any) => {
+            const name = (u.name || '').toLowerCase();
+            const email = (u.email || '').toLowerCase();
+            const role = (u.role || '').toLowerCase();
+            const pt = (u.company?.name || u.company_name || '').toLowerCase();
+            const dept = (u.department?.name || u.org_name || '').toLowerCase();
+            return name.includes(q) || email.includes(q) || role.includes(q) || pt.includes(q) || dept.includes(q);
+        });
+    }, [activeSimActorUsers, simActorSearch]);
+
+    // Context simulasi yang diteruskan ke SortableStepItem & AuthorityTableManager
+    const simulationContext = useMemo(() => ({
+        initiatorId: simInitiatorId || undefined,
+        picId: simPicId || undefined,
+        creatorId: simCreatorId || undefined,
+    }), [simInitiatorId, simPicId, simCreatorId]);
+
+    // Lookup user objects untuk simulasi terpilih
+    const selectedSimInitiator = useMemo(() => {
+        return allUsersList.find((u: any) => String(u.id) === String(simInitiatorId)) || null;
+    }, [simInitiatorId, allUsersList]);
+
+    const selectedSimPic = useMemo(() => {
+        return allUsersList.find((u: any) => String(u.id) === String(simPicId)) || null;
+    }, [simPicId, allUsersList]);
+
+    const selectedSimCreator = useMemo(() => {
+        return allUsersList.find((u: any) => String(u.id) === String(simCreatorId)) || null;
+    }, [simCreatorId, allUsersList]);
 
     const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
 
@@ -524,21 +677,15 @@ export default function WorkflowEditor({
                                         companyGroups={companyGroups}
                                         companies={companies}
                                         regions={regions}
+                                        showInitiatorOption={false}
                                     />
                                 </FormSection>
                             )}
                         {mainTab === 'steps' && (
-                            <div
-                                className={cn(
-                                    'grid gap-6 items-stretch transition-[grid-template-columns] duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] min-h-[500px]',
-                                    isPresetsMinimized ? 'grid-cols-1 lg:grid-cols-[1fr_56px]' : 'grid-cols-1 lg:grid-cols-[7fr_3fr]'
-                                )}
-                            >
-                                {/* Left Column: Active Workflow Steps List */}
-                                <div className="min-w-0 bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 rounded-xl p-4 flex flex-col justify-between gap-4 h-full">
-                                    <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3.5">
+                            <div className="w-full min-w-0 bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 rounded-xl p-4 flex flex-col justify-between gap-4">
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3.5 gap-3">
                                         <div className="flex items-center gap-2">
-                                            <div className="bg-primary/10 text-primary p-1.5 rounded-lg">
+                                            <div className="bg-primary/10 text-primary p-1.5 rounded-lg shrink-0">
                                                 <GitBranch size={16} />
                                             </div>
                                             <div className="flex flex-col">
@@ -546,30 +693,42 @@ export default function WorkflowEditor({
                                                 <p className="text-[10px] text-slate-500 dark:text-zinc-400">Atur dan kelola tahapan persetujuan kontrak</p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            {/* Button Simulasi Aktor Modal Trigger */}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSimActorSearch('');
+                                                    setSimActorModalOpen(true);
+                                                }}
+                                                className={cn(
+                                                    "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-bold transition-all border cursor-pointer select-none",
+                                                    (selectedSimInitiator || selectedSimPic || selectedSimCreator)
+                                                        ? "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 shadow-2xs"
+                                                        : "bg-slate-50 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/80 hover:bg-white dark:hover:bg-zinc-700 hover:border-slate-300"
+                                                )}
+                                                title="Atur Pengguna Simulasi (Inisiator, PIC, Pembuat)"
+                                            >
+                                                <UsersIcon size={13} className={selectedSimInitiator || selectedSimPic || selectedSimCreator ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-zinc-500"} />
+                                                <span>Aktor Simulasi</span>
+                                                {(selectedSimInitiator || selectedSimPic || selectedSimCreator) && (
+                                                    <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-600 text-white font-medium ml-0.5">
+                                                        {[selectedSimInitiator && 'Inisiator', selectedSimPic && 'PIC', selectedSimCreator && 'Pembuat'].filter(Boolean).length}
+                                                    </span>
+                                                )}
+                                            </button>
+
+                                            <div className="h-4 w-px bg-slate-200 dark:bg-zinc-700 mx-0.5" />
+
                                             {form.data.steps.length > 0 && (
                                                 <>
                                                     <button
                                                         type="button"
-                                                        onClick={() => {
-                                                            const allExpanded: Record<string, boolean> = {};
-                                                            form.data.steps.forEach((s: any) => {
-                                                                allExpanded[s.id] = true;
-                                                            });
-                                                            setExpandedStepIds(allExpanded);
-                                                        }}
+                                                        onClick={toggleExpandCollapseAll}
                                                         className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-all dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-primary/40 dark:hover:text-primary cursor-pointer"
-                                                        title="Buka Semua Tahapan (Expand All)"
+                                                        title={isAllCollapsed ? 'Buka Semua Tahapan (Expand All)' : 'Tutup Semua Tahapan (Minimize All)'}
                                                     >
-                                                        <ChevronsDown size={14} />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setExpandedStepIds({})}
-                                                        className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-primary/40 hover:bg-primary/10 hover:text-primary transition-all dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-primary/40 dark:hover:text-primary cursor-pointer"
-                                                        title="Tutup Semua Tahapan (Minimize All)"
-                                                    >
-                                                        <ChevronsUp size={14} />
+                                                        {isAllCollapsed ? <ChevronsDown size={14} /> : <ChevronsUp size={14} />}
                                                     </button>
                                                     <div className="h-3 w-px bg-slate-200 dark:bg-zinc-700 mx-0.5" />
                                                     <button
@@ -593,11 +752,216 @@ export default function WorkflowEditor({
                                                     </button>
                                                 </>
                                             )}
-                                            <span className="text-[10px] font-bold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+                                            <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-md">
                                                 {form.data.steps.length} Tahap
                                             </span>
                                         </div>
                                     </div>
+
+                                    {/* Modal Simulasi Aktor Khusus (Inisiator, PIC, Pembuat) */}
+                                    <Dialog open={simActorModalOpen} onOpenChange={setSimActorModalOpen}>
+                                        <DialogContent className="sm:max-w-3xl border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden">
+                                            <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px]">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                                        <UsersIcon size={18} />
+                                                    </div>
+                                                    <div>
+                                                        <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
+                                                            Pengaturan Aktor Simulasi Alur Kerja
+                                                        </DialogTitle>
+                                                        <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                                            Pilih pengguna simulasi untuk mengevaluasi peran Inisiator, PIC, atau Pembuat Kontrak
+                                                        </DialogDescription>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Role Switcher Subtabs */}
+                                            <div className="p-3 bg-slate-50/90 dark:bg-zinc-800/60 border-b border-slate-200/80 dark:border-zinc-800 flex items-center gap-2 overflow-x-auto">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSimActorType('initiator')}
+                                                    className={cn(
+                                                        "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer",
+                                                        simActorType === 'initiator'
+                                                            ? "bg-white dark:bg-zinc-900 border-primary text-primary shadow-xs"
+                                                            : "bg-transparent border-transparent text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-zinc-700/50"
+                                                    )}
+                                                >
+                                                    <UsersIcon size={13} className="shrink-0" />
+                                                    <div className="flex flex-col text-left">
+                                                        <span>Inisiator Kontrak</span>
+                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[120px]">
+                                                            {selectedSimInitiator ? selectedSimInitiator.name : 'Semua (Default)'}
+                                                        </span>
+                                                    </div>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSimActorType('assigned_pic')}
+                                                    className={cn(
+                                                        "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer",
+                                                        simActorType === 'assigned_pic'
+                                                            ? "bg-white dark:bg-zinc-900 border-emerald-600 text-emerald-700 dark:text-emerald-400 shadow-xs"
+                                                            : "bg-transparent border-transparent text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-zinc-700/50"
+                                                    )}
+                                                >
+                                                    <UserCheck size={13} className="shrink-0" />
+                                                    <div className="flex flex-col text-left">
+                                                        <span>PIC Ditugaskan</span>
+                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[120px]">
+                                                            {selectedSimPic ? selectedSimPic.name : 'Belum dipilih'}
+                                                        </span>
+                                                    </div>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSimActorType('creator')}
+                                                    className={cn(
+                                                        "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer",
+                                                        simActorType === 'creator'
+                                                            ? "bg-white dark:bg-zinc-900 border-amber-600 text-amber-700 dark:text-amber-400 shadow-xs"
+                                                            : "bg-transparent border-transparent text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-zinc-700/50"
+                                                    )}
+                                                >
+                                                    <Bookmark size={13} className="shrink-0" />
+                                                    <div className="flex flex-col text-left">
+                                                        <span>Pembuat Kontrak</span>
+                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[120px]">
+                                                            {selectedSimCreator ? selectedSimCreator.name : 'Belum dipilih'}
+                                                        </span>
+                                                    </div>
+                                                </button>
+                                            </div>
+
+                                            <div className="p-4 bg-slate-50/50 dark:bg-zinc-800/30 border-b border-slate-200/80 dark:border-zinc-800 flex items-center justify-between gap-3">
+                                                <div className="relative flex-1">
+                                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                    <input
+                                                        type="text"
+                                                        value={simActorSearch}
+                                                        onChange={(e) => setSimActorSearch(e.target.value)}
+                                                        placeholder={`Cari pengguna untuk ${simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : 'Pembuat'}...`}
+                                                        className="w-full h-9 pl-9 pr-3 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg outline-none focus:border-primary transition-all text-slate-800 dark:text-zinc-200"
+                                                        autoFocus
+                                                    />
+                                                </div>
+                                                <div className="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold shrink-0">
+                                                    {filteredSimActorUsers.length} Pengguna
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 max-h-[55vh] overflow-y-auto space-y-2">
+                                                {filteredSimActorUsers.length === 0 ? (
+                                                    <div className="py-12 text-center text-slate-400 dark:text-zinc-500">
+                                                        <UsersIcon size={28} className="mx-auto mb-2 opacity-30" />
+                                                        <p className="text-xs font-medium">Tidak ada data pengguna yang cocok.</p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                                                        {filteredSimActorUsers.map((u: any) => {
+                                                            const currentSelectedId =
+                                                                simActorType === 'initiator'
+                                                                    ? simInitiatorId
+                                                                    : simActorType === 'assigned_pic'
+                                                                    ? simPicId
+                                                                    : simCreatorId;
+                                                            const isSelected = String(u.id) === String(currentSelectedId);
+
+                                                            return (
+                                                                <div
+                                                                    key={u.id}
+                                                                    onClick={() => {
+                                                                        if (simActorType === 'initiator') {
+                                                                            setSimInitiatorId(isSelected ? '' : String(u.id));
+                                                                        } else if (simActorType === 'assigned_pic') {
+                                                                            setSimPicId(isSelected ? '' : String(u.id));
+                                                                        } else {
+                                                                            setSimCreatorId(isSelected ? '' : String(u.id));
+                                                                        }
+                                                                    }}
+                                                                    className={cn(
+                                                                        "p-3 rounded-xl border transition-all flex flex-col justify-between gap-1.5 cursor-pointer shadow-2xs",
+                                                                        isSelected
+                                                                            ? "bg-primary/5 border-primary ring-2 ring-primary/20 dark:bg-primary/10"
+                                                                            : "bg-white dark:bg-zinc-900 border-slate-200/80 dark:border-zinc-800 hover:border-primary/50 hover:bg-slate-50/80 dark:hover:bg-zinc-800/80"
+                                                                    )}
+                                                                >
+                                                                    <div className="flex items-center justify-between gap-2">
+                                                                        <div className="font-bold text-xs text-slate-800 dark:text-zinc-100 truncate flex items-center gap-1.5">
+                                                                            {isSelected && <Check size={14} className="text-primary shrink-0" />}
+                                                                            <span className="truncate">{u.name}</span>
+                                                                        </div>
+                                                                        {u.role && (
+                                                                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md shrink-0">
+                                                                                {u.role}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
+                                                                        {u.email}
+                                                                    </div>
+                                                                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-100 dark:border-zinc-800/60">
+                                                                        {(u.company?.name || u.company_name) && (
+                                                                            <span className="font-semibold text-slate-700 dark:text-zinc-300">{u.company?.name || u.company_name}</span>
+                                                                        )}
+                                                                        {(u.department?.name || u.org_name) && (
+                                                                            <>
+                                                                                <span>•</span>
+                                                                                <span>{u.department?.name || u.org_name}</span>
+                                                                            </>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="secondary"
+                                                        onClick={() => {
+                                                            if (simActorType === 'initiator') setSimInitiatorId('');
+                                                            else if (simActorType === 'assigned_pic') setSimPicId('');
+                                                            else setSimCreatorId('');
+                                                        }}
+                                                        className="h-8 text-xs font-semibold px-3 rounded-lg"
+                                                    >
+                                                        Reset {simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : 'Pembuat'}
+                                                    </Button>
+                                                    {(simInitiatorId || simPicId || simCreatorId) && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            onClick={() => {
+                                                                setSimInitiatorId('');
+                                                                setSimPicId('');
+                                                                setSimCreatorId('');
+                                                            }}
+                                                            className="h-8 text-xs font-semibold px-3 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                                        >
+                                                            Reset Semua
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="primary"
+                                                    onClick={() => setSimActorModalOpen(false)}
+                                                    className="h-8 text-xs font-bold px-4 rounded-lg"
+                                                >
+                                                    Selesai
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
 
                                     {/* Bulk Action Toolbar */}
                                     {selectedStepIds.size > 0 && (
@@ -750,6 +1114,12 @@ export default function WorkflowEditor({
                                                                 }));
                                                                 form.setData('steps', normalizedSteps);
                                                             }}
+                                                            simulationContext={simulationContext}
+                                                            onOpenSimulationModal={() => {
+                                                                setSimActorType('initiator');
+                                                                setSimActorSearch('');
+                                                                setSimActorModalOpen(true);
+                                                            }}
                                                         />
                                                     ))}
                                                 </div>
@@ -758,205 +1128,70 @@ export default function WorkflowEditor({
                                     )}
 
                                     {/* Tambah Step button placed inside Tahapan Alur Kerja Card */}
-                                    <div className="flex justify-center pt-2 pb-2">
-                                        <button
+                                    {/* Triple Direct Buttons: Tambah Tahap Default, Template Standar, & Gunakan Preset */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 pb-1 border-t border-slate-100 dark:border-zinc-800">
+                                        <Button
                                             type="button"
-                                            onClick={() => setAddChoiceModalOpen(true)}
-                                            className="w-full inline-flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 py-3 text-sm font-bold text-primary transition-all duration-300 hover:border-primary/60 hover:bg-primary/10 dark:border-primary/20 dark:bg-primary/[0.05] dark:hover:border-primary/40 dark:hover:bg-primary/10 cursor-pointer"
+                                            variant="primary"
+                                            onClick={addLocalStep}
+                                            className="h-10 text-xs font-medium gap-2 shadow-2xs cursor-pointer"
                                         >
-                                            <PlusCircle size={16} />
-                                            Tambah Step
-                                        </button>
-                                    </div>
-                                </div>
+                                            <PlusCircle size={15} />
+                                            <span>Tambah Tahap Default</span>
+                                        </Button>
 
-                                {/* Right Column: Step Presets Panel (Ultra Smooth Collapsible Sidebar) */}
-                                <div
-                                    className={cn(
-                                        'w-full h-full bg-white dark:bg-zinc-900/90 border border-slate-200/80 dark:border-zinc-800 rounded-xl flex flex-col gap-4 overflow-hidden transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
-                                        isPresetsMinimized ? 'p-2' : 'p-4'
-                                    )}
-                                >
-                                    <div
-                                        onClick={() => setIsPresetsMinimized((prev) => !prev)}
-                                        className={cn(
-                                            'flex items-center cursor-pointer select-none group transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)]',
-                                            isPresetsMinimized ? 'flex-col gap-3 py-2 items-center justify-center' : 'justify-between border-b border-slate-100 dark:border-zinc-800 pb-3.5'
-                                        )}
-                                        title={isPresetsMinimized ? `Buka Preset Tahapan (${presets.length} Preset)` : 'Kecilkan Preset Tahapan (Minimize)'}
-                                    >
-                                        <div className={cn('flex items-center gap-2 transition-all duration-700', isPresetsMinimized && 'flex-col items-center')}>
-                                            <div className="bg-primary/10 text-primary dark:text-primary-400 p-2 rounded-lg shrink-0 group-hover:bg-primary/20 transition-colors">
-                                                <LayoutTemplate size={18} />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setBuiltinTemplateModalOpen(true)}
+                                            className="h-10 text-xs font-medium gap-2 justify-between px-3.5 bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 shadow-2xs cursor-pointer"
+                                        >
+                                            <div className="flex items-center gap-2 truncate">
+                                                <LayoutTemplate size={15} className="text-primary shrink-0" />
+                                                <span className="truncate">Template Standar</span>
                                             </div>
-                                            {!isPresetsMinimized && (
-                                                <div className="flex flex-col overflow-hidden transition-all duration-500 animate-in fade-in">
-                                                    <h3 className="text-xs font-bold uppercase tracking-wide text-slate-800 dark:text-zinc-100 group-hover:text-primary transition-colors whitespace-nowrap">
-                                                        Preset Tahapan
-                                                    </h3>
-                                                    <p className="text-[10px] text-slate-500 dark:text-zinc-400 whitespace-nowrap">Tersimpan di Database (Server)</p>
-                                                </div>
-                                            )}
-                                        </div>
+                                            <span className="px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-medium shrink-0">
+                                                {BUILTIN_STEP_TEMPLATES.length}
+                                            </span>
+                                        </Button>
 
-                                        <div className="flex items-center gap-2">
-                                            {!isPresetsMinimized && (
-                                                <span className="text-[10px] font-bold bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300 px-2 py-0.5 rounded-full animate-in fade-in duration-500">
-                                                    {presets.length} Preset
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => setPresetSelectModalOpen(true)}
+                                            className="h-10 text-xs font-medium gap-2 justify-between px-3.5 bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 hover:bg-slate-50 dark:hover:bg-zinc-800 shadow-2xs cursor-pointer"
+                                        >
+                                            <div className="flex items-center gap-2 truncate">
+                                                <Bookmark size={15} className="text-primary shrink-0" />
+                                                <span className="truncate">Preset Tersimpan</span>
+                                            </div>
+                                            {presets.length > 0 && (
+                                                <span className="px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-medium shrink-0">
+                                                    {presets.length}
                                                 </span>
                                             )}
-                                        </div>
-                                    </div>
-
-                                    <div className={cn('transition-all duration-700 [transition-timing-function:cubic-bezier(0.16,1,0.3,1)] overflow-hidden', isPresetsMinimized ? 'max-h-0 opacity-0' : 'max-h-[700px] opacity-100')}>
-                                        {presets.length === 0 ? (
-                                            <div className="flex flex-col items-center justify-center py-8 px-2 text-center border border-dashed border-slate-200/80 dark:border-zinc-800 rounded-lg">
-                                                <Bookmark size={24} className="text-slate-300 dark:text-zinc-700 mb-2" />
-                                                <p className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Belum Ada Preset</p>
-                                                <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
-                                                Klik tombol <span className="font-bold text-primary">Simpan sebagai Preset</span> pada tahapan di sebelah kiri untuk menyimpannya.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                             <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
-                                                 {presets.map((preset) => {
-                                                     const stepData = preset.step_data || {};
-                                                     const approverType = stepData.approver_type || 'role';
-                                                     const appStyle = APPROVER_TYPE_STYLES[approverType] || {
-                                                         label: approverType.toUpperCase(),
-                                                         badgeClass: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200',
-                                                         borderClass: 'border-l-slate-400',
-                                                     };
-
-                                                    return (
-                                                        <div
-                                                            key={preset.id}
-                                                            className="group relative flex flex-col gap-3 transition-all duration-300 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 hover:border-primary/80 hover:bg-white dark:hover:bg-slate-900/60 rounded-lg p-3.5"
-                                                        >
-                                                            {/* Header Row */}
-                                                            <div className="flex items-start justify-between gap-2">
-                                                                <div className="flex items-center gap-2.5 min-w-0">
-                                                                    <div className="border-primary/20 bg-primary/10 text-primary dark:text-primary-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border font-bold">
-                                                                        <Bookmark size={14} />
-                                                                    </div>
-                                                                    <div className="flex flex-col min-w-0">
-                                                                        <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                                                                            {preset.name}
-                                                                        </span>
-                                                                        {(stepData.description || stepData.name || stepData.label) && (
-                                                                            <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                                                                                {stepData.description || stepData.name || stepData.label}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="flex items-center gap-1.5 shrink-0">
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            const newStep = {
-                                                                                ...JSON.parse(JSON.stringify(stepData)),
-                                                                                id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                                                                                step: form.data.steps.length + 1,
-                                                                            };
-                                                                            form.setData('steps', [...form.data.steps, newStep]);
-                                                                            showToast(`Tahap dari preset "${preset.name}" berhasil ditambahkan!`, 'success');
-                                                                        }}
-                                                                        className="h-7 w-7 inline-flex items-center justify-center bg-primary hover:bg-primary/90 text-white rounded-lg transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
-                                                                        title="Gunakan Preset Ini"
-                                                                    >
-                                                                        <PlusCircle size={15} />
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleEditPreset(preset);
-                                                                        }}
-                                                                        className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-200 dark:border-slate-800 hover:border-primary/40 rounded-lg transition-colors cursor-pointer"
-                                                                        title="Ubah Preset"
-                                                                    >
-                                                                        <Pencil size={12} />
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (confirm(`Hapus preset "${preset.name}"?`)) {
-                                                                                router.delete(route('admin.workflows.presets.destroy', preset.id), {
-                                                                                    preserveScroll: true,
-                                                                                    onSuccess: () => showToast(`Preset "${preset.name}" dihapus`, 'info'),
-                                                                                });
-                                                                            }
-                                                                        }}
-                                                                        className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-slate-800 hover:border-rose-300 dark:hover:border-rose-800 rounded-lg transition-colors cursor-pointer"
-                                                                        title="Hapus Preset"
-                                                                    >
-                                                                        <Trash2 size={13} />
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Step Actions Preview */}
-                                                            {stepData.actions && stepData.actions.length > 0 && (
-                                                                <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-slate-100 dark:border-slate-800/60">
-                                                                    {stepData.actions.map((act: any, aIdx: number) => {
-                                                                        let code = act.action_code || act.code || '';
-                                                                        let name = act.alias || act.label || '';
-
-                                                                        if (act.master_action_id) {
-                                                                            const ma = MASTER_ACTIONS.find((m: any) => m.id === act.master_action_id || m.code === act.action_code);
-                                                                            if (ma) {
-                                                                                code = code || ma.code;
-                                                                                name = name || ma.name;
-                                                                            }
-                                                                        } else if (act.master_action) {
-                                                                            code = code || act.master_action.code || act.master_action.name?.toLowerCase();
-                                                                            name = name || act.master_action.name;
-                                                                        }
-
-                                                                        if (!code && act.name) {
-                                                                            code = act.name.toLowerCase();
-                                                                        }
-                                                                        if (!name) {
-                                                                            name = act.name || act.label || `Aksi ${aIdx + 1}`;
-                                                                        }
-
-                                                                        if (name.toLowerCase().includes('setuju') || name.toLowerCase().includes('approve')) code = 'approve';
-                                                                        else if (name.toLowerCase().includes('tolak') || name.toLowerCase().includes('reject')) code = 'reject';
-                                                                        else if (name.toLowerCase().includes('tugas') || name.toLowerCase().includes('assign')) code = 'assign';
-
-                                                                        const { color, icon: IconComponent } = getActionTheme(code, name);
-
-                                                                        return (
-                                                                            <span
-                                                                                key={aIdx}
-                                                                                className={cn(
-                                                                                    'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-semibold text-white uppercase shadow-none',
-                                                                                    color
-                                                                                )}
-                                                                            >
-                                                                                <IconComponent size={10} className="opacity-90" />
-                                                                                <span>{name}</span>
-                                                                            </span>
-                                                                        );
-                                                                    })}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
+                                        </Button>
                                     </div>
                                 </div>
-                            </div>
                         )}
                         {mainTab === 'visualizer' && (
                             <div className="p-1">
-                                <WorkflowFlowVisualizer steps={form.data.steps} workflow={workflow} />
+                                <WorkflowFlowVisualizer
+                                    steps={form.data.steps}
+                                    workflow={workflow}
+                                    users={users}
+                                    roles={roles}
+                                    departments={departments}
+                                    divisions={divisions}
+                                    companyGroups={companyGroups}
+                                    companies={companies}
+                                    regions={regions}
+                                    simulationContext={simulationContext}
+                                    onOpenSimulationModal={() => {
+                                        setSimActorSearch('');
+                                        setSimActorModalOpen(true);
+                                    }}
+                                />
                             </div>
                         )}
                     </div>
@@ -964,142 +1199,78 @@ export default function WorkflowEditor({
             </div>
         </div>
 
-        {/* --- Custom Modal Pilih Jenis Tambah Step (Default vs Preset) --- */}
+        {/* --- Modal Pilih Template Tahapan Standar Bawaan --- */}
         <Modal
-            isOpen={addChoiceModalOpen}
-            onClose={() => setAddChoiceModalOpen(false)}
+            isOpen={builtinTemplateModalOpen}
+            onClose={() => setBuiltinTemplateModalOpen(false)}
             title={
                 <div className="flex items-center gap-2">
-                    <PlusCircle size={18} className="text-primary" />
-                    <span>Tambah Tahapan Alur Kerja</span>
+                    <LayoutTemplate size={18} className="text-primary" />
+                    <span>Pilih Template Standar</span>
                 </div>
             }
-            description="Pilih untuk membuat tahapan alur kerja baru secara kosongan (default) atau gunakan preset yang tersimpan."
-            maxWidth="md"
+            description="Pilih salah satu template tahapan bawaan sistem untuk disisipkan langsung ke alur kerja ini."
+            maxWidth="4xl"
         >
-            <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Opsi 1: Step Default */}
-                    <div
-                        onClick={() => {
-                            setAddChoiceModalOpen(false);
-                            addLocalStep();
-                        }}
-                        className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 hover:bg-primary/5 rounded-xl p-3.5 cursor-pointer transition-all flex flex-col gap-2.5"
-                    >
-                        <div className="bg-primary/10 text-primary p-2 rounded-lg w-fit group-hover:scale-105 transition-transform">
-                            <PlusCircle size={18} />
-                        </div>
-                        <div>
-                            <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors">
-                                Tahap Default
-                            </h4>
-                            <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-                                Buat tahapan baru secara kosong dengan alur konfigurasinya dari awal.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Opsi 2: Ambil dari Preset */}
-                    <div
-                        onClick={() => {
-                            setAddChoiceModalOpen(false);
-                            setPresetSelectModalOpen(true);
-                        }}
-                        className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 hover:bg-primary/5 rounded-xl p-3.5 cursor-pointer transition-all flex flex-col gap-2.5"
-                    >
-                        <div className="bg-primary/10 text-primary dark:text-primary-400 p-2 rounded-lg w-fit group-hover:scale-105 transition-transform">
-                            <Bookmark size={18} />
-                        </div>
-                        <div>
-                            <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-primary transition-colors">
-                                    Gunakan Preset
-                                </h4>
-                                <span className="text-[9px] font-bold bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300 px-2 py-0.5 rounded-full">
-                                    {presets.length}
-                                </span>
-                            </div>
-                            <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">
-                                Pilih dari koleksi preset alur kerja yang tersimpan di server.
-                            </p>
-                        </div>
-                    </div>
+            <div className="space-y-3.5">
+                {/* Search Bar Template */}
+                <div className="relative">
+                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                        type="text"
+                        value={templateSearch}
+                        onChange={(e) => setTemplateSearch(e.target.value)}
+                        placeholder="Cari template standar (misal: Legal, Atasan, PIC, Signer, Finance)..."
+                        className="w-full h-9 pl-9 pr-4 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-all placeholder:text-muted-foreground"
+                    />
                 </div>
 
-                <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setAddChoiceModalOpen(false)}
-                        className="h-8 px-3.5 text-xs font-bold"
-                    >
-                        Batal
-                    </Button>
-                </div>
-            </div>
-        </Modal>
-
-        {/* --- Custom Modal Pilih Preset yang Tersimpan --- */}
-        <Modal
-            isOpen={presetSelectModalOpen}
-            onClose={() => setPresetSelectModalOpen(false)}
-            title={
-                <div className="flex items-center gap-2">
-                    <Bookmark size={18} className="text-primary" />
-                    <span>Pilih Preset Tahapan</span>
-                </div>
-            }
-            description="Pilih salah satu preset tahapan yang tersimpan untuk disisipkan ke alur kerja ini."
-            maxWidth="lg"
-        >
-            <div className="space-y-3">
-                {presets.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 px-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
-                        <Bookmark size={28} className="text-slate-300 dark:text-slate-700 mb-1.5" />
-                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Belum Ada Preset Tersimpan</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
-                            Anda belum menyimpan preset tahapan apa pun ke database server.
+                {filteredBuiltinTemplates.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                        <Search size={24} className="text-slate-300 dark:text-zinc-700 mb-2" />
+                        <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Template Tidak Ditemukan</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Tidak ada template yang cocok dengan kata kunci "{templateSearch}".
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto p-0.5 custom-scrollbar">
-                        {presets.map((preset) => {
-                            const stepData = preset.step_data || {};
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[480px] overflow-y-auto p-0.5 custom-scrollbar">
+                        {filteredBuiltinTemplates.map((tpl) => {
+                            const stepData = tpl.step_data || {};
                             return (
                                 <div
-                                    key={preset.id}
-                                    className="group border border-slate-200 dark:border-slate-800 hover:border-primary bg-slate-50/50 dark:bg-slate-900/50 rounded-xl p-3 transition-all flex flex-col justify-between gap-2.5"
+                                    key={tpl.id}
+                                    className="group border border-slate-200/80 dark:border-zinc-800 hover:border-primary/60 bg-white dark:bg-zinc-900 rounded-xl p-3.5 transition-all flex flex-col justify-between gap-3 shadow-2xs hover:shadow-xs"
                                 >
-                                    <div className="flex flex-col gap-1 min-w-0">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                                                {preset.name}
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-xs font-medium text-foreground truncate">
+                                                {tpl.name}
                                             </span>
-                                            <span className="text-[9px] font-bold uppercase bg-primary/10 text-primary dark:bg-primary/20 dark:text-primary-300 px-1.5 py-0.2 rounded-full">
-                                                Preset
+                                            <span className="text-[9px] font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md shrink-0">
+                                                {tpl.category}
                                             </span>
                                         </div>
-                                        <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                                            {stepData.description || stepData.name || stepData.label || `Role: ${stepData.approver_type || 'Custom'}`}
+                                        <span className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                                            {tpl.description}
                                         </span>
 
                                         {/* Action Step Pills Preview */}
                                         {stepData.actions && stepData.actions.length > 0 && (
-                                            <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                                            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-border/40">
                                                 {stepData.actions.map((act: any, aIdx: number) => {
-                                                    const actName = act.master_action?.name || act.master_action_name || act.label || `Action ${aIdx + 1}`;
-                                                    const isApprove = actName.toLowerCase().includes('setuju') || actName.toLowerCase().includes('approve');
-                                                    const isReject = actName.toLowerCase().includes('tolak') || actName.toLowerCase().includes('reject');
+                                                    const actName = act.name || act.action_code || `Aksi ${aIdx + 1}`;
+                                                    const isApprove = act.action_code === 'approve' || actName.toLowerCase().includes('setuju');
+                                                    const isReject = act.action_code === 'reject' || actName.toLowerCase().includes('tolak');
 
                                                     return (
                                                         <span
                                                             key={aIdx}
                                                             className={cn(
-                                                                'text-[8.5px] font-semibold px-1.5 py-0.2 rounded border tracking-tight',
+                                                                'text-[9px] font-medium px-1.5 py-0.5 rounded-md border tracking-tight',
                                                                 isApprove && 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40',
                                                                 isReject && 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40',
-                                                                !isApprove && !isReject && 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+                                                                !isApprove && !isReject && 'bg-muted text-muted-foreground border-border'
                                                             )}
                                                         >
                                                             {actName}
@@ -1110,9 +1281,140 @@ export default function WorkflowEditor({
                                         )}
                                     </div>
 
-                                    <div className="flex items-center gap-1.5 pt-1">
+                                    <div className="flex items-center gap-1.5 pt-1 border-t border-border/40">
                                         <Button
                                             type="button"
+                                            variant="primary"
+                                            onClick={() => {
+                                                const newStep = {
+                                                    ...JSON.parse(JSON.stringify(tpl.step_data)),
+                                                    id: `step_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                                                    step: form.data.steps.length + 1,
+                                                };
+                                                form.setData('steps', [...form.data.steps, newStep]);
+                                                setBuiltinTemplateModalOpen(false);
+                                                showToast(`Tahap "${tpl.name}" berhasil ditambahkan!`, 'success');
+                                            }}
+                                            className="w-full h-7.5 text-xs font-medium"
+                                        >
+                                            + Sisipkan Template
+                                        </Button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-800">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setBuiltinTemplateModalOpen(false)}
+                        className="h-8 px-4 text-xs font-medium"
+                    >
+                        Tutup
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+
+        {/* --- Custom Modal Pilih Preset yang Tersimpan (Lebar & Modern) --- */}
+        <Modal
+            isOpen={presetSelectModalOpen}
+            onClose={() => setPresetSelectModalOpen(false)}
+            title={
+                <div className="flex items-center gap-2">
+                    <Bookmark size={18} className="text-primary" />
+                    <span>Pilih Preset Tahapan</span>
+                </div>
+            }
+            description="Pilih salah satu preset tahapan yang tersimpan untuk disisipkan ke alur kerja ini."
+            maxWidth="4xl"
+        >
+            <div className="space-y-3.5">
+                {/* Search Bar Preset */}
+                {presets.length > 0 && (
+                    <div className="relative">
+                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <input
+                            type="text"
+                            value={presetSearch}
+                            onChange={(e) => setPresetSearch(e.target.value)}
+                            placeholder="Cari nama preset atau deskripsi tahapan..."
+                            className="w-full h-9 pl-9 pr-4 text-xs rounded-lg border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring transition-all placeholder:text-muted-foreground"
+                        />
+                    </div>
+                )}
+
+                {presets.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 px-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                        <Bookmark size={28} className="text-slate-300 dark:text-zinc-700 mb-2" />
+                        <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Belum Ada Preset Tersimpan</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Anda belum menyimpan preset tahapan apa pun ke database server.
+                        </p>
+                    </div>
+                ) : filteredPresets.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 px-4 text-center border border-dashed border-slate-200 dark:border-zinc-800 rounded-xl">
+                        <Search size={24} className="text-slate-300 dark:text-zinc-700 mb-2" />
+                        <p className="text-xs font-medium text-slate-700 dark:text-zinc-300">Preset Tidak Ditemukan</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Tidak ada preset yang cocok dengan kata kunci "{presetSearch}".
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-[480px] overflow-y-auto p-0.5 custom-scrollbar">
+                        {filteredPresets.map((preset) => {
+                            const stepData = preset.step_data || {};
+                            return (
+                                <div
+                                    key={preset.id}
+                                    className="group border border-slate-200/80 dark:border-zinc-800 hover:border-primary/60 bg-white dark:bg-zinc-900 rounded-xl p-3.5 transition-all flex flex-col justify-between gap-3 shadow-2xs hover:shadow-xs"
+                                >
+                                    <div className="flex flex-col gap-1.5 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-xs font-medium text-foreground truncate">
+                                                {preset.name}
+                                            </span>
+                                            <span className="text-[9px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-md shrink-0">
+                                                Preset
+                                            </span>
+                                        </div>
+                                        <span className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                                            {stepData.description || stepData.name || stepData.label || `Role: ${stepData.approver_type || 'Custom'}`}
+                                        </span>
+
+                                        {/* Action Step Pills Preview */}
+                                        {stepData.actions && stepData.actions.length > 0 && (
+                                            <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-border/40">
+                                                {stepData.actions.map((act: any, aIdx: number) => {
+                                                    const actName = act.master_action?.name || act.master_action_name || act.label || `Action ${aIdx + 1}`;
+                                                    const isApprove = actName.toLowerCase().includes('setuju') || actName.toLowerCase().includes('approve');
+                                                    const isReject = actName.toLowerCase().includes('tolak') || actName.toLowerCase().includes('reject');
+
+                                                    return (
+                                                        <span
+                                                            key={aIdx}
+                                                            className={cn(
+                                                                'text-[9px] font-medium px-1.5 py-0.5 rounded-md border tracking-tight',
+                                                                isApprove && 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/40',
+                                                                isReject && 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40',
+                                                                !isApprove && !isReject && 'bg-muted text-muted-foreground border-border'
+                                                            )}
+                                                        >
+                                                            {actName}
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 pt-1 border-t border-border/40">
+                                        <Button
+                                            type="button"
+                                            variant="primary"
                                             onClick={() => {
                                                 const newStep = {
                                                     ...JSON.parse(JSON.stringify(preset.step_data)),
@@ -1123,21 +1425,23 @@ export default function WorkflowEditor({
                                                 setPresetSelectModalOpen(false);
                                                 showToast(`Tahap dari preset "${preset.name}" berhasil ditambahkan!`, 'success');
                                             }}
-                                            className="flex-1 h-7 text-[11px] font-bold bg-primary hover:bg-primary/90 text-white border-none"
+                                            className="flex-1 h-7.5 text-xs font-medium"
                                         >
-                                            + Gunakan Preset Ini
+                                            + Sisipkan
                                         </Button>
-                                        <button
+                                        <Button
                                             type="button"
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleEditPreset(preset);
                                             }}
-                                            className="h-7 w-7 inline-flex items-center justify-center text-slate-400 hover:text-primary hover:bg-primary/10 border border-slate-200 dark:border-slate-800 hover:border-primary/40 rounded-lg transition-colors cursor-pointer shrink-0"
+                                            className="h-7.5 w-7.5 rounded-lg border border-border/60 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
                                             title="Ubah Preset"
                                         >
                                             <Pencil size={12} />
-                                        </button>
+                                        </Button>
                                     </div>
                                 </div>
                             );
@@ -1145,12 +1449,12 @@ export default function WorkflowEditor({
                     </div>
                 )}
 
-                <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex justify-end pt-2 border-t border-slate-100 dark:border-zinc-800">
                     <Button
                         type="button"
                         variant="outline"
                         onClick={() => setPresetSelectModalOpen(false)}
-                        className="h-8 px-3.5 text-xs font-bold"
+                        className="h-8 px-4 text-xs font-medium"
                     >
                         Tutup
                     </Button>
