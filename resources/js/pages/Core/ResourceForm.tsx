@@ -243,27 +243,30 @@ function MultiSelectField({
                 disabled={isDisabled}
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "flex h-11 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3 py-2 text-sm font-semibold shadow-xs transition-all text-left",
+                    "flex h-10 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3.5 py-2 text-sm font-normal transition-all text-left outline-hidden",
                     isDisabled 
-                        ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200' 
-                        : 'hover:bg-accent hover:border-primary/50 cursor-pointer'
+                        ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500' 
+                        : 'hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary cursor-pointer'
                 )}
             >
-                <span className="truncate text-foreground font-medium">
+                <span className={cn(
+                    "truncate text-sm",
+                    selectedLabels.length > 0 ? "text-foreground font-normal" : "text-muted-foreground font-normal"
+                )}>
                     {disabled
                         ? 'Filter Terkunci (Mengikuti Filter Bawaan Role)'
                         : isDisabled
                         ? 'Filter Terkunci (Mengikuti Profil User)'
                         : selectedLabels.length > 0
                         ? `${selectedLabels.length} terpilih (${selectedLabels.slice(0, 2).join(', ')}${selectedLabels.length > 2 ? '...' : ''})`
-                        : `Pilih ${field.label}...`}
+                        : (field.placeholder || `Pilih ${field.label}...`)}
                 </span>
                 <LucideIcons.ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </button>
- 
+
             {isOpen && (
                 <div className={cn(
-                    "absolute left-0 z-50 w-full rounded-md border border-border bg-popover text-popover-foreground shadow-md p-2.5 flex flex-col gap-2.5 max-h-64",
+                    "absolute left-0 z-50 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-2 flex flex-col gap-2 max-h-64 animate-in fade-in-0 zoom-in-95",
                     dropdownDirection === 'down' ? 'top-full mt-1' : 'bottom-full mb-1'
                 )}>
                     <input
@@ -271,10 +274,10 @@ function MultiSelectField({
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={`Cari ${field.label}...`}
-                        className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-xs outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                        className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary placeholder:text-muted-foreground text-foreground"
                         onClick={(e) => e.stopPropagation()}
                     />
-                    <div className="flex flex-col gap-1 overflow-y-auto pr-1">
+                    <div className="flex flex-col gap-0.5 overflow-y-auto pr-1 custom-scrollbar">
                         {paginatedOptions.map((option: any) => {
                             const val = Array.isArray(field.options) ? option : option[0];
                             const label = Array.isArray(field.options) ? option : option[1];
@@ -282,7 +285,10 @@ function MultiSelectField({
                             return (
                                 <label
                                     key={val}
-                                    className="flex items-center gap-2 cursor-pointer text-xs font-medium text-foreground hover:bg-accent py-1.5 px-2 rounded-sm"
+                                    className={cn(
+                                        "flex items-center gap-2.5 cursor-pointer text-sm font-normal text-foreground hover:bg-accent py-2 px-2.5 rounded-md transition-colors",
+                                        isChecked && "bg-accent/60 font-medium"
+                                    )}
                                 >
                                     <Checkbox
                                         checked={isChecked}
@@ -294,7 +300,7 @@ function MultiSelectField({
                                             }
                                         }}
                                     />
-                                    <span>{label}</span>
+                                    <span className="truncate">{label}</span>
                                 </label>
                             );
                         })}
@@ -305,13 +311,13 @@ function MultiSelectField({
                                     e.stopPropagation();
                                     setPageSize(prev => prev + 15);
                                 }}
-                                className="text-[10px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-1.5 mt-1 cursor-pointer bg-muted border border-border rounded-md"
+                                className="text-[11px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-2 mt-1 cursor-pointer bg-muted/50 border border-border rounded-md"
                             >
                                 Lihat Lebih Banyak... (+{filteredOptions.length - pageSize} Data)
                             </button>
                         )}
                         {filteredOptions.length === 0 && (
-                            <span className="text-xs text-muted-foreground text-center py-2">
+                            <span className="text-xs text-muted-foreground text-center py-4">
                                 Tidak ada data
                             </span>
                         )}
@@ -378,7 +384,7 @@ function SingleSelectField({
 
     return (
         <div ref={containerRef} className="space-y-1.5 w-full relative">
-            <Label htmlFor={field.name} className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200">
+            <Label htmlFor={field.name} className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200">
                 {field.label} {field.required && <span className="text-rose-500">*</span>}
             </Label>
             
@@ -387,29 +393,33 @@ function SingleSelectField({
                 disabled={disabled}
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "flex h-11 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3 py-2 text-sm font-semibold shadow-xs transition-all text-left",
+                    "flex h-10 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3.5 py-2 text-sm font-normal transition-all text-left outline-hidden",
                     disabled 
-                        ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200' 
-                        : 'hover:bg-accent hover:border-primary/50 cursor-pointer'
+                        ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500' 
+                        : 'hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary cursor-pointer',
+                    isOpen && 'border-primary ring-1 ring-primary'
                 )}
             >
-                <span className="truncate text-foreground font-medium">
-                    {selectedLabel ? String(selectedLabel) : (field.placeholder || `Pilih ${field.label.toLowerCase()}...`)}
+                <span className={cn(
+                    "truncate text-sm",
+                    selectedLabel ? "text-foreground font-normal" : "text-muted-foreground font-normal"
+                )}>
+                    {selectedLabel ? String(selectedLabel) : (field.placeholder || `Pilih ${field.label}...`)}
                 </span>
                 <LucideIcons.ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </button>
 
             {isOpen && (
-                <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border border-border bg-popover text-popover-foreground shadow-md p-2.5 flex flex-col gap-2.5 max-h-64">
+                <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-lg border border-border bg-popover text-popover-foreground shadow-lg p-2 flex flex-col gap-2 max-h-64 animate-in fade-in-0 zoom-in-95">
                     <input
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={`Cari ${field.label}...`}
-                        className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-xs outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary"
+                        className="flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm outline-hidden focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary placeholder:text-muted-foreground text-foreground"
                         onClick={(e) => e.stopPropagation()}
                     />
-                    <div className="flex flex-col gap-1 overflow-y-auto pr-1">
+                    <div className="flex flex-col gap-0.5 overflow-y-auto pr-1 custom-scrollbar">
                         {paginatedOptions.map((option: any) => {
                             const val = Array.isArray(field.options) ? option : option[0];
                             const label = Array.isArray(field.options) ? option : option[1];
@@ -423,12 +433,12 @@ function SingleSelectField({
                                         setIsOpen(false);
                                     }}
                                     className={cn(
-                                        "w-full flex items-center justify-between p-2 rounded-sm text-left transition-all text-xs font-medium text-foreground hover:bg-accent",
-                                        isSelected && "bg-accent text-accent-foreground font-semibold"
+                                        "w-full flex items-center justify-between py-2 px-2.5 rounded-md text-left transition-colors text-sm font-normal text-foreground hover:bg-accent cursor-pointer",
+                                        isSelected && "bg-accent text-accent-foreground font-medium"
                                     )}
                                 >
-                                    <span>{label}</span>
-                                    {isSelected && <LucideIcons.Check className="h-3.5 w-3.5 text-primary shrink-0" />}
+                                    <span className="truncate">{label}</span>
+                                    {isSelected && <LucideIcons.Check className="h-4 w-4 text-primary shrink-0 ml-2" />}
                                 </button>
                             );
                         })}
@@ -439,13 +449,13 @@ function SingleSelectField({
                                     e.stopPropagation();
                                     setPageSize(prev => prev + 15);
                                 }}
-                                className="text-[10px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-1.5 mt-1 cursor-pointer bg-muted border border-border rounded-md"
+                                className="text-[11px] font-bold text-primary hover:text-primary-hover hover:underline text-center py-2 mt-1 cursor-pointer bg-muted/50 border border-border rounded-md"
                             >
                                 Tampilkan Lebih Banyak... (+{filteredOptions.length - pageSize} Data)
                             </button>
                         )}
                         {filteredOptions.length === 0 && (
-                            <span className="text-xs text-muted-foreground text-center py-2">
+                            <span className="text-xs text-muted-foreground text-center py-4">
                                 Tidak ada data
                             </span>
                         )}

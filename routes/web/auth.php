@@ -50,4 +50,12 @@ Route::middleware('auth')->group(function () {
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');
+
+    // User Impersonation (Super Admin)
+    Route::get('impersonate/search', [\App\Http\Controllers\Auth\ImpersonateController::class, 'search'])
+        ->name('impersonate.search');
+    Route::post('impersonate/switch/{userId}', [\App\Http\Controllers\Auth\ImpersonateController::class, 'switch'])
+        ->name('impersonate.switch');
+    Route::post('impersonate/leave', [\App\Http\Controllers\Auth\ImpersonateController::class, 'leave'])
+        ->name('impersonate.leave');
 });

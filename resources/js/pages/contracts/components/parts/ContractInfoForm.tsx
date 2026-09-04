@@ -11,6 +11,7 @@ import {
     Calendar,
     Coins,
     FileText,
+    GitBranch,
     Hash,
     Receipt,
     Tag,
@@ -135,6 +136,14 @@ export function ContractInfoForm({
                         </div>
                     )}
 
+                    {/* Alur Kerja (Workflow) */}
+                    <div className="py-2.5 flex items-center justify-between gap-3">
+                        <FieldLabel icon={GitBranch}>Alur Kerja</FieldLabel>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-semibold text-xs border border-indigo-200/60 dark:border-indigo-800/40">
+                            {selected.workflow?.name || selected.workflow_step?.workflow?.name || 'Alur Standar'}
+                        </span>
+                    </div>
+
                     {/* Vendor */}
                     {selected.show_vendor !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
@@ -251,6 +260,21 @@ export function ContractInfoForm({
                     />
                 </div>
             )}
+
+            {/* Alur Kerja (Workflow) Info */}
+            <div className="flex flex-col gap-1.5">
+                <FieldLabel icon={GitBranch}>Alur Kerja</FieldLabel>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30 text-xs font-medium text-foreground">
+                    <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                        {selected.workflow?.name || selected.workflow_step?.workflow?.name || 'Alur Standar'}
+                    </span>
+                    {selected.workflow_step?.step && (
+                        <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-auto">
+                            Tahap {selected.workflow_step.step}: {selected.workflow_step.name || selected.workflow_step.label || 'Berjalan'}
+                        </span>
+                    )}
+                </div>
+            </div>
 
             {/* Masa Berlaku Kontrak */}
             {selected.show_period !== false && (

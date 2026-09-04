@@ -105,6 +105,7 @@ class ContractOptionsQuery
             // ── Users & Vendors ──────────────────────────────────────────────
 
             'users' => fn () => User::with(['department', 'roleRelation'])
+                ->where('is_used', true)
                 ->when($isManager && ! request()->boolean('all'), fn ($q) => $q->where('division_id', $user->division_id))
                 ->orderBy('name')
                 ->get()

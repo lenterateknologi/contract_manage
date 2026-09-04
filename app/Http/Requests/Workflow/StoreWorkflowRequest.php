@@ -22,6 +22,8 @@ class StoreWorkflowRequest extends FormRequest
             'initiator_type' => 'nullable|string|in:all,role,user',
             'scope' => 'nullable|string',
             'workflow_category' => 'nullable|string',
+            'workflow_type' => 'nullable|string|in:main,sub_workflow,standalone',
+            'parent_workflow_id' => 'nullable|string',
             'company_group_ids' => 'nullable|array',
             'company_group_ids.*.value' => 'nullable|string',
             'company_group_ids.*.is_initiator' => 'nullable|boolean',

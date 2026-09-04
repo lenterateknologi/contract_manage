@@ -106,18 +106,20 @@ export function PageTable({
 
             {/* Expandable Page Filter Banner (Identical to Contract Page) */}
             {isExpanded && filters && filters.length > 0 && onFilterChange && onResetFilters && (
-                <PageFilter
-                    categories={filters}
-                    activeFilters={activeFilters}
-                    onFilterChange={onFilterChange}
-                    onReset={onResetFilters}
-                    totalResults={totalResults}
-                    title={`Filter Data ${title}`}
-                    resourceKey={resourceKey}
-                />
+                <div className="relative z-30">
+                    <PageFilter
+                        categories={filters}
+                        activeFilters={activeFilters}
+                        onFilterChange={onFilterChange}
+                        onReset={onResetFilters}
+                        totalResults={totalResults}
+                        title={`Filter Data ${title}`}
+                        resourceKey={resourceKey}
+                    />
+                </div>
             )}
 
-            <div className="flex-1 min-h-0 w-full p-0 m-0 flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 w-full p-0 m-0 flex flex-col overflow-hidden relative z-10">
                 {children}
             </div>
             {showFooter && <PageFooter pagination={pagination} />}

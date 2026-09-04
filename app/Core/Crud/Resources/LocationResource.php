@@ -27,6 +27,8 @@ class LocationResource extends Resource
 
     public static ?string $importClass = LocationsImport::class;
 
+    public static array $withCount = ['businessUnits', 'users'];
+
     public static function table(): array
     {
         return [
@@ -37,8 +39,10 @@ class LocationResource extends Resource
             TextColumn::make('city_name', 'Kota / Kabupaten')->sortable()->searchable(),
             TextColumn::make('province_name', 'Provinsi')->sortable()->searchable(),
             TextColumn::make('oracle_code', 'Kode Oracle')->sortable()->searchable(),
-            BooleanColumn::make('is_used', 'Sistem'),
-            BooleanColumn::make('is_active', 'Portal'),
+            TextColumn::make('business_units_count', 'Total BU')->sortable()->alignRight(),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_used', 'Sistem')->sortable()->alignRight(),
+            BooleanColumn::make('is_active', 'Portal')->sortable()->alignRight(),
         ];
     }
 

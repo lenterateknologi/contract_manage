@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
-import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield, RefreshCw, MoreVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield, RefreshCw, MoreVertical, Copy, LayoutDashboard } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { cn } from '@/lib/utils';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
@@ -188,6 +188,50 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             setIsDeptDialogOpen(true);
         } else {
             router.visit(`/admin/core/${resourceSlug}/${row.id}/edit${returnParam}`);
+        }
+    };
+
+    const handleDuplicate = (row: any) => {
+        const currentUrl = typeof window !== 'undefined' ? (window.location.pathname + window.location.search) : '';
+        const returnParam = currentUrl ? `&return_url=${encodeURIComponent(currentUrl)}` : '';
+
+        if (DIALOG_RESOURCES.includes(resourceSlug)) {
+            const editValues: Record<string, any> = {};
+            formSchema.forEach((field) => {
+                if (field.isGroup && Array.isArray(field.schema)) {
+                    field.schema.forEach((subField: any) => {
+                        editValues[subField.name] = row[subField.name] ?? (subField.type === 'switch' ? false : '');
+                    });
+                } else {
+                    editValues[field.name] = row[field.name] ?? (field.type === 'switch' ? false : '');
+                }
+            });
+            if (editValues.name) editValues.name = `${editValues.name} (Copy)`;
+            if (editValues.code) editValues.code = `${editValues.code}_COPY`;
+            
+            const initialTypes: Record<string, string> = {};
+            const DIMENSIONS = [
+                { key: 'company_group', toggleName: 'can_change_company_group', allowedName: 'allowed_company_groups' },
+                { key: 'region', toggleName: 'can_change_region', allowedName: 'allowed_regions' },
+                { key: 'company', toggleName: 'can_change_company', allowedName: 'allowed_companies' },
+                { key: 'division', toggleName: 'can_change_division', allowedName: 'allowed_divisions' },
+                { key: 'department', toggleName: 'can_change_department', allowedName: 'allowed_departments' },
+            ];
+            DIMENSIONS.forEach(dim => {
+                const canChange = row[dim.toggleName] === true || row[dim.toggleName] === 1 || String(row[dim.toggleName]) === 'true';
+                const allowed = row[dim.allowedName] || [];
+                if (!canChange) {
+                    initialTypes[dim.key] = 'user_data';
+                } else {
+                    initialTypes[dim.key] = allowed.length > 0 ? 'custom' : 'full_access';
+                }
+            });
+            setLocalAccessTypes(initialTypes);
+            deptForm.setData(editValues);
+            setEditDataId(null); // Setting editDataId to null ensures form posts as CREATE new record
+            setIsDeptDialogOpen(true);
+        } else {
+            router.visit(`/admin/core/${resourceSlug}/create?duplicate_from=${row.id}${returnParam}`);
         }
     };
 
@@ -496,6 +540,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     // Map schema to DataTable columns
     const columns = filteredTableSchema.map((col: any) => {
         const isStatusCol = col.type === 'boolean' || col.name === 'is_used' || col.name === 'is_active';
+        const isCountCol = col.name.endsWith('_count') || col.name.startsWith('total_');
+        const isAlignRight = col.align === 'right' || isStatusCol || isCountCol;
         const isPinned = pinnedSet.has(col.name);
         const pinOffset = isPinned ? pinOffsetsMap[col.name] : undefined;
         const isLastPinned = col.name === lastPinnedKey;
@@ -503,17 +549,29 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         return {
             header: col.label,
             accessorKey: col.name,
-            sortable: col.sortable,
+            sortable: col.sortable ?? isStatusCol,
             pinned: isPinned,
             pinOffset,
             isLastPinned,
-            className: isStatusCol ? 'w-24 text-center px-2 py-2 whitespace-nowrap' : 'whitespace-nowrap px-4 py-2.5 text-xs',
+            align: isAlignRight ? 'right' : (col.align || 'left'),
+            className: isStatusCol 
+                ? 'w-24 text-right px-2.5 py-1.5 whitespace-nowrap' 
+                : isCountCol
+                ? 'w-28 text-right px-2.5 py-1.5 whitespace-nowrap'
+                : 'whitespace-nowrap px-3 py-1.5 text-xs',
             cell: (row: any) => {
-                let val = col.name.split('.').reduce((acc: any, part: string) => acc && acc[part], row);
+                let val = col.name.split('.').reduce((acc: any, part: string) => {
+                    if (!acc) return undefined;
+                    if (acc[part] !== undefined) return acc[part];
+                    // Handle camelCase to snake_case transition (e.g. contractFilterTemplate -> contract_filter_template)
+                    const snakePart = part.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+                    return acc[snakePart];
+                }, row);
 
                 // Dynamic fallbacks for relation attributes
                 if (val === undefined || val === null || val === '') {
                     if (col.name === 'role_name') val = row.role_relation?.name || row.roleRelation?.name || row.role?.name;
+                    else if (col.name === 'contractFilterTemplate.name' || col.name === 'contract_filter_template.name') val = row.contract_filter_template?.name || row.contractFilterTemplate?.name;
                     else if (col.name === 'company_group_code') val = row.company_group_code || row.company_group?.code || row.companyGroup?.code || row.company?.company_group?.code;
                     else if (col.name === 'company_group_name') val = row.company_group_name || row.company_group?.name || row.companyGroup?.name || row.group?.name;
                     else if (col.name === 'region_name') val = row.region?.name || row.region_name;
@@ -583,6 +641,33 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     );
                 }
 
+                // Role, Dashboard Type, and Template Badges
+                if (col.name === 'dashboardType.name' || col.name === 'dashboard_type.name' || col.name === 'dashboard_type_name') {
+                    return val ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md leading-tight max-w-[200px] whitespace-normal">
+                            <LayoutDashboard size={11} className="text-indigo-500/70 shrink-0" />
+                            <span className="line-clamp-2">{val}</span>
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center text-[10.5px] font-normal text-text-muted bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                            — Belum Diatur —
+                        </span>
+                    );
+                }
+
+                if (col.name === 'contractFilterTemplate.name' || col.name === 'contract_filter_template.name' || col.name === 'contract_filter_template_name') {
+                    return val ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-md leading-tight max-w-[200px] whitespace-normal">
+                            <Layers size={11} className="text-primary/70 shrink-0" />
+                            <span className="line-clamp-2">{val}</span>
+                        </span>
+                    ) : (
+                        <span className="inline-flex items-center text-[10.5px] font-normal text-text-muted bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                            — Default (Role Fallback) —
+                        </span>
+                    );
+                }
+
                 // Contract status custom badge
                 if (col.name === 'label' && resourceSlug === 'contract-statuses') {
                     const IconComp = row.icon && (LucideIcons as any)[row.icon]
@@ -603,18 +688,39 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     );
                 }
 
-                // Color render
-                if (col.name === 'color' || col.name === 'bg_color' || col.name === 'text_color') {
-                    const colorVal = val || '#ffffff';
-                    return (
-                        <span className="flex items-center gap-2 font-mono text-xs font-normal whitespace-nowrap">
-                            <span 
-                                className="h-4.5 w-4.5 rounded-md border border-surface-border/80 shadow-xs shrink-0" 
-                                style={{ backgroundColor: colorVal }}
-                            />
-                            <span>{val || '—'}</span>
-                        </span>
-                    );
+                // Contract filter template dimension status badges
+                if (resourceSlug === 'contract-filter-templates' && col.name.endsWith('_status')) {
+                    if (val === null || val === undefined) {
+                        return (
+                            <span className="inline-flex items-center text-[10.5px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                Sesuai User
+                            </span>
+                        );
+                    }
+                    if (Array.isArray(val) && val.length === 0) {
+                        return (
+                            <span className="inline-flex items-center text-[10.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md border border-emerald-500/20 whitespace-nowrap">
+                                Buka Semua
+                            </span>
+                        );
+                    }
+                    if (Array.isArray(val) && val.length > 0) {
+                        return (
+                            <div className="flex flex-wrap gap-1 items-center max-w-[240px]">
+                                {val.slice(0, 2).map((item: string, idx: number) => (
+                                    <span key={idx} className="inline-flex items-center text-[10px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 whitespace-nowrap truncate max-w-[110px]" title={item}>
+                                        {item}
+                                    </span>
+                                ))}
+                                {val.length > 2 && (
+                                    <span className="text-[10px] text-text-desc font-bold" title={val.join(', ')}>
+                                        +{val.length - 2} lagi
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    }
+                    return <span className="text-text-muted">—</span>;
                 }
 
                 // Specific badge formats
@@ -674,32 +780,122 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     );
                 }
 
+                if (col.name === 'job_level_name' || col.name === 'job_level') {
+                    let display = val || '—';
+                    if (row.job_level && row.job_level.name) {
+                        display = row.job_level.code ? `(${row.job_level.code}) ${row.job_level.name}` : row.job_level.name;
+                    }
+                    return (
+                        <span className="text-xs text-text-main whitespace-nowrap">
+                            {display}
+                        </span>
+                    );
+                }
+
+                if (col.name.endsWith('_count') || col.name.startsWith('total_')) {
+                    const num = Number(val || 0);
+                    return (
+                        <div className="flex justify-end">
+                            <span className={cn(
+                                "inline-flex items-center justify-center min-w-[34px] px-2 py-0.5 text-[11px] font-bold rounded-md border shadow-2xs font-mono",
+                                num > 0
+                                    ? "bg-primary/10 text-primary border-primary/25 dark:bg-primary/20"
+                                    : "bg-slate-100 text-slate-400 border-slate-200/80 dark:bg-zinc-800 dark:text-zinc-500 dark:border-zinc-700/80"
+                            )}>
+                                {num.toLocaleString('id-ID')}
+                            </span>
+                        </div>
+                    );
+                }
+
                 if (col.type === 'boolean') {
                     const isToggling = updatingRowId === row.id;
+                    const isTrue = Boolean(val === true || val === 1 || val === '1' || val === 'true');
+
                     if (col.name === 'is_used') {
                         return (
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    disabled={isToggling}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSingleToggle(row.id, 'is_used', isTrue);
+                                    }}
+                                    title={`Klik untuk mengubah status sistem (${isTrue ? 'Ya -> Tidak' : 'Tidak -> Ya'})`}
+                                    className={cn(
+                                        "inline-flex items-center justify-center min-w-[50px] px-2 py-0.5 text-[10.5px] font-bold rounded-md border tracking-wider transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95",
+                                        isTrue 
+                                            ? "bg-primary/15 text-primary border-primary/30 hover:bg-primary/25" 
+                                            : "bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700",
+                                        isToggling && "opacity-50 pointer-events-none"
+                                    )}
+                                >
+                                    {isToggling ? (
+                                        <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+                                    ) : (
+                                        isTrue ? 'Ya' : 'Tidak'
+                                    )}
+                                </button>
+                            </div>
+                        );
+                    }
+
+                    if (col.name === 'is_active') {
+                        return (
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    disabled={isToggling}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleSingleToggle(row.id, 'is_active', isTrue);
+                                    }}
+                                    title={`Klik untuk mengubah status portal (${isTrue ? 'Aktif -> Nonaktif' : 'Nonaktif -> Aktif'})`}
+                                    className={cn(
+                                        "inline-flex items-center justify-center min-w-[58px] px-2 py-0.5 text-[10.5px] font-bold rounded-md border tracking-wider transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95",
+                                        isTrue 
+                                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25" 
+                                            : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/25 hover:bg-rose-500/20",
+                                        isToggling && "opacity-50 pointer-events-none"
+                                    )}
+                                >
+                                    {isToggling ? (
+                                        <RefreshCw className="h-3 w-3 animate-spin text-emerald-600" />
+                                    ) : (
+                                        isTrue ? 'Aktif' : 'Nonaktif'
+                                    )}
+                                </button>
+                            </div>
+                        );
+                    }
+
+                    // For can_create_on_behalf and other boolean flags (True/False toggle button)
+                    return (
+                        <div className="flex justify-end">
                             <button
                                 type="button"
                                 disabled={isToggling}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleSingleToggle(row.id, 'is_used', Boolean(val));
+                                    handleSingleToggle(row.id, col.name, isTrue);
                                 }}
-                                title={`Klik untuk mengubah status sistem (${val ? 'Ya -> Tidak' : 'Tidak -> Ya'})`}
-                                className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider transition-all cursor-pointer hover:scale-105 active:scale-95 ${val ? 'bg-primary/10 text-primary border-primary/20 hover:bg-primary/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'} ${isToggling ? 'opacity-50 pointer-events-none' : ''}`}
+                                title={`Klik untuk mengubah status (${isTrue ? 'True -> False' : 'False -> True'})`}
+                                className={cn(
+                                    "inline-flex items-center justify-center min-w-[54px] px-2 py-0.5 text-[10.5px] font-bold rounded-md border tracking-wide transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95",
+                                    isTrue
+                                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25"
+                                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700",
+                                    isToggling && "opacity-50 pointer-events-none"
+                                )}
                             >
                                 {isToggling ? (
-                                    <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+                                    <RefreshCw className="h-3 w-3 animate-spin text-emerald-600" />
                                 ) : (
-                                    val ? 'Ya' : 'Tidak'
+                                    isTrue ? 'True' : 'False'
                                 )}
                             </button>
-                        );
-                    }
-                    return (
-                        <span className={`inline-flex items-center justify-center px-2.5 py-0.5 text-[10px] font-semibold rounded-md border tracking-wider ${val ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`}>
-                            {val ? 'Aktif' : 'Nonaktif'}
-                        </span>
+                        </div>
                     );
                 }
 
@@ -921,6 +1117,16 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                             >
                                                 <Edit2 size={13} className="text-primary" />
                                                 <span>Ubah Data</span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDuplicate(row);
+                                                }}
+                                                className="text-text-main hover:text-amber-600 hover:bg-amber-500/[0.08] flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                                            >
+                                                <Copy size={13} className="text-amber-500" />
+                                                <span>Duplikat Data</span>
                                             </DropdownMenuItem>
                                             <div className="bg-surface-border/40 my-1 h-px" />
                                             <DropdownMenuItem
@@ -1231,8 +1437,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             {/* Reusable Form Dialog */}
             {DIALOG_RESOURCES.includes(resourceSlug) && (
                 <Dialog open={isDeptDialogOpen} onOpenChange={setIsDeptDialogOpen}>
-                    <DialogContent className={`border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[8px] border p-0 shadow-2xl ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[850px]' : 'sm:max-w-[600px]'}`}>
-                        <form onSubmit={handleDeptSubmit}>
+                    <DialogContent className={`border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 overflow-hidden rounded-[8px] border p-0 shadow-2xl flex flex-col ${resourceSlug === 'contract-filter-templates' ? 'sm:max-w-[920px] min-h-[580px]' : 'sm:max-w-[780px] min-h-[460px]'}`}>
+                        <form onSubmit={handleDeptSubmit} className="flex flex-col flex-1">
                             <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
                                 <div className="flex items-center gap-3 z-10 pr-10">
                                     <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
@@ -1248,7 +1454,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     </div>
                                 </div>
                             </div>
-                            <div className="space-y-4 p-6 bg-white dark:bg-zinc-900 max-h-[85vh] overflow-y-auto">
+                            <div className="p-6 bg-white dark:bg-zinc-900 flex-1 max-h-[75vh] min-h-[340px] pb-16 overflow-y-auto">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {formSchema.map((field) => {
                                     if (field.isGroup) {
                                         if (field.label === 'Konfigurasi Filter Kontrak') {
@@ -1271,7 +1478,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                             const nameField = field.schema.find((s: any) => s.name === 'name');
 
                                             return (
-                                                <div key={field.label} className="space-y-4 w-full animate-in fade-in duration-200">
+                                                <div key={field.label} className="col-span-full space-y-4 w-full animate-in fade-in duration-200">
                                                     {nameField && (
                                                         <div className="grid gap-1.5">
                                                             <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300">{nameField.label}</Label>
@@ -1376,13 +1583,14 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                         }
 
                                         return (
-                                            <div key={field.label} className="space-y-3">
+                                            <div key={field.label} className="col-span-full space-y-3">
                                                 <h4 className="text-xs font-bold text-foreground uppercase tracking-wider border-b pb-1">{field.label}</h4>
-                                                <div className="grid grid-cols-1 gap-3">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                     {field.schema.map((subField: any) => {
+                                                        const isFullWidth = subField.type === 'textarea';
                                                         if (subField.type === 'switch' || subField.type === 'toggle') {
                                                             return (
-                                                                <div key={subField.name} className="grid gap-1.5">
+                                                                <div key={subField.name} className={cn("grid gap-1.5", isFullWidth && "col-span-full")}>
                                                                     <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
                                                                     <div className="border-border bg-muted/40 flex h-10 items-center gap-2.5 rounded-lg border px-3">
                                                                         <Checkbox
@@ -1404,7 +1612,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                                 : Object.entries(subField.options || {}).map(([val, label]) => ({ value: String(val), label: String(label) }));
 
                                                             return (
-                                                                <div key={subField.name} className="grid gap-1.5">
+                                                                <div key={subField.name} className={cn("grid gap-1.5", isFullWidth && "col-span-full")}>
                                                                     <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
                                                                     <SearchableSelect
                                                                         value={deptForm.data[subField.name] ? String(deptForm.data[subField.name]) : ''}
@@ -1412,6 +1620,21 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                                                         options={rawOptions}
                                                                         placeholder={subField.placeholder || `Pilih ${subField.label}...`}
                                                                         allowClear={!subField.required}
+                                                                    />
+                                                                </div>
+                                                            );
+                                                        }
+
+                                                        if (subField.type === 'textarea') {
+                                                            return (
+                                                                <div key={subField.name} className="col-span-full grid gap-1.5">
+                                                                    <Label className="text-xs font-medium text-foreground">{subField.label}</Label>
+                                                                    <Textarea
+                                                                        required={subField.required}
+                                                                        className="border-border bg-background focus:ring-primary h-20 resize-none rounded-lg text-xs leading-relaxed font-normal"
+                                                                        placeholder={subField.placeholder || `Masukkan ${subField.label}...`}
+                                                                        value={deptForm.data[subField.name] ?? ''}
+                                                                        onChange={(e) => deptForm.setData(subField.name as any, e.target.value)}
                                                                     />
                                                                 </div>
                                                             );
@@ -1457,7 +1680,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
 
                                     if (field.type === 'textarea') {
                                         return (
-                                            <div key={field.name} className="grid gap-1.5">
+                                            <div key={field.name} className="col-span-full grid gap-1.5">
                                                 <Label className="text-xs font-medium text-foreground">{field.label}</Label>
                                                 <Textarea
                                                     required={field.required}
@@ -1504,8 +1727,9 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                         </div>
                                     );
                                 })}
+                                </div>
                             </div>
-                            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px]">
+                            <div className="flex justify-end gap-2 px-6 py-4 border-t border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-b-[8px] mt-auto">
                                 <Button
                                     type="button"
                                     variant="outline"

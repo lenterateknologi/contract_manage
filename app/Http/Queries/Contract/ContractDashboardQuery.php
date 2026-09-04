@@ -263,57 +263,69 @@ class ContractDashboardQuery
         $todayRejected = $todayUpdatedContracts->where('status', 'rejected')->count();
         $todayApproved = $todayUpdatedContracts->where('status', 'approved')->count();
 
-        // Resolve matching dashboard type configuration based on role, division, and department (supports multiple / array matching)
-        $dashboardConfig = DashboardType::all()->filter(function ($dt) use ($user) {
-            $rawRoles = $dt->role_ids ?? $dt->getAttributeFromArray('role_ids');
-            $roleIds = DashboardType::normalizeIds($rawRoles);
-            if ($rawRoles === null && ! empty($dt->role_id)) {
-                $roleIds = [$dt->role_id];
+        // Resolve matching dashboard type configuration:
+        // 1. Direct role relation dashboard_type_id
+        // 2. Matching rules from m_dashboard_types table
+        $dashboardConfig = null;
+        if ($user && $user->role_id) {
+            $userRole = $user->roleRelation;
+            if ($userRole && $userRole->dashboard_type_id) {
+                $dashboardConfig = DashboardType::find($userRole->dashboard_type_id);
             }
+        }
 
-            $rawDivisions = $dt->division_ids ?? $dt->getAttributeFromArray('division_ids');
-            $divisionIds = DashboardType::normalizeIds($rawDivisions);
-            if ($rawDivisions === null && ! empty($dt->division_id)) {
-                $divisionIds = [$dt->division_id];
-            }
+        if (! $dashboardConfig) {
+            $dashboardConfig = DashboardType::all()->filter(function ($dt) use ($user) {
+                $rawRoles = $dt->role_ids ?? $dt->getAttributeFromArray('role_ids');
+                $roleIds = DashboardType::normalizeIds($rawRoles);
+                if ($rawRoles === null && ! empty($dt->role_id)) {
+                    $roleIds = [$dt->role_id];
+                }
 
-            $rawDepartments = $dt->department_ids ?? $dt->getAttributeFromArray('department_ids');
-            $departmentIds = DashboardType::normalizeIds($rawDepartments);
-            if ($rawDepartments === null && ! empty($dt->department_id)) {
-                $departmentIds = [$dt->department_id];
-            }
+                $rawDivisions = $dt->division_ids ?? $dt->getAttributeFromArray('division_ids');
+                $divisionIds = DashboardType::normalizeIds($rawDivisions);
+                if ($rawDivisions === null && ! empty($dt->division_id)) {
+                    $divisionIds = [$dt->division_id];
+                }
 
-            $roleMatch = empty($roleIds) || in_array((string) $user->role_id, array_map('strval', $roleIds));
-            $divisionMatch = empty($divisionIds) || in_array((string) $user->division_id, array_map('strval', $divisionIds));
-            $departmentMatch = empty($departmentIds) || in_array((string) $user->department_id, array_map('strval', $departmentIds));
+                $rawDepartments = $dt->department_ids ?? $dt->getAttributeFromArray('department_ids');
+                $departmentIds = DashboardType::normalizeIds($rawDepartments);
+                if ($rawDepartments === null && ! empty($dt->department_id)) {
+                    $departmentIds = [$dt->department_id];
+                }
 
-            return $roleMatch && $divisionMatch && $departmentMatch;
-        })->sortByDesc(function ($dt) {
-            $rawRoles = $dt->role_ids ?? $dt->getAttributeFromArray('role_ids');
-            $roleIds = DashboardType::normalizeIds($rawRoles);
-            if ($rawRoles === null && ! empty($dt->role_id)) {
-                $roleIds = [$dt->role_id];
-            }
+                $roleMatch = empty($roleIds) || in_array((string) $user->role_id, array_map('strval', $roleIds));
+                $divisionMatch = empty($divisionIds) || in_array((string) $user->division_id, array_map('strval', $divisionIds));
+                $departmentMatch = empty($departmentIds) || in_array((string) $user->department_id, array_map('strval', $departmentIds));
 
-            $rawDivisions = $dt->division_ids ?? $dt->getAttributeFromArray('division_ids');
-            $divisionIds = DashboardType::normalizeIds($rawDivisions);
-            if ($rawDivisions === null && ! empty($dt->division_id)) {
-                $divisionIds = [$dt->division_id];
-            }
+                return $roleMatch && $divisionMatch && $departmentMatch;
+            })->sortByDesc(function ($dt) {
+                $rawRoles = $dt->role_ids ?? $dt->getAttributeFromArray('role_ids');
+                $roleIds = DashboardType::normalizeIds($rawRoles);
+                if ($rawRoles === null && ! empty($dt->role_id)) {
+                    $roleIds = [$dt->role_id];
+                }
 
-            $rawDepartments = $dt->department_ids ?? $dt->getAttributeFromArray('department_ids');
-            $departmentIds = DashboardType::normalizeIds($rawDepartments);
-            if ($rawDepartments === null && ! empty($dt->department_id)) {
-                $departmentIds = [$dt->department_id];
-            }
+                $rawDivisions = $dt->division_ids ?? $dt->getAttributeFromArray('division_ids');
+                $divisionIds = DashboardType::normalizeIds($rawDivisions);
+                if ($rawDivisions === null && ! empty($dt->division_id)) {
+                    $divisionIds = [$dt->division_id];
+                }
 
-            $score = 0;
-            if (! empty($roleIds)) $score += 4;
-            if (! empty($divisionIds)) $score += 2;
-            if (! empty($departmentIds)) $score += 1;
+                $rawDepartments = $dt->department_ids ?? $dt->getAttributeFromArray('department_ids');
+                $departmentIds = DashboardType::normalizeIds($rawDepartments);
+                if ($rawDepartments === null && ! empty($dt->department_id)) {
+                    $departmentIds = [$dt->department_id];
+                }
 
-            return $score;
-        })->first();
+                $score = 0;
+                if (! empty($roleIds)) $score += 4;
+                if (! empty($divisionIds)) $score += 2;
+                if (! empty($departmentIds)) $score += 1;
+
+                return $score;
+            })->first();
+        }
 
         return [
             'dashboardConfig' => [

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/selection/DropdownMenu';
 import { useDebounce } from '@/hooks/use-debounce';
 import { usePermissions } from '@/hooks/use-permissions';
+import { usePov } from '@/stores/usePovStore';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType, PaginatedData } from '@/pages/contracts/types';
@@ -436,11 +437,29 @@ function ContractPage({
 }>) {
     const { showToast } = useToast();
     const { canUpdate } = usePermissions('CONTRACTS');
+    const pov = usePov();
     const [view, setView] = useState<View>(currentView);
     const [dashboardTab, setDashboardTab] = useState<'overview' | 'workload' | 'master_data'>('overview');
 
+    const effectiveDashboardConfig = useMemo(() => {
+        const baseConfig = metrics?.dashboardConfig || {
+            show_overview: true,
+            show_workload: true,
+            show_master_data: true,
+            has_setting: true,
+        };
+        if (pov.activeDashboardPov.config !== undefined) {
+            return {
+                ...baseConfig,
+                ...pov.activeDashboardPov.config,
+                has_setting: true,
+            };
+        }
+        return baseConfig;
+    }, [metrics?.dashboardConfig, pov.activeDashboardPov]);
+
     useEffect(() => {
-        const config = metrics?.dashboardConfig;
+        const config = effectiveDashboardConfig;
         if (config) {
             if (dashboardTab === 'overview' && !config.show_overview) {
                 if (config.show_workload) setDashboardTab('workload');
@@ -453,7 +472,7 @@ function ContractPage({
                 else if (config.show_workload) setDashboardTab('workload');
             }
         }
-    }, [metrics?.dashboardConfig, dashboardTab]);
+    }, [effectiveDashboardConfig, dashboardTab]);
     const [selected, setSelected] = useState<Contract | null>(initialSelected ?? null);
     const viewTitleMap: Record<string, string> = {
         dashboard: 'Dashboard Kontrak',
@@ -699,45 +718,69 @@ function ContractPage({
     }, []);
 
     const canChangeCompanyGroup = useMemo(() => {
+        if (pov.activeFilterPov.permissions !== undefined) {
+            return pov.activeFilterPov.permissions.can_change_company_group;
+        }
         const settings = meUser?.filter_settings;
         if (settings && typeof settings.can_change_company_group !== 'undefined') {
             return !!settings.can_change_company_group;
         }
         const role = meUser?.role;
         return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
-    }, [meUser]);
+    }, [meUser, pov.activeFilterPov]);
 
     const canChangeRegion = useMemo(() => {
+        if (pov.activeFilterPov.permissions !== undefined) {
+            return pov.activeFilterPov.permissions.can_change_region;
+        }
         const settings = meUser?.filter_settings;
         if (settings && typeof settings.can_change_region !== 'undefined') {
             return !!settings.can_change_region;
         }
         const role = meUser?.role;
         return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
-    }, [meUser]);
+    }, [meUser, pov.activeFilterPov]);
 
     const canChangeCompany = useMemo(() => {
+        if (pov.activeFilterPov.permissions !== undefined) {
+            return pov.activeFilterPov.permissions.can_change_company;
+        }
         const settings = meUser?.filter_settings;
         if (settings && typeof settings.can_change_company !== 'undefined') {
             return !!settings.can_change_company;
         }
         const role = meUser?.role;
         return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
-    }, [meUser]);
+    }, [meUser, pov.activeFilterPov]);
 
     const canChangeDivision = useMemo(() => {
+        if (pov.activeFilterPov.permissions !== undefined) {
+            return pov.activeFilterPov.permissions.can_change_division;
+        }
         const settings = meUser?.filter_settings;
         if (settings && typeof settings.can_change_division !== 'undefined') {
             return !!settings.can_change_division;
         }
         const role = meUser?.role;
         return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
-    }, [meUser]);
+    }, [meUser, pov.activeFilterPov]);
+
+    const canChangeDepartment = useMemo(() => {
+        if (pov.activeFilterPov.permissions !== undefined) {
+            return pov.activeFilterPov.permissions.can_change_department;
+        }
+        const settings = meUser?.filter_settings;
+        if (settings && typeof settings.can_change_department !== 'undefined') {
+            return !!settings.can_change_department;
+        }
+        const role = meUser?.role;
+        return role === 'Admin' || role === 'Super Admin' || !!meUser?.is_admin;
+    }, [meUser, pov.activeFilterPov]);
 
     const filterCategories = useMemo(() => {
         const list: any[] = [];
 
-        if (companyGroups && companyGroups.length > 0) {
+        if (canChangeCompanyGroup && companyGroups && companyGroups.length > 0) {
             list.push({
                 label: 'Grup Perusahaan',
                 key: 'company_group_id',
@@ -749,7 +792,7 @@ function ContractPage({
             });
         }
 
-        if (regions && regions.length > 0) {
+        if (canChangeRegion && regions && regions.length > 0) {
             list.push({
                 label: 'Regional',
                 key: 'region_id',
@@ -761,7 +804,7 @@ function ContractPage({
             });
         }
 
-        if (companies && companies.length > 0) {
+        if (canChangeCompany && companies && companies.length > 0) {
             list.push({
                 label: 'Perusahaan',
                 key: 'company_id',
@@ -773,7 +816,7 @@ function ContractPage({
             });
         }
 
-        if (divisions && divisions.length > 0) {
+        if (canChangeDivision && divisions && divisions.length > 0) {
             list.push({
                 label: 'Divisi',
                 key: 'division_id',
@@ -785,7 +828,7 @@ function ContractPage({
             });
         }
 
-        if (departments && departments.length > 0) {
+        if (canChangeDepartment && departments && departments.length > 0) {
             list.push({
                 label: 'Departemen',
                 key: 'department_id',
@@ -1203,7 +1246,7 @@ function ContractPage({
                                 icon={viewIconMap[view] || FileText}
                                 {...(view === 'dashboard' ? {
                                     actions: (() => {
-                                        const config = metrics?.dashboardConfig;
+                                        const config = effectiveDashboardConfig;
                                         const showOverview = config ? !!config.show_overview : false;
                                         const showWorkload = config ? !!config.show_workload : false;
                                         const showMasterData = config ? !!config.show_master_data : false;
@@ -1308,7 +1351,7 @@ function ContractPage({
                                 <div className="flex-1 min-h-0 h-full overflow-hidden flex flex-col">
                                     {view === 'dashboard' && (
                                         <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar p-5">
-                                            <DashboardMetrics metrics={metrics} activeTab={dashboardTab} />
+                                            <DashboardMetrics metrics={metrics ? { ...metrics, dashboardConfig: effectiveDashboardConfig } : null} activeTab={dashboardTab} />
                                         </div>
                                     )}
                                     {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}

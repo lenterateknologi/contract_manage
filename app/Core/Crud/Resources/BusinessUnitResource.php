@@ -29,6 +29,8 @@ class BusinessUnitResource extends Resource
 
     public static ?string $importClass = BusinessUnitsImport::class;
 
+    public static array $withCount = ['users'];
+
     public static function table(): array
     {
         return [
@@ -40,8 +42,9 @@ class BusinessUnitResource extends Resource
             TextColumn::make('region_name', 'Wilayah (Region)')->sortable()->searchable(),
             TextColumn::make('komoditi_name', 'Komoditi')->sortable()->searchable(),
             TextColumn::make('kebun', 'Kebun / Mill')->sortable()->searchable(),
-            BooleanColumn::make('is_used', 'Sistem'),
-            BooleanColumn::make('is_active', 'Portal'),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_used', 'Sistem')->alignRight(),
+            BooleanColumn::make('is_active', 'Portal')->alignRight(),
         ];
     }
 

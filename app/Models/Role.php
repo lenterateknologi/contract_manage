@@ -19,12 +19,48 @@ class Role extends Model
     protected $fillable = [
         'id',
         'company_id',
+        'contract_filter_template_id',
+        'dashboard_type_id',
         'name',
         'description',
+        'can_create_on_behalf',
     ];
+
+    protected $casts = [
+        'can_create_on_behalf' => 'boolean',
+    ];
+
+    public function contractFilterTemplate()
+    {
+        return $this->belongsTo(ContractFilterTemplate::class, 'contract_filter_template_id');
+    }
+
+    public function dashboardType()
+    {
+        return $this->belongsTo(DashboardType::class, 'dashboard_type_id');
+    }
 
     public function getContractFilterSettings(): array
     {
+        $templateId = $this->contract_filter_template_id;
+        if ($templateId) {
+            $template = ContractFilterTemplate::find($templateId);
+            if ($template) {
+                return [
+                    'can_change_company_group' => (bool) $template->can_change_company_group,
+                    'allowed_company_groups' => (array) ($template->allowed_company_groups ?? []),
+                    'can_change_region' => (bool) $template->can_change_region,
+                    'allowed_regions' => (array) ($template->allowed_regions ?? []),
+                    'can_change_company' => (bool) $template->can_change_company,
+                    'allowed_companies' => (array) ($template->allowed_companies ?? []),
+                    'can_change_division' => (bool) $template->can_change_division,
+                    'allowed_divisions' => (array) ($template->allowed_divisions ?? []),
+                    'can_change_department' => (bool) $template->can_change_department,
+                    'allowed_departments' => (array) ($template->allowed_departments ?? []),
+                ];
+            }
+        }
+
         return [
             'can_change_company_group' => false,
             'allowed_company_groups' => [],

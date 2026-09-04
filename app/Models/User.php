@@ -97,6 +97,7 @@ class User extends Authenticatable
     protected $appends = [
         'initials',
         'role',
+        'can_create_on_behalf',
         'division_name',
         'department_name',
         'company_group_name',
@@ -107,10 +108,10 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::creating(function ($user) {
-            if (empty($user->contract_filter_template_id)) {
-                $templateId = ContractFilterTemplate::where('name', 'like', '%staff biasa%')->value('id');
-                if ($templateId) {
-                    $user->contract_filter_template_id = $templateId;
+            if (empty($user->contract_filter_template_id) && ! empty($user->role_id)) {
+                $roleTemplateId = Role::where('id', $user->role_id)->value('contract_filter_template_id');
+                if ($roleTemplateId) {
+                    $user->contract_filter_template_id = $roleTemplateId;
                 }
             }
         });
@@ -158,8 +159,12 @@ class User extends Authenticatable
 
     public function getRoleAttribute(): ?string
     {
-        if (! array_key_exists('role_id', $this->attributes)) {
+        if (! array_key_exists('role_id', $this->attributes) || empty($this->attributes['role_id'])) {
             return null;
+        }
+
+        if ($this->relationLoaded('roleRelation')) {
+            return $this->getRelation('roleRelation')?->name;
         }
 
         return $this->roleRelation?->name;
@@ -375,6 +380,24 @@ class User extends Authenticatable
         return $this->role === 'Super Admin';
     }
 
+    public function getCanCreateOnBehalfAttribute(): bool
+    {
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        if ($this->relationLoaded('roleRelation') && $this->roleRelation) {
+            return (bool) ($this->roleRelation->can_create_on_behalf ?? false);
+        }
+
+        $roleId = $this->getAttributeFromArray('role_id');
+        if (! empty($roleId)) {
+            return (bool) Role::where('id', $roleId)->value('can_create_on_behalf');
+        }
+
+        return false;
+    }
+
     public function getInitialsAttribute(): string
     {
         $name = $this->name ?? '';
@@ -400,6 +423,14 @@ class User extends Authenticatable
         }
 
         $templateId = $this->getAttributeFromArray('contract_filter_template_id');
+
+        // If not set on user, fallback to role's contract_filter_template_id
+        if (! $templateId && $this->role_id) {
+            $role = $this->roleRelation;
+            if ($role && $role->contract_filter_template_id) {
+                $templateId = $role->contract_filter_template_id;
+            }
+        }
 
         if ($templateId) {
             if (! isset(self::$templateMemoryCache[$templateId])) {

@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Models\AccessModule;
+use App\Models\ContractFilterTemplate;
+use App\Models\DashboardType;
 use App\Models\Module;
 use App\Models\Role;
 use Illuminate\Foundation\Inspiring;
@@ -54,6 +56,10 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
+        $hasSession = $request->hasSession();
+        $isImpersonating = $hasSession && $request->session()->has('impersonator_id');
+        $impersonatorId = $isImpersonating ? $request->session()->get('impersonator_id') : null;
+        $impersonatorUser = $impersonatorId ? \App\Models\User::find($impersonatorId) : null;
 
         return array_merge(parent::share($request), [
             'name' => config('app.name'),
@@ -72,18 +78,117 @@ class HandleInertiaRequests extends Middleware
                     'allowed_divisions' => $request->user()->allowed_divisions,
                     'can_change_department' => $request->user()->can_change_department,
                     'allowed_departments' => $request->user()->allowed_departments,
+                    'can_create_on_behalf' => (bool) $request->user()->can_create_on_behalf,
                 ]) : null,
                 'permissions' => $this->getUserPermissions($request),
+                'impersonation' => [
+                    'is_impersonating' => $isImpersonating,
+                    'impersonator' => $impersonatorUser ? [
+                        'id' => $impersonatorUser->id,
+                        'name' => $impersonatorUser->name,
+                        'email' => $impersonatorUser->email,
+                        'nik' => $impersonatorUser->nik ?? $impersonatorUser->username,
+                        'role' => $impersonatorUser->role,
+                    ] : null,
+                    'can_impersonate' => $request->user() ? ($request->user()->isAdmin() || $isImpersonating) : false,
+                ],
             ],
             'sidebarNavGroups' => $this->getSidebarNavGroups($request),
+            'povOptions' => $this->getPovOptions($request),
             'upload_configs' => config('uploads.categories'),
             'flash' => [
-                'success' => $request->session()->get('success'),
-                'error' => $request->session()->get('error') ?? ($request->session()->get('errors') ? collect($request->session()->get('errors')->getBag('default')->get('error'))->first() : null),
-                'danger' => $request->session()->get('danger'),
-                'info' => $request->session()->get('info'),
+                'success' => $hasSession ? $request->session()->get('success') : null,
+                'error' => $hasSession ? ($request->session()->get('error') ?? ($request->session()->get('errors') ? collect($request->session()->get('errors')->getBag('default')->get('error'))->first() : null)) : null,
+                'danger' => $hasSession ? $request->session()->get('danger') : null,
+                'info' => $hasSession ? $request->session()->get('info') : null,
             ],
         ]);
+    }
+
+    protected function getPovOptions(Request $request): ?array
+    {
+        $user = $request->user();
+        if (! $user) {
+            return null;
+        }
+
+        $isAdmin = in_array($user->role, ['Admin', 'Super Admin']) || $user->is_admin || ($request->hasSession() && $request->session()->has('impersonator_id'));
+        if (! $isAdmin) {
+            return null;
+        }
+
+        return Cache::remember('pov_options_data', now()->addMinutes(10), function () {
+            $roles = Role::orderBy('name')->get()->map(function ($role) {
+                $allowedRoutes = Module::where('m_modules.showed_as_menu', true)
+                    ->join('m_access_modules', 'm_modules.id', '=', 'm_access_modules.module_id')
+                    ->where('m_access_modules.role_id', $role->id)
+                    ->where('m_access_modules.can_read', true)
+                    ->pluck('m_modules.route')
+                    ->all();
+
+                $isSuper = $role->name === 'Super Admin';
+
+                return [
+                    'id' => (string) $role->id,
+                    'name' => $role->name,
+                    'label' => $role->name,
+                    'badge' => $isSuper ? 'All Access' : 'Role POV',
+                    'description' => $role->description ?: ($isSuper ? 'Akses penuh seluruh modul sistem' : "Simulasi hak akses menu {$role->name}"),
+                    'allowed_routes' => $isSuper ? null : $allowedRoutes,
+                    'can_create_on_behalf' => (bool) $role->can_create_on_behalf,
+                ];
+            })->values()->all();
+
+            $dashboardTypes = DashboardType::orderBy('name')->get()->map(function ($d) {
+                $activeTabs = [];
+                if ($d->show_overview) $activeTabs[] = 'Ringkasan';
+                if ($d->show_workload) $activeTabs[] = 'Beban Kerja';
+                if ($d->show_master_data) $activeTabs[] = 'Master Data';
+
+                $badge = empty($activeTabs) ? 'Tanpa Tab' : implode(' + ', $activeTabs);
+
+                return [
+                    'id' => (string) $d->id,
+                    'name' => $d->name,
+                    'label' => $d->name,
+                    'badge' => $badge,
+                    'description' => $d->description ?: 'Konfigurasi visibilitas tab dashboard',
+                    'show_overview' => (bool) $d->show_overview,
+                    'show_workload' => (bool) $d->show_workload,
+                    'show_master_data' => (bool) $d->show_master_data,
+                ];
+            })->values()->all();
+
+            $filterTemplates = ContractFilterTemplate::orderBy('name')->get()->map(function ($t) {
+                $dimCount = 0;
+                if ($t->can_change_company_group) $dimCount++;
+                if ($t->can_change_region) $dimCount++;
+                if ($t->can_change_company) $dimCount++;
+                if ($t->can_change_division) $dimCount++;
+                if ($t->can_change_department) $dimCount++;
+
+                $badge = $dimCount === 5 ? 'Open All' : "{$dimCount}/5 Dimensi";
+
+                return [
+                    'id' => (string) $t->id,
+                    'name' => $t->name,
+                    'label' => $t->name,
+                    'badge' => $badge,
+                    'description' => "Template filter: {$t->name}",
+                    'can_change_company_group' => (bool) $t->can_change_company_group,
+                    'can_change_region' => (bool) $t->can_change_region,
+                    'can_change_company' => (bool) $t->can_change_company,
+                    'can_change_division' => (bool) $t->can_change_division,
+                    'can_change_department' => (bool) $t->can_change_department,
+                ];
+            })->values()->all();
+
+            return [
+                'roles' => $roles,
+                'dashboard_types' => $dashboardTypes,
+                'filter_templates' => $filterTemplates,
+            ];
+        });
     }
 
     protected function getUserPermissions(Request $request): array

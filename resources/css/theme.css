@@ -57,6 +57,7 @@
 
     /* Semantic Surface Colors for Cards/Groups */
     --surface-base: #ffffff;
+    --surface-card: #ffffff;
     --surface-muted: #f8fafc;
     --surface-border: #e2e8f0;
 
@@ -136,6 +137,7 @@
 
     /* Semantic Surface Colors for Dark Mode */
     --surface-base: #1a1c21;
+    --surface-card: #1a1c21;
     --surface-muted: #141518;
     --surface-border: #282b33;
 

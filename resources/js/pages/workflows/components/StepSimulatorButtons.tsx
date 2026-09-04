@@ -10,7 +10,7 @@ interface StepSimulatorButtonsProps {
     totalSteps: number;
     allWorkflows: any[];
     allWorkflowSteps: any[];
-    setActiveModal: (actionType: any) => void;
+    setActiveModal: (actionType: any, action?: any) => void;
 }
 
 export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, allWorkflowSteps, setActiveModal }: StepSimulatorButtonsProps) {
@@ -124,7 +124,7 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
                                             e.stopPropagation();
                                             close();
                                             if (['approve', 'reject', 'assign_pic', 'sign', 'forward'].includes(btn.actionType)) {
-                                                setActiveModal(btn.actionType as any);
+                                                setActiveModal(btn.actionType as any, btn.act);
                                             } else {
                                                 showToast(
                                                     `Simulasi: Menjalankan aksi "${btn.label}" (${btn.tooltip}). Kolom Wajib: ${(btn.act.required_fields || []).join(', ') || '-'}`,

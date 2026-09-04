@@ -60,7 +60,7 @@ export function Modal({
                     className
                 )}
             >
-                {(title || description) && (
+                {(title || description) ? (
                     isBannerHeader ? (
                         <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[8px]">
                             <div className="flex items-center gap-3 z-10 pr-10">
@@ -70,9 +70,9 @@ export function Modal({
                                     </div>
                                 )}
                                 <div>
-                                    <h3 className="text-sm font-bold tracking-tight text-white dark:text-zinc-200">{title}</h3>
+                                    <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-200">{title}</DialogTitle>
                                     {description && (
-                                        <p className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">{description}</p>
+                                        <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">{description}</DialogDescription>
                                     )}
                                 </div>
                             </div>
@@ -91,6 +91,8 @@ export function Modal({
                             )}
                         </DialogHeader>
                     )
+                ) : (
+                    <DialogTitle className="sr-only">Modal Dialog</DialogTitle>
                 )}
                 
                 <div className="p-5 text-text-main bg-white dark:bg-zinc-900">

@@ -66,7 +66,7 @@ class WorkflowQuery
     public function options(): Builder
     {
         return Workflow::query()
-            ->with(['steps', 'contractType'])
+            ->with(['steps.actions', 'contractType'])
             ->orderBy('name');
     }
 }

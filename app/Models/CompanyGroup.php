@@ -39,4 +39,14 @@ class CompanyGroup extends Model
     {
         return $this->hasMany(Company::class, 'company_group_id');
     }
+
+    public function businessUnits(): HasMany
+    {
+        return $this->hasMany(BusinessUnit::class, 'company_group_id');
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'company_group_id');
+    }
 }

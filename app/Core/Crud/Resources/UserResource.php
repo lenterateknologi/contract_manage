@@ -64,7 +64,7 @@ class UserResource extends Resource
     public static function form(): array
     {
         return [
-            Section::make('Informasi Karyawan (Portal)', [
+            Section::make('Data Karyawan & Organisasi (Dari Portal)', [
                 TextInput::make('nik', 'NIK')
                     ->rules(['nullable', 'string', 'max:50'])
                     ->helperText('Nomor Induk Karyawan.'),
@@ -78,7 +78,7 @@ class UserResource extends Resource
                     ->helperText('Alamat email kantor (officeMail).'),
                 TextInput::make('mobile_no', 'No. Handphone')
                     ->rules(['nullable', 'string', 'max:50'])
-                    ->helperText('Nomor ponsel / mobile.'),
+                    ->helperText('Nomor ponsel / WhatsApp.'),
                 SelectInput::make('gender', 'Jenis Kelamin')
                     ->options([
                         'M' => 'M - Laki-Laki (Male)',
@@ -96,11 +96,16 @@ class UserResource extends Resource
                     ->searchable()
                     ->placeholder('Pilih Level Jabatan...')
                     ->helperText('Tingkat jabatan terhubung ke Master Job Level.'),
-                TextInput::make('reporting_to', 'Atasan Langsung (Reporting To)')
-                    ->rules(['nullable', 'string', 'max:255']),
-            ])->icon('User'),
-
-            Section::make('Penempatan & Organisasi', [
+                SelectInput::make('division_id', 'Divisi')
+                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Divisi...')
+                    ->helperText('Unit divisi organisasi.'),
+                SelectInput::make('department_id', 'Departemen / Unit Organisasi')
+                    ->options(fn () => Department::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Departemen...')
+                    ->helperText('Unit organisasi terhubung ke Master Departemen.'),
                 SelectInput::make('company_name', 'Perusahaan (Company)')
                     ->options(fn () => Company::where('is_used', true)->orderBy('name')->whereNotNull('name')->pluck('name', 'name')->toArray())
                     ->meta([
@@ -112,7 +117,7 @@ class UserResource extends Resource
                     ->searchable()
                     ->placeholder('Pilih Perusahaan...')
                     ->rules(['nullable', 'string', 'max:255'])
-                    ->helperText('Group perusahaan dan region akan otomatis disesuaikan dengan master unit bisnis.'),
+                    ->helperText('Grup perusahaan & region terisi otomatis dari master unit bisnis.'),
                 TextInput::make('company_group_name', 'Grup Perusahaan (Group)')
                     ->type('readonly')
                     ->helperText('Otomatis terisi dari master bisnis unit/perusahaan.')
@@ -126,42 +131,31 @@ class UserResource extends Resource
                     ->searchable()
                     ->placeholder('Pilih Lokasi Kerja...')
                     ->helperText('Lokasi penempatan kerja terhubung ke Master Lokasi.'),
-                SelectInput::make('division_id', 'Divisi')
-                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->placeholder('Pilih Divisi...')
-                    ->helperText('Unit divisi organisasi.'),
-                SelectInput::make('department_id', 'Departemen / Unit Organisasi')
-                    ->options(fn () => Department::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->placeholder('Pilih Departemen...')
-                    ->helperText('Unit organisasi terhubung ke Master Departemen.'),
-                SelectInput::make('role_id', 'Role Akses Sistem')
-                    ->required()
-                    ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->helperText('Role kewenangan di dalam sistem aplikasi.'),
-                ToggleInput::make('is_used', 'Sistem')
-                    ->default(false)
-                    ->helperText('Digunakan di dalam aplikasi ini.'),
-                ToggleInput::make('is_active', 'Portal')
+                TextInput::make('reporting_to', 'Atasan Langsung (Reporting To)')
+                    ->rules(['nullable', 'string', 'max:255']),
+                ToggleInput::make('is_active', 'Status Aktif Portal')
                     ->default(true)
-                    ->helperText('Status aktif dari data portal master.'),
-            ])->icon('Building2'),
+                    ->helperText('Status keaktifan data karyawan dari sinkronisasi master portal.'),
+            ])->icon('UserCheck'),
 
-            Section::make('Konfigurasi Akun & Keamanan', [
+            Section::make('Konfigurasi Akses & Akun Sistem', [
                 TextInput::make('username', 'Username')
                     ->required()
                     ->rules(['string', 'max:50'])
-                    ->helperText('Username login aplikasi.'),
+                    ->helperText('Username login ke dalam aplikasi.'),
                 TextInput::make('password', 'Password')
                     ->rules(['nullable', 'string', 'min:8'])
                     ->placeholder('Kosongkan jika tidak ingin mengubah password')
                     ->helperText('Minimal 8 karakter.'),
-                SelectInput::make('contract_filter_template_id', 'Template Filter Kontrak')
-                    ->options(fn () => ContractFilterTemplate::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->placeholder('Pilih Template Filter...')
-                    ->helperText('Template pembatasan akses dokumen kontrak.'),
-            ])->icon('Settings2'),
+                SelectInput::make('role_id', 'Role Akses Sistem')
+                    ->required()
+                    ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->placeholder('Pilih Role Kewenangan...')
+                    ->helperText('Menentukan hak akses menu, tipe dashboard, dan pembatasan filter kontrak.'),
+                ToggleInput::make('is_used', 'Aktifkan Pengguna di Sistem')
+                    ->default(false)
+                    ->helperText('Jika aktif (Ya), user dapat login dan bertransaksi di aplikasi ini.'),
+            ])->icon('ShieldCheck'),
         ];
     }
 

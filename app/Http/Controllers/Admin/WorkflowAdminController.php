@@ -65,6 +65,8 @@ class WorkflowAdminController extends Controller
             'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'contractStatuses' => ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->orderBy('label')->get(),
             'allWorkflows' => $this->workflowQuery->options()->get(),
+            'workflowTypes' => \App\Enums\WorkflowType::options(),
+            'masterWorkflows' => Workflow::where('workflow_type', 'main')->select('id', 'name')->orderBy('name')->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
             'breadcrumbs' => [
@@ -169,6 +171,8 @@ class WorkflowAdminController extends Controller
             'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'contractStatuses' => ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->orderBy('label')->get(),
             'allWorkflows' => $this->workflowQuery->options()->get(),
+            'workflowTypes' => \App\Enums\WorkflowType::options(),
+            'masterWorkflows' => Workflow::where('workflow_type', 'main')->where('id', '!=', $workflow->id)->select('id', 'name')->orderBy('name')->get(),
             'formTemplates' => FormTemplate::select('id', 'name')->orderBy('name')->get(),
             'stepPresets' => WorkflowStepPreset::select('id', 'name', 'step_data', 'created_at')->latest()->get(),
             'breadcrumbs' => [

@@ -177,9 +177,9 @@ export function DataTable<T extends Record<string, any>>({
                 <div className="flex-1 overflow-auto custom-scrollbar min-h-0">
                     <table className="w-full text-left border-collapse min-w-full w-max">
                         <thead className="bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
-                            <tr className="h-11 border-b border-primary/20 dark:border-zinc-700/80 select-none bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
+                            <tr className="h-9 border-b border-primary/20 dark:border-zinc-700/80 select-none bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200">
                                 {onSelectionChange && (
-                                    <th className="h-11 py-2 px-4 w-10 sticky top-0 left-0 z-30 bg-primary dark:bg-zinc-800 text-white dark:text-zinc-200 align-middle">
+                                    <th className="h-9 py-1.5 px-3 w-9 sticky top-0 left-0 z-30 bg-primary dark:bg-zinc-800 text-white dark:text-zinc-200 align-middle">
                                         <Checkbox
                                             checked={isAllSelected}
                                             onCheckedChange={handleSelectAll}
@@ -205,7 +205,7 @@ export function DataTable<T extends Record<string, any>>({
                                             key={idx}
                                             style={thStyles}
                                             className={cn(
-                                                "h-11 py-2 px-4 text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 bg-primary dark:bg-zinc-800 border-b border-primary/20 dark:border-zinc-700/80 align-middle whitespace-nowrap",
+                                                "h-9 py-1.5 px-3 text-[10.5px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 bg-primary dark:bg-zinc-800 border-b border-primary/20 dark:border-zinc-700/80 align-middle whitespace-nowrap",
                                                 !isPinned && "z-10",
                                                 isPinned && "z-25 bg-primary dark:bg-zinc-800",
                                                 isLastPinned && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.18)] border-r border-white/20",
@@ -219,7 +219,7 @@ export function DataTable<T extends Record<string, any>>({
                                                 }
                                             }}
                                         >
-                                            <div className="flex items-center gap-1.5">
+                                            <div className={cn("flex items-center gap-1.5", (col.align === 'right' || col.className?.includes('text-right') || col.className?.includes('text-center')) ? ((col.align === 'center' || col.className?.includes('text-center')) ? "justify-center" : "justify-end") : "justify-start")}>
                                                 <span className="text-white dark:text-zinc-200 font-bold">{col.header}</span>
                                                 {isSortable && (
                                                     <span className="flex flex-col text-[8px] leading-[6px] opacity-80">
@@ -231,7 +231,7 @@ export function DataTable<T extends Record<string, any>>({
                                         </th>
                                     );
                                 })}
-                                {rowActions && <th className="h-11 py-2 px-3 w-16 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 right-0 z-30 bg-primary dark:bg-zinc-800 border-b border-primary/20 dark:border-zinc-700/80 align-middle shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.18)]">Aksi</th>}
+                                {rowActions && <th className="h-9 py-1.5 px-3 w-16 text-center text-[10.5px] font-bold uppercase text-white dark:text-zinc-200 select-none sticky top-0 right-0 z-30 bg-primary dark:bg-zinc-800 border-b border-primary/20 dark:border-zinc-700/80 align-middle shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.18)]">Aksi</th>}
                             </tr>
                         </thead>
                         <tbody className="relative">
@@ -280,7 +280,7 @@ export function DataTable<T extends Record<string, any>>({
                                             )}
                                         >
                                             {onSelectionChange && (
-                                                <td className="py-3.5 px-4 w-10 sticky left-0 z-20 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors" onClick={(e) => e.stopPropagation()}>
+                                                <td className="py-2 px-3 w-9 sticky left-0 z-20 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors" onClick={(e) => e.stopPropagation()}>
                                                     {(!isRowSelectable || isRowSelectable(row)) ? (
                                                         <Checkbox
                                                             checked={activeSelectedRows.some(r => r.id === row.id)}
@@ -308,7 +308,7 @@ export function DataTable<T extends Record<string, any>>({
                                                         key={colIdx}
                                                         style={tdStyles}
                                                         className={cn(
-                                                            "py-3.5 px-4 align-middle text-sm font-normal text-text-main whitespace-nowrap",
+                                                            "py-2 px-3 align-middle text-xs font-normal text-text-main whitespace-nowrap",
                                                             isPinned && "sticky z-15 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors",
                                                             isLastPinned && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.12)] border-r border-surface-border",
                                                             col.className

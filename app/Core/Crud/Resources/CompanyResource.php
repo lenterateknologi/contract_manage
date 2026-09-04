@@ -31,6 +31,8 @@ class CompanyResource extends Resource
 
     public static ?string $importClass = CompaniesImport::class;
 
+    public static array $withCount = ['businessUnits', 'departments', 'users'];
+
     public static function table(): array
     {
         return [
@@ -42,8 +44,11 @@ class CompanyResource extends Resource
             TextColumn::make('city_name', 'Kota / Lokasi')->sortable()->searchable(),
             TextColumn::make('npwp', 'NPWP')->sortable()->searchable(),
             TextColumn::make('oracle_code', 'Kode Oracle')->sortable()->searchable(),
-            BooleanColumn::make('is_used', 'Sistem'),
-            BooleanColumn::make('is_active', 'Portal'),
+            TextColumn::make('business_units_count', 'Total BU')->sortable()->alignRight(),
+            TextColumn::make('departments_count', 'Total Dept')->sortable()->alignRight(),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_used', 'Sistem')->alignRight(),
+            BooleanColumn::make('is_active', 'Portal')->alignRight(),
         ];
     }
 

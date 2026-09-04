@@ -91,46 +91,50 @@ export function SearchableMultiSelect({
         onValuesChange((values || []).filter(v => v !== val));
     };
 
-    // Calculate position for dropdown (portal to closest dialog or document.body)
+    // Calculate position for dropdown (smart above/below positioning considering scroll parents and dialogs)
     React.useEffect(() => {
         if (!open) return;
         const updatePosition = () => {
             if (containerRef.current) {
-                const dialogEl = containerRef.current.closest('[role="dialog"]') as HTMLElement | null;
-                setMountNode(dialogEl || document.body);
-
                 const rect = containerRef.current.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                const dropdownEstimatedHeight = 220;
 
-                if (dialogEl) {
-                    const dialogRect = dialogEl.getBoundingClientRect();
-                    const spaceBelow = dialogRect.bottom - rect.bottom;
-                    const showAbove = spaceBelow < 240 && (rect.top - dialogRect.top) > 240;
-
-                    setDropdownStyle({
-                        position: 'absolute',
-                        left: `${rect.left - dialogRect.left}px`,
-                        width: `${rect.width}px`,
-                        minWidth: `${Math.max(rect.width, 260)}px`,
-                        zIndex: 99999,
-                        ...(showAbove
-                            ? { bottom: `${dialogRect.bottom - rect.top + 4}px` }
-                            : { top: `${rect.bottom - dialogRect.top + 4}px` }),
-                    });
-                } else {
-                    const spaceBelow = window.innerHeight - rect.bottom;
-                    const showAbove = spaceBelow < 240 && rect.top > 240;
-
-                    setDropdownStyle({
-                        position: 'fixed',
-                        left: `${rect.left}px`,
-                        width: `${rect.width}px`,
-                        minWidth: `${Math.max(rect.width, 260)}px`,
-                        zIndex: 9999999,
-                        ...(showAbove
-                            ? { bottom: `${window.innerHeight - rect.top + 4}px` }
-                            : { top: `${rect.bottom + 4}px` }),
-                    });
+                // Find nearest scrollable container or modal dialog
+                let scrollParent: HTMLElement | null = containerRef.current.parentElement;
+                while (scrollParent && scrollParent !== document.body) {
+                    const style = window.getComputedStyle(scrollParent);
+                    if (
+                        style.overflowY === 'auto' ||
+                        style.overflowY === 'scroll' ||
+                        scrollParent.getAttribute('role') === 'dialog' ||
+                        scrollParent.classList.contains('overflow-y-auto')
+                    ) {
+                        break;
+                    }
+                    scrollParent = scrollParent.parentElement;
                 }
+
+                const spaceBelowViewport = viewportHeight - rect.bottom;
+                const spaceAboveViewport = rect.top;
+
+                let spaceBelow = spaceBelowViewport;
+                let spaceAbove = spaceAboveViewport;
+
+                if (scrollParent && scrollParent !== document.body) {
+                    const parentRect = scrollParent.getBoundingClientRect();
+                    spaceBelow = Math.min(spaceBelowViewport, parentRect.bottom - rect.bottom);
+                    spaceAbove = Math.min(spaceAboveViewport, rect.top - parentRect.top);
+                }
+
+                const showAbove = spaceBelow < dropdownEstimatedHeight && spaceAbove > 100;
+                const availableSpace = showAbove ? spaceAbove : spaceBelow;
+                const maxHeight = Math.min(220, Math.max(120, availableSpace - 12));
+
+                setDropdownStyle({
+                    ...(showAbove ? { bottom: 'calc(100% + 4px)' } : { top: 'calc(100% + 4px)' }),
+                    maxHeight: `${maxHeight}px`,
+                });
             }
         };
 
@@ -166,7 +170,7 @@ export function SearchableMultiSelect({
     return (
         <div
             ref={containerRef}
-            className={cn('relative w-full', disabled && 'opacity-60 cursor-not-allowed', className)}
+            className={cn('relative w-full', open ? 'z-50' : 'z-auto', disabled && 'opacity-60 cursor-not-allowed', className)}
         >
             {/* Trigger Button (shadcn style) */}
             <div
@@ -221,14 +225,16 @@ export function SearchableMultiSelect({
                 <ChevronsUpDown size={14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-60" />
             </div>
 
-            {/* Dropdown Panel via Portal (shadcn Popover / Command style) */}
-            {open && typeof document !== 'undefined' && createPortal(
+            {/* Dropdown Panel (shadcn Popover / Command style) */}
+            {open && (
                 <div
                     ref={dropdownRef}
-                    style={dropdownStyle}
-                    onMouseDown={(e) => e.stopPropagation()}
+                    style={{
+                        zIndex: 99999,
+                        ...dropdownStyle,
+                    }}
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 shadow-xl overflow-hidden focus:outline-none animate-in fade-in-0 zoom-in-95 duration-150 p-1"
+                    className="absolute left-0 w-full rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 shadow-2xl overflow-hidden focus:outline-none animate-in fade-in-0 zoom-in-95 duration-150 p-1"
                 >
                     {/* Search Input (Command header style) */}
                     {mergedOptions.length > 3 && (
@@ -315,8 +321,7 @@ export function SearchableMultiSelect({
                             );
                         })}
                     </div>
-                </div>,
-                mountNode || document.body
+                </div>
             )}
         </div>
     );

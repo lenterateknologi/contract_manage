@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             Business\OrganizationalSeeder::class,
             Business\DepartmentSeeder::class,
             Business\UserSeeder::class,
+            Business\DynamicContractApprovalSeeder::class,
         ]);
     }
 }

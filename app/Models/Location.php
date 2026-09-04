@@ -68,4 +68,9 @@ class Location extends Model
     {
         return $this->hasMany(BusinessUnit::class, 'location_id');
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class, 'location_id');
+    }
 }

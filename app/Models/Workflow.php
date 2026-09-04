@@ -35,6 +35,8 @@ class Workflow extends Model
         'sla_cutoff_hour',
         'scope',
         'workflow_category',
+        'workflow_type',
+        'parent_workflow_id',
         'company_group_ids',
         'region_ids',
         'company_ids',
@@ -79,8 +81,10 @@ class Workflow extends Model
 
     public function getInitiatorSummaryAttribute(): string
     {
+        $initiatorType = $this->attributes['initiator_type'] ?? 'all';
+
         if (! $this->relationLoaded('initiatorAuthorities')) {
-            return match ($this->initiator_type) {
+            return match ($initiatorType) {
                 'department' => 'Per Departemen',
                 'role' => 'Per Jabatan',
                 'user' => 'Spesifik User',
@@ -123,7 +127,7 @@ class Workflow extends Model
             return implode(' | ', $items);
         }
 
-        return match ($this->initiator_type) {
+        return match ($initiatorType) {
             'department' => 'Per Departemen',
             'role' => 'Per Jabatan',
             'user' => 'Spesifik User',
@@ -262,5 +266,15 @@ class Workflow extends Model
         return self::where('is_default', true)
             ->where('is_tax_involved', $taxRequired)
             ->first();
+    }
+
+    public function parentWorkflow(): BelongsTo
+    {
+        return $this->belongsTo(Workflow::class, 'parent_workflow_id');
+    }
+
+    public function subWorkflows(): HasMany
+    {
+        return $this->hasMany(Workflow::class, 'parent_workflow_id')->orderBy('name');
     }
 }

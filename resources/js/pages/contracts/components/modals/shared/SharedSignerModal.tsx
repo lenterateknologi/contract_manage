@@ -67,7 +67,11 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
                 return a.action_code === 'sign' || a.action_code === 'signature';
             });
 
-            // Use signing_parties config, fallback to others
+            // 1. Check custom action configuration from workflow meta (e.g. action_signature)
+            const customActions: any[] = contract?.workflow?.meta?.custom_actions || contract?.workflow_step?.workflow?.meta?.custom_actions || [];
+            const customAction = customActions.find((ca: any) => ca.id === 'action_signature' || ca.action_code === 'signature' || ca.action_code === actionCode);
+
+            // 2. Check step action configuration
             const hasSigningConfig = activeAction?.signing_parties && (
                 (activeAction.signing_parties.custom && activeAction.signing_parties.custom.length > 0) ||
                 (activeAction.signing_parties.users && activeAction.signing_parties.users.length > 0) ||
@@ -96,13 +100,20 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
                 activeAction.assignee_config.is_initiator_user
             );
 
+            const hasCustomPersonnel = customAction?.eligible_personnel && Array.isArray(customAction.eligible_personnel) && customAction.eligible_personnel.length > 0;
+
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
             const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(finalTargetStepId))
                 || contract?.workflow_step;
 
-            const config = hasSigningConfig
-                ? activeAction.signing_parties
-                : {};
+            let config: any = null;
+            if (hasCustomPersonnel) {
+                config = { authorities: customAction.eligible_personnel };
+            } else if (hasSigningConfig) {
+                config = activeAction.signing_parties;
+            } else if (hasAssigneeConfig) {
+                config = activeAction.assignee_config;
+            }
 
             // Existing signers should be pre-selected
             const existingSignerUserIds = (contract?.approvals || [])
@@ -112,9 +123,12 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
                 )
                 .map((a: any) => String(a.user_id));
 
-            const availableUsers = allUsers.filter((u: any) => {
-                return matchUserAgainstWorkflowPool(u, config, contract);
-            });
+            let availableUsers: any[] = [];
+            if (config && Object.keys(config).length > 0) {
+                availableUsers = allUsers.filter((u: any) => {
+                    return matchUserAgainstWorkflowPool(u, config, contract);
+                });
+            }
 
             const uniqueUsers = Array.from(new Map(availableUsers.map((u: any) => [u.id, u])).values());
             setUsers(uniqueUsers);

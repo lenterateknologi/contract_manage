@@ -75,6 +75,15 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 );
             });
 
+            // 1. Check custom action configuration from workflow meta (e.g. action_adhoc or forward action)
+            const customActions: any[] = contract?.workflow?.meta?.custom_actions || contract?.workflow_step?.workflow?.meta?.custom_actions || [];
+            const customAction = customActions.find((ca: any) => 
+                ca.id === 'action_adhoc' || 
+                ca.action_code === 'forward' || 
+                (actionCode && ca.action_code === actionCode)
+            );
+
+            // 2. Check step action configuration
             const hasAssigneeConfig = activeAction?.assignee_config && (
                 (activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
                 (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
@@ -89,13 +98,18 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 activeAction.assignee_config.is_initiator_user
             );
 
+            const hasCustomPersonnel = customAction?.eligible_personnel && Array.isArray(customAction.eligible_personnel) && customAction.eligible_personnel.length > 0;
+
+            let config: any = null;
+            if (hasCustomPersonnel) {
+                config = { authorities: customAction.eligible_personnel };
+            } else if (hasAssigneeConfig) {
+                config = activeAction.assignee_config;
+            }
+
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
             const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(finalTargetStepId))
                 || contract?.workflow_step;
-
-            const config = hasAssigneeConfig
-                ? activeAction.assignee_config
-                : {};
 
             // Existing ad-hoc approvers should be pre-selected
             const existingAdhocUserIds = (contract?.approvals || [])
@@ -105,9 +119,12 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 )
                 .map((a: any) => String(a.user_id));
 
-            const availableUsers = allUsers.filter((u: any) => {
-                return matchUserAgainstWorkflowPool(u, config, contract);
-            });
+            let availableUsers: any[] = [];
+            if (config && Object.keys(config).length > 0) {
+                availableUsers = allUsers.filter((u: any) => {
+                    return matchUserAgainstWorkflowPool(u, config, contract);
+                });
+            }
 
             const uniqueUsers = Array.from(new Map(availableUsers.map((u: any) => [u.id, u])).values());
             setUsers(uniqueUsers);

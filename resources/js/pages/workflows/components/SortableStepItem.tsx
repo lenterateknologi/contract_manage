@@ -69,17 +69,17 @@ export default function SortableStepItem({
     step,
     idx,
     totalSteps,
-    contractStatuses,
+    contractStatuses = [],
     updateLocalStep,
     removeLocalStep,
     duplicateLocalStep,
     moveLocalStep,
     isExpanded,
     setIsExpanded,
-    roles,
-    departments,
+    roles = [],
+    departments = [],
     divisions = [],
-    users,
+    users = [],
     companyGroups = [],
     companies = [],
     regions = [],
@@ -95,17 +95,17 @@ export default function SortableStepItem({
     step: any;
     idx: number;
     totalSteps: number;
-    contractStatuses: any[];
+    contractStatuses?: any[];
     updateLocalStep: (idx: number, data: any) => void;
     removeLocalStep: (idx: number) => void;
     duplicateLocalStep: (idx: number) => void;
     moveLocalStep: (idx: number, direction: 'up' | 'down') => void;
     isExpanded: boolean;
     setIsExpanded: (expanded: boolean) => void;
-    roles: any[];
-    departments: any[];
+    roles?: any[];
+    departments?: any[];
     divisions?: any[];
-    users: any[];
+    users?: any[];
     companyGroups?: any[];
     companies?: any[];
     regions?: any[];
@@ -132,7 +132,7 @@ export default function SortableStepItem({
 
     const { showToast } = useToast();
 
-    const { activeModal, setActiveModal, parsedCondition, handleConditionChange, actions, addAction, updateAction, removeAction, cloneAction } =
+    const { activeModal, setActiveModal, activeActionForModal, parsedCondition, handleConditionChange, actions, addAction, updateAction, removeAction, cloneAction } =
         useWorkflowStepState({ step, idx, updateLocalStep });
 
     const isConditionEnabled = step.condition_expression !== null;
@@ -249,78 +249,255 @@ export default function SortableStepItem({
     };
 
 
-    const assigneeOptions = useMemo(() => {
-        const assignAction = actions.find(
-            (a: any) => a.master_action?.code?.toLowerCase().includes('assign') || a.master_action_name?.toLowerCase().includes('assign'),
-        );
-        const options: any[] = [];
+    const simInitiatorUser = useMemo(() => {
+        if (!simulationContext?.initiatorId) return null;
+        return (users || []).find((u: any) => String(u.id) === String(simulationContext.initiatorId)) || null;
+    }, [simulationContext?.initiatorId, users]);
 
-        if (assignAction?.assignee_config) {
-            const cfg = assignAction.assignee_config;
+    const simPicUser = useMemo(() => {
+        if (!simulationContext?.picId) return null;
+        return (users || []).find((u: any) => String(u.id) === String(simulationContext.picId)) || null;
+    }, [simulationContext?.picId, users]);
 
-            // Legacy single type handling
-            if (cfg.type) {
-                if (cfg.type === 'initiator') {
-                    options.push({ value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' });
-                } else if (cfg.type === 'atasan') {
-                    options.push({ value: 'atasan', label: 'ATASAN LANGSUNG' });
-                } else if (cfg.type === 'assigned_pic') {
-                    options.push({ value: 'assigned_pic', label: 'PIC DITUGASKAN' });
-                } else if (cfg.type === 'role' && cfg.roles) {
-                    cfg.roles.forEach((r: string) => options.push({ value: `role_${r}`, label: `ROLE: ${r.toUpperCase()}` }));
-                } else if (cfg.type === 'user' && cfg.user_ids) {
-                    cfg.user_ids.forEach((uid: string) => {
-                        const u = users.find((x: any) => String(x.id) === String(uid));
-                        if (u) {
-                            options.push({ value: `user_${u.id}`, label: `USER: ${u.name.toUpperCase()} (${u.role})` });
-                        }
-                    });
-                }
-            } else {
-                // Multi-Source handling
-                // 1. Custom Actors
-                if (cfg.custom && cfg.custom.length > 0) {
-                    cfg.custom.forEach((c: string) => {
-                        if (c === 'initiator') {
-                            options.push({ value: 'initiator', label: 'INISIATOR (PIC / PEMBUAT)' });
-                        } else if (c === 'assigned_pic') {
-                            options.push({ value: 'assigned_pic', label: 'PIC DITUGASKAN' });
-                        } else if (c === 'creator') {
-                            options.push({ value: 'creator', label: 'PEMBUAT' });
-                        }
-                    });
-                }
-                // 2. Roles
-                if (cfg.is_initiator_role) {
-                    options.push({ value: 'initiator_role', label: 'ROLE SESUAI INISIATOR' });
-                } else if (cfg.roles && cfg.roles.length > 0) {
-                    cfg.roles.forEach((r: string) => {
-                        options.push({ value: `role_${r}`, label: `ROLE: ${r.toUpperCase()}` });
-                    });
-                }
-                // 3. Departments
-                if (cfg.is_initiator_department) {
-                    options.push({ value: 'initiator_department', label: 'DIVISI SESUAI INISIATOR' });
-                } else if (cfg.departments && cfg.departments.length > 0) {
-                    cfg.departments.forEach((deptId: string) => {
-                        const pool = divisions.length > 0 ? divisions : departments;
-                        const dept = pool.find((d: any) => String(d.id) === String(deptId));
-                        options.push({ value: `dept_${deptId}`, label: `DIVISI: ${dept ? dept.name.toUpperCase() : deptId}` });
-                    });
-                }
-                // 4. Users
-                if (cfg.users && cfg.users.length > 0) {
-                    cfg.users.forEach((uid: string) => {
-                        const u = users.find((x: any) => String(x.id) === String(uid));
-                        if (u) {
-                            options.push({ value: `user_${u.id}`, label: `USER: ${u.name.toUpperCase()} (${u.role})` });
-                        }
-                    });
-                }
-            }
+    const simCreatorUser = useMemo(() => {
+        if (!simulationContext?.creatorId) return null;
+        return (users || []).find((u: any) => String(u.id) === String(simulationContext.creatorId)) || null;
+    }, [simulationContext?.creatorId, users]);
+
+    const currentAssignAction = useMemo(() => {
+        if (activeActionForModal && (
+            activeActionForModal.action_code === 'assign' ||
+            activeActionForModal.action_code === 'assign_pic' ||
+            activeActionForModal.master_action_id === 'assign' ||
+            activeActionForModal.master_action?.code === 'assign' ||
+            activeActionForModal.master_action_name?.toLowerCase()?.includes('tugas') ||
+            activeActionForModal.master_action_name?.toLowerCase()?.includes('assign') ||
+            activeActionForModal.alias?.toLowerCase()?.includes('tugas') ||
+            activeActionForModal.alias?.toLowerCase()?.includes('assign')
+        )) {
+            return activeActionForModal;
         }
-        return options.length ? options : undefined;
-    }, [actions, users, departments, divisions]);
+        return (actions || []).find(
+            (a: any) =>
+                a.action_code === 'assign' ||
+                a.action_code === 'assign_pic' ||
+                a.master_action_id === 'assign' ||
+                a.master_action?.code === 'assign' ||
+                a.master_action_name?.toLowerCase()?.includes('tugas') ||
+                a.master_action_name?.toLowerCase()?.includes('assign') ||
+                a.alias?.toLowerCase()?.includes('tugas') ||
+                a.alias?.toLowerCase()?.includes('assign')
+        );
+    }, [activeActionForModal, actions]);
+
+    const assigneeOptions = useMemo(() => {
+        const enrichedList = (users || []).map((u: any) => {
+            const dName = u.department_name || u.department?.name || departments.find((d: any) => String(d.id) === String(u.department_id))?.name || null;
+            const divName = u.division_name || u.division?.name || divisions.find((d: any) => String(d.id) === String(u.division_id || u.department?.division_id))?.name || null;
+            return {
+                ...u,
+                department_name: dName,
+                division_name: divName,
+            };
+        });
+
+        if (!currentAssignAction) {
+            return enrichedList;
+        }
+
+        const cfg = currentAssignAction.assignee_config || {};
+        const authorities: any[] = cfg.authorities || currentAssignAction.authorities || currentAssignAction.assignee_authorities || [];
+
+        // 1. Evaluasi jika menggunakan tabel otoritas (authorities)
+        if (authorities && authorities.length > 0) {
+            const filtered = enrichedList.filter((user) => {
+                const userId = String(user.id);
+                const userRoleId = String(user.role_id || user.role || '');
+                const userDeptId = String(user.department_id || user.department?.id || '');
+                const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+                const userCompId = String(user.company_id || user.company?.id || '');
+                const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
+                const userRegionId = String(user.region_id || user.company?.region_id || '');
+
+                return authorities.some((auth) => {
+                    // Custom Actor match
+                    if (auth.authority_type === 'custom') {
+                        const customType = auth.role_id || auth.user_id || auth.authority_type;
+                        if (customType === 'initiator' && simInitiatorUser) {
+                            return String(simInitiatorUser.id) === userId;
+                        }
+                        if (customType === 'assigned_pic' && simPicUser) {
+                            return String(simPicUser.id) === userId;
+                        }
+                        if (customType === 'creator' && simCreatorUser) {
+                            return String(simCreatorUser.id) === userId;
+                        }
+                        return false;
+                    }
+
+                    // Direct single user
+                    if (auth.authority_type === 'user' && auth.user_id) {
+                        return String(auth.user_id) === userId;
+                    }
+
+                    // Group combination match
+                    if (auth.authority_type === 'group' || !auth.authority_type) {
+                        // Check Role
+                        if (auth.role_use_initiator) {
+                            if (simInitiatorUser) {
+                                const initRoleId = String(simInitiatorUser.role_id || simInitiatorUser.role || '');
+                                if (userRoleId !== initRoleId) return false;
+                            }
+                        } else if (auth.role_id) {
+                            const targetRole = roles.find(r => String(r.id) === String(auth.role_id) || r.name === auth.role_id);
+                            const matchRoleId = targetRole ? String(targetRole.id) : String(auth.role_id);
+                            const matchRoleName = targetRole ? targetRole.name.toLowerCase() : String(auth.role_id).toLowerCase();
+                            const isRoleMatch = userRoleId === matchRoleId || userRoleId.toLowerCase() === matchRoleName;
+                            if (!isRoleMatch) return false;
+                        }
+
+                        // Check Department
+                        if (auth.department_use_initiator) {
+                            if (simInitiatorUser) {
+                                const initDeptId = String(simInitiatorUser.department_id || simInitiatorUser.department?.id || '');
+                                if (userDeptId !== initDeptId) return false;
+                            }
+                        } else if (auth.department_id) {
+                            if (userDeptId !== String(auth.department_id)) return false;
+                        }
+
+                        // Check Division
+                        if (auth.division_use_initiator) {
+                            if (simInitiatorUser) {
+                                const initDivId = String(simInitiatorUser.division_id || simInitiatorUser.division?.id || simInitiatorUser.department?.division_id || '');
+                                if (userDivId !== initDivId) return false;
+                            }
+                        } else if (auth.division_id) {
+                            if (userDivId !== String(auth.division_id)) return false;
+                        }
+
+                        // Check Company Group
+                        if (auth.company_group_use_initiator) {
+                            if (simInitiatorUser) {
+                                const initCgId = String(simInitiatorUser.company_group_id || simInitiatorUser.company?.company_group_id || '');
+                                if (userCgId !== initCgId) return false;
+                            }
+                        } else if (auth.company_group_id) {
+                            if (userCgId !== String(auth.company_group_id)) return false;
+                        }
+
+                        // Check Company PT
+                        if (auth.company_use_initiator) {
+                            if (simInitiatorUser) {
+                                const initCompId = String(simInitiatorUser.company_id || simInitiatorUser.company?.id || '');
+                                if (userCompId !== initCompId) return false;
+                            }
+                        } else if (auth.company_id) {
+                            if (userCompId !== String(auth.company_id)) return false;
+                        }
+
+                        // Check Region
+                        if (auth.region_use_initiator) {
+                            if (simInitiatorUser) {
+                                const initRegionId = String(simInitiatorUser.region_id || simInitiatorUser.company?.region_id || '');
+                                if (userRegionId !== initRegionId) return false;
+                            }
+                        } else if (auth.region_id) {
+                            if (userRegionId !== String(auth.region_id)) return false;
+                        }
+
+                        return true;
+                    }
+
+                    return false;
+                });
+            });
+
+            return filtered;
+        }
+
+        // 2. Evaluasi jika menggunakan konfigurasi direct fields (roles, departments, divisions, dll.)
+        const customActors: string[] = cfg.custom || [];
+        const explicitUsers: any[] = cfg.users || [];
+        const targetRoles: string[] = cfg.roles || [];
+        const targetDepts: string[] = cfg.departments || [];
+        const targetDivs: string[] = cfg.divisions || [];
+        const targetGroups: string[] = cfg.company_groups || [];
+        const targetRegions: string[] = cfg.regions || [];
+
+        const hasAnyConfig = customActors.length > 0 || explicitUsers.length > 0 || targetRoles.length > 0 || targetDepts.length > 0 || targetDivs.length > 0 || targetGroups.length > 0 || targetRegions.length > 0 || cfg.is_initiator_role || cfg.is_initiator_department;
+
+        if (!hasAnyConfig) {
+            return enrichedList;
+        }
+
+        return enrichedList.filter((user) => {
+            const userId = String(user.id);
+            const userRoleId = String(user.role_id || user.role || '');
+            const userDeptId = String(user.department_id || user.department?.id || '');
+            const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+            const userCompId = String(user.company_id || user.company?.id || '');
+            const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
+            const userRegionId = String(user.region_id || user.company?.region_id || '');
+
+            if (explicitUsers.some((uid: any) => String(uid) === userId)) return true;
+
+            if (customActors.includes('initiator') && simInitiatorUser && String(simInitiatorUser.id) === userId) return true;
+            if (customActors.includes('assigned_pic') && simPicUser && String(simPicUser.id) === userId) return true;
+            if (customActors.includes('creator') && simCreatorUser && String(simCreatorUser.id) === userId) return true;
+
+            let roleMatch = targetRoles.length === 0 && !cfg.is_initiator_role;
+            if (cfg.is_initiator_role && simInitiatorUser) {
+                const initRoleId = String(simInitiatorUser.role_id || simInitiatorUser.role || '');
+                if (userRoleId === initRoleId) roleMatch = true;
+            } else if (targetRoles.length > 0) {
+                const userRole = (user.role || '').toLowerCase();
+                roleMatch = targetRoles.some((r: string) => {
+                    const targetRole = roles.find(rl => String(rl.id) === String(r) || rl.name === r);
+                    const matchRoleId = targetRole ? String(targetRole.id) : String(r);
+                    const matchRoleName = targetRole ? targetRole.name.toLowerCase() : String(r).toLowerCase();
+                    return userRoleId === matchRoleId || userRole === matchRoleName;
+                });
+            }
+
+            let deptMatch = targetDepts.length === 0 && !cfg.is_initiator_department;
+            if (cfg.is_initiator_department && simInitiatorUser) {
+                const initDeptId = String(simInitiatorUser.department_id || simInitiatorUser.department?.id || '');
+                if (userDeptId === initDeptId) deptMatch = true;
+            } else if (targetDepts.length > 0) {
+                deptMatch = targetDepts.some((dId: string) => String(dId) === userDeptId);
+            }
+
+            let divMatch = targetDivs.length === 0;
+            if (targetDivs.length > 0) {
+                divMatch = targetDivs.some((dId: string) => String(dId) === userDivId);
+            }
+
+            let groupMatch = targetGroups.length === 0;
+            if (targetGroups.length > 0) {
+                groupMatch = targetGroups.some((gId: string) => String(gId) === userCgId);
+            }
+
+            let regionMatch = targetRegions.length === 0;
+            if (targetRegions.length > 0) {
+                regionMatch = targetRegions.some((rId: string) => String(rId) === userRegionId);
+            }
+
+            return roleMatch && deptMatch && divMatch && groupMatch && regionMatch;
+        });
+    }, [
+        currentAssignAction,
+        users,
+        roles,
+        departments,
+        divisions,
+        companyGroups,
+        companies,
+        regions,
+        simInitiatorUser,
+        simPicUser,
+        simCreatorUser,
+    ]);
 
     const signerOptions = useMemo(() => {
         return users;
@@ -1373,6 +1550,10 @@ export default function SortableStepItem({
                 isOpen={activeModal === 'assign_pic'}
                 onClose={() => setActiveModal(null)}
                 assigneeOptions={assigneeOptions || []}
+                action={currentAssignAction}
+                step={step}
+                idx={idx}
+                actionAlias={currentAssignAction?.alias || currentAssignAction?.name || 'Tugaskan PIC'}
                 showToast={showToast}
             />
 

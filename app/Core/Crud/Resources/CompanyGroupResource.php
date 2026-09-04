@@ -24,13 +24,18 @@ class CompanyGroupResource extends Resource
 
     public static ?string $importClass = CompanyGroupsImport::class;
 
+    public static array $withCount = ['companies', 'businessUnits', 'users'];
+
     public static function table(): array
     {
         return [
             TextColumn::make('code', 'Kode')->sortable()->searchable(),
             TextColumn::make('name', 'Nama Group')->sortable()->searchable(),
-            BooleanColumn::make('is_used', 'Sistem'),
-            BooleanColumn::make('is_active', 'Portal'),
+            TextColumn::make('companies_count', 'Total PT')->sortable()->alignRight(),
+            TextColumn::make('business_units_count', 'Total BU')->sortable()->alignRight(),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_used', 'Sistem')->alignRight(),
+            BooleanColumn::make('is_active', 'Portal')->alignRight(),
         ];
     }
 

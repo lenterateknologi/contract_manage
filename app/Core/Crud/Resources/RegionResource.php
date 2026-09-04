@@ -24,6 +24,8 @@ class RegionResource extends Resource
 
     public static ?string $importClass = RegionsImport::class;
 
+    public static array $withCount = ['companies', 'businessUnits', 'users'];
+
     public static function table(): array
     {
         return [
@@ -31,8 +33,11 @@ class RegionResource extends Resource
             TextColumn::make('name', 'Nama Region')->sortable()->searchable(),
             TextColumn::make('alias', 'Alias')->sortable()->searchable(),
             TextColumn::make('region_ad', 'Region AD')->sortable()->searchable(),
-            BooleanColumn::make('is_used', 'Sistem'),
-            BooleanColumn::make('is_active', 'Portal'),
+            TextColumn::make('companies_count', 'Total PT')->sortable()->alignRight(),
+            TextColumn::make('business_units_count', 'Total BU')->sortable()->alignRight(),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_used', 'Sistem')->alignRight(),
+            BooleanColumn::make('is_active', 'Portal')->alignRight(),
         ];
     }
 

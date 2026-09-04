@@ -337,6 +337,8 @@ class ContractFormatter
             'company_group_name' => $user->relationLoaded('company') && $user->company?->relationLoaded('companyGroup') ? $user->company?->companyGroup?->name : null,
             'region_name' => $user->relationLoaded('company') && $user->company?->relationLoaded('region') ? $user->company?->region?->name : null,
             'email' => array_key_exists('email', $attributes) ? $user->email : null,
+            'is_used' => array_key_exists('is_used', $attributes) ? (bool) $user->is_used : true,
+            'is_active' => array_key_exists('is_active', $attributes) ? (bool) $user->is_active : true,
         ];
     }
 

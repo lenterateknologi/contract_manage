@@ -44,4 +44,14 @@ class Region extends Model
     {
         return $this->hasMany(Company::class, 'region_id');
     }
+
+    public function businessUnits(): HasMany
+    {
+        return $this->hasMany(BusinessUnit::class, 'region_id');
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'region_id');
+    }
 }

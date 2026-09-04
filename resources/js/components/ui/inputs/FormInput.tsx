@@ -27,8 +27,8 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
                         <Label
                             htmlFor={inputId}
                             className={cn(
-                                'font-extrabold uppercase transition-colors flex items-center gap-1',
-                                isCompact ? 'text-[10px]' : 'text-[10.5px]',
+                                'font-bold uppercase tracking-wider transition-colors flex items-center gap-1',
+                                isCompact ? 'text-[10px]' : 'text-[11px]',
                                 error ? 'text-rose-500' : 'text-slate-700 dark:text-zinc-200 group-focus-within:text-primary',
                                 labelClassName
                             )}

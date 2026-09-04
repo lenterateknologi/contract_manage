@@ -2,7 +2,13 @@ import { useMemo, useState } from 'react';
 import { MASTER_ACTIONS } from '../constants';
 
 export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any; idx: number; updateLocalStep: (idx: number, data: any) => void }) {
-    const [activeModal, setActiveModal] = useState<'approve' | 'reject' | 'assign_pic' | 'sign' | 'forward' | null>(null);
+    const [activeModal, setActiveModalState] = useState<'approve' | 'reject' | 'assign_pic' | 'sign' | 'forward' | null>(null);
+    const [activeActionForModal, setActiveActionForModal] = useState<any>(null);
+
+    const setActiveModal = (type: 'approve' | 'reject' | 'assign_pic' | 'sign' | 'forward' | null, action?: any) => {
+        setActiveModalState(type);
+        setActiveActionForModal(action || null);
+    };
 
     const parsedCondition = useMemo(() => {
         const key = step.meta?.condition_key ?? '';
@@ -135,6 +141,7 @@ export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any
     return {
         activeModal,
         setActiveModal,
+        activeActionForModal,
         parsedCondition,
         handleConditionChange,
         actions,

@@ -22,7 +22,9 @@ import SortableStepItem from './components/SortableStepItem';
 import { DraggablePresetCard } from './components/DraggablePresetCard';
 import { MASTER_ACTIONS, APPROVER_TYPE_STYLES, getActionTheme, BUILTIN_STEP_TEMPLATES } from './constants';
 import { WorkflowFlowVisualizer } from './components/WorkflowFlowVisualizer';
-import { Activity } from 'lucide-react';
+import { GroupedStepSections } from './components/GroupedStepSections';
+import { CustomActionsManager } from './components/CustomActionsManager';
+import { Activity, ArrowRightLeft, GitFork, Layers, Network, Sliders } from 'lucide-react';
 
 // --- Sortable Step Item (Compact) ---
 
@@ -40,6 +42,8 @@ export default function WorkflowEditor({
     regions = [],
     companies = [],
     allWorkflows = [],
+    masterWorkflows = [],
+    workflowTypes = [],
     formTemplates = [],
     stepPresets = [],
 }: any) {
@@ -118,15 +122,15 @@ export default function WorkflowEditor({
         });
     };
 
-    const [mainTab, setMainTab] = useState<'settings' | 'categories' | 'authorities' | 'steps' | 'visualizer'>(() => {
+    const [mainTab, setMainTab] = useState<'settings' | 'categories' | 'authorities' | 'steps' | 'visualizer' | 'custom_actions'>(() => {
         if (typeof window !== 'undefined') {
             const tab = new URLSearchParams(window.location.search).get('tab');
-            if (tab === 'settings' || tab === 'categories' || tab === 'authorities' || tab === 'steps' || tab === 'visualizer') return tab;
+            if (tab === 'settings' || tab === 'categories' || tab === 'authorities' || tab === 'steps' || tab === 'visualizer' || tab === 'custom_actions') return tab;
         }
         return 'settings';
     });
 
-    const handleTabChange = (tab: 'settings' | 'categories' | 'authorities' | 'steps' | 'visualizer') => {
+    const handleTabChange = (tab: 'settings' | 'categories' | 'authorities' | 'steps' | 'visualizer' | 'custom_actions') => {
         setMainTab(tab);
         if (typeof window !== 'undefined') {
             const url = new URL(window.location.href);
@@ -142,6 +146,8 @@ export default function WorkflowEditor({
 
     const form = useForm({
         name: workflow?.name || '',
+        workflow_type: workflow?.workflow_type || 'standalone',
+        parent_workflow_id: workflow?.parent_workflow_id || '',
         contract_type_ids: workflow?.contract_type_ids || (workflow?.contract_type_id ? [workflow.contract_type_id] : []),
         description: workflow?.description || '',
         is_default: !!workflow?.is_default,
@@ -579,6 +585,27 @@ export default function WorkflowEditor({
                                     <Activity size={13} />
                                     Visualisasi Diagram
                                 </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleTabChange('custom_actions')}
+                                    className={cn(
+                                        'flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer select-none',
+                                        mainTab === 'custom_actions'
+                                            ? 'bg-primary text-white font-bold shadow-xs'
+                                            : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium',
+                                    )}
+                                >
+                                    <Sliders size={13} />
+                                    Aksi Kustom / Default
+                                    <span className={cn(
+                                        'rounded-full px-1.5 py-0.2 text-[10px] transition-colors',
+                                        mainTab === 'custom_actions'
+                                            ? 'bg-white/20 text-white font-bold'
+                                            : 'bg-slate-200/50 dark:bg-zinc-800/50 text-slate-600 dark:text-zinc-400 font-medium'
+                                    )}>
+                                        {(form.data.meta?.custom_actions || []).length}
+                                    </span>
+                                </button>
                             </div>
                         }
                         headerActions={
@@ -610,20 +637,141 @@ export default function WorkflowEditor({
                                         <div className="space-y-4">
                                             {/* Row 1: Nama Alur Kerja */}
                                             <div className="w-full">
-                                                <FormInput
-                                                    label="Nama Alur Kerja"
-                                                    type="text"
-                                                    autoFocus
-                                                    value={form.data.name}
-                                                    onChange={(e) => form.setData('name', e.target.value)}
-                                                    error={form.errors.name}
-                                                    placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
-                                                    variant="outline"
-                                                    inputSize="compact"
-                                                />
+                                                 <FormInput
+                                                     label="Nama Alur Kerja"
+                                                     type="text"
+                                                     autoFocus
+                                                     value={form.data.name}
+                                                     onChange={(e) => form.setData('name', e.target.value)}
+                                                     error={form.errors.name}
+                                                     placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
+                                                     variant="outline"
+                                                     inputSize="compact"
+                                                 />
                                             </div>
 
-                                            {/* Row 2: Checkboxes */}
+                                            {/* Row 2: Tipe Alur Kerja (Workflow Type) */}
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                                                    Tipe & Hierarki Alur Kerja
+                                                </label>
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                                                    <div
+                                                        onClick={() => {
+                                                            form.setData((prev: any) => ({
+                                                                ...prev,
+                                                                workflow_type: 'main',
+                                                                parent_workflow_id: '',
+                                                            }));
+                                                        }}
+                                                        className={cn(
+                                                            'cursor-pointer p-3 rounded-lg border text-left transition-all flex flex-col gap-1',
+                                                            form.data.workflow_type === 'main'
+                                                                ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-500'
+                                                                : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-1.5 font-bold text-xs text-blue-700 dark:text-blue-400">
+                                                                <GitBranch size={14} />
+                                                                <span>Workflow Utama (Master)</span>
+                                                            </div>
+                                                            {form.data.workflow_type === 'main' && (
+                                                                <CheckCircle2 size={14} className="text-blue-600" />
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                                                            Orchestrator utama yang menghubungkan beberapa sub-alur kerja lintas tahapan.
+                                                        </p>
+                                                    </div>
+
+                                                    <div
+                                                        onClick={() => {
+                                                            form.setData('workflow_type', 'sub_workflow');
+                                                        }}
+                                                        className={cn(
+                                                            'cursor-pointer p-3 rounded-lg border text-left transition-all flex flex-col gap-1',
+                                                            form.data.workflow_type === 'sub_workflow'
+                                                                ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/30 ring-1 ring-purple-500'
+                                                                : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-1.5 font-bold text-xs text-purple-700 dark:text-purple-400">
+                                                                <GitFork size={14} />
+                                                                <span>Workflow Bagian (Sub-WF)</span>
+                                                            </div>
+                                                            {form.data.workflow_type === 'sub_workflow' && (
+                                                                <CheckCircle2 size={14} className="text-purple-600" />
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                                                            Bagian modul spesifik yang dipanggil atau menjadi cabang dari workflow utama.
+                                                        </p>
+                                                    </div>
+
+                                                    <div
+                                                        onClick={() => {
+                                                            form.setData((prev: any) => ({
+                                                                ...prev,
+                                                                workflow_type: 'standalone',
+                                                                parent_workflow_id: '',
+                                                            }));
+                                                        }}
+                                                        className={cn(
+                                                            'cursor-pointer p-3 rounded-lg border text-left transition-all flex flex-col gap-1',
+                                                            form.data.workflow_type === 'standalone' || !form.data.workflow_type
+                                                                ? 'border-slate-600 dark:border-zinc-500 bg-slate-50/70 dark:bg-zinc-800/50 ring-1 ring-slate-600 dark:ring-zinc-500'
+                                                                : 'border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-slate-300'
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-1.5 font-bold text-xs text-slate-700 dark:text-zinc-300">
+                                                                <Activity size={14} />
+                                                                <span>Workflow Standar</span>
+                                                            </div>
+                                                            {(form.data.workflow_type === 'standalone' || !form.data.workflow_type) && (
+                                                                <CheckCircle2 size={14} className="text-slate-700 dark:text-zinc-300" />
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-slate-500 dark:text-zinc-400">
+                                                            Alur mandiri independen yang berjalan sendiri tanpa relasi master-sub.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {/* If Sub-Workflow selected: Show Parent Master Workflow Picker */}
+                                                {form.data.workflow_type === 'sub_workflow' && (
+                                                    <div className="mt-3 p-3 bg-purple-50/40 dark:bg-purple-950/20 border border-purple-200/80 dark:border-purple-800/50 rounded-lg space-y-1.5">
+                                                        <label className="text-xs font-semibold text-purple-900 dark:text-purple-300 flex items-center gap-1.5">
+                                                            <Layers size={13} />
+                                                            Pilih Workflow Utama (Induk / Orchestrator):
+                                                        </label>
+                                                        <Select
+                                                            value={form.data.parent_workflow_id || ''}
+                                                            onValueChange={(val) => form.setData('parent_workflow_id', val)}
+                                                        >
+                                                            <SelectTrigger className="w-full bg-white dark:bg-zinc-900 border-purple-200 dark:border-purple-800 text-xs">
+                                                                <SelectValue placeholder="-- Pilih Workflow Induk --" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {masterWorkflows
+                                                                    .filter((mw: any) => mw.id !== workflow?.id)
+                                                                    .map((mw: any) => (
+                                                                        <SelectItem key={mw.id} value={mw.id} className="text-xs">
+                                                                            {mw.name}
+                                                                        </SelectItem>
+                                                                    ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <p className="text-[10px] text-purple-600 dark:text-purple-400">
+                                                            Menghubungkan alur kerja bagian ini ke Orchestrator untuk tracking dan visualisasi terpadu.
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Row 3: Checkboxes */}
                                             <div className="flex items-center gap-3">
                                                 <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-lg border border-slate-200/60 dark:border-zinc-800/80 bg-slate-50/40 dark:bg-zinc-900/30">
                                                     <Checkbox
@@ -1053,7 +1201,7 @@ export default function WorkflowEditor({
                                                                     form.data.contract_type_ids.includes(String(w.contract_type_id)),
                                                             )}
                                                             allWorkflowSteps={form.data.steps}
-                                                             onSavePreset={(st: any) => {
+                                                            onSavePreset={(st: any) => {
                                                                 setTargetPresetStep(st);
                                                                 setPresetNameInput(st.name || `Preset Tahap ${st.step}`);
                                                                 setPresetModalOpen(true);
@@ -1179,6 +1327,7 @@ export default function WorkflowEditor({
                                 <WorkflowFlowVisualizer
                                     steps={form.data.steps}
                                     workflow={workflow}
+                                    allWorkflows={allWorkflows}
                                     users={users}
                                     roles={roles}
                                     departments={departments}
@@ -1186,6 +1335,32 @@ export default function WorkflowEditor({
                                     companyGroups={companyGroups}
                                     companies={companies}
                                     regions={regions}
+                                    simulationContext={simulationContext}
+                                    onOpenSimulationModal={() => {
+                                        setSimActorSearch('');
+                                        setSimActorModalOpen(true);
+                                    }}
+                                />
+                            </div>
+                        )}
+                        {mainTab === 'custom_actions' && (
+                            <div className="p-1">
+                                <CustomActionsManager
+                                    customActions={form.data.meta?.custom_actions || []}
+                                    onChange={(actions) =>
+                                        form.setData('meta', {
+                                            ...(form.data.meta || {}),
+                                            custom_actions: actions,
+                                        })
+                                    }
+                                    steps={form.data.steps}
+                                    roles={roles}
+                                    departments={departments}
+                                    divisions={divisions}
+                                    companyGroups={companyGroups}
+                                    companies={companies}
+                                    regions={regions}
+                                    users={users}
                                     simulationContext={simulationContext}
                                     onOpenSimulationModal={() => {
                                         setSimActorSearch('');

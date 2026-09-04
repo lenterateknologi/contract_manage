@@ -18,6 +18,8 @@ class DivisionResource extends Resource
 
     public static array $with = ['department'];
 
+    public static array $withCount = ['users'];
+
     public static ?string $title = 'Divisi';
 
     public static ?string $slug = 'divisions';
@@ -28,7 +30,8 @@ class DivisionResource extends Resource
             TextColumn::make('code', 'Kode')->sortable()->searchable(),
             TextColumn::make('name', 'Nama Divisi')->sortable()->searchable(),
             TextColumn::make('department.name', 'Departemen')->sortable(),
-            BooleanColumn::make('is_active', 'Status Aktif'),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_active', 'Status Aktif')->alignRight(),
         ];
     }
 

@@ -28,6 +28,8 @@ class JobTitleResource extends Resource
 
     public static array $with = ['jobLevel'];
 
+    public static array $withCount = ['users'];
+
     public static function table(): array
     {
         return [
@@ -35,8 +37,9 @@ class JobTitleResource extends Resource
             TextColumn::make('code', 'Kode Posisi')->sortable()->searchable(),
             TextColumn::make('name', 'Nama Posisi / Jabatan')->sortable()->searchable(),
             TextColumn::make('job_level_name', 'Job Level')->sortable()->searchable(),
-            BooleanColumn::make('is_used', 'Sistem'),
-            BooleanColumn::make('is_active', 'Portal'),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_used', 'Sistem')->sortable()->alignRight(),
+            BooleanColumn::make('is_active', 'Portal')->sortable()->alignRight(),
         ];
     }
 
@@ -52,7 +55,10 @@ class JobTitleResource extends Resource
                 ->required()
                 ->rules(['string', 'max:255']),
             SelectInput::make('job_level_id', 'Job Level')
-                ->options(fn () => JobLevel::orderBy('name')->pluck('name', 'id')->toArray())
+                ->options(fn () => JobLevel::orderBy('name')->get()->mapWithKeys(function ($lvl) {
+                    $label = $lvl->code ? "({$lvl->code}) {$lvl->name}" : $lvl->name;
+                    return [$lvl->id => $label];
+                })->toArray())
                 ->rules(['nullable', 'string', 'exists:m_job_levels,id']),
             ToggleInput::make('is_used', 'Sistem')
                 ->default(false),
@@ -71,7 +77,10 @@ class JobTitleResource extends Resource
                 ->type('searchable')
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Level / Belum Ditentukan)'];
-                    $levels = JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                    $levels = JobLevel::where('is_used', true)->orderBy('name')->get()->mapWithKeys(function ($lvl) {
+                        $label = $lvl->code ? "({$lvl->code}) {$lvl->name}" : $lvl->name;
+                        return [$lvl->id => $label];
+                    })->toArray();
 
                     return $options + $levels;
                 }),

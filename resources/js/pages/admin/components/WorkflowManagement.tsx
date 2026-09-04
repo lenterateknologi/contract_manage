@@ -233,6 +233,16 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                             <div className="flex flex-col gap-0.5 pl-4">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-medium text-foreground">{row.name}</span>
+                                                    {row.workflow_type === 'main' && (
+                                                        <span className="rounded border border-blue-200 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-800 px-1.5 py-0.5 text-[9px] font-bold uppercase text-blue-700 dark:text-blue-300">
+                                                            MASTER
+                                                        </span>
+                                                    )}
+                                                    {row.workflow_type === 'sub_workflow' && (
+                                                        <span className="rounded border border-purple-200 bg-purple-50 dark:bg-purple-950/40 dark:border-purple-800 px-1.5 py-0.5 text-[9px] font-bold uppercase text-purple-700 dark:text-purple-300">
+                                                            SUB-WF
+                                                        </span>
+                                                    )}
                                                     {row.is_default && (
                                                         <span className="rounded border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase text-emerald-700">
                                                             DEFAULT

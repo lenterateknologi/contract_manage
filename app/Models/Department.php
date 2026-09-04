@@ -52,10 +52,18 @@ class Department extends Model
     }
 
     /**
+     * @return HasMany<Division, Department>
+     */
+    public function divisions(): HasMany
+    {
+        return $this->hasMany(Division::class, 'department_id');
+    }
+
+    /**
      * @return HasMany<User, Department>
      */
     public function users(): HasMany
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(User::class, 'department_id');
     }
 }

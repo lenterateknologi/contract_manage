@@ -3,6 +3,7 @@
  */
 export function matchUserAgainstWorkflowPool(user: any, config: any, contract: any): boolean {
     if (!config || Object.keys(config).length === 0) return false;
+    if (user && (user.is_used === false || user.is_used === 0 || String(user.is_used) === '0')) return false;
 
     // Handle legacy simple array format
     if (Array.isArray(config)) {
@@ -58,51 +59,68 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             let matchesRegion = true;
             let hasFilters = false;
 
+            let userRoleId = String(user.role_id || user.role || '');
+            let userDeptId = String(user.department_id || user.department?.id || '');
+            let userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+            let userCompId = String(user.company_id || user.company?.id || '');
+            let userCgId = String(user.company_group_id || user.company?.company_group_id || '');
+            let userRegionId = String(user.region_id || user.company?.region_id || '');
+
             if (auth.role_id) {
-                matchesRole = String(auth.role_id) === String(user.role_id) || auth.role?.name?.toLowerCase() === user.role?.toLowerCase();
+                const targetRoleStr = String(auth.role_id);
+                matchesRole = targetRoleStr === userRoleId || 
+                              auth.role?.name?.toLowerCase() === user.role?.toLowerCase() ||
+                              targetRoleStr.toLowerCase() === user.role?.toLowerCase();
                 hasFilters = true;
             } else if (auth.role_use_initiator) {
-                matchesRole = String(contract?.initiator?.role_id) === String(user.role_id) || contract?.initiator?.role?.toLowerCase() === user.role?.toLowerCase();
+                const initRoleId = String(contract?.initiator?.role_id || contract?.initiator?.role || '');
+                matchesRole = initRoleId === userRoleId || 
+                              contract?.initiator?.role?.toLowerCase() === user.role?.toLowerCase();
                 hasFilters = true;
             }
 
             if (auth.department_id) {
-                const userDeptId = user.department_id || user.department?.id;
-                matchesDept = String(auth.department_id) === String(userDeptId);
+                matchesDept = String(auth.department_id) === userDeptId;
                 hasFilters = true;
             } else if (auth.department_use_initiator) {
-                const initDeptId = contract?.initiator?.department_id || contract?.initiator?.department?.id;
-                const userDeptId = user.department_id || user.department?.id;
-                matchesDept = String(initDeptId) === String(userDeptId);
+                const initDeptId = String(contract?.initiator?.department_id || contract?.initiator?.department?.id || '');
+                matchesDept = initDeptId === userDeptId;
                 hasFilters = true;
             }
 
             if (auth.division_id) {
-                const userDivId = user.division_id || user.division?.id;
-                matchesDiv = String(auth.division_id) === String(userDivId);
+                matchesDiv = String(auth.division_id) === userDivId;
                 hasFilters = true;
             } else if (auth.division_use_initiator) {
-                const initDivId = contract?.initiator?.division_id || contract?.initiator?.division?.id;
-                const userDivId = user.division_id || user.division?.id;
-                matchesDiv = String(initDivId) === String(userDivId);
+                const initDivId = String(contract?.initiator?.division_id || contract?.initiator?.division?.id || contract?.initiator?.department?.division_id || '');
+                matchesDiv = initDivId === userDivId;
                 hasFilters = true;
             }
 
             if (auth.company_group_id) {
-                matchesGroup = String(auth.company_group_id) === String(user.company_group_id);
+                matchesGroup = String(auth.company_group_id) === userCgId;
                 hasFilters = true;
             } else if (auth.company_group_use_initiator) {
-                const initCG = contract?.initiator?.company_group_id || contract?.initiator?.company_group?.id;
-                matchesGroup = String(initCG) === String(user.company_group_id);
+                const initCG = String(contract?.initiator?.company_group_id || contract?.initiator?.company?.company_group_id || '');
+                matchesGroup = initCG === userCgId;
+                hasFilters = true;
+            }
+
+            if (auth.company_id) {
+                matchesGroup = matchesGroup && (String(auth.company_id) === userCompId);
+                hasFilters = true;
+            } else if (auth.company_use_initiator) {
+                const initCompanyId = String(contract?.initiator?.company_id || contract?.initiator?.company?.id || '');
+                matchesGroup = matchesGroup && (initCompanyId === userCompId);
                 hasFilters = true;
             }
 
             if (auth.region_id) {
-                matchesRegion = String(auth.region_id) === String(user.region_id);
+                matchesRegion = String(auth.region_id) === userRegionId;
                 hasFilters = true;
             } else if (auth.region_use_initiator) {
-                const initRegion = contract?.initiator?.region_id || contract?.initiator?.region?.id;
-                matchesRegion = String(initRegion) === String(user.region_id);
+                const initRegion = String(contract?.initiator?.region_id || contract?.initiator?.region?.id || contract?.initiator?.company?.region_id || '');
+                matchesRegion = initRegion === userRegionId;
                 hasFilters = true;
             }
 

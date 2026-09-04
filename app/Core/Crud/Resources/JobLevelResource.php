@@ -24,14 +24,18 @@ class JobLevelResource extends Resource
 
     public static ?string $importClass = JobLevelsImport::class;
 
+    public static array $withCount = ['jobTitles', 'users'];
+
     public static function table(): array
     {
         return [
             TextColumn::make('code', 'Kode Level')->sortable()->searchable(),
             TextColumn::make('name', 'Nama Level')->sortable()->searchable(),
             TextColumn::make('group_name', 'Grup Level')->sortable()->searchable(),
-            BooleanColumn::make('is_used', 'Sistem'),
-            BooleanColumn::make('is_active', 'Portal'),
+            TextColumn::make('job_titles_count', 'Total Posisi')->sortable()->alignRight(),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_used', 'Sistem')->sortable()->alignRight(),
+            BooleanColumn::make('is_active', 'Portal')->sortable()->alignRight(),
         ];
     }
 

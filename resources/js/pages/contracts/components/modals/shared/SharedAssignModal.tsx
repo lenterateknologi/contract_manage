@@ -33,6 +33,12 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
     const ROLE_NAME = actionAlias || 'Personil';
 
     useEffect(() => {
+        if (initialUsers !== undefined) {
+            setUsers(initialUsers);
+        }
+    }, [initialUsers, open]);
+
+    useEffect(() => {
         if (open) {
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
@@ -57,7 +63,10 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
     }, [open, selectedTargetStepId]);
 
     const fetchUsers = async (targetStepIdVal: string | null) => {
-        if (initialUsers && initialUsers.length > 0) return;
+        if (initialUsers && initialUsers.length > 0) {
+            setUsers(initialUsers);
+            return;
+        }
 
         setFetchingUsers(true);
         try {
@@ -68,6 +77,11 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 return a.action_code === 'assign' || a.action_code === 'assign_pic';
             });
 
+            // 1. Check custom action configuration from workflow meta (e.g. action_assign_pic)
+            const customActions: any[] = contract?.workflow?.meta?.custom_actions || contract?.workflow_step?.workflow?.meta?.custom_actions || [];
+            const customAction = customActions.find((ca: any) => ca.id === 'action_assign_pic' || ca.action_code === 'assign' || ca.action_code === actionCode);
+
+            // 2. Check step action configuration
             const hasAssigneeConfig = activeAction?.assignee_config && (
                 (activeAction.assignee_config.custom && activeAction.assignee_config.custom.length > 0) ||
                 (activeAction.assignee_config.users && activeAction.assignee_config.users.length > 0) ||
@@ -82,17 +96,26 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 activeAction.assignee_config.is_initiator_user
             );
 
-            const config = hasAssigneeConfig
-                ? activeAction.assignee_config
-                : {};
+            const hasCustomPersonnel = customAction?.eligible_personnel && Array.isArray(customAction.eligible_personnel) && customAction.eligible_personnel.length > 0;
+
+            let config: any = null;
+            if (hasCustomPersonnel) {
+                config = { authorities: customAction.eligible_personnel };
+            } else if (hasAssigneeConfig) {
+                config = activeAction.assignee_config;
+            }
+
             const finalTargetStepId = targetStepIdVal || contract?.workflow_step_id;
 
             // Existing assignees should be pre-selected from contract.assigned_pic_id
             const existingAssigneeUserIds = contract?.assigned_pic_id ? [String(contract.assigned_pic_id)] : [];
 
-            const availableUsers = allUsers.filter((u: any) => {
-                return matchUserAgainstWorkflowPool(u, config, contract);
-            });
+            let availableUsers: any[] = [];
+            if (config && Object.keys(config).length > 0) {
+                availableUsers = allUsers.filter((u: any) => {
+                    return matchUserAgainstWorkflowPool(u, config, contract);
+                });
+            }
 
             const uniqueUsers = Array.from(new Map(availableUsers.map((u: any) => [u.id, u])).values());
             setUsers(uniqueUsers);
@@ -262,21 +285,6 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                     )}
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-text-soft text-[10px] font-bold uppercase">Disisipkan Ke Langkah</label>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
-                        {(() => {
-                            if (String(selectedTargetStepId) === String(contract?.workflow_step_id)) {
-                                return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
-                            }
-                            const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(selectedTargetStepId));
-                            if (targetStep) {
-                                return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
-                            }
-                            return 'Tahap Alur Kerja (Default)';
-                        })()}
-                    </div>
-                </div>
 
                 {selectedUserIds.length > 1 && (
                     <div className="animate-in fade-in slide-in-from-top-2 duration-300">

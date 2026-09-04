@@ -5,11 +5,20 @@ interface AssignModalProps {
     onClose: () => void;
     assigneeOptions: any[];
     showToast: (message: string, type?: 'success' | 'danger' | 'info') => void;
+    action?: any;
+    step?: any;
+    idx?: number;
+    actionAlias?: string;
 }
 
-export function AssignModal({ isOpen, onClose, assigneeOptions, showToast }: AssignModalProps) {
+export function AssignModal({ isOpen, onClose, assigneeOptions, showToast, action, step, idx, actionAlias }: AssignModalProps) {
     const mockContract = {
-        workflow_step: { step: 1, actions: [] },
+        workflow_step: {
+            step: (idx !== undefined ? idx + 1 : 1),
+            actions: action ? [action] : (step?.actions || []),
+            description: step?.description || step?.label,
+        },
+        workflow_step_id: step?.id,
         approvals: [],
         requires_pic_assignment: true,
     };
@@ -21,7 +30,8 @@ export function AssignModal({ isOpen, onClose, assigneeOptions, showToast }: Ass
             contract={mockContract}
             onUpdate={() => {}}
             showToast={showToast}
-            actionAlias="Tugaskan PIC"
+            actionCode="assign"
+            actionAlias={actionAlias || action?.alias || action?.name || 'Tugaskan PIC'}
             users={assigneeOptions}
         />
     );

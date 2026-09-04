@@ -83,6 +83,11 @@ class Company extends Model
         return $this->hasMany(Department::class, 'company_id');
     }
 
+    public function businessUnits(): HasMany
+    {
+        return $this->hasMany(BusinessUnit::class, 'company_id');
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class, 'company_id');

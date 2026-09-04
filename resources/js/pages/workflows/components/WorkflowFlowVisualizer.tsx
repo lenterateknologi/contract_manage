@@ -14,8 +14,6 @@ import {
     EdgeProps,
     BaseEdge,
     EdgeLabelRenderer,
-    useNodesState,
-    useEdgesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {
@@ -35,6 +33,16 @@ import {
     ChevronUp,
     RotateCcw,
     Move,
+    ExternalLink,
+    Layers,
+    GitFork,
+    Network,
+    ArrowRightLeft,
+    Check,
+    CheckSquare,
+    Square,
+    ArrowRight,
+    CornerDownLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { APPROVER_TYPE_STYLES } from '../constants';
@@ -65,6 +73,209 @@ const parseTransitionConfig = (act: any) => {
     return config;
 };
 
+// --- Workflow Color Themes for Multi-Workflow Visual Grouping ---
+const WORKFLOW_THEMES = [
+    {
+        name: 'blue',
+        border: 'border-blue-300 dark:border-blue-900/80',
+        bg: 'bg-blue-50/30 dark:bg-blue-950/20',
+        headerBg: 'border-blue-200/80 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/40',
+        badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/70 dark:text-blue-300',
+        iconBg: 'bg-blue-600',
+        stepBorder: 'border-t-blue-500',
+        edgeColor: '#2563eb',
+    },
+    {
+        name: 'emerald',
+        border: 'border-emerald-300 dark:border-emerald-900/80',
+        bg: 'bg-emerald-50/30 dark:bg-emerald-950/20',
+        headerBg: 'border-emerald-200/80 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/40',
+        badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/70 dark:text-emerald-300',
+        iconBg: 'bg-emerald-600',
+        stepBorder: 'border-t-emerald-500',
+        edgeColor: '#059669',
+    },
+    {
+        name: 'violet',
+        border: 'border-purple-300 dark:border-purple-900/80',
+        bg: 'bg-purple-50/30 dark:bg-purple-950/20',
+        headerBg: 'border-purple-200/80 dark:border-purple-900/60 bg-purple-50/50 dark:bg-purple-950/40',
+        badge: 'bg-purple-100 text-purple-700 dark:bg-purple-900/70 dark:text-purple-300',
+        iconBg: 'bg-purple-600',
+        stepBorder: 'border-t-purple-500',
+        edgeColor: '#7c3aed',
+    },
+    {
+        name: 'amber',
+        border: 'border-amber-300 dark:border-amber-900/80',
+        bg: 'bg-amber-50/30 dark:bg-amber-950/20',
+        headerBg: 'border-amber-200/80 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/40',
+        badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/70 dark:text-amber-300',
+        iconBg: 'bg-amber-600',
+        stepBorder: 'border-t-amber-500',
+        edgeColor: '#d97706',
+    },
+    {
+        name: 'cyan',
+        border: 'border-cyan-300 dark:border-cyan-900/80',
+        bg: 'bg-cyan-50/30 dark:bg-cyan-950/20',
+        headerBg: 'border-cyan-200/80 dark:border-cyan-900/60 bg-cyan-50/50 dark:bg-cyan-950/40',
+        badge: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/70 dark:text-cyan-300',
+        iconBg: 'bg-cyan-600',
+        stepBorder: 'border-t-cyan-500',
+        edgeColor: '#0891b2',
+    },
+    {
+        name: 'rose',
+        border: 'border-rose-300 dark:border-rose-900/80',
+        bg: 'bg-rose-50/30 dark:bg-rose-950/20',
+        headerBg: 'border-rose-200/80 dark:border-rose-900/60 bg-rose-50/50 dark:bg-rose-950/40',
+        badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/70 dark:text-rose-300',
+        iconBg: 'bg-rose-600',
+        stepBorder: 'border-t-rose-500',
+        edgeColor: '#e11d48',
+    },
+];
+
+// --- Custom Workflow Group / Container Node Component ---
+const WorkflowGroupNode = ({ data }: NodeProps) => {
+    const {
+        title,
+        subtitle,
+        badge,
+        isPrimary = false,
+        stepCount = 0,
+        themeIndex = 0,
+    } = data as any;
+
+    const theme = WORKFLOW_THEMES[themeIndex % WORKFLOW_THEMES.length];
+
+    return (
+        <div
+            className={cn(
+                'w-full h-full rounded-2xl border-2 transition-all pointer-events-none select-none flex flex-col justify-between p-4 shadow-sm backdrop-blur-xs',
+                theme.border,
+                theme.bg
+            )}
+        >
+            {/* Header Group */}
+            <div
+                className={cn(
+                    'flex items-center justify-between pb-3 px-3 py-2 -mx-2 -mt-2 rounded-xl border-b pointer-events-auto shadow-2xs',
+                    theme.headerBg
+                )}
+            >
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div
+                        className={cn(
+                            'flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-white shadow-2xs text-xs font-bold',
+                            theme.iconBg
+                        )}
+                    >
+                        {isPrimary ? <Layers size={14} /> : <GitFork size={14} />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-xs font-bold text-slate-800 dark:text-zinc-100 truncate" title={title}>
+                                {title}
+                            </h3>
+                            <span
+                                className={cn(
+                                    'px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider shrink-0',
+                                    theme.badge
+                                )}
+                            >
+                                {badge}
+                            </span>
+                        </div>
+                        {subtitle && (
+                            <p className="text-[10px] text-muted-foreground truncate">
+                                {subtitle}
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="text-[10.5px] font-semibold text-slate-600 dark:text-zinc-300 bg-white/90 dark:bg-zinc-900/90 px-2.5 py-0.5 rounded-md border border-slate-200 dark:border-zinc-800 shrink-0 shadow-2xs ml-2">
+                    {stepCount} Tahapan
+                </div>
+            </div>
+
+            {/* Footer Group Indicator */}
+            <div className="pt-2 text-right">
+                <span className="text-[9px] font-medium text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                    {isPrimary ? '• Alur Kerja Utama •' : '• Sub-Alur Terhubung •'}
+                </span>
+            </div>
+        </div>
+    );
+};
+
+// --- Custom Cross-Workflow Target Node Component (Fallback) ---
+const CrossWorkflowTargetNode = ({ data, selected }: NodeProps) => {
+    const { targetWorkflow, targetSequence = 1 } = data as any;
+
+    return (
+        <div
+            className={cn(
+                'w-[330px] rounded-xl border bg-white dark:bg-zinc-900 shadow-lg transition-all font-sans select-none cursor-grab active:cursor-grabbing border-t-4 border-t-indigo-500',
+                selected
+                    ? 'border-indigo-500 ring-2 ring-indigo-500/40 shadow-xl scale-102'
+                    : 'border-slate-200/90 dark:border-zinc-800 hover:border-indigo-400 dark:hover:border-indigo-600'
+            )}
+        >
+            <Handle
+                type="target"
+                position={Position.Top}
+                id="top-target"
+                className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-indigo-600 dark:!border-zinc-900"
+            />
+            <Handle
+                type="target"
+                position={Position.Left}
+                id="left-target"
+                className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-indigo-600 dark:!border-zinc-900"
+            />
+
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 px-3.5 py-2 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-t-lg">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-white text-[10px] font-medium shadow-2xs">
+                        <ExternalLink size={11} />
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-900 dark:text-indigo-200 truncate">
+                        Alur Kerja Eksternal
+                    </span>
+                </div>
+                <span className="shrink-0 rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60">
+                    Cross-Workflow
+                </span>
+            </div>
+
+            <div className="p-3 space-y-2">
+                <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-snug truncate">
+                        {targetWorkflow?.name || 'Alur Kerja Lain'}
+                    </h4>
+                    {targetWorkflow?.contract_type && (
+                        <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                            Jenis: {targetWorkflow.contract_type.name}
+                        </p>
+                    )}
+                </div>
+
+                <div className="rounded-lg bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 p-2 text-[10.5px] text-indigo-900 dark:text-indigo-200 space-y-1">
+                    <div className="flex items-center justify-between">
+                        <span className="font-semibold text-[10px] uppercase tracking-wide">Mulai Pada Tahap:</span>
+                        <span className="px-1.5 py-0.2 rounded bg-indigo-600 text-white font-bold text-[10px]">
+                            Tahap {targetSequence}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 // --- Custom Siku-Siku (Orthogonal Multi-Lane) Rollback Edge ---
 const OrthogonalSikuRollbackEdge = ({
     id,
@@ -81,10 +292,7 @@ const OrthogonalSikuRollbackEdge = ({
     const laneSpacing = Number(data?.laneSpacing || 28);
     const cornerRadius = 10;
 
-    // Hitung koridor X horizontal terpisah untuk setiap garis agar selalu sejajar siku & tidak tumpang tindih
     const outX = sourceX - (36 + lane * laneSpacing);
-
-    // SVG Path Siku 90 derajat dengan radius sudut halus
     const edgePath = `M ${sourceX} ${sourceY} L ${outX + cornerRadius} ${sourceY} Q ${outX} ${sourceY} ${outX} ${sourceY - cornerRadius} L ${outX} ${targetY + cornerRadius} Q ${outX} ${targetY} ${outX + cornerRadius} ${targetY} L ${targetX} ${targetY}`;
 
     const labelX = outX;
@@ -118,37 +326,20 @@ const OrthogonalSikuRollbackEdge = ({
 const CustomStepNode = ({ data, selected }: NodeProps) => {
     const {
         step,
+        workflowId,
+        workflowName,
         isFirst,
         isLast,
         showUsers = true,
         eligibleUsers = [],
         dynamicRoles = [],
-        criteriaSummary = '',
+        themeIndex = 0,
     } = data as any;
 
     const [isUsersExpanded, setIsUsersExpanded] = useState(false);
+    const theme = WORKFLOW_THEMES[themeIndex % WORKFLOW_THEMES.length];
 
-    const approverType = step?.approver_type || 'role';
     const targetStatus = step?.meta?.target_status || (isLast ? 'archived' : isFirst ? 'draft' : 'in_review');
-
-    // Parse reject rollback target
-    const rejectAction = (step?.actions || []).find((a: any) => {
-        const c = getActionCode(a).toLowerCase();
-        return c === 'reject' || c.includes('tolak');
-    });
-
-    let rollbackTargetLabel = 'Step 1 (Inisiator)';
-    if (rejectAction) {
-        const config = parseTransitionConfig(rejectAction);
-        if (config) {
-            if (config.type === 'absolute') {
-                rollbackTargetLabel = `Step ${config.sequence || 1}`;
-            } else if (config.type === 'relative') {
-                const seq = Math.max(1, (Number(step?.step) || 1) + (Number(config.offset) || -1));
-                rollbackTargetLabel = `Step ${seq}`;
-            }
-        }
-    }
 
     const totalEligibleCount = eligibleUsers.length;
     const displayedUsers = isUsersExpanded ? eligibleUsers : eligibleUsers.slice(0, 3);
@@ -163,7 +354,7 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                     : 'border-slate-200/90 dark:border-zinc-800 hover:border-slate-400 dark:hover:border-zinc-700',
                 isFirst && 'border-t-4 border-t-emerald-500',
                 isLast && 'border-t-4 border-t-purple-500',
-                !isFirst && !isLast && 'border-t-4 border-t-blue-500'
+                !isFirst && !isLast && (theme.stepBorder ? `border-t-4 ${theme.stepBorder}` : 'border-t-4 border-t-blue-500')
             )}
         >
             {/* Top Target Handle (Incoming Forward Flow) */}
@@ -173,31 +364,34 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                 id="top-target"
                 className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-slate-600 dark:!border-zinc-900"
             />
-            {/* Left Target Handle (Incoming Rollback Target) */}
+            {/* Left Target Handle (Incoming Rollback or Cross-Workflow Target) */}
             <Handle
                 type="target"
                 position={Position.Left}
                 id="left-target"
-                className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-rose-500 dark:!border-zinc-900"
+                className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-indigo-600 dark:!border-zinc-900"
             />
 
             {/* Card Header */}
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 px-3.5 py-2 bg-slate-50/70 dark:bg-zinc-900/70 rounded-t-lg">
-                <div className="flex items-center gap-1.5">
-                    <span className="flex h-5 w-5 items-center justify-center rounded-md bg-primary text-white text-[10px] font-medium shadow-2xs">
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white text-[10px] font-medium shadow-2xs', theme.iconBg)}>
                         {step?.step || 1}
                     </span>
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-slate-700 dark:text-zinc-200">
-                        {isFirst ? 'Start / Inisiasi' : isLast ? 'Final / Selesai' : `Tahapan ${step?.step || 1}`}
-                    </span>
+                    <div className="min-w-0 flex-1 truncate">
+                        <span className="text-[10px] font-medium uppercase tracking-wider text-slate-700 dark:text-zinc-200 block truncate">
+                            {isFirst ? 'Start / Inisiasi' : isLast ? 'Final / Selesai' : `Tahapan ${step?.step || 1}`}
+                        </span>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                     <span
                         className={cn(
                             'rounded-md px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider',
                             targetStatus === 'draft' && 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/60',
                             targetStatus === 'in_review' && 'bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200/60',
+                            targetStatus === 'pending' && 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300 border border-amber-200/60',
                             targetStatus === 'archived' && 'bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/60'
                         )}
                     >
@@ -220,7 +414,7 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                     )}
                 </div>
 
-                {/* Section Daftar Orang / Personil Berhak Akses (Bisa di-toggle Show/Hide) */}
+                {/* Section Daftar Orang / Personil Berhak Akses */}
                 {showUsers && (
                     <div className="rounded-lg bg-slate-50/80 dark:bg-zinc-950/60 border border-slate-200/70 dark:border-zinc-800 p-2 space-y-1.5 nodrag">
                         <div className="flex items-center justify-between">
@@ -233,7 +427,7 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                             </span>
                         </div>
 
-                        {/* Dynamic Roles Info (Inisiator/PIC/Creator) */}
+                        {/* Dynamic Roles Info */}
                         {dynamicRoles.length > 0 && (
                             <div className="flex flex-wrap gap-1 pt-0.5">
                                 {dynamicRoles.map((dr: any, dIdx: number) => (
@@ -307,50 +501,143 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                 )}
 
                 {/* Available Actions in this Step */}
-                <div className="border-t border-slate-100 dark:border-zinc-800 pt-2 flex flex-wrap gap-1 items-center nodrag">
-                    {(step?.actions || []).map((act: any, aIdx: number) => {
-                        const rawCode = getActionCode(act);
-                        const codeLower = rawCode.toLowerCase();
-                        const isApprove = codeLower === 'approve' || codeLower.includes('setuju');
-                        const isReject = codeLower === 'reject' || codeLower.includes('tolak');
-                        const isAssign = codeLower === 'assign' || codeLower.includes('tugas');
-                        const isSign = codeLower === 'signature' || codeLower === 'sign' || codeLower.includes('tanda tangan');
+                <div className="border-t border-slate-100 dark:border-zinc-800/80 pt-2.5 space-y-1.5 nodrag">
+                    <div className="flex items-center justify-between text-[9.5px] font-semibold text-slate-500 dark:text-zinc-400 uppercase tracking-wider px-0.5">
+                        <span>Aksi & Alur Tahap</span>
+                        <span className="text-[9px] font-normal text-slate-400">({(step?.actions || []).length} Aksi)</span>
+                    </div>
 
-                        const displayLabel = isReject
-                            ? `Tolak -> ${rollbackTargetLabel}`
-                            : act?.alias || act?.label || act?.name || (rawCode ? rawCode.toUpperCase() : `AKSI ${aIdx + 1}`);
+                    <div className="space-y-1.5">
+                        {(step?.actions || []).map((act: any, aIdx: number) => {
+                            const rawCode = getActionCode(act);
+                            const codeLower = rawCode.toLowerCase();
+                            const isApprove = codeLower === 'approve' || codeLower.includes('setuju');
+                            const isReject = codeLower === 'reject' || codeLower.includes('tolak');
+                            const isAssign = codeLower === 'assign' || codeLower.includes('tugas');
+                            const isSign = codeLower === 'signature' || codeLower === 'sign' || codeLower.includes('tanda tangan');
 
-                        return (
-                            <span
-                                key={aIdx}
-                                className={cn(
-                                    'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-medium shadow-2xs',
-                                    isApprove && 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60',
-                                    isReject && 'bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60',
-                                    isAssign && 'bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/60',
-                                    isSign && 'bg-purple-50 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/60',
-                                    !isApprove && !isReject && !isAssign && !isSign && 'bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border border-slate-200'
-                                )}
-                            >
-                                {isApprove && <CheckCircle2 size={9} />}
-                                {isReject && <CornerUpLeft size={9} />}
-                                {isAssign && <UserCheck size={9} />}
-                                {isSign && <PenTool size={9} />}
-                                {displayLabel}
-                            </span>
-                        );
-                    })}
+                            const displayLabel = act?.alias || act?.label || act?.name || (rawCode ? rawCode.toUpperCase() : `Aksi ${aIdx + 1}`);
+
+                            const currentStepNum = Number(step?.step) || 1;
+                            let targetStepNum: number | null = null;
+                            const tConfig = parseTransitionConfig(act);
+
+                            if (tConfig) {
+                                if (tConfig.type === 'initial_step') {
+                                    targetStepNum = 1;
+                                } else if (tConfig.type === 'absolute' && tConfig.sequence) {
+                                    targetStepNum = Number(tConfig.sequence);
+                                } else if (tConfig.type === 'relative') {
+                                    targetStepNum = Math.max(1, currentStepNum + Number(tConfig.offset ?? (isReject ? -1 : 1)));
+                                } else if (tConfig.type === 'cross_workflow') {
+                                    targetStepNum = null;
+                                }
+                            } else if (act?.next_step_id) {
+                                targetStepNum = Number(act.next_step_id);
+                            } else {
+                                if (isReject) targetStepNum = 1;
+                                else if (isApprove) targetStepNum = isLast ? null : currentStepNum + 1;
+                            }
+
+                            let flowDestinationText = '';
+                            const isRollbackDirection = (targetStepNum !== null && targetStepNum < currentStepNum) || (isReject && tConfig?.type !== 'cross_workflow');
+                            const isForwardDirection = targetStepNum !== null && targetStepNum > currentStepNum;
+                            const isCrossWf = tConfig?.type === 'cross_workflow' || Boolean(act?.next_workflow_id);
+
+                            if (isCrossWf) {
+                                flowDestinationText = `Beralih ke Alur Lain (Tahap ${tConfig?.sequence || 1})`;
+                            } else if (isRollbackDirection) {
+                                flowDestinationText = `Mundur ke Step ${targetStepNum ?? 1}`;
+                            } else if (isForwardDirection) {
+                                flowDestinationText = `Lanjut ke Step ${targetStepNum}`;
+                            } else if (isLast && !isRollbackDirection) {
+                                flowDestinationText = 'Selesai / Final';
+                            } else if (isAssign) {
+                                flowDestinationText = 'Tugaskan Personil';
+                            } else if (isSign) {
+                                flowDestinationText = 'Tanda Tangan Dokumen';
+                            }
+
+                            return (
+                                <div
+                                    key={aIdx}
+                                    className={cn(
+                                        'relative flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-all shadow-2xs',
+                                        isCrossWf && 'bg-indigo-50/90 border-indigo-300 text-indigo-950 dark:bg-indigo-950/50 dark:border-indigo-800 dark:text-indigo-200',
+                                        !isCrossWf && isApprove && 'bg-emerald-50/80 border-emerald-200/90 text-emerald-900 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-200',
+                                        !isCrossWf && isReject && 'bg-rose-50/80 border-rose-200/90 text-rose-900 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-200',
+                                        !isCrossWf && isAssign && 'bg-blue-50/80 border-blue-200/90 text-blue-900 dark:bg-blue-950/40 dark:border-blue-800/60 dark:text-blue-200',
+                                        !isCrossWf && isSign && 'bg-purple-50/80 border-purple-200/90 text-purple-900 dark:bg-purple-950/40 dark:border-purple-800/60 dark:text-purple-200',
+                                        !isCrossWf && !isApprove && !isReject && !isAssign && !isSign && 'bg-slate-50 border-slate-200 text-slate-800 dark:bg-zinc-800/60 dark:border-zinc-700 dark:text-zinc-200'
+                                    )}
+                                >
+                                    {/* Left Handle: untuk aksi Rollback */}
+                                    {isRollbackDirection && (
+                                        <Handle
+                                            type="source"
+                                            position={Position.Left}
+                                            id={`action-handle-left-${aIdx}`}
+                                            className="!h-3 !w-3 !-left-2 !rounded-full !border-2 !border-white !bg-rose-500 dark:!border-zinc-900 shadow-xs"
+                                        />
+                                    )}
+
+                                    {/* Action Info */}
+                                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <div
+                                            className={cn(
+                                                'flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-white text-[10px] shadow-2xs',
+                                                isCrossWf && 'bg-indigo-600',
+                                                !isCrossWf && isApprove && 'bg-emerald-600',
+                                                !isCrossWf && isReject && 'bg-rose-600',
+                                                !isCrossWf && isAssign && 'bg-blue-600',
+                                                !isCrossWf && isSign && 'bg-purple-600',
+                                                !isCrossWf && !isApprove && !isReject && !isAssign && !isSign && 'bg-slate-600'
+                                            )}
+                                        >
+                                            {isCrossWf && <GitFork size={11} />}
+                                            {!isCrossWf && isApprove && <CheckCircle2 size={11} />}
+                                            {!isCrossWf && isReject && <CornerUpLeft size={11} />}
+                                            {!isCrossWf && isAssign && <UserCheck size={11} />}
+                                            {!isCrossWf && isSign && <PenTool size={11} />}
+                                            {!isCrossWf && !isApprove && !isReject && !isAssign && !isSign && <Activity size={11} />}
+                                        </div>
+                                        <div className="min-w-0 flex-1 truncate">
+                                            <span className="block font-semibold text-[11px] truncate leading-tight">
+                                                {displayLabel}
+                                            </span>
+                                            {flowDestinationText && (
+                                                <span className="block text-[9.5px] opacity-80 truncate leading-tight font-normal">
+                                                    {flowDestinationText}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Right / Forward Handle: untuk Maju atau Cross-Workflow */}
+                                    {(isForwardDirection || isCrossWf) && (
+                                        <Handle
+                                            type="source"
+                                            position={Position.Right}
+                                            id={`action-handle-right-${aIdx}`}
+                                            className={cn(
+                                                "!h-3 !w-3 !-right-2 !rounded-full !border-2 !border-white dark:!border-zinc-900 shadow-xs",
+                                                isCrossWf ? '!bg-indigo-600' : '!bg-emerald-500'
+                                            )}
+                                        />
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
-            {/* Bottom Source Handle (Outgoing Forward Flow) */}
             <Handle
                 type="source"
                 position={Position.Bottom}
                 id="bottom-source"
                 className="!h-3.5 !w-3.5 !rounded-full !border-2 !border-white !bg-emerald-500 dark:!border-zinc-900"
             />
-            {/* Left Source Handle (Outgoing Rollback Flow) */}
             <Handle
                 type="source"
                 position={Position.Left}
@@ -362,7 +649,9 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
 };
 
 const nodeTypes = {
+    workflowGroupNode: WorkflowGroupNode,
     workflowStepNode: CustomStepNode,
+    crossWorkflowTargetNode: CrossWorkflowTargetNode,
 };
 
 const edgeTypes = {
@@ -372,6 +661,7 @@ const edgeTypes = {
 interface WorkflowFlowVisualizerProps {
     steps: any[];
     workflow?: any;
+    allWorkflows?: any[];
     users?: any[];
     roles?: any[];
     departments?: any[];
@@ -390,6 +680,7 @@ interface WorkflowFlowVisualizerProps {
 export function WorkflowFlowVisualizer({
     steps = [],
     workflow,
+    allWorkflows = [],
     users = [],
     roles = [],
     departments = [],
@@ -400,12 +691,145 @@ export function WorkflowFlowVisualizer({
     simulationContext,
     onOpenSimulationModal,
 }: WorkflowFlowVisualizerProps) {
-    // --- Layout & Route Display Settings ---
-    const [routeFilter, setRouteFilter] = useState<'all' | 'forward_only' | 'rollback_only'>('all');
-    const [laneSpacing, setLaneSpacing] = useState<number>(30); // px antar lajur siku
-    const [animatedLines, setAnimatedLines] = useState<boolean>(true);
-    const [showLabels, setShowLabels] = useState<boolean>(true);
-    const [showUsers, setShowUsers] = useState<boolean>(true); // Toggle Show/Hide Personil List
+    // --- Layout & Mode Settings with LocalStorage Persistence ---
+    const [viewMode, _setViewMode] = useState<'connected' | 'all' | 'single'>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_view_mode');
+            if (saved === 'connected' || saved === 'all' || saved === 'single') return saved;
+        }
+        return 'connected';
+    });
+
+    const setViewMode = (val: 'connected' | 'all' | 'single') => {
+        _setViewMode(val);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('wf_vis_view_mode', val);
+        }
+    };
+
+    // Independent route visibility toggles (checkboxes) with localStorage persistence
+    const [showForwardRoutes, _setShowForwardRoutes] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_show_forward');
+            if (saved !== null) return saved === 'true';
+        }
+        return true;
+    });
+
+    const setShowForwardRoutes = (updater: boolean | ((prev: boolean) => boolean)) => {
+        _setShowForwardRoutes((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('wf_vis_show_forward', String(next));
+            }
+            return next;
+        });
+    };
+
+    const [showRollbackRoutes, _setShowRollbackRoutes] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_show_rollback');
+            if (saved !== null) return saved === 'true';
+        }
+        return true;
+    });
+
+    const setShowRollbackRoutes = (updater: boolean | ((prev: boolean) => boolean)) => {
+        _setShowRollbackRoutes((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('wf_vis_show_rollback', String(next));
+            }
+            return next;
+        });
+    };
+
+    const [showCrossRoutes, _setShowCrossRoutes] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_show_cross');
+            if (saved !== null) return saved === 'true';
+        }
+        return true;
+    });
+
+    const setShowCrossRoutes = (updater: boolean | ((prev: boolean) => boolean)) => {
+        _setShowCrossRoutes((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('wf_vis_show_cross', String(next));
+            }
+            return next;
+        });
+    };
+
+    const [laneSpacing, _setLaneSpacing] = useState<number>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_lane_spacing');
+            if (saved && !isNaN(Number(saved))) return Number(saved);
+        }
+        return 30;
+    });
+
+    const setLaneSpacing = (val: number) => {
+        _setLaneSpacing(val);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('wf_vis_lane_spacing', String(val));
+        }
+    };
+
+    const [animatedLines, _setAnimatedLines] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_animated');
+            if (saved !== null) return saved === 'true';
+        }
+        return true;
+    });
+
+    const setAnimatedLines = (updater: boolean | ((prev: boolean) => boolean)) => {
+        _setAnimatedLines((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('wf_vis_animated', String(next));
+            }
+            return next;
+        });
+    };
+
+    const [showLabels, _setShowLabels] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_show_labels');
+            if (saved !== null) return saved === 'true';
+        }
+        return true;
+    });
+
+    const setShowLabels = (updater: boolean | ((prev: boolean) => boolean)) => {
+        _setShowLabels((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('wf_vis_show_labels', String(next));
+            }
+            return next;
+        });
+    };
+
+    const [showUsers, _setShowUsers] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('wf_vis_show_users');
+            if (saved !== null) return saved === 'true';
+        }
+        return true;
+    });
+
+    const setShowUsers = (updater: boolean | ((prev: boolean) => boolean)) => {
+        _setShowUsers((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('wf_vis_show_users', String(next));
+            }
+            return next;
+        });
+    };
 
     // Simulated users
     const simInitiatorUser = useMemo(() => {
@@ -423,11 +847,11 @@ export function WorkflowFlowVisualizer({
         return users.find((u: any) => String(u.id) === String(simulationContext.creatorId)) || null;
     }, [simulationContext?.creatorId, users]);
 
-    const sortedSteps = useMemo(() => {
+    const sortedPrimarySteps = useMemo(() => {
         return [...steps].sort((a, b) => (Number(a.step) || 0) - (Number(b.step) || 0));
     }, [steps]);
 
-    // Helper untuk menganalisis pengguna berhak akses per tahapan
+    // Helper calculateStepUsers
     const calculateStepUsers = useCallback((step: any) => {
         const matchedUsersMap = new Map<string, { user: any; reasons: string[] }>();
         const dynamicList: { type: string; label: string; description: string; activeUser?: any }[] = [];
@@ -438,8 +862,8 @@ export function WorkflowFlowVisualizer({
 
         if (authorities && authorities.length > 0) {
             authorities.forEach((auth: any) => {
-                if (auth.authority_type === 'custom') {
-                    const customType = auth.role_id || auth.user_id || auth.authority_type;
+                if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan'].includes(auth.authority_type)) {
+                    const customType = auth.authority_type === 'custom' ? (auth.role_id || auth.user_id) : auth.authority_type;
                     if (customType === 'initiator') {
                         criteriaParts.push('Inisiator');
                         dynamicList.push({
@@ -604,79 +1028,6 @@ export function WorkflowFlowVisualizer({
                     }
                 }
             });
-        } else {
-            const customActors = cfg.custom || (['initiator', 'assigned_pic', 'creator'].includes(step.approver_type) ? [step.approver_type] : []);
-            const explicitUsers = cfg.users && cfg.users.length > 0 
-                ? cfg.users 
-                : (step.approver_type === 'user' ? (step.user_ids || []) : []);
-            const targetRoles: string[] = cfg.roles && cfg.roles.length > 0 
-                ? cfg.roles 
-                : (step.approver_type === 'role' ? (step.role || []) : []);
-            const targetDepts: string[] = cfg.departments && cfg.departments.length > 0 
-                ? cfg.departments 
-                : (step.approver_type === 'role' ? (step.department_ids || []) : []);
-
-            const hasAnyConfig = customActors.length > 0 || explicitUsers.length > 0 || targetRoles.length > 0 || targetDepts.length > 0;
-
-            if (hasAnyConfig) {
-                if (customActors.includes('initiator') && simInitiatorUser) {
-                    const deptName = departments.find((d: any) => String(d.id) === String(simInitiatorUser.department_id))?.name;
-                    matchedUsersMap.set(String(simInitiatorUser.id), {
-                        user: { ...simInitiatorUser, department_name: deptName },
-                        reasons: ['Inisiator'],
-                    });
-                }
-                if (customActors.includes('assigned_pic') && simPicUser) {
-                    const deptName = departments.find((d: any) => String(d.id) === String(simPicUser.department_id))?.name;
-                    matchedUsersMap.set(String(simPicUser.id), {
-                        user: { ...simPicUser, department_name: deptName },
-                        reasons: ['PIC Ditugaskan'],
-                    });
-                }
-                if (customActors.includes('creator') && simCreatorUser) {
-                    const deptName = departments.find((d: any) => String(d.id) === String(simCreatorUser.department_id))?.name;
-                    matchedUsersMap.set(String(simCreatorUser.id), {
-                        user: { ...simCreatorUser, department_name: deptName },
-                        reasons: ['Pembuat Kontrak'],
-                    });
-                }
-                if (explicitUsers.length > 0) {
-                    explicitUsers.forEach((userId: any) => {
-                        const u = users.find((user: any) => String(user.id) === String(userId));
-                        if (u) {
-                            const deptName = departments.find((d: any) => String(d.id) === String(u.department_id))?.name;
-                            matchedUsersMap.set(String(u.id), {
-                                user: { ...u, department_name: deptName },
-                                reasons: ['User Spesifik'],
-                            });
-                        }
-                    });
-                }
-                if (targetRoles.length > 0 || targetDepts.length > 0) {
-                    users.forEach((u: any) => {
-                        let roleMatch = targetRoles.length === 0;
-                        let deptMatch = targetDepts.length === 0;
-
-                        if (targetRoles.length > 0) {
-                            const userRole = (u.role || '').toLowerCase();
-                            roleMatch = targetRoles.some((r: string) => userRole === r.toLowerCase());
-                        }
-
-                        if (targetDepts.length > 0) {
-                            const uDeptId = String(u.department_id || u.division_id || '');
-                            deptMatch = targetDepts.some((dId: string) => String(dId) === uDeptId);
-                        }
-
-                        if (roleMatch && deptMatch) {
-                            const deptName = departments.find((d: any) => String(d.id) === String(u.department_id))?.name;
-                            matchedUsersMap.set(String(u.id), {
-                                user: { ...u, department_name: deptName },
-                                reasons: ['Role/Divisi Sesuai'],
-                            });
-                        }
-                    });
-                }
-            }
         }
 
         return {
@@ -684,117 +1035,256 @@ export function WorkflowFlowVisualizer({
             dynamicRoles: dynamicList,
             criteriaSummary: criteriaParts.join(' • ') || '—',
         };
-    }, [
-        departments,
-        roles,
-        users,
-        simInitiatorUser,
-        simPicUser,
-        simCreatorUser,
-    ]);
+    }, [departments, roles, users, simInitiatorUser, simPicUser, simCreatorUser]);
 
-    // Generator Node & Edge Layout
+    // Generator Node & Edge Layout for Multi-Workflow Grouping
     const generateLayout = useCallback(() => {
         const generatedNodes: Node[] = [];
         const generatedEdges: Edge[] = [];
-        let rollbacks = 0;
+        let totalRollbacks = 0;
+        let totalCrossTransitions = 0;
 
-        const NODE_HEIGHT = showUsers ? 220 : 160;
-        const VERTICAL_GAP = 95;
-        const START_X = 420;
-        const START_Y = 40;
+        const NODE_HEIGHT = showUsers ? 290 : 210;
+        const VERTICAL_GAP = 90;
+        const START_X = 60;
+        const START_Y = 50;
+        const GROUP_PADDING_X = 30;
+        const GROUP_PADDING_TOP = 80;
+        const GROUP_PADDING_BOTTOM = 40;
+        const CARD_WIDTH = 330;
+        const GROUP_WIDTH = CARD_WIDTH + GROUP_PADDING_X * 2;
+        const COLUMN_GAP = 120;
 
-        const targetRollbackCountMap: Record<number, number> = {};
+        // 1. Tentukan Workflow Mana Saja yang Dirender berdasarkan viewMode
+        interface RenderWorkflowItem {
+            id: string;
+            workflow: any;
+            steps: any[];
+            isPrimary: boolean;
+        }
 
-        sortedSteps.forEach((step, index) => {
-            const stepNum = Number(step.step) || index + 1;
-            const nodeId = `step-${stepNum}`;
+        const workflowsToRender: RenderWorkflowItem[] = [];
+        const primaryWfId = String(workflow?.id || 'current');
 
-            const x = START_X;
-            const y = START_Y + index * (NODE_HEIGHT + VERTICAL_GAP);
+        // Tambahkan primary workflow selalu di posisi pertama
+        workflowsToRender.push({
+            id: primaryWfId,
+            workflow: workflow || { name: 'Alur Kerja Utama' },
+            steps: sortedPrimarySteps,
+            isPrimary: true,
+        });
 
-            const { eligibleUsers, dynamicRoles, criteriaSummary } = calculateStepUsers(step);
+        if (viewMode === 'connected') {
+            // Traverse seluruh alur yang terhubung baik maju maupun mundur via cross_workflow
+            const visitedWfIds = new Set<string>([primaryWfId]);
+            const queue: any[] = [{ id: primaryWfId, steps: sortedPrimarySteps }];
 
+            while (queue.length > 0) {
+                const current = queue.shift();
+                const curSteps = current.steps || [];
+
+                curSteps.forEach((s: any) => {
+                    (s.actions || []).forEach((act: any) => {
+                        const tConfig = parseTransitionConfig(act);
+                        const targetId = tConfig?.workflow_id || act.next_workflow_id;
+                        if (targetId && !visitedWfIds.has(String(targetId))) {
+                            const foundWf = (allWorkflows || []).find((w: any) => String(w.id) === String(targetId));
+                            if (foundWf) {
+                                visitedWfIds.add(String(targetId));
+                                const sortedSteps = (foundWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
+                                workflowsToRender.push({
+                                    id: String(targetId),
+                                    workflow: foundWf,
+                                    steps: sortedSteps,
+                                    isPrimary: false,
+                                });
+                                queue.push({ id: String(targetId), steps: sortedSteps });
+                            }
+                        }
+                    });
+                });
+
+                // Cek juga workflow luar yang mengarah ke current workflow atau memiliki parent_workflow_id yang sama
+                (allWorkflows || []).forEach((otherWf: any) => {
+                    const otherId = String(otherWf.id);
+                    if (!visitedWfIds.has(otherId)) {
+                        const pointsToCurrent = (otherWf.steps || []).some((s: any) =>
+                            (s.actions || []).some((a: any) => {
+                                const tc = parseTransitionConfig(a);
+                                return String(tc?.workflow_id || a.next_workflow_id) === current.id;
+                            })
+                        );
+
+                        const isChildOfCurrent = String(otherWf.parent_workflow_id) === current.id;
+                        const isSibling = otherWf.parent_workflow_id && String(otherWf.parent_workflow_id) === String(workflow?.parent_workflow_id);
+                        const isParentOfCurrent = String(workflow?.parent_workflow_id) === otherId;
+
+                        if (pointsToCurrent || isChildOfCurrent || isSibling || isParentOfCurrent) {
+                            visitedWfIds.add(otherId);
+                            const sortedSteps = (otherWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
+                            workflowsToRender.push({
+                                id: otherId,
+                                workflow: otherWf,
+                                steps: sortedSteps,
+                                isPrimary: false,
+                            });
+                            queue.push({ id: otherId, steps: sortedSteps });
+                        }
+                    }
+                });
+            }
+        } else if (viewMode === 'all') {
+            // Render seluruh workflow yang ada di database
+            (allWorkflows || []).forEach((otherWf: any) => {
+                const otherId = String(otherWf.id);
+                if (otherId !== primaryWfId) {
+                    const sortedSteps = (otherWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
+                    workflowsToRender.push({
+                        id: otherId,
+                        workflow: otherWf,
+                        steps: sortedSteps,
+                        isPrimary: false,
+                    });
+                }
+            });
+        }
+
+        // Peta node ID per workflow dan step number untuk menghubungkan edges secara akurat
+        const nodePositionMap = new Map<string, { nodeId: string; x: number; y: number }>();
+
+        // 2. Buat Group Nodes dan Step Nodes per Kolom Workflow
+        workflowsToRender.forEach((wfItem, colIdx) => {
+            const colX = START_X + colIdx * (GROUP_WIDTH + COLUMN_GAP);
+            const stepCount = Math.max(1, wfItem.steps.length);
+            const groupHeight = GROUP_PADDING_TOP + (stepCount * (NODE_HEIGHT + VERTICAL_GAP)) - VERTICAL_GAP + GROUP_PADDING_BOTTOM;
+            const groupId = `group-workflow-${wfItem.id}`;
+            const isPrimary = wfItem.isPrimary;
+
+            // Workflow Group Container Node (Background)
             generatedNodes.push({
-                id: nodeId,
-                type: 'workflowStepNode',
-                position: { x, y },
+                id: groupId,
+                type: 'workflowGroupNode',
+                position: { x: colX - GROUP_PADDING_X, y: START_Y - GROUP_PADDING_TOP },
+                style: { width: GROUP_WIDTH, height: groupHeight, zIndex: -1 },
                 data: {
-                    step,
-                    totalSteps: sortedSteps.length,
-                    isFirst: index === 0,
-                    isLast: index === sortedSteps.length - 1,
-                    showUsers,
-                    eligibleUsers,
-                    dynamicRoles,
-                    criteriaSummary,
+                    title: wfItem.workflow.name || `Alur Kerja (${colIdx + 1})`,
+                    subtitle: wfItem.workflow.contract_type?.name ? `Kategori: ${wfItem.workflow.contract_type.name}` : undefined,
+                    badge: isPrimary ? 'Workflow Utama' : `Sub-Alur #${colIdx}`,
+                    isPrimary,
+                    stepCount,
+                    themeIndex: colIdx,
                 },
             });
 
-            // 1. Jalur Maju (Approve)
-            if (routeFilter !== 'rollback_only' && index < sortedSteps.length - 1) {
-                const nextStep = sortedSteps[index + 1];
-                const nextStepNum = Number(nextStep.step) || index + 2;
-                const nextNodeId = `step-${nextStepNum}`;
+            // Target Rollback Count Map untuk Multi-Lane Siku di setiap workflow
+            const targetRollbackCountMap: Record<number, number> = {};
 
-                generatedEdges.push({
-                    id: `edge-forward-${stepNum}->${nextStepNum}`,
-                    source: nodeId,
-                    target: nextNodeId,
-                    sourceHandle: 'bottom-source',
-                    targetHandle: 'top-target',
-                    type: 'smoothstep',
-                    animated: animatedLines,
-                    style: { stroke: '#10b981', strokeWidth: 2.5 },
-                    markerEnd: {
-                        type: MarkerType.ArrowClosed,
-                        color: '#10b981',
-                        width: 18,
-                        height: 18,
+            // Render setiap step di kolom workflow ini
+            wfItem.steps.forEach((step: any, sIdx: number) => {
+                const stepNum = Number(step.step) || sIdx + 1;
+                const nodeId = `wf-${wfItem.id}-step-${stepNum}`;
+                const stepX = colX;
+                const stepY = START_Y + sIdx * (NODE_HEIGHT + VERTICAL_GAP);
+
+                nodePositionMap.set(`${wfItem.id}:${stepNum}`, { nodeId, x: stepX, y: stepY });
+                if (isPrimary) {
+                    nodePositionMap.set(`primary:${stepNum}`, { nodeId, x: stepX, y: stepY });
+                }
+
+                const { eligibleUsers, dynamicRoles, criteriaSummary } = calculateStepUsers(step);
+
+                generatedNodes.push({
+                    id: nodeId,
+                    type: 'workflowStepNode',
+                    position: { x: stepX, y: stepY },
+                    data: {
+                        step,
+                        workflowId: wfItem.id,
+                        workflowName: wfItem.workflow.name,
+                        totalSteps: wfItem.steps.length,
+                        isFirst: sIdx === 0,
+                        isLast: sIdx === wfItem.steps.length - 1,
+                        showUsers,
+                        eligibleUsers,
+                        dynamicRoles,
+                        criteriaSummary,
+                        themeIndex: colIdx,
                     },
-                    label: showLabels ? 'Setujui (Maju)' : undefined,
-                    labelStyle: { fill: '#047857', fontWeight: 500, fontSize: 10 },
-                    labelBgStyle: { fill: '#ecfdf5', fillOpacity: 0.95, rx: 6, ry: 6 },
-                    labelBgPadding: [6, 4],
-                });
-            }
-
-            // 2. Jalur Mundur (Rollback)
-            if (routeFilter !== 'forward_only') {
-                const rejectAction = (step?.actions || []).find((a: any) => {
-                    const c = getActionCode(a).toLowerCase();
-                    return c === 'reject' || c.includes('tolak');
                 });
 
-                if (rejectAction) {
-                    let targetStepNum = 1;
-                    const config = parseTransitionConfig(rejectAction);
+                // Evaluasi Aksi untuk Forward dan Rollback Internal dalam Workflow ini
+                (step.actions || []).forEach((act: any, aIdx: number) => {
+                    const rawCode = getActionCode(act);
+                    const codeLower = rawCode.toLowerCase();
+                    const isApprove = codeLower === 'approve' || codeLower.includes('setuju');
+                    const isReject = codeLower === 'reject' || codeLower.includes('tolak');
 
-                    if (config) {
-                        if (config.type === 'absolute' && config.sequence) {
-                            targetStepNum = Number(config.sequence);
-                        } else if (config.type === 'relative') {
-                            targetStepNum = Math.max(1, stepNum + (Number(config.offset) || -1));
-                        }
-                    } else if (rejectAction.next_step_id) {
-                        const matchedStep = sortedSteps.find((s) => s.id === rejectAction.next_step_id);
-                        if (matchedStep) {
-                            targetStepNum = Number(matchedStep.step) || 1;
-                        }
+                    const tConfig = parseTransitionConfig(act);
+                    let targetStepNum: number | null = null;
+                    const isCrossWf = tConfig?.type === 'cross_workflow' || Boolean(act?.next_workflow_id);
+
+                    if (isCrossWf) {
+                        // Ditangani di tahap cross-workflow edges
+                        return;
                     }
 
-                    if (targetStepNum < stepNum) {
-                        rollbacks++;
-                        const targetNodeId = `step-${targetStepNum}`;
+                    if (tConfig) {
+                        if (tConfig.type === 'initial_step') {
+                            targetStepNum = 1;
+                        } else if (tConfig.type === 'absolute' && tConfig.sequence) {
+                            targetStepNum = Number(tConfig.sequence);
+                        } else if (tConfig.type === 'relative') {
+                            targetStepNum = Math.max(1, stepNum + Number(tConfig.offset ?? (isReject ? -1 : 1)));
+                        }
+                    } else if (act?.next_step_id) {
+                        const matched = wfItem.steps.find((s: any) => s.id === act.next_step_id);
+                        if (matched) targetStepNum = Number(matched.step) || null;
+                    } else {
+                        if (isReject && sIdx > 0) targetStepNum = 1;
+                        else if (isApprove && sIdx < wfItem.steps.length - 1) targetStepNum = stepNum + 1;
+                    }
 
+                    if (targetStepNum === null || targetStepNum === stepNum) return;
+
+                    const isRollback = targetStepNum < stepNum;
+                    const isForward = targetStepNum > stepNum;
+                    const targetNodeId = `wf-${wfItem.id}-step-${targetStepNum}`;
+
+                    // Internal Forward Edge
+                    if (isForward && showForwardRoutes) {
+                        generatedEdges.push({
+                            id: `edge-forward-${wfItem.id}-${stepNum}[${aIdx}]->${targetStepNum}`,
+                            source: nodeId,
+                            target: targetNodeId,
+                            sourceHandle: `action-handle-right-${aIdx}`,
+                            targetHandle: 'top-target',
+                            type: 'smoothstep',
+                            animated: animatedLines,
+                            style: { stroke: '#10b981', strokeWidth: 2.5 },
+                            markerEnd: {
+                                type: MarkerType.ArrowClosed,
+                                color: '#10b981',
+                                width: 18,
+                                height: 18,
+                            },
+                            label: showLabels ? (act?.alias || `Maju -> Step ${targetStepNum}`) : undefined,
+                            labelStyle: { fill: '#047857', fontWeight: 500, fontSize: 10 },
+                            labelBgStyle: { fill: '#ecfdf5', fillOpacity: 0.95, rx: 6, ry: 6 },
+                            labelBgPadding: [6, 4],
+                        });
+                    }
+
+                    // Internal Rollback Edge (Siku-Siku Multi-Lane)
+                    if (isRollback && showRollbackRoutes) {
+                        totalRollbacks++;
                         const currentLane = targetRollbackCountMap[targetStepNum] || 0;
                         targetRollbackCountMap[targetStepNum] = currentLane + 1;
 
                         generatedEdges.push({
-                            id: `edge-rollback-${stepNum}->${targetStepNum}`,
+                            id: `edge-rollback-${wfItem.id}-${stepNum}[${aIdx}]->${targetStepNum}`,
                             source: nodeId,
                             target: targetNodeId,
-                            sourceHandle: 'left-source',
+                            sourceHandle: `action-handle-left-${aIdx}`,
                             targetHandle: 'left-target',
                             type: 'orthogonalSikuRollbackEdge',
                             animated: animatedLines,
@@ -813,17 +1303,115 @@ export function WorkflowFlowVisualizer({
                                 width: 18,
                                 height: 18,
                             },
-                            label: showLabels ? `Revisi -> Step ${targetStepNum}` : undefined,
+                            label: showLabels ? (act?.alias || `Revisi -> Step ${targetStepNum}`) : undefined,
                         });
                     }
-                }
-            }
+                });
+            });
         });
 
-        return { nodes: generatedNodes, edges: generatedEdges, rollbackCount: rollbacks };
+        // 3. Buat Cross-Workflow Edges Menghubungkan Antar Workflow Container
+        if (showCrossRoutes) {
+            workflowsToRender.forEach((sourceWfItem) => {
+                sourceWfItem.steps.forEach((step: any) => {
+                    const stepNum = Number(step.step) || 1;
+                    const sourceNodeId = `wf-${sourceWfItem.id}-step-${stepNum}`;
+
+                    (step.actions || []).forEach((act: any, aIdx: number) => {
+                        const tConfig = parseTransitionConfig(act);
+                        const isCrossWf = tConfig?.type === 'cross_workflow' || Boolean(act?.next_workflow_id);
+
+                        if (isCrossWf) {
+                            totalCrossTransitions++;
+                            const targetWfId = String(tConfig?.workflow_id || act.next_workflow_id || '');
+                            const targetSeq = Number(tConfig?.sequence || 1);
+                            const targetLookup = nodePositionMap.get(`${targetWfId}:${targetSeq}`);
+                            const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
+
+                            if (targetLookup) {
+                                // Target Workflow dirender di kanvas: hubungkan garis langsung ke node target
+                                generatedEdges.push({
+                                    id: `edge-cross-${sourceWfItem.id}[${stepNum}]->${targetWfId}[${targetSeq}]-act${aIdx}`,
+                                    source: sourceNodeId,
+                                    target: targetLookup.nodeId,
+                                    sourceHandle: `action-handle-right-${aIdx}`,
+                                    targetHandle: 'left-target',
+                                    type: 'smoothstep',
+                                    animated: animatedLines,
+                                    style: { stroke: '#6366f1', strokeWidth: 3, strokeDasharray: '6,4' },
+                                    markerEnd: {
+                                        type: MarkerType.ArrowClosed,
+                                        color: '#6366f1',
+                                        width: 18,
+                                        height: 18,
+                                    },
+                                    label: showLabels ? (act?.alias || `Beralih -> ${targetWf?.name || 'Sub-Alur'} (Tahap ${targetSeq})`) : undefined,
+                                    labelStyle: { fill: '#4338ca', fontWeight: 700, fontSize: 10 },
+                                    labelBgStyle: { fill: '#e0e7ff', fillOpacity: 0.95, rx: 6, ry: 6 },
+                                    labelBgPadding: [6, 4],
+                                });
+                            } else if (targetWfId) {
+                                // Fallback jika target workflow belum berada dalam view rendering: buat kartu external mini
+                                const crossFallbackId = `cross-fallback-${targetWfId}-${targetSeq}`;
+                                if (!generatedNodes.some((n) => n.id === crossFallbackId)) {
+                                    const sourcePos = nodePositionMap.get(`${sourceWfItem.id}:${stepNum}`);
+                                    const fallbackX = (sourcePos?.x || START_X) + 420;
+                                    const fallbackY = sourcePos?.y || START_Y;
+
+                                    generatedNodes.push({
+                                        id: crossFallbackId,
+                                        type: 'crossWorkflowTargetNode',
+                                        position: { x: fallbackX, y: fallbackY },
+                                        data: {
+                                            targetWorkflow: targetWf || { name: `Alur Kerja (${targetWfId.substring(0, 8)})` },
+                                            targetSequence: targetSeq,
+                                        },
+                                    });
+                                }
+
+                                generatedEdges.push({
+                                    id: `edge-cross-fallback-${sourceWfItem.id}[${stepNum}]->${crossFallbackId}-act${aIdx}`,
+                                    source: sourceNodeId,
+                                    target: crossFallbackId,
+                                    sourceHandle: `action-handle-right-${aIdx}`,
+                                    targetHandle: 'left-target',
+                                    type: 'smoothstep',
+                                    animated: animatedLines,
+                                    style: { stroke: '#6366f1', strokeWidth: 2.5, strokeDasharray: '5,5' },
+                                    markerEnd: {
+                                        type: MarkerType.ArrowClosed,
+                                        color: '#6366f1',
+                                        width: 18,
+                                        height: 18,
+                                    },
+                                    label: showLabels ? (act?.alias || `Beralih ke ${targetWf?.name || 'Sub-Alur'}`) : undefined,
+                                    labelStyle: { fill: '#4338ca', fontWeight: 600, fontSize: 9.5 },
+                                    labelBgStyle: { fill: '#e0e7ff', fillOpacity: 0.95, rx: 6, ry: 6 },
+                                    labelBgPadding: [6, 4],
+                                });
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        return {
+            nodes: generatedNodes,
+            edges: generatedEdges,
+            totalWorkflows: workflowsToRender.length,
+            totalSteps: generatedNodes.filter((n) => n.type === 'workflowStepNode').length,
+            totalRollbacks,
+            totalCrossTransitions,
+        };
     }, [
-        sortedSteps,
-        routeFilter,
+        workflow,
+        sortedPrimarySteps,
+        allWorkflows,
+        viewMode,
+        showForwardRoutes,
+        showRollbackRoutes,
+        showCrossRoutes,
         laneSpacing,
         animatedLines,
         showLabels,
@@ -831,53 +1419,128 @@ export function WorkflowFlowVisualizer({
         calculateStepUsers,
     ]);
 
-    const initialLayout = useMemo(() => generateLayout(), [generateLayout]);
+    const layout = useMemo(() => generateLayout(), [generateLayout]);
 
-    // React Flow State for Draggable nodes & edges
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialLayout.nodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialLayout.edges);
+    // Position overrides from user dragging with LocalStorage persistence
+    const storageKey = `wf_vis_positions_${workflow?.id || 'default'}`;
+    const [dragPositions, setDragPositions] = useState<Record<string, { x: number; y: number }>>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = localStorage.getItem(storageKey);
+                return saved ? JSON.parse(saved) : {};
+            } catch {
+                return {};
+            }
+        }
+        return {};
+    });
 
-    // Sync when steps, showUsers, or routeFilter change
-    useEffect(() => {
-        const layout = generateLayout();
-        setNodes((currentNodes) => {
-            const currentPositionMap = new Map(currentNodes.map((n) => [n.id, n.position]));
-            return layout.nodes.map((n) => ({
-                ...n,
-                position: currentPositionMap.get(n.id) || n.position,
-            }));
+    const nodes = useMemo(() => {
+        return layout.nodes.map((node) => ({
+            ...node,
+            position: dragPositions[node.id] || node.position,
+        }));
+    }, [layout.nodes, dragPositions]);
+
+    const edges = layout.edges;
+
+    const onNodesChange = useCallback((changes: any[]) => {
+        changes.forEach((change: any) => {
+            if (change.type === 'position' && change.position && change.id) {
+                setDragPositions((prev) => {
+                    const next = {
+                        ...prev,
+                        [change.id]: change.position,
+                    };
+                    if (typeof window !== 'undefined') {
+                        try {
+                            localStorage.setItem(storageKey, JSON.stringify(next));
+                        } catch {}
+                    }
+                    return next;
+                });
+            }
         });
-        setEdges(layout.edges);
-    }, [generateLayout, setNodes, setEdges]);
+    }, [storageKey]);
 
-    // Reset posisi kembali ke layout rapi
     const resetLayoutPositions = useCallback(() => {
-        const layout = generateLayout();
-        setNodes(layout.nodes);
-        setEdges(layout.edges);
-    }, [generateLayout, setNodes, setEdges]);
+        setDragPositions({});
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem(storageKey);
+        }
+    }, [storageKey]);
 
     return (
-        <div className="flex flex-col h-[780px] w-full rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950 overflow-hidden shadow-xs font-sans">
-            {/* Toolbar / Settings Header */}
+        <div className="flex flex-col h-[820px] w-full rounded-2xl border border-slate-200/80 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-950 overflow-hidden shadow-xs font-sans">
+            {/* Toolbar Header */}
             <div className="flex flex-wrap items-center justify-between border-b border-slate-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 px-4 py-2.5 backdrop-blur-md z-10 gap-3">
                 <div className="flex items-center gap-2.5">
                     <div className="bg-primary/10 text-primary p-2 rounded-xl font-medium flex items-center justify-center">
-                        <Activity size={16} />
+                        <Network size={16} />
                     </div>
                     <div>
-                        <h3 className="text-xs font-medium text-slate-900 dark:text-white flex items-center gap-1.5">
-                            Diagram Alur Kerja
-                        </h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-xs font-medium text-slate-900 dark:text-white flex items-center gap-1.5">
+                                Diagram & Visualisasi Multi-Workflow
+                            </h3>
+                            <span className="px-2 py-0.5 rounded-full text-[9.5px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200/80">
+                                {layout.totalWorkflows} Workflow • {layout.totalSteps} Tahap • {layout.totalCrossTransitions} Lintas Alur
+                            </span>
+                        </div>
                         <p className="text-[10px] text-muted-foreground">
-                            Peta visual tahapan proses persetujuan dan alur pengembalian revisi
+                            Peta visual alur persetujuan, sub-workflow modular, dan transisi lintas alur
                         </p>
                     </div>
                 </div>
 
-                {/* Interactive Settings Bar */}
+                {/* Interactive Toolbar Controls */}
                 <div className="flex flex-wrap items-center gap-2 text-xs">
-                    {/* Reset / Rapikan Posisi Button */}
+                    {/* View Mode Switcher (Connected / Show All / Single) */}
+                    <div className="flex items-center bg-slate-100 dark:bg-zinc-800 p-0.5 rounded-xl border border-slate-200 dark:border-zinc-700">
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('connected')}
+                            className={cn(
+                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1',
+                                viewMode === 'connected'
+                                    ? 'bg-indigo-600 text-white shadow-2xs font-semibold'
+                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                            )}
+                            title="Tampilkan Workflow Ini dan Seluruh Sub-Workflow yang Terhubung Langsung"
+                        >
+                            <ArrowRightLeft size={11} />
+                            <span>Alur Terhubung</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('all')}
+                            className={cn(
+                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1',
+                                viewMode === 'all'
+                                    ? 'bg-indigo-600 text-white shadow-2xs font-semibold'
+                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                            )}
+                            title="Tampilkan Semua Workflow di Sistem dengan Grouping Berdampingan"
+                        >
+                            <Layers size={11} />
+                            <span>Seluruh Alur (Show All)</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewMode('single')}
+                            className={cn(
+                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer',
+                                viewMode === 'single'
+                                    ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-2xs font-semibold'
+                                    : 'text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                            )}
+                            title="Hanya Tampilkan Alur Ini Saja"
+                        >
+                            <span>Alur Ini Saja</span>
+                        </button>
+                    </div>
+
+                    {/* Reset Layout Positions */}
                     <button
                         type="button"
                         onClick={resetLayoutPositions}
@@ -885,10 +1548,10 @@ export function WorkflowFlowVisualizer({
                         title="Rapikan posisi kartu kembali ke susunan awal"
                     >
                         <RotateCcw size={12} />
-                        <span>Rapikan Posisi</span>
+                        <span>Rapikan</span>
                     </button>
 
-                    {/* Toggle Show/Hide Personil List */}
+                    {/* Toggle Personil */}
                     <button
                         type="button"
                         onClick={() => setShowUsers(!showUsers)}
@@ -898,74 +1561,64 @@ export function WorkflowFlowVisualizer({
                                 ? 'bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
                                 : 'bg-slate-100 dark:bg-zinc-800 text-slate-500 border-slate-200 dark:border-zinc-700 hover:text-slate-700 dark:hover:text-zinc-300'
                         )}
-                        title="Tampilkan / Sembunyikan Personil Berhak Akses pada setiap Node"
+                        title="Tampilkan / Sembunyikan Personil Berhak Akses"
                     >
                         <UserCheck size={12} className={showUsers ? 'text-indigo-600 dark:text-indigo-400' : ''} />
-                        <span>{showUsers ? 'Sembunyikan Orang' : 'Tampilkan Orang'}</span>
+                        <span>{showUsers ? 'Orang Aktif' : 'Sembunyikan Orang'}</span>
                     </button>
 
-                    {/* Filter Route Toggle */}
-                    <div className="flex items-center bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+                    {/* Filter Rute Checkboxes (Independen: Maju, Rollback, Antar-Alur) */}
+                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+                        {/* Checkbox Rute Maju */}
                         <button
                             type="button"
-                            onClick={() => setRouteFilter('all')}
+                            onClick={() => setShowForwardRoutes(!showForwardRoutes)}
                             className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer',
-                                routeFilter === 'all'
-                                    ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-2xs'
-                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
+                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                                showForwardRoutes
+                                    ? 'bg-emerald-500 text-white shadow-2xs font-semibold'
+                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 opacity-60'
                             )}
+                            title="Tampilkan / Sembunyikan Garis Rute Maju (Forward)"
                         >
-                            Semua Rute
+                            {showForwardRoutes ? <CheckSquare size={12} className="shrink-0" /> : <Square size={12} className="shrink-0" />}
+                            <ArrowRight size={11} className="shrink-0" />
+                            <span>Maju</span>
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => setRouteFilter('forward_only')}
-                            className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer',
-                                routeFilter === 'forward_only'
-                                    ? 'bg-emerald-500 text-white shadow-2xs'
-                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
-                            )}
-                        >
-                            Maju Saja
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setRouteFilter('rollback_only')}
-                            className={cn(
-                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer',
-                                routeFilter === 'rollback_only'
-                                    ? 'bg-rose-500 text-white shadow-2xs'
-                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200'
-                            )}
-                        >
-                            Rollback Saja
-                        </button>
-                    </div>
 
-                    {/* Lane Spacing Controller */}
-                    <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-zinc-800 px-2.5 py-1 rounded-xl border border-slate-200 dark:border-zinc-700 text-[10px] font-medium text-slate-600 dark:text-zinc-300">
-                        <span>Jarak Jalur:</span>
-                        {[
-                            { label: 'Rapat', val: 22 },
-                            { label: 'Ideal', val: 30 },
-                            { label: 'Lebar', val: 42 },
-                        ].map((sp) => (
-                            <button
-                                key={sp.val}
-                                type="button"
-                                onClick={() => setLaneSpacing(sp.val)}
-                                className={cn(
-                                    'px-1.5 py-0.5 rounded cursor-pointer transition-colors',
-                                    laneSpacing === sp.val
-                                        ? 'bg-primary text-white font-medium'
-                                        : 'hover:bg-slate-200 dark:hover:bg-zinc-700'
-                                )}
-                            >
-                                {sp.label}
-                            </button>
-                        ))}
+                        {/* Checkbox Rute Rollback */}
+                        <button
+                            type="button"
+                            onClick={() => setShowRollbackRoutes(!showRollbackRoutes)}
+                            className={cn(
+                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                                showRollbackRoutes
+                                    ? 'bg-rose-500 text-white shadow-2xs font-semibold'
+                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 opacity-60'
+                            )}
+                            title="Tampilkan / Sembunyikan Garis Rute Rollback / Revisi"
+                        >
+                            {showRollbackRoutes ? <CheckSquare size={12} className="shrink-0" /> : <Square size={12} className="shrink-0" />}
+                            <CornerDownLeft size={11} className="shrink-0" />
+                            <span>Rollback</span>
+                        </button>
+
+                        {/* Checkbox Rute Antar-Alur (Cross-Workflow) */}
+                        <button
+                            type="button"
+                            onClick={() => setShowCrossRoutes(!showCrossRoutes)}
+                            className={cn(
+                                'px-2.5 py-1 rounded-lg text-[10px] font-medium transition-all cursor-pointer flex items-center gap-1.5 select-none',
+                                showCrossRoutes
+                                    ? 'bg-indigo-600 text-white shadow-2xs font-semibold'
+                                    : 'text-slate-500 hover:text-slate-800 dark:hover:text-zinc-200 opacity-60'
+                            )}
+                            title="Tampilkan / Sembunyikan Garis Rute Antar-Alur (Cross-Workflow)"
+                        >
+                            {showCrossRoutes ? <CheckSquare size={12} className="shrink-0" /> : <Square size={12} className="shrink-0" />}
+                            <GitFork size={11} className="shrink-0" />
+                            <span>Antar-Alur</span>
+                        </button>
                     </div>
 
                     {/* Animation & Label Toggles */}
@@ -1004,18 +1657,17 @@ export function WorkflowFlowVisualizer({
                     nodes={nodes}
                     edges={edges}
                     onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
                     nodesDraggable={true}
                     nodesConnectable={false}
                     elementsSelectable={true}
                     nodeTypes={nodeTypes}
                     edgeTypes={edgeTypes}
                     fitView
-                    fitViewOptions={{ padding: 0.3 }}
-                    minZoom={0.2}
-                    maxZoom={1.5}
+                    fitViewOptions={{ padding: 0.25 }}
+                    minZoom={0.15}
+                    maxZoom={1.6}
                 >
-                    <Background variant={BackgroundVariant.Dots} gap={18} size={1.2} color="#94a3b8" />
+                    <Background variant={BackgroundVariant.Dots} gap={20} size={1.2} color="#94a3b8" />
                     <Controls className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl shadow-md overflow-hidden text-slate-700 dark:text-zinc-300" />
                     <MiniMap
                         nodeStrokeColor="#0284c7"

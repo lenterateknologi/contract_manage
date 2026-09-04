@@ -38,11 +38,41 @@ class JobTitle extends Model
         'portal_modified_date' => 'datetime',
     ];
 
+    protected $appends = [
+        'job_level_name',
+    ];
+
+    public function getJobLevelNameAttribute(): ?string
+    {
+        $raw = $this->attributes['job_level_name'] ?? null;
+        if ($this->relationLoaded('jobLevel') && $this->jobLevel) {
+            $name = $this->jobLevel->name ?: $raw;
+            $code = $this->jobLevel->code;
+            return $code ? "({$code}) {$name}" : $name;
+        }
+
+        if (! empty($this->attributes['job_level_id']) && $this->jobLevel) {
+            $name = $this->jobLevel->name ?: $raw;
+            $code = $this->jobLevel->code;
+            return $code ? "({$code}) {$name}" : $name;
+        }
+
+        return $raw;
+    }
+
     /**
      * @return BelongsTo<JobLevel, JobTitle>
      */
     public function jobLevel(): BelongsTo
     {
         return $this->belongsTo(JobLevel::class, 'job_level_id');
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<User, JobTitle>
+     */
+    public function users(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(User::class, 'job_position_id');
     }
 }

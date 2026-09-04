@@ -416,17 +416,17 @@ export function TreeSelect({
                         }
                     }}
                     className={cn(
-                        'flex h-9 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background transition-all outline-none',
-                        !disabled && 'cursor-pointer hover:border-primary/60 focus:ring-2 focus:ring-primary/20',
-                        disabled && 'cursor-not-allowed opacity-50 bg-muted',
-                        open && 'border-primary ring-2 ring-primary/20',
+                        'flex h-10 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3.5 py-2 text-sm font-normal ring-offset-background transition-all outline-hidden text-left',
+                        !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
+                        disabled && 'cursor-not-allowed opacity-50 bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500',
+                        open && 'border-primary ring-1 ring-primary',
                         triggerClassName
                     )}
                 >
-                    <span className={cn('truncate text-sm', selectedDisplay ? 'text-foreground' : 'text-muted-foreground')}>
+                    <span className={cn('truncate text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
                         {selectedDisplay || placeholder}
                     </span>
-                    <ChevronDown size={14} className={cn('text-muted-foreground shrink-0 ml-2 transition-transform duration-200', open && 'rotate-180')} />
+                    <ChevronDown size={15} className={cn('text-muted-foreground shrink-0 ml-2 transition-transform duration-200', open && 'rotate-180')} />
                 </button>
             )}
 

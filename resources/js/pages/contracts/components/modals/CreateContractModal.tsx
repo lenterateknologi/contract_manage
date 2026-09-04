@@ -10,6 +10,8 @@ import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck } from 'lucide-reac
 import { useEffect, useState } from 'react';
 import { TaxToggle } from '../parts/TaxToggle';
 import { validateContractForm } from '@/pages/contracts/validations/contractValidation';
+import { type SharedData } from '@/types';
+import { usePov } from '@/stores/usePovStore';
 
 interface Props {
     open: boolean;
@@ -22,7 +24,8 @@ interface Props {
 }
 
 export default function CreateContractModal({ open, onClose, onSubmit, types = [], submissionTypes = [], users = [], vendors = [] }: Props) {
-    const { auth } = usePage().props as any;
+    const { auth, povOptions } = usePage<SharedData>().props;
+    const pov = usePov(povOptions);
     const [title, setTitle] = useState('');
     const [desc, setDesc] = useState('');
     const [parentTypeId, setParentTypeId] = useState('');
@@ -178,9 +181,11 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         >
             <div className="space-y-3.5 pt-1">
                 {(() => {
-                    const roleUpper = String(auth?.user?.role || '').toUpperCase();
-                    const deptUpper = String(auth?.user?.department_name || auth?.user?.department?.name || '').toUpperCase();
-                    const canSelectInitiator = roleUpper.includes('ADMIN') || roleUpper.includes('LEGAL') || deptUpper.includes('LEGAL');
+                    const canSelectInitiator = Boolean(
+                        pov.isSimulatingNav
+                            ? (pov.activeNavPov?.can_create_on_behalf ?? pov.activeNavPov?.roleName === 'Super Admin')
+                            : (auth?.user?.can_create_on_behalf || auth?.user?.is_admin || auth?.user?.role === 'Super Admin')
+                    );
 
                     if (!canSelectInitiator) return null;
 

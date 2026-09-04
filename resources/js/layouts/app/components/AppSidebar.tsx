@@ -1,7 +1,12 @@
-// ponytail: double sidebar with dynamic width adjustment for content
 import { HeaderNotifications } from '@/layouts/app/components/header/HeaderNotifications';
 import { HeaderUserMenu } from '@/layouts/app/components/header/HeaderUserMenu';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/selection/DropdownMenu';
 import {
     Sidebar,
     SidebarContent,
@@ -18,12 +23,15 @@ import { useDetailSidebar, type DetailSidebarTabItem } from '@/stores/useDetailS
 import {
     Archive,
     ArrowLeft,
+    ArrowRightLeft,
     BarChart3,
     Building2,
+    Check,
     ChevronLeft,
     ChevronRight,
     ChevronDown,
     Clock,
+    Eye,
     FileCheck,
     FileCode,
     FileEdit,
@@ -38,6 +46,8 @@ import {
     LayoutGrid,
     PanelLeftClose,
     PanelLeftOpen,
+    RotateCcw,
+    ScanEye,
     ScanLine,
     Search,
     Settings2,
@@ -375,12 +385,26 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
     );
 });
 
+import { usePov } from '@/stores/usePovStore';
+import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
+
 export const AppSidebar = memo(function AppSidebar() {
     const detailSidebar = useDetailSidebar();
     const page = usePage<SharedData>();
-    const { sidebarNavGroups, auth } = page.props;
+    const { sidebarNavGroups, auth, povOptions } = page.props;
     const currentPath = page.url.split('?')[0];
     const { setOpenMobile, isMobile } = useSidebar();
+
+    const pov = usePov(povOptions);
+    const [isUserSwitchOpen, setIsUserSwitchOpen] = useState(false);
+
+    const isSuperAdmin = Boolean(
+        auth?.user?.role === 'Super Admin' ||
+        auth?.user?.role === 'Admin' ||
+        auth?.user?.is_admin ||
+        auth?.user?.role?.toLowerCase()?.includes('admin')
+    );
+    const canImpersonate = Boolean(isSuperAdmin || auth?.impersonation?.can_impersonate);
 
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -449,7 +473,7 @@ export const AppSidebar = memo(function AppSidebar() {
             children: item.children ? item.children.map(mapItem) : undefined,
         });
 
-        return ((sidebarNavGroups as NavGroup[]) ?? []).map((group) => {
+        const rawGroups = ((sidebarNavGroups as NavGroup[]) ?? []).map((group) => {
             const items = group.items.map(mapItem);
 
             // Prefer the group's own icon field, fall back to first item's icon
@@ -464,7 +488,25 @@ export const AppSidebar = memo(function AppSidebar() {
                 items,
             };
         });
-    }, [sidebarNavGroups]);
+
+        if (!pov.activeNavPov.allowedRoutes) {
+            return rawGroups;
+        }
+
+        const allowedSet = new Set(pov.activeNavPov.allowedRoutes);
+        return rawGroups
+            .map((group) => {
+                const filteredItems = group.items.filter((item) => {
+                    const basePath = item.url.split('?')[0];
+                    return allowedSet.has(basePath) || allowedSet.has(item.url);
+                });
+                return {
+                    ...group,
+                    items: filteredItems,
+                };
+            })
+            .filter((group) => group.items.length > 0);
+    }, [sidebarNavGroups, pov.activeNavPov]);
 
     // Active group detection
     const activeGroupTitle = useMemo(() => {
@@ -748,7 +790,7 @@ export const AppSidebar = memo(function AppSidebar() {
                             </div>
                         </div>
 
-                        {/* Bottom: Sub Sidebar Toggle, Notifications & HeaderUserMenu */}
+                        {/* Bottom: Sub Sidebar Toggle, POV Switcher, Notifications & HeaderUserMenu */}
                         <div className="flex w-full shrink-0 flex-col items-center gap-2 pt-2 pb-3 border-t border-white/15">
                             {/* Toggle Sub-Sidebar Expand/Collapse */}
                             <Tooltip>
@@ -769,6 +811,173 @@ export const AppSidebar = memo(function AppSidebar() {
                                     {isSubOpen ? 'Sembunyikan Sub-Menu' : 'Tampilkan Sub-Menu'}
                                 </TooltipContent>
                             </Tooltip>
+
+                            {/* Switch User Button - Khusus Super Admin / Admin */}
+                            {canImpersonate && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsUserSwitchOpen(true)}
+                                            className={cn(
+                                                'relative flex h-8 w-8 items-center justify-center rounded-lg transition-all cursor-pointer',
+                                                auth?.impersonation?.is_impersonating
+                                                    ? 'bg-amber-500 text-white font-bold shadow-xs ring-2 ring-amber-300'
+                                                    : 'text-white/80 hover:bg-white/15 hover:text-white'
+                                            )}
+                                            aria-label="Ganti User Login (Switch User)"
+                                        >
+                                            <ArrowRightLeft className="size-4" />
+                                            {auth?.impersonation?.is_impersonating && (
+                                                <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                                                </span>
+                                            )}
+                                        </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" sideOffset={10}>
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="font-semibold">Ganti User Login (Switch User)</span>
+                                            <span className="text-[11px] text-muted-foreground">
+                                                {auth?.impersonation?.is_impersonating
+                                                    ? `Sedang login sebagai ${auth.user?.name} (${auth.user?.role})`
+                                                    : 'Pilih & login instan sebagai user lain di database'}
+                                            </span>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+
+                            {/* POV Navigation Switcher Button (Above Notification) - Khusus Role Super Admin / Admin */}
+                            {isSuperAdmin && (
+                                <DropdownMenu>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <DropdownMenuTrigger asChild>
+                                                <button
+                                                    type="button"
+                                                    className={cn(
+                                                        'relative flex h-8 w-8 items-center justify-center rounded-lg transition-all cursor-pointer',
+                                                        pov.isSimulatingAny
+                                                            ? 'bg-amber-400 text-amber-950 font-bold shadow-xs ring-2 ring-amber-300 animate-pulse'
+                                                            : 'text-white/80 hover:bg-white/15 hover:text-white'
+                                                    )}
+                                                    aria-label="Ubah Sudut Pandang (POV)"
+                                                >
+                                                    <ScanEye className="size-4" />
+                                                    {pov.isSimulatingAny && (
+                                                        <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            </DropdownMenuTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" sideOffset={10}>
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="font-semibold">Simulasi POV (Super Admin)</span>
+                                                <span className="text-[11px] text-muted-foreground">
+                                                    {pov.isSimulatingAny ? `Simulasi navigasi: ${pov.activeNavPov.label} (${pov.activeNavPov.badge})` : 'Klik untuk ubah simulasi sudut pandang navigasi role'}
+                                                </span>
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
+
+                                    <DropdownMenuContent
+                                        side="right"
+                                        align="end"
+                                        sideOffset={14}
+                                        className="w-80 p-2.5 bg-popover text-popover-foreground rounded-2xl shadow-2xl border border-border/80 z-[100]"
+                                    >
+                                        {/* Header */}
+                                        <div className="px-2 py-1.5 border-b border-border/50">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-1.5 font-bold text-xs">
+                                                    <ScanEye className="size-4 text-primary" />
+                                                    <span>Simulasi Sudut Pandang (POV)</span>
+                                                </div>
+                                                {pov.isSimulatingAny && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={pov.resetAll}
+                                                        className="text-[10.5px] text-primary hover:underline font-bold cursor-pointer"
+                                                    >
+                                                        Reset
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground mt-0.5">
+                                                Pratinjau antarmuka & menu navigasi berdasarkan sudut pandang role.
+                                            </p>
+
+                                            {/* Quick Switch User Link */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsUserSwitchOpen(true)}
+                                                className="w-full mt-2 flex items-center justify-between p-2 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary transition-colors cursor-pointer text-xs font-semibold"
+                                            >
+                                                <div className="flex items-center gap-1.5">
+                                                    <ArrowRightLeft className="size-3.5 shrink-0" />
+                                                    <span>Ganti User Nyata (Switch User)</span>
+                                                </div>
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary text-primary-foreground font-medium">
+                                                    Login Nyata
+                                                </span>
+                                            </button>
+                                        </div>
+
+                                        {/* POV Navigasi Menu List */}
+                                        <div className="py-1.5 space-y-0.5 max-h-[320px] overflow-y-auto custom-scrollbar">
+                                            {pov.navOptions.map((item) => {
+                                                const isSelected = item.id === pov.navPovId;
+                                                return (
+                                                    <DropdownMenuItem
+                                                        key={item.id}
+                                                        onClick={() => pov.setNavPov(item.id)}
+                                                        className={cn(
+                                                            'flex flex-col items-start gap-1 p-2 rounded-xl cursor-pointer transition-colors',
+                                                            isSelected
+                                                                ? 'bg-primary/10 text-primary font-medium'
+                                                                : 'hover:bg-accent'
+                                                        )}
+                                                    >
+                                                        <div className="flex items-center justify-between w-full">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={cn('text-xs font-semibold', isSelected ? 'text-primary' : 'text-foreground')}>
+                                                                    {item.label}
+                                                                </span>
+                                                                <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-muted text-muted-foreground font-medium">
+                                                                    {item.badge}
+                                                                </span>
+                                                            </div>
+                                                            {isSelected && <Check className="size-3.5 text-primary shrink-0" />}
+                                                        </div>
+                                                        <span className="text-[10.5px] text-muted-foreground leading-tight">
+                                                            {item.description}
+                                                        </span>
+                                                    </DropdownMenuItem>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Bottom Action */}
+                                        {pov.isSimulatingAny && (
+                                            <div className="pt-2 mt-1 border-t border-border/50">
+                                                <button
+                                                    type="button"
+                                                    onClick={pov.resetAll}
+                                                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-lg transition-colors cursor-pointer"
+                                                >
+                                                    <RotateCcw className="size-3.5" />
+                                                    <span>Kembalikan POV ke Semula</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
 
                             {/* Notification Bell (Above Profile) */}
                             <Tooltip>
@@ -797,6 +1006,34 @@ export const AppSidebar = memo(function AppSidebar() {
                             isSubOpen ? 'opacity-100' : 'overflow-hidden border-r-0 opacity-0 pointer-events-none',
                         )}
                     >
+                        {/* Simulation Indicator Banner on Sub-sidebar */}
+                        {pov.isSimulatingAny && (
+                            <div className="px-3 py-1.5 bg-amber-500/15 border-b border-amber-500/30 flex items-center justify-between shrink-0 gap-1.5">
+                                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                    <ScanEye className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-[10px] font-bold text-amber-800 dark:text-amber-200 truncate leading-tight">
+                                            Simulasi POV Aktif
+                                        </span>
+                                        <span className="text-[9px] text-amber-700/80 dark:text-amber-300/80 truncate leading-tight">
+                                            {[
+                                                pov.isSimulatingNav ? `Nav: ${pov.activeNavPov.badge}` : null,
+                                                pov.isSimulatingDashboard ? `Dash: ${pov.activeDashboardPov.badge}` : null,
+                                                pov.isSimulatingFilter ? `Filter: ${pov.activeFilterPov.badge}` : null,
+                                            ].filter(Boolean).join(' • ')}
+                                        </span>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={pov.resetAll}
+                                    className="text-[9.5px] font-bold text-amber-800 dark:text-amber-200 hover:underline cursor-pointer shrink-0"
+                                    title="Kembalikan semua POV ke asli"
+                                >
+                                    Reset
+                                </button>
+                            </div>
+                        )}
                         {detailSidebar?.isActive && subMode === 'detail' ? (
                             <>
                                 {/* Detail Header Top: Back button + Switch to main menu button */}
@@ -993,6 +1230,12 @@ export const AppSidebar = memo(function AppSidebar() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Switch User (Impersonation) Modal for Super Admin */}
+            <UserSwitchModal
+                open={isUserSwitchOpen}
+                onOpenChange={setIsUserSwitchOpen}
+            />
         </TooltipProvider>
     );
 });

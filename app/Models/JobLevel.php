@@ -44,4 +44,12 @@ class JobLevel extends Model
     {
         return $this->hasMany(JobTitle::class, 'job_level_id');
     }
+
+    /**
+     * @return HasMany<User, JobLevel>
+     */
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'job_level_id');
+    }
 }

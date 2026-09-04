@@ -7,12 +7,12 @@ const inputVariants = cva(
     {
         variants: {
             variant: {
-                outline: 'border border-border bg-surface-base text-foreground font-semibold placeholder:text-muted-foreground',
-                filled: 'border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-card focus:bg-white dark:focus:bg-slate-900 text-foreground font-bold',
+                outline: 'border border-border bg-surface-base text-foreground font-normal text-sm placeholder:text-muted-foreground placeholder:font-normal',
+                filled: 'border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-card focus:bg-white dark:focus:bg-slate-900 text-foreground font-normal text-sm placeholder:text-muted-foreground',
             },
             size: {
-                default: 'h-11 px-4 py-2 text-sm rounded-lg',
-                sm: 'h-10 px-4 text-xs rounded-xl',
+                default: 'h-10 px-3.5 py-2 text-sm rounded-lg',
+                sm: 'h-9 px-3 text-xs rounded-lg',
             },
         },
         defaultVariants: {

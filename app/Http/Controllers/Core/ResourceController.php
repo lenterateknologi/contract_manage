@@ -82,6 +82,9 @@ class ResourceController extends Controller
 
         // Start query
         $query = $modelClass::with($resourceClass::$with ?? []);
+        if (! empty($resourceClass::$withCount)) {
+            $query->withCount($resourceClass::$withCount);
+        }
 
         if ($resourceSlug === 'vendors') {
             // vendor data fully from COMA, no m_vendor_documents needed

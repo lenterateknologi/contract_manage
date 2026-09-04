@@ -58,6 +58,7 @@
 
     /* Semantic Surface Colors */
     --color-surface-base: var(--surface-base);
+    --color-surface-card: var(--surface-card);
     --color-surface-muted: var(--surface-muted);
     --color-surface-border: var(--surface-border);
 

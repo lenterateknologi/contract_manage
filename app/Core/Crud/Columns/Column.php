@@ -19,6 +19,8 @@ class Column implements JsonSerializable
 
     protected mixed $formatStateUsing = null;
 
+    protected string $align = 'left';
+
     public function __construct(string $name, ?string $label = null)
     {
         $this->name = $name;
@@ -40,6 +42,27 @@ class Column implements JsonSerializable
     public function searchable(bool $condition = true): static
     {
         $this->isSearchable = $condition;
+
+        return $this;
+    }
+
+    public function alignRight(): static
+    {
+        $this->align = 'right';
+
+        return $this;
+    }
+
+    public function alignCenter(): static
+    {
+        $this->align = 'center';
+
+        return $this;
+    }
+
+    public function align(string $align): static
+    {
+        $this->align = $align;
 
         return $this;
     }
@@ -85,6 +108,7 @@ class Column implements JsonSerializable
             'type' => $this->type,
             'sortable' => $this->isSortable,
             'searchable' => $this->isSearchable,
+            'align' => $this->align,
         ];
     }
 

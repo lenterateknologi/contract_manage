@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/pages/contracts/types';
+import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
 import { router } from '@inertiajs/react';
 import {
     AlertCircle,
@@ -13,7 +14,9 @@ import {
     Building2,
     Check,
     CheckCircle2,
+    ChevronDown,
     ChevronLeft,
+    ChevronUp,
     Clock,
     Download,
     FileCheck,
@@ -22,6 +25,7 @@ import {
     History,
     Link2,
     Loader2,
+    Lock,
     MessageSquare,
     MoreVertical,
     Paperclip,
@@ -29,6 +33,7 @@ import {
     Save,
     ShieldCheck,
     Trash2,
+    Unlock,
     Upload,
     User,
     UserCheck,
@@ -150,6 +155,7 @@ const ContractDetailView = ({
     const [signerOpen, setSignerOpen] = useState(false);
     const [rejectOpen, setRejectOpen] = useState(false);
     const [addhocOpen, setAddhocOpen] = useState(false);
+    const [showSpecialActions, setShowSpecialActions] = useState(false);
 
     const [headerTitle, setHeaderTitle] = useState(contract.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -204,28 +210,36 @@ const ContractDetailView = ({
         targetStepId?: string,
     ) => {
         try {
-            const c = await contractApi.approve(
-                contract.id,
-                note,
-                attachment,
-                assignedPicId,
-                executionOrder,
-                signerUserIds,
-                actionCode || activeActionCode,
-                isFinal,
-                targetStepId,
-            );
+            let c: Contract;
+            if (contract.status === 'draft' && contract.workflow_step?.step === 1) {
+                // Tahap 1 Draft: Kirim Persetujuan
+                c = await contractApi.send(contract.id, {
+                    workflow_id: contract.workflow_id || contract.workflow?.id,
+                });
+            } else {
+                c = await contractApi.approve(
+                    contract.id,
+                    note,
+                    attachment,
+                    assignedPicId,
+                    executionOrder,
+                    signerUserIds,
+                    actionCode || activeActionCode,
+                    isFinal,
+                    targetStepId,
+                );
+            }
             onUpdate(c);
 
-            let msg = 'Kontrak disetujui.';
+            let msg = contract.status === 'draft' && contract.workflow_step?.step === 1 ? 'Pengajuan persetujuan berhasil dikirim.' : 'Kontrak disetujui.';
             if (assignedPicId) msg = 'PIC ditugaskan dan kontrak disetujui.';
             if (signerUserIds && signerUserIds.length > 0) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
             if (isFinal) msg = 'Penandatanganan selesai dikonfigurasi sebagai final.';
 
             showToast(msg, 'success');
             setActiveActionCode(undefined);
-        } catch {
-            showToast('Gagal approve.', 'danger');
+        } catch (error: any) {
+            showToast(error.response?.data?.message || 'Gagal memproses persetujuan.', 'danger');
         }
     };
 
@@ -260,6 +274,50 @@ const ContractDetailView = ({
     };
 
     const canApprove = !!contract.can_approve;
+
+    // Custom / Default Actions Evaluation
+    const availableCustomActions = useMemo(() => {
+        const customActions: any[] = contract.workflow?.meta?.custom_actions || contract.workflow_step?.workflow?.meta?.custom_actions || [];
+        if (!customActions || !Array.isArray(customActions) || customActions.length === 0) return [];
+
+        const hasAssignedPic = !!contract.assigned_pic_id;
+        const hasSigners = (contract.approvals || []).some(
+            (a: any) => a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'
+        );
+
+        return customActions.filter((act) => {
+            if (act.is_active === false) return false;
+
+            // Step scope check
+            if (act.scope === 'specific_steps' && Array.isArray(act.step_ids) && act.step_ids.length > 0) {
+                const currentStepId = String(contract.workflow_step_id);
+                const currentStepSeq = contract.workflow_step?.step;
+                const matchStep = act.step_ids.some(
+                    (sid: string) => String(sid) === currentStepId || String(sid) === String(currentStepSeq)
+                );
+                if (!matchStep) return false;
+            }
+
+            // Smart Visibility Condition check
+            if (act.visibility_condition === 'no_pic' && hasAssignedPic) return false;
+            if (act.visibility_condition === 'require_pic' && !hasAssignedPic) return false;
+            if (act.visibility_condition === 'no_signers' && hasSigners) return false;
+            if (act.visibility_condition === 'has_signers' && !hasSigners) return false;
+
+            // Authority check: jika otoritas dikosongkan, aksi tidak dapat diakses
+            const authorities = act.authorities || [];
+            if (!authorities || authorities.length === 0) return false;
+
+            // Use the unified matchUserAgainstWorkflowPool to evaluate the logged-in user
+            const currentUserObj = meUser || { id: meId };
+            return matchUserAgainstWorkflowPool(currentUserObj, { authorities }, contract);
+        });
+    }, [contract.workflow, contract.workflow_step, contract.workflow_step_id, contract.created_by, contract.initiated_by_id, contract.assigned_pic_id, contract.approvals, contract.initiator, contract.creator, meId, meUser]);
+
+    // Check if standard step action panel is blocked by any custom action that requires completion first
+    const isStepActionLocked = useMemo(() => {
+        return availableCustomActions.some((act) => act.unlocks_other_actions);
+    }, [availableCustomActions]);
 
     const activeSignerApproval = useMemo(() => {
         return (contract.approvals || []).find(
@@ -594,10 +652,10 @@ const ContractDetailView = ({
                 </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-hidden p-3 lg:p-4 h-[calc(100vh-48px)]">
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_390px] h-full min-h-0 items-stretch">
+            <div className="flex-1 min-h-0 overflow-hidden p-3 lg:p-4 h-[calc(100vh-64px)]">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_390px] h-full min-h-0 items-start">
                     {/* Left Column: Form / Document Detail */}
-                    <div className="flex flex-col min-w-0 h-full min-h-0">
+                    <div className="flex flex-col min-w-0 h-full min-h-0 overflow-hidden">
                         {contract.workflow_step?.meta?.show_document_detail !== false && (
                             <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs flex-1 flex flex-col min-h-0 h-full">
                                 <div className="flex flex-1 flex-col min-h-0 h-full overflow-hidden">
@@ -724,177 +782,296 @@ const ContractDetailView = ({
                     )}
                 </div>
                 {/* Right Column: Panel Informasi & Aksi */}
-                <div className="flex flex-col gap-4 min-w-0 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1">
-                    {canApprove && contract.workflow_step?.meta?.show_action_panel !== false && (
-                        <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs">
-                            <div className="bg-primary rounded-t-xl flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between border-b border-primary/80 px-4">
-                                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
-                                    <Zap size={15} className="text-primary-foreground/90" /> {isSigner ? 'Upload Tanda Tangan Dibutuhkan' : 'Approval Dibutuhkan'}
-                                </div>
-                                <span className="rounded bg-white/20 border border-white/30 px-1.5 py-0.5 text-[9px] font-bold text-white uppercase">
-                                    {isSigner ? activeSignerApproval?.role : 'Reviewer'}
-                                </span>
-                            </div>
-                            <div className="p-3.5 flex flex-col gap-3">
-                            <div className="flex flex-col gap-2 pt-1">
-                                {isSigner ? (
-                                    <div className="flex flex-col gap-2">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => handleSigningAction('download')}
-                                            className="w-full gap-1.5 border-blue-200 text-xs  text-blue-700 uppercase shadow-sm hover:bg-blue-100/50 dark:border-blue-900/30 dark:text-blue-400"
-                                        >
-                                            <Download size={16} /> Download
-                                        </Button>
-
-                                        <div>
-                                            <input
-                                                type="file"
-                                                id="sidebar-upload-draft"
-                                                className="hidden"
-                                                accept=".docx,.DOCX"
-                                                onChange={(e) => {
-                                                    const f = e.target.files?.[0];
-                                                    if (f) handleSigningAction('upload', f);
-                                                }}
-                                                disabled={!stepDownloaded || signingUploading}
-                                            />
-                                            <Button
-                                                variant="primary"
-                                                onClick={() => document.getElementById('sidebar-upload-draft')?.click()}
-                                                disabled={!stepDownloaded || signingUploading}
-                                                className="shadow-primary/20 w-full gap-1.5 bg-blue-600 text-xs  text-white uppercase shadow-lg hover:bg-blue-700 hover:text-white"
-                                            >
-                                                {signingUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                                                Upload
-                                            </Button>
-                                        </div>
-
-                                        {!stepDownloaded && (
-                                            <div className="mt-1 flex items-start gap-1.5 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 dark:border-rose-900/30 dark:bg-rose-950/20">
-                                                <AlertCircle size={14} className="mt-0.5 shrink-0 text-rose-500" />
-                                                <p className="text-[9px] leading-relaxed font-medium text-rose-600 italic dark:text-rose-400">
-                                                    Anda wajib mengunduh draft terlebih dahulu sebelum mengunggah hasil TTD.
-                                                </p>
-                                            </div>
-                                        )}
+                <div className="flex flex-col gap-3.5 min-w-0 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-6">
+                    {/* SECTION: AKSI PERSYARATAN & APPROVAL (WRAPPED IN CARD) */}
+                    {(availableCustomActions.length > 0 || (canApprove && contract.workflow_step?.meta?.show_action_panel !== false)) && (
+                        <div className="bg-card text-card-foreground border-border/80 shadow-xs rounded-xl border p-4 space-y-3.5">
+                            <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                                        <CheckCircle2 size={16} />
                                     </div>
-                                ) : (
-                                    <>
-                                        {(contract.workflow_step?.actions || []).map((action: any) => {
-                                            const isApproveType = ['approve', 'assign', 'sign', 'signature'].includes(
-                                                action.action_code?.toLowerCase(),
-                                            );
-                                            const isRejectType = ['reject'].includes(action.action_code?.toLowerCase());
-                                            const isForwardType = ['forward', 'add_adhoc'].includes(action.action_code?.toLowerCase());
-
-                                            let variant: 'primary' | 'outline' | 'ghost' = 'outline';
-                                            let Icon = CheckCircle2;
-
-                                            if (isApproveType) {
-                                                variant = 'primary';
-                                                Icon = CheckCircle2;
-                                                if (action.action_code === 'assign') Icon = UserCheck;
-                                                if (['sign', 'signature'].includes(action.action_code)) Icon = PenTool;
-                                            } else if (isRejectType) {
-                                                variant = 'outline';
-                                                Icon = AlertCircle;
-                                            } else if (isForwardType) {
-                                                variant = 'ghost';
-                                                Icon = UserPlus;
-                                            }
-
-                                            return (
-                                                <Button
-                                                    key={action.id}
-                                                    variant={variant}
-                                                    onClick={() => {
-                                                        const code = action.action_code?.toLowerCase();
-                                                        setActiveActionCode(action.action_code);
-                                                        if (isForwardType) {
-                                                            setAddhocOpen(true);
-                                                        } else if (isRejectType) {
-                                                            setRejectOpen(true);
-                                                        } else if (code === 'assign' || code === 'assign_pic') {
-                                                            setAssignOpen(true);
-                                                        } else if (code === 'sign' || code === 'signature') {
-                                                            const hasSignersAssigned = (contract?.approvals || []).some(
-                                                                (a: any) => String(a.workflow_step_id) === String(contract.workflow_step_id) && 
-                                                                            (a.role === 'Penandatangan' || a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === action.alias)
-                                                            );
-                                                            if (hasSignersAssigned) {
-                                                                setApproveOpen(true);
-                                                            } else {
-                                                                setSignerOpen(true);
-                                                            }
-                                                        } else {
-                                                            setApproveOpen(true);
-                                                        }
-                                                    }}
-                                                     className={cn(
-                                                        'w-full text-xs uppercase shadow-none transition-all',
-                                                        isApproveType && 'font-semibold',
-                                                        isRejectType && 'bg-rose-600 text-white hover:bg-rose-700 font-semibold',
-                                                        isForwardType && 'bg-primary text-primary-foreground hover:bg-primary/90 font-semibold',
-                                                    )}
-                                                >
-                                                    <Icon size={16} />{' '}
-                                                    {action.alias ||
-                                                        (action.action_code === 'approve'
-                                                            ? contract.workflow_step?.step === 1
-                                                                ? 'Kirim Persetujuan'
-                                                                : contract.requires_pic_assignment
-                                                                    ? 'Tugaskan PIC'
-                                                                    : 'Setujui Kontrak'
-                                                            : action.action_code === 'forward'
-                                                                ? 'Approval Tambahan'
-                                                                : action.action_code === 'reject'
-                                                                    ? 'Tolak Kontrak'
-                                                                    : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
-                                                                        ? 'Upload Tanda Tangan'
-                                                                        : action.action_code)}
-                                                </Button>
-                                            );
-                                        })}
-
-                                        {/* Fallback if no actions defined (Backward compatibility or safety) */}
-                                        {(!contract.workflow_step?.actions || contract.workflow_step.actions.length === 0) && (
-                                            <>
-                                                <Button
-                                                    variant="primary"
-                                                    onClick={() => {
-                                                        setActiveActionCode('approve');
-                                                        if (contract.requires_pic_assignment) {
-                                                            setAssignOpen(true);
-                                                        } else {
-                                                            setApproveOpen(true);
-                                                        }
-                                                    }}
-                                                    className="w-full text-xs uppercase shadow-none font-semibold"
-                                                >
-                                                    <CheckCircle2 size={16} />{' '}
-                                                    {contract.workflow_step?.step === 1
-                                                        ? 'Kirim Persetujuan'
-                                                        : contract.requires_pic_assignment
-                                                            ? 'Tugaskan PIC'
-                                                            : 'Setujui Kontrak'}
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    onClick={() => {
-                                                        setActiveActionCode('reject');
-                                                        setRejectOpen(true);
-                                                    }}
-                                                    className="w-full text-xs uppercase bg-rose-600 text-white hover:bg-rose-700 font-semibold shadow-none transition-all"
-                                                >
-                                                    <AlertCircle size={16} /> Tolak Kontrak
-                                                </Button>
-                                            </>
-                                        )}
-                                    </>
+                                    <div>
+                                        <h3 className="text-xs font-bold text-foreground">Aksi & Persetujuan</h3>
+                                        <p className="text-[10px] text-muted-foreground">Tindakan yang tersedia pada tahap ini</p>
+                                    </div>
+                                </div>
+                                {contract.workflow_step?.name && (
+                                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
+                                        {contract.workflow_step.name}
+                                    </span>
                                 )}
                             </div>
-                            </div>
+
+                            {/* CUSTOM / SPECIAL ACTIONS */}
+                            {(() => {
+                                const hasPic = !!contract.assigned_pic_id;
+                                const hasSigners = (contract.approvals || []).some(
+                                    (a: any) => a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'
+                                );
+
+                                const canToggleAccess = availableCustomActions.some((a) => a.action_code === 'toggle_access' || a.id === 'action_toggle_access');
+                                const canAssignPic = availableCustomActions.some((a) => a.action_code === 'assign' || a.id === 'action_assign_pic');
+                                const canSignature = availableCustomActions.some((a) => a.action_code === 'signature' || a.id === 'action_signature');
+                                const canAdhoc = availableCustomActions.some((a) => a.action_code === 'forward' || a.id === 'action_adhoc');
+
+                                const picAction = availableCustomActions.find((a) => a.action_code === 'assign' || a.id === 'action_assign_pic');
+                                const sigAction = availableCustomActions.find((a) => a.action_code === 'signature' || a.id === 'action_signature');
+                                const adhocAction = availableCustomActions.find((a) => a.action_code === 'forward' || a.id === 'action_adhoc');
+                                const toggleAction = availableCustomActions.find((a) => a.action_code === 'toggle_access' || a.id === 'action_toggle_access');
+
+                                const visibleActionCount = [canAssignPic, canSignature, canAdhoc].filter(Boolean).length;
+                                if (visibleActionCount === 0 && !canToggleAccess) return null;
+
+                                return (
+                                    <div className="flex flex-col gap-2">
+                                        {/* 0. BUTTON KHUSUS: BUKA / KUNCI SEMUA AKSI TAMBAHAN */}
+                                        {canToggleAccess && (
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => setShowSpecialActions(!showSpecialActions)}
+                                                className="w-full justify-between font-bold bg-slate-700 hover:bg-slate-800 text-white cursor-pointer shadow-md transition-all h-9"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {showSpecialActions ? (
+                                                        <Unlock size={15} className="text-amber-300" />
+                                                    ) : (
+                                                        <Lock size={15} className="text-slate-300" />
+                                                    )}
+                                                    <span>
+                                                        {showSpecialActions 
+                                                            ? 'Sembunyikan Opsi Tambahan' 
+                                                            : (toggleAction?.alias || 'Buka Semua Opsi Tambahan')}
+                                                    </span>
+                                                </div>
+                                                {showSpecialActions ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                                            </Button>
+                                        )}
+
+                                        {/* 1. BUTTON TENTUKAN / GANTI PIC */}
+                                        {canAssignPic && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setActiveActionCode('assign');
+                                                    setAssignOpen(true);
+                                                }}
+                                                className="w-full justify-center bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
+                                            >
+                                                <UserCheck size={16} />
+                                                <span className="text-xs">{hasPic ? (picAction?.alias ? `Ubah ${picAction.alias}` : 'Ubah / Ganti PIC') : (picAction?.alias || 'Tentukan PIC Kontrak')}</span>
+                                            </Button>
+                                        )}
+
+                                        {/* 2. BUTTON TENTUKAN TANDA TANGAN */}
+                                        {canSignature && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setActiveActionCode('signature');
+                                                    setSignerOpen(true);
+                                                }}
+                                                className="w-full justify-center bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
+                                            >
+                                                <PenTool size={16} />
+                                                <span className="text-xs">{hasSigners ? (sigAction?.alias ? `Ubah ${sigAction.alias}` : 'Ubah Penandatangan') : (sigAction?.alias || 'Tentukan Penandatangan')}</span>
+                                            </Button>
+                                        )}
+
+                                        {/* 3. BUTTON TAMBAH APPROVAL TAMBAHAN / AD-HOC */}
+                                        {canAdhoc && (
+                                            <Button
+                                                variant="primary"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setActiveActionCode('forward');
+                                                    setAddhocOpen(true);
+                                                }}
+                                                className="w-full justify-center bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
+                                            >
+                                                <UserPlus size={16} />
+                                                <span className="text-xs">{adhocAction?.alias || 'Tambah Persetujuan Ad-Hoc'}</span>
+                                            </Button>
+                                        )}
+                                    </div>
+                                );
+                            })()}
+
+                            {/* MAIN STEP ACTIONS */}
+                            {canApprove && contract.workflow_step?.meta?.show_action_panel !== false && (
+                                <div className="flex flex-col gap-2 pt-1 border-t border-border/40 mt-1">
+                                    {isStepActionLocked ? (
+                                        <div className="flex flex-col items-center justify-center p-3 text-center bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1.5">
+                                            <AlertCircle size={20} className="text-amber-600 dark:text-amber-400" />
+                                            <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                                                Aksi Utama Terkunci
+                                            </span>
+                                            <p className="text-[10px] text-amber-600/90 dark:text-amber-400/90 leading-tight">
+                                                Harap selesaikan aksi khusus yang dipersyaratkan di atas terlebih dahulu untuk membuka tombol persetujuan ini.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            {isSigner ? (
+                                                <div className="flex flex-col gap-2">
+                                                    <Button
+                                                        variant="primary"
+                                                        onClick={() => handleSigningAction('download')}
+                                                        className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-xs text-white font-bold uppercase shadow-md hover:shadow-lg transition-all h-9"
+                                                    >
+                                                        <Download size={16} /> Download Draft
+                                                    </Button>
+
+                                                    <div>
+                                                        <input
+                                                            type="file"
+                                                            id="sidebar-upload-draft"
+                                                            className="hidden"
+                                                            accept=".docx,.DOCX"
+                                                            onChange={(e) => {
+                                                                const f = e.target.files?.[0];
+                                                                if (f) handleSigningAction('upload', f);
+                                                            }}
+                                                            disabled={!stepDownloaded || signingUploading}
+                                                        />
+                                                        <Button
+                                                            variant="primary"
+                                                            onClick={() => document.getElementById('sidebar-upload-draft')?.click()}
+                                                            disabled={!stepDownloaded || signingUploading}
+                                                            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white uppercase shadow-md hover:shadow-lg transition-all h-9"
+                                                        >
+                                                            {signingUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                                                            Upload TTD
+                                                        </Button>
+                                                    </div>
+
+                                                    {!stepDownloaded && (
+                                                        <div className="mt-1 flex items-start gap-1.5 rounded-lg border border-rose-300 bg-rose-100 px-3 py-2 text-rose-900">
+                                                            <AlertCircle size={14} className="mt-0.5 shrink-0 text-rose-600" />
+                                                            <p className="text-[10px] leading-relaxed font-semibold">
+                                                                Anda wajib mengunduh draft terlebih dahulu sebelum mengunggah hasil TTD.
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {(contract.workflow_step?.actions || []).map((action: any) => {
+                                                        const isApproveType = ['approve', 'assign', 'sign', 'signature'].includes(
+                                                            action.action_code?.toLowerCase(),
+                                                        );
+                                                        const isRejectType = ['reject'].includes(action.action_code?.toLowerCase());
+                                                        const isForwardType = ['forward', 'add_adhoc'].includes(action.action_code?.toLowerCase());
+
+                                                        let customColorClass = 'bg-slate-700 hover:bg-slate-800 text-white';
+                                                        let Icon = CheckCircle2;
+
+                                                        if (isApproveType) {
+                                                            Icon = CheckCircle2;
+                                                            if (action.action_code === 'assign') Icon = UserCheck;
+                                                            if (['sign', 'signature'].includes(action.action_code)) Icon = PenTool;
+                                                            customColorClass = 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-md hover:shadow-lg';
+                                                        } else if (isRejectType) {
+                                                            Icon = AlertCircle;
+                                                            customColorClass = 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-md hover:shadow-lg';
+                                                        } else if (isForwardType) {
+                                                            Icon = UserPlus;
+                                                            customColorClass = 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white shadow-md hover:shadow-lg';
+                                                        }
+
+                                                        return (
+                                                            <Button
+                                                                key={action.id}
+                                                                onClick={() => {
+                                                                    const code = action.action_code?.toLowerCase();
+                                                                    setActiveActionCode(action.action_code);
+                                                                    if (isForwardType) {
+                                                                        setAddhocOpen(true);
+                                                                    } else if (isRejectType) {
+                                                                        setRejectOpen(true);
+                                                                    } else if (code === 'assign' || code === 'assign_pic') {
+                                                                        setAssignOpen(true);
+                                                                    } else if (code === 'sign' || code === 'signature') {
+                                                                        const hasSignersAssigned = (contract?.approvals || []).some(
+                                                                            (a: any) => String(a.workflow_step_id) === String(contract.workflow_step_id) && 
+                                                                                        (a.role === 'Penandatangan' || a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === action.alias)
+                                                                        );
+                                                                        if (hasSignersAssigned) {
+                                                                            setApproveOpen(true);
+                                                                        } else {
+                                                                            setSignerOpen(true);
+                                                                        }
+                                                                    } else {
+                                                                        setApproveOpen(true);
+                                                                    }
+                                                                }}
+                                                                className={cn("w-full h-9.5 font-bold shadow-md cursor-pointer gap-2 transition-all", customColorClass)}
+                                                            >
+                                                                <Icon size={16} className="shrink-0" />
+                                                                <span>
+                                                                    {action.alias ||
+                                                                        (action.action_code === 'approve'
+                                                                            ? contract.workflow_step?.step === 1
+                                                                                ? 'Kirim Persetujuan'
+                                                                                : contract.requires_pic_assignment
+                                                                                    ? 'Tugaskan PIC'
+                                                                                    : 'Setujui Kontrak'
+                                                                            : action.action_code === 'forward'
+                                                                                ? 'Approval Tambahan'
+                                                                                : action.action_code === 'reject'
+                                                                                    ? 'Tolak Kontrak'
+                                                                                    : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
+                                                                                        ? 'Upload Tanda Tangan'
+                                                                                        : action.action_code)}
+                                                                </span>
+                                                            </Button>
+                                                        );
+                                                    })}
+
+                                                    {/* Fallback if no actions defined */}
+                                                    {(!contract.workflow_step?.actions || contract.workflow_step.actions.length === 0) && (
+                                                        <>
+                                                            <Button
+                                                                onClick={() => {
+                                                                    setActiveActionCode('approve');
+                                                                    if (contract.requires_pic_assignment) {
+                                                                        setAssignOpen(true);
+                                                                    } else {
+                                                                        setApproveOpen(true);
+                                                                    }
+                                                                }}
+                                                                className="w-full h-9.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold shadow-md hover:shadow-lg cursor-pointer gap-2 transition-all"
+                                                            >
+                                                                <CheckCircle2 size={16} />
+                                                                <span>
+                                                                    {contract.workflow_step?.step === 1
+                                                                        ? 'Kirim Persetujuan'
+                                                                        : contract.requires_pic_assignment
+                                                                            ? 'Tugaskan PIC'
+                                                                            : 'Setujui Kontrak'}
+                                                                </span>
+                                                            </Button>
+                                                            <Button
+                                                                onClick={() => {
+                                                                    setActiveActionCode('reject');
+                                                                    setRejectOpen(true);
+                                                                }}
+                                                                className="w-full h-9.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold shadow-md hover:shadow-lg cursor-pointer gap-2 transition-all"
+                                                            >
+                                                                <AlertCircle size={16} />
+                                                                <span>Tolak Kontrak</span>
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
 

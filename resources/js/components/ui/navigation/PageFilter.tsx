@@ -221,7 +221,7 @@ export function PageFilter({
     };
 
     return (
-        <div className={cn('border-b border-surface-border bg-surface-card/70 dark:bg-zinc-900/70 backdrop-blur-sm p-4 animate-in fade-in slide-in-from-top-2 duration-200 shrink-0', className)}>
+        <div className={cn('relative z-30 border-b border-surface-border bg-surface-card/70 dark:bg-zinc-900/70 backdrop-blur-sm p-4 animate-in fade-in slide-in-from-top-2 duration-200 shrink-0', className)}>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <div className="flex items-center gap-2">
                     <SlidersHorizontal size={14} className="text-primary" />

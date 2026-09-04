@@ -27,6 +27,8 @@ class DepartmentResource extends Resource
 
     public static ?string $importClass = DepartmentsImport::class;
 
+    public static array $withCount = ['divisions', 'users'];
+
     public static function table(): array
     {
         return [
@@ -34,8 +36,10 @@ class DepartmentResource extends Resource
             TextColumn::make('name', 'Nama Departemen')->sortable()->searchable(),
             TextColumn::make('org_group_name', 'Group Organisasi')->sortable()->searchable(),
             TextColumn::make('org_level_name', 'Level Organisasi')->sortable()->searchable(),
-            BooleanColumn::make('is_used', 'Sistem'),
-            BooleanColumn::make('is_active', 'Portal'),
+            TextColumn::make('divisions_count', 'Total Divisi')->sortable()->alignRight(),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
+            BooleanColumn::make('is_used', 'Sistem')->alignRight(),
+            BooleanColumn::make('is_active', 'Portal')->alignRight(),
         ];
     }
 
