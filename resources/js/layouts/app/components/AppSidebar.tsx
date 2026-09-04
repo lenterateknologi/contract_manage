@@ -31,6 +31,7 @@ import {
     ChevronRight,
     ChevronDown,
     Clock,
+    Database,
     Eye,
     FileCheck,
     FileCode,
@@ -96,6 +97,7 @@ const iconMap: Record<string, LucideIcon> = {
     MessageSquare,
     LayoutDashboard,
     Layers,
+    Database,
     Zap,
 };
 
@@ -476,6 +478,20 @@ export const AppSidebar = memo(function AppSidebar() {
         const rawGroups = ((sidebarNavGroups as NavGroup[]) ?? []).map((group) => {
             const items = group.items.map(mapItem);
 
+            // Hardcode Backup & Restore inside Pengaturan Sistem if user is admin / super admin
+            if (isSuperAdmin && (group.title.toLowerCase().includes('pengaturan') || group.title.toLowerCase().includes('system'))) {
+                const hasBackup = items.some((i) => i.url === '/admin/backups');
+                if (!hasBackup) {
+                    items.push({
+                        title: 'Backup & Restore',
+                        url: '/admin/backups',
+                        description: 'Manajemen pencadangan dan pemulihan database sistem',
+                        icon: Database,
+                        sequence: 99,
+                    });
+                }
+            }
+
             // Prefer the group's own icon field, fall back to first item's icon
             const groupIconName = (group as any).icon as string | null | undefined;
             const primaryIcon = groupIconName
@@ -489,6 +505,24 @@ export const AppSidebar = memo(function AppSidebar() {
             };
         });
 
+        // If Pengaturan Sistem doesn't exist at all in groups for Admin, add it
+        if (isSuperAdmin && !rawGroups.some((g) => g.title.toLowerCase().includes('pengaturan') || g.title.toLowerCase().includes('system'))) {
+            rawGroups.push({
+                title: 'Pengaturan Sistem',
+                icon: Settings2,
+                sequence: 99,
+                items: [
+                    {
+                        title: 'Backup & Restore',
+                        url: '/admin/backups',
+                        description: 'Manajemen pencadangan dan pemulihan database sistem',
+                        icon: Database,
+                        sequence: 99,
+                    },
+                ],
+            });
+        }
+
         if (!pov.activeNavPov.allowedRoutes) {
             return rawGroups;
         }
@@ -497,6 +531,7 @@ export const AppSidebar = memo(function AppSidebar() {
         return rawGroups
             .map((group) => {
                 const filteredItems = group.items.filter((item) => {
+                    if (isSuperAdmin && item.url === '/admin/backups') return true;
                     const basePath = item.url.split('?')[0];
                     return allowedSet.has(basePath) || allowedSet.has(item.url);
                 });
@@ -506,7 +541,7 @@ export const AppSidebar = memo(function AppSidebar() {
                 };
             })
             .filter((group) => group.items.length > 0);
-    }, [sidebarNavGroups, pov.activeNavPov]);
+    }, [sidebarNavGroups, pov.activeNavPov, isSuperAdmin]);
 
     // Active group detection
     const activeGroupTitle = useMemo(() => {

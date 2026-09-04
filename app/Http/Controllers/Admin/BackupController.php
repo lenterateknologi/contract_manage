@@ -10,8 +10,25 @@ use Inertia\Inertia;
 
 class BackupController extends Controller
 {
-    public function index()
+    private function authorizeSuperAdmin(Request $request): void
     {
+        $user = $request->user();
+        $isAuthorized = $user && (
+            $user->role === 'Super Admin' ||
+            $user->role === 'Admin' ||
+            $user->is_admin ||
+            ($request->hasSession() && $request->session()->has('impersonator_id'))
+        );
+
+        if (! $isAuthorized) {
+            abort(403, 'Akses ditolak. Halaman ini hanya dapat diakses oleh Administrator.');
+        }
+    }
+
+    public function index(Request $request)
+    {
+        $this->authorizeSuperAdmin($request);
+
         $backupFiles = [];
         $dumpPath = base_path('database_dumps');
 
@@ -47,6 +64,8 @@ class BackupController extends Controller
 
     public function runScript(Request $request)
     {
+        $this->authorizeSuperAdmin($request);
+
         $request->validate([
             'script' => 'required|in:db,data,master,transaction',
         ]);
@@ -76,8 +95,10 @@ class BackupController extends Controller
         return back()->withErrors(['error' => 'Gagal menjalankan skrip: '.$result->errorOutput()]);
     }
 
-    public function download($filename)
+    public function download(Request $request, $filename)
     {
+        $this->authorizeSuperAdmin($request);
+
         $filename = basename($filename);
         $filePath = base_path("database_dumps/{$filename}");
 
@@ -88,8 +109,10 @@ class BackupController extends Controller
         return response()->download($filePath);
     }
 
-    public function destroy($filename)
+    public function destroy(Request $request, $filename)
     {
+        $this->authorizeSuperAdmin($request);
+
         $filename = basename($filename);
         $filePath = base_path("database_dumps/{$filename}");
 
@@ -104,6 +127,8 @@ class BackupController extends Controller
 
     public function restore(Request $request)
     {
+        $this->authorizeSuperAdmin($request);
+
         $request->validate([
             'filename' => 'required|string',
         ]);
