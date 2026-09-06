@@ -211,24 +211,17 @@ const ContractDetailView = ({
     ) => {
         try {
             let c: Contract;
-            if (contract.status === 'draft' && contract.workflow_step?.step === 1) {
-                // Tahap 1 Draft: Kirim Persetujuan
-                c = await contractApi.send(contract.id, {
-                    workflow_id: contract.workflow_id || contract.workflow?.id,
-                });
-            } else {
-                c = await contractApi.approve(
-                    contract.id,
-                    note,
-                    attachment,
-                    assignedPicId,
-                    executionOrder,
-                    signerUserIds,
-                    actionCode || activeActionCode,
-                    isFinal,
-                    targetStepId,
-                );
-            }
+            c = await contractApi.approve(
+                contract.id,
+                note,
+                attachment,
+                assignedPicId,
+                executionOrder,
+                signerUserIds,
+                actionCode || activeActionCode,
+                isFinal,
+                targetStepId,
+            );
             onUpdate(c);
 
             let msg = contract.status === 'draft' && contract.workflow_step?.step === 1 ? 'Pengajuan persetujuan berhasil dikirim.' : 'Kontrak disetujui.';

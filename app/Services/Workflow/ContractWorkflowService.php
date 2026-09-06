@@ -459,12 +459,47 @@ class ContractWorkflowService
                     in_array('assigned_pic', $customs) ? ['Staff Legal'] : []
                 );
             } else {
+                $cfg = $step->approver_config ?? [];
+                $customActors = ! empty($cfg['custom']) ? (array) $cfg['custom'] : [];
+
+                if (! empty($customActors)) {
+                    if (in_array('initiator', $customActors) && $contract->initiator) {
+                        $approvers->push($contract->initiator);
+                        $roles[] = 'Initiator';
+                    }
+                    if (in_array('creator', $customActors) && $contract->creator) {
+                        $approvers->push($contract->creator);
+                        $roles[] = 'Creator';
+                    }
+                    if (in_array('assigned_pic', $customActors)) {
+                        $metadata = $contract->metadata ?? [];
+                        $picId = $contract->assigned_pic_id ?? ($metadata['assigned_pic_id'] ?? null);
+                        if ($picId) {
+                            $pic = User::find($picId);
+                            if ($pic) {
+                                $approvers->push($pic);
+                                $roles[] = 'Staff Legal';
+                            }
+                        }
+                    }
+                    if (in_array('atasan', $customActors)) {
+                        $atasanList = $this->queryService->resolveHierarchyApprover($contract, $step);
+                        if ($atasanList) {
+                            $approvers = $approvers->merge($atasanList);
+                            $roles[] = 'Atasan Langsung';
+                        }
+                    }
+                }
+
                 if ($step->approver_type === 'atasan') {
-                    $approvers = $this->queryService->resolveHierarchyApprover($contract, $step);
+                    $approvers = $approvers->merge($this->queryService->resolveHierarchyApprover($contract, $step));
                 } elseif ($step->approver_type === 'user') {
-                    $approvers = $step->users()->get();
+                    $approvers = $approvers->merge($step->users()->get());
                 } elseif ($step->approver_type === 'initiator') {
-                    $approvers = collect([$contract->initiator]);
+                    if ($contract->initiator) {
+                        $approvers->push($contract->initiator);
+                        $roles[] = 'Initiator';
+                    }
                 } else {
                     $metadata = $contract->metadata ?? [];
                     $picId = $contract->assigned_pic_id ?? ($metadata['assigned_pic_id'] ?? null);
@@ -472,7 +507,8 @@ class ContractWorkflowService
                     if ($step->approver_type === 'assigned_pic' && $picId) {
                         $pic = User::find($picId);
                         if ($pic) {
-                            $approvers = collect([$pic]);
+                            $approvers->push($pic);
+                            $roles[] = 'Staff Legal';
                         }
                     }
 
@@ -481,18 +517,30 @@ class ContractWorkflowService
                         $hasFilters = false;
 
                         $legacyRoles = $step->role ? (is_array($step->role) ? $step->role : [$step->role]) : [];
+                        if (empty($legacyRoles) && ! empty($cfg['roles'])) {
+                            $legacyRoles = (array) $cfg['roles'];
+                        }
                         if (! empty($legacyRoles)) {
-                            $query->whereHas('roleRelation', fn ($q) => $q->whereIn('name', $legacyRoles));
+                            $query->where(function ($q) use ($legacyRoles) {
+                                $q->whereHas('roleRelation', fn ($rq) => $rq->whereIn('name', $legacyRoles))
+                                    ->orWhereIn('role_id', $legacyRoles);
+                            });
                             $hasFilters = true;
                         }
 
                         $targetDeptIds = $step->department_ids ?? [];
+                        if (empty($targetDeptIds) && ! empty($cfg['departments'])) {
+                            $targetDeptIds = (array) $cfg['departments'];
+                        }
                         if ($step->filter_department) {
                             $initDeptId = $contract->initiator->division_id ?? '00000000-0000-0000-0000-000000000000';
                             $query->where('division_id', $initDeptId);
                             $hasFilters = true;
                         } elseif (! empty($targetDeptIds)) {
-                            $query->whereIn('division_id', $targetDeptIds);
+                            $query->where(function ($q) use ($targetDeptIds) {
+                                $q->whereIn('division_id', $targetDeptIds)
+                                    ->orWhereIn('department_id', $targetDeptIds);
+                            });
                             $hasFilters = true;
                         }
 
@@ -529,6 +577,7 @@ class ContractWorkflowService
                         }
                     }
                 }
+                $approvers = $approvers->unique('id');
             }
         }
 

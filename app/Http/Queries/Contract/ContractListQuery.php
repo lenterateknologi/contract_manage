@@ -70,10 +70,16 @@ class ContractListQuery
         $this->applySearchFilter($query, $request);
         $this->applyStatusFilter($query, $request, $view);
         $this->applyTypeFilter($query, $request);
-        $this->applyDepartmentFilter($query, $request);
+
+        // Untuk view 'pending', approval sudah spesifik user_id approver yang ditugaskan dalam workflow,
+        // sehingga tidak boleh dibatasi oleh scope organisasi/departemen default milik user login.
+        if ($view !== 'pending') {
+            $this->applyDepartmentFilter($query, $request);
+            $this->applyOrgFilters($query, $request);
+        }
+
         $this->applyDateRangeFilter($query, $request);
         $this->applySubmissionTypeFilter($query, $request);
-        $this->applyOrgFilters($query, $request);
 
         return $query;
     }

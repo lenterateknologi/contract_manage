@@ -166,7 +166,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             </div>
 
             {/* Scrollable Timeline Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-6">
 
             {/* Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-2 w-full">
@@ -272,61 +272,39 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                     {group.sequence}
                                                 </TimelineIcon>
 
-                                                 <TimelineContent>
-                                                     <div className="flex flex-wrap items-center justify-between gap-2">
-                                                         <div className="flex items-center gap-2">
-                                                             <span
-                                                                 style={isActive && statusColor ? { color: statusColor } : undefined}
-                                                                 className={cn(
-                                                                     'text-[11px] font-bold tracking-tight uppercase transition-colors duration-300',
-                                                                     isCompleted
-                                                                         ? 'text-emerald-700 dark:text-emerald-400'
-                                                                         : isActive
-                                                                             ? (!statusColor && 'text-amber-600 dark:text-amber-400')
-                                                                             : isRejectedState
-                                                                                 ? 'text-rose-600 dark:text-rose-400'
-                                                                                 : 'text-text-soft',
-                                                                 )}
-                                                             >
-                                                                 {group.stepName || `Tahap ${group.sequence}`}
-                                                             </span>
-                                                             {isActive && (
-                                                                 <span
-                                                                     style={statusColor ? {
-                                                                         backgroundColor: `${statusColor}18`,
-                                                                         color: statusColor,
-                                                                     } : undefined}
-                                                                     className={cn(
-                                                                         'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide',
-                                                                         !statusColor && 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                                                                     )}
-                                                                 >
-                                                                     <span
-                                                                         style={statusColor ? { backgroundColor: statusColor } : undefined}
-                                                                         className={cn(
-                                                                             'h-1.5 w-1.5 rounded-full animate-pulse shrink-0',
-                                                                             !statusColor && 'bg-amber-500'
-                                                                         )}
-                                                                     />
-                                                                     Sekarang
-                                                                 </span>
-                                                             )}
-                                                         </div>
+                                                <TimelineContent>
+                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2 pb-1.5 border-b border-surface-border/60">
+                                                        <div className="space-y-0.5">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <h4 className="text-xs font-bold text-text-main">
+                                                                    Step {group.sequence}: {group.stepName}
+                                                                </h4>
+                                                                {targetStatus && (
+                                                                    <span
+                                                                        className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border uppercase"
+                                                                        style={
+                                                                            statusColor
+                                                                                ? { backgroundColor: `${statusColor}15`, color: statusColor, borderColor: `${statusColor}40` }
+                                                                                : undefined
+                                                                        }
+                                                                    >
+                                                                        {targetStatus}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {group.stepDescription && (
+                                                                <p className="text-[11px] text-text-muted leading-relaxed">
+                                                                    {group.stepDescription}
+                                                                </p>
+                                                            )}
+                                                        </div>
 
-                                                         {/* Required Sub-Documents Badge Pills for Step */}
-                                                         {(() => {
-                                                             const mainItem = group.items[0];
-                                                             let stepMeta = mainItem?.workflow_step?.meta;
-                                                             let actions = mainItem?.workflow_step?.action_configs || [];
+                                                        {(() => {
+                                                            let actions = mainItem?.workflow_step?.action_configs || [];
 
-                                                             if (!stepMeta && contract?.workflow?.steps) {
-                                                                 const matchedStep = contract.workflow.steps.find((s: any) => s.step === group.sequence || s.id === mainItem?.workflow_step_id);
-                                                                 if (matchedStep) {
-                                                                     stepMeta = matchedStep.meta;
-                                                                     if (!actions.length) actions = matchedStep.action_configs || [];
-                                                                 }
-                                                             }
-                                                             stepMeta = stepMeta || {};
+                                                            if (matchedStep) {
+                                                                if (!actions.length) actions = matchedStep.action_configs || [];
+                                                            }
 
                                                              const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
                                                              const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');

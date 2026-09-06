@@ -328,18 +328,20 @@ class HandleInertiaRequests extends Middleware
                 $nonKontrakIds = $getDescendantIds($nonKontrakParent?->id);
                 $ndaIds = $getDescendantIds($ndaParent?->id);
 
-                $baseQuery = DB::table('t_contracts')->whereNull('deleted_at')->whereRaw("UPPER(status) != 'DRAFT'");
+                // Scoped base query for all contracts and expiry respecting user organization permissions
+                $scopedAllQuery = app(\App\Http\Queries\Contract\ContractListQuery::class)->build(new Request(), 'all');
+                $scopedActiveQuery = (clone $scopedAllQuery)->whereRaw("UPPER(status) != 'ARCHIVED'");
 
-                $allTotal = (clone $baseQuery)->count();
-                $allKontrak = (clone $baseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $allNonKontrak = (clone $baseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $allNda = (clone $baseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
+                $allTotal = (clone $scopedActiveQuery)->count();
+                $allKontrak = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
+                $allNonKontrak = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
+                $allNda = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
-                $myBaseQuery = (clone $baseQuery)->where('created_by', $userId);
-                $myTotal = (clone $myBaseQuery)->count();
-                $myKontrak = (clone $myBaseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $myNonKontrak = (clone $myBaseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $myNda = (clone $myBaseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
+                $myBaseQuery = DB::table('t_contracts')->whereNull('deleted_at')->where('created_by', $userId);
+                $myTotal = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->count();
+                $myKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
+                $myNonKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
+                $myNda = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
                 $pendingApprovalCount = 0;
                 $historyApprovalCount = 0;
@@ -351,7 +353,8 @@ class HandleInertiaRequests extends Middleware
                         ->whereNull('t_contracts.deleted_at')
                         ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
                         ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
-                        ->count();
+                        ->distinct('t_contracts.id')
+                        ->count('t_contracts.id');
 
                     $historyApprovalCount = DB::table('t_approvals')
                         ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
@@ -359,14 +362,15 @@ class HandleInertiaRequests extends Middleware
                         ->whereIn('t_approvals.status', ['approved', 'rejected', 'revision'])
                         ->whereNull('t_contracts.deleted_at')
                         ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
-                        ->count();
+                        ->distinct('t_contracts.id')
+                        ->count('t_contracts.id');
                 }
 
-                $expiryBaseQuery = (clone $baseQuery)->whereNotNull('end_date');
-                $expiryTotal = (clone $expiryBaseQuery)->count();
-                $expiryKontrak = (clone $expiryBaseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $expiryNonKontrak = (clone $expiryBaseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $expiryNda = (clone $expiryBaseQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
+                $scopedExpiryQuery = (clone $scopedAllQuery)->whereNotNull('end_date');
+                $expiryTotal = (clone $scopedExpiryQuery)->count();
+                $expiryKontrak = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
+                $expiryNonKontrak = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
+                $expiryNda = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
                 return [
                     'all' => [
@@ -382,7 +386,7 @@ class HandleInertiaRequests extends Middleware
                         'nda' => $myNda,
                     ],
                     'pending' => [
-                        'total' => $pendingApprovalCount,
+                        'total' => $pendingApprovalCount + $historyApprovalCount,
                         'pending' => $pendingApprovalCount,
                         'history' => $historyApprovalCount,
                     ],

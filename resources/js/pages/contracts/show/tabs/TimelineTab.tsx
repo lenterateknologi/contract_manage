@@ -17,17 +17,15 @@ export const TimelineTab = ({ contract, meId, onApprove, showToast }: TimelineTa
     };
 
     return (
-        <div >
-            <div className="flex flex-col gap-4">
-                <ApprovalSteps
-                    contract={contract}
-                    approvals={contract.approvals}
-                    creator={contract.creator}
-                    submittedAt={contract.submitted_at ?? undefined}
-                    meId={meId}
-                    onApprove={onApprove}
-                />
-            </div>
+        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+            <ApprovalSteps
+                contract={contract}
+                approvals={contract.approvals}
+                creator={contract.creator}
+                submittedAt={contract.submitted_at ?? undefined}
+                meId={meId}
+                onApprove={onApprove}
+            />
         </div>
     );
 };

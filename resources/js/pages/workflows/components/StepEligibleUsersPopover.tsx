@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/dialogs/Popover';
 import { Badge } from '@/components/ui/feedback/Badge';
 import { Button } from '@/components/ui/buttons/Button';
-import { UserCheck, Users, Search, Shield, Sparkles, User, Building2, Briefcase } from 'lucide-react';
+import { UserCheck, Users, Search, Shield, Sparkles, User, Building2, Briefcase, Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface StepEligibleUsersPopoverProps {
@@ -37,6 +37,17 @@ export function StepEligibleUsersPopover({
     onOpenSimulationModal,
 }: StepEligibleUsersPopoverProps) {
     const [searchQuery, setSearchQuery] = useState('');
+    const [copiedNik, setCopiedNik] = useState<string | null>(null);
+
+    const handleCopyNik = (e: React.MouseEvent, nik: string) => {
+        e.stopPropagation();
+        if (!nik) return;
+        navigator.clipboard.writeText(nik);
+        setCopiedNik(nik);
+        setTimeout(() => {
+            setCopiedNik((prev) => (prev === nik ? null : prev));
+        }, 2000);
+    };
 
     // Helper untuk mengambil nama Departemen & Divisi pengguna
     const getDeptName = (u: any) => {
@@ -406,10 +417,11 @@ export function StepEligibleUsersPopover({
         return eligibleUsers.filter(({ user }) => {
             const name = (user.name || '').toLowerCase();
             const email = (user.email || '').toLowerCase();
+            const nik = (user.nik || user.username || '').toLowerCase();
             const role = (user.role || '').toLowerCase();
             const dept = (getDeptName(user) || '').toLowerCase();
             const div = (getDivName(user) || '').toLowerCase();
-            return name.includes(q) || email.includes(q) || role.includes(q) || dept.includes(q) || div.includes(q);
+            return name.includes(q) || email.includes(q) || nik.includes(q) || role.includes(q) || dept.includes(q) || div.includes(q);
         });
     }, [eligibleUsers, searchQuery, departments, divisions]);
 
@@ -494,9 +506,30 @@ export function StepEligibleUsersPopover({
                                                 </p>
                                                 {dr.activeUser && (
                                                     <div className="text-[10.5px] text-emerald-700 dark:text-emerald-400 font-medium pt-0.5 space-y-0.5">
-                                                        <div className="flex items-center gap-1">
-                                                            <UserCheck size={11} />
-                                                            <span>Terpilih: {dr.activeUser.name}</span>
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <UserCheck size={11} className="shrink-0" />
+                                                            <span className="font-semibold">Terpilih: {dr.activeUser.name}</span>
+                                                            {(dr.activeUser.nik || dr.activeUser.username) && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => handleCopyNik(e, dr.activeUser.nik || dr.activeUser.username)}
+                                                                    title="Klik untuk menyalin NIK"
+                                                                    className={cn(
+                                                                        "group/nik inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold transition-all cursor-pointer border select-all",
+                                                                        copiedNik === (dr.activeUser.nik || dr.activeUser.username)
+                                                                            ? "bg-emerald-100 text-emerald-800 border-emerald-400 dark:bg-emerald-900/60 dark:text-emerald-200"
+                                                                            : "bg-white/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-700"
+                                                                    )}
+                                                                >
+                                                                    <span className="text-[8px] font-sans font-bold text-muted-foreground uppercase">NIK:</span>
+                                                                    <span>{dr.activeUser.nik || dr.activeUser.username}</span>
+                                                                    {copiedNik === (dr.activeUser.nik || dr.activeUser.username) ? (
+                                                                        <Check size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                                    ) : (
+                                                                        <Copy size={9} className="text-muted-foreground opacity-60 group-hover/nik:opacity-100 shrink-0" />
+                                                                    )}
+                                                                </button>
+                                                            )}
                                                         </div>
                                                         <div className="flex flex-wrap items-center gap-1 text-[9.5px] text-muted-foreground pl-3.5">
                                                             {dr.activeUser.role && <span>{dr.activeUser.role}</span>}
@@ -543,7 +576,7 @@ export function StepEligibleUsersPopover({
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Cari nama, role, unit, atau divisi..."
+                                        placeholder="Cari nama, NIK, role, unit, atau divisi..."
                                         className="w-full h-8 pl-8 pr-3 text-[11px] rounded-md border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 focus:outline-none focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
                                     />
                                 </div>
@@ -567,6 +600,7 @@ export function StepEligibleUsersPopover({
                                     filteredEligibleUsers.map(({ user, reasons }, uIdx) => {
                                         const deptName = getDeptName(user);
                                         const divName = getDivName(user);
+                                        const userNik = user.nik || user.username || '';
 
                                         return (
                                             <div
@@ -578,9 +612,32 @@ export function StepEligibleUsersPopover({
                                                         {(user.name || user.email || 'U').substring(0, 2)}
                                                     </div>
                                                     <div className="min-w-0 flex-1 space-y-0.5">
-                                                        <p className="text-xs font-medium text-slate-800 dark:text-zinc-200 truncate leading-tight">
-                                                            {user.name}
-                                                        </p>
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            <p className="text-xs font-semibold text-slate-800 dark:text-zinc-200 truncate leading-tight">
+                                                                {user.name}
+                                                            </p>
+                                                            {userNik && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => handleCopyNik(e, userNik)}
+                                                                    title="Klik untuk menyalin NIK"
+                                                                    className={cn(
+                                                                        "group/nik inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold transition-all cursor-pointer border select-all",
+                                                                        copiedNik === userNik
+                                                                            ? "bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800"
+                                                                            : "bg-slate-100/90 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900 dark:bg-zinc-800/80 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-700"
+                                                                    )}
+                                                                >
+                                                                    <span className="text-[8px] font-sans font-bold text-muted-foreground uppercase">NIK:</span>
+                                                                    <span>{userNik}</span>
+                                                                    {copiedNik === userNik ? (
+                                                                        <Check size={9} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                                                    ) : (
+                                                                        <Copy size={9} className="text-muted-foreground opacity-60 group-hover/nik:opacity-100 shrink-0" />
+                                                                    )}
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                         
                                                         {/* Role & Email */}
                                                         <p className="text-[10px] text-muted-foreground truncate leading-tight">

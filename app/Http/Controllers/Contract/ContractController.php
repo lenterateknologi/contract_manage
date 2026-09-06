@@ -142,7 +142,7 @@ class ContractController extends Controller
         $viewIcon = 'FileText';
 
         $userId = Auth::id();
-        $cachedCounts = Cache::remember("contract_category_counts_{$userId}", now()->addSeconds(30), function () use ($userId) {
+        $cachedCounts = Cache::remember("contract_category_counts_{$userId}", now()->addSeconds(30), function () use ($userId, $request) {
             $allTypes = DB::table('m_contract_types')->whereNull('deleted_at')->get();
 
             $getDescendantIds = function ($parentId) use (&$getDescendantIds, $allTypes) {
@@ -167,20 +167,22 @@ class ContractController extends Controller
             $nonKontrakIds = $getDescendantIds($nonKontrakParent?->id);
             $ndaIds = $getDescendantIds($ndaParent?->id);
 
-            $baseContractsQuery = DB::table('t_contracts')->whereNull('deleted_at')->whereRaw('UPPER(status) != ?', ['DRAFT']);
-            $activeContractsQuery = (clone $baseContractsQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+            // Scoped base query respecting user organization permissions
+            $scopedAllQuery = $this->contractListQuery->build(new Request(), 'all');
+            $activeContractsQuery = (clone $scopedAllQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
 
             $parentCategoryCounts = [
                 'all' => (clone $activeContractsQuery)->count(),
                 'kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
                 'non_kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
                 'nda' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
-                'in_progress' => (clone $baseContractsQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
-                'archived' => (clone $baseContractsQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
+                'in_progress' => (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked']),
+                'archived' => (clone $scopedAllQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
             ];
+            $parentCategoryCounts['in_progress'] = is_numeric($parentCategoryCounts['in_progress']) ? $parentCategoryCounts['in_progress'] : (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count();
 
-            $myActiveQuery = (clone $activeContractsQuery)->where('created_by', $userId);
-            $myBaseQuery = (clone $baseContractsQuery)->where('created_by', $userId);
+            $myBaseQuery = DB::table('t_contracts')->whereNull('deleted_at')->where('created_by', $userId);
+            $myActiveQuery = (clone $myBaseQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
 
             $mineCounts = [
                 'all' => (clone $myActiveQuery)->count(),
@@ -199,22 +201,24 @@ class ContractController extends Controller
                     ->whereNull('t_contracts.deleted_at')
                     ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
                     ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
-                    ->count(),
+                    ->distinct('t_contracts.id')
+                    ->count('t_contracts.id'),
                 'history' => DB::table('t_approvals')
                     ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
                     ->where('t_approvals.user_id', $userId)
                     ->whereIn('t_approvals.status', ['approved', 'rejected', 'revision'])
                     ->whereNull('t_contracts.deleted_at')
                     ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
-                    ->count(),
+                    ->distinct('t_contracts.id')
+                    ->count('t_contracts.id'),
             ];
 
-            $baseExpiryQuery = (clone $baseContractsQuery)->whereNotNull('end_date');
+            $scopedExpiryQuery = (clone $scopedAllQuery)->whereNotNull('end_date');
             $expiryCategoryCounts = [
-                'all' => (clone $baseExpiryQuery)->count(),
-                'kontrak' => (clone $baseExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
-                'non_kontrak' => (clone $baseExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
-                'nda' => (clone $baseExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
+                'all' => (clone $scopedExpiryQuery)->count(),
+                'kontrak' => (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
+                'non_kontrak' => (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
+                'nda' => (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
             ];
 
             return [
