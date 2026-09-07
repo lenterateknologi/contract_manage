@@ -206,27 +206,6 @@ class ContractApprovalController extends Controller
             $minApprovals = $request->input('min_approvals', count($userIds));
             $isCurrentStep = $targetStepId === $contract->workflow_step_id;
 
-            // If targetStep is a forward step from current step (e.g. initiating ad-hoc approval from step 1 to step 2)
-            $shouldAdvanceToTarget = ! $isCurrentStep;
-            if ($shouldAdvanceToTarget) {
-                $currentApproval = Approval::where('contract_id', $contract->id)
-                    ->where('workflow_step_id', $contract->workflow_step_id)
-                    ->where('user_id', Auth::id())
-                    ->first();
-                if ($currentApproval) {
-                    $currentApproval->update(['status' => 'approved', 'comment' => $request->input('note')]);
-                }
-
-                $statusStr = $targetStep->meta['target_status'] ?? 'in_review';
-                $contract->update([
-                    'workflow_step_id' => $targetStepId,
-                    'status' => $statusStr,
-                ]);
-
-                $isCurrentStep = true;
-                $this->workflowService->getQueryService()->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke tahap {$targetStep->step}: {$targetStep->description}", Auth::id());
-            }
-
             // Save is_sequential and approval_rule setting to contract metadata
             $metadata = $contract->metadata ?? [];
             if (! isset($metadata['adhoc_steps'])) {

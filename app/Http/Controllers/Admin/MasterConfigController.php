@@ -64,7 +64,7 @@ class MasterConfigController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'contract-types',
-            'types' => $query->orderBy($sortBy, $sortDir)->paginate($request->input('per_page', 10))->withQueryString(),
+            'types' => $query->orderBy($sortBy, $sortDir)->paginate($request->input('per_page', 15))->withQueryString(),
             'formTemplates' => FormTemplate::where('is_active', true)->orderBy('name')->get(),
             'contractTemplates' => ContractTemplate::orderBy('name')->get(),
             'filters' => $request->only(['search', 'sort_by', 'sort_dir']),
@@ -132,7 +132,7 @@ class MasterConfigController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'contract-statuses',
-            'statuses' => $query->orderBy('label')->paginate($request->input('per_page', 10))->withQueryString(),
+            'statuses' => $query->orderBy('label')->paginate($request->input('per_page', 15))->withQueryString(),
             'filters' => $request->only(['search']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -180,12 +180,12 @@ class MasterConfigController extends Controller
         $query = $this->organizationQuery->departments($request);
 
         if ($request->wantsJson()) {
-            return response()->json($query->orderBy('name')->paginate($request->input('per_page', 10)));
+            return response()->json($query->orderBy('name')->paginate($request->input('per_page', 15)));
         }
 
         return Inertia::render('admin/Index', [
             'currentView' => 'departments',
-            'departments' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'departments' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
             'filters' => $request->only(['search', 'is_active']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
@@ -246,7 +246,7 @@ class MasterConfigController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'module-groups',
-            'moduleGroups' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'moduleGroups' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
             'filters' => $request->only(['search']),
             'breadcrumbs' => [['title' => 'Administrasi', 'href' => '#'], ['title' => 'Grup Modul', 'href' => route('admin.module-groups')]],
         ]);
@@ -265,7 +265,7 @@ class MasterConfigController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'modules',
-            'modules' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'modules' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
             'moduleGroups' => ModuleGroup::all(),
             'filters' => $request->only(['search', 'module_group_id']),
             'breadcrumbs' => [['title' => 'Administrasi', 'href' => '#'], ['title' => 'Modul Sistem', 'href' => route('admin.modules')]],

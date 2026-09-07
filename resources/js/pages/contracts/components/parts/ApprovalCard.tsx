@@ -11,9 +11,10 @@ interface ApprovalCardProps {
     contract?: Contract;
     showDetails?: boolean;
     isLite?: boolean;
+    isSubStep?: boolean;
 }
 
-export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false, contract, showDetails = false, isLite = false }: ApprovalCardProps) {
+export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false, contract, showDetails = false, isLite = false, isSubStep = false }: ApprovalCardProps) {
     const [isApproverListExpanded, setIsApproverListExpanded] = useState(false);
     const isStaged = !a.is_active || (a.status as string) === 'SELANJUTNYA';
     const isApproved = a.status === 'approved';
@@ -21,6 +22,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
     // Aktif = step ini adalah step kontrak saat ini (tidak bergantung pada nilai 'pending'/'waiting')
     const isCurrent = !isApproved && !isRejected && !!contract?.workflow_step_id && a.workflow_step_id === contract.workflow_step_id;
     const isSkipped = (a.status as string) === 'SKIPPED';
+    const hasSubStep = isSubStep || a.sub_step != null;
 
     const finalStepNumber = displaySubSteps && a.sub_step ? `${stepNumber}.${a.sub_step}` : stepNumber;
 
@@ -86,7 +88,12 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                 </span>
                                 {isApproved && <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />}
                             </div>
-                            <div className="flex items-center gap-1.5 text-[9.5px] text-text-soft">
+                            <div className="flex items-center gap-1.5 text-[9.5px] text-text-soft flex-wrap">
+                                {hasSubStep && (
+                                    <span className="shrink-0 rounded bg-indigo-500/10 border border-indigo-500/25 px-1 py-0.2 font-bold uppercase text-indigo-700 dark:text-indigo-300 text-[8px] tracking-wider">
+                                        Sub {finalStepNumber}
+                                    </span>
+                                )}
                                 {!isLite && a.approver.email && <span className="truncate opacity-75">{a.approver.email}</span>}
                                 {a.role && (
                                     <span className={cn(

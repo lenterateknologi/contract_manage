@@ -1059,27 +1059,39 @@ class ContractWorkflowService
     {
         $approval->reject($reason, $attachmentPath);
 
-        Approval::where('contract_id', $contract->id)
-            ->where('workflow_step_id', $approval->workflow_step_id)
-            ->where('status', 'pending')
-            ->delete();
-
         $stepAction = $approval->workflowStep->actions()->where('action_code', 'reject')->first();
         $targetStep = $stepAction ? ($this->evaluateTransition($contract, $approval->workflowStep, $stepAction) ?: WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', 1)->first()) : WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', 1)->first();
 
         $statusStr = $targetStep->meta['target_status'] ?? 'revision';
         $revisionStatus = ContractStatus::where('code', $statusStr)->first();
 
+        // ponytail: log rejection to contract history audit before resetting approvals
+        $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}. ".($targetStep ? "Sent back to step {$targetStep->step}: {$targetStep->description}." : 'Sent back to Initiator for revision.');
+        $this->queryService->logHistory($contract, 'APPROVAL_REJECTED', $description, Auth::id());
+
+        // Clear adhoc metadata if returning to step 1
+        $metadata = $contract->metadata ?? [];
+        if ($targetStep && $targetStep->step === 1 && isset($metadata['adhoc_steps'])) {
+            unset($metadata['adhoc_steps']);
+        }
+
         $contract->update([
             'status' => $revisionStatus?->code ?: $statusStr,
             'workflow_step_id' => $targetStep ? $targetStep->id : null,
+            'metadata' => $metadata,
         ]);
 
-        $description = "Rejected by {$approval->approver_name} ({$approval->role}): {$reason}. ".($targetStep ? "Sent back to step {$targetStep->step}: {$targetStep->description}." : 'Sent back to Initiator for revision.');
+        // ponytail: reset sub-workflow approvals so sub-workflow approval flow starts fresh while preserving origin workflow history
+        if ($contract->origin_workflow_id && $contract->workflow_id !== $contract->origin_workflow_id && $targetStep && $targetStep->workflow_id === $contract->workflow_id) {
+            $contract->approvals()->whereHas('workflowStep', fn ($q) => $q->where('workflow_id', $contract->workflow_id))->delete();
+        } else {
+            $contract->approvals()->delete();
+        }
 
-        $contract->approvals()->where('workflow_step_id', $approval->workflow_step_id)->where('status', 'pending')->get()->each(fn (Approval $a) => $a->reject('Ditolak oleh '.$approval->approver_name));
-
-        $this->queryService->logHistory($contract, 'APPROVAL_REJECTED', $description, Auth::id());
+        if ($targetStep) {
+            $this->createApprovalForStep($contract, $targetStep);
+            $this->handleAutoApproval($contract, Auth::user());
+        }
 
         return $contract->fresh();
     }
@@ -1142,13 +1154,41 @@ class ContractWorkflowService
 
                 case 'cross_workflow':
                     $workflowId = $transition['workflow_id'] ?? null;
+                    if ($workflowId === 'origin_workflow' || $workflowId === 'origin' || empty($workflowId)) {
+                        $workflowId = $contract->origin_workflow_id ?: $contract->workflow_id;
+                    }
+
                     if ($workflowId) {
                         $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
+
+                        // Dynamic return: if returning to origin from sub-workflow, calculate next step from branch point
+                        $metadata = $contract->metadata ?? [];
+                        if (($transition['return_mode'] ?? '') === 'branch_next' || ($workflowId === $contract->origin_workflow_id && isset($metadata['branch_from_step_num']))) {
+                            if (isset($metadata['branch_from_step_num'])) {
+                                $targetSequence = (int) $metadata['branch_from_step_num'] + 1;
+                            }
+                        }
+
                         $targetStep = WorkflowStep::where('workflow_id', $workflowId)->where('step', $targetSequence)->first();
+                        if (! $targetStep) {
+                            $targetStep = WorkflowStep::where('workflow_id', $workflowId)->where('step', '>=', $targetSequence)->orderBy('step')->first()
+                                ?: WorkflowStep::where('workflow_id', $workflowId)->orderBy('step', 'desc')->first();
+                        }
+
                         if ($targetStep) {
+                            // If jumping into a sub-workflow from main workflow, record the branch origin step number
+                            $originWfId = $contract->origin_workflow_id ?: $contract->workflow_id;
+                            if ($workflowId !== $originWfId) {
+                                $metadata['branch_from_step_num'] = $currentStep->step;
+                                $metadata['branch_from_step_id'] = $currentStep->id;
+                            } elseif (isset($metadata['branch_from_step_num'])) {
+                                unset($metadata['branch_from_step_num'], $metadata['branch_from_step_id']);
+                            }
+
                             $contract->update([
                                 'workflow_id' => $workflowId,
                                 'workflow_step_id' => $targetStep->id,
+                                'metadata' => $metadata,
                             ]);
 
                             return $targetStep;

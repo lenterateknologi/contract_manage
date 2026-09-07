@@ -30,10 +30,43 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
 
-    // Helper to accurately resolve target step (supports relative transition, next_step_id, and adhoc authority lookup)
+    // Helper to accurately resolve target step (supports custom_actions settings, relative transition, next_step_id, and adhoc authority lookup)
     const resolveTargetStepId = (contractData: any, actCode?: string): string | null => {
         const currentStep = contractData?.workflow_step;
         const steps = contractData?.workflow?.steps || [];
+        const customActions: any[] = contractData?.workflow?.meta?.custom_actions || contractData?.workflow_step?.workflow?.meta?.custom_actions || [];
+        const customAction = customActions.find((ca: any) => 
+            ca.id === 'action_adhoc' || 
+            ca.action_code === 'forward' || 
+            (actCode && ca.action_code === actCode)
+        );
+
+        // 1. Check custom action target_step configuration
+        if (customAction && (customAction.target_step_mode || customAction.target_step_position)) {
+            let anchorStep = currentStep;
+            if (customAction.target_step_mode === 'specific_step' && customAction.target_step_id) {
+                const foundAnchor = steps.find((s: any) => String(s.id) === String(customAction.target_step_id) || Number(s.step) === Number(customAction.target_step_id));
+                if (foundAnchor) anchorStep = foundAnchor;
+            }
+
+            const position = customAction.target_step_position || (customAction.target_step_mode === 'next_step' ? 'after' : 'at');
+            const anchorSeq = Number(anchorStep?.step) || 1;
+
+            if (position === 'before') {
+                const targetSeq = Math.max(1, anchorSeq - 1);
+                const matched = steps.find((s: any) => Number(s.step) === targetSeq);
+                if (matched) return String(matched.id);
+            } else if (position === 'after') {
+                const targetSeq = anchorSeq + 1;
+                const matched = steps.find((s: any) => Number(s.step) === targetSeq);
+                if (matched) return String(matched.id);
+            } else {
+                // 'at' (pada tahap acuan)
+                if (anchorStep?.id) return String(anchorStep.id);
+            }
+        }
+
+        // 2. Check step activeAction configuration
         const activeAction = (currentStep?.actions || []).find((a: any) => {
             if (actCode) return a.action_code === actCode || a.master_action_code === actCode || a.master_action?.code === actCode;
             return (

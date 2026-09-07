@@ -554,17 +554,28 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
 
                             if (isCrossWf) {
                                 const targetWfId = String(tConfig?.workflow_id || act?.next_workflow_id || '');
-                                let targetSeq = Number(tConfig?.sequence || 0);
-                                if (!targetSeq && act?.next_workflow_step_id) {
-                                    const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
-                                    const matchedStep = (targetWf?.steps || []).find((s: any) => String(s.id) === String(act.next_workflow_step_id));
-                                    if (matchedStep) {
-                                        targetSeq = Number(matchedStep.step) || 1;
+                                if (targetWfId === 'origin_workflow' || tConfig?.type === 'origin_return') {
+                                    const returnMode = tConfig?.return_mode;
+                                    if (returnMode === 'branch_next') {
+                                        flowDestinationText = 'Kembali ke Workflow Asal (Step Asal + 1)';
+                                    } else if (returnMode === 'branch_origin') {
+                                        flowDestinationText = 'Kembali ke Workflow Asal (Step Asal)';
+                                    } else {
+                                        flowDestinationText = `Kembali ke Workflow Asal (Tahap ${tConfig?.sequence || 1})`;
                                     }
+                                } else {
+                                    let targetSeq = Number(tConfig?.sequence || 0);
+                                    if (!targetSeq && act?.next_workflow_step_id) {
+                                        const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
+                                        const matchedStep = (targetWf?.steps || []).find((s: any) => String(s.id) === String(act.next_workflow_step_id));
+                                        if (matchedStep) {
+                                            targetSeq = Number(matchedStep.step) || 1;
+                                        }
+                                    }
+                                    if (!targetSeq) targetSeq = 1;
+                                    const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
+                                    flowDestinationText = `Beralih ke ${targetWf?.name || 'Alur Lain'} (Tahap ${targetSeq})`;
                                 }
-                                if (!targetSeq) targetSeq = 1;
-                                const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
-                                flowDestinationText = `Beralih ke ${targetWf?.name || 'Alur Lain'} (Tahap ${targetSeq})`;
                             } else if (isRollbackDirection) {
                                 flowDestinationText = `Mundur ke Step ${targetStepNum ?? 1}`;
                             } else if (isForwardDirection) {
@@ -1124,8 +1135,16 @@ export function WorkflowFlowVisualizer({
             isPrimary: true,
         });
 
+        const isMasterWorkflow = (wf: any) => {
+            if (!wf) return false;
+            const type = String(wf.workflow_type || '').toLowerCase();
+            if (type === 'main' || type === 'standalone') return true;
+            if (type === 'sub_workflow') return false;
+            return !wf.parent_workflow_id;
+        };
+
         if (viewMode === 'connected') {
-            // Traverse seluruh alur yang terhubung baik maju maupun mundur via cross_workflow
+            // Traverse seluruh alur yang terhubung maju (sub-workflow) tanpa mencampur 2 master workflow
             const visitedWfIds = new Set<string>([primaryWfId]);
             const queue: any[] = [{ id: primaryWfId, steps: sortedPrimarySteps }];
 
@@ -1139,7 +1158,8 @@ export function WorkflowFlowVisualizer({
                         const targetId = tConfig?.workflow_id || act.next_workflow_id;
                         if (targetId && !visitedWfIds.has(String(targetId))) {
                             const foundWf = (allWorkflows || []).find((w: any) => String(w.id) === String(targetId));
-                            if (foundWf) {
+                            // Jangan sertakan master workflow lain di kanvas yang sama
+                            if (foundWf && (!isMasterWorkflow(foundWf) || String(targetId) === primaryWfId)) {
                                 visitedWfIds.add(String(targetId));
                                 const sortedSteps = (foundWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
                                 workflowsToRender.push({
@@ -1154,22 +1174,12 @@ export function WorkflowFlowVisualizer({
                     });
                 });
 
-                // Cek juga workflow luar yang mengarah ke current workflow atau memiliki parent_workflow_id yang sama
+                // Cek hanya sub-workflow anak (parent_workflow_id mengarah ke current)
                 (allWorkflows || []).forEach((otherWf: any) => {
                     const otherId = String(otherWf.id);
-                    if (!visitedWfIds.has(otherId)) {
-                        const pointsToCurrent = (otherWf.steps || []).some((s: any) =>
-                            (s.actions || []).some((a: any) => {
-                                const tc = parseTransitionConfig(a);
-                                return String(tc?.workflow_id || a.next_workflow_id) === current.id;
-                            })
-                        );
-
+                    if (!visitedWfIds.has(otherId) && !isMasterWorkflow(otherWf)) {
                         const isChildOfCurrent = String(otherWf.parent_workflow_id) === current.id;
-                        const isSibling = otherWf.parent_workflow_id && String(otherWf.parent_workflow_id) === String(workflow?.parent_workflow_id);
-                        const isParentOfCurrent = String(workflow?.parent_workflow_id) === otherId;
-
-                        if (pointsToCurrent || isChildOfCurrent || isSibling || isParentOfCurrent) {
+                        if (isChildOfCurrent) {
                             visitedWfIds.add(otherId);
                             const sortedSteps = (otherWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
                             workflowsToRender.push({
@@ -1184,10 +1194,10 @@ export function WorkflowFlowVisualizer({
                 });
             }
         } else if (viewMode === 'all') {
-            // Render seluruh workflow yang ada di database
+            // Render workflow saat ini beserta seluruh sub-workflow (tanpa master workflow lain)
             (allWorkflows || []).forEach((otherWf: any) => {
                 const otherId = String(otherWf.id);
-                if (otherId !== primaryWfId) {
+                if (otherId !== primaryWfId && !isMasterWorkflow(otherWf)) {
                     const sortedSteps = (otherWf.steps || []).slice().sort((a: any, b: any) => (Number(a.step) || 0) - (Number(b.step) || 0));
                     workflowsToRender.push({
                         id: otherId,
@@ -1394,8 +1404,11 @@ export function WorkflowFlowVisualizer({
                             }
                             if (!targetSeq) targetSeq = 1;
 
+                            const isOriginTarget = targetWfId === 'origin_workflow' || tConfig?.type === 'origin_return';
+                            const targetWf = isOriginTarget ? { name: 'Workflow Asal (Origin / Pemanggil)' } : (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
+                            const dynamicSeqLabel = isOriginTarget ? (tConfig?.return_mode === 'branch_next' ? 'Step Asal + 1 (Dinamis)' : (tConfig?.return_mode === 'branch_origin' ? 'Step Asal (Dinamis)' : `Tahap ${targetSeq}`)) : targetSeq;
+
                             const targetLookup = nodePositionMap.get(`${targetWfId}:${targetSeq}`);
-                            const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
 
                             if (targetLookup) {
                                 // Target Workflow dirender di kanvas: hubungkan garis langsung ke node target
@@ -1421,7 +1434,7 @@ export function WorkflowFlowVisualizer({
                                 });
                             } else if (targetWfId) {
                                 // Fallback jika target workflow belum berada dalam view rendering: buat kartu external mini
-                                const crossFallbackId = `cross-fallback-${targetWfId}-${targetSeq}`;
+                                const crossFallbackId = `cross-fallback-${targetWfId}-${isOriginTarget ? (tConfig?.return_mode || 'origin') : targetSeq}`;
                                 if (!generatedNodes.some((n) => n.id === crossFallbackId)) {
                                     const sourcePos = nodePositionMap.get(`${sourceWfItem.id}:${stepNum}`);
                                     const fallbackX = (sourcePos?.x || START_X) + 420;
@@ -1433,7 +1446,7 @@ export function WorkflowFlowVisualizer({
                                         position: { x: fallbackX, y: fallbackY },
                                         data: {
                                             targetWorkflow: targetWf || { name: `Alur Kerja (${targetWfId.substring(0, 8)})` },
-                                            targetSequence: targetSeq,
+                                            targetSequence: dynamicSeqLabel,
                                         },
                                     });
                                 }
@@ -1453,8 +1466,8 @@ export function WorkflowFlowVisualizer({
                                         width: 18,
                                         height: 18,
                                     },
-                                    label: showLabels ? (act?.alias || `Beralih ke ${targetWf?.name || 'Sub-Alur'}`) : undefined,
-                                    labelStyle: { fill: '#4338ca', fontWeight: 600, fontSize: 9.5 },
+                                    label: showLabels ? (act?.alias || (isOriginTarget ? `Kembali -> Workflow Asal (${dynamicSeqLabel})` : `Beralih -> ${targetWf?.name || 'Sub-Alur'}`)) : undefined,
+                                    labelStyle: { fill: '#4338ca', fontWeight: 700, fontSize: 10 },
                                     labelBgStyle: { fill: '#e0e7ff', fillOpacity: 0.95, rx: 6, ry: 6 },
                                     labelBgPadding: [6, 4],
                                 });

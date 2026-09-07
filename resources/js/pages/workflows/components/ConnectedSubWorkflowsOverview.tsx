@@ -231,8 +231,8 @@ export const ConnectedSubWorkflowsOverview: React.FC<ConnectedSubWorkflowsOvervi
                                             <span className="truncate">
                                                 Tahap {t.sourceStepNum} ({t.actionAlias})
                                             </span>
-                                            <span className="shrink-0 font-bold text-indigo-600 dark:text-indigo-400">
-                                                ➔ Tahap {t.targetSeq}
+                                            <span className="shrink-0 font-bold text-indigo-600 dark:text-indigo-400 inline-flex items-center gap-1">
+                                                <ArrowRight size={10} /> Tahap {t.targetSeq}
                                             </span>
                                         </div>
                                     ))}

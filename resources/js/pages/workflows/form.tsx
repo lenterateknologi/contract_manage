@@ -6,6 +6,7 @@ import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMulti
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { FormInput } from '@/components/ui/inputs/FormInput';
+import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { cn } from '@/lib/utils';
 import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
@@ -677,6 +678,19 @@ export default function WorkflowEditor({
                                                      error={form.errors.name}
                                                      placeholder="Contoh: ALUR PERSETUJUAN KONTRAK LOGISTIK"
                                                      variant="outline"
+                                                     inputSize="compact"
+                                                 />
+                                            </div>
+
+                                            {/* Row 1.5: Deskripsi Alur Kerja */}
+                                            <div className="w-full">
+                                                 <FormTextarea
+                                                     label="Deskripsi Alur Kerja"
+                                                     rows={3}
+                                                     value={form.data.description}
+                                                     onChange={(e) => form.setData('description', e.target.value)}
+                                                     error={form.errors.description}
+                                                     placeholder="Jelaskan ringkasan alur kerja, tujuan, dan peruntukannya..."
                                                      inputSize="compact"
                                                  />
                                             </div>

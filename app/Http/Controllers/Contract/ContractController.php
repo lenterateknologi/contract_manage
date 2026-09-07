@@ -82,7 +82,7 @@ class ContractController extends Controller
         $view = $request->query('view', 'contracts');
         $contracts = (new ContractListQuery)
             ->build($request, $view)
-            ->paginate($request->integer('per_page', 10))
+            ->paginate($request->integer('per_page', 15))
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
         return response()->json($contracts);
@@ -96,10 +96,10 @@ class ContractController extends Controller
         $loaders = $this->contractOptionsQuery->getLoaders();
 
         $contracts = in_array($view, ['dashboard', 'profile'])
-            ? new LengthAwarePaginator([], 0, 10)
+            ? new LengthAwarePaginator([], 0, 15)
             : $this->contractListQuery
                 ->build($request, $view)
-                ->paginate($request->integer('per_page', 10))
+                ->paginate($request->integer('per_page', 15))
                 ->withQueryString()
                 ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
@@ -313,7 +313,7 @@ class ContractController extends Controller
 
         $contracts = $this->contractListQuery
             ->build($request, 'contracts')
-            ->paginate($request->integer('per_page', 10))
+            ->paginate($request->integer('per_page', 15))
             ->withQueryString()
             ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
@@ -327,7 +327,7 @@ class ContractController extends Controller
             'vendors' => Inertia::defer($loaders['vendors']),
             'formTemplates' => Inertia::defer($loaders['formTemplates']),
             'filters' => array_merge($request->only(['search', 'status', 'contract_type_id']), [
-                'per_page' => $request->integer('per_page', 10),
+                'per_page' => $request->integer('per_page', 15),
             ]),
             'breadcrumbs' => [
                 ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],

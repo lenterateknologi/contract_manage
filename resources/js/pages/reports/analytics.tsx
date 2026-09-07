@@ -81,7 +81,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
         current_page: 1,
         last_page: 1,
         total: 0,
-        per_page: 10,
+        per_page: 15,
     });
 
     const fetchData = (currentFilters = filters) => {
@@ -99,7 +99,7 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
                     current_page: raw.contracts.current_page || 1,
                     last_page: raw.contracts.last_page || 1,
                     total: raw.contracts.total || 0,
-                    per_page: raw.contracts.per_page || 10,
+                    per_page: raw.contracts.per_page || 15,
                 });
                 setLoading(false);
             })

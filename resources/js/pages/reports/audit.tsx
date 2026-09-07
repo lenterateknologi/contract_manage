@@ -91,7 +91,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
         current_page: 1,
         last_page: 1,
         total: 0,
-        per_page: 10,
+        per_page: 15,
     });
 
     const fetchData = (currentFilters = filters) => {
@@ -107,7 +107,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
                     current_page: res.data.histories.current_page || 1,
                     last_page: res.data.histories.last_page || 1,
                     total: res.data.histories.total || 0,
-                    per_page: res.data.histories.per_page || 10,
+                    per_page: res.data.histories.per_page || 15,
                 });
                 setLoading(false);
             })

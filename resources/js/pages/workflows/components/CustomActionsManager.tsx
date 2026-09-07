@@ -4,6 +4,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { 
+    ArrowRight,
+    CornerDownLeft,
     Eye,
     EyeOff,
     Filter,
@@ -14,6 +16,7 @@ import {
     Settings2, 
     Sliders, 
     Sparkles, 
+    Target,
     Unlock,
     UserCheck,
     UserPlus, 
@@ -33,6 +36,9 @@ export interface CustomActionItem {
     is_active: boolean;
     scope: 'all_steps' | 'specific_steps';
     step_ids?: string[];
+    target_step_mode?: 'current_step' | 'specific_step' | 'next_step';
+    target_step_position?: 'at' | 'before' | 'after';
+    target_step_id?: string;
     authorities: any[];
     eligible_personnel?: any[];
     requires_note?: boolean;
@@ -65,6 +71,8 @@ export const DEFAULT_FIXED_CUSTOM_ACTIONS: Omit<CustomActionItem, 'authorities'>
         is_active: true,
         scope: 'all_steps',
         step_ids: [],
+        target_step_mode: 'current_step',
+        target_step_position: 'at',
         visibility_condition: 'always',
         unlocks_other_actions: false,
     },
@@ -391,6 +399,99 @@ export function CustomActionsManager({
                                                 options={stepOptions}
                                                 placeholder="Pilih tahapan yang mengizinkan aksi ini..."
                                             />
+                                        </div>
+                                    )}
+
+                                    {/* Target Step Setting for Approval Tambahan (Ad-Hoc / Forward) */}
+                                    {(actionCode === 'forward' || act.id === 'action_adhoc') && (
+                                        <div className="sm:col-span-12 pt-2 mt-1 border-t border-dashed border-slate-100 dark:border-zinc-800 flex flex-wrap items-center gap-2">
+                                            <span className="text-[10px] font-semibold text-slate-500 dark:text-zinc-400 shrink-0">
+                                                Penempatan / Waktu Eksekusi:
+                                            </span>
+
+                                            {/* 1. Posisi: Sebelum / Pada / Setelah */}
+                                            <div className="w-36 sm:w-44">
+                                                <Select
+                                                    value={act.target_step_position || 'at'}
+                                                    onValueChange={(val) => updateAction(actIdx, { target_step_position: val as any })}
+                                                >
+                                                    <SelectTrigger className="h-7 py-1 px-2 rounded border-slate-200 bg-white text-[10.5px] font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                                        <SelectValue placeholder="Pilih Posisi" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                        <SelectItem value="at" className="text-xs font-medium">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Settings2 size={12} className="text-slate-400 shrink-0" />
+                                                                <span>Pada Tahap (Saat)</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="before" className="text-xs font-medium">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <CornerDownLeft size={12} className="text-amber-500 shrink-0" />
+                                                                <span>Sebelum Tahap</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="after" className="text-xs font-medium">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <ArrowRight size={12} className="text-emerald-500 shrink-0" />
+                                                                <span>Setelah Tahap</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* 2. Acuan Tahap: Tahap Saat Ini vs Tahap Spesifik */}
+                                            <div className="w-40 sm:w-44">
+                                                <Select
+                                                    value={act.target_step_mode || 'current_step'}
+                                                    onValueChange={(val) =>
+                                                        updateAction(actIdx, {
+                                                            target_step_mode: val as any,
+                                                            target_step_id: val === 'specific_step' ? act.target_step_id || (steps[0]?.id ? String(steps[0].id) : undefined) : undefined,
+                                                        })
+                                                    }
+                                                >
+                                                    <SelectTrigger className="h-7 py-1 px-2 rounded border-slate-200 bg-white text-[10.5px] font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                                        <SelectValue placeholder="Acuan Tahap" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                        <SelectItem value="current_step" className="text-xs font-medium">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Layers size={12} className="text-blue-500 shrink-0" />
+                                                                <span>Tahap Saat Ini</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="specific_step" className="text-xs font-medium">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Target size={12} className="text-indigo-500 shrink-0" />
+                                                                <span>Tahap Tertentu</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* 3. Dropdown Pilih Tahap Spesifik */}
+                                            {act.target_step_mode === 'specific_step' && (
+                                                <div className="w-56 sm:w-64">
+                                                    <Select
+                                                        value={String(act.target_step_id || steps[0]?.id || '')}
+                                                        onValueChange={(val) => updateAction(actIdx, { target_step_id: val })}
+                                                    >
+                                                        <SelectTrigger className="h-7 py-1 px-2 rounded border-slate-200 bg-white text-[10.5px] font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                                            <SelectValue placeholder="Pilih Tahap Acuan" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                            {steps.map((s: any, sIdx: number) => (
+                                                                <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
+                                                                    Tahap {s.step || sIdx + 1}: {s.label || s.name || s.description || `Langkah ${sIdx + 1}`}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

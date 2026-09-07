@@ -1531,7 +1531,7 @@ function ContractPage({
 
 export default function ContractsIndex({
     currentView = 'dashboard',
-    contracts: initialContractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 10 } as any,
+    contracts: initialContractsPaged = { data: [], links: [], current_page: 1, last_page: 1, total: 0, from: 0, to: 0, per_page: 15 } as any,
     types: initialTypes = [],
     submissionTypes: initialSubmissionTypes = [],
     formTemplates: initialFormTemplates = [],

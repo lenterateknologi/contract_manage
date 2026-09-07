@@ -386,35 +386,77 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                          })()}
                                                     </div>
 
-                                                    <div className="space-y-1 mt-0.5">
+                                                    <div className="mt-0.5 space-y-1.5">
                                                         {(() => {
                                                             const groupKey = `${block.workflowId}_${group.sequence}`;
                                                             const isExpanded = !!expandedGroups[groupKey];
-                                                            const visibleItems = isExpanded ? group.items : group.items.slice(0, 3);
+                                                            const subStepItems = group.items.filter((a: ContractApproval) => a.sub_step != null);
+                                                            const mainStepItems = group.items.filter((a: ContractApproval) => a.sub_step == null);
+                                                            const visibleMainItems = isExpanded ? mainStepItems : mainStepItems.slice(0, 3);
 
                                                             return (
                                                                 <>
-                                                                    {visibleItems.map((a: ContractApproval) => {
-                                                                        const stepNumber = a.sub_step != null ? `${group.sequence}.${a.sub_step}` : `${group.sequence}`;
-                                                                        return (
-                                                                            <ApprovalCard 
-                                                                                key={a.id} 
-                                                                                approval={a} 
-                                                                                stepNumber={stepNumber} 
-                                                                                displaySubSteps={false} 
-                                                                                contract={contract} 
-                                                                                showDetails={viewTab === 'pro'}
-                                                                                isLite={viewTab === 'lite'}
-                                                                            />
-                                                                        );
-                                                                    })}
-                                                                    {group.items.length > 3 && (
+                                                                    {/* Distinct Sub-Step Wrapper Card */}
+                                                                    {subStepItems.length > 0 && (
+                                                                        <div className={cn(
+                                                                            "rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-800/80 bg-indigo-50/50 dark:bg-indigo-950/25 shadow-2xs",
+                                                                            viewTab === 'lite' ? 'p-1.5 space-y-1 mb-1' : 'p-2.5 space-y-1.5 mb-1.5'
+                                                                        )}>
+                                                                            <div className="flex items-center justify-between pb-1 border-b border-indigo-200/70 dark:border-indigo-800/50">
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <span className={cn(
+                                                                                        "flex items-center justify-center rounded bg-indigo-600 text-white dark:bg-indigo-500 shadow-2xs",
+                                                                                        viewTab === 'lite' ? 'h-4 w-4' : 'h-4.5 w-4.5'
+                                                                                    )}>
+                                                                                        <GitCommit size={viewTab === 'lite' ? 9 : 11} strokeWidth={2.5} />
+                                                                                    </span>
+                                                                                    <span className="text-[10px] font-extrabold tracking-wider uppercase text-indigo-950 dark:text-indigo-200">
+                                                                                        Persetujuan Tambahan (Sub-Tahap {group.sequence})
+                                                                                    </span>
+                                                                                </div>
+                                                                                <span className="text-[8.5px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.2 rounded uppercase">
+                                                                                    {subStepItems.length} Sub-Approver
+                                                                                </span>
+                                                                            </div>
+
+                                                                            <div className="space-y-1 pl-0.5">
+                                                                                {subStepItems.map((a: ContractApproval) => (
+                                                                                    <ApprovalCard
+                                                                                        key={a.id}
+                                                                                        approval={a}
+                                                                                        stepNumber={`${group.sequence}.${a.sub_step}`}
+                                                                                        displaySubSteps={false}
+                                                                                        contract={contract}
+                                                                                        showDetails={viewTab === 'pro'}
+                                                                                        isLite={viewTab === 'lite'}
+                                                                                        isSubStep={true}
+                                                                                    />
+                                                                                ))}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Main Step Cards */}
+                                                                    {visibleMainItems.map((a: ContractApproval) => (
+                                                                        <ApprovalCard 
+                                                                            key={a.id} 
+                                                                            approval={a} 
+                                                                            stepNumber={`${group.sequence}`} 
+                                                                            displaySubSteps={false} 
+                                                                            contract={contract} 
+                                                                            showDetails={viewTab === 'pro'}
+                                                                            isLite={viewTab === 'lite'}
+                                                                            isSubStep={false}
+                                                                        />
+                                                                    ))}
+
+                                                                    {mainStepItems.length > 3 && (
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => setExpandedGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
                                                                             className="text-primary hover:underline mt-1 flex items-center gap-1.5 text-[9.5px] font-extrabold tracking-wider uppercase cursor-pointer"
                                                                         >
-                                                                            {isExpanded ? 'Sembunyikan' : `+ Tampilkan ${group.items.length - 3} Penerima Persetujuan Lainnya`}
+                                                                            {isExpanded ? 'Sembunyikan' : `+ Tampilkan ${mainStepItems.length - 3} Penerima Persetujuan Lainnya`}
                                                                         </button>
                                                                     )}
                                                                 </>

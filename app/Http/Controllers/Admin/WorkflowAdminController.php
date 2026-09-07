@@ -42,7 +42,7 @@ class WorkflowAdminController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'workflows',
-            'workflows' => $query->orderBy('name')->paginate($request->input('per_page', 10))->withQueryString(),
+            'workflows' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
             'filters' => $request->only(['search', 'contract_type_id', 'company_group_id', 'region_id', 'company_id']),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],

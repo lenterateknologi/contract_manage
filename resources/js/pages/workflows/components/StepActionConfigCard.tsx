@@ -3,7 +3,22 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
-import { Briefcase, Copy, FileSignature, GitBranch, Settings2, Shield, Trash2, Users as UsersIcon } from 'lucide-react';
+import {
+    ArrowRight,
+    Briefcase,
+    Copy,
+    CornerDownLeft,
+    FileSignature,
+    Flag,
+    GitBranch,
+    RefreshCw,
+    Settings2,
+    Shield,
+    Sparkles,
+    Trash2,
+    Users as UsersIcon,
+    Workflow as WorkflowIcon,
+} from 'lucide-react';
 
 import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, TRANSITION_OPTIONS, getActionTheme } from '../constants';
 import { cn } from '@/lib/utils';
@@ -210,11 +225,15 @@ export function StepActionConfigCard({
             if (act.transition_config.type === 'absolute') {
                 return 'absolute';
             }
+            if (act.transition_config.type === 'origin_return' || act.transition_config.workflow_id === 'origin_workflow') {
+                return 'origin_return';
+            }
             if (act.transition_config.type === 'cross_workflow') return 'cross_workflow';
             if (act.transition_config.type === 'initial_step') return 'initial_step';
         }
 
         // Fallback for backward compatibility
+        if (act.next_workflow_id === 'origin_workflow') return 'origin_return';
         if (act.next_workflow_id) return 'cross_workflow';
         if (act.next_step_id) {
             const firstStep = allWorkflowSteps[0];
@@ -225,7 +244,7 @@ export function StepActionConfigCard({
         return 'sequential';
     })();
 
-    const showCrossWorkflowSelector = transitionType === 'cross_workflow';
+    const showCrossWorkflowSelector = transitionType === 'cross_workflow' || transitionType === 'origin_return';
     const showAbsoluteStepSelector = transitionType === 'absolute';
 
     return (
@@ -419,6 +438,13 @@ export function StepActionConfigCard({
                                         next_workflow_id: null,
                                         next_workflow_step_id: null,
                                     });
+                                } else if (val === 'origin_return') {
+                                    updateAction(actIdx, {
+                                        transition_config: { type: 'cross_workflow', workflow_id: 'origin_workflow', return_mode: 'branch_next', sequence: 1 },
+                                        next_step_id: null,
+                                        next_workflow_id: null,
+                                        next_workflow_step_id: null,
+                                    });
                                 } else if (val === 'cross_workflow') {
                                     updateAction(actIdx, {
                                         transition_config: { type: 'cross_workflow', workflow_id: '', sequence: 1 },
@@ -440,15 +466,41 @@ export function StepActionConfigCard({
                                 <SelectValue placeholder="Pilih Transisi" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                {TRANSITION_OPTIONS.map((opt) => (
-                                    <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
-                                        {opt.label}
-                                    </SelectItem>
-                                ))}
+                                {TRANSITION_OPTIONS.map((opt) => {
+                                    const getTransitionIcon = (val: string) => {
+                                        switch (val) {
+                                            case 'sequential':
+                                                return <ArrowRight size={13} className="text-emerald-500 shrink-0" />;
+                                            case 'origin_return':
+                                                return <RefreshCw size={13} className="text-indigo-500 shrink-0" />;
+                                            case 'cross_workflow':
+                                                return <GitBranch size={13} className="text-blue-500 shrink-0" />;
+                                            case 'stay':
+                                                return <Settings2 size={13} className="text-slate-400 shrink-0" />;
+                                            case 'back':
+                                                return <CornerDownLeft size={13} className="text-amber-500 shrink-0" />;
+                                            case 'initial_step':
+                                                return <Flag size={13} className="text-rose-500 shrink-0" />;
+                                            case 'absolute':
+                                                return <ArrowRight size={13} className="text-teal-500 shrink-0" />;
+                                            default:
+                                                return <ArrowRight size={13} className="shrink-0" />;
+                                        }
+                                    };
+
+                                    return (
+                                        <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
+                                            <div className="flex items-center gap-1.5">
+                                                {getTransitionIcon(opt.value)}
+                                                <span>{opt.label}</span>
+                                            </div>
+                                        </SelectItem>
+                                    );
+                                })}
                             </SelectContent>
                         </Select>
 
-                        {/* Cross Workflow Selector (Flat Inline) */}
+                        {/* Cross Workflow / Dynamic Origin Return Selector (Flat Inline) */}
                         {showCrossWorkflowSelector && (
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-1 animate-in fade-in-50 duration-200">
                                 <div className="space-y-1">
@@ -456,25 +508,47 @@ export function StepActionConfigCard({
                                     <Select
                                         value={act.transition_config?.workflow_id || act.next_workflow_id || ''}
                                         onValueChange={(val) => {
-                                            const targetWf = allWorkflows.find((w: any) => String(w.id) === val);
-                                            updateAction(actIdx, {
-                                                transition_config: {
-                                                    type: 'cross_workflow',
-                                                    workflow_id: val,
-                                                    sequence: targetWf?.steps?.[0]?.step || 1,
-                                                },
-                                                next_workflow_id: null,
-                                                next_workflow_step_id: null,
-                                            });
+                                            if (val === 'origin_workflow') {
+                                                updateAction(actIdx, {
+                                                    transition_config: {
+                                                        type: 'cross_workflow',
+                                                        workflow_id: 'origin_workflow',
+                                                        return_mode: 'branch_next',
+                                                        sequence: 1,
+                                                    },
+                                                    next_workflow_id: null,
+                                                    next_workflow_step_id: null,
+                                                });
+                                            } else {
+                                                const targetWf = allWorkflows.find((w: any) => String(w.id) === val);
+                                                updateAction(actIdx, {
+                                                    transition_config: {
+                                                        type: 'cross_workflow',
+                                                        workflow_id: val,
+                                                        sequence: targetWf?.steps?.[0]?.step || 1,
+                                                    },
+                                                    next_workflow_id: null,
+                                                    next_workflow_step_id: null,
+                                                });
+                                            }
                                         }}
                                     >
                                         <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
                                             <SelectValue placeholder="Pilih Alur Kerja" />
                                         </SelectTrigger>
                                         <SelectContent className="z-[9999] rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                            <SelectItem value="origin_workflow" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                                                <div className="flex items-center gap-1.5">
+                                                    <RefreshCw size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+                                                    <span>Workflow Asal (Origin Workflow Dinamis)</span>
+                                                </div>
+                                            </SelectItem>
                                             {allWorkflows.map((w: any) => (
                                                 <SelectItem key={w.id} value={String(w.id)} className="text-xs font-medium">
-                                                    {w.name} {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}
+                                                    <div className="flex items-center gap-1.5">
+                                                        <WorkflowIcon size={12} className="shrink-0 text-slate-400" />
+                                                        <span>{w.name} {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}</span>
+                                                    </div>
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -482,30 +556,85 @@ export function StepActionConfigCard({
                                 </div>
                                 <div className="space-y-1">
                                     <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Mulai Dari Langkah</label>
-                                    <Select
-                                        value={String(act.transition_config?.sequence || '')}
-                                        onValueChange={(val) =>
-                                            updateAction(actIdx, {
-                                                transition_config: { ...act.transition_config, type: 'cross_workflow', sequence: Number(val) },
-                                                next_workflow_step_id: null,
-                                            })
-                                        }
-                                    >
-                                        <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
-                                            <SelectValue placeholder="Pilih Tahap Target" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                            {(
-                                                allWorkflows.find(
-                                                    (w: any) => String(w.id) === (act.transition_config?.workflow_id || act.next_workflow_id),
-                                                )?.steps || []
-                                            ).map((s: any, sIdx: number) => (
-                                                <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-xs font-medium">
-                                                    Tahap {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                    {(act.transition_config?.workflow_id || act.next_workflow_id) === 'origin_workflow' ? (
+                                        <Select
+                                            value={act.transition_config?.return_mode || String(act.transition_config?.sequence || 'branch_next')}
+                                            onValueChange={(val) => {
+                                                if (val === 'branch_next' || val === 'branch_origin') {
+                                                    updateAction(actIdx, {
+                                                        transition_config: {
+                                                            ...act.transition_config,
+                                                            type: 'cross_workflow',
+                                                            workflow_id: 'origin_workflow',
+                                                            return_mode: val,
+                                                            sequence: 1,
+                                                        },
+                                                        next_workflow_step_id: null,
+                                                    });
+                                                } else {
+                                                    updateAction(actIdx, {
+                                                        transition_config: {
+                                                            ...act.transition_config,
+                                                            type: 'cross_workflow',
+                                                            workflow_id: 'origin_workflow',
+                                                            return_mode: null,
+                                                            sequence: Number(val),
+                                                        },
+                                                        next_workflow_step_id: null,
+                                                    });
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                                <SelectValue placeholder="Pilih Tahap Target" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                <SelectItem value="branch_next" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Sparkles size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                        <span>Lanjut ke Step Berikutnya (Origin Step + 1)</span>
+                                                    </div>
                                                 </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                                <SelectItem value="branch_origin" className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <CornerDownLeft size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                                                        <span>Kembali ke Step Pemanggil (Origin Step)</span>
+                                                    </div>
+                                                </SelectItem>
+                                                <SelectItem value="1" className="text-xs font-medium">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <Flag size={13} className="shrink-0 text-slate-500" />
+                                                        <span>Langkah Awal Workflow Asal (Tahap 1)</span>
+                                                    </div>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Select
+                                            value={String(act.transition_config?.sequence || '')}
+                                            onValueChange={(val) =>
+                                                updateAction(actIdx, {
+                                                    transition_config: { ...act.transition_config, type: 'cross_workflow', sequence: Number(val), return_mode: null },
+                                                    next_workflow_step_id: null,
+                                                })
+                                            }
+                                        >
+                                            <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                                <SelectValue placeholder="Pilih Tahap Target" />
+                                            </SelectTrigger>
+                                            <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                {(
+                                                    allWorkflows.find(
+                                                        (w: any) => String(w.id) === (act.transition_config?.workflow_id || act.next_workflow_id),
+                                                    )?.steps || []
+                                                ).map((s: any, sIdx: number) => (
+                                                    <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-xs font-medium">
+                                                        Tahap {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    )}
                                 </div>
                             </div>
                         )}

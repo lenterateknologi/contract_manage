@@ -442,6 +442,58 @@ class ContractFormatter
             }
         }
 
+        // ponytail: If inside sub-workflow, ensure origin workflow is represented at start and remaining steps projected at end
+        if ($c->origin_workflow_id && $c->origin_workflow_id !== $c->workflow_id) {
+            $hasOriginAtStart = ! empty($chunks) && $chunks[0]['workflow_id'] === $c->origin_workflow_id;
+            $originWf = \App\Models\Workflow::with('steps.approverAuthorities.role', 'steps.approverAuthorities.division', 'steps.actions')->find($c->origin_workflow_id);
+
+            if ($originWf) {
+                if (! $hasOriginAtStart) {
+                    $originStep1 = $originWf->steps->sortBy('step')->first();
+                    array_unshift($chunks, [
+                        'workflow_id' => $originWf->id,
+                        'workflow' => $originWf,
+                        'is_current' => false,
+                        'step_ids' => collect($originStep1 ? [$originStep1->id] : []),
+                        'approvals' => collect(),
+                    ]);
+                }
+
+                $returnStepNum = 2;
+                if (isset($c->metadata['branch_from_step_num'])) {
+                    $returnStepNum = (int) $c->metadata['branch_from_step_num'] + 1;
+                } elseif ($c->workflow) {
+                    $subSteps = $c->workflow->relationLoaded('steps')
+                        ? $c->workflow->steps
+                        : $c->workflow->steps()->with('actions')->get();
+                    $subSteps->loadMissing('actions');
+
+                    foreach ($subSteps->flatMap->actions as $act) {
+                        $trans = $act->transition_config ?? [];
+                        if (($trans['type'] ?? '') === 'cross_workflow') {
+                            $wfId = $trans['workflow_id'] ?? null;
+                            if ($wfId === 'origin_workflow' || $wfId === 'origin' || $wfId === $c->origin_workflow_id) {
+                                if (isset($trans['sequence'])) {
+                                    $returnStepNum = (int) $trans['sequence'];
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                $chunks[] = [
+                    'workflow_id' => $originWf->id,
+                    'workflow' => $originWf,
+                    'is_current' => false,
+                    'is_future_origin' => true,
+                    'from_step' => $returnStepNum,
+                    'step_ids' => collect(),
+                    'approvals' => collect(),
+                ];
+            }
+        }
+
         $timeline = [];
         $globalOrder = 0;
 
@@ -456,6 +508,8 @@ class ContractFormatter
                 ? $workflow->steps->sortBy('step')
                 : $workflow->steps()->with('approverAuthorities.role', 'approverAuthorities.division', 'actions', 'workflow')->orderBy('step')->get();
 
+            $steps->loadMissing(['approverAuthorities.role', 'approverAuthorities.division', 'actions', 'workflow']);
+
             // Ensure every step has workflow loaded
             $steps->each(function ($step) use ($workflow) {
                 if (! $step->relationLoaded('workflow')) {
@@ -463,15 +517,16 @@ class ContractFormatter
                 }
             });
 
-            if (! $isCurrentChunk) {
+            $currentStepObj = $steps->firstWhere('id', $c->workflow_step_id);
+            $currentStepNumber = $currentStepObj ? $currentStepObj->step : ($c->workflowStep?->step ?? 0);
+
+            if ($chunk['is_future_origin'] ?? false) {
+                $fromStep = $chunk['from_step'] ?? 2;
+                $stepsToProcess = $steps->filter(fn ($s) => $s->step >= $fromStep);
+            } elseif (! $isCurrentChunk) {
                 $stepsToProcess = $steps->filter(fn ($s) => $chunk['step_ids']->contains($s->id));
             } else {
-                $currentStepObj = $steps->firstWhere('id', $c->workflow_step_id);
-                $currentStepNumber = $currentStepObj ? $currentStepObj->step : 0;
-
-                $stepsToProcess = $steps->filter(function ($s) use ($chunk, $currentStepNumber) {
-                    return $chunk['step_ids']->contains($s->id) || $s->step >= $currentStepNumber;
-                });
+                $stepsToProcess = $steps;
             }
 
             foreach ($stepsToProcess as $step) {
@@ -482,7 +537,7 @@ class ContractFormatter
                 $hasApprovals = $regularApprovals->isNotEmpty() || $adhocApprovals->isNotEmpty();
                 $isCurrentStep = $isCurrentChunk && ($c->workflow_step_id === $step->id);
 
-                if (! $isCurrentChunk && ! $hasApprovals && ! $isCurrentStep) {
+                if (! $isCurrentChunk && ! $hasApprovals && ! $isCurrentStep && ! ($chunk['is_future_origin'] ?? false)) {
                     continue;
                 }
 
@@ -690,7 +745,7 @@ class ContractFormatter
                                 ];
                             }
                         }
-                    } elseif ($adhocApprovals->isEmpty()) {
+                    } else {
                         $roleLabel = is_array($step->role) ? implode(', ', $step->role) : $step->role;
                         $stepTargetApprovers = $targetApprovers;
                         $approverName = $roleLabel;
@@ -724,6 +779,14 @@ class ContractFormatter
                             ])->values()->toArray();
                         }
 
+                        $mainStatus = 'SELANJUTNYA';
+                        if ($isCurrentStep) {
+                            $hasActiveAdhoc = $adhocApprovals->whereIn('status', ['pending', 'waiting'])->isNotEmpty();
+                            $mainStatus = $hasActiveAdhoc ? 'waiting' : 'pending';
+                        } elseif ($step->step < $currentStepNumber) {
+                            $mainStatus = 'SKIPPED';
+                        }
+
                         $timeline[] = [
                             'id' => 'step-'.$step->id,
                             'workflow_step_id' => $step->id,
@@ -734,7 +797,7 @@ class ContractFormatter
                             'target_approvers' => $stepTargetApprovers,
                             'target_emails' => $targetEmails,
                             'sequence' => $step->step,
-                            'status' => $isCurrentStep ? 'pending' : 'SELANJUTNYA',
+                            'status' => $mainStatus,
                             'note' => null,
                             'approved_at' => null,
                             'decided_at' => null,
@@ -743,7 +806,7 @@ class ContractFormatter
                             'approver' => null,
                             'is_active' => $isCurrentStep,
                             'step_type' => 'APPROVAL',
-                            'step_name' => $step->name,
+                            'step_name' => $stepLabel,
                             'step_description' => $step->description,
                             'step_category' => $step->step_category,
                             'sort_order' => $globalOrder++,

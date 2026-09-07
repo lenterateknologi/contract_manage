@@ -40,7 +40,7 @@ class OrganizationController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'company-groups',
-            'companyGroups' => $query->paginate($request->input('per_page', 10))->withQueryString(),
+            'companyGroups' => $query->paginate($request->input('per_page', 15))->withQueryString(),
             'regions' => Region::all(),
             'filters' => $request->only(['search', 'action', 'id', 'region_id']),
             'breadcrumbs' => [
@@ -140,7 +140,7 @@ class OrganizationController extends Controller
 
         return Inertia::render('admin/Index', [
             'currentView' => 'companies',
-            'companies' => $query->paginate($request->input('per_page', 10))->withQueryString(),
+            'companies' => $query->paginate($request->input('per_page', 15))->withQueryString(),
             'regions' => Region::all(),
             'companyGroups' => CompanyGroup::all(),
             'filters' => $request->only(['search', 'action', 'id', 'region_id', 'company_group_id']),
