@@ -38,12 +38,21 @@ class WorkflowAdminController extends Controller
 
     public function index(Request $request)
     {
+        $filters = $request->only(['search', 'contract_type_id', 'workflow_type', 'is_default', 'is_selectable', 'is_active', 'per_page']);
+        if (! array_key_exists('is_active', $filters)) {
+            $filters['is_active'] = 'true';
+        }
+        if (! array_key_exists('is_selectable', $filters)) {
+            $filters['is_selectable'] = 'true';
+        }
+
         $query = $this->workflowQuery->list($request);
 
         return Inertia::render('admin/Index', [
             'currentView' => 'workflows',
             'workflows' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
-            'filters' => $request->only(['search', 'contract_type_id', 'company_group_id', 'region_id', 'company_id']),
+            'contractTypes' => ContractType::select('id', 'name', 'code')->orderBy('name')->get(),
+            'filters' => $filters,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
@@ -212,6 +221,33 @@ class WorkflowAdminController extends Controller
             Log::error('Workflow Update Error: '.$e->getMessage());
 
             return back()->withErrors(['error' => 'Gagal memperbarui alur kerja: '.$e->getMessage()]);
+        }
+    }
+
+    public function toggleField(Request $request, Workflow $workflow)
+    {
+        $validated = $request->validate([
+            'field' => 'required|string|in:is_default,is_selectable,is_active',
+            'value' => 'required|boolean',
+        ]);
+
+        $field = $validated['field'];
+        $value = (bool) $validated['value'];
+
+        try {
+            if ($field === 'is_default' && $value) {
+                Workflow::where('id', '!=', $workflow->id)->update(['is_default' => false]);
+            }
+
+            $workflow->update([
+                $field => $value,
+            ]);
+
+            return back()->with('success', 'Perubahan berhasil disimpan.');
+        } catch (\Exception $e) {
+            Log::error('Workflow Toggle Error: '.$e->getMessage());
+
+            return back()->withErrors(['error' => 'Gagal memperbarui: '.$e->getMessage()]);
         }
     }
 

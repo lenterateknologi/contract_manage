@@ -12,6 +12,7 @@ import {
     Layers,
     Plus,
     ShieldCheck,
+    Star,
     Tag,
     Trash2,
     UserCircle,
@@ -39,6 +40,102 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [search, setSearch] = useState(filters.search || '');
 
+    const filterCategories = useMemo(() => {
+        return [
+            {
+                key: 'contract_type_id',
+                label: 'Tipe Pengajuan',
+                type: 'searchable' as const,
+                options: (contractTypes || []).map((ct: any) => ({
+                    label: ct.name,
+                    value: String(ct.id),
+                })),
+                placeholder: 'Semua Tipe Pengajuan',
+            },
+            {
+                key: 'workflow_type',
+                label: 'Jenis Alur Kerja',
+                type: 'multiselect' as const,
+                options: [
+                    { label: 'Master Workflow', value: 'main' },
+                    { label: 'Sub-Workflow', value: 'sub_workflow' },
+                    { label: 'Standalone', value: 'standalone' },
+                ],
+            },
+            {
+                key: 'is_default',
+                label: 'Status Default',
+                type: 'multiselect' as const,
+                options: [
+                    { label: 'Ya (Default)', value: 'true' },
+                    { label: 'Tidak (Bukan Default)', value: 'false' },
+                ],
+            },
+            {
+                key: 'is_selectable',
+                label: 'Tampil di Pilihan Opsi',
+                type: 'multiselect' as const,
+                options: [
+                    { label: 'Tampil (Ya)', value: 'true' },
+                    { label: 'Sembunyi (Tidak)', value: 'false' },
+                ],
+            },
+            {
+                key: 'is_active',
+                label: 'Status Keaktifan',
+                type: 'multiselect' as const,
+                options: [
+                    { label: 'Aktif', value: 'true' },
+                    { label: 'Nonaktif', value: 'false' },
+                ],
+            },
+        ];
+    }, [contractTypes]);
+
+    const activeFilters = useMemo(() => {
+        const active: Record<string, any> = {};
+        if (filters.contract_type_id) active.contract_type_id = Array.isArray(filters.contract_type_id) ? filters.contract_type_id : [filters.contract_type_id];
+        if (filters.workflow_type) active.workflow_type = Array.isArray(filters.workflow_type) ? filters.workflow_type : [filters.workflow_type];
+        if (filters.is_default !== undefined) active.is_default = Array.isArray(filters.is_default) ? filters.is_default : [String(filters.is_default)];
+        if (filters.is_selectable !== undefined) active.is_selectable = Array.isArray(filters.is_selectable) ? filters.is_selectable : [String(filters.is_selectable)];
+        if (filters.is_active !== undefined) active.is_active = Array.isArray(filters.is_active) ? filters.is_active : [String(filters.is_active)];
+        return active;
+    }, [filters]);
+
+    const handleFilterChange = (keyOrObj: string | Record<string, any>, value?: any) => {
+        const nextFilters = { ...filters };
+        if (typeof keyOrObj === 'string') {
+            if (value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
+                delete nextFilters[keyOrObj];
+            } else {
+                nextFilters[keyOrObj] = value;
+            }
+        } else {
+            Object.entries(keyOrObj).forEach(([k, v]) => {
+                if (v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)) {
+                    delete nextFilters[k];
+                } else {
+                    nextFilters[k] = v;
+                }
+            });
+        }
+        nextFilters.page = 1;
+
+        router.get(
+            globalThis.location.pathname,
+            nextFilters,
+            { preserveState: true, preserveScroll: true }
+        );
+    };
+
+    const handleResetFilters = () => {
+        router.get(
+            globalThis.location.pathname,
+            { per_page: filters.per_page || 15 },
+            { preserveState: true, preserveScroll: true }
+        );
+    };
+
     const rows: any[] = workflows.data || [];
 
     // Group workflows by contract_type_name (parent/first item only)
@@ -57,12 +154,45 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
     const openEdit = (w: any) => router.visit(route('admin.workflows.edit', w.id));
     const openCreate = () => router.visit(route('admin.workflows.create'));
 
+    const [togglingKey, setTogglingKey] = useState<string | null>(null);
+
     const toggleSelect = (id: string) => {
         setSelectedIds((prev) => {
             const next = new Set(prev);
             next.has(id) ? next.delete(id) : next.add(id);
             return next;
         });
+    };
+
+    const handleToggle = (
+        id: string,
+        field: 'is_default' | 'is_selectable' | 'is_active',
+        currentValue: boolean,
+        e: React.MouseEvent,
+    ) => {
+        e.stopPropagation();
+        const nextVal = !currentValue;
+        const key = `${id}-${field}`;
+        setTogglingKey(key);
+
+        router.patch(
+            route('admin.workflows.toggle', id),
+            { field, value: nextVal },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onSuccess: () => {
+                    const label = field === 'is_default' ? 'Default' : field === 'is_selectable' ? 'Tampil' : 'Status Aktif';
+                    showToast(`Status ${label} berhasil diperbarui`, 'success');
+                },
+                onError: (errors: any) => {
+                    showToast(errors?.error || 'Gagal memperbarui status', 'error');
+                },
+                onFinish: () => {
+                    setTogglingKey(null);
+                },
+            },
+        );
     };
 
     const handleBulkDelete = () => {
@@ -97,6 +227,11 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                 );
             }}
             searchPlaceholder="Cari alur kerja..."
+            filters={filterCategories}
+            activeFilters={activeFilters}
+            onFilterChange={handleFilterChange}
+            onResetFilters={handleResetFilters}
+            totalResults={workflows.total || 0}
             actions={
                 <div className="flex items-center gap-2">
                     {selectedIds.size > 0 && (
@@ -172,7 +307,17 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                         </th>
                         <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
                             <div className="flex items-center justify-center gap-1.5">
+                                <Star size={13} /> Default
+                            </div>
+                        </th>
+                        <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
+                            <div className="flex items-center justify-center gap-1.5">
                                 <Eye size={13} /> Tampil
+                            </div>
+                        </th>
+                        <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
+                            <div className="flex items-center justify-center gap-1.5">
+                                <ShieldCheck size={13} /> Status
                             </div>
                         </th>
                         <th className="w-28 px-4 py-3 text-right text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">Aksi</th>
@@ -181,7 +326,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                 <tbody className="divide-y divide-border/40">
                     {grouped.size === 0 ? (
                         <tr>
-                            <td colSpan={6} className="py-16 text-center text-muted-foreground">
+                            <td colSpan={8} className="py-16 text-center text-muted-foreground">
                                 <GitBranch size={24} className="mx-auto mb-2 opacity-30" />
                                 <p>Belum ada alur kerja terdaftar</p>
                             </td>
@@ -191,7 +336,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                             <React.Fragment key={`group-${typeName}`}>
                                 {/* Category sub-header row */}
                                 <tr className="bg-muted/20 border-t border-border/50">
-                                    <td colSpan={6} className="px-4 py-2">
+                                    <td colSpan={8} className="px-4 py-2">
                                         <div className="flex items-center gap-2">
                                             <div className="h-1.5 w-1.5 rounded-full bg-primary/50" />
                                             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -313,17 +458,67 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                             })()}
                                         </td>
 
-                                        {/* Tampil (is_active) */}
-                                        <td className="px-4 py-3 text-center">
-                                            {row.is_active !== false ? (
-                                                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
-                                                    <Eye size={10} /> Ya
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700">
-                                                    <EyeOff size={10} /> Tidak
-                                                </span>
-                                            )}
+                                        {/* Default */}
+                                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleToggle(row.id, 'is_default', !!row.is_default, e)}
+                                                disabled={togglingKey === `${row.id}-is_default`}
+                                                title={row.is_default ? 'Klik untuk membatalkan status alur default' : 'Klik untuk jadikan alur default'}
+                                                className="group inline-flex items-center cursor-pointer transition-all hover:scale-105 active:scale-95 focus:outline-none disabled:opacity-50"
+                                            >
+                                                {row.is_default ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 shadow-2xs group-hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:group-hover:bg-emerald-900/60">
+                                                        <CheckCircle2 size={10} /> Ya
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground group-hover:border-primary/30 group-hover:bg-muted group-hover:text-foreground">
+                                                        —
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </td>
+
+                                        {/* Tampil (is_selectable) */}
+                                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleToggle(row.id, 'is_selectable', !!row.is_selectable, e)}
+                                                disabled={togglingKey === `${row.id}-is_selectable`}
+                                                title={row.is_selectable ? 'Klik untuk sembunyikan dari opsi pilihan' : 'Klik untuk tampilkan pada opsi pilihan'}
+                                                className="group inline-flex items-center cursor-pointer transition-all hover:scale-105 active:scale-95 focus:outline-none disabled:opacity-50"
+                                            >
+                                                {row.is_selectable ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 shadow-2xs group-hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:group-hover:bg-emerald-900/60">
+                                                        <Eye size={10} /> Ya
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-[10px] font-medium text-zinc-500 group-hover:bg-zinc-200 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:group-hover:bg-zinc-800">
+                                                        <EyeOff size={10} /> Tidak
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </td>
+
+                                        {/* Status Aktif (is_active) */}
+                                        <td className="px-4 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleToggle(row.id, 'is_active', row.is_active !== false, e)}
+                                                disabled={togglingKey === `${row.id}-is_active`}
+                                                title={row.is_active !== false ? 'Klik untuk nonaktifkan alur kerja' : 'Klik untuk aktifkan alur kerja'}
+                                                className="group inline-flex items-center cursor-pointer transition-all hover:scale-105 active:scale-95 focus:outline-none disabled:opacity-50"
+                                            >
+                                                {row.is_active !== false ? (
+                                                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 shadow-2xs group-hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 dark:group-hover:bg-emerald-900/60">
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Aktif
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700 group-hover:bg-rose-100 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300 dark:group-hover:bg-rose-900/60">
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-rose-500" /> Nonaktif
+                                                    </span>
+                                                )}
+                                            </button>
                                         </td>
 
                                         {/* Row Actions */}

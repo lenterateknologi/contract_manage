@@ -161,7 +161,7 @@ function GenericFormTab({
                 fields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
                         const val = getAutofillValue(f, selected, docType, users);
-                        if (val !== null) {
+                        if (val !== null && val !== '') {
                             const currentVal = synced[f.name];
                             const isManualEdit = manualFields.has(f.name);
                             const isDateField =
@@ -174,7 +174,8 @@ function GenericFormTab({
                                 if (!isManual && isDateField && currentVal) {
                                     return;
                                 }
-                                if (currentVal !== val) {
+                                // ponytail: only update if value exists and differs, never clear non-empty user inputs
+                                if (currentVal !== val && (!currentVal || isManual)) {
                                     synced[f.name] = val;
                                     hasChanged = true;
                                 }

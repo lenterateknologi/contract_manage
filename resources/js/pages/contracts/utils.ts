@@ -42,6 +42,9 @@ export const contractApi = {
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>
         unwrap(api.post(`/api/contracts/${id}/send`, data)),
 
+    assignPic: (id: string, assignedPicId: string, note?: string): Promise<Contract> =>
+        unwrap(api.post(`/api/contracts/${id}/assign-pic`, { assigned_pic_id: assignedPicId, note })),
+
     approve: (
         id: string,
         note: string,

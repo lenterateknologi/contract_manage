@@ -1002,11 +1002,14 @@ class ContractWorkflowService
                     $q->orWhereIn('action_code', ['signature', 'sign']);
                 }
                 if (in_array(strtolower($actionCode), ['assign', 'assign_pic'])) {
-                    $q->orWhereIn('action_code', ['assign', 'assign_pic']);
+                    $q->orWhereIn('action_code', ['assign', 'assign_pic', 'approve']);
                 }
             })->first();
         if (! $stepAction && $actionCode === 'approve' && $approval->role === 'Persetujuan Tambahan') {
             $stepAction = $approval->workflowStep->actions()->where('action_code', 'forward')->first();
+        }
+        if (! $stepAction) {
+            $stepAction = $approval->workflowStep->actions()->whereIn('action_code', ['approve', 'assign', 'assign_pic'])->first();
         }
         if ($stepAction && ! empty($stepAction->autofilled_fields)) {
             $metadata = $contract->metadata ?? [];
@@ -1028,17 +1031,22 @@ class ContractWorkflowService
 
         if ($nextStep) {
             $minStepVal = $contract->workflow ? $contract->workflow->loadMissing('steps')->steps->min('step') : 1;
-            $statusStr = $nextStep->meta['target_status'] ?? ($nextStep->step_category === 'signing' ? 'locked' : ($nextStep->step === $minStepVal ? 'draft' : 'in_review'));
+            $statusStr = $stepAction?->target_status
+                ?: ($nextStep->id === $approval->workflow_step_id ? $contract->status : ($nextStep->meta['target_status'] ?? ($nextStep->step_category === 'signing' ? 'locked' : ($nextStep->step === $minStepVal ? 'draft' : 'in_review'))));
             $nextStatus = ContractStatus::where('code', $statusStr)->first();
+
+            $isSameStep = $nextStep->id === $approval->workflow_step_id;
 
             $contract->update([
                 'workflow_step_id' => $nextStep->id,
                 'status' => $nextStatus?->code ?: $statusStr,
             ]);
 
-            $this->createApprovalForStep($contract, $nextStep);
-            $this->handleAutoApproval($contract, Auth::user());
-            $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke tahap {$nextStep->step}: {$nextStep->description}", Auth::id());
+            if (! $isSameStep) {
+                $this->createApprovalForStep($contract, $nextStep);
+                $this->handleAutoApproval($contract, Auth::user());
+                $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke tahap {$nextStep->step}: {$nextStep->description}", Auth::id());
+            }
         } else {
             $archivedStatus = ContractStatus::where('code', 'archived')->first();
             if ($approval->workflowStep->step_category === 'closing' && $archivedStatus) {

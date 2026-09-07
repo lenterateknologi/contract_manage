@@ -101,6 +101,7 @@ interface CustomActionsManagerProps {
     companies?: any[];
     regions?: any[];
     users: any[];
+    contractStatuses?: any[];
     simulationContext?: any;
     onOpenSimulationModal?: () => void;
 }
@@ -116,6 +117,7 @@ export function CustomActionsManager({
     companies = [],
     regions = [],
     users = [],
+    contractStatuses = [],
     simulationContext,
     onOpenSimulationModal,
 }: CustomActionsManagerProps) {
@@ -399,6 +401,107 @@ export function CustomActionsManager({
                                                 options={stepOptions}
                                                 placeholder="Pilih tahapan yang mengizinkan aksi ini..."
                                             />
+                                        </div>
+                                    )}
+
+                                    {/* Target Step Setting for Tentukan / Ganti PIC */}
+                                    {(actionCode === 'assign' || act.id === 'action_assign_pic') && (
+                                        <div className="sm:col-span-12 pt-2 mt-1 border-t border-dashed border-slate-100 dark:border-zinc-800 flex flex-wrap items-center gap-2">
+                                            <span className="text-[10px] font-semibold text-slate-500 dark:text-zinc-400 shrink-0">
+                                                Perilaku Langkah & Tahapan:
+                                            </span>
+
+                                            {/* 1. Mode Transisi Langkah */}
+                                            <div className="w-48 sm:w-56">
+                                                <Select
+                                                    value={act.target_step_mode || 'current_step'}
+                                                    onValueChange={(val) =>
+                                                        updateAction(actIdx, {
+                                                            target_step_mode: val as any,
+                                                            target_step_id: val === 'specific_step' ? act.target_step_id || (steps[0]?.id ? String(steps[0].id) : undefined) : undefined,
+                                                        })
+                                                    }
+                                                >
+                                                    <SelectTrigger className="h-7 py-1 px-2 rounded border-slate-200 bg-white text-[10.5px] font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                                        <SelectValue placeholder="Pilih Perilaku Langkah" />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                        <SelectItem value="current_step" className="text-xs font-medium">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Layers size={12} className="text-blue-500 shrink-0" />
+                                                                <span>Tetap di Tahap Saat Ini (Default)</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="next_step" className="text-xs font-medium">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <ArrowRight size={12} className="text-emerald-500 shrink-0" />
+                                                                <span>Lanjut ke Langkah Berikutnya (+1)</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                        <SelectItem value="specific_step" className="text-xs font-medium">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Target size={12} className="text-indigo-500 shrink-0" />
+                                                                <span>Lompat ke Tahap Tertentu</span>
+                                                            </div>
+                                                        </SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* 2. Dropdown Pilih Tahap Spesifik jika specific_step */}
+                                            {act.target_step_mode === 'specific_step' && (
+                                                <div className="w-56 sm:w-64">
+                                                    <Select
+                                                        value={String(act.target_step_id || steps[0]?.id || '')}
+                                                        onValueChange={(val) => updateAction(actIdx, { target_step_id: val })}
+                                                    >
+                                                        <SelectTrigger className="h-7 py-1 px-2 rounded border-slate-200 bg-white text-[10.5px] font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                                            <SelectValue placeholder="Pilih Tahap Target" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                            {steps.map((s: any, sIdx: number) => (
+                                                                <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
+                                                                    Tahap {s.step || sIdx + 1}: {s.label || s.name || s.description || `Langkah ${sIdx + 1}`}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
+
+                                            {/* 3. Status Kontrak Target */}
+                                            {contractStatuses && contractStatuses.length > 0 && (
+                                                <div className="w-44 sm:w-52">
+                                                    <Select
+                                                        value={act.target_status || 'default'}
+                                                        onValueChange={(val) => updateAction(actIdx, { target_status: val === 'default' ? null : val })}
+                                                    >
+                                                        <SelectTrigger className="h-7 py-1 px-2 rounded border-slate-200 bg-white text-[10.5px] font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                                            <SelectValue placeholder="Status Kontrak" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                            <SelectItem value="default" className="text-xs font-medium text-slate-500">
+                                                                Status Tetap (Tidak Berubah)
+                                                            </SelectItem>
+                                                            {contractStatuses.map((status: any) => (
+                                                                <SelectItem key={status.id} value={status.code} className="text-xs font-medium">
+                                                                    <div className="flex items-center gap-1.5">
+                                                                        <div
+                                                                            className="h-2 w-2 rounded-full"
+                                                                            style={{ backgroundColor: status.color || '#cbd5e1' }}
+                                                                        />
+                                                                        <span>{status.code?.toUpperCase()}</span>
+                                                                    </div>
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
+
+                                            <span className="text-[10px] text-slate-400 dark:text-zinc-500 italic">
+                                                *Default hanya simpan data PIC tanpa geser langkah/status.
+                                            </span>
                                         </div>
                                     )}
 

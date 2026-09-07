@@ -43,10 +43,10 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
                 if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode;
-                return a.action_code === 'assign' || a.action_code === 'assign_pic';
+                return a.action_code === 'assign' || a.action_code === 'assign_pic' || a.action_code === 'approve';
             });
             const config = activeAction?.assignee_config || {};
-            const targetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
+            const targetStepId = activeAction?.next_step_id || config.default_target_step || null;
             
             setSelectedTargetStepId(targetStepId ? String(targetStepId) : null);
             setNote('');
@@ -74,7 +74,7 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
             const currentStep = contract?.workflow_step;
             const activeAction = (currentStep?.actions || []).find((a: any) => {
                 if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode;
-                return a.action_code === 'assign' || a.action_code === 'assign_pic';
+                return a.action_code === 'assign' || a.action_code === 'assign_pic' || a.action_code === 'approve';
             });
 
             // 1. Check custom action configuration from workflow meta (e.g. action_assign_pic)
@@ -156,16 +156,10 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
 
         setLoading(true);
         try {
-            const updatedContract = await contractApi.approve(
+            const updatedContract = await contractApi.assignPic(
                 contract.id,
-                note || '',
-                undefined, // attachment
-                selectedUserIds[0] || undefined, // assignedPicId
-                undefined, // executionOrder
-                undefined, // signerUserIds
-                actionCode || 'assign',
-                undefined, // isFinal
-                selectedTargetStepId || undefined // targetStepId
+                selectedUserIds[0],
+                note || undefined
             );
             
             onUpdate(updatedContract);

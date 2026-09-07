@@ -241,6 +241,7 @@ export function StepActionConfigCard({
             const prevStep = allWorkflowSteps[idx - 1];
             if (prevStep && act.next_step_id === prevStep.id) return 'back';
         }
+        if (actionCode === 'assign' || actionCode === 'assign_pic') return 'stay';
         return 'sequential';
     })();
 
@@ -272,10 +273,15 @@ export function StepActionConfigCard({
                             value={act.master_action_id || ''}
                             onValueChange={(val) => {
                                 const ma = MASTER_ACTIONS.find((m: any) => m.id === val);
+                                const isAssign = val === 'assign' || val === 'assign_pic' || ma?.code === 'assign' || ma?.code === 'assign_pic';
                                 updateAction(actIdx, {
                                     master_action_id: val,
                                     master_action: ma || null,
                                     alias: act.alias || (ma ? ma.name : ''),
+                                    ...(isAssign && (!act.transition_config || (act.transition_config?.type === 'relative' && act.transition_config?.offset === 1)) ? {
+                                        transition_config: { type: 'relative', offset: 0 },
+                                        target_status: act.target_status || null,
+                                    } : {}),
                                 });
                             }}
                         >

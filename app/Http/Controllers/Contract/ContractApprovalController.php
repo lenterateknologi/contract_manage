@@ -13,6 +13,7 @@ use App\Http\Requests\Contract\BulkApproveContractRequest;
 use App\Http\Requests\Contract\RejectContractRequest;
 use App\Models\Approval;
 use App\Models\Contract;
+use App\Models\ContractHistory;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\WorkflowStep;
@@ -49,6 +50,64 @@ class ContractApprovalController extends Controller
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+    }
+
+    public function assignPic(Request $request, string $id): JsonResponse
+    {
+        $contract = $this->contractDetailQuery->find($id);
+
+        $request->validate([
+            'assigned_pic_id' => 'required|uuid|exists:m_users,id',
+            'note' => 'nullable|string',
+        ]);
+
+        $picId = $request->input('assigned_pic_id');
+        $note = $request->input('note');
+
+        $actorId = Auth::id() ?: $contract->created_by;
+
+        $metadata = $contract->metadata ?? [];
+        $metadata['assigned_pic_id'] = $picId;
+        $metadata['assigned_by_id'] = $actorId;
+        if ($note) {
+            $metadata['assigned_pic_note'] = $note;
+        }
+
+        $contract->update([
+            'assigned_pic_id' => $picId,
+            'assigned_by_id' => $actorId,
+            'metadata' => $metadata,
+        ]);
+
+        $pic = User::find($picId);
+
+        // Update any active/pending/waiting approvals for assigned_pic step so the new PIC receives the task
+        $picApprovals = Approval::where('contract_id', $contract->id)
+            ->whereIn('status', ['pending', 'waiting'])
+            ->where(function ($q) {
+                $q->whereHas('workflowStep', function ($sq) {
+                    $sq->where('approver_type', 'assigned_pic')
+                        ->orWhereHas('approverAuthorities', fn ($aq) => $aq->where('authority_type', 'assigned_pic'));
+                })->orWhere('role', 'Staff Legal');
+            })
+            ->get();
+
+        foreach ($picApprovals as $appr) {
+            $appr->update([
+                'user_id' => $pic->id,
+                'approver_name' => $pic->name,
+            ]);
+        }
+
+        $desc = 'PIC ditugaskan ke: '.($pic ? $pic->name : $picId).($note ? " (Catatan: {$note})" : '');
+        ContractHistory::create([
+            'contract_id' => $contract->id,
+            'action' => 'WORKFLOW_ASSIGNED',
+            'description' => $desc,
+            'actor_id' => $actorId,
+        ]);
+
+        return response()->json(ContractFormatter::formatContract($contract->fresh()));
     }
 
     public function approve(ApproveContractRequest $request, string $id): JsonResponse

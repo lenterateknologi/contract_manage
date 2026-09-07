@@ -1437,6 +1437,7 @@ export default function WorkflowEditor({
                                     companies={companies}
                                     regions={regions}
                                     users={users}
+                                    contractStatuses={contractStatuses}
                                     simulationContext={simulationContext}
                                     onOpenSimulationModal={() => {
                                         setSimActorSearch('');

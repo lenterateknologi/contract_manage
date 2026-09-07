@@ -26,6 +26,7 @@ Route::prefix('contracts')->group(function () {
 
     Route::controller(ContractApprovalController::class)->prefix('{id}')->group(function () {
         Route::post('/send', 'send');
+        Route::post('/assign-pic', 'assignPic');
         Route::post('/approve', 'approve');
         Route::post('/reject', 'reject');
         Route::post('/recall', 'recall');

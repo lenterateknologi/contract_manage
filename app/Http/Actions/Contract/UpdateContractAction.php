@@ -26,6 +26,29 @@ class UpdateContractAction
             $contract = $this->workflowService->sendForApproval($contract, null, null, false);
         }
 
+        if (array_key_exists('assigned_pic_id', $validated) && $validated['assigned_pic_id']) {
+            $newPicId = $validated['assigned_pic_id'];
+            $newPic = \App\Models\User::find($newPicId);
+            if ($newPic) {
+                $picApprovals = \App\Models\Approval::where('contract_id', $contract->id)
+                    ->whereIn('status', ['pending', 'waiting'])
+                    ->where(function ($q) {
+                        $q->whereHas('workflowStep', function ($sq) {
+                            $sq->where('approver_type', 'assigned_pic')
+                                ->orWhereHas('approverAuthorities', fn ($aq) => $aq->where('authority_type', 'assigned_pic'));
+                        })->orWhere('role', 'Staff Legal');
+                    })
+                    ->get();
+
+                foreach ($picApprovals as $appr) {
+                    $appr->update([
+                        'user_id' => $newPic->id,
+                        'approver_name' => $newPic->name,
+                    ]);
+                }
+            }
+        }
+
         ContractHistory::create([
             'contract_id' => $contract->id,
             'action' => 'CONTRACT_UPDATED',

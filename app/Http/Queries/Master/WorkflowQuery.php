@@ -32,8 +32,56 @@ class WorkflowQuery
                         ->orWhere(DB::raw('LOWER(description)'), 'like', "%{$search}%");
                 });
             })
-            ->when($request->contract_type_id, function ($q, $type) {
-                $q->whereIn('contract_type_id', (array) $type);
+            ->when($request->workflow_type, function ($q, $type) {
+                $types = is_array($type) ? $type : [$type];
+                $types = array_filter($types, fn ($t) => $t !== 'all' && $t !== '' && $t !== null);
+                if (! empty($types)) {
+                    $q->whereIn('workflow_type', $types);
+                }
+            })
+            ->when($request->contract_type_id, function ($q, $typeId) {
+                $ids = is_array($typeId) ? $typeId : [$typeId];
+                $ids = array_filter($ids, fn ($id) => $id !== 'all' && $id !== '' && $id !== null);
+                if (! empty($ids)) {
+                    $q->where(function ($qq) use ($ids) {
+                        $qq->whereIn('contract_type_id', $ids);
+                        foreach ($ids as $id) {
+                            $qq->orWhereJsonContains('meta->contract_type_ids', $id);
+                        }
+                    });
+                }
+            })
+            ->when($request->filled('is_default'), function ($q) use ($request) {
+                $vals = is_array($request->is_default) ? $request->is_default : [$request->is_default];
+                $vals = array_filter($vals, fn ($v) => $v !== 'all' && $v !== '' && $v !== null);
+                if (! empty($vals)) {
+                    $bools = array_map(fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN), $vals);
+                    $q->whereIn('is_default', $bools);
+                }
+            })
+            ->when($request->has('is_selectable'), function ($q) use ($request) {
+                if ($request->filled('is_selectable')) {
+                    $vals = is_array($request->is_selectable) ? $request->is_selectable : [$request->is_selectable];
+                    $vals = array_filter($vals, fn ($v) => $v !== 'all' && $v !== '' && $v !== null);
+                    if (! empty($vals)) {
+                        $bools = array_map(fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN), $vals);
+                        $q->whereIn('is_selectable', $bools);
+                    }
+                }
+            }, function ($q) {
+                $q->where('is_selectable', true);
+            })
+            ->when($request->has('is_active'), function ($q) use ($request) {
+                if ($request->filled('is_active')) {
+                    $vals = is_array($request->is_active) ? $request->is_active : [$request->is_active];
+                    $vals = array_filter($vals, fn ($v) => $v !== 'all' && $v !== '' && $v !== null);
+                    if (! empty($vals)) {
+                        $bools = array_map(fn ($v) => filter_var($v, FILTER_VALIDATE_BOOLEAN), $vals);
+                        $q->whereIn('is_active', $bools);
+                    }
+                }
+            }, function ($q) {
+                $q->where('is_active', true);
             });
     }
 

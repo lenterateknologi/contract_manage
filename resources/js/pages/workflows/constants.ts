@@ -172,7 +172,7 @@ export const BUILTIN_STEP_TEMPLATES = [
                 {
                     action_code: 'assign',
                     name: 'Tugaskan PIC',
-                    transition_type: 'sequential',
+                    transition_type: 'stay',
                     is_active: true,
                 },
             ],

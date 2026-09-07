@@ -51,14 +51,48 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
         const { color, icon, actionType } = getActionTheme(code);
 
         let tooltip = '';
-        if (act.next_workflow_id) {
-            const targetWfName = allWorkflows.find((w: any) => w.id === act.next_workflow_id)?.name || 'Workflow Lain';
-            tooltip = `Lompat ke Workflow: ${targetWfName}`;
-        } else if (act.next_step_id) {
-            const targetStepIdx = allWorkflowSteps.findIndex((s) => s.id === act.next_step_id);
-            tooltip = `Lompat ke Tahap ${targetStepIdx !== -1 ? targetStepIdx + 1 : 'Kustom'}`;
-        } else {
-            tooltip = idx + 2 > totalSteps ? 'Selesai / Final' : `Lanjut ke Tahap ${idx + 2}`;
+        const tc = act.transition_config;
+
+        if (tc && typeof tc === 'object') {
+            if (tc.type === 'cross_workflow' || tc.type === 'origin_return') {
+                const wfId = tc.workflow_id;
+                if (wfId === 'origin_workflow' || !wfId) {
+                    tooltip = 'Kembali ke Workflow Asal (Origin)';
+                } else {
+                    const targetWfName = allWorkflows.find((w: any) => String(w.id) === String(wfId))?.name || 'Sub-Workflow';
+                    const targetSeq = tc.sequence ? ` (Tahap ${tc.sequence})` : '';
+                    tooltip = `Lompat ke Workflow: ${targetWfName}${targetSeq}`;
+                }
+            } else if (tc.type === 'absolute') {
+                tooltip = `Lompat ke Tahap ${tc.sequence ?? 1}`;
+            } else if (tc.type === 'initial_step') {
+                tooltip = 'Kembali ke Tahap Awal (#1)';
+            } else if (tc.type === 'relative') {
+                const offset = Number(tc.offset ?? 1);
+                if (offset === 1) {
+                    tooltip = idx + 2 > totalSteps ? 'Selesai / Final' : `Lanjut ke Tahap ${idx + 2}`;
+                } else if (offset === 0) {
+                    tooltip = `Tetap di Tahap ${idx + 1}`;
+                } else if (offset === -1) {
+                    tooltip = idx > 0 ? `Kembali ke Tahap ${idx}` : 'Kembali ke Tahap 1';
+                } else if (offset > 1) {
+                    tooltip = `Lompat maju ke Tahap ${idx + 1 + offset}`;
+                } else if (offset < -1) {
+                    tooltip = `Lompat mundur ke Tahap ${Math.max(1, idx + 1 + offset)}`;
+                }
+            }
+        }
+
+        if (!tooltip) {
+            if (act.next_workflow_id) {
+                const targetWfName = allWorkflows.find((w: any) => w.id === act.next_workflow_id)?.name || 'Workflow Lain';
+                tooltip = `Lompat ke Workflow: ${targetWfName}`;
+            } else if (act.next_step_id) {
+                const targetStepIdx = allWorkflowSteps.findIndex((s) => s.id === act.next_step_id);
+                tooltip = `Lompat ke Tahap ${targetStepIdx !== -1 ? targetStepIdx + 1 : 'Kustom'}`;
+            } else {
+                tooltip = idx + 2 > totalSteps ? 'Selesai / Final' : `Lanjut ke Tahap ${idx + 2}`;
+            }
         }
 
         buttons.push({

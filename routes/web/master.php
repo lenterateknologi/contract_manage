@@ -104,6 +104,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::post('/import', 'import')->name('admin.workflows.import');
         Route::get('/{workflow}/edit', 'edit')->name('admin.workflows.edit');
         Route::put('/{workflow}', 'update')->name('admin.workflows.update');
+        Route::patch('/{workflow}/toggle', 'toggleField')->name('admin.workflows.toggle');
         Route::delete('/{workflow}', 'destroy')->name('admin.workflows.destroy');
         Route::post('/bulk-delete', 'bulkDestroy')->name('admin.workflows.bulk-destroy');
         Route::post('/{workflow}/duplicate', 'duplicate')->name('admin.workflows.duplicate');

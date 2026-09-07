@@ -751,8 +751,9 @@ class ContractFormatter
                         $approverName = $roleLabel;
 
                         if ($step->approver_type === 'assigned_pic') {
-                            $stepTargetApprovers = 'PIC (Belum Ditugaskan)';
-                            $approverName = 'PIC (Belum Ditugaskan)';
+                            $picName = $c->assignedPic?->name ?? ($c->assigned_pic_id ? \App\Models\User::find($c->assigned_pic_id)?->name : null);
+                            $stepTargetApprovers = $picName ?: 'PIC (Belum Ditugaskan)';
+                            $approverName = $picName ?: 'PIC (Belum Ditugaskan)';
                         }
 
                         $authoritiesPayload = [];
