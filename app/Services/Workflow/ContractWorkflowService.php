@@ -318,7 +318,7 @@ class ContractWorkflowService
                         continue;
                     }
 
-                    $query = User::query();
+                    $query = User::query()->where('is_used', true);
                     $hasFilters = false;
 
                     // ponytail: strictly apply filters based on authority_type, or apply all available if 'group'
@@ -438,7 +438,7 @@ class ContractWorkflowService
                 // 4. Resolve Users
                 $stepUsers = $authorities->filter(fn ($a) => $a->authority_type === 'user' && ! empty($a->user_id))->pluck('user_id')->toArray();
                 if (! empty($stepUsers)) {
-                    $uQuery = User::whereIn('id', $stepUsers);
+                    $uQuery = User::whereIn('id', $stepUsers)->where('is_used', true);
                     $rawSql = $uQuery->toSql();
                     foreach ($uQuery->getBindings() as $binding) {
                         $val = is_numeric($binding) ? $binding : "'".addslashes((string) $binding)."'";
@@ -515,7 +515,7 @@ class ContractWorkflowService
                     }
 
                     if ($approvers->isEmpty()) {
-                        $query = User::query();
+                        $query = User::query()->where('is_used', true);
                         $hasFilters = false;
 
                         $legacyRoles = $step->role ? (is_array($step->role) ? $step->role : [$step->role]) : [];

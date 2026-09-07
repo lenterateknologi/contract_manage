@@ -174,6 +174,7 @@ class WorkflowQueryService
         $targetRoleLower = strtolower($hierarchy[$targetIndex]);
 
         $query = User::whereHas('roleRelation', fn ($q) => $q->where(DB::raw('LOWER(name)'), $targetRoleLower))
+            ->where('is_used', true)
             ->where('is_active', true);
 
         if ($step) {
@@ -200,6 +201,7 @@ class WorkflowQueryService
         // Fallback: If no one in specific department/filters, search more broadly but keep the role
         if ($approvers->isEmpty() && $targetIndex > 0) {
             $fallbackQuery = User::whereHas('roleRelation', fn ($q) => $q->where(DB::raw('LOWER(name)'), $targetRoleLower))
+                ->where('is_used', true)
                 ->where('is_active', true);
 
             if ($step && $step->filter_company && $initiator->company_id) {
