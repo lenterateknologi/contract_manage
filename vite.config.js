@@ -36,6 +36,12 @@ export default defineConfig({
     build: {
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
+            onwarn(warning, defaultHandler) {
+                if (warning.code === 'EVAL' && warning.id && warning.id.includes('lottie-web')) {
+                    return;
+                }
+                defaultHandler(warning);
+            },
             output: {
                 experimentalMinChunkSize: 12288,
                 manualChunks: (id) => {
@@ -55,6 +61,18 @@ export default defineConfig({
                             id.includes('node_modules/@reduxjs/toolkit/')
                         ) {
                             return 'vendor-charts';
+                        }
+                        if (id.includes('node_modules/@dnd-kit/')) {
+                            return 'vendor-dnd';
+                        }
+                        if (id.includes('node_modules/@radix-ui/')) {
+                            return 'vendor-radix';
+                        }
+                        if (id.includes('node_modules/docx-preview')) {
+                            return 'vendor-docx';
+                        }
+                        if (id.includes('node_modules/lottie-react') || id.includes('node_modules/lottie-web')) {
+                            return 'vendor-lottie';
                         }
                         if (id.includes('node_modules/@xyflow/')) {
                             return 'vendor-flow';

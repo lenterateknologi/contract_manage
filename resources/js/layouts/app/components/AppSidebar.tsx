@@ -1141,7 +1141,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                 <div className="flex h-16 items-center px-4 border-b border-sidebar-border/40 shrink-0">
                                     <div className="flex flex-col justify-center truncate">
                                         <span className="text-sidebar-foreground text-[15px] leading-tight font-bold tracking-tight">
-                                            ABSAH
+                                            corexa
                                         </span>
                                         <span className="text-sidebar-foreground/50 text-[10px] leading-tight font-medium truncate mt-0.5">
                                             Legal Management System
