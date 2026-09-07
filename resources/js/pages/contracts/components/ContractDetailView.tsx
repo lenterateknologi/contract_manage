@@ -281,6 +281,12 @@ const ContractDetailView = ({
         return customActions.filter((act) => {
             if (act.is_active === false) return false;
 
+            // Do not allow nested ad-hoc action on ad-hoc review steps
+            if ((act.action_code === 'forward' || act.id === 'action_adhoc') && 
+                (contract.workflow_step?.step_category === 'adhoc_review' || contract.workflow_step?.meta?.is_adhoc_step)) {
+                return false;
+            }
+
             // Step scope check
             if (act.scope === 'specific_steps' && Array.isArray(act.step_ids) && act.step_ids.length > 0) {
                 const currentStepId = String(contract.workflow_step_id);
@@ -668,8 +674,8 @@ const ContractDetailView = ({
                                     const activeSub = docSubTabs.some(t => t.id === docSubTab) ? docSubTab : (docSubTabs[0]?.id || 'f1');
 
                                     return (
-                                        <div className="flex flex-col flex-1">
-                                            <div className="flex-1">
+                                        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+                                            <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
                                                 {activeSub === 'f1' && (
                                                     <F1Tab
                                                         contract={contract}

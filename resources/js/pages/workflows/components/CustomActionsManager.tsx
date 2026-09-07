@@ -57,18 +57,6 @@ export const DEFAULT_FIXED_CUSTOM_ACTIONS: Omit<CustomActionItem, 'authorities'>
         unlocks_other_actions: false,
     },
     {
-        id: 'action_signature',
-        action_code: 'signature',
-        name: 'Tentukan Penandatangan',
-        alias: 'Tentukan Penandatangan',
-        description: 'Aksi untuk menentukan pihak penandatangan dokumen perjanjian (Pihak 1 / Pihak 2 / Penandatangan).',
-        is_active: true,
-        scope: 'all_steps',
-        step_ids: [],
-        visibility_condition: 'always',
-        unlocks_other_actions: false,
-    },
-    {
         id: 'action_adhoc',
         action_code: 'forward',
         name: 'Tambah Approval Tambahan (Ad-Hoc)',

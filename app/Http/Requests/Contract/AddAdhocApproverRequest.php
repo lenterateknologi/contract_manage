@@ -29,6 +29,8 @@ class AddAdhocApproverRequest extends FormRequest
             'note' => 'nullable|string|max:1000',
             'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
             'is_sequential' => 'nullable|boolean',
+            'approval_rule' => 'nullable|string|in:all,any,quorum',
+            'min_approvals' => 'nullable|integer|min:1',
             'role' => 'nullable|string|max:100',
         ];
     }

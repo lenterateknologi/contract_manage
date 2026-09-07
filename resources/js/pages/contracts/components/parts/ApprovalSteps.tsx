@@ -3,7 +3,7 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
-import { Download, GitCommit } from 'lucide-react';
+import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
@@ -20,10 +20,10 @@ interface Props {
     onApprove: (note: string, attachment?: File) => Promise<void>;
 }
 
-type ViewTab = 'all' | 'eligible' | 'active' | 'no_skipped';
+type ViewTab = 'lite' | 'pro';
 
 export default function ApprovalSteps({ contract, approvals, creator, submittedAt, meId, onApprove }: Props) {
-    const [viewTab, setViewTab] = useState<ViewTab>('eligible');
+    const [viewTab, setViewTab] = useState<ViewTab>('lite');
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -31,8 +31,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const filteredSteps = useMemo(() => {
         let result = [...approvals];
 
-        // Tab: Syarat Terpenuhi = approved, rejected, dan step yang sedang aktif (berdasarkan workflow_step_id kontrak)
-        if (viewTab === 'eligible') {
+        // Tab: Lite (Sederhana - Hanya yang sudah dieksekusi atau step aktif sekarang)
+        if (viewTab === 'lite') {
             const currentStepId = contract.workflow_step_id;
             result = result.filter(
                 (a) =>
@@ -42,24 +42,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             );
         }
 
-        // Tab: Semua Kecuali Tidak Terpenuhi
-        // = hide step yang bukan current dan belum ada hasilnya
-        if (viewTab === 'active') {
-            const currentStepId = contract.workflow_step_id;
-            result = result.filter(
-                (a) =>
-                    a.status === 'approved' ||
-                    a.status === 'rejected' ||
-                    a.workflow_step_id === currentStepId,
-            );
-        }
-
-        // Tab: Tanpa Dilewati = hide SKIPPED saja, tampilkan sisanya
-        if (viewTab === 'no_skipped') {
-            result = result.filter(
-                (a) => (a.status as string) !== 'SKIPPED',
-            );
-        }
+        // Tab: Pro = Full information (Semua step approval termasuk yang belum aktif / dilewati)
 
         if (debouncedSearch) {
             const s = debouncedSearch.toLowerCase();
@@ -80,10 +63,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             }
             return a.id.localeCompare(b.id);
         });
-    }, [approvals, viewTab, meId, debouncedSearch]);
+    }, [approvals, viewTab, meId, debouncedSearch, contract.workflow_step_id]);
 
     // Build a hierarchical tree of steps
     const stepTree = useMemo(() => {
+        const rootWorkflowId = contract.origin_workflow_id || contract.workflow_id;
         const blocks: any[] = [];
         let currentBlock: any = null;
 
@@ -95,7 +79,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 currentBlock = {
                     workflowId: wfId,
                     workflowName: wfName,
-                    isSubWorkflow: wfId !== contract.workflow_id,
+                    isSubWorkflow: Boolean(rootWorkflowId && wfId !== rootWorkflowId),
                     groups: [],
                 };
                 blocks.push(currentBlock);
@@ -137,7 +121,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             block.groups.sort((a: any, b: any) => Number(a.sequence) - Number(b.sequence));
         });
         return blocks;
-    }, [filteredSteps, contract.workflow_id, contract.workflow?.name]);
+    }, [filteredSteps, contract.workflow_id, contract.origin_workflow_id, contract.workflow?.name]);
 
     const showProjectedManager = approvals.length === 0 && creator.role?.toLowerCase() === 'staff';
 
@@ -146,9 +130,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     };
 
     const tabs: { key: ViewTab; label: string }[] = [
-        { key: 'eligible', label: 'Syarat Terpenuhi' },
-        { key: 'no_skipped', label: 'Semua (Tanpa Dilewati)' },
-        { key: 'all', label: 'Semua Alur' },
+        { key: 'lite', label: 'Lite' },
+        { key: 'pro', label: 'Pro' },
     ];
 
     return (
@@ -213,32 +196,23 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             </div>
 
             <div className="relative px-1">
-                <Timeline>
+                <Timeline className={viewTab === 'lite' ? 'border-l ml-2 pl-4 py-0 gap-1.5' : undefined}>
                     {!search && !approvals.some((a) => a.sequence === 1) && (
-                        <TimelineItem status="completed">
-                            <InitiatorStepCard isOnly={stepTree.length === 0 && !showProjectedManager} creator={creator} submittedAt={submittedAt} />
+                        <TimelineItem status="completed" className={viewTab === 'lite' ? 'pb-1.5' : undefined}>
+                            <InitiatorStepCard isOnly={stepTree.length === 0 && !showProjectedManager} creator={creator} submittedAt={submittedAt} isLite={viewTab === 'lite'} />
                         </TimelineItem>
                     )}
                     {!search && showProjectedManager && (
-                        <TimelineItem status="waiting">
+                        <TimelineItem status="waiting" className={viewTab === 'lite' ? 'pb-1.5' : undefined}>
                             <ProjectedStepCard creator={creator} />
                         </TimelineItem>
                     )}
 
                     {stepTree.map((block, bIdx) => {
-                        const isLastBlock = bIdx === stepTree.length - 1;
+                        const isSubWf = block.isSubWorkflow;
 
-                        return (
+                        const content = (
                             <React.Fragment key={block.workflowId + bIdx}>
-                                {block.isSubWorkflow && (
-                                    <div className="mb-2 flex items-center gap-2 pl-2">
-                                        <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-500" />
-                                        <span className="text-[10px] font-semibold tracking-tighter text-indigo-600 uppercase dark:text-indigo-400">
-                                            Sub-Workflow: {block.workflowName}
-                                        </span>
-                                    </div>
-                                )}
-
                                 {block.groups.map(
                                     (group: { sequence: number; stepName: string; stepDescription?: string; items: ContractApproval[] }, idx: number) => {
                                         const currentStepId = contract.workflow_step_id;
@@ -264,22 +238,29 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                         const statusColor = (isActive && contract.status_info?.color) ? contract.status_info.color : null;
 
                                         return (
-                                            <TimelineItem key={group.sequence + idx} status={itemStatus}>
+                                            <TimelineItem key={group.sequence + idx} status={itemStatus} className={viewTab === 'lite' ? 'pb-1.5' : undefined}>
                                                 <TimelineIcon
                                                     status={itemStatus}
                                                     style={isActive && statusColor ? { backgroundColor: statusColor, borderColor: 'transparent' } : undefined}
+                                                    className={viewTab === 'lite' ? '-left-[27px] h-5 w-5 text-[10px]' : undefined}
                                                 >
-                                                    {group.sequence}
+                                                    {isSubWf ? `${group.sequence}` : group.sequence}
                                                 </TimelineIcon>
 
-                                                <TimelineContent>
-                                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-2 pb-1.5 border-b border-surface-border/60">
+                                                <TimelineContent className={viewTab === 'lite' ? 'gap-1 before:top-[9px] before:-left-4 before:w-3' : undefined}>
+                                                    <div className={cn(
+                                                        "flex items-center justify-between gap-1",
+                                                        viewTab === 'lite' ? 'mb-0' : 'mb-2 pb-1.5 border-b border-surface-border/60'
+                                                    )}>
                                                         <div className="space-y-0.5">
-                                                            <div className="flex items-center gap-2 flex-wrap">
-                                                                <h4 className="text-xs font-bold text-text-main">
-                                                                    Step {group.sequence}: {group.stepName}
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <h4 className={cn(
+                                                                    "font-bold text-text-main",
+                                                                    viewTab === 'lite' ? 'text-[11px]' : 'text-xs'
+                                                                )}>
+                                                                    {group.stepName}
                                                                 </h4>
-                                                                {targetStatus && (
+                                                                 {viewTab === 'pro' && targetStatus && (
                                                                     <span
                                                                         className="px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide border uppercase"
                                                                         style={
@@ -291,15 +272,36 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                         {targetStatus}
                                                                     </span>
                                                                 )}
+                                                                {(() => {
+                                                                    const hasSequential = group.items.some(it => it.sub_step != null) || Boolean(contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id]?.is_sequential);
+                                                                    if (!hasSequential || group.items.length <= 1) return null;
+                                                                    return (
+                                                                        <span className="inline-flex items-center gap-1 rounded bg-indigo-500/10 border border-indigo-500/25 px-1.5 py-0.5 text-[8.5px] font-bold tracking-wider uppercase text-indigo-700 dark:text-indigo-300">
+                                                                            <ArrowDownRight size={10} className="shrink-0" />
+                                                                            <span>Persetujuan Berurutan</span>
+                                                                        </span>
+                                                                    );
+                                                                })()}
                                                             </div>
-                                                            {group.stepDescription && (
-                                                                <p className="text-[11px] text-text-muted leading-relaxed">
-                                                                    {group.stepDescription}
-                                                                </p>
-                                                            )}
-                                                        </div>
+                                                            {(() => {
+                                                                const hasSequential = group.items.some(it => it.sub_step != null) || Boolean(contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id]?.is_sequential);
+                                                                if (hasSequential && group.items.length > 1) {
+                                                                    return (
+                                                                        <p className="text-[10px] text-indigo-600/90 dark:text-indigo-400 font-medium mt-0.5">
+                                                                            Setiap peninjau harus menyetujui secara berurutan sebelum peninjau berikutnya dapat melakukan tindakan persetujuan.
+                                                                        </p>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })()}
+                                                            {viewTab === 'pro' && group.stepDescription && (
+                                                                 <p className="text-[11px] text-text-muted leading-relaxed">
+                                                                     {group.stepDescription}
+                                                                 </p>
+                                                             )}
+                                                         </div>
 
-                                                        {(() => {
+                                                         {viewTab === 'pro' && (() => {
                                                             let actions = mainItem?.workflow_step?.action_configs || [];
 
                                                             if (matchedStep) {
@@ -382,7 +384,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                  </div>
                                                              );
                                                          })()}
-                                                     </div>
+                                                    </div>
 
                                                     <div className="space-y-1 mt-0.5">
                                                         {(() => {
@@ -395,7 +397,15 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                     {visibleItems.map((a: ContractApproval) => {
                                                                         const stepNumber = a.sub_step != null ? `${group.sequence}.${a.sub_step}` : `${group.sequence}`;
                                                                         return (
-                                                                            <ApprovalCard key={a.id} approval={a} stepNumber={stepNumber} displaySubSteps={false} contract={contract} />
+                                                                            <ApprovalCard 
+                                                                                key={a.id} 
+                                                                                approval={a} 
+                                                                                stepNumber={stepNumber} 
+                                                                                displaySubSteps={false} 
+                                                                                contract={contract} 
+                                                                                showDetails={viewTab === 'pro'}
+                                                                                isLite={viewTab === 'lite'}
+                                                                            />
                                                                         );
                                                                     })}
                                                                     {group.items.length > 3 && (
@@ -418,6 +428,71 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                 )}
                             </React.Fragment>
                         );
+
+                        if (isSubWf) {
+                            return (
+                                <TimelineItem key={block.workflowId + bIdx} status="active" className={cn(viewTab === 'lite' ? 'pb-2' : 'pb-4')}>
+                                    <TimelineIcon 
+                                        status="active" 
+                                        className={cn(
+                                            "bg-indigo-600 text-white dark:bg-indigo-500",
+                                            viewTab === 'lite' ? '-left-[27px] h-5 w-5' : ''
+                                        )}
+                                    >
+                                        <Layers size={viewTab === 'lite' ? 11 : 13} strokeWidth={2.5} />
+                                    </TimelineIcon>
+                                    <TimelineContent className={viewTab === 'lite' ? 'gap-1 before:top-[9px] before:-left-4 before:w-3' : undefined}>
+                                        <div className={cn(
+                                            "rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-800/80 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-xs",
+                                            viewTab === 'lite' ? 'p-2 sm:p-2.5' : 'p-3 sm:p-4'
+                                        )}>
+                                            {/* Sub-Workflow Card Header */}
+                                            <div className={cn(
+                                                "flex flex-wrap items-center justify-between gap-1.5 border-b border-indigo-200/60 dark:border-indigo-800/50",
+                                                viewTab === 'lite' ? 'pb-1.5 mb-1.5' : 'pb-3 mb-3'
+                                            )}>
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className={cn(
+                                                        "flex items-center justify-center rounded-md bg-indigo-600 text-white dark:bg-indigo-500 shadow-xs shrink-0",
+                                                        viewTab === 'lite' ? 'h-5 w-5' : 'h-6 w-6'
+                                                    )}>
+                                                        <Workflow size={viewTab === 'lite' ? 11 : 13} strokeWidth={2.5} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex items-center gap-1">
+                                                            <span className="text-[8.5px] font-extrabold tracking-wider text-indigo-700 dark:text-indigo-400 uppercase bg-indigo-100 dark:bg-indigo-900/60 px-1 py-0.2 rounded">
+                                                                Sub-Workflow Cabang
+                                                            </span>
+                                                        </div>
+                                                        <h4 className={cn(
+                                                            "font-bold text-indigo-950 dark:text-indigo-100",
+                                                            viewTab === 'lite' ? 'text-[11px] mt-0' : 'text-xs mt-0.5'
+                                                        )}>
+                                                            {block.workflowName}
+                                                        </h4>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-1 text-[9.5px] font-semibold text-indigo-600 dark:text-indigo-400">
+                                                    <span>{block.groups.length} Tahap Persetujuan</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Nested Timeline for Sub-Workflow steps */}
+                                            <div className="relative pl-0.5">
+                                                <Timeline className={cn(
+                                                    "border-indigo-200 dark:border-indigo-800/60",
+                                                    viewTab === 'lite' ? 'ml-1 pl-3 py-0 gap-1' : 'ml-2'
+                                                )}>
+                                                    {content}
+                                                </Timeline>
+                                            </div>
+                                        </div>
+                                    </TimelineContent>
+                                </TimelineItem>
+                            );
+                        }
+
+                        return content;
                     })}
                 </Timeline>
                 </div>

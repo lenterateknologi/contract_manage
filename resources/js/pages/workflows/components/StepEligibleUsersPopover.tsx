@@ -19,6 +19,8 @@ interface StepEligibleUsersPopoverProps {
         initiatorId?: string;
         picId?: string;
         creatorId?: string;
+        adhocId?: string;
+        adhocIds?: string[];
     };
     onOpenSimulationModal?: () => void;
 }
@@ -60,7 +62,7 @@ export function StepEligibleUsersPopover({
         return u.division?.name || divisions.find((d: any) => String(d.id) === String(u.division_id || u.department?.division_id))?.name || null;
     };
 
-    // Pengguna simulasi untuk Inisiator, PIC, dan Creator jika ada di context simulasi
+    // Pengguna simulasi untuk Inisiator, PIC, Creator, dan Adhoc jika ada di context simulasi
     const simInitiatorUser = useMemo(() => {
         if (!simulationContext?.initiatorId) return null;
         return users.find((u: any) => String(u.id) === String(simulationContext.initiatorId)) || null;
@@ -76,6 +78,12 @@ export function StepEligibleUsersPopover({
         return users.find((u: any) => String(u.id) === String(simulationContext.creatorId)) || null;
     }, [simulationContext?.creatorId, users]);
 
+    const simAdhocUsers = useMemo(() => {
+        const ids = simulationContext?.adhocIds || (simulationContext?.adhocId ? [simulationContext.adhocId] : []);
+        if (ids.length === 0) return [];
+        return users.filter((u: any) => ids.includes(String(u.id)));
+    }, [simulationContext?.adhocIds, simulationContext?.adhocId, users]);
+
     // Analisis kriteria akses tahap berdasarkan Otoritas Aktor di tab Konfigurasi Langkah
     const { eligibleUsers, dynamicRoles, criteriaSummary } = useMemo(() => {
         const matchedUsersMap = new Map<string, { user: any; reasons: string[] }>();
@@ -88,8 +96,8 @@ export function StepEligibleUsersPopover({
         // 1. Prioritas: Cek jika menggunakan Tabel Otoritas Aktor (approver_authorities)
         if (authorities && authorities.length > 0) {
             authorities.forEach((auth: any) => {
-                if (auth.authority_type === 'custom') {
-                    const customType = auth.role_id || auth.user_id || auth.authority_type;
+                if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)) {
+                    const customType = auth.authority_type === 'custom' ? (auth.role_id || auth.user_id) : auth.authority_type;
                     if (customType === 'initiator') {
                         criteriaParts.push('Inisiator');
                         dynamicList.push({
@@ -128,6 +136,27 @@ export function StepEligibleUsersPopover({
                             const existing = matchedUsersMap.get(String(simCreatorUser.id)) || { user: simCreatorUser, reasons: [] };
                             existing.reasons.push('Pembuat Kontrak (Simulasi)');
                             matchedUsersMap.set(String(simCreatorUser.id), existing);
+                        }
+                    } else if (customType === 'adhoc_approvers' || customType === 'adhoc') {
+                        criteriaParts.push('Approver Tambahan');
+                        if (simAdhocUsers.length > 0) {
+                            simAdhocUsers.forEach((u: any) => {
+                                dynamicList.push({
+                                    type: 'adhoc_approvers',
+                                    label: 'Approver Tambahan (Ad-Hoc)',
+                                    description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
+                                    activeUser: u,
+                                });
+                                const existing = matchedUsersMap.get(String(u.id)) || { user: u, reasons: [] };
+                                existing.reasons.push('Approver Tambahan (Simulasi)');
+                                matchedUsersMap.set(String(u.id), existing);
+                            });
+                        } else {
+                            dynamicList.push({
+                                type: 'adhoc_approvers',
+                                label: 'Approver Tambahan (Ad-Hoc)',
+                                description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
+                            });
                         }
                     } else if (customType === 'atasan') {
                         criteriaParts.push('Atasan Langsung');

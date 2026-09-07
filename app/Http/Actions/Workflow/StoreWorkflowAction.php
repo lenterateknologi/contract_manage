@@ -43,12 +43,21 @@ class StoreWorkflowAction
             // Sync Initiator Authorities
             if (! empty($data['initiator_authorities'])) {
                 foreach ((array) $data['initiator_authorities'] as $auth) {
+                    $authType = $auth['authority_type'] ?? null;
+                    $customType = $auth['user_id'] ?? $auth['role_id'] ?? null;
+                    if ($authType === 'custom' && in_array($customType, ['initiator', 'assigned_pic', 'creator', 'adhoc_approvers', 'adhoc'])) {
+                        $authType = $customType;
+                        $userId = null;
+                    } else {
+                        $userId = ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null;
+                    }
+
                     $workflow->initiatorAuthorities()->create([
-                        'authority_type' => $auth['authority_type'] ?? null,
-                        'role_id' => ! empty($auth['role_id']) ? $this->resolveRoleId($auth['role_id']) : null,
+                        'authority_type' => $authType,
+                        'role_id' => ! empty($auth['role_id']) && $authType !== $customType ? $this->resolveRoleId($auth['role_id']) : null,
                         'department_id' => ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null,
                         'division_id' => $auth['division_id'] ?? null,
-                        'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
+                        'user_id' => $userId,
                         'company_group_id' => $auth['company_group_id'] ?? null,
                         'company_id' => $auth['company_id'] ?? null,
                         'region_id' => $auth['region_id'] ?? null,
@@ -199,12 +208,21 @@ class StoreWorkflowAction
 
                     if (! empty($stepData['approver_authorities'])) {
                         foreach ((array) $stepData['approver_authorities'] as $auth) {
+                            $authType = $auth['authority_type'] ?? null;
+                            $customType = $auth['user_id'] ?? $auth['role_id'] ?? null;
+                            if ($authType === 'custom' && in_array($customType, ['initiator', 'assigned_pic', 'creator', 'adhoc_approvers', 'adhoc'])) {
+                                $authType = $customType;
+                                $userId = null;
+                            } else {
+                                $userId = ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null;
+                            }
+
                             $step->approverAuthorities()->create([
-                                'authority_type' => $auth['authority_type'] ?? null,
-                                'role_id' => ! empty($auth['role_id']) ? $this->resolveRoleId($auth['role_id']) : null,
+                                'authority_type' => $authType,
+                                'role_id' => ! empty($auth['role_id']) && $authType !== $auth['role_id'] ? $this->resolveRoleId($auth['role_id']) : null,
                                 'department_id' => ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null,
                                 'division_id' => $auth['division_id'] ?? null,
-                                'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
+                                'user_id' => $userId,
                                 'company_group_id' => $auth['company_group_id'] ?? null,
                                 'company_id' => $auth['company_id'] ?? null,
                                 'region_id' => $auth['region_id'] ?? null,

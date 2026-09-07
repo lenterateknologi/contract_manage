@@ -496,7 +496,7 @@ function GenericFormTab({
     } as any;
 
     return (
-        <div className="bg-surface-base animate-in fade-in flex flex-1 flex-col overflow-hidden duration-300 p-3 lg:p-4 gap-3">
+        <div className="bg-surface-base animate-in fade-in flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden duration-300 p-3 lg:p-4 gap-3">
             {/* PDF Preview Overlay */}
             {pdfPreviewUrl && (
                 <div className="animate-in fade-in zoom-in-95 bg-surface-base/90 fixed inset-0 z-[100] flex flex-col backdrop-blur-md duration-300">

@@ -25,6 +25,11 @@ class ContractWorkflowService
         protected WorkflowQueryService $queryService
     ) {}
 
+    public function getQueryService(): WorkflowQueryService
+    {
+        return $this->queryService;
+    }
+
     /**
      * Send a contract for approval by initiating its workflow.
      */
@@ -256,20 +261,6 @@ class ContractWorkflowService
             }
         }
 
-        if ($step->step_category === 'signing') {
-            if ($step->approver_type === 'assigned_pic' && $contract->assigned_pic_id) {
-                $pic = User::find($contract->assigned_pic_id);
-                $approvers = $pic ? collect([$pic]) : collect();
-            } else {
-                $query = User::whereHas('roleRelation', fn ($q) => $q->whereIn('name', ['Staff Legal', 'Admin']));
-                $targetDeptIds = ! empty($step->department_ids) ? $step->department_ids : [];
-                if (! empty($targetDeptIds)) {
-                    $query->whereIn('division_id', $targetDeptIds);
-                }
-                $approvers = $query->get();
-            }
-            $roles = ['Staff Legal (Setup)'];
-        }
 
         if ($approvers->isEmpty()) {
             $hasExplicitAuthorities = $step->relationLoaded('approverAuthorities')
@@ -282,7 +273,7 @@ class ContractWorkflowService
                     : $step->approverAuthorities()->get();
 
                 // 1. Resolve Custom Actors
-                $customs = $authorities->filter(fn ($a) => ! empty($a->authority_type) && in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator', 'atasan']))->pluck('authority_type')->toArray();
+                $customs = $authorities->filter(fn ($a) => ! empty($a->authority_type) && in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc']))->pluck('authority_type')->toArray();
                 if (! empty($customs)) {
                     if (in_array('initiator', $customs) && $contract->initiator) {
                         $approvers->push($contract->initiator);
@@ -303,6 +294,17 @@ class ContractWorkflowService
                         $atasanList = $this->queryService->resolveHierarchyApprover($contract, $step);
                         if ($atasanList) {
                             $approvers = $approvers->merge($atasanList);
+                        }
+                    }
+                    if (in_array('adhoc_approvers', $customs) || in_array('adhoc', $customs)) {
+                        $adhocUserIds = Approval::where('contract_id', $contract->id)
+                            ->where('workflow_step_id', $step->id)
+                            ->whereIn('role', ['Persetujuan Tambahan', 'Ad-Hoc Approver'])
+                            ->pluck('user_id')
+                            ->filter();
+                        if ($adhocUserIds->isNotEmpty()) {
+                            $adhocUsers = User::whereIn('id', $adhocUserIds)->get();
+                            $approvers = $approvers->merge($adhocUsers);
                         }
                     }
                 }
@@ -706,7 +708,24 @@ class ContractWorkflowService
         $adhocApprovals = $currentStepApprovals->filter(fn (Approval $a) => $a->role === 'Persetujuan Tambahan');
         $signerApprovals = $currentStepApprovals->filter(fn (Approval $a) => in_array($a->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']));
 
-        $adhocApproved = $adhocApprovals->isEmpty() || $adhocApprovals->every(fn (Approval $a) => $a->status === 'approved');
+        // Evaluate Ad-Hoc Approvals rule
+        if ($adhocApprovals->isEmpty()) {
+            $adhocApproved = true;
+        } else {
+            $adhocStepMeta = ($contract->metadata['adhoc_steps'] ?? [])[$approval->workflow_step_id] ?? [];
+            $adhocRule = $adhocStepMeta['approval_rule'] ?? 'all';
+            $adhocMinApprovals = (int) ($adhocStepMeta['min_approvals'] ?? $adhocApprovals->count());
+
+            if ($adhocRule === 'any') {
+                $adhocApproved = $adhocApprovals->contains(fn (Approval $a) => $a->status === 'approved');
+            } elseif ($adhocRule === 'quorum') {
+                $approvedCount = $adhocApprovals->filter(fn (Approval $a) => $a->status === 'approved')->count();
+                $adhocApproved = $approvedCount >= max(1, $adhocMinApprovals);
+            } else {
+                $adhocApproved = $adhocApprovals->every(fn (Approval $a) => $a->status === 'approved');
+            }
+        }
+
         $signersApproved = $signerApprovals->isEmpty() || $signerApprovals->every(fn (Approval $a) => $a->status === 'approved');
 
         if ($regularApprovals->isEmpty()) {

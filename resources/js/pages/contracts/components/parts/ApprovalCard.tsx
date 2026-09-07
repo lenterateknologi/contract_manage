@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { Check, Clock, ChevronDown, CheckCircle2, X } from 'lucide-react';
+import { Check, Clock, ChevronDown, CheckCircle2, X, Lock } from 'lucide-react';
 import { Avatar, StatusBadge } from '../ui/ui';
 
 interface ApprovalCardProps {
@@ -9,9 +9,11 @@ interface ApprovalCardProps {
     stepNumber: string;
     displaySubSteps?: boolean;
     contract?: Contract;
+    showDetails?: boolean;
+    isLite?: boolean;
 }
 
-export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false, contract }: ApprovalCardProps) {
+export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false, contract, showDetails = false, isLite = false }: ApprovalCardProps) {
     const [isApproverListExpanded, setIsApproverListExpanded] = useState(false);
     const isStaged = !a.is_active || (a.status as string) === 'SELANJUTNYA';
     const isApproved = a.status === 'approved';
@@ -38,7 +40,8 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 backgroundColor: `${statusColor}10`,
             } : undefined}
             className={cn(
-                'group bg-surface-base relative flex flex-col gap-1.5 rounded-lg border p-2 transition-all duration-200 w-full shadow-2xs',
+                'group bg-surface-base relative flex flex-col rounded-lg border transition-all duration-200 w-full shadow-2xs',
+                isLite ? 'p-1.5 gap-1' : 'p-2 gap-1.5',
                 isApproved && 'border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500/60 dark:bg-emerald-950/20 dark:border-emerald-500/40',
                 isRejected && 'border-rose-500/40 bg-rose-500/5 hover:border-rose-500/60 dark:bg-rose-950/20 dark:border-rose-500/40',
                 isCurrent && !statusColor && 'border-amber-500/50 bg-amber-500/8 ring-1 ring-amber-500/20 hover:border-amber-500 dark:bg-amber-950/30 dark:border-amber-500/50',
@@ -61,32 +64,35 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
             />
 
             {/* Top row */}
-            <div className="flex items-center justify-between gap-2 w-full pl-1">
-                <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+            <div className="flex items-center justify-between gap-1.5 w-full pl-0.5">
+                <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                     {/* Avatar */}
                     <div className="shrink-0">
                         {a.approver ? (
-                            <Avatar user={a.approver} size="sm" className="h-6 w-6 ring-1 ring-surface-base" />
+                            <Avatar user={a.approver} size="sm" className={cn("ring-1 ring-surface-base shrink-0", isLite ? "h-5 w-5" : "h-6 w-6")} />
                         ) : (
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-surface-muted text-text-soft">
-                                <Clock size={12} strokeWidth={2} />
+                            <div className={cn("flex items-center justify-center rounded-full bg-surface-muted text-text-soft", isLite ? "h-5 w-5" : "h-6 w-6")}>
+                                <Clock size={isLite ? 10 : 12} strokeWidth={2} />
                             </div>
                         )}
                     </div>
 
                     {/* Approver Details */}
                     {a.approver ? (
-                        <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-1.5">
-                                <span className="text-text-main truncate text-[11px] font-bold leading-tight">
+                        <div className={cn("flex min-w-0", isLite ? "flex-row items-center gap-1.5 flex-wrap" : "flex-col")}>
+                            <div className="flex items-center gap-1 min-w-0">
+                                <span className={cn("text-text-main truncate font-bold leading-tight", isLite ? "text-[11px]" : "text-[11px]")}>
                                     {a.approver.name}
                                 </span>
-                                {isApproved && <Check size={12} className="shrink-0 text-emerald-500" strokeWidth={2.5} />}
+                                {isApproved && <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />}
                             </div>
-                            <div className="flex items-center gap-2 text-[10px] text-text-soft">
-                                {a.approver.email && <span className="truncate opacity-75">{a.approver.email}</span>}
+                            <div className="flex items-center gap-1.5 text-[9.5px] text-text-soft">
+                                {!isLite && a.approver.email && <span className="truncate opacity-75">{a.approver.email}</span>}
                                 {a.role && (
-                                    <span className="shrink-0 rounded bg-surface-muted px-1.5 py-0.5 text-[9px] font-semibold uppercase text-text-soft">
+                                    <span className={cn(
+                                        "shrink-0 rounded bg-surface-muted px-1.5 py-0.2 font-semibold uppercase text-text-soft",
+                                        isLite ? "text-[8.5px]" : "text-[9px]"
+                                    )}>
                                         {a.role}
                                     </span>
                                 )}
@@ -94,11 +100,11 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                         </div>
                     ) : (
                         <div className="flex flex-col min-w-0">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1">
                                 {(() => {
                                     if (a.target_approvers && a.target_approvers.includes(',')) {
                                         const names = a.target_approvers.split(',').map((s) => s.trim()).filter(Boolean);
-                                        const maxVisible = 2;
+                                        const maxVisible = isLite ? 1 : 2;
                                         const visible = isApproverListExpanded ? names : names.slice(0, maxVisible);
                                         const remaining = names.length - maxVisible;
 
@@ -107,7 +113,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                                 {visible.map((name, i) => (
                                                     <span
                                                         key={i}
-                                                        className="inline-flex items-center rounded bg-surface-muted px-1.5 py-0.5 text-[10.5px] font-medium text-text-main"
+                                                        className="inline-flex items-center rounded bg-surface-muted px-1 py-0.2 text-[9.5px] font-medium text-text-main"
                                                     >
                                                         {name}
                                                     </span>
@@ -116,9 +122,9 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                                     <button
                                                         type="button"
                                                         onClick={(e) => { e.stopPropagation(); setIsApproverListExpanded(true); }}
-                                                        className="inline-flex items-center gap-0.5 rounded bg-primary/10 border border-primary/25 hover:bg-primary/20 px-1.5 py-0.5 text-[10px] font-semibold text-primary cursor-pointer"
+                                                        className="inline-flex items-center gap-0.5 rounded bg-primary/10 border border-primary/25 hover:bg-primary/20 px-1 py-0.2 text-[9px] font-semibold text-primary cursor-pointer"
                                                     >
-                                                        +{remaining} <ChevronDown size={9} strokeWidth={2} />
+                                                        +{remaining} <ChevronDown size={8} strokeWidth={2} />
                                                     </button>
                                                 )}
                                             </div>
@@ -136,25 +142,36 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 </div>
 
                 {/* Status & Timestamp */}
-                <div className="flex flex-col items-end shrink-0 gap-0.5">
-                    {/* Sembunyikan label menunggu (hanya tampilkan status jika sudah ada keputusan atau bukan status pending/waiting) */}
-                    {a.status !== 'pending' && a.status !== 'waiting' && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Status Badge */}
+                    {a.status === 'waiting' ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">
+                            <Lock size={9} className="shrink-0" />
+                            <span>Menunggu Giliran</span>
+                        </span>
+                    ) : a.status === 'pending' && isCurrent ? (
+                        <span className="inline-flex items-center gap-1 rounded bg-sky-500/10 border border-sky-500/25 px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-sky-600 dark:text-sky-400 animate-pulse">
+                            <Clock size={9} className="shrink-0" />
+                            <span>Giliran Meninjau</span>
+                        </span>
+                    ) : (a.status !== 'pending' && a.status !== 'waiting') ? (
                         <StatusBadge status={a.status} size="sm" />
-                    )}
+                    ) : null}
+
                     {a.decided_at ? (
-                        <span className="text-text-main/90 dark:text-text-main/90 flex items-center gap-1.5 text-[11px] font-semibold mt-0.5" title="Waktu Keputusan / Aksi">
-                            <Clock size={12} className="text-text-soft shrink-0" /> {a.decided_at}
+                        <span className="text-text-soft flex items-center gap-1 text-[10px] font-medium" title="Waktu Keputusan / Aksi">
+                            <Clock size={10} className="text-text-soft shrink-0" /> {formatDateTime(a.decided_at)}
                         </span>
                     ) : (a.created_at || a.step_entry_at) ? (
-                        <span className="text-text-main/90 dark:text-text-main/90 flex items-center gap-1.5 text-[11px] font-semibold mt-0.5" title="Waktu Masuk Step">
-                            <Clock size={12} className="text-text-soft shrink-0" /> {a.step_entry_at || a.created_at}
+                        <span className="text-text-soft flex items-center gap-1 text-[10px] font-medium" title="Waktu Masuk Step">
+                            <Clock size={10} className="text-text-soft shrink-0" /> {formatDateTime(a.step_entry_at || a.created_at)}
                         </span>
                     ) : null}
                 </div>
             </div>
 
-            {/* Syarat Dokumen Wajib untuk Step Card Ini */}
-            {(() => {
+            {/* Syarat Dokumen Wajib untuk Step Card Ini (Hanya di mode detail / full) */}
+            {showDetails && (() => {
                 let stepMeta = a.workflow_step?.meta;
                 let actions = a.workflow_step?.action_configs || [];
                 
@@ -322,13 +339,18 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
 
             {/* Comment card */}
             {a.comment && (
-                <div className="mt-1 w-full pl-1">
-                    <div className="rounded-md bg-white border border-slate-200 p-2 shadow-xs text-black dark:bg-white dark:text-black">
-                        <div className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">
-                            Catatan:
-                        </div>
-                        <div className="text-[11px] leading-relaxed font-normal whitespace-pre-wrap">
-                            {a.comment}
+                <div className="mt-0.5 w-full pl-0.5">
+                    <div className={cn(
+                        "rounded-md border text-black dark:bg-white dark:text-black",
+                        isLite ? "p-1.5 bg-slate-50/90 border-slate-200/80 text-[10px]" : "p-2 bg-white border-slate-200 text-[11px] shadow-xs"
+                    )}>
+                        {!isLite && (
+                            <div className="text-[8.5px] font-bold uppercase tracking-wider text-slate-500 mb-0.5">
+                                Catatan:
+                            </div>
+                        )}
+                        <div className="leading-relaxed font-normal whitespace-pre-wrap">
+                            {isLite ? `“${a.comment}”` : a.comment}
                         </div>
                     </div>
                 </div>

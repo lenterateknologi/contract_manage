@@ -42,9 +42,22 @@ interface AuthorityTableManagerProps {
         initiatorId?: string;
         picId?: string;
         creatorId?: string;
+        adhocId?: string;
+        adhocIds?: string[];
     };
     onOpenSimulationModal?: () => void;
 }
+
+const isCustomAuth = (auth?: AuthorityItem | null): boolean => {
+    if (!auth) return false;
+    return auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type);
+};
+
+const getCustomType = (auth?: AuthorityItem | null): string => {
+    if (!auth) return '';
+    if (auth.authority_type === 'custom') return auth.role_id || auth.user_id || '';
+    return auth.authority_type || '';
+};
 
 export default function AuthorityTableManager({
     authorities = [],
@@ -198,8 +211,8 @@ export default function AuthorityTableManager({
         setRegionUseInitiator(false);
 
         if (firstAuth) {
-            if (firstAuth.authority_type === 'custom' && firstAuth.user_id) {
-                setModalCustomIds([firstAuth.user_id]);
+            if (isCustomAuth(firstAuth)) {
+                setModalCustomIds([getCustomType(firstAuth)]);
             } else if (firstAuth.authority_type === 'user' && firstAuth.user_id) {
                 setModalUserIds([firstAuth.user_id]);
             } else {
@@ -249,8 +262,8 @@ export default function AuthorityTableManager({
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
 
-        if (auth.authority_type === 'custom' && auth.user_id) {
-            setModalCustomIds([auth.user_id]);
+        if (isCustomAuth(auth)) {
+            setModalCustomIds([getCustomType(auth)]);
         } else if (auth.authority_type === 'user' && auth.user_id) {
             setModalUserIds([auth.user_id]);
         } else {
@@ -273,108 +286,132 @@ export default function AuthorityTableManager({
         setIsModalOpen(true);
     };
 
-    const handleSave = () => {
-        const newAuths: AuthorityItem[] = [];
+    const saveAuthority = () => {
+        let newItems: AuthorityItem[] = [];
 
-        // Save Individuals
+        // 1. Custom actors
         if (modalCustomIds.length > 0) {
-            modalCustomIds.forEach(id => newAuths.push({ authority_type: 'custom', user_id: id }));
-        }
-        if (modalUserIds.length > 0) {
-            modalUserIds.forEach(id => newAuths.push({ authority_type: 'user', user_id: id }));
-        }
-
-        // Save Group Combinations
-        const hasAnyCombination =
-            modalRoleIds.length > 0 ||
-            modalDepartmentIds.length > 0 ||
-            modalDivisionIds.length > 0 ||
-            modalCompanyGroupIds.length > 0 ||
-            modalCompanyIds.length > 0 ||
-            modalRegionIds.length > 0 ||
-            roleUseInitiator ||
-            departmentUseInitiator ||
-            divisionUseInitiator ||
-            companyGroupUseInitiator ||
-            companyUseInitiator ||
-            regionUseInitiator;
-
-        if (hasAnyCombination) {
-            const roleList = roleUseInitiator ? [null] : (modalRoleIds.length > 0 ? modalRoleIds : [null]);
-            const deptList = departmentUseInitiator ? [null] : (modalDepartmentIds.length > 0 ? modalDepartmentIds : [null]);
-            const divList = divisionUseInitiator ? [null] : (modalDivisionIds.length > 0 ? modalDivisionIds : [null]);
-            const cgList = companyGroupUseInitiator ? [null] : (modalCompanyGroupIds.length > 0 ? modalCompanyGroupIds : [null]);
-            const compList = companyUseInitiator ? [null] : (modalCompanyIds.length > 0 ? modalCompanyIds : [null]);
-            const regList = regionUseInitiator ? [null] : (modalRegionIds.length > 0 ? modalRegionIds : [null]);
-
-            for (const r of roleList) {
-                for (const d of deptList) {
-                    for (const div of divList) {
-                        for (const cg of cgList) {
-                            for (const c of compList) {
-                                for (const reg of regList) {
-                                    newAuths.push({
-                                        authority_type: 'group',
-                                        role_id: r || undefined,
-                                        department_id: d || undefined,
-                                        division_id: div || undefined,
-                                        company_group_id: cg || undefined,
-                                        company_id: c || undefined,
-                                        region_id: reg || undefined,
-                                        role_use_initiator: roleUseInitiator,
-                                        department_use_initiator: departmentUseInitiator,
-                                        division_use_initiator: divisionUseInitiator,
-                                        company_group_use_initiator: companyGroupUseInitiator,
-                                        company_use_initiator: companyUseInitiator,
-                                        region_use_initiator: regionUseInitiator,
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (newAuths.length > 0) {
-            if (isBulkEdit) {
-                // Replace all selected indices with the newAuths
-                const toReplaceSet = new Set(selectedIndices);
-                const updated: AuthorityItem[] = [];
-                let inserted = false;
-                authorities.forEach((auth, idx) => {
-                    if (toReplaceSet.has(idx)) {
-                        if (!inserted) {
-                            updated.push(...newAuths);
-                            inserted = true;
-                        }
-                    } else {
-                        updated.push(auth);
-                    }
+            modalCustomIds.forEach(cId => {
+                newItems.push({
+                    authority_type: 'custom',
+                    role_id: cId,
+                    user_id: cId,
                 });
-                onChange(updated);
-                setSelectedIndices([]);
-            } else if (editIndex !== null) {
-                // If editing single item
-                const updated = [...authorities];
-                updated.splice(editIndex, 1, ...newAuths);
-                onChange(updated);
-            } else {
-                onChange([...authorities, ...newAuths]);
-            }
-        } else if (isBulkEdit) {
-            // If cleared during bulk edit, remove selected items
-            const toDeleteSet = new Set(selectedIndices);
-            const remaining = authorities.filter((_, idx) => !toDeleteSet.has(idx));
-            onChange(remaining);
-            setSelectedIndices([]);
-        } else if (editIndex !== null) {
-            // If they cleared everything during edit, treat as remove
-            const updated = [...authorities];
-            updated.splice(editIndex, 1);
-            onChange(updated);
+            });
         }
-        
+        // 2. Individual users
+        else if (modalUserIds.length > 0) {
+            modalUserIds.forEach(uId => {
+                newItems.push({
+                    authority_type: 'user',
+                    user_id: uId,
+                });
+            });
+        }
+        // 3. Multi-dimensional combinations
+        else {
+            const roleList = roleUseInitiator ? ['__initiator__'] : (modalRoleIds.length > 0 ? modalRoleIds : [null]);
+            const deptList = departmentUseInitiator ? ['__initiator__'] : (modalDepartmentIds.length > 0 ? modalDepartmentIds : [null]);
+            const divList = divisionUseInitiator ? ['__initiator__'] : (modalDivisionIds.length > 0 ? modalDivisionIds : [null]);
+            const cgList = companyGroupUseInitiator ? ['__initiator__'] : (modalCompanyGroupIds.length > 0 ? modalCompanyGroupIds : [null]);
+            const compList = companyUseInitiator ? ['__initiator__'] : (modalCompanyIds.length > 0 ? modalCompanyIds : [null]);
+            const regList = regionUseInitiator ? ['__initiator__'] : (modalRegionIds.length > 0 ? modalRegionIds : [null]);
+
+            const hasAnyDimension = 
+                roleUseInitiator || modalRoleIds.length > 0 ||
+                departmentUseInitiator || modalDepartmentIds.length > 0 ||
+                divisionUseInitiator || modalDivisionIds.length > 0 ||
+                companyGroupUseInitiator || modalCompanyGroupIds.length > 0 ||
+                companyUseInitiator || modalCompanyIds.length > 0 ||
+                regionUseInitiator || modalRegionIds.length > 0;
+
+            if (hasAnyDimension) {
+                roleList.forEach(r => {
+                    deptList.forEach(d => {
+                        divList.forEach(dv => {
+                            cgList.forEach(cg => {
+                                compList.forEach(cp => {
+                                    regList.forEach(rg => {
+                                        newItems.push({
+                                            authority_type: 'group',
+                                            role_id: r === '__initiator__' ? null : r,
+                                            department_id: d === '__initiator__' ? null : d,
+                                            division_id: dv === '__initiator__' ? null : dv,
+                                            company_group_id: cg === '__initiator__' ? null : cg,
+                                            company_id: cp === '__initiator__' ? null : cp,
+                                            region_id: rg === '__initiator__' ? null : rg,
+                                            role_use_initiator: r === '__initiator__',
+                                            department_use_initiator: d === '__initiator__',
+                                            division_use_initiator: dv === '__initiator__',
+                                            company_group_use_initiator: cg === '__initiator__',
+                                            company_use_initiator: cp === '__initiator__',
+                                            region_use_initiator: rg === '__initiator__',
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            }
+        }
+
+        if (newItems.length === 0) {
+            closeModal();
+            return;
+        }
+
+        if (editIndex !== null) {
+            const updated = [...authorities];
+            updated[editIndex] = newItems[0];
+            onChange(updated);
+        } else if (isBulkEdit && selectedIndices.length > 0) {
+            const template = newItems[0];
+            const updated = authorities.map((item, idx) => {
+                if (selectedIndices.includes(idx)) {
+                    return { ...template };
+                }
+                return item;
+            });
+            onChange(updated);
+        } else {
+            const existingKeys = new Set(authorities.map(a => JSON.stringify({
+                type: a.authority_type,
+                r: a.role_id,
+                d: a.department_id,
+                dv: a.division_id,
+                u: a.user_id,
+                cg: a.company_group_id,
+                c: a.company_id,
+                rg: a.region_id,
+                ru: a.role_use_initiator,
+                du: a.department_use_initiator,
+                dvu: a.division_use_initiator,
+                cgu: a.company_group_use_initiator,
+                cu: a.company_use_initiator,
+                rgu: a.region_use_initiator,
+            })));
+
+            const uniqueNew = newItems.filter(a => !existingKeys.has(JSON.stringify({
+                type: a.authority_type,
+                r: a.role_id,
+                d: a.department_id,
+                dv: a.division_id,
+                u: a.user_id,
+                cg: a.company_group_id,
+                c: a.company_id,
+                rg: a.region_id,
+                ru: a.role_use_initiator,
+                du: a.department_use_initiator,
+                dvu: a.division_use_initiator,
+                cgu: a.company_group_use_initiator,
+                cu: a.company_use_initiator,
+                rgu: a.region_use_initiator,
+            })));
+
+            onChange([...authorities, ...uniqueNew]);
+        }
+
         closeModal();
     };
 
@@ -426,6 +463,7 @@ export default function AuthorityTableManager({
         if (id === 'initiator') return 'INISIATOR';
         if (id === 'assigned_pic') return 'PIC DITUGASKAN';
         if (id === 'creator') return 'PEMBUAT';
+        if (id === 'adhoc_approvers' || id === 'adhoc') return 'APPROVER TAMBAHAN (DITENTUKAN SAAT PENGAJUAN)';
         return id;
     };
 
@@ -445,14 +483,21 @@ export default function AuthorityTableManager({
         return activeUsers.find(u => String(u.id) === String(simulationContext.creatorId)) || null;
     }, [simulationContext?.creatorId, activeUsers]);
 
+    const simAdhocUsers = useMemo(() => {
+        const ids = simulationContext?.adhocIds || (simulationContext?.adhocId ? [simulationContext.adhocId] : []);
+        if (ids.length === 0) return [];
+        return activeUsers.filter(u => ids.includes(String(u.id)));
+    }, [simulationContext?.adhocIds, simulationContext?.adhocId, activeUsers]);
+
     // Helper untuk menghitung jumlah orang per baris aturan otoritas
     const getAuthorityUserCount = (auth?: AuthorityItem) => {
         if (!auth || !activeUsers || activeUsers.length === 0) return 0;
-        if (auth.authority_type === 'custom') {
-            const customType = auth.role_id || auth.user_id;
+        if (isCustomAuth(auth)) {
+            const customType = getCustomType(auth);
             if (customType === 'initiator') return simInitiatorUser ? 1 : 0;
             if (customType === 'assigned_pic') return simPicUser ? 1 : 0;
             if (customType === 'creator') return simCreatorUser ? 1 : 0;
+            if (customType === 'adhoc_approvers' || customType === 'adhoc') return simAdhocUsers.length;
             return 0;
         }
         if (auth.authority_type === 'user' && auth.user_id) {
@@ -558,8 +603,8 @@ export default function AuthorityTableManager({
             result = result.filter(item => {
                 const auth = item.auth || item;
                 if (!auth) return false;
-                if (auth.authority_type === 'custom') {
-                    const label = getCustomLabel(auth.role_id || undefined).toLowerCase();
+                if (isCustomAuth(auth)) {
+                    const label = getCustomLabel(getCustomType(auth)).toLowerCase();
                     return label.includes(q);
                 }
                 if (auth.authority_type === 'user') {
@@ -670,9 +715,9 @@ export default function AuthorityTableManager({
             const userRegionId = String(user.region_id || user.company?.region_id || '');
 
             return authorities.some((auth) => {
-                // Custom Actor match (Initiator, Assigned PIC, Creator)
-                if (auth.authority_type === 'custom') {
-                    const customType = auth.role_id || auth.user_id;
+                // Custom Actor match (Initiator, Assigned PIC, Creator, Ad-hoc)
+                if (isCustomAuth(auth)) {
+                    const customType = getCustomType(auth);
                     if (customType === 'initiator' && simInitiatorUser) {
                         return String(simInitiatorUser.id) === userId;
                     }
@@ -681,6 +726,9 @@ export default function AuthorityTableManager({
                     }
                     if (customType === 'creator' && simCreatorUser) {
                         return String(simCreatorUser.id) === userId;
+                    }
+                    if ((customType === 'adhoc_approvers' || customType === 'adhoc') && simAdhocUsers.length > 0) {
+                        return simAdhocUsers.some(u => String(u.id) === userId);
                     }
                     return false;
                 }
@@ -1107,32 +1155,54 @@ export default function AuthorityTableManager({
                                         </td>
                                         <td className="px-3 py-2.5 font-semibold text-slate-700 dark:text-slate-300">
                                             <div className="flex flex-col gap-1 items-start">
-                                                <span className="inline-flex items-center rounded-md bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[10px] uppercase font-bold text-slate-600 dark:text-slate-400">
-                                                    {auth.authority_type}
+                                                <span className={cn(
+                                                    "inline-flex items-center rounded-md px-2 py-1 text-[10px] uppercase font-bold",
+                                                    isCustomAuth(auth)
+                                                        ? "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border border-violet-200/60"
+                                                        : auth.authority_type === 'user'
+                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60"
+                                                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                                )}>
+                                                    {isCustomAuth(auth) ? 'Custom' : auth.authority_type || 'Group'}
                                                 </span>
                                             </div>
                                         </td>
                                         {showCustom && (
                                             <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
-                                                {auth.authority_type === 'custom' ? (
+                                                {isCustomAuth(auth) ? (
                                                     <div className="flex flex-col gap-1 items-start">
                                                         <span className="font-semibold text-xs text-slate-800 dark:text-zinc-200">
-                                                            {getCustomLabel(auth.role_id || auth.user_id)}
+                                                            {getCustomLabel(getCustomType(auth))}
                                                         </span>
-                                                        {(auth.role_id === 'initiator' || auth.user_id === 'initiator') && simInitiatorUser && (
+                                                        {getCustomType(auth) === 'initiator' && simInitiatorUser && (
                                                             <span className="inline-flex items-center gap-1 text-[10px] text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 px-1.5 py-0.5 rounded border border-indigo-200/60">
                                                                 <span className="font-bold">Sim:</span> {simInitiatorUser.name}
                                                             </span>
                                                         )}
-                                                        {(auth.role_id === 'assigned_pic' || auth.user_id === 'assigned_pic') && simPicUser && (
+                                                        {getCustomType(auth) === 'assigned_pic' && simPicUser && (
                                                             <span className="inline-flex items-center gap-1 text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200/60">
                                                                 <span className="font-bold">Sim:</span> {simPicUser.name}
                                                             </span>
                                                         )}
-                                                        {(auth.role_id === 'creator' || auth.user_id === 'creator') && simCreatorUser && (
+                                                        {getCustomType(auth) === 'creator' && simCreatorUser && (
                                                             <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-200/60">
                                                                 <span className="font-bold">Sim:</span> {simCreatorUser.name}
                                                             </span>
+                                                        )}
+                                                        {(getCustomType(auth) === 'adhoc_approvers' || getCustomType(auth) === 'adhoc') && (
+                                                            simAdhocUsers.length > 0 ? (
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {simAdhocUsers.map(u => (
+                                                                        <span key={u.id} className="inline-flex items-center gap-1 text-[10px] text-violet-700 dark:text-violet-300 bg-violet-50 dark:bg-violet-950/60 px-1.5 py-0.5 rounded border border-violet-200/60">
+                                                                            <span className="font-bold">Sim:</span> {u.name}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-[10px] text-muted-foreground italic">
+                                                                    (Belum ada simulasi approver)
+                                                                </span>
+                                                            )
                                                         )}
                                                     </div>
                                                 ) : '-'}
@@ -1246,7 +1316,8 @@ export default function AuthorityTableManager({
                                             options={[
                                                 { value: 'initiator', label: 'INISIATOR' },
                                                 { value: 'assigned_pic', label: 'PIC DITUGASKAN' },
-                                                { value: 'creator', label: 'PEMBUAT' }
+                                                { value: 'creator', label: 'PEMBUAT' },
+                                                { value: 'adhoc_approvers', label: 'APPROVER TAMBAHAN (DITENTUKAN SAAT PENGAJUAN)' }
                                             ]}
                                             placeholder="Pilih Aktor..."
                                         />
@@ -1469,7 +1540,7 @@ export default function AuthorityTableManager({
                         <Button type="button" variant="outline" onClick={closeModal} className="rounded-lg h-9 px-4 text-xs font-semibold">
                             Batal
                         </Button>
-                        <Button type="button" onClick={handleSave} className="rounded-lg h-9 px-4 text-xs font-semibold bg-primary text-white hover:bg-primary/95 shadow-sm">
+                        <Button type="button" onClick={saveAuthority} className="rounded-lg h-9 px-4 text-xs font-semibold bg-primary text-white hover:bg-primary/95 shadow-sm">
                             {editIndex !== null ? 'Simpan' : 'Simpan'}
                         </Button>
                     </DialogFooter>

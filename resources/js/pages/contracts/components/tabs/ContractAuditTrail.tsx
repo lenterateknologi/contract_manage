@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/pages/contracts/utils';
-import { cn } from '@/lib/utils';
+import { cn, formatDateTime } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import { Check, Clock, ExternalLink, FileSpreadsheet, FileText, ListFilter, Search, ShieldCheck, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -214,7 +214,7 @@ export default function ContractAuditTrail({ contract }: Props) {
                                                 </span>
                                             </div>
                                             <div className="font-mono text-[9px] whitespace-nowrap text-text-main uppercase tabular-nums">
-                                                {h.created_at}
+                                                {formatDateTime(h.created_at)}
                                             </div>
                                         </div>
                                         <div className="mt-2.5 w-full border-b border-black/5 dark:border-white/5" />

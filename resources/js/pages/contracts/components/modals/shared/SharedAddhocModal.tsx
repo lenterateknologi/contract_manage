@@ -23,30 +23,68 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [note, setNote] = useState('');
     const [isSequential, setIsSequential] = useState(false);
+    const [approvalRule, setApprovalRule] = useState<'all' | 'any' | 'quorum'>('all');
+    const [minApprovals, setMinApprovals] = useState<number>(1);
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<any[]>([]);
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
 
+    // Helper to accurately resolve target step (supports relative transition, next_step_id, and adhoc authority lookup)
+    const resolveTargetStepId = (contractData: any, actCode?: string): string | null => {
+        const currentStep = contractData?.workflow_step;
+        const steps = contractData?.workflow?.steps || [];
+        const activeAction = (currentStep?.actions || []).find((a: any) => {
+            if (actCode) return a.action_code === actCode || a.master_action_code === actCode || a.master_action?.code === actCode;
+            return (
+                a.master_action_code?.toLowerCase() === 'forward' ||
+                a.action_code?.toLowerCase() === 'forward' ||
+                a.master_action?.code?.toLowerCase() === 'forward'
+            );
+        });
+
+        const config = activeAction?.assignee_config || {};
+        let targetStepId = activeAction?.next_step_id || config.default_target_step || null;
+
+        if (!targetStepId && activeAction?.transition_config) {
+            const tCfg = activeAction.transition_config;
+            if (tCfg.type === 'relative') {
+                const targetSeq = (currentStep?.step || 1) + (tCfg.offset ?? 1);
+                const matched = steps.find((s: any) => s.step === targetSeq);
+                if (matched) targetStepId = String(matched.id);
+            } else if (tCfg.type === 'absolute') {
+                const matched = steps.find((s: any) => s.step === tCfg.sequence);
+                if (matched) targetStepId = String(matched.id);
+            }
+        }
+
+        if (!targetStepId && steps.length > 0) {
+            const adhocStep = steps.find((s: any) => 
+                (s.approver_authorities || s.authorities || []).some((auth: any) => 
+                    auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers'
+                )
+            );
+            if (adhocStep) {
+                targetStepId = String(adhocStep.id);
+            }
+        }
+
+        return targetStepId ? String(targetStepId) : (contractData?.workflow_step_id ? String(contractData.workflow_step_id) : null);
+    };
+
     // Initial setup when modal opens
     useEffect(() => {
         if (open) {
-            const currentStep = contract?.workflow_step;
-            const activeAction = (currentStep?.actions || []).find((a: any) => {
-                if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode || a.master_action?.code === actionCode;
-                return (
-                    a.master_action_code?.toLowerCase() === 'forward' ||
-                    a.action_code?.toLowerCase() === 'forward' ||
-                    a.master_action?.code?.toLowerCase() === 'forward'
-                );
-            });
-            const config = activeAction?.assignee_config || {};
-            const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
-            const initialTargetStepId = defaultTargetStepId ? String(defaultTargetStepId) : null;
+            const initialTargetStepId = resolveTargetStepId(contract, actionCode);
 
             setSelectedTargetStepId(initialTargetStepId);
             setNote('');
-            setIsSequential(false);
+
+            // Read saved adhoc settings from contract metadata if available
+            const savedAdhocMeta = contract?.metadata?.adhoc_steps?.[initialTargetStepId || ''] || {};
+            setIsSequential(savedAdhocMeta.is_sequential ?? false);
+            setApprovalRule(savedAdhocMeta.approval_rule ?? 'all');
+            setMinApprovals(savedAdhocMeta.min_approvals ?? 1);
         } else {
             // Reset state when closed
             setSelectedUserIds([]);
@@ -168,20 +206,18 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         setLoading(true);
         try {
             // Get the target step ID from the action configuration
-            const currentStep = contract?.workflow_step;
-            const activeAction = (currentStep?.actions || []).find((a: any) => {
-                if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode || a.master_action?.code === actionCode;
-                return (
-                    a.master_action_code?.toLowerCase() === 'forward' ||
-                    a.action_code?.toLowerCase() === 'forward' ||
-                    a.master_action?.code?.toLowerCase() === 'forward'
-                );
-            });
-            const config = activeAction?.assignee_config || {};
-            const defaultTargetStepId = activeAction?.next_step_id || config.default_target_step || contract.workflow_step_id;
-            const finalTargetStepId = selectedTargetStepId || defaultTargetStepId;
+            const finalTargetStepId = selectedTargetStepId || resolveTargetStepId(contract, actionCode);
 
-            const updatedContract = await contractApi.addAdhocApprover(contract.id, selectedUserIds, note, isSequential, finalTargetStepId);
+            const updatedContract = await contractApi.addAdhocApprover(
+                contract.id,
+                selectedUserIds,
+                note,
+                isSequential,
+                finalTargetStepId,
+                undefined,
+                approvalRule,
+                approvalRule === 'quorum' ? minApprovals : undefined,
+            );
             onUpdate(updatedContract);
             showToast('Persetujuan tambahan berhasil dikaitkan.', 'success');
             onClose();
@@ -204,100 +240,105 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         <Modal
             isOpen={open}
             onClose={onClose}
-            maxWidth="2xl"
+            maxWidth="xl"
             headerVariant="primary"
-            headerIcon={<UserPlus size={18} className="text-white" />}
+            headerIcon={<UserPlus size={16} className="text-white" />}
             title={actionAlias || 'Persetujuan Tambahan'}
-            description="Minta persetujuan tambahan di luar alur kerja template"
+            description="Tentukan pihak tambahan untuk menelaah dan menyetujui dokumen ini"
             footer={
-                <div className="flex w-full justify-end gap-2.5">
+                <div className="flex w-full justify-end gap-2">
                     <Button
                         variant="ghost"
                         onClick={onClose}
                         disabled={loading}
-                        className="h-9 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-semibold"
+                        className="h-8 px-3 text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 hover:text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/50 font-medium"
                     >
                         Batal
                     </Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading || selectedUserIds.length === 0}
-                        className="min-w-[140px] h-9 text-xs"
+                        className="min-w-[130px] h-8 px-3 text-xs font-semibold"
                     >
-                        {loading ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <CheckCircle2 size={15} className="mr-1.5" />}
-                        Simpan Perubahan
+                        {loading ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : <CheckCircle2 size={14} className="mr-1.5" />}
+                        Simpan Approver
                     </Button>
                 </div>
             }
         >
-            <div className="space-y-3.5 pt-1">
-                <div className="rounded-lg border border-primary/10 bg-primary/5 p-3">
-                    <p className="text-[11px] leading-relaxed font-normal text-primary/90">
-                        Anda dapat meminta persetujuan tambahan di luar alur kerja template saat ini. User yang dipilih wajib menyetujui dokumen sebelum lanjut.
-                    </p>
-                </div>
-
-                {/* --- EXISTING DELEGATES LIST --- */}
+            <div className="space-y-3 pt-0.5">
+                {/* --- EXISTING APPROVERS (IF ANY) --- */}
                 {currentStepDelegates.length > 0 && (
-                    <div className="space-y-2.5">
-                        <div className="text-text-soft flex items-center justify-between text-[10px] font-bold  uppercase">
-                            <div className="flex items-center gap-1.5">
+                    <div className="rounded-lg border border-slate-200/80 bg-slate-50/70 p-2.5 dark:border-slate-800 dark:bg-slate-900/40">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                            <span className="flex items-center gap-1">
                                 <Users size={12} className="text-indigo-500" />
-                                Approver Terdaftar
-                            </div>
-                            <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400">
-                                {currentStepDelegates.length} Orang
+                                Approver Terdaftar ({currentStepDelegates.length})
                             </span>
                         </div>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="flex flex-wrap gap-1.5">
                             {currentStepDelegates.map((a: any) => (
-                                <div key={a.id} className="group border-surface-border bg-surface-muted/20 relative flex items-center gap-3 rounded-xl border p-2 transition-all hover:border-indigo-200">
-                                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                                        {a.approver_name?.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="flex min-w-0 flex-col">
-                                        <span className="text-text-main truncate text-xs leading-tight font-bold">{a.approver_name}</span>
-                                        <span className="text-text-soft text-[9px] tracking-tighter uppercase">{a.job_title || a.role}</span>
-                                    </div>
-                                    <div className="ml-auto flex items-center gap-1.5">
-                                        <StatusBadge status={a.status} />
-                                        <button
-                                            type="button"
-                                            disabled={loading}
-                                            onClick={async () => {
-                                                if (confirm(`Hapus persetujuan tambahan untuk ${a.approver_name}?`)) {
-                                                    try {
-                                                        const updated = await contractApi.removeAdhocApprover(contract.id, a.id);
-                                                        onUpdate(updated);
-                                                        showToast('Persetujuan berhasil dihapus.', 'success');
-                                                    } catch (err: any) {
-                                                        showToast(err.response?.data?.message || 'Gagal menghapus.', 'danger');
-                                                    }
+                                <div
+                                    key={a.id}
+                                    className="group flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 shadow-2xs dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                                >
+                                    <span>{a.approver_name}</span>
+                                    <span className="text-[9px] text-slate-400">({a.job_title || a.role})</span>
+                                    <StatusBadge status={a.status} />
+                                    <button
+                                        type="button"
+                                        disabled={loading}
+                                        onClick={async () => {
+                                            if (confirm(`Hapus ${a.approver_name} dari persetujuan tambahan?`)) {
+                                                try {
+                                                    const updated = await contractApi.removeAdhocApprover(contract.id, a.id);
+                                                    onUpdate(updated);
+                                                    showToast('Approver berhasil dihapus.', 'success');
+                                                } catch (err: any) {
+                                                    showToast(err.response?.data?.message || 'Gagal menghapus.', 'danger');
                                                 }
-                                            }}
-                                            className="text-text-soft hover:text-danger hover:bg-danger/10 rounded-md p-1 opacity-0 transition-all group-hover:opacity-100"
-                                        >
-                                            <X size={14} />
-                                        </button>
-                                    </div>
+                                            }
+                                        }}
+                                        className="ml-0.5 text-slate-400 hover:text-rose-600 transition-colors"
+                                        title="Hapus"
+                                    >
+                                        <X size={12} />
+                                    </button>
                                 </div>
                             ))}
                         </div>
-                        <div className="bg-surface-border/50 my-2 h-px" />
                     </div>
                 )}
-                {/* ------------------------------ */}
 
-                <div className="space-y-2">
-                    <label className="text-text-soft text-[10px] font-bold  uppercase">
-                        Tambah Approver Baru <span className="text-danger">*</span>
+                {/* --- TARGET STEP INFO (COMPACT INLINE) --- */}
+                <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-1.5 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
+                    <span className="text-[11px] font-medium text-slate-500">Tahap Penelaahan:</span>
+                    <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px]">
+                        {(() => {
+                            const targetStepId = resolveTargetStepId(contract, actionCode);
+                            if (targetStepId && String(targetStepId) === String(contract?.workflow_step_id)) {
+                                return `Tahap ${contract?.workflow_step?.step || 1} (Tahap Saat Ini)`;
+                            }
+                            const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(targetStepId));
+                            if (targetStep) {
+                                return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
+                            }
+                            return 'Tahap Saat Ini';
+                        })()}
+                    </span>
+                </div>
+
+                {/* --- SELECT USERS --- */}
+                <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        Pilih Karyawan / Approver <span className="text-rose-500">*</span>
                     </label>
                     {fetchingUsers ? (
-                        <div className="text-text-soft flex animate-pulse items-center gap-2 py-1 text-[10px]">
-                            <Loader2 size={12} className="animate-spin" /> Memuat daftar user...
+                        <div className="flex items-center gap-2 py-1 text-xs text-slate-400">
+                            <Loader2 size={13} className="animate-spin text-indigo-500" /> Memuat daftar karyawan...
                         </div>
                     ) : users.length === 0 ? (
-                        <p className="text-danger py-1 text-[10px] font-medium">Tidak ada user tambahan yang tersedia.</p>
+                        <p className="text-xs text-rose-500 font-medium">Tidak ada karyawan yang tersedia.</p>
                     ) : (
                         <SearchableMultiSelect
                             values={selectedUserIds}
@@ -307,91 +348,125 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                 value: u.id,
                                 label: `${u.name} (${u.role}${u.department_name ? ` - ${u.department_name}` : ''})`,
                             }))}
-                            placeholder="-- Cari & Pilih User --"
+                            placeholder="-- Cari nama karyawan --"
                         />
                     )}
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-text-soft text-[10px] font-bold  uppercase">Disisipkan Ke Langkah</label>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/50 dark:text-slate-400">
-                        {(() => {
-                            const currentStep = contract?.workflow_step;
-                            const activeAction = (currentStep?.actions || []).find((a: any) => {
-                                if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode;
-                                return a.master_action_code?.toLowerCase() === 'forward' || a.action_code?.toLowerCase() === 'forward';
-                            });
-                            const config = activeAction?.assignee_config || {};
-                            const targetStepId = activeAction?.next_step_id || config.default_target_step || contract?.workflow_step_id;
+                {/* --- EXECUTION & APPROVAL RULES (COMPACT) --- */}
+                <div className="space-y-2.5 rounded-lg border border-slate-200 bg-slate-50/60 p-3 dark:border-slate-800 dark:bg-slate-900/30">
+                    {/* 1. Urutan Persetujuan */}
+                    <div className="space-y-1">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Urutan Persetujuan
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsSequential(false)}
+                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${
+                                    !isSequential
+                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                                }`}
+                            >
+                                <span>Serentak (Bersamaan)</span>
+                                {!isSequential && <CheckCircle2 size={13} className="text-indigo-600 dark:text-indigo-400" />}
+                            </button>
 
-                            if (String(targetStepId) === String(contract?.workflow_step_id)) {
-                                return `(Step Saat Ini) Tahap ${contract?.workflow_step?.step} - ${contract?.workflow_step?.description || contract?.workflow_step?.label || ''}`;
-                            }
-                            const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(targetStepId));
-                            if (targetStep) {
-                                return `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || ''}`;
-                            }
-                            return 'Tahap Saat Ini (Default)';
-                        })()}
+                            <button
+                                type="button"
+                                disabled={selectedUserIds.length <= 1}
+                                onClick={() => setIsSequential(true)}
+                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${
+                                    selectedUserIds.length <= 1
+                                        ? 'cursor-not-allowed opacity-50 border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/20'
+                                        : isSequential
+                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                                }`}
+                            >
+                                <span>Berurutan (Satu per satu)</span>
+                                {isSequential && <CheckCircle2 size={13} className="text-indigo-600 dark:text-indigo-400" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* 2. Syarat Selesai */}
+                    <div className="space-y-1 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            Syarat Penyelesaian
+                        </label>
+                        <div className="grid grid-cols-3 gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => setApprovalRule('all')}
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
+                                    approvalRule === 'all'
+                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                                }`}
+                            >
+                                Semua Wajib Setuju
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setApprovalRule('any')}
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
+                                    approvalRule === 'any'
+                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                                }`}
+                            >
+                                Cukup 1 Orang
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setApprovalRule('quorum')}
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
+                                    approvalRule === 'quorum'
+                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                                }`}
+                            >
+                                Minimal N Orang
+                            </button>
+                        </div>
+
+                        {approvalRule === 'quorum' && (
+                            <div className="flex items-center gap-2 pt-1 px-0.5 animate-in fade-in">
+                                <span className="text-xs text-slate-600 dark:text-slate-400">Minimal persetujuan:</span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={Math.max(1, selectedUserIds.length)}
+                                    value={minApprovals}
+                                    onChange={(e) => setMinApprovals(Math.max(1, Math.min(selectedUserIds.length || 99, parseInt(e.target.value) || 1)))}
+                                    className="w-16 rounded border border-slate-300 bg-white px-2 py-0.5 text-xs font-bold text-center text-slate-800 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                />
+                                <span className="text-xs text-slate-400 font-normal">
+                                    dari {selectedUserIds.length || 1} orang
+                                </span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {selectedUserIds.length > 1 && (
-                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                        <CompactSwitch
-                            label={isSequential ? 'Mode: Berurutan (Sequential)' : 'Mode: Serentak (Parallel)'}
-                            description={
-                                isSequential
-                                    ? 'Approver akan diminta menyetujui satu per satu sesuai urutan di bawah.'
-                                    : 'Semua approver dapat menyetujui secara bersamaan (kapan saja).'
-                            }
-                            checked={isSequential}
-                            onCheckedChange={setIsSequential}
-                        />
-                    </div>
-                )}
-
-                {/* Selected Users Detailed List */}
-                {selectedUserIds.length > 0 && (
-                    <div className="animate-in fade-in slide-in-from-top-1 space-y-2.5 duration-200">
-                        <div className="text-text-soft flex items-center gap-1.5 text-[10px] font-bold  uppercase">
-                            <Users size={12} />
-                            Approver Terpilih ({selectedUserIds.length})
-                        </div>
-                        <div className="border-surface-border bg-surface-muted/30 flex flex-wrap gap-2 rounded-xl border p-3">
-                            {selectedUserIds.map((uid) => {
-                                const u = users.find((user) => user.id === uid);
-                                if (!u) return null;
-                                return (
-                                    <div
-                                        key={uid}
-                                        className="group flex items-center gap-1.5 rounded-full border border-indigo-100 bg-indigo-50/50 px-3 py-1 text-xs font-bold text-indigo-700 transition-all hover:bg-indigo-50/80 dark:border-indigo-900/50 dark:bg-indigo-950/20 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
-                                    >
-                                        <span className="max-w-[200px] truncate">
-                                            {u.name}
-                                            <span className="ml-1 text-[9px] font-medium text-indigo-600/70 dark:text-indigo-400/60">({u.role})</span>
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveUser(uid)}
-                                            className="ml-1 rounded-full p-0.5 text-indigo-500/50 transition-colors hover:bg-indigo-100 hover:text-indigo-700 dark:text-indigo-400/50 dark:hover:bg-indigo-900/60 dark:hover:text-indigo-300"
-                                        >
-                                            <X size={12} strokeWidth={2.5} />
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                <FormTextarea
-                    label="Catatan / Alasan Permintaan (Opsional)"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    rows={3}
-                    placeholder="Tuliskan catatan atau instruksi khusus mengapa persetujuan tambahan dibutuhkan..."
-                />
+                {/* --- NOTE (COMPACT) --- */}
+                <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                        Catatan / Instruksi <span className="text-slate-400 font-normal">(Opsional)</span>
+                    </label>
+                    <textarea
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        rows={2}
+                        placeholder="Tuliskan catatan atau alasan penambahan approver..."
+                        className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 resize-none"
+                    />
+                </div>
             </div>
         </Modal>
     );

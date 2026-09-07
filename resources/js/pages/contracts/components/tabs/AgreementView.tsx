@@ -486,8 +486,8 @@ export default function AgreementView({
                 ) : (
                     <>
                         {pdfUrl ? (
-                            <div className="w-full h-full min-h-[800px] flex-1 p-0 m-0 border-none overflow-hidden">
-                                <iframe src={pdfUrl} className="w-full h-full min-h-[800px] flex-1 border-none p-0 m-0" title="Agreement Preview" />
+                            <div className="w-full h-full min-h-0 flex-1 p-0 m-0 border-none overflow-hidden">
+                                <iframe src={pdfUrl} className="w-full h-full min-h-0 flex-1 border-none p-0 m-0" title="Agreement Preview" />
                             </div>
                         ) : (
                             <div className="flex flex-1 items-center justify-center py-20">

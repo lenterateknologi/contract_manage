@@ -11,7 +11,7 @@ import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor,
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Bookmark, Check, CheckCircle2, CheckSquare2, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Edit3, GitBranch, LayoutTemplate, MinusSquare, Pencil, PlusCircle, Search, Shield, Square, Trash2, UserCheck, Users, Users as UsersIcon, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Bookmark, Check, CheckCircle2, CheckSquare2, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Edit3, GitBranch, LayoutTemplate, MinusSquare, Pencil, PlusCircle, Search, Shield, Square, Trash2, UserCheck, UserPlus, Users, Users as UsersIcon, X } from 'lucide-react';
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import AuthorityTableManager from './components/AuthorityTableManager';
 import ContractTypeTableManager from './components/ContractTypeTableManager';
@@ -206,9 +206,9 @@ export default function WorkflowEditor({
         setExpandedStepIds(nextState);
     }, [form.data?.steps, isAllCollapsed]);
 
-    // State Simulasi Aktor Khusus (Inisiator, PIC Ditugaskan, Pembuat Kontrak)
+    // State Simulasi Aktor Khusus (Inisiator, PIC Ditugaskan, Pembuat Kontrak, Approver Tambahan)
     const [simActorModalOpen, setSimActorModalOpen] = useState(false);
-    const [simActorType, setSimActorType] = useState<'initiator' | 'assigned_pic' | 'creator'>('initiator');
+    const [simActorType, setSimActorType] = useState<'initiator' | 'assigned_pic' | 'creator' | 'adhoc_approvers'>('initiator');
     const [simActorSearch, setSimActorSearch] = useState('');
 
     // Key cache client-side untuk simulasi aktor
@@ -236,6 +236,21 @@ export default function WorkflowEditor({
             return localStorage.getItem(`${SIM_STORAGE_KEY}_creator`) || '';
         } catch {
             return '';
+        }
+    });
+
+    const [simAdhocIds, setSimAdhocIds] = useState<string[]>(() => {
+        try {
+            const saved = localStorage.getItem(`${SIM_STORAGE_KEY}_adhoc`);
+            if (!saved) return [];
+            try {
+                const parsed = JSON.parse(saved);
+                return Array.isArray(parsed) ? parsed : [saved];
+            } catch {
+                return [saved];
+            }
+        } catch {
+            return [];
         }
     });
 
@@ -270,6 +285,16 @@ export default function WorkflowEditor({
         } catch (e) {}
     }, [simCreatorId, SIM_STORAGE_KEY]);
 
+    useEffect(() => {
+        try {
+            if (simAdhocIds && simAdhocIds.length > 0) {
+                localStorage.setItem(`${SIM_STORAGE_KEY}_adhoc`, JSON.stringify(simAdhocIds));
+            } else {
+                localStorage.removeItem(`${SIM_STORAGE_KEY}_adhoc`);
+            }
+        } catch (e) {}
+    }, [simAdhocIds, SIM_STORAGE_KEY]);
+
     const allUsersList = useMemo(() => {
         return (users || []).filter((u: any) => {
             // User aktif jika is_used !== false, !== 0, !== '0', !== null/undefined (atau secara eksplisit true/1)
@@ -303,7 +328,9 @@ export default function WorkflowEditor({
         initiatorId: simInitiatorId || undefined,
         picId: simPicId || undefined,
         creatorId: simCreatorId || undefined,
-    }), [simInitiatorId, simPicId, simCreatorId]);
+        adhocId: simAdhocIds[0] || undefined,
+        adhocIds: simAdhocIds.length > 0 ? simAdhocIds : undefined,
+    }), [simInitiatorId, simPicId, simCreatorId, simAdhocIds]);
 
     // Lookup user objects untuk simulasi terpilih
     const selectedSimInitiator = useMemo(() => {
@@ -317,6 +344,10 @@ export default function WorkflowEditor({
     const selectedSimCreator = useMemo(() => {
         return allUsersList.find((u: any) => String(u.id) === String(simCreatorId)) || null;
     }, [simCreatorId, allUsersList]);
+
+    const selectedSimAdhocUsers = useMemo(() => {
+        return allUsersList.filter((u: any) => simAdhocIds.includes(String(u.id)));
+    }, [simAdhocIds, allUsersList]);
 
     const [selectedStepIds, setSelectedStepIds] = useState<Set<string>>(new Set());
 
@@ -851,17 +882,17 @@ export default function WorkflowEditor({
                                                 }}
                                                 className={cn(
                                                     "inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-bold transition-all border cursor-pointer select-none",
-                                                    (selectedSimInitiator || selectedSimPic || selectedSimCreator)
+                                                    (selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0)
                                                         ? "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 shadow-2xs"
                                                         : "bg-slate-50 dark:bg-zinc-800/80 text-slate-700 dark:text-zinc-300 border-slate-200/80 dark:border-zinc-700/80 hover:bg-white dark:hover:bg-zinc-700 hover:border-slate-300"
                                                 )}
-                                                title="Atur Pengguna Simulasi (Inisiator, PIC, Pembuat)"
+                                                title="Atur Pengguna Simulasi (Inisiator, PIC, Pembuat, Approver Tambahan)"
                                             >
-                                                <UsersIcon size={13} className={selectedSimInitiator || selectedSimPic || selectedSimCreator ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-zinc-500"} />
+                                                <UsersIcon size={13} className={selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0 ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-zinc-500"} />
                                                 <span>Aktor Simulasi</span>
-                                                {(selectedSimInitiator || selectedSimPic || selectedSimCreator) && (
+                                                {(selectedSimInitiator || selectedSimPic || selectedSimCreator || selectedSimAdhocUsers.length > 0) && (
                                                     <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-md bg-indigo-600 text-white font-medium ml-0.5">
-                                                        {[selectedSimInitiator && 'Inisiator', selectedSimPic && 'PIC', selectedSimCreator && 'Pembuat'].filter(Boolean).length}
+                                                        {[selectedSimInitiator && 'Inisiator', selectedSimPic && 'PIC', selectedSimCreator && 'Pembuat', selectedSimAdhocUsers.length > 0 && 'Ad-Hoc'].filter(Boolean).length}
                                                     </span>
                                                 )}
                                             </button>
@@ -906,7 +937,7 @@ export default function WorkflowEditor({
                                         </div>
                                     </div>
 
-                                    {/* Modal Simulasi Aktor Khusus (Inisiator, PIC, Pembuat) */}
+                                    {/* Modal Simulasi Aktor Khusus (Inisiator, PIC, Pembuat, Approver Tambahan) */}
                                     <Dialog open={simActorModalOpen} onOpenChange={setSimActorModalOpen}>
                                         <DialogContent className="sm:max-w-3xl border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden">
                                             <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px]">
@@ -919,7 +950,7 @@ export default function WorkflowEditor({
                                                             Pengaturan Aktor Simulasi Alur Kerja
                                                         </DialogTitle>
                                                         <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
-                                                            Pilih pengguna simulasi untuk mengevaluasi peran Inisiator, PIC, atau Pembuat Kontrak
+                                                            Pilih pengguna simulasi untuk mengevaluasi peran Inisiator, PIC, Pembuat Kontrak, atau Approver Tambahan
                                                         </DialogDescription>
                                                     </div>
                                                 </div>
@@ -939,9 +970,9 @@ export default function WorkflowEditor({
                                                 >
                                                     <UsersIcon size={13} className="shrink-0" />
                                                     <div className="flex flex-col text-left">
-                                                        <span>Inisiator Kontrak</span>
-                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[120px]">
-                                                            {selectedSimInitiator ? selectedSimInitiator.name : 'Semua (Default)'}
+                                                        <span>Inisiator</span>
+                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[100px]">
+                                                            {selectedSimInitiator ? selectedSimInitiator.name : 'Semua'}
                                                         </span>
                                                     </div>
                                                 </button>
@@ -959,7 +990,7 @@ export default function WorkflowEditor({
                                                     <UserCheck size={13} className="shrink-0" />
                                                     <div className="flex flex-col text-left">
                                                         <span>PIC Ditugaskan</span>
-                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[120px]">
+                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[100px]">
                                                             {selectedSimPic ? selectedSimPic.name : 'Belum dipilih'}
                                                         </span>
                                                     </div>
@@ -977,9 +1008,28 @@ export default function WorkflowEditor({
                                                 >
                                                     <Bookmark size={13} className="shrink-0" />
                                                     <div className="flex flex-col text-left">
-                                                        <span>Pembuat Kontrak</span>
-                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[120px]">
+                                                        <span>Pembuat</span>
+                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[100px]">
                                                             {selectedSimCreator ? selectedSimCreator.name : 'Belum dipilih'}
+                                                        </span>
+                                                    </div>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSimActorType('adhoc_approvers')}
+                                                    className={cn(
+                                                        "flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold border transition-all cursor-pointer",
+                                                        simActorType === 'adhoc_approvers'
+                                                            ? "bg-white dark:bg-zinc-900 border-indigo-600 text-indigo-700 dark:text-indigo-400 shadow-xs"
+                                                            : "bg-transparent border-transparent text-slate-600 dark:text-zinc-400 hover:bg-slate-200/60 dark:hover:bg-zinc-700/50"
+                                                    )}
+                                                >
+                                                    <UserPlus size={13} className="shrink-0" />
+                                                    <div className="flex flex-col text-left">
+                                                        <span>Approver Tambahan</span>
+                                                        <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-400 truncate max-w-[100px]">
+                                                            {selectedSimAdhocUsers.length > 0 ? `${selectedSimAdhocUsers.length} Dipilih` : 'Belum dipilih'}
                                                         </span>
                                                     </div>
                                                 </button>
@@ -992,7 +1042,7 @@ export default function WorkflowEditor({
                                                         type="text"
                                                         value={simActorSearch}
                                                         onChange={(e) => setSimActorSearch(e.target.value)}
-                                                        placeholder={`Cari pengguna untuk ${simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : 'Pembuat'}...`}
+                                                        placeholder={`Cari pengguna untuk ${simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : simActorType === 'creator' ? 'Pembuat' : 'Approver Tambahan (Bisa Multi)'}...`}
                                                         className="w-full h-9 pl-9 pr-3 text-xs bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-lg outline-none focus:border-primary transition-all text-slate-800 dark:text-zinc-200"
                                                         autoFocus
                                                     />
@@ -1011,13 +1061,16 @@ export default function WorkflowEditor({
                                                 ) : (
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
                                                         {filteredSimActorUsers.map((u: any) => {
-                                                            const currentSelectedId =
-                                                                simActorType === 'initiator'
-                                                                    ? simInitiatorId
-                                                                    : simActorType === 'assigned_pic'
-                                                                    ? simPicId
-                                                                    : simCreatorId;
-                                                            const isSelected = String(u.id) === String(currentSelectedId);
+                                                            const isAdhocMode = simActorType === 'adhoc_approvers';
+                                                            const isSelected = isAdhocMode
+                                                                ? simAdhocIds.includes(String(u.id))
+                                                                : String(u.id) === String(
+                                                                      simActorType === 'initiator'
+                                                                          ? simInitiatorId
+                                                                          : simActorType === 'assigned_pic'
+                                                                          ? simPicId
+                                                                          : simCreatorId
+                                                                  );
 
                                                             return (
                                                                 <div
@@ -1027,8 +1080,15 @@ export default function WorkflowEditor({
                                                                             setSimInitiatorId(isSelected ? '' : String(u.id));
                                                                         } else if (simActorType === 'assigned_pic') {
                                                                             setSimPicId(isSelected ? '' : String(u.id));
-                                                                        } else {
+                                                                        } else if (simActorType === 'creator') {
                                                                             setSimCreatorId(isSelected ? '' : String(u.id));
+                                                                        } else {
+                                                                            const uIdStr = String(u.id);
+                                                                            setSimAdhocIds((prev) =>
+                                                                                prev.includes(uIdStr)
+                                                                                    ? prev.filter((id) => id !== uIdStr)
+                                                                                    : [...prev, uIdStr]
+                                                                            );
                                                                         }
                                                                     }}
                                                                     className={cn(
@@ -1078,13 +1138,14 @@ export default function WorkflowEditor({
                                                         onClick={() => {
                                                             if (simActorType === 'initiator') setSimInitiatorId('');
                                                             else if (simActorType === 'assigned_pic') setSimPicId('');
-                                                            else setSimCreatorId('');
+                                                            else if (simActorType === 'creator') setSimCreatorId('');
+                                                            else setSimAdhocIds([]);
                                                         }}
                                                         className="h-8 text-xs font-semibold px-3 rounded-lg"
                                                     >
-                                                        Reset {simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : 'Pembuat'}
+                                                        Reset {simActorType === 'initiator' ? 'Inisiator' : simActorType === 'assigned_pic' ? 'PIC' : simActorType === 'creator' ? 'Pembuat' : 'Approver Tambahan'}
                                                     </Button>
-                                                    {(simInitiatorId || simPicId || simCreatorId) && (
+                                                    {(simInitiatorId || simPicId || simCreatorId || simAdhocIds.length > 0) && (
                                                         <Button
                                                             type="button"
                                                             variant="ghost"
@@ -1092,6 +1153,7 @@ export default function WorkflowEditor({
                                                                 setSimInitiatorId('');
                                                                 setSimPicId('');
                                                                 setSimCreatorId('');
+                                                                setSimAdhocIds([]);
                                                             }}
                                                             className="h-8 text-xs font-semibold px-3 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                                                         >
@@ -1232,7 +1294,7 @@ export default function WorkflowEditor({
                                                                     ...item,
                                                                     step: index + 1,
                                                                 }));
-                                                                form.setData('steps', filtered);
+                                                                form.setData('steps', normalized);
                                                             }}
                                                             moveLocalStep={(i: number, direction: 'up' | 'down') => {
                                                                 const nextIndex = direction === 'up' ? i - 1 : i + 1;

@@ -119,6 +119,7 @@ export default function SortableStepItem({
         initiatorId?: string;
         picId?: string;
         creatorId?: string;
+        adhocId?: string;
     };
     onOpenSimulationModal?: () => void;
 }) {
@@ -264,6 +265,12 @@ export default function SortableStepItem({
         return (users || []).find((u: any) => String(u.id) === String(simulationContext.creatorId)) || null;
     }, [simulationContext?.creatorId, users]);
 
+    const simAdhocUsers = useMemo(() => {
+        const ids = simulationContext?.adhocIds || (simulationContext?.adhocId ? [simulationContext.adhocId] : []);
+        if (ids.length === 0) return [];
+        return (users || []).filter((u: any) => ids.includes(String(u.id)));
+    }, [simulationContext?.adhocIds, simulationContext?.adhocId, users]);
+
     const currentAssignAction = useMemo(() => {
         if (activeActionForModal && (
             activeActionForModal.action_code === 'assign' ||
@@ -321,8 +328,8 @@ export default function SortableStepItem({
 
                 return authorities.some((auth) => {
                     // Custom Actor match
-                    if (auth.authority_type === 'custom') {
-                        const customType = auth.role_id || auth.user_id || auth.authority_type;
+                    if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)) {
+                        const customType = auth.authority_type === 'custom' ? (auth.role_id || auth.user_id) : auth.authority_type;
                         if (customType === 'initiator' && simInitiatorUser) {
                             return String(simInitiatorUser.id) === userId;
                         }
@@ -331,6 +338,9 @@ export default function SortableStepItem({
                         }
                         if (customType === 'creator' && simCreatorUser) {
                             return String(simCreatorUser.id) === userId;
+                        }
+                        if ((customType === 'adhoc_approvers' || customType === 'adhoc') && simAdhocUsers.length > 0) {
+                            return simAdhocUsers.some((u: any) => String(u.id) === userId);
                         }
                         return false;
                     }
@@ -445,6 +455,7 @@ export default function SortableStepItem({
             if (customActors.includes('initiator') && simInitiatorUser && String(simInitiatorUser.id) === userId) return true;
             if (customActors.includes('assigned_pic') && simPicUser && String(simPicUser.id) === userId) return true;
             if (customActors.includes('creator') && simCreatorUser && String(simCreatorUser.id) === userId) return true;
+            if ((customActors.includes('adhoc_approvers') || customActors.includes('adhoc')) && simAdhocUsers.length > 0 && simAdhocUsers.some((u: any) => String(u.id) === userId)) return true;
 
             let roleMatch = targetRoles.length === 0 && !cfg.is_initiator_role;
             if (cfg.is_initiator_role && simInitiatorUser) {
@@ -497,6 +508,7 @@ export default function SortableStepItem({
         simInitiatorUser,
         simPicUser,
         simCreatorUser,
+        simAdhocUsers,
     ]);
 
     const signerOptions = useMemo(() => {

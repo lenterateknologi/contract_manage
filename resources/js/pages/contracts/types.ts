@@ -224,6 +224,11 @@ export interface Contract {
         }>;
     };
     workflow_id?: string;
+    origin_workflow_id?: string;
+    origin_workflow?: {
+        id: string;
+        name: string;
+    } | null;
     workflow?: {
         id: string;
         name: string;

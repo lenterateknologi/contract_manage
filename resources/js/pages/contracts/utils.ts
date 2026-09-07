@@ -81,6 +81,8 @@ export const contractApi = {
         isSequential: boolean = false,
         targetStepId?: string,
         role?: string,
+        approvalRule: string = 'all',
+        minApprovals?: number,
     ): Promise<Contract> => {
         const uids = Array.isArray(userIds) ? userIds : [userIds];
         return unwrap(
@@ -90,6 +92,8 @@ export const contractApi = {
                 is_sequential: isSequential,
                 target_step_id: targetStepId,
                 role,
+                approval_rule: approvalRule,
+                min_approvals: minApprovals,
             }),
         );
     },

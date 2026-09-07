@@ -26,8 +26,8 @@ class ContractPolicy
             return true;
         }
 
-        // 2. Creator can always view their own creation
-        if ($contract->created_by === $user->id) {
+        // 2. Creator or Initiator can always view
+        if ($contract->created_by === $user->id || $contract->initiated_by_id === $user->id) {
             return true;
         }
 
@@ -46,7 +46,71 @@ class ContractPolicy
             return true;
         }
 
+        // 6. User has permission to read contracts module and the contract falls within their organizational scope
+        if ($this->canReadInOrgScope($user, $contract)) {
+            return true;
+        }
+
         return false;
+    }
+
+    /**
+     * Check if user has permission to read contracts and the contract is within their organizational scope.
+     */
+    private function canReadInOrgScope(User $user, Contract $contract): bool
+    {
+        // Check if role has read access to /contracts module
+        $roleId = $user->role_id;
+        if (! $roleId) {
+            return false;
+        }
+
+        $canReadModule = \App\Models\AccessModule::where('role_id', $roleId)
+            ->whereHas('module', fn ($q) => $q->where('route', '/contracts'))
+            ->where('can_read', true)
+            ->exists();
+
+        if (! $canReadModule) {
+            return false;
+        }
+
+        // Check organizational scope matching ContractFilterScopeService rules
+        $settings = $user->getContractFilterSettings();
+        $isGlobalFull = in_array($user->role, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
+
+        $contractOrg = $contract->initiator ?: $contract->creator;
+        if (! $contractOrg) {
+            return true;
+        }
+
+        // Department check
+        $depFull = $isGlobalFull || ($settings['can_change_department'] ?? false);
+        if (! $depFull) {
+            $allowedDeps = array_filter(array_merge([$user->department_id], $settings['allowed_departments'] ?? []));
+            if (! empty($allowedDeps) && ! in_array($contractOrg->department_id, $allowedDeps)) {
+                return false;
+            }
+        }
+
+        // Company check
+        $compFull = $isGlobalFull || ($settings['can_change_company'] ?? false);
+        if (! $compFull) {
+            $allowedCompanies = array_filter(array_merge([$user->company_id], $settings['allowed_companies'] ?? []));
+            if (! empty($allowedCompanies) && ! in_array($contractOrg->company_id, $allowedCompanies)) {
+                return false;
+            }
+        }
+
+        // Division check
+        $divFull = $isGlobalFull || ($settings['can_change_division'] ?? false);
+        if (! $divFull) {
+            $allowedDivs = array_filter(array_merge([$user->division_id], $settings['allowed_divisions'] ?? []));
+            if (! empty($allowedDivs) && ! in_array($contractOrg->division_id, $allowedDivs)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

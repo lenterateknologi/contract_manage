@@ -130,6 +130,11 @@ class ContractFormatter
             ] : null,
             'progress' => $progress,
             'workflow_id' => $c->workflow_id,
+            'origin_workflow_id' => $c->origin_workflow_id,
+            'origin_workflow' => $c->origin_workflow_id ? [
+                'id' => $c->origin_workflow_id,
+                'name' => \App\Models\Workflow::where('id', $c->origin_workflow_id)->value('name') ?? $c->workflow?->name,
+            ] : null,
             'workflow_step_id' => $c->workflow_step_id,
             'workflow' => $c->workflow ? [
                 'id' => $c->workflow->id,
@@ -250,7 +255,7 @@ class ContractFormatter
                     return true;
                 }
                 $hasUnapprovedSubSteps = $c->approvals
-                    ->where('sequence', $a->sequence)
+                    ->where('workflow_step_id', $a->workflow_step_id)
                     ->whereNotNull('sub_step')
                     ->contains(fn ($sub) => $sub->status !== 'approved');
 
@@ -261,7 +266,7 @@ class ContractFormatter
                     return true;
                 }
                 $hasUnapprovedSubSteps = $c->approvals
-                    ->where('sequence', $a->sequence)
+                    ->where('workflow_step_id', $a->workflow_step_id)
                     ->whereNotNull('sub_step')
                     ->contains(fn ($sub) => $sub->status !== 'approved');
 
@@ -365,260 +370,398 @@ class ContractFormatter
 
     public static function mapApprovalTimeline($c, bool $isDetail = true): array
     {
-        if (! $c->workflow) {
+        if (! $c->workflow && $c->approvals->isEmpty()) {
             return [];
         }
 
-        $timeline = [];
-        $workflowSteps = $c->workflow->steps->sortBy('step');
         $workflowService = app(ContractWorkflowService::class);
 
-        foreach ($workflowSteps as $step) {
-            $isStepSkipped = ! $workflowService->shouldExecuteStep($c, $step);
-            $stepLabel = data_get($step, 'label') ?: (data_get($step, 'name') ?: 'Persetujuan Step '.$step->step);
+        // 1. Build chronological execution chunks based on real approval timestamps
+        $executedApprovals = $c->approvals->sortBy('created_at')->values();
+        $chunks = [];
 
-            $regularApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role !== config('master.roles.adhoc_approver') && $a->role !== 'Penandatangan');
-            $adhocApprovals = $c->approvals->where('workflow_step_id', $step->id)->filter(fn ($a) => $a->role === config('master.roles.adhoc_approver') || $a->role === 'Penandatangan');
-
-            $deptNames = (array) $step->department_names;
-            $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
-
-            if (! $deptName && $step->approver_type === 'initiator' && $c->initiator?->department) {
-                $deptName = $c->initiator->department->name;
-            }
-
-            $targetApprovers = null;
-            $targetEmails = null;
-
-            $stepSqlQueries = [];
-            if ($isDetail) {
-                $resolved = $workflowService->resolveApproversForStep($c, $step);
-                $approvers = $resolved['approvers'];
-                $stepSqlQueries = $resolved['sql_queries'] ?? [];
-                $targetApprovers = $approvers->pluck('name')->implode(', ');
-                $targetEmails = $approvers->pluck('email')->implode(', ');
-
-                if (empty($targetApprovers)) {
-                    $targetApprovers = is_array($step->role) ? implode(', ', $step->role) : ($step->role ?: null);
-                }
-            } else {
-                // List mode minimal resolution
-                if ($step->approver_type === 'initiator') {
-                    $targetApprovers = $c->initiator?->name;
-                } elseif ($step->approver_type === 'assigned_pic' && $c->assigned_pic_id) {
-                    $targetApprovers = $c->assignedPic?->name;
-                } else {
-                    $targetApprovers = is_array($step->role) ? implode(', ', $step->role) : ($step->role ?: null);
-                }
-            }
-
-            // 1. ADD AD-HOC (SUB-STEPS) FIRST - they always happen before the main step action
-            foreach ($adhocApprovals as $a) {
-                $isSigner = $a->role === 'Penandatangan';
-
-                $timeline[] = [
-                    'id' => $a->id,
-                    'workflow_step_id' => $a->workflow_step_id,
-                    'user_id' => $a->user_id,
-                    'approver_name' => $a->approver_name,
-                    'role' => $a->role,
-                    'department_name' => $a->approver?->department->name ?? $deptName,
-                    'target_approvers' => $a->approver_name,
-                    'target_emails' => $a->approver?->email,
-                    'sequence' => $step->step,
-                    'sub_step' => $a->sub_step,
-                    'status' => $a->status,
-                    'comment' => $a->comment,
-                    'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
-                    'created_at' => $a->created_at?->toIso8601String(),
-                    'is_active' => $a->is_active,
-                    'step_type' => 'APPROVAL',
-                    'step_name' => $isSigner ? $a->role : config('master.roles.adhoc_approver'),
-                    'step_description' => $isSigner ? 'Proses penandatanganan dokumen' : 'Persetujuan tambahan di luar alur kerja template',
-                    'step_category' => $isSigner ? 'signing' : null,
-                    'approver' => self::formatUser($a->approver),
+        if ($executedApprovals->isEmpty()) {
+            if ($c->workflow) {
+                $chunks[] = [
+                    'workflow_id' => $c->workflow->id,
+                    'workflow' => $c->workflow,
+                    'is_current' => true,
+                    'step_ids' => collect(),
+                    'approvals' => collect(),
                 ];
             }
+        } else {
+            foreach ($executedApprovals as $appr) {
+                $step = $appr->workflowStep;
+                $wf = null;
+                if ($step) {
+                    if ($step->relationLoaded('workflow')) {
+                        $wf = $step->workflow;
+                    } elseif ($c->workflow_id === $step->workflow_id) {
+                        $wf = $c->workflow;
+                    } else {
+                        $step->load('workflow');
+                        $wf = $step->workflow;
+                    }
+                }
+                if (! $wf && $c->workflow) {
+                    $wf = $c->workflow;
+                }
+                $wfId = $wf?->id ?? $c->workflow_id;
 
-            // 2. ADD MAIN STEP (REGULAR APPROVAL OR PLACEHOLDER)
-            if ($isStepSkipped) {
-                // Only show skipped main step if there are no regular approvals (prevents duplicates if manually added then skipped)
-                if ($regularApprovals->isEmpty()) {
+                $lastIdx = count($chunks) - 1;
+                if ($lastIdx < 0 || $chunks[$lastIdx]['workflow_id'] !== $wfId) {
+                    $chunks[] = [
+                        'workflow_id' => $wfId,
+                        'workflow' => $wf,
+                        'is_current' => false,
+                        'step_ids' => collect($appr->workflow_step_id ? [$appr->workflow_step_id] : []),
+                        'approvals' => collect([$appr]),
+                    ];
+                } else {
+                    if ($appr->workflow_step_id && ! $chunks[$lastIdx]['step_ids']->contains($appr->workflow_step_id)) {
+                        $chunks[$lastIdx]['step_ids']->push($appr->workflow_step_id);
+                    }
+                    $chunks[$lastIdx]['approvals']->push($appr);
+                }
+            }
+
+            // Determine if the last chunk matches current contract workflow
+            $lastIdx = count($chunks) - 1;
+            if ($chunks[$lastIdx]['workflow_id'] === $c->workflow_id) {
+                $chunks[$lastIdx]['is_current'] = true;
+            } elseif ($c->workflow) {
+                // If current contract workflow is not in the last chunk, append it for future/active steps
+                $chunks[] = [
+                    'workflow_id' => $c->workflow->id,
+                    'workflow' => $c->workflow,
+                    'is_current' => true,
+                    'step_ids' => collect(),
+                    'approvals' => collect(),
+                ];
+            }
+        }
+
+        $timeline = [];
+        $globalOrder = 0;
+
+        foreach ($chunks as $chunk) {
+            $workflow = $chunk['workflow'];
+            if (! $workflow) {
+                continue;
+            }
+
+            $isCurrentChunk = $chunk['is_current'];
+            $steps = $workflow->relationLoaded('steps')
+                ? $workflow->steps->sortBy('step')
+                : $workflow->steps()->with('approverAuthorities.role', 'approverAuthorities.division', 'actions', 'workflow')->orderBy('step')->get();
+
+            // Ensure every step has workflow loaded
+            $steps->each(function ($step) use ($workflow) {
+                if (! $step->relationLoaded('workflow')) {
+                    $step->setRelation('workflow', $workflow);
+                }
+            });
+
+            if (! $isCurrentChunk) {
+                $stepsToProcess = $steps->filter(fn ($s) => $chunk['step_ids']->contains($s->id));
+            } else {
+                $currentStepObj = $steps->firstWhere('id', $c->workflow_step_id);
+                $currentStepNumber = $currentStepObj ? $currentStepObj->step : 0;
+
+                $stepsToProcess = $steps->filter(function ($s) use ($chunk, $currentStepNumber) {
+                    return $chunk['step_ids']->contains($s->id) || $s->step >= $currentStepNumber;
+                });
+            }
+
+            foreach ($stepsToProcess as $step) {
+                $stepApprovals = $chunk['approvals']->where('workflow_step_id', $step->id);
+                $regularApprovals = $stepApprovals->filter(fn ($a) => $a->role !== config('master.roles.adhoc_approver') && $a->role !== 'Penandatangan');
+                $adhocApprovals = $stepApprovals->filter(fn ($a) => $a->role === config('master.roles.adhoc_approver') || $a->role === 'Penandatangan');
+
+                $hasApprovals = $regularApprovals->isNotEmpty() || $adhocApprovals->isNotEmpty();
+                $isCurrentStep = $isCurrentChunk && ($c->workflow_step_id === $step->id);
+
+                if (! $isCurrentChunk && ! $hasApprovals && ! $isCurrentStep) {
+                    continue;
+                }
+
+                $isStepSkipped = ! $workflowService->shouldExecuteStep($c, $step);
+                $stepLabel = data_get($step, 'label') ?: (data_get($step, 'name') ?: 'Persetujuan Step '.$step->step);
+
+                $deptNames = (array) $step->department_names;
+                $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
+
+                if (! $deptName && $step->approver_type === 'initiator' && $c->initiator?->department) {
+                    $deptName = $c->initiator->department->name;
+                }
+
+                $targetApprovers = null;
+                $targetEmails = null;
+                $stepSqlQueries = [];
+
+                if ($isDetail) {
+                    $resolved = $workflowService->resolveApproversForStep($c, $step);
+                    $approvers = $resolved['approvers'];
+                    $stepSqlQueries = $resolved['sql_queries'] ?? [];
+                    $targetApprovers = $approvers->pluck('name')->implode(', ');
+                    $targetEmails = $approvers->pluck('email')->implode(', ');
+
+                    if (empty($targetApprovers)) {
+                        $targetApprovers = is_array($step->role) ? implode(', ', $step->role) : ($step->role ?: null);
+                    }
+                } else {
+                    if ($step->approver_type === 'initiator') {
+                        $targetApprovers = $c->initiator?->name;
+                    } elseif ($step->approver_type === 'assigned_pic' && $c->assigned_pic_id) {
+                        $targetApprovers = $c->assignedPic?->name;
+                    } else {
+                        $targetApprovers = is_array($step->role) ? implode(', ', $step->role) : ($step->role ?: null);
+                    }
+                }
+
+                // 1. ADD AD-HOC (SUB-STEPS) FIRST - they always happen before the main step action
+                foreach ($adhocApprovals as $a) {
+                    $isSigner = $a->role === 'Penandatangan';
+
                     $timeline[] = [
-                        'id' => 'skipped-'.$step->id,
-                        'workflow_step_id' => $step->id,
-                        'user_id' => null,
-                        'approver_name' => 'Langkah Dilewati',
-                        'role' => is_array($step->role) ? implode(', ', $step->role) : $step->role,
-                        'department_name' => $deptName,
-                        'target_approvers' => 'Syarat tidak terpenuhi',
-                        'target_emails' => null,
+                        'id' => $a->id,
+                        'workflow_step_id' => $a->workflow_step_id,
+                        'user_id' => $a->user_id,
+                        'approver_name' => $a->approver_name,
+                        'role' => $a->role,
+                        'department_name' => $a->approver?->department->name ?? $deptName,
+                        'target_approvers' => $a->approver_name,
+                        'target_emails' => $a->approver?->email,
                         'sequence' => $step->step,
-                        'status' => 'SKIPPED',
-                        'note' => 'Langkah ini dilewati berdasarkan logika sistem.',
+                        'sub_step' => $a->sub_step,
+                        'status' => $a->status,
+                        'comment' => $a->comment,
+                        'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
+                        'created_at' => $a->created_at?->toIso8601String(),
+                        'is_active' => $a->is_active,
                         'step_type' => 'APPROVAL',
-                        'step_name' => $stepLabel,
-                        'step_description' => $step->description,
-                        'step_category' => $step->step_category,
+                        'step_name' => $isSigner ? $a->role : config('master.roles.adhoc_approver'),
+                        'step_description' => $isSigner ? 'Proses penandatanganan dokumen' : 'Persetujuan tambahan di luar alur kerja template',
+                        'step_category' => $isSigner ? 'signing' : null,
+                        'sort_order' => $globalOrder++,
                         'workflow_step' => [
                             'id' => $step->id,
                             'step' => $step->step,
                             'label' => $stepLabel,
                             'description' => $step->description,
                             'workflow_id' => $step->workflow_id,
+                            'workflow' => [
+                                'id' => $workflow->id,
+                                'name' => $workflow->name,
+                            ],
                         ],
+                        'approver' => self::formatUser($a->approver),
                     ];
                 }
-            } else {
-                if ($regularApprovals->isNotEmpty()) {
-                    $isRoleBased = $step->approver_type === 'role';
-                    $hasDecision = $regularApprovals->contains(fn ($a) => in_array($a->status, ['approved', 'rejected']));
 
-                    // Grouping for multiple pending role-based approvers
-                    $isAllPending = $regularApprovals->every(fn ($a) => $a->status === 'pending');
-                    if ($isAllPending && $regularApprovals->count() > 1 && $isRoleBased) {
-                        $first = $regularApprovals->first();
-                        $candidateNames = $regularApprovals->map(fn ($a) => $a->approver->name ?? $a->approver_name)->implode(', ');
-                        $candidateEmails = $regularApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
-
+                // 2. ADD MAIN STEP (REGULAR APPROVAL OR PLACEHOLDER)
+                if ($isStepSkipped) {
+                    if ($regularApprovals->isEmpty()) {
                         $timeline[] = [
-                            'id' => 'step-group-'.$step->id,
+                            'id' => 'skipped-'.$step->id,
                             'workflow_step_id' => $step->id,
                             'user_id' => null,
-                            'approver_name' => $first->role,
-                            'role' => $first->role,
+                            'approver_name' => 'Langkah Dilewati',
+                            'role' => is_array($step->role) ? implode(', ', $step->role) : $step->role,
                             'department_name' => $deptName,
-                            'target_approvers' => $candidateNames ?: $targetApprovers,
-                            'target_emails' => $candidateEmails ?: $targetEmails,
+                            'target_approvers' => 'Syarat tidak terpenuhi',
+                            'target_emails' => null,
                             'sequence' => $step->step,
-                            'status' => 'pending',
-                            'comment' => null,
-                            'decided_at' => null,
-                            'created_at' => null,
-                            'is_active' => (bool) $first->is_active,
+                            'status' => 'SKIPPED',
+                            'note' => 'Langkah ini dilewati berdasarkan logika sistem.',
                             'step_type' => 'APPROVAL',
                             'step_name' => $stepLabel,
                             'step_description' => $step->description,
                             'step_category' => $step->step_category,
+                            'sort_order' => $globalOrder++,
                             'workflow_step' => [
                                 'id' => $step->id,
                                 'step' => $step->step,
                                 'label' => $stepLabel,
                                 'description' => $step->description,
                                 'workflow_id' => $step->workflow_id,
+                                'workflow' => [
+                                    'id' => $workflow->id,
+                                    'name' => $workflow->name,
+                                ],
                             ],
-                            'approver' => null,
                         ];
-                    } else {
-                        $approvalsToDisplay = $regularApprovals;
-                        if ($isRoleBased && $hasDecision) {
-                            $approvalsToDisplay = $regularApprovals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected']));
-                        }
+                    }
+                } else {
+                    if ($regularApprovals->isNotEmpty()) {
+                        $isRoleBased = $step->approver_type === 'role';
+                        $hasDecision = $regularApprovals->contains(fn ($a) => in_array($a->status, ['approved', 'rejected']));
 
-                        foreach ($approvalsToDisplay as $a) {
+                        $isAllPending = $regularApprovals->every(fn ($a) => $a->status === 'pending');
+                        if ($isAllPending && $regularApprovals->count() > 1 && $isRoleBased) {
+                            $first = $regularApprovals->first();
+                            $candidateNames = $regularApprovals->map(fn ($a) => $a->approver->name ?? $a->approver_name)->implode(', ');
+                            $candidateEmails = $regularApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
+
                             $timeline[] = [
-                                'id' => $a->id,
-                                'workflow_step_id' => $a->workflow_step_id,
-                                'user_id' => $a->user_id,
-                                'approver_name' => $a->approver_name,
-                                'role' => $a->role,
+                                'id' => 'step-group-'.$step->id,
+                                'workflow_step_id' => $step->id,
+                                'user_id' => null,
+                                'approver_name' => $first->role,
+                                'role' => $first->role,
                                 'department_name' => $deptName,
-                                'target_approvers' => $targetApprovers,
-                                'target_emails' => $a->approver?->email ?: $targetEmails,
+                                'target_approvers' => $candidateNames ?: $targetApprovers,
+                                'target_emails' => $candidateEmails ?: $targetEmails,
                                 'sequence' => $step->step,
-                                'sub_step' => $a->sub_step,
-                                'status' => $a->status,
-                                'comment' => $a->comment,
-                                'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
-                                'created_at' => $a->created_at?->format('d/m/Y H:i'),
-                                'step_entry_at' => $a->created_at?->format('d/m/Y H:i'),
-                                'is_active' => $a->is_active,
+                                'status' => 'pending',
+                                'comment' => null,
+                                'decided_at' => null,
+                                'created_at' => null,
+                                'is_active' => (bool) $first->is_active,
                                 'step_type' => 'APPROVAL',
                                 'step_name' => $stepLabel,
                                 'step_description' => $step->description,
                                 'step_category' => $step->step_category,
+                                'sort_order' => $globalOrder++,
                                 'workflow_step' => [
                                     'id' => $step->id,
                                     'step' => $step->step,
                                     'label' => $stepLabel,
                                     'description' => $step->description,
                                     'workflow_id' => $step->workflow_id,
-                                    'meta' => $step->meta ?? [],
-                                    'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
-                                        'id' => $act->id,
-                                        'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
-                                        'alias' => $act->alias,
-                                        'target_status' => $act->target_status,
-                                        'required_fields' => $act->required_fields ?? [],
-                                        'autofilled_fields' => $act->autofilled_fields ?? [],
-                                    ])->toArray() : [],
+                                    'workflow' => [
+                                        'id' => $workflow->id,
+                                        'name' => $workflow->name,
+                                    ],
                                 ],
-                                'approver' => self::formatUser($a->approver),
+                                'approver' => null,
                             ];
+                        } else {
+                            $approvalsToDisplay = $regularApprovals;
+                            if ($isRoleBased && $hasDecision) {
+                                $approvalsToDisplay = $regularApprovals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected']));
+                            }
+
+                            foreach ($approvalsToDisplay as $a) {
+                                $timeline[] = [
+                                    'id' => $a->id,
+                                    'workflow_step_id' => $a->workflow_step_id,
+                                    'user_id' => $a->user_id,
+                                    'approver_name' => $a->approver_name,
+                                    'role' => $a->role,
+                                    'department_name' => $deptName,
+                                    'target_approvers' => $targetApprovers,
+                                    'target_emails' => $a->approver?->email ?: $targetEmails,
+                                    'sequence' => $step->step,
+                                    'sub_step' => $a->sub_step,
+                                    'status' => $a->status,
+                                    'comment' => $a->comment,
+                                    'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
+                                    'created_at' => $a->created_at?->format('d/m/Y H:i'),
+                                    'step_entry_at' => $a->created_at?->format('d/m/Y H:i'),
+                                    'is_active' => $a->is_active,
+                                    'step_type' => 'APPROVAL',
+                                    'step_name' => $stepLabel,
+                                    'step_description' => $step->description,
+                                    'step_category' => $step->step_category,
+                                    'sort_order' => $globalOrder++,
+                                    'workflow_step' => [
+                                        'id' => $step->id,
+                                        'step' => $step->step,
+                                        'label' => $stepLabel,
+                                        'description' => $step->description,
+                                        'workflow_id' => $step->workflow_id,
+                                        'workflow' => [
+                                            'id' => $workflow->id,
+                                            'name' => $workflow->name,
+                                        ],
+                                        'meta' => $step->meta ?? [],
+                                        'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
+                                            'id' => $act->id,
+                                            'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
+                                            'alias' => $act->alias,
+                                            'target_status' => $act->target_status,
+                                            'required_fields' => $act->required_fields ?? [],
+                                            'autofilled_fields' => $act->autofilled_fields ?? [],
+                                        ])->toArray() : [],
+                                    ],
+                                    'approver' => self::formatUser($a->approver),
+                                ];
+                            }
                         }
+                    } elseif ($adhocApprovals->isEmpty()) {
+                        $roleLabel = is_array($step->role) ? implode(', ', $step->role) : $step->role;
+                        $stepTargetApprovers = $targetApprovers;
+                        $approverName = $roleLabel;
+
+                        if ($step->approver_type === 'assigned_pic') {
+                            $stepTargetApprovers = 'PIC (Belum Ditugaskan)';
+                            $approverName = 'PIC (Belum Ditugaskan)';
+                        }
+
+                        $authoritiesPayload = [];
+                        if ($step->relationLoaded('approverAuthorities') || $step->approverAuthorities()->exists()) {
+                            $authorities = $step->relationLoaded('approverAuthorities')
+                                ? $step->approverAuthorities
+                                : $step->approverAuthorities()->with(['role', 'department', 'division', 'companyGroup', 'company', 'region'])->get();
+
+                            $authoritiesPayload = $authorities->map(fn ($a) => [
+                                'id' => $a->id,
+                                'authority_type' => $a->authority_type,
+                                'role_name' => $a->relationLoaded('role') ? $a->role?->name : null,
+                                'department_name' => $a->relationLoaded('department') ? $a->department?->name : null,
+                                'division_name' => $a->relationLoaded('division') ? $a->division?->name : null,
+                                'company_group_name' => $a->relationLoaded('companyGroup') ? $a->companyGroup?->name : null,
+                                'company_name' => $a->relationLoaded('company') ? $a->company?->name : null,
+                                'region_name' => $a->relationLoaded('region') ? $a->region?->name : null,
+                                'role_use_initiator' => (bool) $a->role_use_initiator,
+                                'department_use_initiator' => (bool) $a->department_use_initiator,
+                                'division_use_initiator' => (bool) $a->division_use_initiator,
+                                'company_group_use_initiator' => (bool) $a->company_group_use_initiator,
+                                'company_use_initiator' => (bool) $a->company_use_initiator,
+                                'region_use_initiator' => (bool) $a->region_use_initiator,
+                            ])->values()->toArray();
+                        }
+
+                        $timeline[] = [
+                            'id' => 'step-'.$step->id,
+                            'workflow_step_id' => $step->id,
+                            'user_id' => null,
+                            'approver_name' => $approverName,
+                            'role' => $roleLabel,
+                            'department_name' => $deptName,
+                            'target_approvers' => $stepTargetApprovers,
+                            'target_emails' => $targetEmails,
+                            'sequence' => $step->step,
+                            'status' => $isCurrentStep ? 'pending' : 'SELANJUTNYA',
+                            'note' => null,
+                            'approved_at' => null,
+                            'decided_at' => null,
+                            'created_at' => $isCurrentStep ? $c->updated_at?->format('d/m/Y H:i') : null,
+                            'step_entry_at' => $isCurrentStep ? $c->updated_at?->format('d/m/Y H:i') : null,
+                            'approver' => null,
+                            'is_active' => $isCurrentStep,
+                            'step_type' => 'APPROVAL',
+                            'step_name' => $step->name,
+                            'step_description' => $step->description,
+                            'step_category' => $step->step_category,
+                            'sort_order' => $globalOrder++,
+                            'workflow_step' => [
+                                'id' => $step->id,
+                                'step' => $step->step,
+                                'label' => $stepLabel,
+                                'description' => $step->description,
+                                'workflow_id' => $step->workflow_id,
+                                'workflow' => [
+                                    'id' => $workflow->id,
+                                    'name' => $workflow->name,
+                                ],
+                            ],
+                            'approver_authorities' => $authoritiesPayload,
+                            'debug_sql_queries' => $stepSqlQueries,
+                        ];
                     }
-                } else {
-                    // Placeholder for future step
-                    $roleLabel = is_array($step->role) ? implode(', ', $step->role) : $step->role;
-                    $stepTargetApprovers = $targetApprovers;
-                    $approverName = $roleLabel;
-
-                    if ($step->approver_type === 'assigned_pic') {
-                        $stepTargetApprovers = 'PIC (Belum Ditugaskan)';
-                        $approverName = 'PIC (Belum Ditugaskan)';
-                    }
-
-                    $isCurrentStep = $c->workflow_step_id === $step->id;
-
-                    $authoritiesPayload = [];
-                    if ($step->relationLoaded('approverAuthorities') || $step->approverAuthorities()->exists()) {
-                        $authorities = $step->relationLoaded('approverAuthorities')
-                            ? $step->approverAuthorities
-                            : $step->approverAuthorities()->with(['role', 'department', 'division', 'companyGroup', 'company', 'region'])->get();
-
-                        $authoritiesPayload = $authorities->map(fn ($a) => [
-                            'id' => $a->id,
-                            'authority_type' => $a->authority_type,
-                            'role_name' => $a->relationLoaded('role') ? $a->role?->name : null,
-                            'department_name' => $a->relationLoaded('department') ? $a->department?->name : null,
-                            'division_name' => $a->relationLoaded('division') ? $a->division?->name : null,
-                            'company_group_name' => $a->relationLoaded('companyGroup') ? $a->companyGroup?->name : null,
-                            'company_name' => $a->relationLoaded('company') ? $a->company?->name : null,
-                            'region_name' => $a->relationLoaded('region') ? $a->region?->name : null,
-                            'role_use_initiator' => (bool) $a->role_use_initiator,
-                            'department_use_initiator' => (bool) $a->department_use_initiator,
-                            'division_use_initiator' => (bool) $a->division_use_initiator,
-                            'company_group_use_initiator' => (bool) $a->company_group_use_initiator,
-                            'company_use_initiator' => (bool) $a->company_use_initiator,
-                            'region_use_initiator' => (bool) $a->region_use_initiator,
-                        ])->values()->toArray();
-                    }
-
-                    $timeline[] = [
-                        'id' => 'step-'.$step->id,
-                        'workflow_step_id' => $step->id,
-                        'user_id' => null,
-                        'approver_name' => $approverName,
-                        'role' => $roleLabel,
-                        'department_name' => $deptName,
-                        'target_approvers' => $stepTargetApprovers,
-                        'target_emails' => $targetEmails,
-                        'sequence' => $step->step,
-                        'status' => $isCurrentStep ? 'pending' : 'SELANJUTNYA',
-                        'note' => null,
-                        'approved_at' => null,
-                        'decided_at' => null,
-                        'created_at' => $isCurrentStep ? $c->updated_at?->format('d/m/Y H:i') : null,
-                        'step_entry_at' => $isCurrentStep ? $c->updated_at?->format('d/m/Y H:i') : null,
-                        'approver' => null,
-                        'is_active' => $isCurrentStep,
-                        'step_type' => 'APPROVAL',
-                        'step_name' => $step->name,
-                        'step_description' => $step->description,
-                        'step_category' => $step->step_category,
-                        'approver_authorities' => $authoritiesPayload,
-                        'debug_sql_queries' => $stepSqlQueries,
-                    ];
                 }
             }
         }

@@ -23,7 +23,6 @@ export const MASTER_ACTIONS = [
     { id: 'approve', code: 'approve', name: 'Setujui' },
     { id: 'reject', code: 'reject', name: 'Tolak' },
     { id: 'assign', code: 'assign', name: 'Tugaskan' },
-    { id: 'signature', code: 'signature', name: 'Upload Tanda Tangan' },
     { id: 'forward', code: 'forward', name: 'Approval Tambahan' },
 ];
 

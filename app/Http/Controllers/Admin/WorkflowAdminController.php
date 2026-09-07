@@ -93,7 +93,7 @@ class WorkflowAdminController extends Controller
             $sd['division_ids'] = $s->approverAuthorities->filter(fn ($a) => ! $a->division_use_initiator)->pluck('division_id')->filter()->values()->toArray();
             $sd['approver_authorities'] = $s->approverAuthorities->map(function ($a) {
                 $arr = $a->toArray();
-                if (in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator'])) {
+                if (in_array($a->authority_type, ['initiator', 'assigned_pic', 'creator', 'adhoc_approvers', 'adhoc'])) {
                     $arr['authority_type'] = 'custom';
                     $arr['user_id'] = $a->authority_type;
                 }

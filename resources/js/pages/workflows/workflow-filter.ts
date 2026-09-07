@@ -31,7 +31,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
         if (authorities.length === 0) return false;
 
         return authorities.some((auth: any) => {
-            if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator'].includes(auth.authority_type)) {
+            if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)) {
                 const actorType = auth.user_id || auth.authority_type;
                 if (actorType === 'initiator') {
                     const initId = contract?.initiator?.id || contract?.initiated_by_id;
@@ -44,6 +44,12 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 if (actorType === 'creator') {
                     const creatorId = contract?.creator?.id || contract?.created_by;
                     return creatorId && String(user.id) === String(creatorId);
+                }
+                if (actorType === 'adhoc_approvers' || actorType === 'adhoc') {
+                    const adhocApprovals = (contract?.approvals || []).filter(
+                        (a: any) => (a.role === 'Persetujuan Tambahan' || a.role === 'Ad-Hoc Approver') && String(a.workflow_step_id) === String(contract?.workflow_step_id)
+                    );
+                    return adhocApprovals.some((a: any) => String(a.user_id) === String(user.id));
                 }
                 return false;
             }

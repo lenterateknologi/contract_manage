@@ -326,6 +326,8 @@ const OrthogonalSikuRollbackEdge = ({
 const CustomStepNode = ({ data, selected }: NodeProps) => {
     const {
         step,
+        allSteps = [],
+        allWorkflows = [],
         workflowId,
         workflowName,
         isFirst,
@@ -533,19 +535,36 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                     targetStepNum = null;
                                 }
                             } else if (act?.next_step_id) {
-                                targetStepNum = Number(act.next_step_id);
+                                const matched = (allSteps || []).find((s: any) => String(s.id) === String(act.next_step_id));
+                                if (matched) {
+                                    targetStepNum = Number(matched.step) || null;
+                                } else {
+                                    const parsed = Number(act.next_step_id);
+                                    targetStepNum = !isNaN(parsed) ? parsed : null;
+                                }
                             } else {
                                 if (isReject) targetStepNum = 1;
                                 else if (isApprove) targetStepNum = isLast ? null : currentStepNum + 1;
                             }
 
                             let flowDestinationText = '';
-                            const isRollbackDirection = (targetStepNum !== null && targetStepNum < currentStepNum) || (isReject && tConfig?.type !== 'cross_workflow');
-                            const isForwardDirection = targetStepNum !== null && targetStepNum > currentStepNum;
                             const isCrossWf = tConfig?.type === 'cross_workflow' || Boolean(act?.next_workflow_id);
+                            const isRollbackDirection = !isCrossWf && ((targetStepNum !== null && targetStepNum < currentStepNum) || (isReject && targetStepNum === null));
+                            const isForwardDirection = !isCrossWf && targetStepNum !== null && targetStepNum > currentStepNum;
 
                             if (isCrossWf) {
-                                flowDestinationText = `Beralih ke Alur Lain (Tahap ${tConfig?.sequence || 1})`;
+                                const targetWfId = String(tConfig?.workflow_id || act?.next_workflow_id || '');
+                                let targetSeq = Number(tConfig?.sequence || 0);
+                                if (!targetSeq && act?.next_workflow_step_id) {
+                                    const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
+                                    const matchedStep = (targetWf?.steps || []).find((s: any) => String(s.id) === String(act.next_workflow_step_id));
+                                    if (matchedStep) {
+                                        targetSeq = Number(matchedStep.step) || 1;
+                                    }
+                                }
+                                if (!targetSeq) targetSeq = 1;
+                                const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
+                                flowDestinationText = `Beralih ke ${targetWf?.name || 'Alur Lain'} (Tahap ${targetSeq})`;
                             } else if (isRollbackDirection) {
                                 flowDestinationText = `Mundur ke Step ${targetStepNum ?? 1}`;
                             } else if (isForwardDirection) {
@@ -614,7 +633,7 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                                     </div>
 
                                     {/* Right / Forward Handle: untuk Maju atau Cross-Workflow */}
-                                    {(isForwardDirection || isCrossWf) && (
+                                    {(isForwardDirection || isCrossWf || (!isRollbackDirection && !isReject)) && (
                                         <Handle
                                             type="source"
                                             position={Position.Right}
@@ -673,6 +692,8 @@ interface WorkflowFlowVisualizerProps {
         initiatorId?: string;
         picId?: string;
         creatorId?: string;
+        adhocId?: string;
+        adhocIds?: string[];
     };
     onOpenSimulationModal?: () => void;
 }
@@ -847,6 +868,12 @@ export function WorkflowFlowVisualizer({
         return users.find((u: any) => String(u.id) === String(simulationContext.creatorId)) || null;
     }, [simulationContext?.creatorId, users]);
 
+    const simAdhocUsers = useMemo(() => {
+        const ids = simulationContext?.adhocIds || (simulationContext?.adhocId ? [simulationContext.adhocId] : []);
+        if (ids.length === 0) return [];
+        return users.filter((u: any) => ids.includes(String(u.id)));
+    }, [simulationContext?.adhocIds, simulationContext?.adhocId, users]);
+
     const sortedPrimarySteps = useMemo(() => {
         return [...steps].sort((a, b) => (Number(a.step) || 0) - (Number(b.step) || 0));
     }, [steps]);
@@ -862,7 +889,7 @@ export function WorkflowFlowVisualizer({
 
         if (authorities && authorities.length > 0) {
             authorities.forEach((auth: any) => {
-                if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan'].includes(auth.authority_type)) {
+                if (auth.authority_type === 'custom' || ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc'].includes(auth.authority_type)) {
                     const customType = auth.authority_type === 'custom' ? (auth.role_id || auth.user_id) : auth.authority_type;
                     if (customType === 'initiator') {
                         criteriaParts.push('Inisiator');
@@ -907,6 +934,29 @@ export function WorkflowFlowVisualizer({
                             matchedUsersMap.set(String(simCreatorUser.id), {
                                 user: { ...simCreatorUser, department_name: deptName },
                                 reasons: ['Pembuat Kontrak (Simulasi)'],
+                            });
+                        }
+                    } else if (customType === 'adhoc_approvers' || customType === 'adhoc') {
+                        criteriaParts.push('Approver Tambahan');
+                        if (simAdhocUsers.length > 0) {
+                            simAdhocUsers.forEach((u: any) => {
+                                const deptName = departments.find((d: any) => String(d.id) === String(u.department_id))?.name;
+                                dynamicList.push({
+                                    type: 'adhoc_approvers',
+                                    label: 'Approver Tambahan (Ad-Hoc)',
+                                    description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
+                                    activeUser: u,
+                                });
+                                matchedUsersMap.set(String(u.id), {
+                                    user: { ...u, department_name: deptName },
+                                    reasons: ['Approver Tambahan (Simulasi)'],
+                                });
+                            });
+                        } else {
+                            dynamicList.push({
+                                type: 'adhoc_approvers',
+                                label: 'Approver Tambahan (Ad-Hoc)',
+                                description: 'Pengguna yang ditunjuk sebagai approver tambahan saat pengajuan.',
                             });
                         }
                     } else if (customType === 'atasan') {
@@ -1035,7 +1085,7 @@ export function WorkflowFlowVisualizer({
             dynamicRoles: dynamicList,
             criteriaSummary: criteriaParts.join(' • ') || '—',
         };
-    }, [departments, roles, users, simInitiatorUser, simPicUser, simCreatorUser]);
+    }, [departments, roles, users, simInitiatorUser, simPicUser, simCreatorUser, simAdhocUsers]);
 
     // Generator Node & Edge Layout for Multi-Workflow Grouping
     const generateLayout = useCallback(() => {
@@ -1149,18 +1199,20 @@ export function WorkflowFlowVisualizer({
             });
         }
 
-        // Peta node ID per workflow dan step number untuk menghubungkan edges secara akurat
+        // 2. Render Node Containers & Step Nodes
         const nodePositionMap = new Map<string, { nodeId: string; x: number; y: number }>();
 
-        // 2. Buat Group Nodes dan Step Nodes per Kolom Workflow
         workflowsToRender.forEach((wfItem, colIdx) => {
-            const colX = START_X + colIdx * (GROUP_WIDTH + COLUMN_GAP);
+            const colX = START_X + colIdx * (CARD_WIDTH + COLUMN_GAP);
             const stepCount = Math.max(1, wfItem.steps.length);
-            const groupHeight = GROUP_PADDING_TOP + (stepCount * (NODE_HEIGHT + VERTICAL_GAP)) - VERTICAL_GAP + GROUP_PADDING_BOTTOM;
-            const groupId = `group-workflow-${wfItem.id}`;
+            const groupHeight = Math.max(
+                400,
+                GROUP_PADDING_TOP + stepCount * NODE_HEIGHT + Math.max(0, stepCount - 1) * VERTICAL_GAP + GROUP_PADDING_BOTTOM
+            );
+            const groupId = `group-wf-${wfItem.id}`;
             const isPrimary = wfItem.isPrimary;
 
-            // Workflow Group Container Node (Background)
+            // Group Container Node
             generatedNodes.push({
                 id: groupId,
                 type: 'workflowGroupNode',
@@ -1199,6 +1251,8 @@ export function WorkflowFlowVisualizer({
                     position: { x: stepX, y: stepY },
                     data: {
                         step,
+                        allSteps: wfItem.steps,
+                        allWorkflows,
                         workflowId: wfItem.id,
                         workflowName: wfItem.workflow.name,
                         totalSteps: wfItem.steps.length,
@@ -1237,8 +1291,13 @@ export function WorkflowFlowVisualizer({
                             targetStepNum = Math.max(1, stepNum + Number(tConfig.offset ?? (isReject ? -1 : 1)));
                         }
                     } else if (act?.next_step_id) {
-                        const matched = wfItem.steps.find((s: any) => s.id === act.next_step_id);
-                        if (matched) targetStepNum = Number(matched.step) || null;
+                        const matched = (wfItem.steps || []).find((s: any) => String(s.id) === String(act.next_step_id));
+                        if (matched) {
+                            targetStepNum = Number(matched.step) || null;
+                        } else {
+                            const parsed = Number(act.next_step_id);
+                            targetStepNum = !isNaN(parsed) ? parsed : null;
+                        }
                     } else {
                         if (isReject && sIdx > 0) targetStepNum = 1;
                         else if (isApprove && sIdx < wfItem.steps.length - 1) targetStepNum = stepNum + 1;
@@ -1324,7 +1383,17 @@ export function WorkflowFlowVisualizer({
                         if (isCrossWf) {
                             totalCrossTransitions++;
                             const targetWfId = String(tConfig?.workflow_id || act.next_workflow_id || '');
-                            const targetSeq = Number(tConfig?.sequence || 1);
+                            let targetSeq = Number(tConfig?.sequence || 0);
+
+                            if (!targetSeq && act.next_workflow_step_id) {
+                                const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
+                                const matchedStep = (targetWf?.steps || []).find((s: any) => String(s.id) === String(act.next_workflow_step_id));
+                                if (matchedStep) {
+                                    targetSeq = Number(matchedStep.step) || 1;
+                                }
+                            }
+                            if (!targetSeq) targetSeq = 1;
+
                             const targetLookup = nodePositionMap.get(`${targetWfId}:${targetSeq}`);
                             const targetWf = (allWorkflows || []).find((w: any) => String(w.id) === targetWfId);
 
