@@ -239,9 +239,9 @@ export default function AgreementView({
             await loadVersions(true, true);
             const typeLabel = effectiveDocType === 'f1' ? 'Sub-dokumen F1' : effectiveDocType === 'f2' ? 'Sub-dokumen F2' : 'Draft Perjanjian';
             showToast(`${typeLabel} berhasil diunggah.`, 'success');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Upload failed', err);
-            showToast('Gagal mengupload agreement.', 'danger');
+            showToast(err.response?.data?.message || 'Gagal mengupload agreement.', 'danger');
         } finally {
             setUploading(false);
         }

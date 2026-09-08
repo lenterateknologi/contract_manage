@@ -163,7 +163,7 @@ class ContractPolicy
     private function canPerformEdit(User $user, Contract $contract, string $metaKey): bool
     {
         // Admin, Super Admin, Creator, and Initiator always have upload/edit permission for contract files
-        if ($user->isAdmin() || $user->isSuperAdmin() || $contract->created_by === $user->id || $contract->initiator_id === $user->id) {
+        if ($user->isAdmin() || $user->isSuperAdmin() || $contract->created_by === $user->id || $contract->initiated_by_id === $user->id) {
             return true;
         }
 
