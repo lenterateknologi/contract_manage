@@ -38,6 +38,7 @@ class ContractFilterTemplate extends Model
         'company_status',
         'division_status',
         'department_status',
+        'users_count',
     ];
 
     // Returns: null = "Sesuai Data User", [] = "Semua", [name,…] = list of names
@@ -208,6 +209,21 @@ class ContractFilterTemplate extends Model
             (bool) $this->can_change_department,
             'allowed_departments'
         );
+    }
+
+    public function getUsersCountAttribute(): int
+    {
+        $roleIds = Role::where('contract_filter_template_id', $this->id)->pluck('id')->toArray();
+        if (empty($roleIds)) {
+            return 0;
+        }
+
+        return User::whereIn('role_id', $roleIds)->count();
+    }
+
+    public function roles()
+    {
+        return $this->hasMany(Role::class, 'contract_filter_template_id');
     }
 
     protected function casts(): array

@@ -67,7 +67,7 @@ class WorkflowInitiatorAuthority extends Model
 
     public function department(): BelongsTo
     {
-        return $this->belongsTo(Division::class, 'department_id');
+        return $this->belongsTo(Department::class, 'department_id');
     }
 
     public function division(): BelongsTo

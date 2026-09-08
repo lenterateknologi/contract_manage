@@ -70,6 +70,7 @@ class DashboardType extends Model
         'role_names',
         'division_names',
         'department_names',
+        'users_count',
     ];
 
     public static function normalizeIds(mixed $val): array
@@ -136,6 +137,48 @@ class DashboardType extends Model
         }
 
         return Department::whereIn('id', $ids)->pluck('name')->join(', ') ?: '- (Semua Departemen)';
+    }
+
+    public function getUsersCountAttribute(): int
+    {
+        $roleIds = self::normalizeIds($this->role_ids ?? $this->getAttributeFromArray('role_ids'));
+        if (array_key_exists('role_id', $this->attributes) && ! empty($this->attributes['role_id']) && ! in_array($this->attributes['role_id'], $roleIds)) {
+            $roleIds[] = $this->attributes['role_id'];
+        }
+
+        $assignedRoleIds = Role::where('dashboard_type_id', $this->id)->pluck('id')->toArray();
+        $allRoleIds = array_values(array_unique(array_merge($roleIds, $assignedRoleIds)));
+
+        $divIds = self::normalizeIds($this->division_ids ?? $this->getAttributeFromArray('division_ids'));
+        if (array_key_exists('division_id', $this->attributes) && ! empty($this->attributes['division_id']) && ! in_array($this->attributes['division_id'], $divIds)) {
+            $divIds[] = $this->attributes['division_id'];
+        }
+
+        $deptIds = self::normalizeIds($this->department_ids ?? $this->getAttributeFromArray('department_ids'));
+        if (array_key_exists('department_id', $this->attributes) && ! empty($this->attributes['department_id']) && ! in_array($this->attributes['department_id'], $deptIds)) {
+            $deptIds[] = $this->attributes['department_id'];
+        }
+
+        $query = User::query();
+
+        if (! empty($allRoleIds)) {
+            $query->whereIn('role_id', $allRoleIds);
+        }
+
+        if (! empty($divIds)) {
+            $query->whereIn('division_id', $divIds);
+        }
+
+        if (! empty($deptIds)) {
+            $query->whereIn('department_id', $deptIds);
+        }
+
+        return $query->count();
+    }
+
+    public function roles()
+    {
+        return $this->hasMany(Role::class, 'dashboard_type_id');
     }
 
     public function role(): BelongsTo

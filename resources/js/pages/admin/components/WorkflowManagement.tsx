@@ -16,9 +16,24 @@ import {
     Tag,
     Trash2,
     UserCircle,
+    Users,
     XCircle,
+    Workflow as WorkflowIcon,
+    ArrowRight,
+    UserCheck,
+    FileSignature,
+    Sparkles,
+    Shield,
+    X,
 } from 'lucide-react';
 import { PageTable } from '@/components/ui/navigation/PageTable';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialogs/Dialog';
 import React, { useMemo, useState } from 'react';
 
 interface WorkflowManagementProps {
@@ -154,7 +169,13 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
     const openEdit = (w: any) => router.visit(route('admin.workflows.edit', w.id));
     const openCreate = () => router.visit(route('admin.workflows.create'));
 
+    const [previewWorkflow, setPreviewWorkflow] = useState<any | null>(null);
     const [togglingKey, setTogglingKey] = useState<string | null>(null);
+
+    const openPreview = (w: any, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setPreviewWorkflow(w);
+    };
 
     const toggleSelect = (id: string) => {
         setSelectedIds((prev) => {
@@ -305,6 +326,11 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                 <Tag size={13} /> Tipe Pengajuan
                             </div>
                         </th>
+                        <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
+                            <div className="flex items-center justify-end gap-1.5">
+                                <Users size={13} /> Akses Inisiator
+                            </div>
+                        </th>
                         <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
                             <div className="flex items-center justify-center gap-1.5">
                                 <Star size={13} /> Default
@@ -326,7 +352,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                 <tbody className="divide-y divide-border/40">
                     {grouped.size === 0 ? (
                         <tr>
-                            <td colSpan={8} className="py-16 text-center text-muted-foreground">
+                            <td colSpan={9} className="py-16 text-center text-muted-foreground">
                                 <GitBranch size={24} className="mx-auto mb-2 opacity-30" />
                                 <p>Belum ada alur kerja terdaftar</p>
                             </td>
@@ -336,7 +362,7 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                             <React.Fragment key={`group-${typeName}`}>
                                 {/* Category sub-header row */}
                                 <tr className="bg-muted/20 border-t border-border/50">
-                                    <td colSpan={8} className="px-4 py-2">
+                                    <td colSpan={9} className="px-4 py-2">
                                         <div className="flex items-center gap-2">
                                             <div className="h-1.5 w-1.5 rounded-full bg-primary/50" />
                                             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
@@ -403,27 +429,33 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                         </td>
 
                                         {/* Steps */}
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
+                                        <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => openPreview(row, e)}
+                                                title="Klik untuk melihat pratinjau tahapan alur kerja"
+                                                className="group inline-flex items-center gap-2 rounded-lg border border-transparent p-1 -m-1 transition-all hover:border-primary/30 hover:bg-primary/5 hover:shadow-2xs cursor-pointer focus:outline-none"
+                                            >
                                                 <div className="flex -space-x-1.5">
                                                     {[...Array(Math.min(row.steps_count || 0, 4))].map((_, i) => (
                                                         <div
                                                             key={i}
-                                                            className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary/10"
+                                                            className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary/10 group-hover:bg-primary/20 transition-colors"
                                                         >
                                                             <CheckCircle2 size={9} className="text-primary" />
                                                         </div>
                                                     ))}
                                                     {(row.steps_count || 0) > 4 && (
-                                                        <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-muted text-[8px] font-bold text-muted-foreground">
+                                                        <div className="flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-muted text-[8px] font-bold text-muted-foreground group-hover:bg-muted/80">
                                                             +{(row.steps_count || 0) - 4}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="text-[11px] font-medium text-foreground">
+                                                <span className="text-[11px] font-medium text-foreground group-hover:text-primary group-hover:underline flex items-center gap-1">
                                                     {row.steps_count || 0} Tahap
+                                                    <Eye size={11} className="opacity-0 group-hover:opacity-100 transition-opacity text-primary" />
                                                 </span>
-                                            </div>
+                                            </button>
                                         </td>
 
                                         {/* Submission type */}
@@ -439,23 +471,31 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                                         </span>
                                                     );
                                                 }
-                                                const visibleTypes = types.slice(0, 2);
-                                                const hasMore = types.length > 2;
+                                                const visibleTypes = types.slice(0, 1);
+                                                const hasMore = types.length > 1;
                                                 return (
                                                     <div className="flex flex-wrap gap-1 items-center">
                                                         {visibleTypes.map((t: string, idx: number) => (
-                                                            <span key={idx} className="inline-flex items-center rounded-md border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground">
+                                                            <span key={idx} className="inline-flex items-center rounded-md border border-border bg-muted/30 px-2 py-0.5 text-[10px] text-muted-foreground" title={types.join(', ')}>
                                                                 {t}
                                                             </span>
                                                         ))}
                                                         {hasMore && (
-                                                            <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
-                                                                +{types.length - 2}
+                                                            <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/5 px-1.5 py-0.5 text-[10px] font-medium text-primary" title={types.slice(1).join(', ')}>
+                                                                +{types.length - 1}
                                                             </span>
                                                         )}
                                                     </div>
                                                 );
                                             })()}
+                                        </td>
+
+                                        {/* User Count (Akses Inisiator) */}
+                                        <td className="px-4 py-3 text-right">
+                                            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground tabular-nums">
+                                                <Users size={11} className="text-muted-foreground" />
+                                                {(row.users_count ?? 0).toLocaleString()} User
+                                            </span>
                                         </td>
 
                                         {/* Default */}
@@ -528,6 +568,13 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                         >
                                             <div className="flex items-center justify-end gap-1">
                                                 <button
+                                                    onClick={(e) => openPreview(row, e)}
+                                                    title="Pratinjau Tahapan (Preview Steps)"
+                                                    className="flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-primary transition-all hover:border-primary/30 hover:bg-primary/10"
+                                                >
+                                                    <Eye size={13} />
+                                                </button>
+                                                <button
                                                     onClick={() => openEdit(row)}
                                                     title="Konfigurasi"
                                                     className="flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-muted-foreground transition-all hover:border-border hover:bg-muted/50 hover:text-foreground"
@@ -574,6 +621,251 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                 </tbody>
                 </table>
             </div>
+
+            {/* Modal Dialog Preview Tahapan Alur Kerja */}
+            <Dialog open={!!previewWorkflow} onOpenChange={(open) => !open && setPreviewWorkflow(null)}>
+                <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+                    {/* Header */}
+                    <div className="px-6 py-4 border-b border-border bg-muted/20 dark:bg-zinc-900 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                                <GitBranch size={20} />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <DialogTitle className="text-base font-bold text-foreground">
+                                        {previewWorkflow?.name || 'Pratinjau Alur Kerja'}
+                                    </DialogTitle>
+                                    {previewWorkflow?.workflow_type === 'main' && (
+                                        <span className="rounded border border-blue-200 bg-blue-50 dark:bg-blue-950/40 dark:border-blue-800 px-1.5 py-0.5 text-[9px] font-bold uppercase text-blue-700 dark:text-blue-300">
+                                            MASTER
+                                        </span>
+                                    )}
+                                    {previewWorkflow?.workflow_type === 'sub_workflow' && (
+                                        <span className="rounded border border-purple-200 bg-purple-50 dark:bg-purple-950/40 dark:border-purple-800 px-1.5 py-0.5 text-[9px] font-bold uppercase text-purple-700 dark:text-purple-300">
+                                            SUB-WF
+                                        </span>
+                                    )}
+                                </div>
+                                <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center flex-wrap gap-2">
+                                    {/* Tipe Kontrak */}
+                                    {(() => {
+                                        const types = previewWorkflow?.contract_type_name
+                                            ? previewWorkflow.contract_type_name.split(',').map((s: string) => s.trim()).filter(Boolean)
+                                            : [];
+                                        const firstType = types[0] || 'Global / Semua Tipe';
+                                        const remainingTypes = types.length - 1;
+
+                                        return (
+                                            <span className="inline-flex items-center gap-1">
+                                                Tipe:{' '}
+                                                <strong className="text-foreground" title={types.join(', ')}>
+                                                    {firstType}
+                                                </strong>
+                                                {remainingTypes > 0 && (
+                                                    <span
+                                                        className="rounded-md border border-primary/20 bg-primary/10 px-1 py-0.2 text-[9px] font-semibold text-primary cursor-help"
+                                                        title={types.slice(1).join(', ')}
+                                                    >
+                                                        +{remainingTypes}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        );
+                                    })()}
+                                    <span>•</span>
+                                    {/* Inisiator / Otoritas */}
+                                    {(() => {
+                                        const summary = previewWorkflow?.initiator_summary || 'Semua Staff';
+                                        const items = summary.split('|').map((s: string) => s.trim()).filter(Boolean);
+                                        const firstItem = items[0] || 'Semua Staff';
+                                        const remainingItems = items.length - 1;
+
+                                        return (
+                                            <span className="inline-flex items-center gap-1">
+                                                Inisiator:{' '}
+                                                <strong className="text-foreground" title={summary}>
+                                                    {firstItem}
+                                                </strong>
+                                                {remainingItems > 0 && (
+                                                    <span
+                                                        className="rounded-md border border-primary/20 bg-primary/10 px-1 py-0.2 text-[9px] font-semibold text-primary cursor-help"
+                                                        title={items.slice(1).join(' | ')}
+                                                    >
+                                                        +{remainingItems}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        );
+                                    })()}
+                                    <span>•</span>
+                                    <span>Total: <strong className="text-foreground">{(previewWorkflow?.steps || []).length} Tahapan</strong></span>
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Body: Step List Timeline */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[60vh]">
+                        {previewWorkflow && (!previewWorkflow.steps || previewWorkflow.steps.length === 0) ? (
+                            <div className="py-12 text-center text-muted-foreground">
+                                <Layers size={32} className="mx-auto mb-2 opacity-30" />
+                                <p className="text-sm font-medium">Alur kerja ini belum memiliki konfigurasi tahapan.</p>
+                                <p className="text-xs text-muted-foreground mt-1">Buka halaman edit untuk menambahkan tahapan approval.</p>
+                            </div>
+                        ) : (
+                            <div className="relative pl-6 space-y-4 before:absolute before:left-3 before:top-3 before:bottom-3 before:w-0.5 before:bg-border/60">
+                                {(previewWorkflow?.steps || []).map((step: any, index: number) => {
+                                    const stepAuthorities = step.approver_authorities || step.approverAuthorities || [];
+                                    const actions = step.actions || [];
+                                    const isFirst = index === 0;
+                                    const isLast = index === (previewWorkflow.steps.length - 1);
+
+                                    return (
+                                        <div key={step.id || index} className="relative group">
+                                            {/* Step Circle Indicator */}
+                                            <div className="absolute -left-6 top-2 flex h-6 w-6 -translate-x-1/2 items-center justify-center rounded-full border-2 border-background bg-primary text-[10px] font-bold text-white shadow-xs">
+                                                {step.step || index + 1}
+                                            </div>
+
+                                            {/* Step Card */}
+                                            <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs hover:border-primary/40 transition-colors">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <h4 className="text-sm font-semibold text-foreground">
+                                                                {step.label || step.description || `Tahap ${step.step || index + 1}`}
+                                                            </h4>
+                                                            {step.is_optional && (
+                                                                <span className="rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-400">
+                                                                    Opsional
+                                                                </span>
+                                                            )}
+                                                            {step.approver_type && (
+                                                                <span className="rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground capitalize">
+                                                                    Tipe: {step.approver_type.replace('_', ' ')}
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        {step.description && step.description !== step.label && (
+                                                            <p className="text-xs text-muted-foreground line-clamp-2">
+                                                                {step.description}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Authorities / Aktor yang berhak */}
+                                                <div className="mt-3 pt-3 border-t border-border/50 flex flex-col gap-2">
+                                                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+                                                        <UserCheck size={12} className="text-primary" />
+                                                        <span>Aktor / Otoritas Persetujuan:</span>
+                                                    </div>
+
+                                                    {stepAuthorities.length === 0 ? (
+                                                        <div className="text-[11px] text-muted-foreground italic pl-4">
+                                                            {step.approver_type === 'initiator' ? 'Inisiator Pengajuan' :
+                                                             step.approver_type === 'assigned_pic' ? 'PIC Legal yang Ditugaskan' :
+                                                             step.approver_type === 'atasan' ? 'Atasan Langsung Inisiator' :
+                                                             'Mengikuti konfigurasi default sistem'}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-wrap gap-1.5 pl-4">
+                                                            {stepAuthorities.map((auth: any, aIdx: number) => {
+                                                                const roleName = auth.role?.name || auth.role_id;
+                                                                const deptName = auth.department?.name || auth.department_id;
+                                                                const divName = auth.division?.name || auth.division_id;
+                                                                const userName = auth.user?.name || auth.user_id;
+
+                                                                const parts = [];
+                                                                if (roleName) parts.push(`Role: ${roleName}`);
+                                                                if (deptName) parts.push(`Dept: ${deptName}`);
+                                                                if (divName) parts.push(`Div: ${divName}`);
+                                                                if (userName) parts.push(`User: ${userName}`);
+                                                                if (auth.authority_type && auth.authority_type !== 'group' && auth.authority_type !== 'role') {
+                                                                    parts.push(auth.authority_type);
+                                                                }
+
+                                                                return (
+                                                                    <span
+                                                                        key={auth.id || aIdx}
+                                                                        className="inline-flex items-center gap-1 rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-foreground"
+                                                                    >
+                                                                        <Shield size={10} className="text-primary" />
+                                                                        {parts.join(' • ') || 'Otoritas Khusus'}
+                                                                    </span>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Actions / Tombol Aksi */}
+                                                {actions.length > 0 && (
+                                                    <div className="mt-2.5 pt-2.5 border-t border-border/40 flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-[10px] text-muted-foreground mr-1">Aksi Tersedia:</span>
+                                                        {actions.map((act: any, actIdx: number) => {
+                                                            const isApprove = act.action_code === 'approve';
+                                                            const isReject = act.action_code === 'reject';
+                                                            const label = act.alias || act.master_action_name || act.action_code || 'Aksi';
+
+                                                            return (
+                                                                <span
+                                                                    key={act.id || actIdx}
+                                                                    className={cn(
+                                                                        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold",
+                                                                        isApprove && "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+                                                                        isReject && "border border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
+                                                                        !isApprove && !isReject && "border border-border bg-muted text-muted-foreground"
+                                                                    )}
+                                                                >
+                                                                    {isApprove && <CheckCircle2 size={9} />}
+                                                                    {isReject && <XCircle size={9} />}
+                                                                    {label}
+                                                                </span>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="px-6 py-3 border-t border-border bg-muted/10 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                            Klik <strong>Buka Editor</strong> untuk mengubah konfigurasi lengkap.
+                        </span>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPreviewWorkflow(null)}
+                            >
+                                Tutup
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                className="gap-1.5"
+                                onClick={() => {
+                                    if (previewWorkflow) {
+                                        openEdit(previewWorkflow);
+                                    }
+                                }}
+                            >
+                                <GitBranch size={13} />
+                                Buka Editor Alur
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </PageTable>
     );
 }

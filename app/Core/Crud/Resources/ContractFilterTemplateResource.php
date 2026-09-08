@@ -29,6 +29,7 @@ class ContractFilterTemplateResource extends Resource
     {
         return [
             TextColumn::make('name', 'Nama Template')->sortable()->searchable(),
+            TextColumn::make('users_count', 'Total User')->alignRight(),
             TextColumn::make('company_group_status', 'Grup Perusahaan'),
             TextColumn::make('region_status', 'Wilayah (Region)'),
             TextColumn::make('company_status', 'Perusahaan'),

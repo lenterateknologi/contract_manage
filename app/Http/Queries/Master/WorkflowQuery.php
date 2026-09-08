@@ -21,9 +21,14 @@ class WorkflowQuery
                 'initiatorAuthorities.role:id,name',
                 'initiatorAuthorities.department:id,name',
                 'initiatorAuthorities.division:id,name',
-                'initiatorAuthorities.user:id,name',
+                'initiatorAuthorities.user:id,name,role_id',
                 'initiatorAuthorities.companyGroup:id,name',
                 'initiatorAuthorities.region:id,name',
+                'steps.actions',
+                'steps.approverAuthorities.role:id,name',
+                'steps.approverAuthorities.division:id,name',
+                'steps.approverAuthorities.department:id,name',
+                'steps.approverAuthorities.user:id,name,role_id',
             ])
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);

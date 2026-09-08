@@ -29,11 +29,14 @@ class RoleResource extends Resource
 
     public static array $with = ['contractFilterTemplate', 'dashboardType'];
 
+    public static array $withCount = ['users'];
+
     public static function table(): array
     {
         return [
             TextColumn::make('name', 'Nama Role')->sortable()->searchable(),
             TextColumn::make('description', 'Deskripsi')->sortable()->searchable(),
+            TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
             TextColumn::make('dashboardType.name', 'Tipe Dash')->sortable(),
             TextColumn::make('contractFilterTemplate.name', 'Filter Pengajuan')->sortable(),
             BooleanColumn::make('can_create_on_behalf', 'Buatkan Pengajuan')->sortable(),

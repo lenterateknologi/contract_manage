@@ -34,6 +34,7 @@ class DashboardTypeResource extends Resource
             TextColumn::make('role_names', 'Role Akses')->sortable(),
             TextColumn::make('division_names', 'Divisi')->sortable(),
             TextColumn::make('department_names', 'Departemen')->sortable(),
+            TextColumn::make('users_count', 'Total User')->alignRight(),
             BooleanColumn::make('show_overview', 'Ringkasan'),
             BooleanColumn::make('show_workload', 'Beban Kerja'),
             BooleanColumn::make('show_master_data', 'Master Data'),

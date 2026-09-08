@@ -77,6 +77,7 @@ class Workflow extends Model
         'initiator_divisions',
         'contract_type_name',
         'contract_type_ids',
+        'users_count',
     ];
 
     public function getInitiatorSummaryAttribute(): string
@@ -174,6 +175,51 @@ class Workflow extends Model
         }
 
         return $this->initiatorAuthorities->pluck('division_id')->filter()->unique()->values()->toArray();
+    }
+
+    public function getUsersCountAttribute(): int
+    {
+        $initiatorAuthorities = $this->relationLoaded('initiatorAuthorities')
+            ? $this->initiatorAuthorities
+            : $this->initiatorAuthorities()->get();
+
+        if ($initiatorAuthorities->isEmpty()) {
+            return User::count();
+        }
+
+        $userIds = [];
+        foreach ($initiatorAuthorities as $auth) {
+            $query = User::query();
+            if ($auth->authority_type === 'user' && $auth->user_id) {
+                $query->where('id', $auth->user_id);
+            } else {
+                if ($auth->role_id) {
+                    $query->where('role_id', $auth->role_id);
+                }
+                if ($auth->department_id) {
+                    $query->where(function ($sq) use ($auth) {
+                        $sq->where('department_id', $auth->department_id)
+                            ->orWhere('division_id', $auth->department_id);
+                    });
+                }
+                if ($auth->division_id) {
+                    $query->where('division_id', $auth->division_id);
+                }
+                if ($auth->company_group_id) {
+                    $query->where('company_group_id', $auth->company_group_id);
+                }
+                if ($auth->company_id) {
+                    $query->where('company_id', $auth->company_id);
+                }
+                if ($auth->region_id) {
+                    $query->where('region_id', $auth->region_id);
+                }
+            }
+
+            $userIds = array_merge($userIds, $query->pluck('id')->toArray());
+        }
+
+        return count(array_unique($userIds));
     }
 
     public function getContractTypeNameAttribute()
