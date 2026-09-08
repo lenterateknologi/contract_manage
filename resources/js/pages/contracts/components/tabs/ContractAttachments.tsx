@@ -69,7 +69,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 setPreviewLoading(true);
                 try {
                     const url = (previewAt as any).is_vendor_doc
-                        ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id)
+                        ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id, previewAt.file_name)
                         : `/api/contracts/${contract.id}/attachment/${previewAt.id}`;
 
                     const res = await axios.get(url, {
@@ -262,11 +262,11 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
         const isImage = /\.(jpe?g|png|gif|webp)$/i.test(fileName);
 
         const downloadUrl = (previewAt as any).is_vendor_doc
-            ? contractApi.vendorDocumentDownloadUrl(contract.id, previewAt.id)
+            ? contractApi.vendorDocumentDownloadUrl(contract.id, previewAt.id, previewAt.file_name)
             : contractApi.attachmentDownloadUrl(contract.id, previewAt.id);
 
         const previewUrl = (previewAt as any).is_vendor_doc
-            ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id)
+            ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id, previewAt.file_name)
             : `/api/contracts/${contract.id}/attachment/${previewAt.id}/preview`;
 
         return (
@@ -517,7 +517,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                             <a
                                                 href={
                                                     at.is_vendor_doc
-                                                        ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id)
+                                                        ? contractApi.vendorDocumentDownloadUrl(contract.id, at.id, at.file_name)
                                                         : contractApi.attachmentDownloadUrl(contract.id, at.id)
                                                 }
                                                 download
