@@ -57,6 +57,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                                 <option value="meta_ringkasan_klausul">Ringkasan Klausul (meta_ringkasan_klausul)</option>
                                 <option value="meta_ruang_lingkup">Ruang Lingkup (meta_ruang_lingkup)</option>
                                 <option value="meta_lampiran">Daftar Lampiran (meta_lampiran)</option>
+                                <option value="meta_tax_required">Status Pajak (meta_tax_required)</option>
                             </optgroup>
                             <optgroup label="Tanda Tangan & Persetujuan">
                                 <option value="meta_pic">PIC (meta_pic)</option>

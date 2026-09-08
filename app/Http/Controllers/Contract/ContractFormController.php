@@ -190,7 +190,38 @@ class ContractFormController extends Controller
             // --- Pihak Kedua identity ---
             if (! empty($formData['meta_p2_entity'])) {
                 $updates['p2_entity'] = $formData['meta_p2_entity'];
+
+                // --- Sync vendor_id on main contract when p2 entity name matches a vendor ---
+                if (! empty($formData['vendor_id'])) {
+                    // Explicit vendor_id override from form
+                    $contract->vendor_id = $formData['vendor_id'];
+                    $contract->save();
+                } else {
+                    // Check if current vendor name differs from what's submitted in form
+                    $currentVendorName = $contract->vendor?->vendor_name ?? '';
+                    $submittedEntityName = trim($formData['meta_p2_entity']);
+                    $nameChanged = strcasecmp($currentVendorName, $submittedEntityName) !== 0;
+
+                    if (! $contract->vendor_id || $nameChanged) {
+                        // Try to match by vendor name (case-insensitive)
+                        $matchedVendor = Vendor::whereRaw('LOWER(vendor_name) = ?', [strtolower($submittedEntityName)])
+                            ->first();
+                        if ($matchedVendor) {
+                            $contract->vendor_id = $matchedVendor->id;
+                            $contract->save();
+                        } elseif ($nameChanged && $contract->vendor_id) {
+                            // Vendor name in form no longer matches any vendor → clear vendor link
+                            // so the user must re-select from Informasi Kontrak dropdown
+                            // (Do NOT auto-clear, preserving existing link is safer)
+                        }
+                    }
+                }
+            } elseif (! empty($formData['vendor_id'])) {
+                // vendor_id provided directly (e.g. from a vendor dropdown in form)
+                $contract->vendor_id = $formData['vendor_id'];
+                $contract->save();
             }
+
             if (! empty($formData['meta_p2_signer'])) {
                 $updates['p2_signer'] = $formData['meta_p2_signer'];
             }
@@ -386,6 +417,10 @@ class ContractFormController extends Controller
         }
         if (empty($formData['meta_tgl_dibuat'])) {
             $formData['meta_tgl_dibuat'] = $contract->contract_date ? $contract->contract_date->toDateString() : now()->toDateString();
+        }
+        if (empty($formData['meta_tax_required'])) {
+            $taxReq = $contract->metadata['tax_required'] ?? false;
+            $formData['meta_tax_required'] = ($taxReq === true || $taxReq === '1' || $taxReq === 1 || $taxReq === 'Ya') ? 'Ya' : 'Tidak';
         }
 
         return $formData;

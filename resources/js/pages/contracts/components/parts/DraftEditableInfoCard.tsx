@@ -261,6 +261,11 @@ export function DraftEditableInfoCard({
                             onTaxRequiredChange={(newVal) => {
                                 setTaxRequired(newVal);
                             }}
+                            canEditVendor={selected.allow_vendor_edit !== false}
+                            canEditCategory={selected.allow_category_edit !== false}
+                            canEditPrice={selected.allow_price_edit !== false}
+                            canEditPeriod={selected.allow_period_edit !== false}
+                            canEditTaxToggle={selected.allow_tax_toggle_edit !== false}
                         />
                     </div>
                 )}

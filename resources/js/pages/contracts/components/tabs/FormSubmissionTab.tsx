@@ -158,9 +158,37 @@ function GenericFormTab({
             setFormData((prev) => {
                 const synced = { ...prev };
                 let hasChanged = false;
+
+                // Detect vendor change: compare current meta_p2_entity in form vs fresh autofill
+                const vendorRelatedFields = new Set([
+                    'meta_p2_entity',
+                    'meta_p2_signer',
+                    'meta_p2_signer_position',
+                    'meta_p2_alamat',
+                    'meta_lampiran', // vendor document/attachment list
+                ]);
+                const currentP2Entity = synced['meta_p2_entity'] ?? '';
+                const freshP2Entity = fields.find((f) => f.name === 'meta_p2_entity')
+                    ? getAutofillValue({ name: 'meta_p2_entity' }, selected, docType, users) ?? ''
+                    : '';
+                const vendorChanged = currentP2Entity && freshP2Entity && currentP2Entity !== freshP2Entity;
+
                 fields.forEach((f) => {
                     if (f.type !== 'kop_surat' && f.type !== 'form_title') {
+                        const isVendorField = vendorRelatedFields.has(f.name);
+                        const forceUpdate = isVendorField && vendorChanged;
                         const val = getAutofillValue(f, selected, docType, users);
+
+                        // For force-update (vendor changed): apply even if val is null/empty (clears stale data)
+                        if (forceUpdate) {
+                            const freshVal = val ?? '';
+                            if (synced[f.name] !== freshVal) {
+                                synced[f.name] = freshVal;
+                                hasChanged = true;
+                            }
+                            return;
+                        }
+
                         if (val !== null && val !== '') {
                             const currentVal = synced[f.name];
                             const isManualEdit = manualFields.has(f.name);
@@ -174,7 +202,7 @@ function GenericFormTab({
                                 if (!isManual && isDateField && currentVal) {
                                     return;
                                 }
-                                // ponytail: only update if value exists and differs, never clear non-empty user inputs
+                                // Update if: value differs AND (field is empty or manual sync)
                                 if (currentVal !== val && (!currentVal || isManual)) {
                                     synced[f.name] = val;
                                     hasChanged = true;
@@ -232,6 +260,27 @@ function GenericFormTab({
                         finalData[key] = savedData[key];
                     }
                 });
+
+                // --- Vendor change detection: if vendor has changed since last save, override all vendor-sourced fields ---
+                // Compare saved meta_p2_entity with current vendor name from contract
+                const vendorRelatedFields = [
+                    'meta_p2_entity',
+                    'meta_p2_signer',
+                    'meta_p2_signer_position',
+                    'meta_p2_alamat',
+                    'meta_lampiran', // vendor document/attachment list
+                ];
+                const savedP2Entity = savedData['meta_p2_entity'];
+                const currentP2Entity = autofilled['meta_p2_entity'] ?? '';
+                // If vendor name in saved data differs from current vendor on contract → replace all vendor-sourced fields
+                if (savedP2Entity && currentP2Entity && savedP2Entity !== currentP2Entity) {
+                    vendorRelatedFields.forEach((key) => {
+                        if (autofilled[key] !== undefined && autofilled[key] !== null) {
+                            // Replace with fresh autofill value (even if empty, to clear stale data)
+                            finalData[key] = autofilled[key];
+                        }
+                    });
+                }
 
                 setFormData(finalData);
                 setOriginalData(finalData);

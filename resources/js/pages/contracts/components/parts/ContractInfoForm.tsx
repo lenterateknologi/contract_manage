@@ -44,6 +44,12 @@ interface ContractInfoFormProps {
     inputCls: string;
     taxRequired: boolean;
     onTaxRequiredChange: (val: boolean) => void;
+    /** Per-field granular edit permissions (from workflow step meta) */
+    canEditVendor?: boolean;
+    canEditCategory?: boolean;
+    canEditPrice?: boolean;
+    canEditPeriod?: boolean;
+    canEditTaxToggle?: boolean;
 }
 
 const FieldLabel = ({ icon: Icon, children }: { icon?: any; children: React.ReactNode }) => (
@@ -80,6 +86,11 @@ export function ContractInfoForm({
     inputCls,
     taxRequired,
     onTaxRequiredChange,
+    canEditVendor = true,
+    canEditCategory = true,
+    canEditPrice = true,
+    canEditPeriod = true,
+    canEditTaxToggle = true,
 }: ContractInfoFormProps) {
     const vendorOptions = Array.isArray(vendors)
         ? vendors.map((v) => ({ value: String(v.id), label: v.name }))
@@ -237,13 +248,19 @@ export function ContractInfoForm({
             {selected.show_vendor !== false && (
                 <div className="flex flex-col gap-1.5">
                     <FieldLabel icon={Building2}>Pihak Kedua (Vendor)</FieldLabel>
-                    <SearchableSelect
-                        value={vendorId}
-                        onValueChange={setVendorId}
-                        options={vendorOptions}
-                        placeholder="Pilih Vendor"
-                        searchPlaceholder="Cari vendor..."
-                    />
+                    {canEditVendor ? (
+                        <SearchableSelect
+                            value={vendorId}
+                            onValueChange={setVendorId}
+                            options={vendorOptions}
+                            placeholder="Pilih Vendor"
+                            searchPlaceholder="Cari vendor..."
+                        />
+                    ) : (
+                        <span className="text-xs font-semibold text-foreground px-3 py-2 rounded-lg border border-border bg-muted/30 truncate">
+                            {selected.vendor?.name || vendorOptions.find((o) => o.value === vendorId)?.label || 'Tanpa Vendor'}
+                        </span>
+                    )}
                 </div>
             )}
 
@@ -251,13 +268,19 @@ export function ContractInfoForm({
             {selected.show_category !== false && (
                 <div className="flex flex-col gap-1.5">
                     <FieldLabel icon={Tag}>Kategori Kontrak</FieldLabel>
-                    <TreeSelect
-                        value={typeId}
-                        onValueChange={(val) => setTypeId(val)}
-                        items={types}
-                        placeholder="Pilih Kategori"
-                        disableParentSelection={true}
-                    />
+                    {canEditCategory ? (
+                        <TreeSelect
+                            value={typeId}
+                            onValueChange={(val) => setTypeId(val)}
+                            items={types}
+                            placeholder="Pilih Kategori"
+                            disableParentSelection={true}
+                        />
+                    ) : (
+                        <span className="text-xs font-semibold text-foreground px-3 py-2 rounded-lg border border-border bg-muted/30">
+                            {selected.contract_type || '—'}
+                        </span>
+                    )}
                 </div>
             )}
 
@@ -280,26 +303,34 @@ export function ContractInfoForm({
             {selected.show_period !== false && (
                 <div className="flex flex-col gap-1.5">
                     <FieldLabel icon={Calendar}>Masa Berlaku Kontrak</FieldLabel>
-                    <div className="grid grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[10px] text-muted-foreground font-medium">Tanggal Mulai</span>
-                            <Input
-                                type="date"
-                                value={contractDate}
-                                onChange={(e) => setContractDate(e.target.value)}
-                                size="sm"
-                            />
+                    {canEditPeriod ? (
+                        <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-muted-foreground font-medium">Tanggal Mulai</span>
+                                <Input
+                                    type="date"
+                                    value={contractDate}
+                                    onChange={(e) => setContractDate(e.target.value)}
+                                    size="sm"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-muted-foreground font-medium">Tanggal Selesai</span>
+                                <Input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    size="sm"
+                                />
+                            </div>
                         </div>
-                        <div className="flex flex-col gap-1">
-                            <span className="text-[10px] text-muted-foreground font-medium">Tanggal Selesai</span>
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                size="sm"
-                            />
-                        </div>
-                    </div>
+                    ) : (
+                        <span className="text-xs font-medium text-foreground px-3 py-2 rounded-lg border border-border bg-muted/30">
+                            {contractDate || endDate
+                                ? `${contractDate || '—'} s/d ${endDate || '—'}`
+                                : '—'}
+                        </span>
+                    )}
                 </div>
             )}
 
@@ -307,20 +338,28 @@ export function ContractInfoForm({
             {selected.show_price !== false && (
                 <div className="flex flex-col gap-1.5">
                     <FieldLabel icon={Coins}>Nilai / Harga Kontrak</FieldLabel>
-                    <Input
-                        value={(() => {
-                            if (!price) return '';
-                            const clean = String(price).replace(/\D/g, '');
-                            if (!clean) return '';
-                            return new Intl.NumberFormat('id-ID').format(parseInt(clean, 10));
-                        })()}
-                        onChange={(e) => {
-                            const raw = e.target.value.replace(/\D/g, '');
-                            setPrice(raw);
-                        }}
-                        placeholder="Contoh: 510.000.000..."
-                        size="sm"
-                    />
+                    {canEditPrice ? (
+                        <Input
+                            value={(() => {
+                                if (!price) return '';
+                                const clean = String(price).replace(/\D/g, '');
+                                if (!clean) return '';
+                                return new Intl.NumberFormat('id-ID').format(parseInt(clean, 10));
+                            })()}
+                            onChange={(e) => {
+                                const raw = e.target.value.replace(/\D/g, '');
+                                setPrice(raw);
+                            }}
+                            placeholder="Contoh: 510.000.000..."
+                            size="sm"
+                        />
+                    ) : (
+                        <span className="font-mono font-bold text-xs text-foreground px-3 py-2 rounded-lg border border-border bg-muted/30">
+                            {price
+                                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(parseFloat(price))
+                                : '—'}
+                        </span>
+                    )}
                 </div>
             )}
 
@@ -328,21 +367,31 @@ export function ContractInfoForm({
             {selected.show_tax_toggle !== false && (
                 <div className="flex flex-col gap-1.5">
                     <FieldLabel icon={Receipt}>Penentuan Pajak</FieldLabel>
-                    <label
-                        htmlFor="tax_required_checkbox"
-                        className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 hover:bg-muted/60 transition-colors"
-                    >
-                        <Checkbox
-                            id="tax_required_checkbox"
-                            checked={taxRequired}
-                            onCheckedChange={(c) => onTaxRequiredChange(!!c)}
-                        />
-                        <span className="text-xs font-medium text-foreground select-none">
-                            Dikenakan Pajak (PPN/PPh)
-                        </span>
-                    </label>
+                    {canEditTaxToggle ? (
+                        <label
+                            htmlFor="tax_required_checkbox"
+                            className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 hover:bg-muted/60 transition-colors"
+                        >
+                            <Checkbox
+                                id="tax_required_checkbox"
+                                checked={taxRequired}
+                                onCheckedChange={(c) => onTaxRequiredChange(!!c)}
+                            />
+                            <span className="text-xs font-medium text-foreground select-none">
+                                Dikenakan Pajak (PPN/PPh)
+                            </span>
+                        </label>
+                    ) : (
+                        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 opacity-60">
+                            <Checkbox id="tax_required_checkbox_ro" checked={taxRequired} disabled />
+                            <span className="text-xs font-medium text-foreground select-none">
+                                {taxRequired ? 'Dikenakan Pajak (PPN/PPh)' : 'Tanpa Pajak'}
+                            </span>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
     );
 }
+

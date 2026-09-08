@@ -87,7 +87,7 @@ class NotificationController extends Controller
         $approvals = Approval::query()
             ->where('user_id', $user->id)
             ->where('status', 'pending')
-            ->with(['contract', 'workflowStep'])
+            ->with(['contract.initiator', 'workflowStep'])
             ->latest()
             ->get()
             ->map(function ($a) {
