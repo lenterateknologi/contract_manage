@@ -68,6 +68,10 @@ export * from './uploads/FileUpload';
 
 // User
 export * from './user/Avatar';
+export * from './user/UserAvatar';
+
+// Icons & Icon Manager
+export * from './icons';
 
 // Utilities
 export * from './utilities/Collapsible';

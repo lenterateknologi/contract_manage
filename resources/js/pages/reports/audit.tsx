@@ -3,7 +3,7 @@ import { PageTable } from '@/components/ui/navigation/PageTable';
 import { Button } from '@/components/ui/buttons/Button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
-import { cn } from '@/lib/utils';
+import { cn, formatDate, formatDateTime } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
@@ -28,13 +28,7 @@ interface AuditData {
 
 const formatDateText = (dStr?: string) => {
     if (!dStr) return '';
-    try {
-        const [y, m, d] = dStr.split('-').map(Number);
-        const dt = new Date(y, m - 1, d);
-        return dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-    } catch {
-        return dStr;
-    }
+    return formatDate(dStr);
 };
 
 const getPresetRange = (type: 'today' | '7days' | '30days' | 'thisMonth' | 'lastMonth') => {
@@ -188,7 +182,7 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
             accessorKey: 'created_at',
             cell: (row: any) => (
                 <span className="text-text-desc text-sm whitespace-nowrap">
-                    {new Date(row.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} {new Date(row.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    {formatDateTime(row.created_at)}
                 </span>
             )
         },

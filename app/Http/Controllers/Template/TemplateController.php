@@ -13,10 +13,51 @@ use Inertia\Inertia;
 class TemplateController extends Controller
 {
     /**
+     * Check permission against role access mapping for ADMIN_TEMPLATES module.
+     */
+    private function checkPermission(string $action = 'read')
+    {
+        $user = Auth::user();
+        if (! $user) {
+            abort(401, 'Unauthorized');
+        }
+
+        if ($user->isAdmin() || in_array($user->role, ['Super Admin', 'Admin'])) {
+            return true;
+        }
+
+        $role = \App\Models\Role::firstWhere('name', $user->role);
+        if (! $role) {
+            abort(403, 'Akses ditolak: Role tidak valid.');
+        }
+
+        $module = \App\Models\Module::where('identifier', 'ADMIN_TEMPLATES')
+            ->orWhere('route', '/admin/templates')
+            ->first();
+
+        if (! $module) {
+            return true;
+        }
+
+        $access = \App\Models\AccessModule::where('role_id', $role->id)
+            ->where('module_id', $module->id)
+            ->first();
+
+        $column = 'can_'.$action;
+        if (! $access || ! ($access->{$column} ?? false)) {
+            abort(403, 'Role Anda ('.$user->role.') tidak memiliki izin untuk '.$action.' pada modul Template Dokumen.');
+        }
+
+        return true;
+    }
+
+    /**
      * Display the template management page.
      */
     public function index()
     {
+        $this->checkPermission('read');
+
         return Inertia::render('contract-templates/Index', [
             'folders' => TemplateFolder::with('creator')->withCount('templates')->get(),
             'templates' => ContractTemplate::with('folder', 'creator')->get(),
@@ -32,6 +73,8 @@ class TemplateController extends Controller
      */
     public function storeFolder(Request $request)
     {
+        $this->checkPermission('create');
+
         $request->validate([
             'name' => 'required|string|max:255',
             'parent_id' => 'nullable|exists:m_template_folders,id',
@@ -52,6 +95,8 @@ class TemplateController extends Controller
      */
     public function updateFolder(Request $request, TemplateFolder $folder)
     {
+        $this->checkPermission('update');
+
         $request->validate([
             'name' => 'required|string|max:255',
         ]);
@@ -69,6 +114,8 @@ class TemplateController extends Controller
      */
     public function destroyFolder(TemplateFolder $folder)
     {
+        $this->checkPermission('delete');
+
         $this->deleteFolderRecursively($folder);
 
         return back()->with('success', 'Folder berhasil dihapus.');
@@ -104,6 +151,8 @@ class TemplateController extends Controller
      */
     public function storeTemplate(Request $request)
     {
+        $this->checkPermission('create');
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -135,6 +184,8 @@ class TemplateController extends Controller
      */
     public function updateTemplate(Request $request, ContractTemplate $template)
     {
+        $this->checkPermission('update');
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -173,6 +224,8 @@ class TemplateController extends Controller
      */
     public function downloadTemplate(ContractTemplate $template)
     {
+        $this->checkPermission('read');
+
         if (Storage::disk('public')->exists($template->file_path)) {
             return Storage::disk('public')->download($template->file_path, $template->file_name);
         }
@@ -189,6 +242,8 @@ class TemplateController extends Controller
      */
     public function destroyTemplate(ContractTemplate $template)
     {
+        $this->checkPermission('delete');
+
         if (Storage::disk('public')->exists($template->file_path)) {
             Storage::disk('public')->delete($template->file_path);
         } elseif (Storage::exists($template->file_path)) {
@@ -205,6 +260,8 @@ class TemplateController extends Controller
      */
     public function moveFolder(Request $request, TemplateFolder $folder)
     {
+        $this->checkPermission('update');
+
         $request->validate([
             'parent_id' => 'nullable|exists:m_template_folders,id|different:id',
         ]);
@@ -219,6 +276,8 @@ class TemplateController extends Controller
      */
     public function moveTemplate(Request $request, ContractTemplate $template)
     {
+        $this->checkPermission('update');
+
         $request->validate([
             'template_folder_id' => 'nullable|exists:m_template_folders,id',
         ]);
@@ -233,6 +292,8 @@ class TemplateController extends Controller
      */
     public function bulkDestroy(Request $request)
     {
+        $this->checkPermission('bulk_delete');
+
         $request->validate([
             'folder_ids' => 'nullable|array',
             'folder_ids.*' => 'exists:m_template_folders,id',
@@ -272,6 +333,8 @@ class TemplateController extends Controller
      */
     public function bulkMove(Request $request)
     {
+        $this->checkPermission('update');
+
         $request->validate([
             'target_folder_id' => 'nullable|exists:m_template_folders,id',
             'folder_ids' => 'nullable|array',

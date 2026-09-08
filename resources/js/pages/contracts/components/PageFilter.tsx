@@ -1,7 +1,14 @@
 import React, { useMemo } from 'react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/buttons/Button';
-import { Calendar, ChevronDown, RotateCcw, SlidersHorizontal, X } from 'lucide-react';
+import { cn, formatDateRange } from '@/lib/utils';
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
+    Calendar,
+    ChevronDown,
+    RotateCcw,
+    SlidersHorizontal,
+    X,
+} = Icons;
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
@@ -50,12 +57,6 @@ function DateRangeField({
     const fromVal = typeof activeFilters[fromKey] === 'string' ? activeFilters[fromKey].split('T')[0] : '';
     const toVal = typeof activeFilters[toKey] === 'string' ? activeFilters[toKey].split('T')[0] : '';
 
-    const formatDateText = (s: string) => {
-        if (!s) return '';
-        const [y, m, d] = s.split('-');
-        return `${d}/${m}/${y}`;
-    };
-
     const hasDate = Boolean(fromVal || toVal);
 
     return (
@@ -79,7 +80,7 @@ function DateRangeField({
                                 >
                                     <Calendar size={10} className="shrink-0" />
                                     <span>
-                                        {formatDateText(fromVal) || '-'} – {formatDateText(toVal) || '-'}
+                                        {formatDateRange(fromVal, toVal)}
                                     </span>
                                     <button
                                         type="button"

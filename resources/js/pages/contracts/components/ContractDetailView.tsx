@@ -8,7 +8,9 @@ import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
 import { router } from '@inertiajs/react';
-import {
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
     AlertCircle,
     Archive,
     Building2,
@@ -40,7 +42,7 @@ import {
     UserPlus,
     Users,
     Zap,
-} from 'lucide-react';
+} = Icons;
 import React, { useMemo, useState, lazy, Suspense, useEffect } from 'react';
 
 import { DraftEditableInfoCard, RequesterInfoCard, VendorInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
@@ -543,6 +545,24 @@ const ContractDetailView = ({
     }, [tabs, detailTab, contract.workflow_step?.meta]);
 
     const currentActiveTab = tabs.find((t) => t.id === detailTab) || detailSidebarTabs.find((t) => t.id === detailTab);
+    const activeSidebarTab = detailSidebarTabs.find((t) => t.id === detailTab);
+    const activeSubChildren = activeSidebarTab?.children || [];
+
+    const activeSubId = useMemo(() => {
+        if (detailTab === 'documents') return docSubTab;
+        if (detailTab === 'parties') return partySubTab;
+        if (detailTab === 'history') return historySubTab;
+        if (detailTab === 'discussion') return discSubTab;
+        return undefined;
+    }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab]);
+
+    const handleSubTabChange = (subId: string) => {
+        if (detailTab === 'documents') setDocSubTab(subId as any);
+        else if (detailTab === 'parties') setPartySubTab(subId as any);
+        else if (detailTab === 'history') setHistorySubTab(subId as any);
+        else if (detailTab === 'discussion') setDiscSubTab(subId as any);
+    };
+
     const currentActiveSubLabel = useMemo(() => {
         if (detailTab === 'documents') {
             if (docSubTab === 'f1') return 'F1 (Permohonan)';
@@ -570,9 +590,9 @@ const ContractDetailView = ({
     return (
         <div className="mx-auto flex w-full max-w-full flex-1 flex-col relative h-full overflow-hidden">
             {/* Action & Status Header Bar (h-16 matching sub side nav, no shadow) */}
-            <div className="sticky top-0 z-50 flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between px-5 bg-background border-b border-border transition-all duration-200 box-border">
+            <div className="sticky top-0 z-50 flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between px-5 bg-background border-b border-border transition-all duration-200 box-border gap-3">
                 {/* Left Side: Document Title (Editable) + Section Breadcrumb */}
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-2.5 min-w-0 flex-shrink">
                     <div className="flex flex-col justify-center min-w-0">
                         {isEditingTitle && isDraftTitle ? (
                             <input
@@ -657,6 +677,38 @@ const ContractDetailView = ({
                     <div className="flex flex-col min-w-0 h-full min-h-0 overflow-hidden">
                         {contract.workflow_step?.meta?.show_document_detail !== false && (
                             <div className="bg-surface-base border-surface-border overflow-hidden rounded-xl border shadow-xs flex-1 flex flex-col min-h-0 h-full">
+                                {/* Content Card Header: Sub-tabs from Sub-sidebar */}
+                                {activeSubChildren && activeSubChildren.length > 1 && (
+                                    <div className="flex items-center justify-between px-4 py-2 border-b border-surface-border bg-surface-muted/30 shrink-0 gap-2">
+                                        <div className="flex items-center gap-1 overflow-x-auto">
+                                            {activeSubChildren.map((child) => {
+                                                const isActive = activeSubId === child.id;
+                                                const ChildIcon = child.icon;
+                                                return (
+                                                    <button
+                                                        key={child.id}
+                                                        type="button"
+                                                        onClick={() => handleSubTabChange(child.id)}
+                                                        className={cn(
+                                                            'flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap',
+                                                            isActive
+                                                                ? 'bg-surface-base text-primary shadow-xs border border-surface-border font-bold'
+                                                                : 'text-text-desc hover:text-text-main hover:bg-surface-muted/60'
+                                                        )}
+                                                    >
+                                                        {ChildIcon && (
+                                                            <ChildIcon
+                                                                size={14}
+                                                                className={isActive ? 'text-primary shrink-0' : 'text-text-desc shrink-0'}
+                                                            />
+                                                        )}
+                                                        <span>{child.label}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="flex flex-1 flex-col min-h-0 h-full overflow-hidden">
                                     <Suspense fallback={<TabSkeleton />}>
                                 {detailTab === 'documents' && (() => {

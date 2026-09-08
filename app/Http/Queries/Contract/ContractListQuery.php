@@ -21,7 +21,7 @@ class ContractListQuery
         'contractType:id,name,parent_id,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'contractTypeParent:id,name,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'submissionType:id,name',
-        'statusDetail:code,label',
+        'statusDetail:code,label,color,bg_color,icon',
         'approvals.approver:id,name,role_id,department_id,division_id,company_id,email',
         'approvals.workflowStep:id,step,description,step_category,workflow_id,meta',
         'approvals.workflowStep.workflow:id,name,contract_type_id,meta',

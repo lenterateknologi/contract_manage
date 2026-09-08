@@ -1,4 +1,5 @@
-import { cn, formatDateShort } from '@/lib/utils';
+import { cn, formatDateShort, getContractTypeBadgeConfig } from '@/lib/utils';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { router } from '@inertiajs/react';
 import { SectionTitle } from './SectionTitle';
 import { ContractItem } from './types';
@@ -10,28 +11,6 @@ const STATUS_ACCENT: Record<string, { border: string }> = {
     revision: { border: 'border-l-rose-500' },
     approved: { border: 'border-l-emerald-500' },
 };
-
-// Premium, soft badge config for statuses
-const STATUS_BADGE_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-    draft: { label: 'Draft', color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-500/10 border-slate-500/20', dot: 'bg-slate-400' },
-    in_review: { label: 'Review', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', dot: 'bg-amber-500' },
-    revision: { label: 'Revisi', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20', dot: 'bg-rose-500' },
-    approved: {
-        label: 'Disetujui',
-        color: 'text-emerald-600 dark:text-emerald-400',
-        bg: 'bg-emerald-500/10 border-emerald-500/20',
-        dot: 'bg-emerald-500',
-    },
-};
-
-// Sleek palette for contract type badges
-const TYPE_COLORS = [
-    'bg-violet-500/10 text-violet-600 border-violet-500/20 dark:text-violet-400',
-    'bg-info/10 text-info border-info/20',
-    'bg-cyan-500/10 text-cyan-600 border-cyan-500/20 dark:text-cyan-400',
-    'bg-teal-500/10 text-teal-600 border-teal-500/20 dark:text-teal-400',
-    'bg-indigo-500/10 text-indigo-600 border-indigo-500/20 dark:text-indigo-400',
-];
 
 interface RecentContractsProps {
     items: ContractItem[];
@@ -73,10 +52,10 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                 </td>
                             </tr>
                         ) : (
-                            items.map((c, idx) => {
-                                const statusCfg = STATUS_BADGE_CONFIG[c.status] ?? STATUS_BADGE_CONFIG.draft;
+                            items.map((c) => {
                                 const accentCfg = STATUS_ACCENT[c.status] ?? STATUS_ACCENT.draft;
-                                const typeColor = TYPE_COLORS[idx % TYPE_COLORS.length];
+                                const cleanType = (c.type ?? '').replace('Perjanjian ', '').replace('Addendum / ', '').replace('Persetujuan ', '');
+                                const typeBadge = cleanType ? getContractTypeBadgeConfig(cleanType) : null;
 
                                 return (
                                     <tr
@@ -104,29 +83,26 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
 
                                         {/* Tipe — colorful badge */}
                                         <td className="hidden px-5 py-3.5 md:table-cell">
-                                            <span
-                                                className={cn(
-                                                    'inline-block rounded-full border px-2.5 py-0.5 text-[9px] font-medium tracking-wide whitespace-nowrap uppercase',
-                                                    typeColor,
-                                                )}
-                                                title={c.type ?? ''}
-                                            >
-                                                {(c.type ?? '—').replace('Perjanjian ', '').replace('Addendum / ', '').replace('Persetujuan ', '')}
-                                            </span>
+                                            {typeBadge ? (
+                                                <span
+                                                    className={cn(
+                                                        'inline-block rounded-full border px-2.5 py-0.5 text-[9px] font-medium tracking-wide whitespace-nowrap uppercase',
+                                                        typeBadge.bgClass,
+                                                        typeBadge.textClass,
+                                                        typeBadge.borderClass,
+                                                    )}
+                                                    title={c.type ?? ''}
+                                                >
+                                                    {cleanType}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground text-[10px]">—</span>
+                                            )}
                                         </td>
 
-                                        {/* Status — colored badge */}
+                                        {/* Status — StatusBadge */}
                                         <td className="px-5 py-3.5">
-                                            <span
-                                                className={cn(
-                                                    'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium',
-                                                    statusCfg.bg,
-                                                    statusCfg.color,
-                                                )}
-                                            >
-                                                <span className={cn('h-1.5 w-1.5 animate-pulse rounded-full', statusCfg.dot)} />
-                                                {statusCfg.label}
-                                            </span>
+                                            <StatusBadge status={c.status} />
                                         </td>
 
                                         {/* Tanggal */}

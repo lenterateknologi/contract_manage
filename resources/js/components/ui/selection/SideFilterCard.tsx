@@ -12,7 +12,7 @@ import {
     Calendar,
     MoreVertical
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
@@ -93,8 +93,7 @@ function DateRangeCategoryOptions({
 
     const formatDateText = (s: string) => {
         if (!s) return '';
-        const [y, m, d] = s.split('-');
-        return `${d}/${m}/${y}`;
+        return formatDate(s);
     };
 
     return (

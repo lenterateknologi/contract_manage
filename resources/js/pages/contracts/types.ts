@@ -282,6 +282,7 @@ export interface Contract {
         label?: string;
         color?: string;
         bg_color?: string;
+        icon?: string | null;
     } | null;
 }
 

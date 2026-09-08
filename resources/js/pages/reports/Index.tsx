@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { FilterCategory, FilterPopover } from '@/components/ui/selection/FilterPopover';
-import { cn } from '@/lib/utils';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { cn, formatDate, formatDateTime, formatRelativeTime } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
@@ -278,25 +279,10 @@ function ContractRegistryTable({ contracts }: { contracts: any[] }) {
                                 <td className="px-4 py-3 text-text-soft uppercase font-bold">{c.type || 'N/A'}</td>
                                 <td className="px-4 py-3 text-text-soft uppercase font-semibold">{c.creator}</td>
                                 <td className="px-4 py-3 text-text-soft font-semibold">
-                                    {new Date(c.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                    {formatDate(c.created_at)}
                                 </td>
                                 <td className="px-4 py-3 text-center">
-                                    <span className={cn(
-                                        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                                        c.status === 'approved' ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
-                                        c.status === 'pending' ? "bg-amber-50 text-amber-700 border border-amber-200" :
-                                        c.status === 'rejected' ? "bg-rose-50 text-rose-700 border border-rose-200" :
-                                        "bg-slate-50 text-slate-700 border border-slate-200"
-                                    )}>
-                                        <span className={cn(
-                                            "h-1.5 w-1.5 rounded-full",
-                                            c.status === 'approved' ? "bg-emerald-500" :
-                                            c.status === 'pending' ? "bg-amber-500" :
-                                            c.status === 'rejected' ? "bg-rose-500" :
-                                            "bg-slate-400"
-                                        )} />
-                                        {c.status}
-                                    </span>
+                                    <StatusBadge status={c.status} />
                                 </td>
                                 <td className="px-4 py-3 text-right font-mono font-semibold text-text-soft">{formatRelativeTime(c.created_at)}</td>
                                 <td className="px-4 py-3 font-bold text-text-soft uppercase">{c.current_step}</td>
@@ -334,7 +320,7 @@ function AuditTrailTable({ histories }: { histories: any[] }) {
                             return (
                                 <tr key={h.id} className="hover:bg-surface-muted/50 transition-colors">
                                     <td className="px-4 py-3 text-text-desc text-sm whitespace-nowrap">
-                                        {new Date(h.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} {new Date(h.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                        {formatDateTime(h.created_at)}
                                     </td>
                                     <td className="px-4 py-3 font-mono text-sm text-text-main">
                                         #{(h.form_no || h.contract_no || '').split('/').pop()}
@@ -369,23 +355,5 @@ function EmptyState({ label }: { label: string }) {
             <span className="text-sm font-medium tracking-tight">Tidak ada {label} ditemukan dengan filter ini.</span>
         </div>
     );
-}
-
-function formatRelativeTime(dateString: string) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    const diffInDays = Math.floor(diffInSeconds / 86400);
-
-    if (diffInDays === 0) {
-        if (diffInSeconds < 60) return 'Baru saja';
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} mnt lalu`;
-        return `${Math.floor(diffInSeconds / 3600)} jam lalu`;
-    }
-    if (diffInDays === 1) return 'Kemarin';
-    if (diffInDays < 7) return `${diffInDays} hari lalu`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} minggu lalu`;
-    if (diffInDays < 365) return `${Math.floor(diffInDays / 30)} bulan lalu`;
-    return `${Math.floor(diffInDays / 365)} tahun lalu`;
 }
 

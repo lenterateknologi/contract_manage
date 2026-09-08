@@ -1,28 +1,29 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-export interface TimelineProps extends React.HTMLAttributes<HTMLOListElement> {}
+export interface TimelineProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export const Timeline = React.forwardRef<HTMLOListElement, TimelineProps>(
-    ({ className, ...props }, ref) => (
-        <ol
-            ref={ref}
-            className={cn('relative flex flex-col gap-0 border-l-2 border-surface-border/60 ml-3 pl-6 py-1', className)}
-            {...props}
-        />
+export const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
+    ({ className, children, ...props }, ref) => (
+        <div ref={ref} className={cn('relative', className)} {...props}>
+            <div className="absolute top-3 bottom-3 left-[11px] w-px bg-border/60" />
+            <div className="flex flex-col gap-3">
+                {children}
+            </div>
+        </div>
     ),
 );
 Timeline.displayName = 'Timeline';
 
-export interface TimelineItemProps extends React.LiHTMLAttributes<HTMLLIElement> {
+export interface TimelineItemProps extends React.HTMLAttributes<HTMLDivElement> {
     status?: 'completed' | 'active' | 'rejected' | 'waiting' | 'skipped';
 }
 
-export const TimelineItem = React.forwardRef<HTMLLIElement, TimelineItemProps>(
-    ({ className, status = 'waiting', ...props }, ref) => (
-        <li
+export const TimelineItem = React.forwardRef<HTMLDivElement, TimelineItemProps>(
+    ({ className, ...props }, ref) => (
+        <div
             ref={ref}
-            className={cn('relative pb-2 last:pb-0 group/timeline-item', className)}
+            className={cn('relative flex gap-3 group/timeline-item', className)}
             {...props}
         />
     ),
@@ -37,21 +38,25 @@ export const TimelineIcon = React.forwardRef<HTMLDivElement, TimelineIconProps>(
     ({ className, status = 'waiting', children, style, ...props }, ref) => {
         return (
             <div
-                ref={ref}
-                style={style}
-                className={cn(
-                    'absolute -left-[37px] top-0 flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold shadow-xs transition-all duration-200 ring-4 ring-surface-base',
-                    status === 'completed' && !style?.backgroundColor && 'bg-emerald-500 text-white dark:bg-emerald-600',
-                    status === 'rejected' && !style?.backgroundColor && 'bg-rose-500 text-white dark:bg-rose-600',
-                    status === 'active' && !style?.backgroundColor && 'bg-amber-500 text-white animate-pulse shadow-md ring-amber-500/20',
-                    status === 'active' && !!style?.backgroundColor && 'text-white animate-pulse shadow-md',
-                    status === 'skipped' && !style?.backgroundColor && 'bg-slate-300 text-slate-600 dark:bg-zinc-700 dark:text-zinc-400 opacity-60',
-                    status === 'waiting' && !style?.backgroundColor && 'bg-surface-muted text-text-soft border border-surface-border',
-                    className,
-                )}
-                {...props}
+                className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background ring-1 ring-border/80 shadow-2xs"
             >
-                {children}
+                <div
+                    ref={ref}
+                    style={style}
+                    className={cn(
+                        'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200',
+                        status === 'completed' && !style?.backgroundColor && 'bg-emerald-500 text-white dark:bg-emerald-600',
+                        status === 'rejected' && !style?.backgroundColor && 'bg-rose-500 text-white dark:bg-rose-600',
+                        status === 'active' && !style?.backgroundColor && 'bg-primary text-primary-foreground animate-pulse shadow-xs',
+                        status === 'active' && !!style?.backgroundColor && 'text-white animate-pulse shadow-xs',
+                        status === 'skipped' && !style?.backgroundColor && 'bg-muted text-muted-foreground opacity-60',
+                        status === 'waiting' && !style?.backgroundColor && 'bg-muted text-muted-foreground',
+                        className,
+                    )}
+                    {...props}
+                >
+                    {children}
+                </div>
             </div>
         );
     },
@@ -65,8 +70,7 @@ export const TimelineContent = React.forwardRef<HTMLDivElement, TimelineContentP
         <div
             ref={ref}
             className={cn(
-                'relative flex w-full flex-col gap-1.5 min-w-0',
-                'before:absolute before:top-[11px] before:-left-6 before:h-px before:w-5 before:bg-surface-border/60',
+                'flex min-w-0 flex-1 flex-col',
                 className,
             )}
             {...props}

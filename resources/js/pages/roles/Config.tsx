@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/feedback/Toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/dialogs/Sheet';
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -38,16 +39,25 @@ import {
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Head, router, useForm } from '@inertiajs/react';
-import {
+import { AppIcon, Icons, type LucideIcon } from '@/components/ui';
+import React, { useEffect, useMemo, useState } from 'react';
+
+const {
     ArrowDown,
     ArrowUp,
     Check,
+    CheckCircle2,
     CheckSquare,
     ChevronDown,
+    Download,
     Edit2,
     Eye,
+    FileText,
     Filter,
+    FolderPlus,
+    FolderSync,
     GripVertical,
+    Info,
     Key,
     Layers,
     LayoutGrid,
@@ -60,6 +70,7 @@ import {
     Save,
     Scale,
     Search,
+    Settings,
     Shield,
     ShieldAlert,
     ShieldCheck,
@@ -70,8 +81,7 @@ import {
     Trash2,
     UserCheck,
     X,
-} from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+} = Icons;
 
 // --- Shared Constants & Types ---
 const PERMISSIONS = ['can_read', 'can_create', 'can_update', 'can_delete', 'can_approve', 'can_bulk_approve', 'can_bulk_delete'] as const;
@@ -271,6 +281,7 @@ const ModernModuleRow = React.memo(
         onSelect,
         onToggle,
         onSetPreset,
+        onOpenSideConfig,
     }: {
         module: Module;
         access: any;
@@ -278,6 +289,7 @@ const ModernModuleRow = React.memo(
         onSelect: (moduleId: string) => void;
         onToggle: (moduleId: string, permission: Permission, checked: boolean) => void;
         onSetPreset: (moduleId: string, preset: PresetLevel) => void;
+        onOpenSideConfig: (module: Module) => void;
     }) => {
         const status = getPermissionLevel(access);
         const StatusIcon = status.icon;
@@ -297,14 +309,21 @@ const ModernModuleRow = React.memo(
                         className="border-surface-border data-[state=checked]:bg-primary data-[state=checked]:border-primary h-4 w-4 rounded-md transition-all active:scale-90 shrink-0 cursor-pointer"
                         title={isSelected ? 'Batalkan pilihan' : 'Pilih untuk bulk edit'}
                     />
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
+                    <div 
+                        onClick={() => onOpenSideConfig(module)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 cursor-pointer hover:bg-primary/20 transition-colors"
+                        title="Klik untuk konfigurasi detail modul"
+                    >
                         {module.icon && SELECTABLE_ICONS[module.icon]
                             ? React.createElement(SELECTABLE_ICONS[module.icon], { size: 16 })
                             : <LayoutGrid size={16} />}
                     </div>
-                    <div className="flex flex-col min-w-0">
+                    <div 
+                        onClick={() => onOpenSideConfig(module)}
+                        className="flex flex-col min-w-0 cursor-pointer group"
+                    >
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-text-main truncate">
+                            <span className="text-xs font-bold text-text-main truncate group-hover:text-primary transition-colors">
                                 {module.name}
                             </span>
                         </div>
@@ -322,7 +341,11 @@ const ModernModuleRow = React.memo(
                 </div>
 
                 {/* Active Permission Badges */}
-                <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+                <div 
+                    onClick={() => onOpenSideConfig(module)}
+                    className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0 cursor-pointer"
+                    title="Buka panel konfigurasi izin"
+                >
                     {PERMISSIONS.map((p) => {
                         const isGranted = !!access?.[p];
                         const cfg = PERMISSION_CONFIG[p];
@@ -364,6 +387,18 @@ const ModernModuleRow = React.memo(
                         <span>{status.label}</span>
                     </span>
 
+                    {/* Side Config Button */}
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onOpenSideConfig(module)}
+                        className="h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 hover:text-primary cursor-pointer border border-surface-border/70 bg-surface-muted/40"
+                        title="Buka Side Config izin lengkap"
+                    >
+                        <SlidersHorizontal size={12} />
+                        <span className="hidden sm:inline">Side Config</span>
+                    </Button>
+
                     {/* Permission Dropdown Trigger */}
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -372,7 +407,7 @@ const ModernModuleRow = React.memo(
                                 size="sm"
                                 className="h-8 px-2.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border-surface-border bg-surface-muted/60 hover:bg-surface-border/80 cursor-pointer"
                             >
-                                <span>Kelola Izin</span>
+                                <span>Preset</span>
                                 <ChevronDown size={12} className="text-text-desc" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -423,38 +458,13 @@ const ModernModuleRow = React.memo(
 
                             <DropdownMenuSeparator className="my-1 bg-surface-border" />
 
-                            <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-text-desc px-2 py-1">
-                                Izin Granular
-                            </DropdownMenuLabel>
-                            {PERMISSIONS.map((p) => {
-                                const cfg = PERMISSION_CONFIG[p];
-                                const Icon = cfg.icon;
-                                const isChecked = !!access?.[p];
-
-                                return (
-                                    <DropdownMenuItem
-                                        key={p}
-                                        onSelect={(e) => e.preventDefault()}
-                                        onClick={() => onToggle(module.id, p, !isChecked)}
-                                        className="cursor-pointer rounded-lg py-1.5 px-2 text-xs font-medium flex items-center justify-between hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-2 min-w-0 pr-2">
-                                            <Icon size={14} className={cn('shrink-0', cfg.colorClass)} />
-                                            <span className="text-xs font-medium text-text-main truncate">{cfg.label}</span>
-                                        </div>
-                                        <div
-                                            className={cn(
-                                                'h-4 w-4 rounded flex items-center justify-center border transition-all shrink-0',
-                                                isChecked
-                                                    ? 'bg-primary border-primary text-primary-foreground'
-                                                    : 'border-surface-border bg-surface-muted/40',
-                                            )}
-                                        >
-                                            {isChecked && <Check size={11} strokeWidth={3} />}
-                                        </div>
-                                    </DropdownMenuItem>
-                                );
-                            })}
+                            <DropdownMenuItem
+                                onClick={() => onOpenSideConfig(module)}
+                                className="cursor-pointer rounded-lg text-xs font-bold text-primary flex items-center gap-2 py-1.5 px-2 hover:bg-primary/10"
+                            >
+                                <SlidersHorizontal size={14} className="shrink-0" />
+                                <span>Buka Konfigurasi Detail</span>
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -462,6 +472,321 @@ const ModernModuleRow = React.memo(
         );
     },
 );
+
+// --- MODULE ACCESS SIDE CONFIG (DRAWER / SHEET PANEL) ---
+interface ModuleAccessSideConfigProps {
+    module: Module | null;
+    role: Role;
+    access: any;
+    onClose: () => void;
+    onToggle: (moduleId: string, permission: Permission, checked: boolean) => void;
+    onSetPreset: (moduleId: string, preset: PresetLevel) => void;
+}
+
+const ModuleAccessSideConfig: React.FC<ModuleAccessSideConfigProps> = ({
+    module,
+    role,
+    access,
+    onClose,
+    onToggle,
+    onSetPreset,
+}) => {
+    if (!module) return null;
+
+    const status = getPermissionLevel(access);
+    const StatusIcon = status.icon;
+
+    const isTemplatesModule = module.identifier === 'ADMIN_TEMPLATES';
+    const isFormsModule = module.identifier === 'ADMIN_FORMS';
+
+    return (
+        <Sheet open={!!module} onOpenChange={(open) => { if (!open) onClose(); }}>
+            <SheetContent className="w-full sm:max-w-xl md:max-w-2xl overflow-y-auto p-0 flex flex-col bg-surface-card border-l border-surface-border z-50">
+                {/* Header */}
+                <div className="p-6 pb-4 border-b border-surface-border bg-gradient-to-b from-primary/5 via-transparent to-transparent">
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-3.5">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
+                                {module.icon && SELECTABLE_ICONS[module.icon]
+                                    ? React.createElement(SELECTABLE_ICONS[module.icon], { size: 22 })
+                                    : <LayoutGrid size={22} />}
+                            </div>
+                            <div className="flex flex-col">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h2 className="text-base font-bold text-text-main">
+                                        {module.name}
+                                    </h2>
+                                    <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border', status.badgeClass)}>
+                                        <StatusIcon size={11} />
+                                        {status.label}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-text-desc">
+                                    <span className="font-mono bg-surface-muted px-1.5 py-0.5 rounded border border-surface-border text-[10.5px]">
+                                        {module.identifier || 'system.module'}
+                                    </span>
+                                    {module.route && (
+                                        <span className="text-[11px] text-text-desc/70">
+                                            {module.route}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Role Target Info Banner */}
+                    <div className="mt-4 p-3 rounded-xl bg-surface-muted/60 border border-surface-border flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2 text-text-main font-medium">
+                            <Shield size={14} className="text-primary shrink-0" />
+                            <span>Konfigurasi Izin Role: <strong className="text-primary font-bold">{role.name}</strong></span>
+                        </div>
+                        <span className="text-[10px] text-text-desc font-mono">ID: {role.id}</span>
+                    </div>
+                </div>
+
+                <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+                    {/* Special Context Banner */}
+                    {isTemplatesModule && (
+                        <div className="p-4 rounded-xl bg-sky-500/10 border border-sky-500/30 space-y-2">
+                            <div className="flex items-center gap-2 text-sky-700 dark:text-sky-300 font-bold text-xs">
+                                <Info size={14} className="shrink-0" />
+                                <span>Panduan Otorisasi Document & Contract Templates</span>
+                            </div>
+                            <p className="text-[11.5px] text-sky-900 dark:text-sky-200 leading-relaxed">
+                                Modul ini mengontrol manajemen berkas template dokumen kontrak.
+                            </p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-sky-800 dark:text-sky-200/90 pt-1">
+                                <div className="flex items-start gap-1.5">
+                                    <Check size={13} className="text-sky-600 mt-0.5 shrink-0" />
+                                    <span><strong>Lihat & Download:</strong> Kontrol akses membuka halaman dan mengunduh berkas template (.docx / .pdf).</span>
+                                </div>
+                                <div className="flex items-start gap-1.5">
+                                    <Check size={13} className="text-sky-600 mt-0.5 shrink-0" />
+                                    <span><strong>Mode Inisiator / CRUD:</strong> Membuat folder baru, upload file, rename, dan memindahkan dokumen.</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isFormsModule && (
+                        <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 space-y-2">
+                            <div className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300 font-bold text-xs">
+                                <Info size={14} className="shrink-0" />
+                                <span>Panduan Otorisasi Form Management & Builder</span>
+                            </div>
+                            <p className="text-[11.5px] text-indigo-900 dark:text-indigo-200 leading-relaxed">
+                                Mengatur perizinan pembuatan form dinamis, pembukaan editor Form Builder, impor skema, serta penghapusan template form.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Quick Preset Cards */}
+                    <div>
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-text-desc flex items-center gap-1.5">
+                                <Sparkles size={13} className="text-primary" />
+                                <span>Preset Akses Cepat</span>
+                            </h3>
+                            <span className="text-[10.5px] text-text-desc/70">Klik untuk mengatur otomatis</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <button
+                                type="button"
+                                onClick={() => onSetPreset(module.id, 'full')}
+                                className={cn(
+                                    'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                    status.level === 'full'
+                                        ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/50'
+                                        : 'bg-surface-card border-surface-border hover:border-emerald-500/30 hover:bg-emerald-500/5',
+                                )}
+                            >
+                                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+                                    <ShieldCheck size={16} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-xs font-bold text-text-main">Akses Penuh</span>
+                                    <span className="text-[10.5px] text-text-desc mt-0.5">Semua izin CRUD, Download, Approve, Bulk Delete</span>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => onSetPreset(module.id, 'editor')}
+                                className={cn(
+                                    'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                    status.level === 'editor'
+                                        ? 'bg-blue-500/10 border-blue-500/50 ring-1 ring-blue-500/50'
+                                        : 'bg-surface-card border-surface-border hover:border-blue-500/30 hover:bg-blue-500/5',
+                                )}
+                            >
+                                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 shrink-0">
+                                    <Edit2 size={16} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-xs font-bold text-text-main">Mode Inisiator / Editor</span>
+                                    <span className="text-[10.5px] text-text-desc mt-0.5">Lihat, Download, Upload/Tambah, Ubah/Pindah</span>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => onSetPreset(module.id, 'read')}
+                                className={cn(
+                                    'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                    status.level === 'read'
+                                        ? 'bg-sky-500/10 border-sky-500/50 ring-1 ring-sky-500/50'
+                                        : 'bg-surface-card border-surface-border hover:border-sky-500/30 hover:bg-sky-500/5',
+                                )}
+                            >
+                                <div className="p-2 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 shrink-0">
+                                    <Eye size={16} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-xs font-bold text-text-main">Lihat & Unduh Saja</span>
+                                    <span className="text-[10.5px] text-text-desc mt-0.5">Hanya melihat & mengunduh berkas template</span>
+                                </div>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => onSetPreset(module.id, 'none')}
+                                className={cn(
+                                    'flex items-start gap-3 p-3 rounded-xl border text-left transition-all cursor-pointer',
+                                    status.level === 'none'
+                                        ? 'bg-rose-500/10 border-rose-500/50 ring-1 ring-rose-500/50'
+                                        : 'bg-surface-card border-surface-border hover:border-rose-500/30 hover:bg-rose-500/5',
+                                )}
+                            >
+                                <div className="p-2 rounded-lg bg-rose-500/10 text-rose-600 shrink-0">
+                                    <ShieldOff size={16} />
+                                </div>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-xs font-bold text-text-main">Nonaktifkan Semua</span>
+                                    <span className="text-[10.5px] text-text-desc mt-0.5">Role tidak memiliki izin apa pun di modul ini</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Detailed Granular Permission Cards */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between border-b border-surface-border pb-2">
+                            <h3 className="text-xs font-bold uppercase tracking-wider text-text-desc flex items-center gap-1.5">
+                                <SlidersHorizontal size={13} className="text-primary" />
+                                <span>Izin Granular Terperinci</span>
+                            </h3>
+                            <span className="text-[10.5px] text-text-desc">Sesuaikan hak perizinan spesifik</span>
+                        </div>
+
+                        <div className="space-y-2.5">
+                            {PERMISSIONS.map((p) => {
+                                const cfg = PERMISSION_CONFIG[p];
+                                const Icon = cfg.icon;
+                                const isChecked = !!access?.[p];
+
+                                let detailedDesc = cfg.description;
+                                if (p === 'can_read') {
+                                    detailedDesc = 'Membuka modul, melihat data tabel/tree, dan mengunduh berkas / dokumen.';
+                                } else if (p === 'can_create') {
+                                    detailedDesc = 'Menambah data baru, membuat folder, atau mengunggah berkas dokumen template.';
+                                } else if (p === 'can_update') {
+                                    detailedDesc = 'Mode Inisiator: Mengubah data, ubah nama (rename) dokumen/folder, dan memindahkan item.';
+                                } else if (p === 'can_delete') {
+                                    detailedDesc = 'Menghapus template atau berkas individual secara mandiri.';
+                                } else if (p === 'can_bulk_delete') {
+                                    detailedDesc = 'Menghapus banyak berkas, dokumen, atau item secara massal dalam satu aksi.';
+                                } else if (p === 'can_approve') {
+                                    detailedDesc = 'Menyetujui permohonan atau verifikasi status dokumen.';
+                                } else if (p === 'can_bulk_approve') {
+                                    detailedDesc = 'Menyetujui banyak permohonan sekaligus secara massal.';
+                                }
+
+                                return (
+                                    <div
+                                        key={p}
+                                        className={cn(
+                                            'p-3.5 rounded-xl border transition-all flex items-center justify-between gap-4',
+                                            isChecked
+                                                ? 'bg-surface-card border-primary/30 shadow-xs'
+                                                : 'bg-surface-card/60 border-surface-border/70 opacity-80 hover:opacity-100',
+                                        )}
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div
+                                                className={cn(
+                                                    'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-colors',
+                                                    isChecked
+                                                        ? 'bg-primary/10 border-primary/20 text-primary'
+                                                        : 'bg-surface-muted border-surface-border text-text-desc',
+                                                )}
+                                            >
+                                                <Icon size={16} className={isChecked ? cfg.colorClass : undefined} />
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-bold text-text-main">
+                                                        {cfg.label}
+                                                    </span>
+                                                    {isChecked ? (
+                                                        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9.5px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                                            Aktif
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9.5px] font-medium bg-surface-muted text-text-desc border border-surface-border">
+                                                            Nonaktif
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <span className="text-[11px] text-text-desc mt-0.5 leading-snug">
+                                                    {detailedDesc}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            role="switch"
+                                            aria-checked={isChecked}
+                                            onClick={() => onToggle(module.id, p, !isChecked)}
+                                            className={cn(
+                                                'relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-colors duration-200 outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+                                                isChecked ? 'bg-primary' : 'bg-surface-muted border border-surface-border',
+                                            )}
+                                        >
+                                            <span
+                                                className={cn(
+                                                    'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transition duration-200 ease-in-out',
+                                                    isChecked ? 'translate-x-6' : 'translate-x-1',
+                                                )}
+                                            />
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 border-t border-surface-border bg-surface-card flex items-center justify-between gap-3">
+                    <div className="text-[11px] text-text-desc">
+                        Perubahan otomatis disinkronkan ke draft matriks akses.
+                    </div>
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={onClose}
+                        className="rounded-lg text-xs font-bold px-4 cursor-pointer"
+                    >
+                        <Check size={14} />
+                        <span>Selesai</span>
+                    </Button>
+                </div>
+            </SheetContent>
+        </Sheet>
+    );
+};
 
 // --- NAVIGATION TAB COMPONENTS ---
 
@@ -1264,6 +1589,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
 
     // --- Bulk Selection & Bulk Action States ---
     const [selectedModuleIds, setSelectedModuleIds] = useState<string[]>([]);
+    const [configuringModule, setConfiguringModule] = useState<Module | null>(null);
     const [isBulkGranularModalOpen, setIsBulkGranularModalOpen] = useState(false);
     const [bulkPermissions, setBulkPermissions] = useState<Record<Permission, boolean>>({
         can_read: true,
@@ -2596,6 +2922,7 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                                                             onSelect={toggleSelectModule}
                                                             onToggle={updateAccess}
                                                             onSetPreset={applyPresetToModule}
+                                                            onOpenSideConfig={setConfiguringModule}
                                                         />
                                                     ))}
                                                 </div>
@@ -3219,6 +3546,16 @@ export default function RoleConfig({ role, roles, modules, navigation, allModule
                 confirmText="Ya, Hapus Permanen"
                 cancelText="Batal"
                 variant="danger"
+            />
+
+            {/* Module Access Side Config (Sheet / Drawer Panel) */}
+            <ModuleAccessSideConfig
+                module={configuringModule}
+                role={role}
+                access={configuringModule ? accessForm.data.accesses.find((a) => a.module_id === configuringModule.id) : null}
+                onClose={() => setConfiguringModule(null)}
+                onToggle={updateAccess}
+                onSetPreset={applyPresetToModule}
             />
 
             <style

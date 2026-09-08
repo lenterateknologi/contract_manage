@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils';
+import { cn, getStatusConfig } from '@/lib/utils';
 import { SectionTitle } from './SectionTitle';
-import { STATUS_CONFIG, StatusItem } from './types';
+import { StatusItem } from './types';
 
 interface StatusDistributionProps {
     items: StatusItem[];
@@ -19,12 +19,7 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
                     <p className="text-text-desc/40 py-4 text-center text-[12px] font-semibold">Belum ada data</p>
                 ) : (
                     items.map((s) => {
-                        const cfg = STATUS_CONFIG[s.status] ?? {
-                            label: s.status,
-                            color: 'text-text-desc',
-                            bg: 'bg-surface-muted',
-                            dot: 'bg-text-desc/40',
-                        };
+                        const cfg = getStatusConfig(s.status);
                         const pct = Math.round((s.count / total) * 100);
                         return (
                             <div key={s.status}>

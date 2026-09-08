@@ -28,11 +28,13 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { usePermissions } from '@/hooks/use-permissions';
 import { usePov } from '@/stores/usePovStore';
 import { contractApi } from '@/pages/contracts/utils';
-import { cn } from '@/lib/utils';
+import { cn, STATUS_FILTER_OPTIONS } from '@/lib/utils';
 import { Contract, ContractType, PaginatedData } from '@/pages/contracts/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
-import {
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
     AlertCircle,
     AlertTriangle,
     Archive,
@@ -66,7 +68,7 @@ import {
     LayoutGrid,
     LayoutDashboard,
     Briefcase,
-} from 'lucide-react';
+} = Icons;
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, memo } from 'react';
 import ContractDetailView from './components/ContractDetailView';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
@@ -92,7 +94,9 @@ import {
     renderContractPeriod,
     renderInitiator,
     renderStatusAndStep,
-    TypeAndVendorCell,
+    renderVendor,
+    ContractNoAndTitleCell,
+    ExpiryBadge,
 } from './components/ContractTableCells';
 
 const SLACountdown = memo(({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
@@ -856,17 +860,7 @@ function ContractPage({
             label: 'Status Pengajuan',
             key: 'status',
             type: 'multiselect',
-            options: [
-                { label: 'Draft', value: 'draft' },
-                { label: 'Dalam Review', value: 'in_review' },
-                { label: 'Menunggu', value: 'pending' },
-                { label: 'Revisi', value: 'revision' },
-                { label: 'Disetujui', value: 'approved' },
-                { label: 'Ditolak', value: 'rejected' },
-                { label: 'Terkunci', value: 'locked' },
-                { label: 'Diarsipkan', value: 'archived' },
-                { label: 'Dibatalkan', value: 'cancelled' },
-            ],
+            options: STATUS_FILTER_OPTIONS.filter((o) => o.value !== 'all'),
         });
 
         list.push({
@@ -1039,7 +1033,9 @@ function ContractPage({
         [hasAnyBulkAction, canBulkApprove, handleBulkApprove, canBulkDelete, handleBulkDelete],
     );
 
-    const renderTypeAndVendor = useCallback((c: Contract) => <TypeAndVendorCell c={c} types={types} />, [types]);
+    const renderContractWithTypes = useCallback((c: Contract) => <ContractNoAndTitleCell c={c} types={types} />, [types]);
+    const isExpiryView = currentView === 'expiry' || view === 'expiry';
+    const renderPeriodWithExpiry = useCallback((c: Contract) => renderContractPeriod(c, isExpiryView), [isExpiryView]);
 
     const columns: Column<Contract>[] = useMemo(
         () => [
@@ -1051,27 +1047,27 @@ function ContractPage({
                         <span>No. & Judul Kontrak</span>
                     </div>
                 ),
-                cell: renderContractNoAndTitle,
+                cell: renderContractWithTypes,
             },
             {
-                accessorKey: 'contract_type_id',
+                accessorKey: 'vendor',
                 header: (
                     <div className="flex items-center gap-2">
                         <FileType size={14} className="text-text-desc" />
-                        <span>Tipe & Vendor</span>
+                        <span>Vendor</span>
                     </div>
                 ),
-                cell: renderTypeAndVendor,
+                cell: renderVendor,
             },
             {
                 accessorKey: 'period',
                 header: (
                     <div className="flex items-center gap-2">
                         <Calendar size={14} className="text-text-desc" />
-                        <span>Masa Berlaku</span>
+                        <span>{isExpiryView ? 'Masa Berlaku & Kedaluwarsa' : 'Masa Berlaku'}</span>
                     </div>
                 ),
-                cell: renderContractPeriod,
+                cell: renderPeriodWithExpiry,
             },
             {
                 accessorKey: 'initiator',
@@ -1088,7 +1084,7 @@ function ContractPage({
                 header: (
                     <div className="flex items-center gap-2">
                         <GitBranch size={14} className="text-text-desc" />
-                        <span>Status & Step</span>
+                        <span>Status</span>
                     </div>
                 ),
                 cell: renderStatusAndStep,
@@ -1114,7 +1110,7 @@ function ContractPage({
                 cell: renderCreatedAt,
             },
         ],
-        [types, renderTypeAndVendor],
+        [renderContractWithTypes, renderPeriodWithExpiry, isExpiryView],
     );
 
     const renderCategoryTabs = () => {
@@ -1416,6 +1412,11 @@ function ContractPage({
                                                                         <span className="text-text-desc text-[9px] font-medium uppercase italic truncate">
                                                                             {c.contract_type}
                                                                         </span>
+                                                                        {isExpiryView && c.end_date && (
+                                                                            <div className="pt-1">
+                                                                                <ExpiryBadge endDate={c.end_date} />
+                                                                            </div>
+                                                                        )}
                                                                     </div>
 
                                                                     <div className="flex items-center justify-between border-t border-surface-border/40 pt-2.5 text-[9px] font-semibold text-text-soft uppercase">

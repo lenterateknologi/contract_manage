@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { contractApi } from '@/pages/contracts/utils';
-import { cn } from '@/lib/utils';
+import { cn, formatTime } from '@/lib/utils';
 import { Contract, ContractMessage } from '@/pages/contracts/types';
 import {
     ArrowDown,
@@ -30,19 +30,23 @@ import {
     Table,
     Users,
     X,
+    Copy,
+    Check,
 } from 'lucide-react';
 import { usePage } from '@inertiajs/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DocumentPreviewModal from '../modals/DocumentPreviewModal';
 import { MentionDropdown } from '../parts/MentionDropdown';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/user/Avatar';
+import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 import { getAvatarColor } from '@/lib/avatarColor';
 import {
     Bubble,
     BubbleContent,
     BubbleGroup,
     BubbleReactions,
+    BubbleActions,
+    BubbleAction,
     Marker,
     MarkerContent,
     Message,
@@ -75,6 +79,8 @@ function MsgBubble({
     const [localReactions, setLocalReactions] = useState<any[]>((msg as any).reactions || []);
     const [showReactionPicker, setShowReactionPicker] = useState(false);
     const pickerRef = useRef<HTMLDivElement>(null);
+
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         setLocalReactions((msg as any).reactions || []);
@@ -231,12 +237,11 @@ function MsgBubble({
     return (
         <Message align={isMe ? 'end' : 'start'} className="mb-4 group/msg">
             <MessageAvatar>
-                <Avatar className="h-8 w-8 border border-slate-200/80 dark:border-zinc-700/80">
-                    <AvatarImage src={msg.user?.avatar || ''} alt={name} />
-                    <AvatarFallback className={`${avatarColorClass} text-[10.5px] font-black tracking-tight`}>
-                        {initials}
-                    </AvatarFallback>
-                </Avatar>
+                <UserAvatarIcon
+                    src={msg.user?.avatar || ''}
+                    name={name}
+                    className="h-8 w-8 text-[10.5px]"
+                />
             </MessageAvatar>
             <MessageContent className={cn("max-w-[80%] relative flex flex-col", isMe ? "items-end" : "items-start")}>
                 <MessageHeader className={isMe ? 'justify-end' : 'justify-start'}>
@@ -321,6 +326,33 @@ function MsgBubble({
                                     <Download size={12} className="opacity-60 transition-opacity group-hover/file:opacity-100" />
                                 </div>
                             )}
+
+                            {/* Shadcn BubbleActions toolbar on hover */}
+                            <BubbleActions className={isMe ? "-left-14 right-auto" : "-right-14 left-auto"}>
+                                <BubbleAction
+                                    title="Beri Reaksi"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowReactionPicker((prev) => !prev);
+                                    }}
+                                >
+                                    <Smile size={12} />
+                                </BubbleAction>
+                                {msg.message && (
+                                    <BubbleAction
+                                        title={copied ? "Tersalin!" : "Salin Pesan"}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const text = msg.message?.replace(/<[^>]*>?/gm, '') || '';
+                                            navigator.clipboard.writeText(text);
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 1500);
+                                        }}
+                                    >
+                                        {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                                    </BubbleAction>
+                                )}
+                            </BubbleActions>
                         </Bubble>
 
                         {/* Reaction badges — di luar Bubble, flow normal */}
@@ -685,7 +717,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             return;
         }
         localStorage.setItem(draftKey, input);
-        const timeStr = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+        const timeStr = formatTime(new Date());
         setDraftSavedTime(`Tersimpan ${timeStr}`);
         showToast('Draf pesan berhasil disimpan.', 'success');
     };
@@ -935,8 +967,11 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     ) : (
                         Object.entries(groupedMessages).map(([day, dayMessages]) => (
                             <div key={day} className="flex flex-col">
-                                <div className="bg-surface-border my-2 h-px flex-1" />
-                                <span className="text-text-main px-2 text-[10px]">{day}</span>
+                                <div className="flex items-center justify-center my-3">
+                                    <Marker className="text-[10.5px] font-semibold tracking-tight uppercase">
+                                        <MarkerContent>{day}</MarkerContent>
+                                    </Marker>
+                                </div>
                                 {dayMessages.map((m) => (
                                     <div key={m.id} id={`chat-msg-${m.id}`}>
                                         <MsgBubble

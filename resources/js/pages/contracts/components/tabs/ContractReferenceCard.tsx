@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
-import { cn } from '@/lib/utils';
+import { cn, formatDateLong } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import axios from 'axios';
 import { ExternalLink, Link as LinkIcon, Loader2, Plus, Search, Trash2, X } from 'lucide-react';
@@ -119,7 +119,7 @@ export function ContractReferenceCard({ selected, canUpdate, onUpdate, processin
                                     </h4>
                                     <div className="text-muted-foreground/60 mt-2 text-[10px] font-semibold  uppercase">
                                         DIBUAT{' '}
-                                        {new Date(parent.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                        {formatDateLong(parent.created_at)}
                                     </div>
                                 </div>
                             </div>

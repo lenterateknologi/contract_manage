@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import {
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
     ArrowDown,
     ArrowUp,
     Bookmark,
@@ -43,9 +45,9 @@ import {
     Trash2,
     UserCheck,
     Users,
-    Users as UsersIcon,
     Zap,
-} from 'lucide-react';
+} = Icons;
+const UsersIcon = Users;
 import { useMemo, useState } from 'react';
 import { ApproveModal } from './modals/ApproveModal';
 import { AssignModal } from './modals/AssignModal';

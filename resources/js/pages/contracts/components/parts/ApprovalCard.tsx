@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { cn, formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval } from '@/pages/contracts/types';
 import { Check, Clock, ChevronDown, CheckCircle2, X, Lock } from 'lucide-react';
-import { Avatar, StatusBadge } from '../ui/ui';
+import { UserAvatarIcon } from '@/components/profile/UserAvatar';
+import { Badge } from '@/components/ui/feedback/Badge';
+import { StatusBadge } from '../ui/ui';
 
 interface ApprovalCardProps {
     approval: ContractApproval;
@@ -37,46 +39,35 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
 
     return (
         <div
-            style={isCurrent && statusColor ? {
-                borderColor: `${statusColor}60`,
-                backgroundColor: `${statusColor}10`,
-            } : undefined}
             className={cn(
-                'group bg-surface-base relative flex flex-col rounded-lg border transition-all duration-200 w-full shadow-2xs',
-                isLite ? 'p-1.5 gap-1' : 'p-2 gap-1.5',
-                isApproved && 'border-emerald-500/40 bg-emerald-500/5 hover:border-emerald-500/60 dark:bg-emerald-950/20 dark:border-emerald-500/40',
-                isRejected && 'border-rose-500/40 bg-rose-500/5 hover:border-rose-500/60 dark:bg-rose-950/20 dark:border-rose-500/40',
-                isCurrent && !statusColor && 'border-amber-500/50 bg-amber-500/8 ring-1 ring-amber-500/20 hover:border-amber-500 dark:bg-amber-950/30 dark:border-amber-500/50',
-                isCurrent && !!statusColor && 'ring-1 hover:opacity-95',
-                isSkipped && 'border-slate-300 dark:border-zinc-700 bg-surface-muted/20 opacity-50 grayscale',
-                !isApproved && !isRejected && !isCurrent && !isSkipped && 'border-dashed border-slate-300 dark:border-zinc-700 bg-surface-muted/20 opacity-75',
+                'group relative flex flex-col w-full transition-all duration-200 py-0.5',
+                isLite ? 'gap-1' : 'gap-1.5',
             )}
         >
-            {/* Left indicator bar */}
-            <div
-                style={isCurrent && statusColor ? { backgroundColor: statusColor } : undefined}
-                className={cn(
-                    'absolute top-1 bottom-1 left-0 w-0.5 rounded-r-full',
-                    isApproved && 'bg-emerald-500',
-                    isRejected && 'bg-rose-500',
-                    isCurrent && !statusColor && 'animate-pulse bg-amber-500',
-                    isCurrent && !!statusColor && 'animate-pulse',
-                    (!isApproved && !isRejected && !isCurrent || isSkipped) && 'bg-surface-border',
-                )}
-            />
 
             {/* Top row */}
             <div className="flex items-center justify-between gap-1.5 w-full pl-0.5">
                 <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                     {/* Avatar */}
                     <div className="shrink-0">
-                        {a.approver ? (
-                            <Avatar user={a.approver} size="sm" className={cn("ring-1 ring-surface-base shrink-0", isLite ? "h-5 w-5" : "h-6 w-6")} />
-                        ) : (
-                            <div className={cn("flex items-center justify-center rounded-full bg-surface-muted text-text-soft", isLite ? "h-5 w-5" : "h-6 w-6")}>
-                                <Clock size={isLite ? 10 : 12} strokeWidth={2} />
-                            </div>
-                        )}
+                        {(() => {
+                            const approverName = a.approver?.name || a.approver_name || (a.target_approvers ? a.target_approvers.split(',')[0].trim() : null);
+                            if (a.approver || approverName) {
+                                return (
+                                    <UserAvatarIcon
+                                        user={a.approver}
+                                        name={approverName}
+                                        size="sm"
+                                        className="h-6 w-6 ring-1 ring-surface-base shrink-0 text-[10px]"
+                                    />
+                                );
+                            }
+                            return (
+                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground ring-1 ring-surface-base shadow-2xs">
+                                    <Clock size={12} strokeWidth={2.5} />
+                                </div>
+                            );
+                        })()}
                     </div>
 
                     {/* Approver Details */}
@@ -90,18 +81,18 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                             </div>
                             <div className="flex items-center gap-1.5 text-[9.5px] text-text-soft flex-wrap">
                                 {hasSubStep && (
-                                    <span className="shrink-0 rounded bg-indigo-500/10 border border-indigo-500/25 px-1 py-0.2 font-bold uppercase text-indigo-700 dark:text-indigo-300 text-[8px] tracking-wider">
+                                    <Badge variant="outline" className="px-1 py-0 font-bold uppercase text-indigo-700 dark:text-indigo-300 border-indigo-500/25 bg-indigo-500/10 text-[8px] tracking-wider rounded-xs">
                                         Sub {finalStepNumber}
-                                    </span>
+                                    </Badge>
                                 )}
                                 {!isLite && a.approver.email && <span className="truncate opacity-75">{a.approver.email}</span>}
                                 {a.role && (
-                                    <span className={cn(
-                                        "shrink-0 rounded bg-surface-muted px-1.5 py-0.2 font-semibold uppercase text-text-soft",
-                                        isLite ? "text-[8.5px]" : "text-[9px]"
+                                    <Badge variant="outline" className={cn(
+                                        "px-1.5 py-0 font-semibold uppercase text-muted-foreground border-border bg-muted/50 rounded-xs",
+                                        isLite ? "text-[8px]" : "text-[8.5px]"
                                     )}>
                                         {a.role}
-                                    </span>
+                                    </Badge>
                                 )}
                             </div>
                         </div>
@@ -139,7 +130,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                     }
                                     return (
                                         <span className="text-text-main truncate text-[11px] font-bold leading-tight">
-                                            {a.target_approvers || '-'}
+                                            {a.target_approvers || 'Not Set'}
                                         </span>
                                     );
                                 })()}

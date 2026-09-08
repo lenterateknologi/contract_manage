@@ -688,6 +688,20 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     );
                 }
 
+                if (col.name === 'icon') {
+                    const IconComp = val && (LucideIcons as any)[val]
+                        ? (LucideIcons as any)[val]
+                        : null;
+                    return val ? (
+                        <span className="inline-flex items-center gap-1.5 text-xs text-text-main font-mono bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                            {IconComp && <IconComp className="h-3.5 w-3.5 text-primary shrink-0" />}
+                            <span>{val}</span>
+                        </span>
+                    ) : (
+                        <span className="text-text-muted">—</span>
+                    );
+                }
+
                 // Contract filter template dimension status badges
                 if (resourceSlug === 'contract-filter-templates' && col.name.endsWith('_status')) {
                     if (val === null || val === undefined) {

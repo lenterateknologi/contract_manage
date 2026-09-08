@@ -53,6 +53,8 @@ class ContractMessage extends Model
             $involvedUserIds = collect([
                 $contract->created_by,
                 $contract->initiated_by_id,
+                $contract->assigned_pic_id,
+                $contract->assigned_by_id,
             ])
                 ->concat($contract->approvals()->pluck('user_id'))
                 ->concat($contract->messages()->where('id', '!=', $message->id)->pluck('user_id'))

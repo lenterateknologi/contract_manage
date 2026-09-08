@@ -1,5 +1,6 @@
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
+import { formatDate } from '@/lib/utils';
 import { contractApi } from '@/pages/contracts/utils';
 import { Contract } from '@/pages/contracts/types';
 import { X } from 'lucide-react';
@@ -351,7 +352,7 @@ export default function FloatingChat({ contracts, meId, onContractUpdated }: Pro
 
                                                     if (mDateStr === now.toISOString().split('T')[0]) label = 'Hari ini';
                                                     else if (mDateStr === yesterday.toISOString().split('T')[0]) label = 'Kemarin';
-                                                    else label = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+                                                    else label = formatDate(d);
 
                                                     separator = <DateSeparator key={`sep-${mDateStr}`} date={label} />;
                                                 }

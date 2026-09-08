@@ -1,75 +1,44 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
-import { cn, formatDate } from '@/lib/utils';
+import { cn, formatDate, formatDateAndTimeParts, getContractTypeBadgeConfig, getExpiryBadgeConfig, getSlaCountdownConfig } from '@/lib/utils';
+import { UserAvatar, UserAvatarIcon, UserAvatarWithName, UserAvatarWithRole } from '@/components/profile/UserAvatar';
 import { Contract, ContractType } from '@/pages/contracts/types';
-import { AlertCircle, AlertTriangle, Check, CheckCircle2, Clock, Eye, FileEdit, MoreVertical, Trash2 } from 'lucide-react';
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
+    AlertCircle,
+    AlertTriangle,
+    Check,
+    CheckCircle2,
+    Clock,
+    Eye,
+    FileEdit,
+    MoreVertical,
+    Trash2,
+} = Icons;
 import { useEffect, useState } from 'react';
 
-export function ExpiryBadge({ endDate }: Readonly<{ endDate: string | null }>) {
-    if (!endDate) return null;
-    const end = new Date(endDate);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const diffTime = end.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+export function ExpiryBadge({ endDate, className }: Readonly<{ endDate: string | null; className?: string }>) {
+    const config = getExpiryBadgeConfig(endDate);
+    if (!config) return null;
 
-    let color = 'bg-text-main text-surface-base border-surface-border';
-    let Icon = CheckCircle2;
-    let label = `${diffDays} Hari Lagi`;
-
-    if (diffDays < 0) {
-        color = 'bg-danger/10 text-danger border-danger/20';
-        Icon = AlertCircle;
-        label = `Expired ${Math.abs(diffDays)} Hari`;
-    } else if (diffDays <= 30) {
-        color = 'bg-warning text-white border-warning/20';
-        Icon = AlertTriangle;
-    } else if (diffDays <= 90) {
-        color = 'text-text-main border border-surface-border bg-surface-muted/50';
-        Icon = Clock;
-    }
+    const { countdownLabel, color, icon: Icon } = config;
 
     return (
-        <div className={cn('inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-semibold', color)}>
-            <Icon size={12} strokeWidth={3} />
-            {label}
+        <div className={cn('inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-semibold border shadow-2xs whitespace-nowrap', color, className)}>
+            <Icon size={11} strokeWidth={2.5} className="shrink-0" />
+            <span>{countdownLabel}</span>
         </div>
     );
 }
 
 export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
-    const [timeLeft, setTimeLeft] = useState<string>('');
-    const [urgency, setUrgency] = useState<'normal' | 'warning' | 'danger'>('normal');
+    const [config, setConfig] = useState(() => getSlaCountdownConfig(deadline, status));
 
     useEffect(() => {
-        if (!deadline || status === 'archived' || status === 'approved') {
-            setTimeLeft('-');
-            return;
-        }
-
         const tick = () => {
-            const now = Date.now();
-            const target = new Date(deadline).getTime();
-            const diff = target - now;
-
-            if (diff <= 0) {
-                setTimeLeft('OVERDUE');
-                setUrgency('danger');
-                return;
-            }
-
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-            if (days > 0) {
-                setTimeLeft(`${days}d ${hours}h`);
-                setUrgency(days < 1 ? 'warning' : 'normal');
-            } else {
-                setTimeLeft(`${hours}h ${minutes}m`);
-                setUrgency(hours < 4 ? 'danger' : 'warning');
-            }
+            setConfig(getSlaCountdownConfig(deadline, status));
         };
 
         tick();
@@ -77,13 +46,13 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
         return () => clearInterval(timer);
     }, [deadline, status]);
 
-    if (!deadline || status === 'archived' || status === 'approved') return <span className="text-text-soft text-[10px]">—</span>;
+    if (!deadline || config.timeLeft === '-') return <span className="text-text-soft text-[10px]">—</span>;
 
     const getUrgencyStyles = () => {
-        if (urgency === 'danger') {
+        if (config.urgency === 'danger') {
             return 'bg-danger text-surface-base ring-danger/40';
         }
-        if (urgency === 'warning') {
+        if (config.urgency === 'warning') {
             return 'bg-warning/10 text-warning ring-warning/40';
         }
         return 'bg-surface-muted text-text-desc ring-surface-border';
@@ -103,19 +72,34 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
 };
 
 export const ContractInfoCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <div className="flex flex-col gap-1 py-0.5">
-        <div className="flex items-center gap-2">
-            <span className="text-text-main text-[13px] leading-tight font-semibold">{c.title}</span>
-            {!!c.current_version && (
-                <div className="bg-primary flex-shrink-0 rounded px-1.5 py-0.5">
-                    <span className="text-primary-foreground text-[9px] font-semibold">V{c.current_version}</span>
-                </div>
+    <div className="flex flex-col gap-1 py-1 max-w-[360px]">
+        <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-text-main font-semibold text-[12.5px] leading-snug line-clamp-1" title={c.title}>
+                {c.title}
+            </span>
+            {!!c.current_version && c.current_version > 0 && (
+                <span className="shrink-0 inline-flex items-center px-1.5 py-0.2 rounded text-[8.5px] font-bold font-mono bg-primary/10 text-primary border border-primary/20 leading-tight">
+                    v{c.current_version}
+                </span>
             )}
         </div>
-        <div className="mt-0.5 flex items-center gap-2">
-            <span className="text-text-soft text-[10px] font-medium">{c.contract_type}</span>
-            <span className="bg-surface-border h-1 w-1 rounded-full" />
-            <span className="text-text-soft text-[10px] font-medium">{c.vendor?.name || 'No Vendor'}</span>
+        <div className="flex items-center gap-1.5 text-[10px] text-text-desc flex-wrap">
+            {c.contract_type && (
+                <span className="font-semibold uppercase bg-surface-muted/60 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-surface-border/60 leading-none">
+                    {c.contract_type}
+                </span>
+            )}
+            {c.form_no && (
+                <span className="font-mono text-text-soft leading-none">
+                    {c.form_no}
+                </span>
+            )}
+            {c.vendor?.name && (
+                <>
+                    <span className="text-text-soft/40">•</span>
+                    <span className="text-text-soft truncate max-w-[140px] leading-none">{c.vendor.name}</span>
+                </>
+            )}
         </div>
     </div>
 );
@@ -130,9 +114,27 @@ export const ProgressCell = ({ c }: Readonly<{ c: Contract }>) => (
     </span>
 );
 
-export const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <span className="text-text-soft text-[11px] font-medium">{c.created_at}</span>
-);
+export const CreatedAtCell = ({ c }: Readonly<{ c: Contract }>) => {
+    const raw = (c as any).created_at_raw || c.created_at;
+    if (!raw) {
+        return <span className="text-zinc-400 text-[11px] font-normal">—</span>;
+    }
+
+    const { dateStr, timeStr } = formatDateAndTimeParts(raw, c.created_at);
+
+    return (
+        <div className="flex flex-col py-0.5 min-w-[95px] text-left">
+            <div className="text-zinc-900 dark:text-zinc-100 text-[12px] font-semibold leading-tight">
+                {dateStr}
+            </div>
+            {!!timeStr && (
+                <div className="text-zinc-800 dark:text-zinc-200 text-[11px] font-medium leading-tight mt-0.5">
+                    {timeStr}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-primary font-mono text-xs font-medium">{c.form_no || 'N/A'}</span>
@@ -142,52 +144,81 @@ export const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-text-main line-clamp-1 text-xs font-semibold">{c.title}</span>
 );
 
-export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
-    const TYPE_COLORS = [
-        'bg-role-admin-bg text-role-admin-text border border-role-admin-text/20',
-        'bg-role-manager-bg text-role-manager-text border border-role-manager-text/20',
-        'bg-role-reviewer-bg text-role-reviewer-text border border-role-reviewer-text/20',
-        'bg-role-approver-bg text-role-approver-text border border-role-approver-text/20',
-        'bg-primary-muted text-primary border border-primary/20',
-    ];
-    const type = types.find((t) => t.id === c.contract_type_id);
-    const colorIdx = type ? type.name.charCodeAt(0) % TYPE_COLORS.length : 0;
-    const vendorName = c.vendor?.name || '-';
+export const ContractNoAndTitleCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
+    const type = types?.find((t) => t.id === c.contract_type_id);
+    const typeName = type?.name || c.contract_type || '';
+    const cleanTypeName = typeName ? typeName.replace('Perjanjian ', '').replace('Addendum / ', '') : '';
+    const typeBadge = cleanTypeName ? getContractTypeBadgeConfig(cleanTypeName) : null;
 
     return (
-        <div className="flex flex-col gap-1.5 py-0.5">
-            <span
-                className={cn(
-                    'inline-block w-fit rounded-xl px-2.5 py-0.5 text-[10px] leading-none font-semibold',
-                    TYPE_COLORS[colorIdx],
+        <div className="flex flex-col gap-1 py-1 max-w-[360px]">
+            {/* Top row: Title + Version Chip */}
+            <div className="flex items-center gap-1.5 min-w-0">
+                <span
+                    className="text-text-main group-hover:text-primary font-semibold text-[12.5px] leading-snug line-clamp-1 transition-colors"
+                    title={c.title}
+                >
+                    {c.title}
+                </span>
+                {!!c.current_version && c.current_version > 0 && (
+                    <span className="shrink-0 inline-flex items-center px-1.5 py-0.2 rounded text-[8.5px] font-bold font-mono bg-primary/10 text-primary border border-primary/20 leading-tight">
+                        v{c.current_version}
+                    </span>
                 )}
-            >
-                {(type?.name || 'N/A').replace('Perjanjian ', '').replace('Addendum / ', '')}
-            </span>
-            <span className="text-text-normal truncate text-[11px] font-medium">{vendorName}</span>
+            </div>
+
+            {/* Bottom row: Type Pill + Form / Contract Code */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+                {!!typeBadge && (
+                    <span
+                        className={cn(
+                            'inline-flex items-center rounded-md px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide uppercase border leading-none',
+                            typeBadge.bgClass,
+                            typeBadge.textClass,
+                            typeBadge.borderClass,
+                        )}
+                    >
+                        {cleanTypeName}
+                    </span>
+                )}
+                <span className="font-mono text-[10px] font-medium text-text-desc bg-surface-muted/60 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-surface-border/60 leading-none">
+                    {c.form_no || 'N/A'}
+                </span>
+                {c.contract_no && c.contract_no !== c.form_no && (
+                    <span className="font-mono text-[9.5px] text-text-soft truncate max-w-[150px] leading-none" title={`No. Kontrak: ${c.contract_no}`}>
+                        {c.contract_no}
+                    </span>
+                )}
+            </div>
         </div>
     );
 };
 
-export const ContractNoAndTitleCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <div className="flex flex-col gap-0.5 py-0.5">
-        <span className="text-primary font-mono text-[11px] leading-none font-semibold">{c.form_no || 'N/A'}</span>
-        <span className="text-text-main mt-1.5 line-clamp-1 text-[12px] leading-tight font-normal">{c.title}</span>
+export const VendorCell = ({ c }: Readonly<{ c: Contract }>) => (
+    <div className="flex flex-col py-0.5">
+        <span className="text-text-normal truncate text-[12px] font-medium">{c.vendor?.name || '—'}</span>
     </div>
 );
 
+export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => (
+    <VendorCell c={c} />
+);
+
 export const InitiatorCell = ({ c }: Readonly<{ c: Contract }>) => {
-    const role = c.initiator?.role || '';
-    const dept = c.initiator?.department_name || '';
-    const roleDept = [role, dept].filter(Boolean).join(' ');
+    if (!c.initiator?.name) {
+        return <span className="text-text-soft text-[11px] font-normal">—</span>;
+    }
 
     return (
-        <div className="flex flex-col gap-0.5 py-0.5">
-            <span className="text-text-normal text-[11px] leading-none font-medium">{roleDept || 'Staff UMUM'}</span>
-            <span className="text-text-normal truncate text-[11px] leading-tight font-medium">
-                ({c.initiator?.name || '—'})
-            </span>
-        </div>
+        <UserAvatarWithRole
+            user={c.initiator}
+            name={c.initiator.name}
+            role={c.initiator.role || ''}
+            department={c.initiator.department_name || 'UMUM'}
+            size="sm"
+            nameClassName="text-[11px] font-normal text-text-main"
+            roleClassName="text-[9.5px] text-text-desc"
+        />
     );
 };
 
@@ -196,29 +227,51 @@ export const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
     if (!stepDesc && c.status === 'draft') {
         stepDesc = c.initiator?.role || '';
     }
+
     return (
-        <div className="flex flex-col gap-1.5 py-0.5">
-            <div className="flex items-center">
-                <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
-            </div>
-            {!!stepDesc && <span className="text-text-desc truncate text-[10px] leading-tight font-medium">{stepDesc}</span>}
+        <div className="flex items-center py-0.5" title={stepDesc ? `Tahapan / Step: ${stepDesc}` : undefined}>
+            <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
         </div>
     );
 };
 
-export const AssignedByCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <div className="flex flex-col py-0.5">
-        <span className="text-text-main truncate text-[13px] font-semibold">{c.assigned_by?.name || '—'}</span>
-    </div>
-);
+export const AssignedByCell = ({ c }: Readonly<{ c: Contract }>) => {
+    if (!c.assigned_by?.name) {
+        return <span className="text-text-soft text-[11px] font-normal">—</span>;
+    }
 
-export const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => (
-    <div className="flex flex-col py-0.5">
-        <span className="text-text-main truncate text-[13px] font-semibold">{c.assigned_pic?.name || '—'}</span>
-    </div>
-);
+    return (
+        <UserAvatarWithRole
+            user={c.assigned_by}
+            name={c.assigned_by.name}
+            role={c.assigned_by.role || ''}
+            department={c.assigned_by.department_name || ''}
+            size="sm"
+            nameClassName="text-[11px] font-normal text-text-main"
+            roleClassName="text-[9.5px] text-text-desc"
+        />
+    );
+};
 
-export const ContractPeriodCell = ({ c }: Readonly<{ c: Contract }>) => {
+export const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => {
+    if (!c.assigned_pic?.name) {
+        return <span className="text-text-soft text-[11px] font-normal">—</span>;
+    }
+
+    return (
+        <UserAvatarWithRole
+            user={c.assigned_pic}
+            name={c.assigned_pic.name}
+            role={c.assigned_pic.role || ''}
+            department={c.assigned_pic.department_name || ''}
+            size="sm"
+            nameClassName="text-[11px] font-normal text-text-main"
+            roleClassName="text-[9.5px] text-text-desc"
+        />
+    );
+};
+
+export const ContractPeriodCell = ({ c, isExpiryView }: Readonly<{ c: Contract; isExpiryView?: boolean }>) => {
     const startDate = c.contract_date ? formatDate(c.contract_date, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
     const endDate = c.end_date ? formatDate(c.end_date, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
 
@@ -226,23 +279,33 @@ export const ContractPeriodCell = ({ c }: Readonly<{ c: Contract }>) => {
         return <span className="text-text-soft text-[11px] font-normal">—</span>;
     }
 
+    const showExpiry = Boolean(isExpiryView || (typeof window !== 'undefined' && window.location.pathname.includes('/contracts/expiry')));
+
     return (
-        <div className="flex flex-col gap-0.5 py-0.5 min-w-[130px]">
-            <div className="flex items-center gap-1.5 text-[11px] leading-tight font-medium text-text-normal">
-                <span className="text-text-desc text-[10px] uppercase font-semibold">Mulai:</span>
-                <span>{startDate || '—'}</span>
+        <div className="flex flex-col gap-1 py-0.5 min-w-[145px]">
+            <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1.5 text-[11px] leading-tight font-medium text-text-normal">
+                    <span className="text-text-desc text-[10px] uppercase font-semibold">Mulai:</span>
+                    <span>{startDate || '—'}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] leading-tight font-medium text-text-normal">
+                    <span className="text-text-desc text-[10px] uppercase font-semibold">S/d:</span>
+                    <span className={cn(c.end_date ? 'font-semibold text-text-main' : '')}>{endDate || '—'}</span>
+                </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] leading-tight font-medium text-text-normal">
-                <span className="text-text-desc text-[10px] uppercase font-semibold">S/d:</span>
-                <span className={cn(c.end_date ? 'font-semibold text-text-main' : '')}>{endDate || '—'}</span>
-            </div>
+            {showExpiry && c.end_date && (
+                <div className="mt-0.5">
+                    <ExpiryBadge endDate={c.end_date} />
+                </div>
+            )}
         </div>
     );
 };
 
 export const renderContractNoAndTitle = (c: Contract) => <ContractNoAndTitleCell c={c} />;
+export const renderVendor = (c: Contract) => <VendorCell c={c} />;
 export const renderInitiator = (c: Contract) => <InitiatorCell c={c} />;
-export const renderContractPeriod = (c: Contract) => <ContractPeriodCell c={c} />;
+export const renderContractPeriod = (c: Contract, isExpiryView?: boolean) => <ContractPeriodCell c={c} isExpiryView={isExpiryView} />;
 export const renderStatusAndStep = (c: Contract) => <StatusAndStepCell c={c} />;
 export const renderCreatedAt = (c: Contract) => <CreatedAtCell c={c} />;
 export const renderAssignedBy = (c: Contract) => <AssignedByCell c={c} />;

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
+import { usePermissions } from '@/hooks/use-permissions';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { PageTable } from '@/components/ui/navigation/PageTable';
@@ -23,7 +24,9 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/selection/DropdownMenu';
 import { cn } from '@/lib/utils';
-import {
+import { AppIcon, Icons, type LucideIcon } from '@/components/ui';
+
+const {
     AlertTriangle,
     ArrowLeft,
     ChevronDown,
@@ -45,7 +48,7 @@ import {
     Search,
     Trash2,
     Upload,
-} from 'lucide-react';
+} = Icons;
 
 interface TemplateFolder {
     id: string;
@@ -99,6 +102,8 @@ interface FolderTreeNode extends TemplateFolder {
 }
 
 export default function Templates({ folders = [], templates = [] }: Props) {
+    const { canRead, canCreate, canUpdate, canDelete, canBulkDelete } = usePermissions('ADMIN_TEMPLATES');
+
     const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [fileTypeFilter, setFileTypeFilter] = useState<string[]>([]);
@@ -721,16 +726,18 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                         <Eye size={13} className="text-primary" />
                                         <span>Buka / Pratinjau</span>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            window.location.href = route('admin.templates.download', row.id);
-                                        }}
-                                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
-                                    >
-                                        <Download size={13} className="text-emerald-500" />
-                                        <span>Download</span>
-                                    </DropdownMenuItem>
+                                    {canRead && (
+                                        <DropdownMenuItem
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.location.href = route('admin.templates.download', row.id);
+                                            }}
+                                            className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                        >
+                                            <Download size={13} className="text-emerald-500" />
+                                            <span>Download</span>
+                                        </DropdownMenuItem>
+                                    )}
                                 </>
                             ) : (
                                 <DropdownMenuItem
@@ -744,41 +751,47 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                     <span>Buka Folder</span>
                                 </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
-                                    setNewFolderName(row.name);
-                                    setIsRenameModalOpen(true);
-                                }}
-                                className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
-                            >
-                                <Edit3 size={13} className="text-amber-500" />
-                                <span>Ubah Nama</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
-                                    setTargetFolderId(row.itemType === 'folder' ? row.raw.parent_id : row.raw.template_folder_id);
-                                    setIsMoveModalOpen(true);
-                                }}
-                                className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
-                            >
-                                <FolderInput size={13} className="text-blue-500" />
-                                <span>Pindahkan</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
-                                    setIsDeleteModalOpen(true);
-                                }}
-                                className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-colors cursor-pointer"
-                            >
-                                <Trash2 size={13} className="text-rose-500" />
-                                <span>Hapus</span>
-                            </DropdownMenuItem>
+                            {canUpdate && (
+                                <>
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
+                                            setNewFolderName(row.name);
+                                            setIsRenameModalOpen(true);
+                                        }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                    >
+                                        <Edit3 size={13} className="text-amber-500" />
+                                        <span>Ubah Nama</span>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
+                                            setTargetFolderId(row.itemType === 'folder' ? row.raw.parent_id : row.raw.template_folder_id);
+                                            setIsMoveModalOpen(true);
+                                        }}
+                                        className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted rounded-md transition-colors cursor-pointer"
+                                    >
+                                        <FolderInput size={13} className="text-blue-500" />
+                                        <span>Pindahkan</span>
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                            {canDelete && (
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedItem({ type: row.itemType, id: row.id, name: row.name });
+                                        setIsDeleteModalOpen(true);
+                                    }}
+                                    className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-md transition-colors cursor-pointer"
+                                >
+                                    <Trash2 size={13} className="text-rose-500" />
+                                    <span>Hapus</span>
+                                </DropdownMenuItem>
+                            )}
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
@@ -860,55 +873,63 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="start" className="w-40 p-1 shadow-lg border-surface-border">
-                                <DropdownMenuItem
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setDragDropTargetFolder({
-                                            id: node.id,
-                                            name: node.name,
-                                        });
-                                        setIsUploadModalOpen(true);
-                                    }}
-                                    className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer font-semibold"
-                                >
-                                    <Upload size={13} className="text-primary" />
-                                    <span>Upload Dokumen</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setFolderFormParentId(node.id);
-                                        setNewFolderName('');
-                                        setIsFolderModalOpen(true);
-                                    }}
-                                    className="flex items-center gap-2 px-2 py-1.5 text-xs text-text-main cursor-pointer"
-                                >
-                                    <FolderPlus size={13} className="text-amber-500" />
-                                    <span>Buat Sub-Folder</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedItem({ type: 'folder', id: node.id, name: node.name });
-                                        setNewFolderName(node.name);
-                                        setIsRenameModalOpen(true);
-                                    }}
-                                    className="flex items-center gap-2 px-2 py-1.5 text-xs text-text-main cursor-pointer"
-                                >
-                                    <Edit3 size={13} className="text-amber-500" />
-                                    <span>Ubah Nama</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedItem({ type: 'folder', id: node.id, name: node.name });
-                                        setIsDeleteModalOpen(true);
-                                    }}
-                                    className="flex items-center gap-2 px-2 py-1.5 text-xs text-rose-600 hover:bg-rose-50 cursor-pointer"
-                                >
-                                    <Trash2 size={13} className="text-rose-500" />
-                                    <span>Hapus Folder</span>
-                                </DropdownMenuItem>
+                                {canCreate && (
+                                    <>
+                                        <DropdownMenuItem
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setDragDropTargetFolder({
+                                                    id: node.id,
+                                                    name: node.name,
+                                                });
+                                                setIsUploadModalOpen(true);
+                                            }}
+                                            className="flex items-center gap-2 px-2 py-1.5 text-xs text-primary cursor-pointer font-semibold"
+                                        >
+                                            <Upload size={13} className="text-primary" />
+                                            <span>Upload Dokumen</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setFolderFormParentId(node.id);
+                                                setNewFolderName('');
+                                                setIsFolderModalOpen(true);
+                                            }}
+                                            className="flex items-center gap-2 px-2 py-1.5 text-xs text-text-main cursor-pointer"
+                                        >
+                                            <FolderPlus size={13} className="text-amber-500" />
+                                            <span>Buat Sub-Folder</span>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
+                                {canUpdate && (
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedItem({ type: 'folder', id: node.id, name: node.name });
+                                            setNewFolderName(node.name);
+                                            setIsRenameModalOpen(true);
+                                        }}
+                                        className="flex items-center gap-2 px-2 py-1.5 text-xs text-text-main cursor-pointer"
+                                    >
+                                        <Edit3 size={13} className="text-amber-500" />
+                                        <span>Ubah Nama</span>
+                                    </DropdownMenuItem>
+                                )}
+                                {canDelete && (
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedItem({ type: 'folder', id: node.id, name: node.name });
+                                            setIsDeleteModalOpen(true);
+                                        }}
+                                        className="flex items-center gap-2 px-2 py-1.5 text-xs text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                    >
+                                        <Trash2 size={13} className="text-rose-500" />
+                                        <span>Hapus Folder</span>
+                                    </DropdownMenuItem>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
@@ -942,20 +963,22 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                             </div>
                         </div>
 
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                                setFolderFormParentId(currentFolderId);
-                                setNewFolderName('');
-                                setIsFolderModalOpen(true);
-                            }}
-                            className="h-7 w-7 rounded-lg text-text-desc hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-                            title="Buat Sub-Folder Baru"
-                        >
-                            <FolderPlus size={15} />
-                        </Button>
+                        {canCreate && (
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                    setFolderFormParentId(currentFolderId);
+                                    setNewFolderName('');
+                                    setIsFolderModalOpen(true);
+                                }}
+                                className="h-7 w-7 rounded-lg text-text-desc hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                                title="Buat Sub-Folder Baru"
+                            >
+                                <FolderPlus size={15} />
+                            </Button>
+                        )}
                     </div>
 
                     {/* Filter / Search Tree */}
@@ -1104,38 +1127,40 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                         onResetFilters={() => setFileTypeFilter([])}
                         totalResults={processedRows.length}
                         actions={
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => {
-                                        setFolderFormParentId(currentFolderId);
-                                        setNewFolderName('');
-                                        setIsFolderModalOpen(true);
-                                    }}
-                                    className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
-                                >
-                                    <FolderPlus size={15} className="text-amber-500" />
-                                    <span>{currentFolderId ? 'Buat Sub-Folder' : 'Buat Folder'}</span>
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={() => {
-                                        setDragDropTargetFolder({
-                                            id: currentFolderId,
-                                            name: currentFolder ? currentFolder.name : 'Repository Root',
-                                        });
-                                        setIsUploadModalOpen(true);
-                                    }}
-                                    className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
-                                >
-                                    <Upload size={15} />
-                                    <span>Upload Dokumen</span>
-                                </Button>
-                            </div>
+                            canCreate ? (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setFolderFormParentId(currentFolderId);
+                                            setNewFolderName('');
+                                            setIsFolderModalOpen(true);
+                                        }}
+                                        className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                                    >
+                                        <FolderPlus size={15} className="text-amber-500" />
+                                        <span>{currentFolderId ? 'Buat Sub-Folder' : 'Buat Folder'}</span>
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={() => {
+                                            setDragDropTargetFolder({
+                                                id: currentFolderId,
+                                                name: currentFolder ? currentFolder.name : 'Repository Root',
+                                            });
+                                            setIsUploadModalOpen(true);
+                                        }}
+                                        className="h-9 gap-1.5 px-3 rounded-lg text-xs font-semibold cursor-pointer"
+                                    >
+                                        <Upload size={15} />
+                                        <span>Upload Dokumen</span>
+                                    </Button>
+                                </div>
+                            ) : undefined
                         }
                     >
                         {/* Folder Breadcrumbs Navigation Trail */}
@@ -1198,31 +1223,37 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 selectedRows={selectedRows}
                                 onSelectionChange={setSelectedRows}
                                 bulkActions={
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                                setBulkTargetFolderId(null);
-                                                setIsBulkMoveModalOpen(true);
-                                            }}
-                                            className="h-7.5 gap-1 px-2.5 text-[11px] font-semibold bg-surface-card hover:bg-surface-muted"
-                                        >
-                                            <FolderInput size={13} className="text-blue-500" />
-                                            <span>Pindahkan ({selectedRows.length})</span>
-                                        </Button>
-                                        <Button
-                                            type="button"
-                                            variant="danger"
-                                            size="sm"
-                                            onClick={() => setIsBulkDeleteModalOpen(true)}
-                                            className="h-7.5 gap-1 px-2.5 text-[11px] font-semibold"
-                                        >
-                                            <Trash2 size={13} />
-                                            <span>Hapus ({selectedRows.length})</span>
-                                        </Button>
-                                    </div>
+                                    (canUpdate || canBulkDelete) ? (
+                                        <div className="flex items-center gap-2">
+                                            {canUpdate && (
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setBulkTargetFolderId(null);
+                                                        setIsBulkMoveModalOpen(true);
+                                                    }}
+                                                    className="h-7.5 gap-1 px-2.5 text-[11px] font-semibold bg-surface-card hover:bg-surface-muted"
+                                                >
+                                                    <FolderInput size={13} className="text-blue-500" />
+                                                    <span>Pindahkan ({selectedRows.length})</span>
+                                                </Button>
+                                            )}
+                                            {canBulkDelete && (
+                                                <Button
+                                                    type="button"
+                                                    variant="danger"
+                                                    size="sm"
+                                                    onClick={() => setIsBulkDeleteModalOpen(true)}
+                                                    className="h-7.5 gap-1 px-2.5 text-[11px] font-semibold"
+                                                >
+                                                    <Trash2 size={13} />
+                                                    <span>Hapus ({selectedRows.length})</span>
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ) : undefined
                                 }
                                 onRowClick={(row) => {
                                     if (row.itemType === 'folder') {
@@ -1793,34 +1824,40 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                             <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-text-desc border-b border-surface-border/50 mb-1">
                                 Repository Root
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setContextMenu(null);
-                                    setFolderFormParentId(null);
-                                    setNewFolderName('');
-                                    setIsFolderModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                            >
-                                <FolderPlus size={14} className="text-amber-500" />
-                                <span>Buat Folder Baru</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setContextMenu(null);
-                                    setDragDropTargetFolder({
-                                        id: null,
-                                        name: 'Repository Root',
-                                    });
-                                    setIsUploadModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
-                            >
-                                <Upload size={14} className="text-primary" />
-                                <span>Upload Dokumen di Sini</span>
-                            </button>
+                            {canCreate ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setContextMenu(null);
+                                            setFolderFormParentId(null);
+                                            setNewFolderName('');
+                                            setIsFolderModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    >
+                                        <FolderPlus size={14} className="text-amber-500" />
+                                        <span>Buat Folder Baru</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setContextMenu(null);
+                                            setDragDropTargetFolder({
+                                                id: null,
+                                                name: 'Repository Root',
+                                            });
+                                            setIsUploadModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
+                                    >
+                                        <Upload size={14} className="text-primary" />
+                                        <span>Upload Dokumen di Sini</span>
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="px-2.5 py-1 text-xs text-text-desc italic">Hanya mode baca</div>
+                            )}
                         </>
                     ) : contextMenu.target.type === 'folder' ? (
                         <>
@@ -1839,78 +1876,88 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 <FolderOpen size={14} className="text-amber-500" />
                                 <span>Buka Folder</span>
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const folder = (contextMenu.target as any).folder;
-                                    setContextMenu(null);
-                                    setFolderFormParentId(folder.id);
-                                    setNewFolderName('');
-                                    setIsFolderModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                            >
-                                <FolderPlus size={14} className="text-amber-500" />
-                                <span>Buat Sub-Folder</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const folder = (contextMenu.target as any).folder;
-                                    setContextMenu(null);
-                                    setDragDropTargetFolder({
-                                        id: folder.id,
-                                        name: folder.name,
-                                    });
-                                    setIsUploadModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
-                            >
-                                <Upload size={14} className="text-primary" />
-                                <span>Upload Dokumen ke Folder Ini</span>
-                            </button>
-                            <div className="my-1 border-t border-surface-border/50" />
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const folder = (contextMenu.target as any).folder;
-                                    setContextMenu(null);
-                                    setSelectedItem({ type: 'folder', id: folder.id, name: folder.name });
-                                    setNewFolderName(folder.name);
-                                    setIsRenameModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                            >
-                                <Edit3 size={14} className="text-amber-500" />
-                                <span>Ubah Nama</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const folder = (contextMenu.target as any).folder;
-                                    setContextMenu(null);
-                                    setSelectedItem({ type: 'folder', id: folder.id, name: folder.name });
-                                    setTargetFolderId(folder.parent_id || null);
-                                    setIsMoveModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                            >
-                                <FolderInput size={14} className="text-blue-500" />
-                                <span>Pindahkan</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const folder = (contextMenu.target as any).folder;
-                                    setContextMenu(null);
-                                    setSelectedItem({ type: 'folder', id: folder.id, name: folder.name });
-                                    setIsDeleteModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
-                            >
-                                <Trash2 size={14} className="text-rose-500" />
-                                <span>Hapus Folder</span>
-                            </button>
+                            {canCreate && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const folder = (contextMenu.target as any).folder;
+                                            setContextMenu(null);
+                                            setFolderFormParentId(folder.id);
+                                            setNewFolderName('');
+                                            setIsFolderModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    >
+                                        <FolderPlus size={14} className="text-amber-500" />
+                                        <span>Buat Sub-Folder</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const folder = (contextMenu.target as any).folder;
+                                            setContextMenu(null);
+                                            setDragDropTargetFolder({
+                                                id: folder.id,
+                                                name: folder.name,
+                                            });
+                                            setIsUploadModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors cursor-pointer text-left"
+                                    >
+                                        <Upload size={14} className="text-primary" />
+                                        <span>Upload Dokumen ke Folder Ini</span>
+                                    </button>
+                                </>
+                            )}
+                            {canUpdate && (
+                                <>
+                                    <div className="my-1 border-t border-surface-border/50" />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const folder = (contextMenu.target as any).folder;
+                                            setContextMenu(null);
+                                            setSelectedItem({ type: 'folder', id: folder.id, name: folder.name });
+                                            setNewFolderName(folder.name);
+                                            setIsRenameModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    >
+                                        <Edit3 size={14} className="text-amber-500" />
+                                        <span>Ubah Nama</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const folder = (contextMenu.target as any).folder;
+                                            setContextMenu(null);
+                                            setSelectedItem({ type: 'folder', id: folder.id, name: folder.name });
+                                            setTargetFolderId(folder.parent_id || null);
+                                            setIsMoveModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    >
+                                        <FolderInput size={14} className="text-blue-500" />
+                                        <span>Pindahkan</span>
+                                    </button>
+                                </>
+                            )}
+                            {canDelete && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const folder = (contextMenu.target as any).folder;
+                                        setContextMenu(null);
+                                        setSelectedItem({ type: 'folder', id: folder.id, name: folder.name });
+                                        setIsDeleteModalOpen(true);
+                                    }}
+                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
+                                >
+                                    <Trash2 size={14} className="text-rose-500" />
+                                    <span>Hapus Folder</span>
+                                </button>
+                            )}
                         </>
                     ) : (
                         <>
@@ -1929,56 +1976,66 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 <Eye size={14} className="text-primary" />
                                 <span>Buka / Pratinjau</span>
                             </button>
-                            <a
-                                href={route('admin.templates.download', (contextMenu.target as any).template.id)}
-                                onClick={() => setContextMenu(null)}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                            >
-                                <Download size={14} className="text-emerald-500" />
-                                <span>Download Dokumen</span>
-                            </a>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const tpl = (contextMenu.target as any).template;
-                                    setContextMenu(null);
-                                    setSelectedItem({ type: 'template', id: tpl.id, name: tpl.name });
-                                    setNewFolderName(tpl.name);
-                                    setIsRenameModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                            >
-                                <Edit3 size={14} className="text-amber-500" />
-                                <span>Ubah Nama</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const tpl = (contextMenu.target as any).template;
-                                    setContextMenu(null);
-                                    setSelectedItem({ type: 'template', id: tpl.id, name: tpl.name });
-                                    setTargetFolderId(tpl.template_folder_id || null);
-                                    setIsMoveModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
-                            >
-                                <FolderInput size={14} className="text-blue-500" />
-                                <span>Pindahkan</span>
-                            </button>
-                            <div className="my-1 border-t border-surface-border/50" />
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const tpl = (contextMenu.target as any).template;
-                                    setContextMenu(null);
-                                    setSelectedItem({ type: 'template', id: tpl.id, name: tpl.name });
-                                    setIsDeleteModalOpen(true);
-                                }}
-                                className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
-                            >
-                                <Trash2 size={14} className="text-rose-500" />
-                                <span>Hapus Dokumen</span>
-                            </button>
+                            {canRead && (
+                                <a
+                                    href={route('admin.templates.download', (contextMenu.target as any).template.id)}
+                                    onClick={() => setContextMenu(null)}
+                                    className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                >
+                                    <Download size={14} className="text-emerald-500" />
+                                    <span>Download Dokumen</span>
+                                </a>
+                            )}
+                            {canUpdate && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const tpl = (contextMenu.target as any).template;
+                                            setContextMenu(null);
+                                            setSelectedItem({ type: 'template', id: tpl.id, name: tpl.name });
+                                            setNewFolderName(tpl.name);
+                                            setIsRenameModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    >
+                                        <Edit3 size={14} className="text-amber-500" />
+                                        <span>Ubah Nama</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const tpl = (contextMenu.target as any).template;
+                                            setContextMenu(null);
+                                            setSelectedItem({ type: 'template', id: tpl.id, name: tpl.name });
+                                            setTargetFolderId(tpl.template_folder_id || null);
+                                            setIsMoveModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-text-main hover:bg-surface-muted transition-colors cursor-pointer text-left"
+                                    >
+                                        <FolderInput size={14} className="text-blue-500" />
+                                        <span>Pindahkan</span>
+                                    </button>
+                                </>
+                            )}
+                            {canDelete && (
+                                <>
+                                    <div className="my-1 border-t border-surface-border/50" />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const tpl = (contextMenu.target as any).template;
+                                            setContextMenu(null);
+                                            setSelectedItem({ type: 'template', id: tpl.id, name: tpl.name });
+                                            setIsDeleteModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer text-left"
+                                    >
+                                        <Trash2 size={14} className="text-rose-500" />
+                                        <span>Hapus Dokumen</span>
+                                    </button>
+                                </>
+                            )}
                         </>
                     )}
                 </div>

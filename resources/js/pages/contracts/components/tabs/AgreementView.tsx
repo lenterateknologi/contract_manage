@@ -6,7 +6,23 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import axios from 'axios';
-import { ArrowRight, Diff, Download, ExternalLink, FileText, History, Loader2, Maximize2, Minimize2, MoreVertical, PenTool, RefreshCw, Upload } from 'lucide-react';
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
+    ArrowRight,
+    Diff,
+    Download,
+    ExternalLink,
+    FileText,
+    History,
+    Loader2,
+    Maximize2,
+    Minimize2,
+    MoreVertical,
+    PenTool,
+    RefreshCw,
+    Upload,
+} = Icons;
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 interface AgreementVersion {

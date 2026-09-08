@@ -161,18 +161,7 @@ export const contractApi = {
 };
 
 // ── Form Formatting Helpers ──────────────────────────────────────────
-export const formatDateWithOptionalTime = (dateStrInput?: string | null, field?: any): string => {
-    let dateObj = new Date();
-    if (dateStrInput) {
-        const parsed = new Date(dateStrInput);
-        if (!isNaN(parsed.getTime())) dateObj = parsed;
-    }
-    const dateStr = dateObj.toLocaleDateString('en-CA');
-    const isDateOnly = field?.type === 'date' || field?.options?.value_type === 'date';
-    if (isDateOnly) return dateStr;
-    const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    return `${dateStr} ${timeStr}`;
-};
+export { formatDateWithOptionalTime } from '@/lib/time-utils';
 
 export const formatRuangLingkup = (contractNo?: string, signerName?: string): string => {
     const dateStr = new Date().toLocaleDateString('en-CA');

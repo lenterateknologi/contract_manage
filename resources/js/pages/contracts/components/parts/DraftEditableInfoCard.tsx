@@ -1,7 +1,9 @@
 import { cn } from '@/lib/utils';
-import { Avatar } from '@/pages/contracts/components/ui/ui';
+import { UserAvatarIcon } from '@/components/profile/UserAvatar';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/cards/Card';
+import { Badge } from '@/components/ui/feedback/Badge';
 import { Contract, ContractType } from '@/pages/contracts/types';
-import { Building2, Check, ChevronDown, ChevronUp, ExternalLink, Info, Loader2, User } from 'lucide-react';
+import { Building2, Check, ChevronDown, ChevronUp, ExternalLink, Info, Loader2, User, Mail, MapPin, Calendar, CheckCircle2, UserCheck, ShieldCheck, Briefcase, Landmark } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ContractInfoForm, MetaBadge } from './ContractInfoForm';
 import { TaxToggle } from './TaxToggle';
@@ -272,90 +274,147 @@ export function RequesterInfoCard({ selected, isTabView = false }: { selected: C
     const user = selected.initiator || selected.creator;
 
     const content = (
-        <div className="grid grid-cols-1 gap-4 p-5">
-            {/* Data Pengaju / Creator Detail */}
-            <div className="flex flex-col gap-3 border-b border-surface-border/60 pb-4">
-                <div className="text-foreground text-[11px] font-extrabold tracking-wider uppercase">
-                    Diajukan Oleh
-                </div>
-                <div className="flex items-start gap-3">
-                    <Avatar user={user} size="md" className="mt-0.5 shrink-0" />
-                    <div className="flex flex-col overflow-hidden min-w-0 flex-1">
-                        <span className="text-text-main text-sm font-bold truncate">
-                            {user?.name || '-'}
-                        </span>
+        <div className="flex flex-col gap-6 p-6">
+            {/* Header / User Profile Box */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/60">
+                <div className="flex items-center gap-4">
+                    <UserAvatarIcon
+                        user={user}
+                        name={user?.name || 'Inisiator'}
+                        size="lg"
+                        className="h-14 w-14 ring-2 ring-primary/20 shadow-sm shrink-0 text-base"
+                    />
+                    <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-base font-bold text-foreground leading-tight truncate">
+                                {user?.name || '-'}
+                            </h3>
+                            <Badge variant="outline" className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary border-primary/30 bg-primary/5 rounded-md">
+                                Inisiator Pengaju
+                            </Badge>
+                        </div>
                         {user?.email && (
-                            <span className="text-text-soft text-xs font-medium truncate">
-                                {user.email}
-                            </span>
+                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                                <Mail size={13} className="shrink-0" />
+                                <span className="truncate">{user.email}</span>
+                            </div>
                         )}
                     </div>
                 </div>
 
-                {/* Hierarki Organisasi Pengaju */}
-                <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Departemen :</span>
-                        <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.department_name || '—'}</span>
+                <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+                    <div className="flex flex-col sm:items-end">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                            <Calendar size={11} /> Tanggal Dibuat
+                        </span>
+                        <span className="text-xs font-semibold text-foreground mt-0.5">
+                            {selected.created_at || '—'}
+                        </span>
                     </div>
-                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Divisi :</span>
-                        <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.division_name || '—'}</span>
-                    </div>
-                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Perusahaan (PT) :</span>
-                        <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.company_name || '—'}</span>
-                    </div>
-                    <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                        <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Company Group :</span>
-                        <span className="text-slate-900 dark:text-slate-100 font-normal">{user?.company_group_name || '—'}</span>
-                    </div>
-                </div>
-                <div className="leading-relaxed pt-1">
-                    <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider inline-block mr-1.5">Alamat Kantor / Pihak I :</span>
-                    <span className="text-slate-900 dark:text-slate-100 font-normal text-xs break-words">
-                        {(user as any)?.address || selected.metadata?.meta_p1_alamat || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan'}
-                    </span>
                 </div>
             </div>
 
-            <div className="flex flex-col gap-1 pt-1 border-b border-surface-border/60 pb-3">
-                <div className="flex items-center justify-between">
-                    <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
-                        Tgl Dibuat :
-                    </div>
-                    <MetaBadge name="created_at" />
+            {/* Organisasi Grid Cards */}
+            <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <Briefcase size={14} className="text-primary" />
+                    <span>Informasi Unit Organisasi</span>
                 </div>
-                <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.created_at}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="rounded-lg border border-border/70 bg-muted/30 p-3.5 flex flex-col justify-between space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Departemen</span>
+                        <span className="text-xs font-semibold text-foreground break-words">{user?.department_name || '—'}</span>
+                    </div>
+                    <div className="rounded-lg border border-border/70 bg-muted/30 p-3.5 flex flex-col justify-between space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Divisi</span>
+                        <span className="text-xs font-semibold text-foreground break-words">{user?.division_name || '—'}</span>
+                    </div>
+                    <div className="rounded-lg border border-border/70 bg-muted/30 p-3.5 flex flex-col justify-between space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Perusahaan (PT)</span>
+                        <span className="text-xs font-semibold text-foreground break-words">{user?.company_name || '—'}</span>
+                    </div>
+                    <div className="rounded-lg border border-border/70 bg-muted/30 p-3.5 flex flex-col justify-between space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Company Group</span>
+                        <span className="text-xs font-semibold text-foreground break-words">{user?.company_group_name || '—'}</span>
+                    </div>
+                </div>
             </div>
 
-            <div className="pt-1">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div className="flex flex-col gap-1 items-start">
-                        <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
-                            Disetujui Oleh :
+            {/* Alamat Pihak I */}
+            <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
+                <div className="flex items-start gap-2.5">
+                    <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            Alamat Kantor / Pihak I
+                        </span>
+                        <span className="text-xs text-foreground mt-1 leading-relaxed">
+                            {(user as any)?.address || selected.metadata?.meta_p1_alamat || 'The Manhattan Square Mid Tower Lt. 12, Jl. TB Simatupang No.1, Jakarta Selatan'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Status Penugasan & Approval Manager */}
+            <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <ShieldCheck size={14} className="text-primary" />
+                    <span>Status Otorisasi & Penugasan</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
+                        <div className="flex items-center justify-between mb-3">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Disetujui Oleh (Manager)</span>
+                            {selected.assigned_by ? (
+                                <Badge variant="outline" className="px-1.5 py-0 text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
+                                    Disetujui
+                                </Badge>
+                            ) : (
+                                <Badge variant="outline" className="px-1.5 py-0 text-[9px] font-semibold text-muted-foreground border-border bg-muted/40">
+                                    Belum Disetujui
+                                </Badge>
+                            )}
                         </div>
                         {selected.assigned_by ? (
-                            <div className="flex items-center gap-2">
-                                <Avatar user={selected.assigned_by} size="sm" />
-                                <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.assigned_by.name}</span>
+                            <div className="flex items-center gap-3">
+                                <UserAvatarIcon user={selected.assigned_by} size="sm" className="h-8 w-8 ring-1 ring-border shrink-0 text-xs" />
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-xs font-bold text-foreground truncate">{selected.assigned_by.name}</span>
+                                    {selected.assigned_by.email && (
+                                        <span className="text-[10px] text-muted-foreground truncate">{selected.assigned_by.email}</span>
+                                    )}
+                                </div>
                             </div>
                         ) : (
-                            <span className="text-slate-400 text-xs font-medium italic opacity-60">Belum disetujui manager</span>
+                            <p className="text-xs text-muted-foreground italic">Menunggu persetujuan dari atasan / manager terkait.</p>
                         )}
                     </div>
 
-                    <div className="flex flex-col gap-1 items-start">
-                        <div className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase">
-                            Ditugaskan :
+                    <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
+                        <div className="flex items-center justify-between mb-3">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Petugas Ditugaskan (PIC)</span>
+                            {selected.assigned_pic ? (
+                                <Badge variant="outline" className="px-1.5 py-0 text-[9px] font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400 border-sky-500/30 bg-sky-500/10">
+                                    Ditugaskan
+                                </Badge>
+                            ) : (
+                                <Badge variant="outline" className="px-1.5 py-0 text-[9px] font-semibold text-muted-foreground border-border bg-muted/40">
+                                    Belum Ada PIC
+                                </Badge>
+                            )}
                         </div>
                         {selected.assigned_pic ? (
-                            <div className="flex items-center gap-2">
-                                <Avatar user={selected.assigned_pic} size="sm" />
-                                <span className="text-slate-900 dark:text-slate-100 text-xs font-normal">{selected.assigned_pic.name}</span>
+                            <div className="flex items-center gap-3">
+                                <UserAvatarIcon user={selected.assigned_pic} size="sm" className="h-8 w-8 ring-1 ring-border shrink-0 text-xs" />
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-xs font-bold text-foreground truncate">{selected.assigned_pic.name}</span>
+                                    {selected.assigned_pic.email && (
+                                        <span className="text-[10px] text-muted-foreground truncate">{selected.assigned_pic.email}</span>
+                                    )}
+                                </div>
                             </div>
                         ) : (
-                            <span className="text-slate-400 text-xs font-medium italic opacity-60">Belum ditugaskan</span>
+                            <p className="text-xs text-muted-foreground italic">PIC belum ditugaskan untuk dokumen ini.</p>
                         )}
                     </div>
                 </div>
@@ -371,19 +430,19 @@ export function RequesterInfoCard({ selected, isTabView = false }: { selected: C
                         <User size={15} className="text-primary-foreground/90" /> Informasi Pengaju
                     </div>
                 </div>
-                <div className="rounded-xl border border-surface-border bg-surface-base flex-1 overflow-y-auto custom-scrollbar">
+                <Card className="flex-1 overflow-y-auto custom-scrollbar border-border/80">
                     {content}
-                </div>
+                </Card>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col gap-3">
-            <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+        <Card className="border-border/80 shadow-xs">
+            <CardHeader className="p-3 bg-primary text-primary-foreground flex flex-row items-center justify-between rounded-t-lg space-y-0">
+                <CardTitle className="text-xs font-semibold uppercase tracking-tight text-primary-foreground flex items-center gap-2">
                     <User size={15} className="text-primary-foreground/90" /> Informasi Pengaju
-                </div>
+                </CardTitle>
                 <button
                     type="button"
                     onClick={() => setMinimized(!minimized)}
@@ -391,14 +450,14 @@ export function RequesterInfoCard({ selected, isTabView = false }: { selected: C
                 >
                     {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                 </button>
-            </div>
+            </CardHeader>
 
             {!minimized && (
-                <div className="bg-surface-base text-text-main border border-surface-border rounded-xl shadow-xs">
+                <CardContent className="p-0">
                     {content}
-                </div>
+                </CardContent>
             )}
-        </div>
+        </Card>
     );
 }
 
@@ -411,42 +470,72 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
     const address = vendor?.address || vendor?.detail?.address || selected.metadata?.meta_p2_alamat || '—';
 
     const content = (
-        <div className="grid grid-cols-1 gap-4 p-5">
-            <div className="flex flex-wrap items-baseline gap-2 border-b border-slate-200/80 dark:border-slate-800/80 pb-3">
-                <span className="text-slate-500 dark:text-slate-400 text-[10px] font-bold tracking-wider uppercase shrink-0">
-                    Nama Vendor / Pihak II :
-                </span>
-                <span className="text-slate-900 dark:text-slate-100 text-sm font-bold truncate">{vendorName}</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                    <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Nama PIC :</span>
-                    <span className="text-slate-900 dark:text-slate-100 font-normal truncate">{picName}</span>
+        <div className="flex flex-col gap-6 p-6">
+            {/* Header / Vendor Banner */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/60">
+                <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0">
+                        <Building2 size={28} />
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-base font-bold text-foreground leading-tight truncate">
+                                {vendorName}
+                            </h3>
+                            <Badge variant="outline" className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary border-primary/30 bg-primary/5 rounded-md">
+                                Pihak Kedua / Mitra
+                            </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">Mitra penyedia barang & jasa rekanan resmi</p>
+                    </div>
                 </div>
-                <div className="flex flex-wrap items-baseline gap-1.5 border-b border-dashed border-slate-200/80 dark:border-slate-800/80 pb-2">
-                    <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider shrink-0">Jabatan PIC :</span>
-                    <span className="text-slate-900 dark:text-slate-100 font-normal truncate">{picPosition}</span>
-                </div>
-            </div>
-            <div className="leading-relaxed pt-1">
-                <span className="text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider inline-block mr-1.5">Alamat Resmi :</span>
-                <span className="text-slate-900 dark:text-slate-100 font-normal text-xs break-words">{address}</span>
-            </div>
 
-            {vendor?.id && (
-                <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                {vendor?.id && (
                     <a
                         href={`/admin/core/vendors/${vendor.id}/document`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background hover:bg-muted/80 px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs transition-all active:scale-95 shrink-0 self-start sm:self-center"
+                        title="Buka Dokumen Resmi Vendor"
                     >
-                        <span>Lihat Dokumen Legalitas Vendor Lengkap</span>
-                        <ExternalLink size={14} />
+                        <span>Dokumen Legalitas</span>
+                        <ExternalLink size={13} className="text-muted-foreground" />
                     </a>
+                )}
+            </div>
+
+            {/* Detail PIC Vendor */}
+            <div>
+                <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+                    <UserCheck size={14} className="text-primary" />
+                    <span>Penanggung Jawab (PIC Vendor)</span>
                 </div>
-            )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="rounded-lg border border-border/70 bg-muted/30 p-3.5 flex flex-col justify-between space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Nama Lengkap PIC</span>
+                        <span className="text-xs font-semibold text-foreground break-words">{picName}</span>
+                    </div>
+                    <div className="rounded-lg border border-border/70 bg-muted/30 p-3.5 flex flex-col justify-between space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Jabatan Resmi PIC</span>
+                        <span className="text-xs font-semibold text-foreground break-words">{picPosition}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Alamat Vendor */}
+            <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
+                <div className="flex items-start gap-2.5">
+                    <MapPin size={16} className="text-primary shrink-0 mt-0.5" />
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            Alamat Resmi Kantor Vendor / Pihak II
+                        </span>
+                        <span className="text-xs text-foreground mt-1 leading-relaxed break-words">
+                            {address}
+                        </span>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 
@@ -470,19 +559,19 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                         </a>
                     )}
                 </div>
-                <div className="rounded-xl border border-surface-border bg-surface-base flex-1 overflow-y-auto custom-scrollbar">
+                <Card className="flex-1 overflow-y-auto custom-scrollbar border-border/80">
                     {content}
-                </div>
+                </Card>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col gap-3">
-            <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
+        <Card className="border-border/80 shadow-xs">
+            <CardHeader className="p-3 bg-primary text-primary-foreground flex flex-row items-center justify-between rounded-t-lg space-y-0">
+                <CardTitle className="text-xs font-semibold uppercase tracking-tight text-primary-foreground flex items-center gap-2">
                     <Building2 size={15} className="text-primary-foreground/90" /> Detail Pihak Kedua / Vendor
-                </div>
+                </CardTitle>
                 <div className="flex items-center gap-1.5">
                     {vendor?.id && (
                         <a
@@ -504,13 +593,13 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                         {minimized ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
                     </button>
                 </div>
-            </div>
+            </CardHeader>
 
             {!minimized && (
-                <div className="bg-surface-base text-text-main border border-surface-border rounded-xl shadow-xs">
+                <CardContent className="p-0">
                     {content}
-                </div>
+                </CardContent>
             )}
-        </div>
+        </Card>
     );
 }

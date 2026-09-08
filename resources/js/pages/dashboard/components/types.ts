@@ -88,15 +88,10 @@ export const STATUS_CONFIG: Record<string, { label: string; color: string; bg: s
     approved: { label: 'Disetujui', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
 };
 
+import { formatRelativeTime } from '@/lib/utils';
+
 // ─── Shared Utilities ─────────────────────────────────────────────────────────
 
 export function relativeTime(dateStr: string): string {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000);
-    if (diffSec < 60) return 'Baru saja';
-    if (diffSec < 3600) return `${Math.floor(diffSec / 60)} menit lalu`;
-    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} jam lalu`;
-    if (diffSec < 86400 * 30) return `${Math.floor(diffSec / 86400)} hari lalu`;
-    return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    return formatRelativeTime(dateStr);
 }

@@ -12,7 +12,41 @@ import { closestCenter, DndContext, DragEndEvent, KeyboardSensor, PointerSensor,
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Bookmark, Check, CheckCircle2, CheckSquare2, ChevronDown, ChevronUp, ChevronsDown, ChevronsUp, Edit3, GitBranch, LayoutTemplate, MinusSquare, Pencil, PlusCircle, Search, Shield, Square, Trash2, UserCheck, UserPlus, Users, Users as UsersIcon, X } from 'lucide-react';
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
+    Activity,
+    ArrowDown,
+    ArrowRightLeft,
+    ArrowUp,
+    Bookmark,
+    Check,
+    CheckCircle2,
+    CheckSquare2,
+    ChevronDown,
+    ChevronUp,
+    ChevronsDown,
+    ChevronsUp,
+    Edit3,
+    GitBranch,
+    GitFork,
+    Layers,
+    LayoutTemplate,
+    MinusSquare,
+    Network,
+    Pencil,
+    PlusCircle,
+    Search,
+    Shield,
+    Sliders,
+    Square,
+    Trash2,
+    UserCheck,
+    UserPlus,
+    Users,
+    X,
+} = Icons;
+const UsersIcon = Users;
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import AuthorityTableManager from './components/AuthorityTableManager';
 import ContractTypeTableManager from './components/ContractTypeTableManager';
@@ -25,7 +59,6 @@ import { MASTER_ACTIONS, APPROVER_TYPE_STYLES, getActionTheme, BUILTIN_STEP_TEMP
 import { WorkflowFlowVisualizer } from './components/WorkflowFlowVisualizer';
 import { GroupedStepSections } from './components/GroupedStepSections';
 import { CustomActionsManager } from './components/CustomActionsManager';
-import { Activity, ArrowRightLeft, GitFork, Layers, Network, Sliders } from 'lucide-react';
 
 // --- Sortable Step Item (Compact) ---
 

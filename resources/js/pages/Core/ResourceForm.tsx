@@ -14,12 +14,13 @@ import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 
 const COMMON_ICONS = [
-    'Clock', 'CheckCircle2', 'XCircle', 'AlertCircle', 'AlertTriangle',
+    'Clock', 'CheckCircle', 'CheckCircle2', 'CheckCheck', 'XCircle', 'AlertCircle', 'AlertTriangle',
     'FileText', 'FileCheck', 'FileX', 'FileClock', 'FileEdit', 'FileQuestion',
     'Folder', 'FolderClosed', 'FolderOpen', 'Inbox', 'Send', 'User', 'Users',
     'Settings', 'Shield', 'Database', 'Key', 'Lock', 'Unlock', 'Eye', 'EyeOff',
     'Trash2', 'Plus', 'Check', 'X', 'HelpCircle', 'Info', 'CheckSquare',
-    'Square', 'Minus', 'ChevronRight', 'ChevronDown', 'Search'
+    'Square', 'Minus', 'ChevronRight', 'ChevronDown', 'Search', 'Zap', 'Ban',
+    'RefreshCw', 'Archive', 'ListOrdered'
 ];
 
 function IconPicker({ value, onChange }: { value: string; onChange: (val: string) => void }) {

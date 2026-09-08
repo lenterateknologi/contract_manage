@@ -1,72 +1,80 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { cn, getStatusConfig, isLightColor, type StatusInfo } from '@/lib/utils';
+import LucideIcons from '@/lib/lucide-dynamic';
 
 export interface StatusBadgeProps {
     status: string;
-    statusInfo?: {
-        label?: string;
-        color?: string;
-        bg_color?: string;
-    } | null;
+    statusInfo?: StatusInfo | null;
+    className?: string;
+    size?: 'xs' | 'sm' | 'md' | 'lg';
+    showIcon?: boolean;
 }
 
-const config: Record<string, { bg: string; dot: string; text: string; label: string }> = {
-    draft: { bg: 'bg-slate-100 dark:bg-slate-800', dot: 'bg-slate-400', text: 'text-slate-700 dark:text-slate-300', label: 'Draft' },
-    queue: { bg: 'bg-slate-100 dark:bg-slate-800', dot: 'bg-slate-400', text: 'text-slate-700 dark:text-slate-300', label: 'Antrian' },
-    in_review: { bg: 'bg-amber-50 dark:bg-amber-950/30', dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400', label: 'Review' },
-    revision: { bg: 'bg-rose-50 dark:bg-rose-950/30', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400', label: 'Revisi' },
-    pending: { bg: 'bg-amber-50 dark:bg-amber-950/30', dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400', label: 'Pending' },
-    approved: { bg: 'bg-emerald-50 dark:bg-emerald-950/30', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400', label: 'Disetujui' },
-    active: { bg: 'bg-indigo-50 dark:bg-indigo-950/30', dot: 'bg-indigo-500', text: 'text-indigo-700 dark:text-indigo-400', label: 'Aktif' },
-    expired: { bg: 'bg-rose-50 dark:bg-rose-950/30', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400', label: 'Expired' },
-    archived: { bg: 'bg-slate-100 dark:bg-slate-800', dot: 'bg-slate-400', text: 'text-slate-600 dark:text-slate-400', label: 'Arsip' },
-    rejected: { bg: 'bg-rose-50 dark:bg-rose-950/30', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400', label: 'Ditolak' },
-};
-
-const fallback = { bg: 'bg-slate-100 dark:bg-slate-800', dot: 'bg-slate-400', text: 'text-slate-700 dark:text-slate-300', label: 'Unknown' };
-
-export const StatusBadge = ({ status, statusInfo }: StatusBadgeProps) => {
-    const s = config[status?.toLowerCase() as keyof typeof config] || fallback;
+export const StatusBadge = ({
+    status,
+    statusInfo,
+    className,
+    size = 'md',
+    showIcon = true,
+}: StatusBadgeProps) => {
+    const s = getStatusConfig(status, statusInfo);
 
     const label = statusInfo?.label || s.label;
     const color = statusInfo?.color;
     const bgColor = statusInfo?.bg_color;
+    const iconName = statusInfo?.icon || s.icon;
 
-    // Check if bgColor is a light color (like #ffffff or #fff)
-    const isLightBg = (bg?: string) => {
-        if (!bg) return false;
-        const clean = bg.replace('#', '').trim().toLowerCase();
-        if (clean === 'fff' || clean === 'ffffff' || clean === 'white') return true;
-        if (clean.length === 6) {
-            const r = parseInt(clean.substring(0, 2), 16);
-            const g = parseInt(clean.substring(2, 4), 16);
-            const b = parseInt(clean.substring(4, 6), 16);
-            return (r * 299 + g * 587 + b * 114) / 1000 > 200;
-        }
-        return false;
-    };
+    const hasCustomColors = Boolean(color || bgColor);
+    const lightBg = isLightColor(bgColor);
 
-    const hasCustomColors = !!(color || bgColor);
-    const lightBg = isLightBg(bgColor);
+    const IconComp = showIcon && iconName && (LucideIcons as any)[iconName]
+        ? (LucideIcons as any)[iconName]
+        : null;
+
+    const sizeClasses = {
+        xs: 'px-1.5 py-0.2 text-[8.5px] gap-1',
+        sm: 'px-2 py-0.5 text-[9px] gap-1',
+        md: 'px-2.5 py-0.5 text-[10px] gap-1.5',
+        lg: 'px-3 py-1 text-xs gap-1.5',
+    }[size] || 'px-2.5 py-0.5 text-[10px] gap-1.5';
+
+    const iconSize = {
+        xs: 9,
+        sm: 10,
+        md: 11,
+        lg: 13,
+    }[size] || 11;
 
     return (
         <span
             className={cn(
-                'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-semibold tracking-tight uppercase',
+                'inline-flex items-center rounded-full font-semibold tracking-tight uppercase whitespace-nowrap shadow-xs border',
+                sizeClasses,
                 !hasCustomColors && s.bg,
                 !hasCustomColors && s.text,
+                !hasCustomColors && (s.border || 'border-transparent'),
                 hasCustomColors && lightBg && 'dark:!bg-slate-800 dark:!text-slate-200',
+                className,
             )}
-            style={hasCustomColors ? {
-                backgroundColor: bgColor || undefined,
-                color: color || undefined,
-            } : undefined}
+            style={
+                hasCustomColors
+                    ? {
+                          backgroundColor: bgColor || undefined,
+                          color: color || undefined,
+                          borderColor: color ? `${color}30` : undefined,
+                      }
+                    : undefined
+            }
         >
-            <span 
-                className={cn('h-1.5 w-1.5 rounded-full', !color && s.dot)} 
-                style={color ? { backgroundColor: color } : undefined}
-            />
-            {label}
+            {IconComp ? (
+                <IconComp size={iconSize} className="shrink-0" />
+            ) : (
+                <span
+                    className={cn('h-1.5 w-1.5 rounded-full shrink-0', !color && s.dot)}
+                    style={color ? { backgroundColor: color } : undefined}
+                />
+            )}
+            <span>{label}</span>
         </span>
     );
 };

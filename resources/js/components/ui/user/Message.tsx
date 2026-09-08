@@ -166,6 +166,37 @@ const MarkerContent = React.forwardRef<
 ));
 MarkerContent.displayName = "MarkerContent";
 
+const BubbleActions = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "absolute -top-3.5 right-2 flex items-center gap-0.5 rounded-full border border-border/80 bg-background/95 p-0.5 shadow-xs backdrop-blur-xs opacity-0 transition-opacity duration-200 group-hover/msg:opacity-100",
+      className
+    )}
+    {...props}
+  />
+));
+BubbleActions.displayName = "BubbleActions";
+
+const BubbleAction = React.forwardRef<
+  HTMLButtonElement,
+  React.ButtonHTMLAttributes<HTMLButtonElement>
+>(({ className, ...props }, ref) => (
+  <button
+    ref={ref}
+    type="button"
+    className={cn(
+      "flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer",
+      className
+    )}
+    {...props}
+  />
+));
+BubbleAction.displayName = "BubbleAction";
+
 export {
   Message,
   MessageGroup,
@@ -177,6 +208,9 @@ export {
   BubbleContent,
   BubbleGroup,
   BubbleReactions,
+  BubbleActions,
+  BubbleAction,
   Marker,
   MarkerContent,
 };
+

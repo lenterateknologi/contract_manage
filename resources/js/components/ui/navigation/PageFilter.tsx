@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, formatDateRange } from '@/lib/utils';
 import { Button } from '@/components/ui/buttons/Button';
 import { Bookmark, BookmarkCheck, Calendar, Check, ChevronDown, RotateCcw, SlidersHorizontal, Trash2, X } from 'lucide-react';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
@@ -69,12 +69,6 @@ function DateRangeField({
     const fromVal = typeof activeFilters[fromKey] === 'string' ? activeFilters[fromKey].split('T')[0] : '';
     const toVal = typeof activeFilters[toKey] === 'string' ? activeFilters[toKey].split('T')[0] : '';
 
-    const formatDateText = (s: string) => {
-        if (!s) return '';
-        const [y, m, d] = s.split('-');
-        return `${d}/${m}/${y}`;
-    };
-
     const hasDate = Boolean(fromVal || toVal);
 
     return (
@@ -98,7 +92,7 @@ function DateRangeField({
                                 >
                                     <Calendar size={10} className="shrink-0" />
                                     <span>
-                                        {formatDateText(fromVal) || '-'} – {formatDateText(toVal) || '-'}
+                                        {formatDateRange(fromVal, toVal)}
                                     </span>
                                     <button
                                         type="button"

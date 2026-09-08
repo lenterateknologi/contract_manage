@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/buttons/Button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
 import { useToast } from '@/components/ui/feedback/Toast';
-import { cn } from '@/lib/utils';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { cn, formatDate } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
@@ -19,13 +20,7 @@ interface AnalyticsData {
 
 const formatDateText = (dStr?: string) => {
     if (!dStr) return '';
-    try {
-        const [y, m, d] = dStr.split('-').map(Number);
-        const dt = new Date(y, m - 1, d);
-        return dt.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-    } catch {
-        return dStr;
-    }
+    return formatDate(dStr);
 };
 
 const getPresetRange = (type: 'today' | '7days' | '30days' | 'thisMonth' | 'lastMonth') => {
@@ -220,31 +215,14 @@ export default function AnalyticsPage({ breadcrumbs }: { breadcrumbs: Breadcrumb
         {
             header: 'Status',
             accessorKey: 'status',
-            cell: (row: any) => (
-                <span className={cn(
-                    "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-normal uppercase tracking-wider",
-                    row.status === 'approved' ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-900/60" :
-                    row.status === 'pending' ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-900/60" :
-                    row.status === 'rejected' ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-900/60" :
-                    "bg-slate-50 text-slate-700 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700"
-                )}>
-                    <span className={cn(
-                        "h-1.5 w-1.5 rounded-full",
-                        row.status === 'approved' ? "bg-emerald-500" :
-                        row.status === 'pending' ? "bg-amber-500" :
-                        row.status === 'rejected' ? "bg-rose-500" :
-                        "bg-slate-400"
-                    )} />
-                    {row.status}
-                </span>
-            )
+            cell: (row: any) => <StatusBadge status={row.status} />
         },
         {
             header: 'Tanggal Registrasi',
             accessorKey: 'created_at',
             cell: (row: any) => (
                 <span className="text-text-main font-normal text-xs">
-                    {new Date(row.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    {formatDate(row.created_at)}
                 </span>
             )
         }

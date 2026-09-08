@@ -11,8 +11,13 @@ import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { Modal } from '@/components/ui/dialogs/Modal';
+import { usePermissions } from '@/hooks/use-permissions';
 import { Head, router, useForm } from '@inertiajs/react';
-import {
+import { formatDate } from '@/lib/utils';
+import { AppIcon, Icons, type LucideIcon } from '@/components/ui';
+import React, { useMemo, useState } from 'react';
+
+const {
     ChevronDown,
     ChevronRight,
     Copy,
@@ -29,8 +34,7 @@ import {
     Settings,
     Trash2,
     Upload,
-} from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+} = Icons;
 
 interface FormTemplate {
     id: string;
@@ -241,6 +245,7 @@ function ImportFormTemplateModal({ isOpen, onClose, showToast }: Readonly<Import
 }
 
 export default function FormTemplates({ templates, contract_types }: Props) {
+    const { canRead, canCreate, canUpdate, canDelete, canBulkDelete } = usePermissions('ADMIN_FORMS');
     const { showToast } = useToast();
     const [searchQuery, setSearchQuery] = useState('');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -414,7 +419,7 @@ export default function FormTemplates({ templates, contract_types }: Props) {
             accessorKey: 'updated_at',
             cell: (row) => {
                 if (row.isParent) return null;
-                return <span className="text-text-main text-[11px] font-normal">{new Date(row.updated_at).toLocaleDateString()}</span>;
+                return <span className="text-text-main text-[11px] font-normal">{formatDate(row.updated_at)}</span>;
             },
         },
     ];
@@ -528,14 +533,16 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                     });
                 }}
                 actions={
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={() => setIsImportModalOpen(true)} className="gap-2 h-9 rounded-xl text-xs font-normal bg-card">
-                            <Upload size={14} /> Impor Template
-                        </Button>
-                        <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-                            <Plus size={16} /> Tambah Baru
-                        </Button>
-                    </div>
+                    canCreate ? (
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" onClick={() => setIsImportModalOpen(true)} className="gap-2 h-9 rounded-xl text-xs font-normal bg-card">
+                                <Upload size={14} /> Impor Template
+                            </Button>
+                            <Button variant="primary" onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+                                <Plus size={16} /> Tambah Baru
+                            </Button>
+                        </div>
+                    ) : undefined
                 }
             >
                 <TableMasterData
@@ -547,36 +554,42 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                             toggleClassificationCollapse(t.classificationName);
                             return;
                         }
-                        window.open(route('admin.form-templates.builder', t.id), '_blank');
+                        if (canUpdate) {
+                            window.open(route('admin.form-templates.builder', t.id), '_blank');
+                        }
                     }}
                     selectedRows={selectedRows}
                     onSelectionChange={setSelectedRows}
                     isRowSelectable={(row: any) => !row.isParent}
-                    bulkActions={(selected: any[]) => (
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                                const ids = selected.map((r) => r.id);
-                                if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} template terpilih?`)) {
-                                    router.post(
-                                        '/admin/form-templates/bulk-delete',
-                                        { ids },
-                                        {
-                                            onSuccess: () => {
-                                                showToast(`${ids.length} template telah dihapus`, 'success');
-                                                setSelectedRows([]);
-                                            },
-                                        },
-                                    );
-                                }
-                            }}
-                            className="h-8 gap-1.5 px-3 text-[10px] font-semibold tracking-wider uppercase bg-rose-600 hover:bg-rose-700 text-white rounded-lg"
-                        >
-                            <Trash2 size={12} />
-                            Hapus Terpilih
-                        </Button>
-                    )}
+                    bulkActions={
+                        canBulkDelete
+                            ? (selected: any[]) => (
+                                  <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() => {
+                                          const ids = selected.map((r) => r.id);
+                                          if (confirm(`Apakah Anda yakin ingin menghapus ${ids.length} template terpilih?`)) {
+                                              router.post(
+                                                  '/admin/form-templates/bulk-delete',
+                                                  { ids },
+                                                  {
+                                                      onSuccess: () => {
+                                                          showToast(`${ids.length} template telah dihapus`, 'success');
+                                                          setSelectedRows([]);
+                                                      },
+                                                  },
+                                              );
+                                          }
+                                      }}
+                                      className="h-8 gap-1.5 px-3 text-[10px] font-semibold tracking-wider uppercase bg-rose-600 hover:bg-rose-700 text-white rounded-lg"
+                                  >
+                                      <Trash2 size={12} />
+                                      Hapus Terpilih
+                                  </Button>
+                              )
+                            : undefined
+                    }
                     rowActions={(row: any) => {
                         if (row.isParent) return null;
                         return (
@@ -586,72 +599,82 @@ export default function FormTemplates({ templates, contract_types }: Props) {
                                     e.stopPropagation();
                                 }}
                             >
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        window.open(route('admin.form-templates.builder', row.id), '_blank');
-                                    }}
-                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
-                                    title="Open Builder"
-                                >
-                                    <Edit2 size={14} />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        openEditModal(row);
-                                    }}
-                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
-                                    title="Metadata"
-                                >
-                                    <Settings size={14} />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleDuplicate(row.id);
-                                    }}
-                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
-                                    title="Clone Asset"
-                                >
-                                    <Copy size={14} />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        handleExport(row.id);
-                                    }}
-                                    className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
-                                    title="Export JSON"
-                                >
-                                    <Download size={14} />
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setSelectedTemplate(row);
-                                        setIsDeleteModalOpen(true);
-                                    }}
-                                    className="text-text-main/20 hover:bg-danger/5 hover:text-danger h-9 w-9 rounded-xl transition-all cursor-pointer"
-                                    title="Purge Asset"
-                                >
-                                    <Trash2 size={14} />
-                                </Button>
+                                {canUpdate && (
+                                    <>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                window.open(route('admin.form-templates.builder', row.id), '_blank');
+                                            }}
+                                            className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
+                                            title="Open Builder"
+                                        >
+                                            <Edit2 size={14} />
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                openEditModal(row);
+                                            }}
+                                            className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
+                                            title="Metadata"
+                                        >
+                                            <Settings size={14} />
+                                        </Button>
+                                    </>
+                                )}
+                                {canCreate && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleDuplicate(row.id);
+                                        }}
+                                        className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
+                                        title="Clone Asset"
+                                    >
+                                        <Copy size={14} />
+                                    </Button>
+                                )}
+                                {canRead && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleExport(row.id);
+                                        }}
+                                        className="text-text-main/20 hover:text-text-main hover:bg-primary/[0.05] h-9 w-9 rounded-xl transition-all cursor-pointer"
+                                        title="Export JSON"
+                                    >
+                                        <Download size={14} />
+                                    </Button>
+                                )}
+                                {canDelete && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setSelectedTemplate(row);
+                                            setIsDeleteModalOpen(true);
+                                        }}
+                                        className="text-text-main/20 hover:bg-danger/5 hover:text-danger h-9 w-9 rounded-xl transition-all cursor-pointer"
+                                        title="Purge Asset"
+                                    >
+                                        <Trash2 size={14} />
+                                    </Button>
+                                )}
                             </div>
                         );
                     }}

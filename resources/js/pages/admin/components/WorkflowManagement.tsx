@@ -3,7 +3,9 @@ import { useToast } from '@/components/ui/feedback/Toast';
 import { usePermissions } from '@/hooks/use-permissions';
 import { cn } from '@/lib/utils';
 import { router } from '@inertiajs/react';
-import {
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
     CheckCircle2,
     Copy,
     Eye,
@@ -18,14 +20,14 @@ import {
     UserCircle,
     Users,
     XCircle,
-    Workflow as WorkflowIcon,
+    Workflow: WorkflowIcon,
     ArrowRight,
     UserCheck,
     FileSignature,
     Sparkles,
     Shield,
     X,
-} from 'lucide-react';
+} = Icons;
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import {
     Dialog,

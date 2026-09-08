@@ -10,8 +10,11 @@ import {
 import { Input } from '@/components/ui/inputs/Input';
 import { Badge } from '@/components/ui/feedback/Badge';
 import { Button } from '@/components/ui/buttons/Button';
+import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 import { type SharedData } from '@/types';
-import {
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
     Search,
     UserCheck,
     Building2,
@@ -22,7 +25,7 @@ import {
     Check,
     CornerDownLeft,
     Sparkles,
-} from 'lucide-react';
+} = Icons;
 import { cn } from '@/lib/utils';
 
 export interface ImpersonationUser {
@@ -225,14 +228,14 @@ export function UserSwitchModal({ open, onOpenChange }: UserSwitchModalProps) {
                             >
                                 <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
                                     {/* Initials Avatar */}
-                                    <div className={cn(
-                                        'size-9 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 transition-transform group-hover:scale-105',
-                                        isCurrent
-                                            ? 'bg-primary text-primary-foreground shadow-sm'
-                                            : 'bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground'
-                                    )}>
-                                        {user.initials || user.name.substring(0, 2).toUpperCase()}
-                                    </div>
+                                    <UserAvatarIcon
+                                        user={user}
+                                        size="md"
+                                        className={cn(
+                                            'size-9 rounded-xl text-xs font-bold shrink-0 transition-transform group-hover:scale-105',
+                                            isCurrent && 'ring-2 ring-primary shadow-sm',
+                                        )}
+                                    />
 
                                     {/* User Details */}
                                     <div className="min-w-0 flex-1">

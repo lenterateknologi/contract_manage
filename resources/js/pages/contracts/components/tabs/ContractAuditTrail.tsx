@@ -7,7 +7,22 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn, formatDateTime } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
-import { Check, Clock, ExternalLink, FileSpreadsheet, FileText, ListFilter, Search, ShieldCheck, X } from 'lucide-react';
+import { Badge } from '@/components/ui/feedback/Badge';
+import { UserAvatarIcon } from '@/components/profile/UserAvatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/feedback/Tooltip';
+import { AppIcon, Icons } from '@/components/ui';
+
+const {
+    Check,
+    Clock,
+    ExternalLink,
+    FileSpreadsheet,
+    FileText,
+    ListFilter,
+    Search,
+    ShieldCheck,
+    X,
+} = Icons;
 import { useEffect, useState } from 'react';
 
 interface Props {
@@ -183,41 +198,52 @@ export default function ContractAuditTrail({ contract }: Props) {
                     </div>
                 ) : (
                     <div className="relative">
-                        <div className="absolute top-2.5 bottom-2.5 left-[9px] w-px bg-black/5 dark:bg-white/5" />
+                        <div className="absolute top-3 bottom-3 left-[11px] w-px bg-black/5 dark:bg-white/5" />
                         <div className="flex flex-col gap-3">
                             {histories.map((h) => (
                                 <div key={h.id} className="relative flex gap-3">
-                                    <div className="dark:bg-sidebar relative z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/10 dark:ring-white/10">
-                                        <div className="scale-75">{getActionIcon(h.action)}</div>
+                                    <div className="dark:bg-sidebar relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-black/10 dark:ring-white/10">
+                                        <div className="scale-90">{getActionIcon(h.action)}</div>
                                     </div>
                                     <div className="flex min-w-0 flex-1 flex-col">
                                         <div className="flex items-baseline justify-between gap-3">
                                             <div className="flex flex-wrap items-center gap-1.5 overflow-hidden">
-                                                <span className="shrink-0 truncate text-[11px] tracking-tight text-text-main uppercase">
-                                                    {h.actor?.name || 'System'}
-                                                </span>
-                                                <span
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    <UserAvatarIcon
+                                                        user={h.actor}
+                                                        name={h.actor?.name || 'System'}
+                                                        size="sm"
+                                                        className="h-6 w-6 ring-1 ring-surface-base shrink-0 text-[10px]"
+                                                    />
+                                                    <span className="shrink-0 truncate text-[11px] font-semibold tracking-tight text-text-main">
+                                                        {h.actor?.name || 'System'}
+                                                    </span>
+                                                </div>
+                                                <Badge
+                                                    variant="outline"
                                                     className={cn(
-                                                        'rounded border px-1.5 py-0.5 text-[8px] uppercase shadow-sm font-medium',
+                                                        'px-1.5 py-0 text-[8px] font-bold uppercase tracking-wider rounded-sm',
                                                         h.action.includes('APPROVE')
-                                                            ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black'
+                                                            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
                                                             : h.action.includes('REJECT')
-                                                              ? 'border-black/20 bg-white text-black dark:border-white/20 dark:bg-black dark:text-white'
-                                                              : 'border-surface-border bg-surface-muted text-text-main',
+                                                              ? 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                                                              : h.action.includes('CREATE') || h.action.includes('SUBMIT')
+                                                                ? 'border-primary/30 bg-primary/10 text-primary'
+                                                                : 'border-border bg-muted/60 text-muted-foreground',
                                                     )}
                                                 >
                                                     {h.action.replace(/_/g, ' ')}
-                                                </span>
-                                                {/* ponytail: uniform text, no bold or gray */}
+                                                </Badge>
+                                                {/* Activity description */}
                                                 <span className="max-w-md truncate text-[11px] leading-relaxed text-text-main">
                                                     "{h.description}"
                                                 </span>
                                             </div>
-                                            <div className="font-mono text-[9px] whitespace-nowrap text-text-main uppercase tabular-nums">
+                                            <div className="font-mono text-[9px] whitespace-nowrap text-muted-foreground uppercase tabular-nums">
                                                 {formatDateTime(h.created_at)}
                                             </div>
                                         </div>
-                                        <div className="mt-2.5 w-full border-b border-black/5 dark:border-white/5" />
+                                        <div className="mt-2.5 w-full border-b border-border/40" />
                                     </div>
                                 </div>
                             ))}

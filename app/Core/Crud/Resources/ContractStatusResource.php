@@ -24,6 +24,7 @@ class ContractStatusResource extends Resource
         return [
             TextColumn::make('code', 'Kode')->sortable()->searchable(),
             TextColumn::make('label', 'Label')->sortable()->searchable(),
+            TextColumn::make('icon', 'Ikon')->searchable(),
             TextColumn::make('color', 'Warna Teks')->searchable(),
             TextColumn::make('bg_color', 'Warna Background')->searchable(),
             BooleanColumn::make('is_active', 'Status Aktif'),

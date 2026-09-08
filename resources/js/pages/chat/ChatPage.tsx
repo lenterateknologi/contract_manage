@@ -10,6 +10,7 @@ import { Contract } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
 import { ContractListItem } from './ui/ContractListItem';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
+import { formatDate } from '@/lib/utils';
 
 interface Props {
     contracts: Contract[];
@@ -90,15 +91,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
 
         filteredContracts.forEach((c) => {
             const rawDate = c.updated_at || c.created_at;
-            let groupLabel = 'Lainnya';
-            if (rawDate) {
-                const dateObj = new Date(rawDate);
-                groupLabel = dateObj.toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                });
-            }
+            const groupLabel = rawDate ? formatDate(rawDate) : 'Lainnya';
 
             if (!groups[groupLabel]) groups[groupLabel] = [];
             groups[groupLabel].push(c);

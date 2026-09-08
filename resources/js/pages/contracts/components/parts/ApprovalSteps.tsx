@@ -3,6 +3,7 @@ import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
+import { Badge } from '@/components/ui/feedback/Badge';
 import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
@@ -195,16 +196,28 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 </div>
             </div>
 
-            <div className="relative px-1">
-                <Timeline className={viewTab === 'lite' ? 'border-l ml-2 pl-4 py-0 gap-1.5' : undefined}>
+            <div className="relative">
+                <Timeline>
                     {!search && !approvals.some((a) => a.sequence === 1) && (
-                        <TimelineItem status="completed" className={viewTab === 'lite' ? 'pb-1.5' : undefined}>
-                            <InitiatorStepCard isOnly={stepTree.length === 0 && !showProjectedManager} creator={creator} submittedAt={submittedAt} isLite={viewTab === 'lite'} />
+                        <TimelineItem status="completed">
+                            <TimelineIcon status="completed">
+                                ✓
+                            </TimelineIcon>
+                            <TimelineContent>
+                                <InitiatorStepCard isOnly={stepTree.length === 0 && !showProjectedManager} creator={creator} submittedAt={submittedAt} isLite={viewTab === 'lite'} />
+                                <div className="mt-2.5 w-full border-b border-border/40" />
+                            </TimelineContent>
                         </TimelineItem>
                     )}
                     {!search && showProjectedManager && (
-                        <TimelineItem status="waiting" className={viewTab === 'lite' ? 'pb-1.5' : undefined}>
-                            <ProjectedStepCard creator={creator} />
+                        <TimelineItem status="waiting">
+                            <TimelineIcon status="waiting">
+                                ?
+                            </TimelineIcon>
+                            <TimelineContent>
+                                <ProjectedStepCard creator={creator} />
+                                <div className="mt-2.5 w-full border-b border-border/40" />
+                            </TimelineContent>
                         </TimelineItem>
                     )}
 
@@ -238,16 +251,15 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                         const statusColor = (isActive && contract.status_info?.color) ? contract.status_info.color : null;
 
                                         return (
-                                            <TimelineItem key={group.sequence + idx} status={itemStatus} className={viewTab === 'lite' ? 'pb-1.5' : undefined}>
+                                            <TimelineItem key={group.sequence + idx} status={itemStatus}>
                                                 <TimelineIcon
                                                     status={itemStatus}
                                                     style={isActive && statusColor ? { backgroundColor: statusColor, borderColor: 'transparent' } : undefined}
-                                                    className={viewTab === 'lite' ? '-left-[27px] h-5 w-5 text-[10px]' : undefined}
                                                 >
                                                     {isSubWf ? `${group.sequence}` : group.sequence}
                                                 </TimelineIcon>
 
-                                                <TimelineContent className={viewTab === 'lite' ? 'gap-1 before:top-[9px] before:-left-4 before:w-3' : undefined}>
+                                                <TimelineContent>
                                                     <div className={cn(
                                                         "flex items-center justify-between gap-1",
                                                         viewTab === 'lite' ? 'mb-0' : 'mb-2 pb-1.5 border-b border-surface-border/60'
@@ -396,30 +408,15 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
                                                             return (
                                                                 <>
-                                                                    {/* Distinct Sub-Step Wrapper Card */}
+                                                                    {/* Distinct Sub-Step Rows */}
                                                                     {subStepItems.length > 0 && (
-                                                                        <div className={cn(
-                                                                            "rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-800/80 bg-indigo-50/50 dark:bg-indigo-950/25 shadow-2xs",
-                                                                            viewTab === 'lite' ? 'p-1.5 space-y-1 mb-1' : 'p-2.5 space-y-1.5 mb-1.5'
-                                                                        )}>
-                                                                            <div className="flex items-center justify-between pb-1 border-b border-indigo-200/70 dark:border-indigo-800/50">
-                                                                                <div className="flex items-center gap-1.5">
-                                                                                    <span className={cn(
-                                                                                        "flex items-center justify-center rounded bg-indigo-600 text-white dark:bg-indigo-500 shadow-2xs",
-                                                                                        viewTab === 'lite' ? 'h-4 w-4' : 'h-4.5 w-4.5'
-                                                                                    )}>
-                                                                                        <GitCommit size={viewTab === 'lite' ? 9 : 11} strokeWidth={2.5} />
-                                                                                    </span>
-                                                                                    <span className="text-[10px] font-extrabold tracking-wider uppercase text-indigo-950 dark:text-indigo-200">
-                                                                                        Persetujuan Tambahan (Sub-Tahap {group.sequence})
-                                                                                    </span>
-                                                                                </div>
-                                                                                <span className="text-[8.5px] font-bold text-indigo-700 dark:text-indigo-300 bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.2 rounded uppercase">
-                                                                                    {subStepItems.length} Sub-Approver
-                                                                                </span>
+                                                                        <div className="my-1.5 ml-3 sm:ml-4 pl-2.5 border-l-2 border-indigo-500/30 dark:border-indigo-500/20 space-y-1.5">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <Badge variant="outline" className="px-1.5 py-0 font-bold uppercase text-indigo-700 dark:text-indigo-300 border-indigo-500/25 bg-indigo-500/10 text-[8.5px] tracking-wider rounded-xs">
+                                                                                    Sub-Tahap {group.sequence} ({subStepItems.length} Penyetuju Tambahan)
+                                                                                </Badge>
                                                                             </div>
-
-                                                                            <div className="space-y-1 pl-0.5">
+                                                                            <div className="space-y-1">
                                                                                 {subStepItems.map((a: ContractApproval) => (
                                                                                     <ApprovalCard
                                                                                         key={a.id}
@@ -463,6 +460,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                             );
                                                         })()}
                                                     </div>
+                                                    <div className="mt-2.5 w-full border-b border-border/40" />
                                                 </TimelineContent>
                                             </TimelineItem>
                                         );
@@ -476,14 +474,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                 <TimelineItem key={block.workflowId + bIdx} status="active" className={cn(viewTab === 'lite' ? 'pb-2' : 'pb-4')}>
                                     <TimelineIcon 
                                         status="active" 
-                                        className={cn(
-                                            "bg-indigo-600 text-white dark:bg-indigo-500",
-                                            viewTab === 'lite' ? '-left-[27px] h-5 w-5' : ''
-                                        )}
+                                        className="bg-indigo-600 text-white dark:bg-indigo-500"
                                     >
-                                        <Layers size={viewTab === 'lite' ? 11 : 13} strokeWidth={2.5} />
+                                        <Layers size={13} strokeWidth={2.5} />
                                     </TimelineIcon>
-                                    <TimelineContent className={viewTab === 'lite' ? 'gap-1 before:top-[9px] before:-left-4 before:w-3' : undefined}>
+                                    <TimelineContent>
                                         <div className={cn(
                                             "rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-800/80 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-xs",
                                             viewTab === 'lite' ? 'p-2 sm:p-2.5' : 'p-3 sm:p-4'
@@ -491,30 +486,24 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                             {/* Sub-Workflow Card Header */}
                                             <div className={cn(
                                                 "flex flex-wrap items-center justify-between gap-1.5 border-b border-indigo-200/60 dark:border-indigo-800/50",
-                                                viewTab === 'lite' ? 'pb-1.5 mb-1.5' : 'pb-3 mb-3'
+                                                viewTab === 'lite' ? 'pb-2 mb-2' : 'pb-3 mb-3'
                                             )}>
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className={cn(
-                                                        "flex items-center justify-center rounded-md bg-indigo-600 text-white dark:bg-indigo-500 shadow-xs shrink-0",
-                                                        viewTab === 'lite' ? 'h-5 w-5' : 'h-6 w-6'
-                                                    )}>
-                                                        <Workflow size={viewTab === 'lite' ? 11 : 13} strokeWidth={2.5} />
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-white dark:bg-indigo-500 shadow-xs shrink-0">
+                                                        <Workflow size={13} strokeWidth={2.5} />
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-1">
-                                                            <span className="text-[8.5px] font-extrabold tracking-wider text-indigo-700 dark:text-indigo-400 uppercase bg-indigo-100 dark:bg-indigo-900/60 px-1 py-0.2 rounded">
+                                                            <span className="text-[9px] font-extrabold tracking-wider text-indigo-700 dark:text-indigo-400 uppercase bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.5 rounded">
                                                                 Sub-Workflow Cabang
                                                             </span>
                                                         </div>
-                                                        <h4 className={cn(
-                                                            "font-bold text-indigo-950 dark:text-indigo-100",
-                                                            viewTab === 'lite' ? 'text-[11px] mt-0' : 'text-xs mt-0.5'
-                                                        )}>
+                                                        <h4 className="text-xs font-bold text-indigo-950 dark:text-indigo-100 mt-0.5">
                                                             {block.workflowName}
                                                         </h4>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-1 text-[9.5px] font-semibold text-indigo-600 dark:text-indigo-400">
+                                                <div className="flex items-center gap-1 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
                                                     <span>{block.groups.length} Tahap Persetujuan</span>
                                                 </div>
                                             </div>
