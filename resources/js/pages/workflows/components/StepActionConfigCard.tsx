@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/buttons/Button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
-import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
+import { SearchableMultiSelectPortal } from '@/components/ui/selection/SearchableMultiSelectPortal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import {
+    ArrowDown,
     ArrowRight,
+    ArrowUp,
     Briefcase,
     Copy,
     CornerDownLeft,
+    Eye,
+    EyeOff,
     FileSignature,
     Flag,
     GitBranch,
@@ -106,6 +110,7 @@ const mapAuthoritiesToConfig = (authorities: any[]) => {
 interface StepActionConfigCardProps {
     act: any;
     actIdx: number;
+    totalActions?: number;
     idx: number;
     step: any;
     allWorkflows: any[];
@@ -120,11 +125,13 @@ interface StepActionConfigCardProps {
     updateAction: (actIdx: number, data: any) => void;
     removeAction: (actIdx: number) => void;
     cloneAction: (actIdx: number) => void;
+    moveAction?: (actIdx: number, direction: 'up' | 'down') => void;
 }
 
 export function StepActionConfigCard({
     act,
     actIdx,
+    totalActions = 1,
     idx,
     step,
     allWorkflows,
@@ -139,6 +146,7 @@ export function StepActionConfigCard({
     updateAction,
     removeAction,
     cloneAction,
+    moveAction,
 }: StepActionConfigCardProps) {
     const actionCode = (act.master_action?.code || act.action_code || act.master_action_id || '').toLowerCase();
     const isForwardAction = actionCode === 'forward';
@@ -200,6 +208,27 @@ export function StepActionConfigCard({
         },
         forward: {
             bg: 'bg-indigo-600/90 dark:bg-indigo-900/80',
+            text: 'text-white',
+            border: 'border-transparent',
+            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
+            activeColor: 'bg-primary text-white shadow-xs'
+        },
+        branch: {
+            bg: 'bg-sky-600/90 dark:bg-sky-900/80',
+            text: 'text-white',
+            border: 'border-transparent',
+            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
+            activeColor: 'bg-primary text-white shadow-xs'
+        },
+        auto: {
+            bg: 'bg-emerald-700/90 dark:bg-emerald-900/80',
+            text: 'text-white',
+            border: 'border-transparent',
+            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
+            activeColor: 'bg-primary text-white shadow-xs'
+        },
+        automation: {
+            bg: 'bg-emerald-700/90 dark:bg-emerald-900/80',
             text: 'text-white',
             border: 'border-transparent',
             buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
@@ -346,6 +375,55 @@ export function StepActionConfigCard({
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Reorder Buttons (Tukar Posisi Aksi) */}
+                    {moveAction && totalActions > 1 && (
+                        <div className="flex items-center gap-0.5 rounded-lg bg-white/15 p-0.5 border border-white/15 shadow-xs mr-0.5">
+                            <button
+                                type="button"
+                                disabled={actIdx === 0}
+                                onClick={() => moveAction(actIdx, 'up')}
+                                className={cn(
+                                    'cursor-pointer transition-all p-1 rounded-md text-white flex items-center justify-center',
+                                    actIdx === 0
+                                        ? 'opacity-30 cursor-not-allowed'
+                                        : 'hover:bg-white/20 active:scale-95'
+                                )}
+                                title="Pindah ke Atas (Tukar Posisi)"
+                            >
+                                <ArrowUp size={13} />
+                            </button>
+                            <button
+                                type="button"
+                                disabled={actIdx === totalActions - 1}
+                                onClick={() => moveAction(actIdx, 'down')}
+                                className={cn(
+                                    'cursor-pointer transition-all p-1 rounded-md text-white flex items-center justify-center',
+                                    actIdx === totalActions - 1
+                                        ? 'opacity-30 cursor-not-allowed'
+                                        : 'hover:bg-white/20 active:scale-95'
+                                )}
+                                title="Pindah ke Bawah (Tukar Posisi)"
+                            >
+                                <ArrowDown size={13} />
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Toggle Visible/Invisible (Eye Icon) */}
+                    <button
+                        type="button"
+                        onClick={() => updateAction(actIdx, { is_visible: act.is_visible === false ? true : false })}
+                        className={cn(
+                            'cursor-pointer transition-all p-1.5 rounded-lg border flex items-center justify-center shadow-xs',
+                            act.is_visible !== false
+                                ? 'bg-white/20 hover:bg-white/30 text-white border-white/20'
+                                : 'bg-amber-500/90 hover:bg-amber-500 text-white border-amber-400/60 ring-1 ring-amber-300/40'
+                        )}
+                        title={act.is_visible !== false ? 'Aksi Terlihat (Tombol Tampil di Form/Detail Kontrak)' : 'Aksi Tersembunyi (Aksi Otomatis/Sistem Tanpa Tombol)'}
+                    >
+                        {act.is_visible !== false ? <Eye size={13} /> : <EyeOff size={13} />}
+                    </button>
+
                     {/* Toggle Active/Inactive */}
                     <button
                         type="button"
@@ -358,14 +436,16 @@ export function StepActionConfigCard({
                         {act.is_active !== false ? 'AKTIF' : 'NON-AKTIF'}
                     </button>
 
-                    <button
-                        type="button"
-                        onClick={() => cloneAction(actIdx)}
-                        className="cursor-pointer transition-colors p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white border border-white/10 flex items-center justify-center shadow-xs"
-                        title="Duplikat Aksi"
-                    >
-                        <Copy size={13} />
-                    </button>
+                    {actionCode !== 'auto' && actionCode !== 'automation' && (
+                        <button
+                            type="button"
+                            onClick={() => cloneAction(actIdx)}
+                            className="cursor-pointer transition-colors p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white border border-white/10 flex items-center justify-center shadow-xs"
+                            title="Duplikat Aksi"
+                        >
+                            <Copy size={13} />
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => removeAction(actIdx)}
@@ -676,7 +756,7 @@ export function StepActionConfigCard({
                 {/* Cell 3: Required Fields */}
                 <div className="relative space-y-1.5 z-20 focus-within:z-40">
                     <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Kolom Wajib Diisi (Required)</label>
-                    <SearchableMultiSelect
+                    <SearchableMultiSelectPortal
                         values={act.required_fields || []}
                         onValuesChange={(vals: string[]) => updateAction(actIdx, { required_fields: vals })}
                         options={AVAILABLE_FIELDS}
@@ -687,7 +767,7 @@ export function StepActionConfigCard({
                 {/* Cell 4: Autofill Fields */}
                 <div className="relative space-y-1.5 z-10 focus-within:z-40">
                     <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Kolom Isi Otomatis (Autofill)</label>
-                    <SearchableMultiSelect
+                    <SearchableMultiSelectPortal
                         values={act.autofilled_fields || []}
                         onValuesChange={(vals: string[]) => updateAction(actIdx, { autofilled_fields: vals })}
                         options={AUTOFILLED_PARAMS}

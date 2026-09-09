@@ -117,6 +117,7 @@ class ContractFormatter
             'submitted_at' => $c->submitted_at ? $c->submitted_at->format('d/m/Y H:i') : null,
             'creator' => self::formatUser($c->creator),
             'initiator' => self::formatUser($c->initiator),
+            'assigned_pic_id' => $c->assigned_pic_id ?? ($c->metadata['assigned_pic_id'] ?? null),
             'assigned_pic' => self::formatUser($c->assignedPic),
             'assigned_by' => self::formatUser($c->assignedBy)
                 ?: ($c->approvals->where('sequence', 3)->where('status', 'approved')->first()
@@ -137,6 +138,7 @@ class ContractFormatter
             'origin_workflow' => $c->origin_workflow_id ? [
                 'id' => $c->origin_workflow_id,
                 'name' => \App\Models\Workflow::where('id', $c->origin_workflow_id)->value('name') ?? $c->workflow?->name,
+                'meta' => \App\Models\Workflow::where('id', $c->origin_workflow_id)->value('meta') ?? [],
             ] : null,
             'workflow_step_id' => $c->workflow_step_id,
             'workflow' => $c->workflow ? [
@@ -187,6 +189,7 @@ class ContractFormatter
                         'required_fields' => $action->required_fields,
                         'autofilled_fields' => $action->autofilled_fields,
                         'signing_parties' => $action->signing_parties,
+                        'is_visible' => (bool) ($action->is_visible ?? true),
                     ];
                 })->toArray(),
             ] : null,
@@ -253,17 +256,32 @@ class ContractFormatter
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]),
-            'can_approve' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
-                if ($a->sub_step !== null) {
-                    return true;
-                }
-                $hasUnapprovedSubSteps = $c->approvals
-                    ->where('workflow_step_id', $a->workflow_step_id)
-                    ->whereNotNull('sub_step')
-                    ->contains(fn ($sub) => $sub->status !== 'approved');
+            'can_approve' => (function () use ($c) {
+                if ($c->status === 'in_review' && $c->workflow_step_id && $c->workflowStep) {
+                    $hasPendingOrWaiting = $c->approvals
+                        ->where('workflow_step_id', $c->workflow_step_id)
+                        ->whereIn('status', ['pending', 'waiting'])
+                        ->isNotEmpty();
 
-                return ! $hasUnapprovedSubSteps;
-            })->isNotEmpty(),
+                    if (! $hasPendingOrWaiting) {
+                        app(\App\Services\Workflow\ContractWorkflowService::class)->createApprovalForStep($c, $c->workflowStep);
+                        $c->unsetRelation('approvals');
+                        $c->load(['approvals.approver', 'approvals.workflowStep']);
+                    }
+                }
+
+                return $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+                    if ($a->sub_step !== null) {
+                        return true;
+                    }
+                    $hasUnapprovedSubSteps = $c->approvals
+                        ->where('workflow_step_id', $a->workflow_step_id)
+                        ->whereNotNull('sub_step')
+                        ->contains(fn ($sub) => $sub->status !== 'approved');
+
+                    return ! $hasUnapprovedSubSteps;
+                })->isNotEmpty();
+            })(),
             'pending_approval_id' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
                 if ($a->sub_step !== null) {
                     return true;
@@ -464,7 +482,24 @@ class ContractFormatter
 
                 $returnStepNum = 2;
                 if (isset($c->metadata['branch_from_step_num'])) {
-                    $returnStepNum = (int) $c->metadata['branch_from_step_num'] + 1;
+                    $returnMode = 'branch_next';
+                    if ($c->workflow) {
+                        $subSteps = $c->workflow->relationLoaded('steps')
+                            ? $c->workflow->steps
+                            : $c->workflow->steps()->with('actions')->get();
+                        $subSteps->loadMissing('actions');
+
+                        foreach ($subSteps->flatMap->actions as $act) {
+                            $trans = $act->transition_config ?? [];
+                            if (($trans['type'] ?? '') === 'cross_workflow' && isset($trans['return_mode'])) {
+                                $returnMode = $trans['return_mode'];
+                                break;
+                            }
+                        }
+                    }
+                    $returnStepNum = ($returnMode === 'branch_origin' || $returnMode === 'origin_step')
+                        ? (int) $c->metadata['branch_from_step_num']
+                        : (int) $c->metadata['branch_from_step_num'] + 1;
                 } elseif ($c->workflow) {
                     $subSteps = $c->workflow->relationLoaded('steps')
                         ? $c->workflow->steps
@@ -497,6 +532,17 @@ class ContractFormatter
             }
         }
 
+        // ponytail: If a workflow appears across sub-workflows (and contract has returned to origin), normalize earlier chunks and current chunk
+        if (! ($c->origin_workflow_id && $c->origin_workflow_id !== $c->workflow_id)) {
+            $lastIdx = count($chunks) - 1;
+            for ($i = 0; $i < $lastIdx; $i++) {
+                if ($chunks[$i]['workflow_id'] === $chunks[$lastIdx]['workflow_id']) {
+                    $resumeStep = $chunks[$lastIdx]['approvals']->map(fn ($a) => $a->workflowStep?->step)->filter()->min() ?? ($c->workflowStep?->step ?? 1);
+                    $chunks[$lastIdx]['from_step'] = $resumeStep;
+                }
+            }
+        }
+
         $timeline = [];
         $globalOrder = 0;
 
@@ -526,6 +572,10 @@ class ContractFormatter
             if ($chunk['is_future_origin'] ?? false) {
                 $fromStep = $chunk['from_step'] ?? 2;
                 $stepsToProcess = $steps->filter(fn ($s) => $s->step >= $fromStep);
+            } elseif (isset($chunk['from_step'])) {
+                $stepsToProcess = $steps->filter(fn ($s) => $s->step >= $chunk['from_step']);
+            } elseif (isset($chunk['max_step'])) {
+                $stepsToProcess = $steps->filter(fn ($s) => $s->step <= $chunk['max_step'] && $chunk['step_ids']->contains($s->id));
             } elseif (! $isCurrentChunk) {
                 $stepsToProcess = $steps->filter(fn ($s) => $chunk['step_ids']->contains($s->id));
             } else {
@@ -533,9 +583,31 @@ class ContractFormatter
             }
 
             foreach ($stepsToProcess as $step) {
+                $isVisible = $step->getAttributes()['is_visible'] ?? $step->is_visible ?? true;
+                if ($isVisible === false) {
+                    continue;
+                }
+
+                $stepAuthorities = $step->relationLoaded('approverAuthorities')
+                    ? $step->approverAuthorities
+                    : $step->approverAuthorities()->get();
+
+                $isAdhocStep = $stepAuthorities->contains(fn ($a) => in_array($a->authority_type, ['adhoc_approvers', 'adhoc'])) ||
+                    (! empty($step->approver_config['custom']) && (in_array('adhoc_approvers', (array) $step->approver_config['custom']) || in_array('adhoc', (array) $step->approver_config['custom'])));
+
+                $isSigningStep = $step->step_category === 'signing';
+
                 $stepApprovals = $chunk['approvals']->where('workflow_step_id', $step->id);
                 $regularApprovals = $stepApprovals->filter(fn ($a) => $a->role !== config('master.roles.adhoc_approver') && $a->role !== 'Penandatangan');
-                $adhocApprovals = $stepApprovals->filter(fn ($a) => $a->role === config('master.roles.adhoc_approver') || $a->role === 'Penandatangan');
+                $adhocApprovals = $stepApprovals->filter(function ($a) use ($isAdhocStep, $isSigningStep) {
+                    if ($a->role === 'Penandatangan') {
+                        return $isSigningStep;
+                    }
+                    if ($a->role === config('master.roles.adhoc_approver') || $a->role === 'Persetujuan Tambahan' || $a->sub_step !== null) {
+                        return true;
+                    }
+                    return false;
+                });
 
                 $hasApprovals = $regularApprovals->isNotEmpty() || $adhocApprovals->isNotEmpty();
                 $isCurrentStep = $isCurrentChunk && ($c->workflow_step_id === $step->id);
@@ -594,6 +666,9 @@ class ContractFormatter
                         'sequence' => $step->step,
                         'sub_step' => $a->sub_step,
                         'status' => $a->status,
+                        'action_id' => $a->action_id,
+                        'action_code' => $a->action_code,
+                        'action_alias' => $a->action_alias,
                         'comment' => $a->comment,
                         'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
                         'created_at' => $a->created_at?->toIso8601String(),
@@ -655,9 +730,111 @@ class ContractFormatter
                     if ($regularApprovals->isNotEmpty()) {
                         $isRoleBased = $step->approver_type === 'role';
                         $hasDecision = $regularApprovals->contains(fn ($a) => in_array($a->status, ['approved', 'rejected']));
+                        $hasPending = $regularApprovals->contains(fn ($a) => in_array($a->status, ['pending', 'waiting']));
 
-                        $isAllPending = $regularApprovals->every(fn ($a) => $a->status === 'pending');
-                        if ($isAllPending && $regularApprovals->count() > 1 && $isRoleBased) {
+                        if ($isCurrentStep && $hasDecision && $hasPending) {
+                            // First output completed decision(s) (e.g. action that initiated sub-workflow)
+                            foreach ($regularApprovals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected'])) as $a) {
+                                $timeline[] = [
+                                    'id' => $a->id,
+                                    'workflow_step_id' => $a->workflow_step_id,
+                                    'user_id' => $a->user_id,
+                                    'approver_name' => $a->approver_name,
+                                    'role' => $a->role,
+                                    'department_name' => $deptName,
+                                    'target_approvers' => $targetApprovers,
+                                    'target_emails' => $a->approver?->email ?: $targetEmails,
+                                    'sequence' => $step->step,
+                                    'sub_step' => $a->sub_step,
+                                    'status' => $a->status,
+                                    'action_id' => $a->action_id,
+                                    'action_code' => $a->action_code,
+                                    'action_alias' => $a->action_alias,
+                                    'comment' => $a->comment,
+                                    'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
+                                    'created_at' => $a->created_at?->format('d/m/Y H:i'),
+                                    'step_entry_at' => $a->created_at?->format('d/m/Y H:i'),
+                                    'is_active' => $a->is_active,
+                                    'step_type' => 'APPROVAL',
+                                    'step_name' => $stepLabel,
+                                    'step_description' => $step->description,
+                                    'step_category' => $step->step_category,
+                                    'sort_order' => $globalOrder++,
+                                    'workflow_step' => [
+                                        'id' => $step->id,
+                                        'step' => $step->step,
+                                        'label' => $stepLabel,
+                                        'description' => $step->description,
+                                        'workflow_id' => $step->workflow_id,
+                                        'workflow' => [
+                                            'id' => $workflow->id,
+                                            'name' => $workflow->name,
+                                        ],
+                                        'meta' => $step->meta ?? [],
+                                        'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
+                                            'id' => $act->id,
+                                            'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
+                                            'alias' => $act->alias,
+                                            'target_status' => $act->target_status,
+                                            'required_fields' => $act->required_fields ?? [],
+                                            'autofilled_fields' => $act->autofilled_fields ?? [],
+                                            'is_visible' => (bool) ($act->is_visible ?? true),
+                                        ])->toArray() : [],
+                                    ],
+                                    'approver' => self::formatUser($a->approver),
+                                ];
+                            }
+
+                            // Then output pending group
+                            $pendingItems = $regularApprovals->filter(fn ($a) => in_array($a->status, ['pending', 'waiting']));
+                            $first = $pendingItems->first();
+                            $candidateNames = $pendingItems->map(fn ($a) => $a->approver->name ?? $a->approver_name)->implode(', ');
+                            $candidateEmails = $pendingItems->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
+
+                            $timeline[] = [
+                                'id' => 'step-group-'.$step->id,
+                                'workflow_step_id' => $step->id,
+                                'user_id' => null,
+                                'approver_name' => $first->role,
+                                'role' => $first->role,
+                                'department_name' => $deptName,
+                                'target_approvers' => $candidateNames ?: $targetApprovers,
+                                'target_emails' => $candidateEmails ?: $targetEmails,
+                                'sequence' => $step->step,
+                                'status' => 'pending',
+                                'comment' => null,
+                                'decided_at' => null,
+                                'created_at' => null,
+                                'is_active' => (bool) $first->is_active,
+                                'step_type' => 'APPROVAL',
+                                'step_name' => $stepLabel,
+                                'step_description' => $step->description,
+                                'step_category' => $step->step_category,
+                                'sort_order' => $globalOrder++,
+                                'workflow_step' => [
+                                    'id' => $step->id,
+                                    'step' => $step->step,
+                                    'label' => $stepLabel,
+                                    'description' => $step->description,
+                                    'workflow_id' => $step->workflow_id,
+                                    'workflow' => [
+                                        'id' => $workflow->id,
+                                        'name' => $workflow->name,
+                                    ],
+                                    'meta' => $step->meta ?? [],
+                                    'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
+                                        'id' => $act->id,
+                                        'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
+                                        'alias' => $act->alias,
+                                        'target_status' => $act->target_status,
+                                        'required_fields' => $act->required_fields ?? [],
+                                        'autofilled_fields' => $act->autofilled_fields ?? [],
+                                        'is_visible' => (bool) ($act->is_visible ?? true),
+                                    ])->toArray() : [],
+                                ],
+                                'approver' => null,
+                            ];
+                        } elseif ($regularApprovals->every(fn ($a) => $a->status === 'pending') && $regularApprovals->count() > 1 && $isRoleBased) {
                             $first = $regularApprovals->first();
                             $candidateNames = $regularApprovals->map(fn ($a) => $a->approver->name ?? $a->approver_name)->implode(', ');
                             $candidateEmails = $regularApprovals->map(fn ($a) => $a->approver?->email)->filter()->implode(', ');
@@ -692,12 +869,22 @@ class ContractFormatter
                                         'id' => $workflow->id,
                                         'name' => $workflow->name,
                                     ],
+                                    'meta' => $step->meta ?? [],
+                                    'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
+                                        'id' => $act->id,
+                                        'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
+                                        'alias' => $act->alias,
+                                        'target_status' => $act->target_status,
+                                        'required_fields' => $act->required_fields ?? [],
+                                        'autofilled_fields' => $act->autofilled_fields ?? [],
+                                        'is_visible' => (bool) ($act->is_visible ?? true),
+                                    ])->toArray() : [],
                                 ],
                                 'approver' => null,
                             ];
                         } else {
                             $approvalsToDisplay = $regularApprovals;
-                            if ($isRoleBased && $hasDecision) {
+                            if ($isRoleBased && $hasDecision && ! $isCurrentStep) {
                                 $approvalsToDisplay = $regularApprovals->filter(fn ($a) => in_array($a->status, ['approved', 'rejected']));
                             }
 
@@ -714,6 +901,9 @@ class ContractFormatter
                                     'sequence' => $step->step,
                                     'sub_step' => $a->sub_step,
                                     'status' => $a->status,
+                                    'action_id' => $a->action_id,
+                                    'action_code' => $a->action_code,
+                                    'action_alias' => $a->action_alias,
                                     'comment' => $a->comment,
                                     'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
                                     'created_at' => $a->created_at?->format('d/m/Y H:i'),
@@ -742,6 +932,7 @@ class ContractFormatter
                                             'target_status' => $act->target_status,
                                             'required_fields' => $act->required_fields ?? [],
                                             'autofilled_fields' => $act->autofilled_fields ?? [],
+                                            'is_visible' => (bool) ($act->is_visible ?? true),
                                         ])->toArray() : [],
                                     ],
                                     'approver' => self::formatUser($a->approver),
@@ -749,17 +940,8 @@ class ContractFormatter
                             }
                         }
                     } else {
-                        $roleLabel = is_array($step->role) ? implode(', ', $step->role) : $step->role;
-                        $stepTargetApprovers = $targetApprovers;
-                        $approverName = $roleLabel;
-
-                        if ($step->approver_type === 'assigned_pic') {
-                            $picName = $c->assignedPic?->name ?? ($c->assigned_pic_id ? \App\Models\User::find($c->assigned_pic_id)?->name : null);
-                            $stepTargetApprovers = $picName ?: 'PIC (Belum Ditugaskan)';
-                            $approverName = $picName ?: 'PIC (Belum Ditugaskan)';
-                        }
-
                         $authoritiesPayload = [];
+                        $authorities = collect();
                         if ($step->relationLoaded('approverAuthorities') || $step->approverAuthorities()->exists()) {
                             $authorities = $step->relationLoaded('approverAuthorities')
                                 ? $step->approverAuthorities
@@ -781,6 +963,33 @@ class ContractFormatter
                                 'company_use_initiator' => (bool) $a->company_use_initiator,
                                 'region_use_initiator' => (bool) $a->region_use_initiator,
                             ])->values()->toArray();
+                        }
+
+                        $isAdhocStep = $authorities->contains(fn ($a) => in_array($a->authority_type, ['adhoc_approvers', 'adhoc'])) ||
+                            (! empty($step->approver_config['custom']) && (in_array('adhoc_approvers', (array) $step->approver_config['custom']) || in_array('adhoc', (array) $step->approver_config['custom'])));
+
+                        // If adhoc approvals already exist for this step and it's an adhoc step or has no other regular approvers, skip redundant placeholder
+                        if ($adhocApprovals->isNotEmpty() && ($isAdhocStep || empty($targetApprovers))) {
+                            continue;
+                        }
+
+                        // ponytail: Historical / completed chunks should not project future steps
+                        if (! $isCurrentChunk && ! ($chunk['is_future_origin'] ?? false)) {
+                            continue;
+                        }
+
+                        $roleLabel = is_array($step->role) ? implode(', ', array_filter($step->role)) : $step->role;
+                        $stepTargetApprovers = $targetApprovers;
+                        $approverName = $roleLabel;
+
+                        if ($step->approver_type === 'assigned_pic') {
+                            $picName = $c->assignedPic?->name ?? ($c->assigned_pic_id ? \App\Models\User::find($c->assigned_pic_id)?->name : null);
+                            $stepTargetApprovers = $picName ?: 'PIC (Belum Ditugaskan)';
+                            $approverName = $picName ?: 'PIC (Belum Ditugaskan)';
+                        } elseif ($isAdhocStep) {
+                            $stepTargetApprovers = 'Persetujuan Tambahan (Ditentukan saat pengajuan)';
+                            $approverName = 'Persetujuan Tambahan';
+                            $roleLabel = 'Persetujuan Tambahan';
                         }
 
                         $mainStatus = 'SELANJUTNYA';

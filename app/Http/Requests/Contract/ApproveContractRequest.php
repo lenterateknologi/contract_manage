@@ -32,6 +32,7 @@ class ApproveContractRequest extends FormRequest
             'p1_user_id' => 'nullable|uuid|exists:m_users,id',
             'p2_user_id' => 'nullable|uuid|exists:m_users,id',
             'action_code' => 'nullable|string',
+            'action_id' => 'nullable|uuid|exists:m_workflow_step_actions,id',
             'target_step_id' => 'nullable|uuid|exists:m_workflow_steps,id',
         ];
     }

@@ -68,7 +68,10 @@ export function SharedSignerModal({ open, onClose, contract, onUpdate, showToast
             });
 
             // 1. Check custom action configuration from workflow meta (e.g. action_signature)
-            const customActions: any[] = contract?.workflow?.meta?.custom_actions || contract?.workflow_step?.workflow?.meta?.custom_actions || [];
+            const customActions: any[] = 
+                contract?.workflow?.meta?.custom_actions || 
+                contract?.origin_workflow?.meta?.custom_actions || 
+                contract?.workflow_step?.workflow?.meta?.custom_actions || [];
             const customAction = customActions.find((ca: any) => ca.id === 'action_signature' || ca.action_code === 'signature' || ca.action_code === actionCode);
 
             // 2. Check step action configuration

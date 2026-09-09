@@ -10,7 +10,7 @@ class GetAuditTrailAction
 {
     public function execute(Contract $contract, Request $request): JsonResponse
     {
-        $query = $contract->histories()->with('actor')->orderBy('created_at', 'desc');
+        $query = $contract->histories()->with('actor')->orderBy('created_at', 'asc')->orderBy('id', 'asc');
 
         if ($request->action) {
             $query->where('action', $request->action);
@@ -38,6 +38,7 @@ class GetAuditTrailAction
                     'name' => $h->actor->name,
                 ] : null,
                 'created_at' => $h->created_at->format('d/m/Y H:i'),
+                'created_at_iso' => $h->created_at->toIso8601String(),
             ];
         }));
     }

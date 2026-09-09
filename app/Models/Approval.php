@@ -23,6 +23,9 @@ class Approval extends Model
     protected $fillable = [
         'contract_id',
         'workflow_step_id',
+        'action_id',
+        'action_code',
+        'action_alias',
         'user_id',
         'approver_name',
         'role',
@@ -64,31 +67,60 @@ class Approval extends Model
         return $this->belongsTo(WorkflowStep::class);
     }
 
+    public function action(): BelongsTo
+    {
+        return $this->belongsTo(WorkflowStepAction::class, 'action_id');
+    }
+
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function approve(?string $comment = null, ?string $attachmentPath = null): void
+    public function approve(?string $comment = null, ?string $attachmentPath = null, ?string $actionId = null, ?string $actionCode = null, ?string $actionAlias = null): void
     {
-        $this->update([
+        $data = [
             'status' => 'approved',
             'comment' => $comment,
             'attachment_path' => $attachmentPath ?? $this->attachment_path,
             'decided_at' => now(),
             'updated_by' => Auth::id(),
-        ]);
+        ];
+
+        if ($actionId !== null) {
+            $data['action_id'] = $actionId;
+        }
+        if ($actionCode !== null) {
+            $data['action_code'] = $actionCode;
+        }
+        if ($actionAlias !== null) {
+            $data['action_alias'] = $actionAlias;
+        }
+
+        $this->update($data);
     }
 
-    public function reject(?string $comment = null, ?string $attachmentPath = null): void
+    public function reject(?string $comment = null, ?string $attachmentPath = null, ?string $actionId = null, ?string $actionCode = null, ?string $actionAlias = null): void
     {
-        $this->update([
+        $data = [
             'status' => 'rejected',
             'comment' => $comment,
             'attachment_path' => $attachmentPath ?? $this->attachment_path,
             'decided_at' => now(),
             'updated_by' => Auth::id(),
-        ]);
+        ];
+
+        if ($actionId !== null) {
+            $data['action_id'] = $actionId;
+        }
+        if ($actionCode !== null) {
+            $data['action_code'] = $actionCode;
+        }
+        if ($actionAlias !== null) {
+            $data['action_alias'] = $actionAlias;
+        }
+
+        $this->update($data);
     }
 
     protected static function booted()

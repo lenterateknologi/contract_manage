@@ -35,6 +35,7 @@ class WorkflowStepAction extends Model
         'target_status',
         'description',
         'is_active',
+        'is_visible',
         'created_by',
         'updated_by',
     ];
@@ -47,6 +48,7 @@ class WorkflowStepAction extends Model
         'signing_parties' => 'array',
         'assignee_config' => 'array',
         'is_active' => 'boolean',
+        'is_visible' => 'boolean',
     ];
 
     public function step(): BelongsTo

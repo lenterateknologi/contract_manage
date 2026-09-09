@@ -85,7 +85,15 @@ export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any
         });
     }, [step.actions, step.allowed_actions]);
 
+    const hasAutoAction = useMemo(() => {
+        return actions.some((a: any) => {
+            const code = (a.action_code || a.master_action?.code || a.master_action_name || '').toLowerCase();
+            return code === 'auto' || code === 'automation';
+        });
+    }, [actions]);
+
     const addAction = () => {
+        if (hasAutoAction) return;
         const next = [
             ...actions,
             {
@@ -126,12 +134,27 @@ export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any
     };
 
     const cloneAction = (actionIdx: number) => {
+        if (hasAutoAction) return;
         const actionToClone = actions[actionIdx];
         if (!actionToClone) return;
+        const code = (actionToClone.action_code || actionToClone.master_action?.code || actionToClone.master_action_name || '').toLowerCase();
+        if (code === 'auto' || code === 'automation') return;
         const cloned = JSON.parse(JSON.stringify(actionToClone));
         cloned.id = `new-action-${Date.now()}`;
         const next = [...actions];
         next.splice(actionIdx + 1, 0, cloned);
+        updateLocalStep(idx, {
+            actions: next,
+            allowed_actions: next.map((a: any) => a.master_action?.code || a.master_action_name?.toLowerCase()).filter(Boolean),
+        });
+    };
+
+    const moveAction = (actionIdx: number, direction: 'up' | 'down') => {
+        const targetIdx = direction === 'up' ? actionIdx - 1 : actionIdx + 1;
+        if (targetIdx < 0 || targetIdx >= actions.length) return;
+        const next = [...actions];
+        const [movedItem] = next.splice(actionIdx, 1);
+        next.splice(targetIdx, 0, movedItem);
         updateLocalStep(idx, {
             actions: next,
             allowed_actions: next.map((a: any) => a.master_action?.code || a.master_action_name?.toLowerCase()).filter(Boolean),
@@ -149,5 +172,6 @@ export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any
         updateAction,
         removeAction,
         cloneAction,
+        moveAction,
     };
 }

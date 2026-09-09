@@ -178,13 +178,14 @@ class StoreWorkflowAction
                     /** @var WorkflowStep $step */
                     $step = $workflow->steps()->create([
                         'label' => $stepData['label'] ?? null,
+                        'is_visible' => isset($stepData['is_visible']) ? (bool) $stepData['is_visible'] : true,
                         'is_mandatory' => $stepData['is_mandatory'] ?? true,
                         'approver_type' => $stepData['approver_type'] ?? ApproverType::Role->value,
                         'description' => $stepData['description'] ?? '',
                         'step' => $index + 1,
                         'created_by' => Auth::id(),
                         'updated_by' => Auth::id(),
-                        'is_active' => true,
+                        'is_active' => isset($stepData['is_active']) ? (bool) $stepData['is_active'] : true,
                         'step_category' => $stepData['step_category'] ?? null,
                         'is_optional' => $stepData['is_optional'] ?? false,
                         'optional_label' => $stepData['optional_label'] ?? null,

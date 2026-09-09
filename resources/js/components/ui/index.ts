@@ -52,6 +52,7 @@ export * from './selection/SideFilterCard';
 export * from './selection/PortalSelect';
 export * from './selection/Radio';
 export * from './selection/SearchableMultiSelect';
+export * from './selection/SearchableMultiSelectPortal';
 export * from './selection/SearchableSelect';
 export * from './selection/SearchableSelectHeadless';
 export * from './selection/Select';

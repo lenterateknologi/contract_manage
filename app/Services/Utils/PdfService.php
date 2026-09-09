@@ -19,6 +19,32 @@ class PdfService
             return true;
         }
 
+        // Sanitize & repair source file if it has corrupt bytes/whitespace or missing EOF byte
+        if (file_exists($sourcePath)) {
+            $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+            if (in_array($ext, ['docx', 'xlsx', 'pptx'])) {
+                $content = file_get_contents($sourcePath);
+                $modified = false;
+                $pkPos = strpos($content, "PK\x03\x04");
+                if ($pkPos !== false && $pkPos > 0) {
+                    $content = substr($content, $pkPos);
+                    $modified = true;
+                }
+                // Check if missing 1 byte from standard 22-byte End-of-Central-Directory record
+                $eocdPos = strrpos($content, "PK\x05\x06");
+                if ($eocdPos !== false) {
+                    $eocdLen = strlen($content) - $eocdPos;
+                    if ($eocdLen === 21) {
+                        $content .= "\x00";
+                        $modified = true;
+                    }
+                }
+                if ($modified) {
+                    file_put_contents($sourcePath, $content);
+                }
+            }
+        }
+
         $soffice = config('services.libreoffice.path');
         $userDir = 'file://'.sys_get_temp_dir().'/soffice_user_'.$uniqueId;
 

@@ -49,6 +49,7 @@ class WorkflowStep extends Model
         'created_by',
         'updated_by',
         'is_active',
+        'is_visible',
         'meta',
         'approver_config',
         'filter_department',
@@ -62,6 +63,7 @@ class WorkflowStep extends Model
         return [
             'step' => 'integer',
             'is_active' => 'boolean',
+            'is_visible' => 'boolean',
             'meta' => 'array',
             'approver_config' => 'array',
             'is_optional' => 'boolean',
@@ -86,7 +88,7 @@ class WorkflowStep extends Model
 
     public function getNameAttribute()
     {
-        return $this->description;
+        return ! empty($this->attributes['label']) ? $this->attributes['label'] : ($this->attributes['description'] ?? '');
     }
 
     /**

@@ -10,6 +10,8 @@ enum WorkflowAction: string
     case SIGN = 'sign';
     case SIGNATURE = 'signature';
     case FORWARD = 'forward';
+    case BRANCH = 'branch';
+    case AUTO = 'auto';
 
     public function label(): string
     {
@@ -20,6 +22,8 @@ enum WorkflowAction: string
             self::SIGN => 'Upload Tanda Tangan',
             self::SIGNATURE => 'Upload Tanda Tangan',
             self::FORWARD => 'Approval Tambahan',
+            self::BRANCH => 'Pindah Workflow',
+            self::AUTO => 'Otomatis (Auto)',
         };
     }
 }

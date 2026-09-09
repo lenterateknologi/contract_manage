@@ -107,8 +107,9 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 group.stepDescription = mainStep.step_description || mainStep.workflow_step?.description;
 
                 group.items.sort((a: any, b: any) => {
-                    if (a.sub_step == null && b.sub_step != null) return 1;
-                    if (a.sub_step != null && b.sub_step == null) return -1;
+                    if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
+                        return (a.sort_order || 0) - (b.sort_order || 0);
+                    }
                     if (a.sub_step != null && b.sub_step != null) {
                         return Number(a.sub_step) - Number(b.sub_step);
                     }
@@ -341,6 +342,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                  const isFilled = !!(
                                                                      contract.f1_file ||
                                                                      contract.metadata?.f1_file ||
+                                                                     (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'f1') ||
                                                                      (contract as any)?.f1_submission ||
                                                                      (contract as any)?.f1_form_data ||
                                                                      contract.metadata?.f1_form_data ||
@@ -353,6 +355,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                  const isFilled = !!(
                                                                      contract.f2_file ||
                                                                      contract.metadata?.f2_file ||
+                                                                     (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'f2') ||
                                                                      (contract as any)?.f2_submission ||
                                                                      (contract as any)?.f2_form_data ||
                                                                      contract.metadata?.f2_form_data ||
@@ -366,6 +369,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                  const isFilled = !!(
                                                                      contract.agreement_file ||
                                                                      contract.metadata?.agreement_file ||
+                                                                     (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'agreement' || fs.document_type === 'contract') ||
                                                                      (contract as any)?.agreement_submission ||
                                                                      contract.agreement_content ||
                                                                      contract.metadata?.agreement_content ||
@@ -402,58 +406,35 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                         {(() => {
                                                             const groupKey = `${block.workflowId}_${group.sequence}`;
                                                             const isExpanded = !!expandedGroups[groupKey];
-                                                            const subStepItems = group.items.filter((a: ContractApproval) => a.sub_step != null);
-                                                            const mainStepItems = group.items.filter((a: ContractApproval) => a.sub_step == null);
-                                                            const visibleMainItems = isExpanded ? mainStepItems : mainStepItems.slice(0, 3);
+                                                            const allItems = group.items;
+                                                            const visibleItems = isExpanded ? allItems : allItems.slice(0, 10);
 
                                                             return (
-                                                                <>
-                                                                    {/* Distinct Sub-Step Rows */}
-                                                                    {subStepItems.length > 0 && (
-                                                                        <div className="my-1.5 ml-3 sm:ml-4 pl-2.5 border-l-2 border-indigo-500/30 dark:border-indigo-500/20 space-y-1.5">
-                                                                            <div className="flex items-center gap-1.5">
-                                                                                <Badge variant="outline" className="px-1.5 py-0 font-bold uppercase text-indigo-700 dark:text-indigo-300 border-indigo-500/25 bg-indigo-500/10 text-[8.5px] tracking-wider rounded-xs">
-                                                                                    Sub-Tahap {group.sequence} ({subStepItems.length} Penyetuju Tambahan)
-                                                                                </Badge>
-                                                                            </div>
-                                                                            <div className="space-y-1">
-                                                                                {subStepItems.map((a: ContractApproval) => (
-                                                                                    <ApprovalCard
-                                                                                        key={a.id}
-                                                                                        approval={a}
-                                                                                        stepNumber={`${group.sequence}.${a.sub_step}`}
-                                                                                        displaySubSteps={false}
-                                                                                        contract={contract}
-                                                                                        showDetails={viewTab === 'pro'}
-                                                                                        isLite={viewTab === 'lite'}
-                                                                                        isSubStep={true}
-                                                                                    />
-                                                                                ))}
-                                                                            </div>
-                                                                        </div>
-                                                                    )}
+                                                                 <>
+                                                                    {/* Render all approver items for this step directly */}
+                                                                    {visibleItems.map((a: ContractApproval) => {
+                                                                        const hasSub = a.sub_step != null && a.sub_step !== '' && String(a.sub_step) !== 'null' && String(a.sub_step) !== 'undefined';
+                                                                        return (
+                                                                            <ApprovalCard 
+                                                                                key={a.id} 
+                                                                                approval={a} 
+                                                                                stepNumber={hasSub ? `${group.sequence}.${a.sub_step}` : `${group.sequence}`} 
+                                                                                displaySubSteps={false} 
+                                                                                contract={contract} 
+                                                                                showDetails={viewTab === 'pro'}
+                                                                                isLite={viewTab === 'lite'}
+                                                                                isSubStep={hasSub}
+                                                                            />
+                                                                        );
+                                                                    })}
 
-                                                                    {/* Main Step Cards */}
-                                                                    {visibleMainItems.map((a: ContractApproval) => (
-                                                                        <ApprovalCard 
-                                                                            key={a.id} 
-                                                                            approval={a} 
-                                                                            stepNumber={`${group.sequence}`} 
-                                                                            displaySubSteps={false} 
-                                                                            contract={contract} 
-                                                                            showDetails={viewTab === 'pro'}
-                                                                            isLite={viewTab === 'lite'}
-                                                                            isSubStep={false}
-                                                                        />
-                                                                    ))}
-
-                                                                    {mainStepItems.length > 3 && (
+                                                                    {allItems.length > 10 && (
                                                                         <button
                                                                             type="button"
                                                                             onClick={() => setExpandedGroups(prev => ({ ...prev, [groupKey]: !prev[groupKey] }))}
                                                                             className="text-primary hover:underline mt-1 flex items-center gap-1.5 text-[9.5px] font-extrabold tracking-wider uppercase cursor-pointer"
                                                                         >
-                                                                            {isExpanded ? 'Sembunyikan' : `+ Tampilkan ${mainStepItems.length - 3} Penerima Persetujuan Lainnya`}
+                                                                            {isExpanded ? 'Sembunyikan' : `+ Tampilkan ${allItems.length - 10} Penerima Persetujuan Lainnya`}
                                                                         </button>
                                                                     )}
                                                                 </>
@@ -474,46 +455,35 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                 <TimelineItem key={block.workflowId + bIdx} status="active" className={cn(viewTab === 'lite' ? 'pb-2' : 'pb-4')}>
                                     <TimelineIcon 
                                         status="active" 
-                                        className="bg-indigo-600 text-white dark:bg-indigo-500"
+                                        className="bg-primary text-primary-foreground"
                                     >
-                                        <Layers size={13} strokeWidth={2.5} />
+                                        <Layers size={13} strokeWidth={2} />
                                     </TimelineIcon>
                                     <TimelineContent>
-                                        <div className={cn(
-                                            "rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-800/80 bg-indigo-50/40 dark:bg-indigo-950/20 shadow-xs",
-                                            viewTab === 'lite' ? 'p-2 sm:p-2.5' : 'p-3 sm:p-4'
-                                        )}>
-                                            {/* Sub-Workflow Card Header */}
-                                            <div className={cn(
-                                                "flex flex-wrap items-center justify-between gap-1.5 border-b border-indigo-200/60 dark:border-indigo-800/50",
-                                                viewTab === 'lite' ? 'pb-2 mb-2' : 'pb-3 mb-3'
-                                            )}>
+                                        <div className="rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-xs space-y-2.5">
+                                            {/* Simple Sub-Workflow Card Header */}
+                                            <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
                                                 <div className="flex items-center gap-2">
-                                                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-600 text-white dark:bg-indigo-500 shadow-xs shrink-0">
-                                                        <Workflow size={13} strokeWidth={2.5} />
+                                                    <div className="flex h-5.5 w-5.5 items-center justify-center rounded-md bg-muted text-muted-foreground shrink-0">
+                                                        <Workflow size={12} strokeWidth={2} />
                                                     </div>
-                                                    <div>
-                                                        <div className="flex items-center gap-1">
-                                                            <span className="text-[9px] font-extrabold tracking-wider text-indigo-700 dark:text-indigo-400 uppercase bg-indigo-100 dark:bg-indigo-900/60 px-1.5 py-0.5 rounded">
-                                                                Sub-Workflow Cabang
-                                                            </span>
-                                                        </div>
-                                                        <h4 className="text-xs font-bold text-indigo-950 dark:text-indigo-100 mt-0.5">
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        <span className="text-[9px] font-bold tracking-wider uppercase bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                                                            Sub-Workflow
+                                                        </span>
+                                                        <h4 className="text-xs font-semibold text-foreground">
                                                             {block.workflowName}
                                                         </h4>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-1 text-[10px] font-semibold text-indigo-600 dark:text-indigo-400">
-                                                    <span>{block.groups.length} Tahap Persetujuan</span>
-                                                </div>
+                                                <span className="text-[10px] text-muted-foreground font-medium shrink-0">
+                                                    {block.groups.length} Tahap
+                                                </span>
                                             </div>
 
-                                            {/* Nested Timeline for Sub-Workflow steps */}
-                                            <div className="relative pl-0.5">
-                                                <Timeline className={cn(
-                                                    "border-indigo-200 dark:border-indigo-800/60",
-                                                    viewTab === 'lite' ? 'ml-1 pl-3 py-0 gap-1' : 'ml-2'
-                                                )}>
+                                            {/* Simple Nested Timeline */}
+                                            <div className="relative pt-0.5">
+                                                <Timeline className="border-border/60 ml-1 pl-2.5 gap-2">
                                                     {content}
                                                 </Timeline>
                                             </div>

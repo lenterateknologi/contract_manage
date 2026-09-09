@@ -4,6 +4,8 @@ namespace App\Http\Queries\Contract;
 
 use App\Models\Contract;
 use App\Services\Utils\ShortIdService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Str;
 
 class ContractDetailQuery
 {
@@ -22,12 +24,15 @@ class ContractDetailQuery
         'submissionType:id,name',
         'approvals.approver:id,name,role_id,department_id,division_id,company_id,email',
         'approvals.approver.department:id,name',
-        'approvals.workflowStep:id,step,description,step_category,workflow_id',
+        'approvals.workflowStep:id,step,description,step_category,workflow_id,is_visible,is_active',
         'approvals.workflowStep.workflow:id,name,contract_type_id,meta',
-        'approvals.workflowStep.workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company',
-        'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company',
-        'workflow.steps.workflow:id,name,contract_type_id,meta',
-        'workflowStep:id,workflow_id,step,description,step_category,meta',
+        'approvals.workflowStep.workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company,is_visible,is_active',
+        'workflow.steps:id,workflow_id,step,description,approver_type,step_category,meta,filter_department,filter_company_group,filter_region,filter_company,is_visible,is_active',
+        'workflowStep',
+        'workflowStep.approverAuthorities.role',
+        'workflowStep.approverAuthorities.department',
+        'workflowStep.approverAuthorities.division',
+        'workflowStep.approverAuthorities.user',
         'workflowStep.workflow:id,name,contract_type_id,meta',
         'workflowStep.actions',
         'versions.uploader:id,name,role_id,department_id,division_id,company_id,email',
@@ -68,6 +73,10 @@ class ContractDetailQuery
     public function find(string $id): Contract
     {
         $decodedId = ShortIdService::decode($id);
+
+        if (! Str::isUuid($decodedId)) {
+            throw (new ModelNotFoundException)->setModel(Contract::class, [$id]);
+        }
 
         return Contract::query()
             ->select(self::SELECT)

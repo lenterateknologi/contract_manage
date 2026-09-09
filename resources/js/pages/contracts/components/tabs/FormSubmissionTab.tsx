@@ -735,24 +735,10 @@ function GenericFormTab({
                         isOpen={showNoteModal}
                         onClose={() => setShowNoteModal(false)}
                         maxWidth="lg"
-                        title={
-                            <div className="bg-primary text-primary-foreground -m-8 flex items-center justify-between px-5 py-3.5 relative overflow-hidden border-b border-white/20">
-                                <div className="flex items-center gap-3 z-10">
-                                    <div className="bg-white/15 border border-white/20 shadow-xs flex h-9 w-9 items-center justify-center rounded-lg backdrop-blur-xs">
-                                        <PlusCircle size={18} className="text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold tracking-wide">Update Versi Dokumen</h3>
-                                        <p className="text-white/80 text-[10.5px] font-normal">Arsipkan perubahan sebagai versi baru</p>
-                                    </div>
-                                </div>
-                                {/* Oversized transparent rotated background icon */}
-                                <PlusCircle
-                                    size={55}
-                                    className="absolute right-14 top-1/2 -translate-y-1/2 text-white/15 rotate-12 pointer-events-none select-none"
-                                />
-                            </div>
-                        }
+                        headerVariant="primary"
+                        headerIcon={<PlusCircle size={18} className="text-white" />}
+                        title="Update Versi Dokumen"
+                        description="Arsipkan perubahan sebagai versi baru"
                         footer={
                             <div className="flex w-full justify-end gap-2.5">
                                 <Button

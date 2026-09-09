@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronsUpDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -8,7 +9,7 @@ export interface SearchableSelectOption {
     italic?: boolean;
 }
 
-interface SearchableMultiSelectProps {
+interface SearchableMultiSelectPortalProps {
     values: string[];
     onValuesChange: (values: string[]) => void;
     options: SearchableSelectOption[];
@@ -21,7 +22,7 @@ interface SearchableMultiSelectProps {
     showOrder?: boolean;
 }
 
-export function SearchableMultiSelect({
+export function SearchableMultiSelectPortal({
     values = [],
     onValuesChange,
     options = [],
@@ -32,10 +33,12 @@ export function SearchableMultiSelect({
     emptyText = 'Tidak ada hasil ditemukan',
     disabled = false,
     showOrder = false,
-}: SearchableMultiSelectProps) {
+}: SearchableMultiSelectPortalProps) {
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
+    const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties>({});
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const dropdownRef = React.useRef<HTMLDivElement>(null);
 
     const validValues = React.useMemo(() => {
         return (values || []).filter(val => Boolean(val) && val !== 'null' && val !== 'undefined');
@@ -91,10 +94,52 @@ export function SearchableMultiSelect({
         onValuesChange((values || []).filter(v => v !== val));
     };
 
+    // Calculate position for dropdown (smart fixed positioning using createPortal)
+    React.useEffect(() => {
+        if (!open) return;
+        const updatePosition = () => {
+            if (containerRef.current) {
+                const rect = containerRef.current.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                const dropdownEstimatedHeight = 220;
+
+                const spaceBelow = viewportHeight - rect.bottom;
+                const spaceAbove = rect.top;
+
+                const showAbove = spaceBelow < dropdownEstimatedHeight && spaceAbove > 120;
+                const availableSpace = showAbove ? spaceAbove : spaceBelow;
+                const maxHeight = Math.min(220, Math.max(120, availableSpace - 16));
+
+                setDropdownStyle({
+                    position: 'fixed',
+                    left: `${rect.left}px`,
+                    width: `${rect.width}px`,
+                    ...(showAbove
+                        ? { bottom: `${viewportHeight - rect.top + 4}px` }
+                        : { top: `${rect.bottom + 4}px` }),
+                    maxHeight: `${maxHeight}px`,
+                    zIndex: 999999,
+                });
+            }
+        };
+
+        updatePosition();
+        window.addEventListener('resize', updatePosition);
+        window.addEventListener('scroll', updatePosition, true);
+        return () => {
+            window.removeEventListener('resize', updatePosition);
+            window.removeEventListener('scroll', updatePosition, true);
+        };
+    }, [open]);
+
     // Close dropdown on outside click
     React.useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(e.target as Node) &&
+                (!dropdownRef.current || !dropdownRef.current.contains(e.target as Node))
+            ) {
                 setOpen(false);
                 setSearch('');
             }
@@ -112,7 +157,7 @@ export function SearchableMultiSelect({
             ref={containerRef}
             className={cn('relative w-full', open ? 'z-50' : 'z-auto', disabled && 'opacity-60 cursor-not-allowed', className)}
         >
-            {/* Trigger Button (shadcn style) */}
+            {/* Trigger Button */}
             <div
                 role="button"
                 tabIndex={disabled ? -1 : 0}
@@ -165,13 +210,18 @@ export function SearchableMultiSelect({
                 <ChevronsUpDown size={14} className="text-slate-400 dark:text-zinc-500 shrink-0 ml-1.5 opacity-60" />
             </div>
 
-            {/* Dropdown Panel (Inline relative/absolute) */}
-            {open && (
+            {/* Dropdown Panel mounted via Portal */}
+            {open && typeof document !== 'undefined' && createPortal(
                 <div
+                    ref={dropdownRef}
+                    style={{
+                        zIndex: 999999,
+                        ...dropdownStyle,
+                    }}
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 shadow-2xl overflow-hidden focus:outline-none animate-in fade-in-0 zoom-in-95 duration-150 p-1"
+                    className="rounded-xl border border-slate-200/90 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-slate-900 dark:text-zinc-100 shadow-2xl overflow-hidden focus:outline-none animate-in fade-in-0 zoom-in-95 duration-150 p-1"
                 >
-                    {/* Search Input (Command header style) */}
+                    {/* Search Input */}
                     {mergedOptions.length > 3 && (
                         <div className="flex items-center border-b border-slate-100 dark:border-zinc-800/80 px-2.5 py-1">
                             <Search size={13} className="mr-2 shrink-0 opacity-40 text-slate-500 dark:text-zinc-400" />
@@ -219,7 +269,7 @@ export function SearchableMultiSelect({
                         </div>
                     )}
 
-                    {/* Option list (Command Item style) */}
+                    {/* Option list */}
                     <div className="max-h-[190px] overflow-y-auto p-1 custom-scrollbar space-y-0.5">
                         {filtered.length === 0 && (
                             <div className="py-6 text-center text-xs font-normal text-slate-400 dark:text-zinc-500">
@@ -256,7 +306,8 @@ export function SearchableMultiSelect({
                             );
                         })}
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

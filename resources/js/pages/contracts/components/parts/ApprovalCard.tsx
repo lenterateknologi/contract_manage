@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { cn, formatDateTime } from '@/lib/utils';
 import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { Check, Clock, ChevronDown, CheckCircle2, X, Lock } from 'lucide-react';
+import { Check, Clock, ChevronDown, CheckCircle2, X, Lock, GitBranch, UserCheck } from 'lucide-react';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 import { Badge } from '@/components/ui/feedback/Badge';
 import { StatusBadge } from '../ui/ui';
@@ -24,9 +24,10 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
     // Aktif = step ini adalah step kontrak saat ini (tidak bergantung pada nilai 'pending'/'waiting')
     const isCurrent = !isApproved && !isRejected && !!contract?.workflow_step_id && a.workflow_step_id === contract.workflow_step_id;
     const isSkipped = (a.status as string) === 'SKIPPED';
-    const hasSubStep = isSubStep || a.sub_step != null;
+    const hasValidSubStep = a.sub_step != null && a.sub_step !== '' && String(a.sub_step) !== 'null' && String(a.sub_step) !== 'undefined';
+    const hasSubStep = Boolean(isSubStep || hasValidSubStep);
 
-    const finalStepNumber = displaySubSteps && a.sub_step ? `${stepNumber}.${a.sub_step}` : stepNumber;
+    const finalStepNumber = (displaySubSteps && hasValidSubStep) ? `${stepNumber}.${a.sub_step}` : stepNumber;
 
     // Cari workflow step yang cocok untuk card ini
     const matchedStep = contract?.workflow?.steps?.find((s: any) => s.step === a.sequence || s.id === a.workflow_step_id) || a.workflow_step;
@@ -142,11 +143,33 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 {/* Status & Timestamp */}
                 <div className="flex items-center gap-1.5 shrink-0">
                     {/* Status Badge */}
-                    {a.status === 'waiting' ? (
-                        <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">
-                            <Lock size={9} className="shrink-0" />
-                            <span>Menunggu Giliran</span>
+                    {a.action_code && a.action_code !== 'approve' && (isApproved || isRejected) ? (
+                        <span className={cn(
+                            "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase",
+                            (a.action_code === 'branch' || a.action_code === 'forward')
+                                ? "bg-sky-500/10 border-sky-500/25 text-sky-600 dark:text-sky-400"
+                                : (a.action_code === 'assign' || a.action_code === 'assign_pic')
+                                ? "bg-purple-500/10 border-purple-500/25 text-purple-600 dark:text-purple-400"
+                                : isRejected
+                                ? "bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400"
+                                : "bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400"
+                        )}>
+                            {a.action_code === 'branch' ? (
+                                <GitBranch size={9} className="shrink-0" />
+                            ) : (a.action_code === 'assign' || a.action_code === 'assign_pic') ? (
+                                <UserCheck size={9} className="shrink-0" />
+                            ) : null}
+                            <span>{a.action_alias || (a.action_code === 'branch' ? 'Pindah Workflow' : a.action_code === 'forward' ? 'Teruskan' : a.action_code)}</span>
                         </span>
+                    ) : a.status === 'waiting' ? (
+                        targetStatusCode ? (
+                            <StatusBadge status={targetStatusCode} size="sm" />
+                        ) : (
+                            <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-amber-600 dark:text-amber-400">
+                                <Lock size={9} className="shrink-0" />
+                                <span>Menunggu Giliran</span>
+                            </span>
+                        )
                     ) : a.status === 'pending' && isCurrent ? (
                         <span className="inline-flex items-center gap-1 rounded bg-sky-500/10 border border-sky-500/25 px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase text-sky-600 dark:text-sky-400 animate-pulse">
                             <Clock size={9} className="shrink-0" />
@@ -154,6 +177,8 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                         </span>
                     ) : (a.status !== 'pending' && a.status !== 'waiting') ? (
                         <StatusBadge status={a.status} size="sm" />
+                    ) : targetStatusCode ? (
+                        <StatusBadge status={targetStatusCode} size="sm" />
                     ) : null}
 
                     {a.decided_at ? (
@@ -168,8 +193,8 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 </div>
             </div>
 
-            {/* Syarat Dokumen Wajib untuk Step Card Ini (Hanya di mode detail / full) */}
-            {showDetails && (() => {
+            {/* Syarat Dokumen Wajib untuk Step Card Ini (Hanya di mode detail / full dan BUKAN untuk sub-step) */}
+            {showDetails && !hasSubStep && (() => {
                 let stepMeta = a.workflow_step?.meta;
                 let actions = a.workflow_step?.action_configs || [];
                 
@@ -200,45 +225,57 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 const stepStartTime = a.step_entry_at || a.created_at;
 
                 const hasDocUploadedInStep = (type: string) => {
-                    if (!contract?.versions) return false;
-                    return contract.versions.some((v: any) => {
+                    const hasVersion = contract?.versions && contract.versions.some((v: any) => {
                         if (v.document_type !== type && !(type === 'agreement' && v.document_type === 'contract')) return false;
                         if (!stepStartTime || !v.created_at_raw) return true;
                         return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
                     });
+                    if (hasVersion) return true;
+
+                    const hasForm = (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => {
+                        if (fs.document_type !== type && !(type === 'agreement' && fs.document_type === 'contract')) return false;
+                        return (fs.current_version ?? 0) > 0 || !!fs.id;
+                    });
+                    if (hasForm) return true;
+
+                    return false;
                 };
 
                 if (requireF1) {
-                    const isFilled = hasDocUploadedInStep('f1') || (a.sequence === 1 && !!(
+                    const isFilled = hasDocUploadedInStep('f1') || !!(
                         contract?.f1_file ||
                         contract?.metadata?.f1_file ||
+                        (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => fs.document_type === 'f1') ||
                         (contract as any)?.f1_submission ||
                         (contract as any)?.f1_form_data ||
                         contract?.metadata?.f1_form_data ||
                         (contract?.f1_items && contract.f1_items.length > 0)
-                    ));
+                    );
                     reqList.push({ label: 'Sub-dokumen F1', isFilled });
                 }
                 if (requireF2) {
-                    const isFilled = hasDocUploadedInStep('f2') || (a.sequence === 1 && !!(
+                    const isFilled = hasDocUploadedInStep('f2') || !!(
                         contract?.f2_file ||
                         contract?.metadata?.f2_file ||
+                        (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => fs.document_type === 'f2') ||
                         (contract as any)?.f2_submission ||
                         (contract as any)?.f2_form_data ||
                         contract?.metadata?.f2_form_data ||
                         contract?.contract_no ||
                         contract?.price
-                    ));
+                    );
                     reqList.push({ label: 'Sub-dokumen F2', isFilled });
                 }
                 if (requireAgreement) {
-                    const isFilled = hasDocUploadedInStep('agreement') || (a.sequence === 1 && !!(
+                    const isFilled = hasDocUploadedInStep('agreement') || !!(
                         contract?.agreement_file ||
                         contract?.metadata?.agreement_file ||
+                        (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => fs.document_type === 'agreement' || fs.document_type === 'contract') ||
                         (contract as any)?.agreement_submission ||
                         contract?.agreement_content ||
-                        contract?.metadata?.agreement_content
-                    ));
+                        contract?.metadata?.agreement_content ||
+                        (contract?.versions && (contract.versions as any[]).some((v: any) => v.document_type === 'agreement' || v.document_type === 'contract'))
+                    );
                     reqList.push({ label: 'Sub-dokumen Perjanjian', isFilled });
                 }
 

@@ -79,6 +79,7 @@ trait HasWorkflowHelpers
                 'target_status' => $actData['target_status'] ?? null,
                 'description' => $actData['description'] ?? null,
                 'is_active' => $actData['is_active'] ?? true,
+                'is_visible' => isset($actData['is_visible']) ? (bool) $actData['is_visible'] : true,
                 'updated_by' => Auth::id(),
             ];
 

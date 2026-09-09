@@ -114,11 +114,19 @@ class ContractApprovalController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        // Find the pending approval for the current user
+        // Find the pending approval for the current user (with self-healing if workflow step approver was updated)
         $approval = Approval::where('contract_id', $id)
             ->where('user_id', Auth::id())
             ->where('status', 'pending')
             ->first();
+
+        if (! $approval && $contract->status === 'in_review' && $contract->workflow_step_id && $contract->workflowStep) {
+            $this->workflowService->createApprovalForStep($contract, $contract->workflowStep);
+            $approval = Approval::where('contract_id', $id)
+                ->where('user_id', Auth::id())
+                ->where('status', 'pending')
+                ->first();
+        }
 
         if (! $approval) {
             return response()->json(['message' => 'Tidak ada persetujuan tertunda yang ditemukan untuk Anda.'], 422);
@@ -162,6 +170,7 @@ class ContractApprovalController extends Controller
             $request->action_code,
             $request->target_step_id,
             ! empty($signerUserIds) ? $signerUserIds : null,
+            $request->input('action_id'),
         );
 
         return response()->json(ContractFormatter::formatContract($contract->fresh()));
@@ -171,11 +180,19 @@ class ContractApprovalController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        // Find the pending approval for the current user
+        // Find the pending approval for the current user (with self-healing if workflow step approver was updated)
         $approval = Approval::where('contract_id', $id)
             ->where('user_id', Auth::id())
             ->where('status', 'pending')
             ->first();
+
+        if (! $approval && $contract->status === 'in_review' && $contract->workflow_step_id && $contract->workflowStep) {
+            $this->workflowService->createApprovalForStep($contract, $contract->workflowStep);
+            $approval = Approval::where('contract_id', $id)
+                ->where('user_id', Auth::id())
+                ->where('status', 'pending')
+                ->first();
+        }
 
         if (! $approval) {
             return response()->json(['message' => 'Tidak ada persetujuan tertunda yang ditemukan untuk Anda.'], 422);
@@ -241,6 +258,22 @@ class ContractApprovalController extends Controller
             $targetStepId = $targetStepId ?: $contract->workflow_step_id;
             if (! $targetStepId) {
                 return response()->json(['message' => 'Tahap alur kerja tidak aktif saat ini.'], 422);
+            }
+
+            // If on initiator step and targetStepId defaulted to current step, auto-route to designated adhoc step or next step
+            if ($targetStepId === $contract->workflow_step_id && $contract->workflowStep?->approver_type === 'initiator') {
+                $adhocStep = $contract->workflow?->steps()->where(function ($q) {
+                    $q->where('approver_type', 'adhoc')
+                        ->orWhere('step_category', 'adhoc');
+                })->first();
+
+                if (! $adhocStep) {
+                    $adhocStep = $this->workflowService->findNextValidStep($contract, $contract->workflowStep);
+                }
+
+                if ($adhocStep) {
+                    $targetStepId = $adhocStep->id;
+                }
             }
 
             $role = $request->input('role', config('master.roles.adhoc_approver'));
@@ -406,6 +439,40 @@ class ContractApprovalController extends Controller
                     'description' => "{$count} {$role} ditambahkan oleh {$actorName}. Catatan: ".$request->input('note'),
                     'actor_id' => Auth::id(),
                 ]);
+            }
+
+            // If current step is an initiator/setup step with an approval for the current user,
+            // and the target step is different (or step transition is configured), complete current step approval and advance workflow
+            $currentApproval = Approval::where('contract_id', $contract->id)
+                ->where('workflow_step_id', $contract->workflow_step_id)
+                ->where('user_id', Auth::id())
+                ->whereNotIn('role', ['Persetujuan Tambahan'])
+                ->whereIn('status', ['pending', 'waiting'])
+                ->first();
+
+            if ($currentApproval && $targetStepId !== $contract->workflow_step_id) {
+                // Ensure approval is in pending status so approveContract can process it
+                if ($currentApproval->status !== 'pending') {
+                    $currentApproval->update(['status' => 'pending']);
+                }
+
+                // Dynamically obtain the action code configured on the current step
+                $stepAction = $currentApproval->workflowStep->actions()
+                    ->whereIn('action_code', ['forward', 'approve', 'assign', 'assign_pic'])
+                    ->first() ?: $currentApproval->workflowStep->actions()->first();
+
+                $actionToUse = $stepAction?->action_code ?? 'forward';
+
+                $contract = $this->workflowService->approveContract(
+                    $contract,
+                    $currentApproval,
+                    $request->input('note'),
+                    null,
+                    null,
+                    null,
+                    $actionToUse,
+                    $targetStepId
+                );
             }
 
             return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);

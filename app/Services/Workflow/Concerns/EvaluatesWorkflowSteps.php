@@ -21,6 +21,7 @@ trait EvaluatesWorkflowSteps
     {
         $allSteps = WorkflowStep::where('workflow_id', $currentStep->workflow_id)
             ->where('step', '>', $currentStep->step)
+            ->where('is_active', true)
             ->orderBy('step')
             ->get();
 
@@ -38,6 +39,11 @@ trait EvaluatesWorkflowSteps
      */
     public function shouldExecuteStep(Contract $contract, WorkflowStep $step): bool
     {
+        // Rule 0: Bypass inactive steps
+        if ($step->is_active === false || (isset($step->getAttributes()['is_active']) && ! $step->getAttributes()['is_active'])) {
+            return false;
+        }
+
         // Rule 2: Bypass optional or decision steps entirely
         if ($step->getAttributes()['is_optional'] ?? false) {
             return false;

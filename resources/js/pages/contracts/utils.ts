@@ -55,6 +55,7 @@ export const contractApi = {
         actionCode?: string,
         isFinal?: boolean,
         targetStepId?: string,
+        actionId?: string,
     ): Promise<Contract> => {
         const fd = new FormData();
         fd.append('note', note);
@@ -65,15 +66,17 @@ export const contractApi = {
             signerUserIds.forEach((uid) => fd.append('signer_user_ids[]', uid));
         }
         if (actionCode) fd.append('action_code', actionCode);
+        if (actionId) fd.append('action_id', actionId);
         if (isFinal) fd.append('is_final', '1');
         if (targetStepId) fd.append('target_step_id', targetStepId);
         return unwrap(api.post(`/api/contracts/${id}/approve`, fd));
     },
 
-    reject: (id: string, reason: string, attachment?: File): Promise<Contract> => {
+    reject: (id: string, reason: string, attachment?: File, actionId?: string): Promise<Contract> => {
         const fd = new FormData();
         fd.append('reason', reason);
         if (attachment) fd.append('attachment', attachment);
+        if (actionId) fd.append('action_id', actionId);
         return unwrap(api.post(`/api/contracts/${id}/reject`, fd));
     },
 

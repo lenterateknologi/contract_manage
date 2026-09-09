@@ -48,6 +48,9 @@ export interface ContractApproval {
     sub_step?: number | null;
     sort_order?: number;
     status: 'pending' | 'waiting' | 'approved' | 'rejected';
+    action_id?: string | null;
+    action_code?: string | null;
+    action_alias?: string | null;
     is_active?: boolean;
     comment: string | null;
     decided_at: string | null;
@@ -228,10 +231,14 @@ export interface Contract {
     origin_workflow?: {
         id: string;
         name: string;
+        meta?: Record<string, any>;
     } | null;
     workflow?: {
         id: string;
         name: string;
+        meta?: Record<string, any>;
+        contract_type?: any;
+        steps?: any[];
     } | null;
     workflow_step_id?: string;
     workflow_step?: {

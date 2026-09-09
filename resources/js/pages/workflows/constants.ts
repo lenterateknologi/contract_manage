@@ -1,4 +1,4 @@
-import { CheckCircle2, FileSignature, Settings2, UserCheck, XCircle } from 'lucide-react';
+import { CheckCircle2, FileSignature, GitBranch, Settings2, UserCheck, XCircle } from 'lucide-react';
 
 export const AVAILABLE_FIELDS = [
     { value: 'pic', label: 'Data PIC (Penanggung Jawab)' },
@@ -24,6 +24,8 @@ export const MASTER_ACTIONS = [
     { id: 'reject', code: 'reject', name: 'Tolak' },
     { id: 'assign', code: 'assign', name: 'Tugaskan' },
     { id: 'forward', code: 'forward', name: 'Approval Tambahan' },
+    { id: 'branch', code: 'branch', name: 'Pindah Workflow (Cabang)' },
+    { id: 'auto', code: 'auto', name: 'Otomatis (Auto Transition)' },
 ];
 
 export const ALL_ROLES = [
@@ -59,6 +61,8 @@ export const ACTION_THEMES: Record<string, { color: string; icon: any; actionTyp
     assign: { color: 'bg-blue-600 hover:bg-blue-700', icon: UserCheck, actionType: 'assign_pic' },
     sign: { color: 'bg-amber-600 hover:bg-amber-700', icon: FileSignature, actionType: 'sign' },
     forward: { color: 'bg-indigo-500 hover:bg-indigo-600', icon: UserCheck, actionType: 'forward' },
+    branch: { color: 'bg-sky-600 hover:bg-sky-700', icon: GitBranch, actionType: 'branch' },
+    auto: { color: 'bg-purple-600 hover:bg-purple-700', icon: Settings2, actionType: 'auto' },
 };
 
 export function getActionTheme(code: string) {
@@ -68,6 +72,8 @@ export function getActionTheme(code: string) {
     if (cleanCode === 'assign_pic' || cleanCode === 'assign') return ACTION_THEMES.assign;
     if (cleanCode.includes('sign') || cleanCode.includes('tangan') || cleanCode.includes('paraf')) return ACTION_THEMES.sign;
     if (cleanCode === 'forward' || cleanCode === 'add_adhoc') return ACTION_THEMES.forward;
+    if (cleanCode === 'branch' || cleanCode === 'cross_workflow') return ACTION_THEMES.branch;
+    if (cleanCode === 'auto' || cleanCode === 'system') return ACTION_THEMES.auto;
 
     return {
         color: 'bg-slate-600 hover:bg-slate-700',

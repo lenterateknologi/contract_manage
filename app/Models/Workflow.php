@@ -19,6 +19,16 @@ class Workflow extends Model
 
     protected $keyType = 'string';
 
+    protected static function booted(): void
+    {
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('contract_opts_types');
+        });
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('contract_opts_types');
+        });
+    }
+
     protected $fillable = [
         'id',
         'contract_type_id',

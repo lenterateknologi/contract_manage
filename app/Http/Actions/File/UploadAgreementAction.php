@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class UploadAgreementAction
 {
@@ -28,6 +29,29 @@ class UploadAgreementAction
         $versionNo = $lastVersion + 1;
         $extension = $file->getClientOriginalExtension() ?: 'docx';
         $path = $file->storeAs('contracts/'.$contract->id.'/agreements', "agreement_v{$versionNo}.{$extension}", 'local');
+
+        // Repair corrupt / truncated zip / docx files if needed
+        $fullPath = Storage::disk('local')->path($path);
+        if (file_exists($fullPath) && in_array(strtolower($extension), ['docx', 'xlsx', 'pptx'])) {
+            $content = file_get_contents($fullPath);
+            $modified = false;
+            $pkPos = strpos($content, "PK\x03\x04");
+            if ($pkPos !== false && $pkPos > 0) {
+                $content = substr($content, $pkPos);
+                $modified = true;
+            }
+            $eocdPos = strrpos($content, "PK\x05\x06");
+            if ($eocdPos !== false) {
+                $eocdLen = strlen($content) - $eocdPos;
+                if ($eocdLen === 21) {
+                    $content .= "\x00";
+                    $modified = true;
+                }
+            }
+            if ($modified) {
+                file_put_contents($fullPath, $content);
+            }
+        }
 
         ContractVersion::create([
             'contract_id' => $contract->id,

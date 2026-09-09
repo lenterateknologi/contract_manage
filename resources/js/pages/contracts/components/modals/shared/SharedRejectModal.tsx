@@ -11,10 +11,11 @@ interface Props {
     onClose: () => void;
     onSubmit: (reason: string, attachment?: File) => Promise<void>;
     actionAlias?: string;
+    actionId?: string;
     contract?: any;
 }
 
-export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, contract }: Props) {
+export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, actionId, contract }: Props) {
     const [reason, setReason] = useState('');
     const [attachment, setAttachment] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
@@ -32,7 +33,9 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, contra
     const getTransitionPreview = () => {
         if (!contract) return null;
 
-        const rejectAction = contract?.workflow_step?.actions?.find((a: any) => a.action_code === 'reject');
+        const rejectAction = actionId
+            ? contract?.workflow_step?.actions?.find((a: any) => a.id === actionId)
+            : contract?.workflow_step?.actions?.find((a: any) => a.action_code === 'reject');
         let transition = rejectAction?.transition_config;
 
         const currentStep = contract?.workflow_step;
@@ -78,12 +81,32 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, contra
                     target: formatStepInfo(targetStep)
                 };
             } else if (type === 'cross_workflow') {
-                const targetWf = allWorkflows.find((w: any) => String(w.id) === String(workflow_id));
-                const targetStep = targetWf?.steps?.find((s: any) => Number(s.step) === Number(sequence));
-                const wfName = targetWf?.name || 'Alur Kerja Target';
-                const stepLabel = targetStep ? `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || 'Tanpa Keterangan'}` : `Tahap ${sequence}`;
+                const isOrigin = workflow_id === 'origin_workflow' || workflow_id === 'origin' || workflow_id === contract.origin_workflow_id;
+                const returnMode = transition.return_mode;
+                const targetWfId = isOrigin ? (contract.origin_workflow_id || contract.workflow_id) : workflow_id;
+                const targetWf = allWorkflows.find((w: any) => String(w.id) === String(targetWfId));
+                const wfName = targetWf?.name || (isOrigin ? 'Alur Kerja Utama' : 'Alur Kerja Target');
+
+                let stepLabel = `Tahap ${sequence || 1}`;
+                if (isOrigin) {
+                    if (returnMode === 'branch_origin' || returnMode === 'origin_step') {
+                        stepLabel = 'Kembali ke Tahap Semula di Alur Utama';
+                    } else if (returnMode === 'branch_next') {
+                        stepLabel = 'Lanjut ke Tahap Berikutnya di Alur Utama';
+                    } else if (sequence) {
+                        stepLabel = `Tahap ${sequence} di Alur Utama`;
+                    } else {
+                        stepLabel = 'Kembali ke Alur Utama';
+                    }
+                } else {
+                    const targetStep = targetWf?.steps?.find((s: any) => Number(s.step) === Number(sequence));
+                    if (targetStep) {
+                        stepLabel = `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || 'Tanpa Keterangan'}`;
+                    }
+                }
+
                 return {
-                    label: `Pindah ke Alur Kerja: ${wfName}`,
+                    label: isOrigin ? 'Kembali ke Alur Kerja Utama' : `Pindah ke Alur Kerja: ${wfName}`,
                     target: stepLabel
                 };
             }

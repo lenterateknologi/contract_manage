@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Contract extends Model
 {
@@ -47,6 +48,10 @@ class Contract extends Model
     public function resolveRouteBinding($value, $field = null)
     {
         $id = ShortIdService::decode($value);
+
+        if (($field === null || $field === 'id') && ! Str::isUuid($id)) {
+            return null;
+        }
 
         return parent::resolveRouteBinding($id, $field);
     }

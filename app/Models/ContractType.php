@@ -158,11 +158,13 @@ class ContractType extends Model
         static::saved(function () {
             Cache::forget('options_contract_types_tree');
             Cache::forget('options_contract_types_all');
+            Cache::forget('contract_opts_types');
         });
 
         static::deleted(function () {
             Cache::forget('options_contract_types_tree');
             Cache::forget('options_contract_types_all');
+            Cache::forget('contract_opts_types');
         });
     }
 

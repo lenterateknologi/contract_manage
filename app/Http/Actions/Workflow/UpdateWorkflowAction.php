@@ -204,12 +204,13 @@ class UpdateWorkflowAction
                         $step = WorkflowStep::find($stepId);
                         $step->update([
                             'label' => $stepData['label'] ?? null,
+                            'is_visible' => isset($stepData['is_visible']) ? (bool) $stepData['is_visible'] : true,
                             'is_mandatory' => $stepData['is_mandatory'] ?? true,
                             'approver_type' => $stepData['approver_type'] ?? ApproverType::Role->value,
                             'description' => $stepData['description'] ?? '',
                             'step' => $index + 1,
                             'updated_by' => Auth::id(),
-                            'is_active' => true,
+                            'is_active' => isset($stepData['is_active']) ? (bool) $stepData['is_active'] : true,
                             'step_category' => $stepData['step_category'] ?? null,
                             'is_optional' => $stepData['is_optional'] ?? false,
                             'optional_label' => $stepData['optional_label'] ?? null,
@@ -231,13 +232,14 @@ class UpdateWorkflowAction
                     } else {
                         $step = $workflow->steps()->create([
                             'label' => $stepData['label'] ?? null,
+                            'is_visible' => isset($stepData['is_visible']) ? (bool) $stepData['is_visible'] : true,
                             'is_mandatory' => $stepData['is_mandatory'] ?? true,
                             'approver_type' => $stepData['approver_type'] ?? ApproverType::Role->value,
                             'description' => $stepData['description'] ?? '',
                             'step' => $index + 1,
                             'created_by' => Auth::id(),
                             'updated_by' => Auth::id(),
-                            'is_active' => true,
+                            'is_active' => isset($stepData['is_active']) ? (bool) $stepData['is_active'] : true,
                             'step_category' => $stepData['step_category'] ?? null,
                             'is_optional' => $stepData['is_optional'] ?? false,
                             'optional_label' => $stepData['optional_label'] ?? null,
@@ -339,6 +341,22 @@ class UpdateWorkflowAction
                         if ($step) {
                             $this->syncStepActions($step, $stepData['actions'] ?? [], $stepIdMap);
                         }
+                    }
+                }
+            }
+
+            // Re-sync active in-progress contracts for this workflow so new actors get their pending tasks
+            $activeContracts = \App\Models\Contract::where('workflow_id', $workflow->id)
+                ->where('status', 'in_review')
+                ->with(['initiator.department', 'initiator.company', 'creator'])
+                ->get();
+
+            $workflowService = app(\App\Services\Workflow\ContractWorkflowService::class);
+            foreach ($activeContracts as $contract) {
+                if ($contract->workflow_step_id) {
+                    $currentStep = WorkflowStep::find($contract->workflow_step_id);
+                    if ($currentStep) {
+                        $workflowService->createApprovalForStep($contract, $currentStep);
                     }
                 }
             }

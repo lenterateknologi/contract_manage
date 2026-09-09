@@ -34,7 +34,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const resolveTargetStepId = (contractData: any, actCode?: string): string | null => {
         const currentStep = contractData?.workflow_step;
         const steps = contractData?.workflow?.steps || [];
-        const customActions: any[] = contractData?.workflow?.meta?.custom_actions || contractData?.workflow_step?.workflow?.meta?.custom_actions || [];
+        const customActions: any[] = 
+            contractData?.workflow?.meta?.custom_actions || 
+            contractData?.origin_workflow?.meta?.custom_actions || 
+            contractData?.workflow_step?.workflow?.meta?.custom_actions || [];
         const customAction = customActions.find((ca: any) => 
             ca.id === 'action_adhoc' || 
             ca.action_code === 'forward' || 
@@ -62,7 +65,9 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 if (matched) return String(matched.id);
             } else {
                 // 'at' (pada tahap acuan)
-                if (anchorStep?.id) return String(anchorStep.id);
+                if (anchorStep?.id && (!customAction.target_step_id || String(anchorStep.id) === String(customAction.target_step_id))) {
+                    return String(anchorStep.id);
+                }
             }
         }
 
@@ -91,8 +96,12 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             }
         }
 
+        // 3. Look for explicit adhoc steps in the current workflow
         if (!targetStepId && steps.length > 0) {
             const adhocStep = steps.find((s: any) => 
+                s.approver_type === 'adhoc' ||
+                s.step_category === 'adhoc' ||
+                s.step_category === 'adhoc_review' ||
                 (s.approver_authorities || s.authorities || []).some((auth: any) => 
                     auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers'
                 )
@@ -186,7 +195,12 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             const existingAdhocUserIds = (contract?.approvals || [])
                 .filter(
                     (a: any) =>
-                        String(a.workflow_step_id) === String(finalTargetStepId) && a.role === 'Persetujuan Tambahan' && a.status !== 'rejected',
+                        String(a.workflow_step_id) === String(finalTargetStepId) &&
+                        a.role === 'Persetujuan Tambahan' &&
+                        a.status !== 'rejected' &&
+                        a.user_id != null &&
+                        String(a.user_id) !== 'null' &&
+                        String(a.user_id) !== 'undefined',
                 )
                 .map((a: any) => String(a.user_id));
 
@@ -203,7 +217,9 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             // Set initial selected users based on existing ones
             // Use unique array to prevent double entries from state + db
             setSelectedUserIds((prev) => {
-                const combined = [...prev, ...existingAdhocUserIds];
+                const combined = [...prev, ...existingAdhocUserIds].filter(
+                    (uid) => Boolean(uid) && uid !== 'null' && uid !== 'undefined'
+                );
                 return Array.from(new Set(combined));
             });
         } catch (error) {
@@ -214,8 +230,8 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     };
 
     const handleUpdateSelectedUsers = (val: string[]) => {
-        // Force unique values just in case
-        setSelectedUserIds(Array.from(new Set(val)));
+        // Force unique values and exclude null strings
+        setSelectedUserIds(Array.from(new Set(val.filter((uid) => Boolean(uid) && uid !== 'null' && uid !== 'undefined'))));
     };
 
     const handleRemoveUser = (id: string) => {

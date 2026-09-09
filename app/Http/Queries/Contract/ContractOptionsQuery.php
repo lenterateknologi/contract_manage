@@ -150,8 +150,10 @@ class ContractOptionsQuery
                         fn ($w) => empty($w->contract_type_id) && empty($w->meta['contract_type_ids'])
                     );
 
+                    $allTypes = ContractType::all();
+
                     if ($globalExists) {
-                        return ContractType::all();
+                        return $allTypes;
                     }
 
                     $allowedTypeIds = collect();
@@ -166,15 +168,30 @@ class ContractOptionsQuery
                         }
                     }
 
-                    $ids = $allowedTypeIds->unique()->filter()->values()->toArray();
+                    $ids = array_flip($allowedTypeIds->unique()->filter()->values()->toArray());
+                    if (empty($ids)) {
+                        return collect();
+                    }
 
-                    return ContractType::whereIn('id', $ids)
-                        ->orWhereIn('id', fn ($q) => $q->select('parent_id')
-                            ->from('m_contract_types')
-                            ->whereIn('id', $ids)
-                            ->whereNotNull('parent_id')
-                        )
-                        ->get();
+                    $typesById = $allTypes->keyBy('id');
+                    $includedIds = [];
+
+                    foreach (array_keys($ids) as $id) {
+                        $current = $typesById->get($id);
+                        if (! $current) {
+                            continue;
+                        }
+                        $includedIds[$id] = true;
+
+                        // Traverse up to include all ancestors so the tree can render
+                        $parent = $current;
+                        while ($parent && $parent->parent_id && isset($typesById[$parent->parent_id])) {
+                            $includedIds[$parent->parent_id] = true;
+                            $parent = $typesById->get($parent->parent_id);
+                        }
+                    }
+
+                    return $allTypes->filter(fn ($t) => isset($includedIds[$t->id]))->values();
                 });
             },
 

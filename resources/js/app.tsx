@@ -18,7 +18,7 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: async (name) => {
         const page = (await resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx'))) as any;
-        if (page.default.layout === undefined && !name.startsWith('auth/') && name !== 'welcome') {
+        if (page.default.layout === undefined && !name.startsWith('auth/') && !name.startsWith('errors/') && name !== 'Error' && name !== 'welcome') {
             page.default.layout = (page: React.ReactNode) => <AppLayout children={page} />;
         }
         return page;
