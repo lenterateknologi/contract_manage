@@ -18,21 +18,7 @@ import { Label } from '@/components/ui/forms/Label';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
-
-export interface FilterOption {
-    label: string;
-    value: string | number;
-    icon?: React.ElementType;
-    color?: string;
-}
-
-export interface FilterCategory {
-    key: string;
-    label: string;
-    type?: 'multiselect' | 'searchable' | 'date-range';
-    options?: FilterOption[];
-    placeholder?: string;
-}
+import type { FilterCategory, FilterOption } from './FilterPopover';
 
 export interface SideFilterCardProps {
     categories: FilterCategory[];

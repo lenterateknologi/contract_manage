@@ -1228,7 +1228,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                             {canBulkDelete && (
                                                 <Button
                                                     type="button"
-                                                    variant="danger"
+                                                    variant="destructive"
                                                     size="sm"
                                                     onClick={() => setIsBulkDeleteModalOpen(true)}
                                                     className="h-7.5 gap-1 px-2.5 text-[11px] font-semibold"
@@ -1654,7 +1654,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 Batal
                             </Button>
                             <Button
-                                variant="danger"
+                                variant="destructive"
                                 size="sm"
                                 className="h-10 text-xs font-semibold"
                                 onClick={handleDelete}
@@ -1692,7 +1692,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                 Batal
                             </Button>
                             <Button
-                                variant="danger"
+                                variant="destructive"
                                 size="sm"
                                 className="h-10 text-xs font-semibold"
                                 onClick={handleBulkDelete}

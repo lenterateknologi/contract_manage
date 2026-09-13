@@ -363,7 +363,7 @@ export const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-text-main line-clamp-1 text-xs font-semibold">{c.title}</span>
 );
 
-export const ContractNoAndTitleCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => {
+export const ContractNoAndTitleCell = ({ c, types = [] }: Readonly<{ c: Contract; types?: ContractType[] }>) => {
     const type = types?.find((t) => t.id === c.contract_type_id);
     const typeName = type?.name || c.contract_type || '';
     const cleanTypeName = typeName ? typeName.replace('Perjanjian ', '').replace('Addendum / ', '') : '';

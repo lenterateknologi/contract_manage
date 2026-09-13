@@ -4,7 +4,15 @@ import { cn } from "@/lib/utils"
 
 const Popover = HeadlessPopover
 
-const PopoverTrigger = PopoverButton
+interface PopoverTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean
+  as?: any
+}
+
+const PopoverTrigger = React.forwardRef<any, PopoverTriggerProps>(({ asChild, as, ...props }, ref) => {
+  return <PopoverButton ref={ref} as={asChild ? (as || 'div') : (as || 'button')} {...props} />
+})
+PopoverTrigger.displayName = "PopoverTrigger"
 
 interface PopoverContentProps extends Omit<React.ComponentPropsWithoutRef<typeof PopoverPanel>, 'anchor'> {
   align?: "start" | "center" | "end"

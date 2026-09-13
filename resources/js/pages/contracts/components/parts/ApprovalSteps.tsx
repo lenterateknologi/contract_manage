@@ -286,7 +286,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                     </span>
                                                                 )}
                                                                 {(() => {
-                                                                    const hasSequential = group.items.some(it => it.sub_step != null) || Boolean(contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id]?.is_sequential);
+                                                                    const hasSequential = group.items.some(it => it.sub_step != null) || Boolean(contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id || '']?.is_sequential);
                                                                     if (!hasSequential || group.items.length <= 1) return null;
                                                                     return (
                                                                         <span className="inline-flex items-center gap-1 rounded bg-indigo-500/10 border border-indigo-500/25 px-1.5 py-0.5 text-[8.5px] font-bold tracking-wider uppercase text-indigo-700 dark:text-indigo-300">
@@ -297,7 +297,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                 })()}
                                                             </div>
                                                             {(() => {
-                                                                const hasSequential = group.items.some(it => it.sub_step != null) || Boolean(contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id]?.is_sequential);
+                                                                const hasSequential = group.items.some(it => it.sub_step != null) || Boolean(contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id || '']?.is_sequential);
                                                                 if (hasSequential && group.items.length > 1) {
                                                                     return (
                                                                         <p className="text-[10px] text-indigo-600/90 dark:text-indigo-400 font-medium mt-0.5">
@@ -413,7 +413,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                  <>
                                                                     {/* Render all approver items for this step directly */}
                                                                     {visibleItems.map((a: ContractApproval) => {
-                                                                        const hasSub = a.sub_step != null && a.sub_step !== '' && String(a.sub_step) !== 'null' && String(a.sub_step) !== 'undefined';
+                                                                        const hasSub = a.sub_step !== null && a.sub_step !== undefined && String(a.sub_step).trim() !== '' && String(a.sub_step) !== 'null' && String(a.sub_step) !== 'undefined';
                                                                         return (
                                                                             <ApprovalCard 
                                                                                 key={a.id} 

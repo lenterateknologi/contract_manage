@@ -475,7 +475,7 @@ function FormField({
     readOnly = false,
 }: {
     label: string;
-    value: string;
+    value?: string | null;
     onChange?: (v: string) => void;
     error?: string;
     type?: string;
@@ -486,7 +486,7 @@ function FormField({
             <Label className="text-text-desc block text-xs font-medium">{label}</Label>
             <Input
                 type={type}
-                value={value}
+                value={value ?? ''}
                 readOnly={readOnly}
                 onChange={(e) => onChange?.(e.target.value)}
                 className={cn(

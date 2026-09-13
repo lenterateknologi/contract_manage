@@ -26,7 +26,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
     // Aktif = step ini adalah step kontrak saat ini (tidak bergantung pada nilai 'pending'/'waiting')
     const isCurrent = !isApproved && !isRejected && !!contract?.workflow_step_id && a.workflow_step_id === contract.workflow_step_id;
     const isSkipped = (a.status as string) === 'SKIPPED';
-    const hasValidSubStep = a.sub_step != null && a.sub_step !== '' && String(a.sub_step) !== 'null' && String(a.sub_step) !== 'undefined';
+    const hasValidSubStep = a.sub_step != null && String(a.sub_step) !== '' && String(a.sub_step) !== 'null' && String(a.sub_step) !== 'undefined';
     const hasSubStep = Boolean(isSubStep || hasValidSubStep);
 
     const finalStepNumber = (displaySubSteps && hasValidSubStep) ? `${stepNumber}.${a.sub_step}` : stepNumber;
@@ -161,7 +161,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                             <Clock size={9} className="shrink-0" />
                             <span>Giliran Meninjau</span>
                         </span>
-                    ) : (a.status !== 'pending' && a.status !== 'waiting') ? (
+                    ) : ((a.status as string) !== 'pending' && (a.status as string) !== 'waiting') ? (
                         <StatusBadge status={a.status} size="sm" />
                     ) : targetStatusCode ? (
                         <StatusBadge status={targetStatusCode} size="sm" />

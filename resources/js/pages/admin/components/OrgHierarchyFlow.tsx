@@ -122,7 +122,7 @@ const ALL_LEVELS: LevelConfig[] = [
     { key: 'employee', label: 'List Employee (Orang)', icon: UserIcon, color: 'text-cyan-600 dark:text-cyan-400', badgeBg: 'bg-cyan-50 border-cyan-200 text-cyan-700 dark:bg-cyan-950/40 dark:border-cyan-800 dark:text-cyan-300' },
 ];
 
-interface TreeNodeData {
+interface TreeNodeData extends Record<string, unknown> {
     nodeId?: string;
     title: string;
     levelKey: HierarchyLevelKey;
@@ -490,7 +490,7 @@ export function OrgHierarchyFlow({
     // Card Finder / Jump to Node States
     const [cardFindQuery, setCardFindQuery] = useState('');
     const [currentCardFindIndex, setCurrentCardFindIndex] = useState(0);
-    const reactFlowInstanceRef = useRef<ReactFlowInstance | null>(null);
+    const reactFlowInstanceRef = useRef<ReactFlowInstance<any, any> | null>(null);
 
     // Filter is_used: 'used_only' (is_used = true across all active levels) | 'all' (all data)
     const [usedFilter, setUsedFilter] = useState<'used_only' | 'all'>(() => {

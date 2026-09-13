@@ -43,7 +43,7 @@ export default function ContractReferences({
     const performSearch = async (val: string) => {
         setIsSearching(true);
         try {
-            const res = await contractApi.references.search(contract.id, val);
+            const res: any = await contractApi.references.search(contract.id, val);
             const list = res?.data || res || [];
             setResults(Array.isArray(list) ? list.filter((c: any) => c.id !== contract.id) : []);
         } catch (error) {

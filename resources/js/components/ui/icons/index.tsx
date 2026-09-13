@@ -71,7 +71,7 @@ import {
     FileCode,
     FileDown,
     FileEdit,
-    FileIcon,
+    File as FileIcon,
     FileJson,
     FilePlus,
     FilePlus2,
@@ -215,6 +215,8 @@ import {
     type LucideIcon,
     type LucideProps,
 } from 'lucide-react';
+
+export type { LucideIcon, LucideProps };
 
 export const Icons = {
     Activity,
@@ -463,7 +465,7 @@ export function getIcon(
     return fallback;
 }
 
-export interface AppIconProps extends Omit<LucideProps, 'ref'> {
+export interface AppIconProps extends Omit<LucideProps, 'ref' | 'name'> {
     name?: IconName | string | LucideIcon | null;
     fallback?: LucideIcon;
     size?: number | string;

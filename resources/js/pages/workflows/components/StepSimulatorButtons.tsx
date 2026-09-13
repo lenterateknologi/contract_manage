@@ -20,7 +20,7 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
         return null;
     }
 
-    const buttons = [];
+    const buttons: any[] = [];
 
     for (const act of actions) {
         let code = act.action_code || act.code || '';

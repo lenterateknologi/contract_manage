@@ -399,7 +399,9 @@ const CustomStepNode = ({ data, selected }: NodeProps) => {
                     >
                         {targetStatus}
                     </span>
-                    <Move size={11} className="text-slate-400 opacity-60" title="Bisa Digeser (Drag & Drop)" />
+                    <span title="Bisa Digeser (Drag & Drop)" className="inline-flex items-center">
+                        <Move size={11} className="text-slate-400 opacity-60" />
+                    </span>
                 </div>
             </div>
 

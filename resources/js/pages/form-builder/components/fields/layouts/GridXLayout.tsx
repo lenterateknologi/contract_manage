@@ -14,7 +14,7 @@ export const GridXLayout: React.FC<LayoutProps> = ({ field, children, isBuilder 
     // Unwrap children jika dibungkus SortableContext
     let actualChildren: React.ReactNode[] = [];
     React.Children.forEach(children, (child) => {
-        if (React.isValidElement(child) && child.props && child.props.children) {
+        if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.props?.children) {
             actualChildren = actualChildren.concat(React.Children.toArray(child.props.children));
         } else if (child) {
             actualChildren.push(child);

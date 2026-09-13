@@ -4,7 +4,7 @@ import {
     ChevronDown,
     ChevronUp,
     Code,
-    FileIcon,
+    File as FileIcon,
     Heading1,
     Heading2,
     Italic,
@@ -33,8 +33,8 @@ interface ChatEditorProps {
     selectedFiles: File[];
     onRemoveFile: (index: number) => void;
     onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    editorRef: React.RefObject<HTMLDivElement>;
-    fileInputRef: React.RefObject<HTMLInputElement>;
+    editorRef: React.RefObject<HTMLDivElement | null>;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
     filteredUsers: any[];
     showMentions: boolean;
     mentionIndex: number;

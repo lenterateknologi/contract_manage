@@ -2,9 +2,9 @@
 export interface UserProfile {
     id: string;
     name: string;
-    email: string;
+    email?: string;
     initials: string;
-    role: string;
+    role?: string;
     department_id?: string | null;
     department_name?: string;
     division_name?: string;
@@ -15,8 +15,9 @@ export interface UserProfile {
         id: string;
         name: string;
     };
-    bg_color: string;
-    text_color: string;
+    bg_color?: string;
+    text_color?: string;
+    avatar?: string;
     avatar_url?: string;
 }
 
@@ -57,6 +58,7 @@ export interface ContractApproval {
     attachment_name?: string | null;
     file_size?: number | null;
     has_attachment?: boolean;
+    step_entry_at?: string | null;
     decided_at: string | null;
     created_at?: string;
     step_type?: string;
@@ -72,6 +74,9 @@ export interface ContractApproval {
             id: string;
             name: string;
         };
+        meta?: any;
+        action_configs?: any[];
+        actions?: any[];
     };
     approver_authorities?: any[];
     debug_sql_queries?: string[];
@@ -88,10 +93,15 @@ export interface ContractHistory {
 
 export interface ContractMessage {
     id: string;
+    contract_id?: string;
     user_id: string;
     message: string;
     read_by: string[];
     created_at: string;
+    reactions?: any[];
+    attachments?: any[];
+    parent_id?: string | null;
+    parent?: any;
     user: UserProfile;
 }
 
@@ -166,6 +176,15 @@ export interface Contract {
     p2_signer_position?: string;
     p2_address?: string;
     created_by: string;
+    initiated_by_id?: string;
+    assigned_pic_id?: string | null;
+    assigned_by_id?: string | null;
+    price?: number | string | null;
+    f1_file?: string | null;
+    f2_file?: string | null;
+    f1_items?: any[];
+    agreement_file?: string | null;
+    agreement_content?: string | null;
     status: ContractStatus;
     display_mode?: 'interactive' | 'pdf';
     allow_info_edit?: boolean;

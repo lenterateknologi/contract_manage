@@ -428,37 +428,37 @@ export default function AuthorityTableManager({
         return details ? `${u.name} (${details})` : u.name;
     };
 
-    const getUserLabel = (id?: string) => {
+    const getUserLabel = (id?: string | null) => {
         if (!id) return '-';
         const u = users.find(user => String(user.id) === id);
         return u ? formatUserDetail(u) : id;
     };
-    const getRoleLabel = (id?: string) => {
+    const getRoleLabel = (id?: string | null) => {
         if (!id) return '-';
         return roles.find(r => String(r.id) === id || r.name === id)?.name || id;
     };
-    const getDeptLabel = (id?: string) => {
+    const getDeptLabel = (id?: string | null) => {
         if (!id) return '-';
         return departments.find(d => String(d.id) === id)?.name || id;
     };
-    const getDivLabel = (id?: string) => {
+    const getDivLabel = (id?: string | null) => {
         if (!id) return '-';
         return divisions.find(d => String(d.id) === id)?.name || id;
     };
-    const getCompanyGroupLabel = (id?: string) => {
+    const getCompanyGroupLabel = (id?: string | null) => {
         if (!id) return '-';
         return companyGroups.find(cg => String(cg.id) === id)?.name || id;
     };
-    const getCompanyLabel = (id?: string) => {
+    const getCompanyLabel = (id?: string | null) => {
         if (!id) return '-';
         return companies.find(c => String(c.id) === id)?.name || id;
     };
-    const getRegionLabel = (id?: string) => {
+    const getRegionLabel = (id?: string | null) => {
         if (!id) return '-';
         return regions.find(r => String(r.id) === id)?.name || id;
     };
 
-    const getCustomLabel = (id?: string) => {
+    const getCustomLabel = (id?: string | null) => {
         if (!id) return '-';
         if (id === 'initiator') return 'INISIATOR';
         if (id === 'assigned_pic') return 'PIC DITUGASKAN';

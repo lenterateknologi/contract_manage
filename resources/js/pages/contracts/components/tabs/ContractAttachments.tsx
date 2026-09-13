@@ -25,6 +25,8 @@ const {
     Eye,
 } = Icons;
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
+import type { Contract, ContractAttachment } from '@/pages/contracts/types';
 
 interface Props {
     contract: Contract;

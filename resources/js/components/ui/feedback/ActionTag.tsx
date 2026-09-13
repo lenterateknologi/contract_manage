@@ -1,13 +1,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import LucideIcons from '@/lib/lucide-dynamic';
-
-export interface StatusInfo {
-    label?: string;
-    color?: string;
-    bg_color?: string;
-    icon?: string | null;
-}
+import type { StatusInfo } from './StatusBadge';
 import {
     CheckCircle2,
     AlertCircle,

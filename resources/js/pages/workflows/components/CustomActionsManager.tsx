@@ -47,6 +47,7 @@ export interface CustomActionItem {
     visibility_condition?: 'always' | 'require_pic' | 'no_pic' | 'has_signers' | 'no_signers' | 'custom_status';
     custom_status_value?: string;
     unlocks_other_actions?: boolean;
+    target_status?: string | null;
     meta?: Record<string, any>;
 }
 

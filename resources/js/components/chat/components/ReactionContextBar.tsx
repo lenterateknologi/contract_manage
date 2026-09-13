@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 interface ReactionContextBarProps {
     show: boolean;
-    pickerRef: React.RefObject<HTMLDivElement>;
+    pickerRef: React.RefObject<HTMLDivElement | null>;
     isMe: boolean;
     localReactions: any[];
     currentUserId?: string;

@@ -20,6 +20,7 @@ import {
     Network,
     RefreshCw,
     ShieldCheck,
+    Tags,
     Upload,
     Users,
 } from 'lucide-react';

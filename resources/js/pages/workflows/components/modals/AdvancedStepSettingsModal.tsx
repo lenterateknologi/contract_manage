@@ -4,6 +4,7 @@ import { Checkbox } from '@/components/ui/selection/Checkbox';
 export interface WorkflowStep {
     id: any;
     meta?: {
+        [key: string]: any;
         allow_info_edit?: boolean;
         allow_f1_edit?: boolean;
         allow_f2_edit?: boolean;
@@ -13,6 +14,12 @@ export interface WorkflowStep {
         is_manager?: boolean;
         show_f2_contract_no?: boolean;
         show_tax_toggle?: boolean;
+        show_price?: boolean;
+        show_period?: boolean;
+        show_info?: boolean;
+        show_tab_members?: boolean;
+        show_action_panel?: boolean;
+        show_document_detail?: boolean;
         
         show_tab_f1?: boolean;
         show_tab_f2?: boolean;
@@ -29,11 +36,9 @@ export interface WorkflowStep {
         allow_title_edit?: boolean;
         allow_vendor_edit?: boolean;
         allow_category_edit?: boolean;
-        show_info?: boolean;
         show_title?: boolean;
         show_vendor?: boolean;
         show_category?: boolean;
-        show_period?: boolean;
         require_f1?: boolean;
         require_f2?: boolean;
         require_agreement?: boolean;

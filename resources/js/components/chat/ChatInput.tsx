@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { RefreshCw, Send, Paperclip, X, FileIcon } from 'lucide-react';
+import { RefreshCw, Send, Paperclip, X, File as FileIcon } from 'lucide-react';
 import React from 'react';
 import { MentionDropdown } from '@/pages/contracts/components/parts/MentionDropdown';
 

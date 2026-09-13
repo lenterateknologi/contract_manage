@@ -91,9 +91,9 @@ export function ContractActionSection({
                             <p className="text-[10px] text-muted-foreground">Tindakan yang tersedia pada tahap ini</p>
                         </div>
                     </div>
-                    {contract.workflow_step?.name && (
+                    {((contract.workflow_step as any)?.name || contract.workflow_step?.description) && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                            {contract.workflow_step.name}
+                            {(contract.workflow_step as any)?.name || contract.workflow_step?.description}
                         </span>
                     )}
                 </div>
@@ -203,13 +203,13 @@ export function ContractActionSection({
                                             const actionConfig = getActionConfig(
                                                 {
                                                     ...action,
-                                                    target_status: action.target_status || contract?.workflow_step?.meta?.target_status,
+                                                    target_status: action.target_status || (contract?.workflow_step?.meta as any)?.target_status,
                                                     isStep1: contract?.workflow_step?.step === 1,
                                                 },
                                                 null,
                                                 false,
                                                 false,
-                                                action.target_status || contract?.workflow_step?.meta?.target_status,
+                                                action.target_status || (contract?.workflow_step?.meta as any)?.target_status,
                                                 action.target_status_info,
                                                 masterContractStatuses,
                                             );
@@ -359,13 +359,13 @@ export function ContractActionSection({
                                             const mainApproveCfg = getActionConfig(
                                                 {
                                                     action_code: 'approve',
-                                                    target_status: contract?.workflow_step?.meta?.target_status,
+                                                    target_status: (contract?.workflow_step?.meta as any)?.target_status,
                                                     isStep1: contract.workflow_step?.step === 1,
                                                 },
                                                 null,
                                                 false,
                                                 false,
-                                                contract?.workflow_step?.meta?.target_status,
+                                                (contract?.workflow_step?.meta as any)?.target_status,
                                                 null,
                                                 masterContractStatuses,
                                             );

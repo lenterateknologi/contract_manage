@@ -57,6 +57,7 @@ export * from './selection/Radio';
 export * from './selection/SearchableMultiSelect';
 export * from './selection/SearchableMultiSelectPortal';
 export * from './selection/SearchableSelect';
+export type { SearchableSelectOption } from './selection/SearchableSelect';
 export * from './selection/SearchableSelectHeadless';
 export * from './selection/Select';
 export * from './selection/SimpleFilters';
@@ -76,6 +77,7 @@ export * from './user/UserAvatar';
 
 // Icons & Icon Manager
 export * from './icons';
+export type { LucideIcon, LucideProps } from 'lucide-react';
 
 // Utilities
 export * from './utilities/Collapsible';

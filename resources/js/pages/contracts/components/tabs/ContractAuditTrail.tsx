@@ -90,7 +90,7 @@ export default function ContractAuditTrail({ contract }: Props) {
         window.open(`/api/contracts/${contract.id}/audit-trail/excel?${params}`, '_blank');
     };
 
-    const currentStep = contract.workflow_step || contract.current_step || contract.workflow?.steps?.find((s: any) => s.id === contract.workflow_step_id);
+    const currentStep = contract.workflow_step || (contract as any).current_step || contract.workflow?.steps?.find((s: any) => s.id === contract.workflow_step_id);
     const currentStepNumber = currentStep?.step || null;
     const isBranchedWorkflow = Boolean(contract.origin_workflow_id && contract.workflow_id !== contract.origin_workflow_id);
 

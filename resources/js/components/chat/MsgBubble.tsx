@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 import { ContractMessage } from '@/pages/contracts/types';
 import { usePage } from '@inertiajs/react';
-import { FileIcon, Download } from 'lucide-react';
+import { File as FileIcon, Download } from 'lucide-react';
 
 interface MsgBubbleProps {
     msg: ContractMessage;

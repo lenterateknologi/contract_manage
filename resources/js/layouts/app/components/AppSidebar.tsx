@@ -295,7 +295,7 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
     const isChildActive = Boolean(
         tab.children?.some((child) => isParentActive && activeSubTab === child.id),
     );
-    const [isOpen, setIsOpen] = useState(isParentActive || true);
+    const [isOpen, setIsOpen] = useState<boolean>(Boolean(isParentActive));
 
     useEffect(() => {
         if (isParentActive) {
@@ -516,7 +516,6 @@ export const AppSidebar = memo(function AppSidebar() {
             rawGroups.push({
                 title: 'Pengaturan Sistem',
                 icon: Settings2,
-                sequence: 99,
                 items: [
                     {
                         title: 'Backup & Restore',
@@ -526,7 +525,7 @@ export const AppSidebar = memo(function AppSidebar() {
                         sequence: 99,
                     },
                 ],
-            });
+            } as any);
         }
 
         if (!pov.activeNavPov.allowedRoutes) {

@@ -18,6 +18,7 @@ export interface Column<T> {
     accessorKey: keyof T | string;
     cell?: (row: T) => React.ReactNode;
     className?: string;
+    align?: 'left' | 'center' | 'right';
     sortable?: boolean;
     pinned?: 'left' | 'right' | boolean;
     pinOffset?: number;

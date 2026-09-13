@@ -160,6 +160,10 @@ export default function AgreementView({
         }
 
         const versionToDownload = vId ? versionsList.find((v) => v.id === vId) : versionsList.sort((a, b) => b.version_no - a.version_no)[0];
+        if (!versionToDownload) {
+            showToast('Tidak ada versi dokumen untuk diunduh.', 'danger');
+            return;
+        }
 
         const downloadUrl = `/api/contracts/${contract.id}/file/${versionToDownload.version_no}?type=${effectiveDocType}`;
         const a = document.createElement('a');
@@ -507,7 +511,7 @@ export default function AgreementView({
                                 disabled={uploading}
                                 onClick={() => {
                                     if (isSigner && !stepDownloaded) {
-                                        showToast('Harap unduh dokumen terlebih dahulu sebelum mengunggah persetujuan.', 'warning');
+                                        showToast('Harap unduh dokumen terlebih dahulu sebelum mengunggah persetujuan.', 'danger');
                                         return;
                                     }
                                     fileInputRef.current?.click();

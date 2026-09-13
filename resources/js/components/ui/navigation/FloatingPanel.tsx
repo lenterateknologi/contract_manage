@@ -12,7 +12,7 @@ import * as React from 'react';
  *   <FloatingPanel className="flex-1 min-w-0">…main content…</FloatingPanel>
  *   <FloatingPanel padded>…right filter sidebar…</FloatingPanel>
  */
-interface FloatingPanelProps {
+export interface FloatingPanelProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     className?: string;
     /** Add p-4 inner padding */
@@ -29,6 +29,7 @@ export function FloatingPanel({
     padded = false,
     shrink = false,
     style,
+    ...props
 }: FloatingPanelProps) {
     return (
         <div
@@ -39,6 +40,7 @@ export function FloatingPanel({
                 shrink && 'shrink-0',
                 className,
             )}
+            {...props}
         >
             {children}
         </div>

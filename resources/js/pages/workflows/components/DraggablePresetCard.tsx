@@ -2,7 +2,6 @@ import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { Bookmark, PlusCircle, Trash2, GripVertical, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { APPROVER_TYPE_STYLES } from '../constants/workflowConstants';
 
 interface DraggablePresetCardProps {
     preset: any;

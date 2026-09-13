@@ -9,15 +9,15 @@ export function RequesterInfoCard({ selected, isTabView = false }: { selected: C
     const [minimized, setMinimized] = useState(false);
     const user = selected.initiator || selected.creator;
 
-    const picAssignedAt = selected.pic_assigned_at ||
+    const picAssignedAt = (selected as any).pic_assigned_at ||
         selected.histories?.find((h: any) => h.action === 'WORKFLOW_ASSIGNED')?.created_at ||
-        selected.histories?.find((h: any) => h.action === 'WORKFLOW_ASSIGNED')?.created_at_formatted ||
+        (selected.histories?.find((h: any) => h.action === 'WORKFLOW_ASSIGNED') as any)?.created_at_formatted ||
         null;
 
-    const submittedAt = selected.submitted_at ||
-        selected.submitted_at_formatted ||
-        selected.created_at_formatted ||
-        selected.created_at ||
+    const submittedAt = (selected as any).submitted_at ||
+        (selected as any).submitted_at_formatted ||
+        (selected as any).created_at_formatted ||
+        (selected as any).created_at ||
         null;
 
     const content = (

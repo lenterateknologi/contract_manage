@@ -103,9 +103,9 @@ export default function SortableStepItem({
     totalSteps: number;
     contractStatuses?: any[];
     updateLocalStep: (idx: number, data: any) => void;
-    removeLocalStep: (idx: number) => void;
-    duplicateLocalStep: (idx: number) => void;
-    moveLocalStep: (idx: number, direction: 'up' | 'down') => void;
+    removeLocalStep?: (idx: number) => void;
+    duplicateLocalStep?: (idx: number) => void;
+    moveLocalStep?: (idx: number, direction: 'up' | 'down') => void;
     isExpanded: boolean;
     setIsExpanded: (expanded: boolean) => void;
     roles?: any[];
@@ -126,6 +126,7 @@ export default function SortableStepItem({
         picId?: string;
         creatorId?: string;
         adhocId?: string;
+        adhocIds?: string[];
     };
     onOpenSimulationModal?: () => void;
 }) {
@@ -815,7 +816,7 @@ export default function SortableStepItem({
                                 size="icon"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    duplicateLocalStep(idx);
+                                    duplicateLocalStep?.(idx);
                                 }}
                                 className="hover:text-primary h-7 w-7 rounded-md text-muted-foreground transition-all hover:bg-background"
                                 title="Duplikat Tahap"
@@ -827,7 +828,7 @@ export default function SortableStepItem({
                                 size="icon"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    removeLocalStep(idx);
+                                    removeLocalStep?.(idx);
                                 }}
                                 className="hover:text-destructive h-7 w-7 rounded-md text-muted-foreground transition-all hover:bg-destructive/10"
                                 title="Hapus Tahap"

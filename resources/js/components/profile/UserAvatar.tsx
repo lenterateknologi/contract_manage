@@ -5,7 +5,7 @@ import * as React from 'react';
 
 export type UserAvatarVariant = 'icon' | 'name' | 'role';
 
-export interface UserAvatarProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface UserAvatarProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'role'> {
     user?: UserProfile | any | null;
     name?: string | null;
     avatarUrl?: string | null;
@@ -25,18 +25,20 @@ export function UserAvatarIcon({
     user,
     name: nameProp,
     avatarUrl: avatarUrlProp,
+    src,
     size = 'md',
     className,
 }: {
     user?: any;
     name?: string | null;
     avatarUrl?: string | null;
+    src?: string | null;
     size?: AvatarSize;
     className?: string;
 }) {
     const data = getUserAvatarData(user);
     const name = nameProp || data.name;
-    const avatarUrl = avatarUrlProp || data.avatarUrl;
+    const avatarUrl = src || avatarUrlProp || data.avatarUrl;
     const initials = data.initials;
     const colorClass = data.colorClass;
     const sizeClasses = AVATAR_SIZE_MAP[size] || AVATAR_SIZE_MAP.md;

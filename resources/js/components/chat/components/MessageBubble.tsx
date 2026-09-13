@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { usePage } from '@inertiajs/react';
-import { Download, Eye, FileIcon, Copy, Check, Smile } from 'lucide-react';
+import { Download, Eye, File as FileIcon, Copy, Check, Smile } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ContractMessage } from '@/pages/contracts/types';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';

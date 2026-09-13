@@ -278,7 +278,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 selectedUserIds,
                 note,
                 isSequential,
-                finalTargetStepId,
+                finalTargetStepId || undefined,
                 undefined,
                 approvalRule,
                 approvalRule === 'quorum' ? minApprovals : undefined,

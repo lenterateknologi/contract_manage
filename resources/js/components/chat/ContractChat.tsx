@@ -49,12 +49,14 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             contractApi.messages
                 .list(contract.id)
                 .then((newMsgs) => {
-                    setMessages((prev) => {
-                        if (JSON.stringify(prev) === JSON.stringify(newMsgs)) {
-                            return prev;
-                        }
-                        return newMsgs;
-                    });
+                    if (Array.isArray(newMsgs)) {
+                        setMessages((prev: ContractMessage[]) => {
+                            if (JSON.stringify(prev) === JSON.stringify(newMsgs)) {
+                                return prev;
+                            }
+                            return newMsgs;
+                        });
+                    }
                 })
                 .catch(() => null);
         }
@@ -141,7 +143,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 contractApi.messages.list(contract.id).catch(() => null),
                 contractApi.get(contract.id).catch(() => null),
             ]);
-            if (fetchedMsgs) {
+            if (Array.isArray(fetchedMsgs)) {
                 setMessages(fetchedMsgs);
             }
             if (updated) {

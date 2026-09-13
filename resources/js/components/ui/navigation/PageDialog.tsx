@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { Button } from '@/components/ui/buttons/Button';
+import { cn } from '@/lib/utils';
 
 interface PageDialogProps {
     open: boolean;

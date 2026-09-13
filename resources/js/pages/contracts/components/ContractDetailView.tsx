@@ -103,6 +103,7 @@ const ContractDetailView = ({
     submissionTypes: any[];
     vendors: any[];
     meUser: any;
+    users?: any[];
     formTemplates: any[];
     canUpdate: boolean;
     onClose: () => void;
@@ -340,7 +341,7 @@ const ContractDetailView = ({
         const customActions: any[] = 
             contract.workflow?.meta?.custom_actions || 
             contract.origin_workflow?.meta?.custom_actions || 
-            contract.workflow_step?.workflow?.meta?.custom_actions || [];
+            ((contract.workflow_step as any)?.workflow as any)?.meta?.custom_actions || [];
         if (!customActions || !Array.isArray(customActions) || customActions.length === 0) return [];
 
         const hasAssignedPic = !!contract.assigned_pic_id;
@@ -355,7 +356,7 @@ const ContractDetailView = ({
 
             // Do not allow nested ad-hoc action on ad-hoc review steps
             if ((act.action_code === 'forward' || act.id === 'action_adhoc') && 
-                (contract.workflow_step?.step_category === 'adhoc_review' || contract.workflow_step?.meta?.is_adhoc_step)) {
+                (contract.workflow_step?.step_category === 'adhoc_review' || (contract.workflow_step?.meta as any)?.is_adhoc_step)) {
                 return false;
             }
 
@@ -816,8 +817,8 @@ const ContractDetailView = ({
 
                                     return (
                                         <div className="flex-1 min-h-0 flex flex-col">
-                                            {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={users} onUpdate={onUpdate} />}
-                                            {activeSub === 'members' && <MembersTab contract={contract} users={users} />}
+                                            {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={users || []} onUpdate={onUpdate} />}
+                                            {activeSub === 'members' && <MembersTab contract={contract} users={users || []} />}
                                         </div>
                                     );
                                 })()}

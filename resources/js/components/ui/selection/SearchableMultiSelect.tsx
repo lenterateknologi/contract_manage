@@ -2,11 +2,8 @@ import * as React from 'react';
 import { Search, ChevronsUpDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export interface SearchableSelectOption {
-    value: string;
-    label: string;
-    italic?: boolean;
-}
+import type { SearchableSelectOption } from './SearchableSelect';
+export type { SearchableSelectOption };
 
 interface SearchableMultiSelectProps {
     values: string[];

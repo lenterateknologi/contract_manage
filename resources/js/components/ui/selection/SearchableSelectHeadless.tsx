@@ -18,7 +18,7 @@ interface SearchableSelectProps {
     disabled?: boolean;
 }
 
-export function SearchableSelect({
+export function SearchableSelectHeadless({
     options,
     value,
     onChange,

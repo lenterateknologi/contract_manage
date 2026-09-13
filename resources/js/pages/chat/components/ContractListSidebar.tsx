@@ -47,7 +47,7 @@ export function ContractListSidebar({
 
                     <button
                         type="button"
-                        onClick={() => setShowChatSearch((prev) => !prev)}
+                        onClick={() => setShowChatSearch(!showChatSearch)}
                         className={`p-1.5 rounded-lg border text-xs transition-all cursor-pointer ${
                             showChatSearch || hasActiveFilters
                                 ? 'bg-primary/10 border-primary/30 text-primary font-bold'

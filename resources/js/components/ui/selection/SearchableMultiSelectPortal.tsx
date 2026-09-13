@@ -2,12 +2,7 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronsUpDown, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-export interface SearchableSelectOption {
-    value: string;
-    label: string;
-    italic?: boolean;
-}
+import type { SearchableSelectOption } from './SearchableMultiSelect';
 
 interface SearchableMultiSelectPortalProps {
     values: string[];

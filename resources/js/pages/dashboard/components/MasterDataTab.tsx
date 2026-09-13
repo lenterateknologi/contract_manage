@@ -290,7 +290,7 @@ export function MasterDataTab({ data }: MasterDataTabProps) {
                                     radius={[4, 4, 0, 0]}
                                     barSize={32}
                                 >
-                                    {chartData.map((entry, index) => (
+                                    {chartData.map((entry: any, index: number) => (
                                         <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                     ))}
                                 </Bar>
