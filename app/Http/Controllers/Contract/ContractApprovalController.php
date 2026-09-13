@@ -65,10 +65,13 @@ class ContractApprovalController extends Controller
         $note = $request->input('note');
 
         $actorId = Auth::id() ?: $contract->created_by;
+        $now = now();
 
         $metadata = $contract->metadata ?? [];
         $metadata['assigned_pic_id'] = $picId;
         $metadata['assigned_by_id'] = $actorId;
+        $metadata['assigned_at'] = $now->toIso8601String();
+        $metadata['pic_assigned_at'] = $now->toIso8601String();
         if ($note) {
             $metadata['assigned_pic_note'] = $note;
         }
@@ -76,8 +79,29 @@ class ContractApprovalController extends Controller
         $contract->update([
             'assigned_pic_id' => $picId,
             'assigned_by_id' => $actorId,
+            'assigned_at' => $now,
             'metadata' => $metadata,
         ]);
+
+        // Process attachments if any
+        $filesToProcess = [];
+        if ($request->hasFile('attachments')) {
+            $filesToProcess = $request->file('attachments');
+        } elseif ($request->hasFile('attachment')) {
+            $filesToProcess = [$request->file('attachment')];
+        }
+        foreach ($filesToProcess as $file) {
+            if (! $file) continue;
+            $path = $file->store("contracts/{$contract->id}/assignments", 'local');
+            $contract->attachments()->create([
+                'label' => $file->getClientOriginalName(),
+                'category' => 'Lampiran',
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+                'file_type' => $file->getClientOriginalExtension() ?: 'file',
+                'uploaded_by' => $actorId,
+            ]);
+        }
 
         $pic = User::find($picId);
 
@@ -132,19 +156,35 @@ class ContractApprovalController extends Controller
             return response()->json(['message' => 'Tidak ada persetujuan tertunda yang ditemukan untuk Anda.'], 422);
         }
 
-        // VALIDATION: Manager can only assign to their own department staff
-        $userRole = Auth::user()->role ?? Auth::user()->roleRelation?->name;
-        if ($request->assigned_pic_id && $userRole === 'Manager') {
-            $assignedUser = User::find($request->assigned_pic_id);
-            if ($assignedUser && $assignedUser->division_id !== Auth::user()->division_id) {
-                return response()->json(['message' => 'Anda hanya dapat menugaskan kontrak kepada staf di departemen Anda sendiri.'], 422);
-            }
-        }
 
         $attachmentPath = null;
-        if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store("contracts/{$contract->id}/approvals", 'local');
-            $approval->attachment_path = $attachmentPath;
+        $filesToProcess = [];
+        if ($request->hasFile('attachments')) {
+            $filesToProcess = $request->file('attachments');
+        } elseif ($request->hasFile('attachment')) {
+            $filesToProcess = [$request->file('attachment')];
+        }
+
+        $isSigner = str_contains(strtolower($approval->role ?? ''), 'tanda tangan') || in_array($request->action_code, ['signature', 'sign']);
+        $category = $isSigner ? 'Tanda Tangan' : 'Persetujuan';
+
+        $isFirst = true;
+        foreach ($filesToProcess as $file) {
+            if (! $file) continue;
+            $path = $file->store("contracts/{$contract->id}/approvals", 'local');
+            if ($isFirst) {
+                $attachmentPath = $path;
+                $approval->attachment_path = $path;
+                $isFirst = false;
+            }
+            $contract->attachments()->create([
+                'label' => $file->getClientOriginalName(),
+                'category' => 'Lampiran',
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+                'file_type' => $file->getClientOriginalExtension() ?: 'file',
+                'uploaded_by' => Auth::id(),
+            ]);
         }
 
         $signerUserIds = $request->input('signer_user_ids');
@@ -199,9 +239,30 @@ class ContractApprovalController extends Controller
         }
 
         $attachmentPath = null;
-        if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store("contracts/{$contract->id}/approvals", 'local');
-            $approval->attachment_path = $attachmentPath;
+        $filesToProcess = [];
+        if ($request->hasFile('attachments')) {
+            $filesToProcess = $request->file('attachments');
+        } elseif ($request->hasFile('attachment')) {
+            $filesToProcess = [$request->file('attachment')];
+        }
+
+        $isFirst = true;
+        foreach ($filesToProcess as $file) {
+            if (! $file) continue;
+            $path = $file->store("contracts/{$contract->id}/approvals", 'local');
+            if ($isFirst) {
+                $attachmentPath = $path;
+                $approval->attachment_path = $path;
+                $isFirst = false;
+            }
+            $contract->attachments()->create([
+                'label' => $file->getClientOriginalName(),
+                'category' => 'Lampiran',
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+                'file_type' => $file->getClientOriginalExtension() ?: 'file',
+                'uploaded_by' => Auth::id(),
+            ]);
         }
 
         $contract = $this->rejectAction->execute($contract, $approval, $request->reason, $attachmentPath);
@@ -428,6 +489,26 @@ class ContractApprovalController extends Controller
                             ->update(['status' => 'pending']);
                     }
                 }
+            }
+
+            // Process attachments if any
+            $filesToProcess = [];
+            if ($request->hasFile('attachments')) {
+                $filesToProcess = $request->file('attachments');
+            } elseif ($request->hasFile('attachment')) {
+                $filesToProcess = [$request->file('attachment')];
+            }
+            foreach ($filesToProcess as $file) {
+                if (! $file) continue;
+                $path = $file->store("contracts/{$contract->id}/adhoc", 'local');
+                $contract->attachments()->create([
+                    'label' => $file->getClientOriginalName(),
+                    'category' => 'Lampiran',
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'file_type' => $file->getClientOriginalExtension() ?: 'file',
+                    'uploaded_by' => Auth::id(),
+                ]);
             }
 
             if (! empty($addedUsers)) {

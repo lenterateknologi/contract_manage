@@ -32,6 +32,9 @@ class AddAdhocApproverRequest extends FormRequest
             'approval_rule' => 'nullable|string|in:all,any,quorum',
             'min_approvals' => 'nullable|integer|min:1',
             'role' => 'nullable|string|max:100',
+            'attachment' => 'nullable|file|max:20480',
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'file|max:20480',
         ];
     }
 }

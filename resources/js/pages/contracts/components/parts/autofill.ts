@@ -20,7 +20,6 @@ export const F2_IMPORTANT_FIELDS: { key: string; label: string; width: string; t
     { key: 'meta_mekanisme_pembayaran', label: 'Mekanisme Bayar', width: '1/2' },
     // Signature boxes
     { key: 'meta_pic', label: 'PIC', width: '1/3', type: 'signature_box' },
-    { key: 'meta_vp_legal', label: 'VP Legal / Management', width: '1/3', type: 'signature_box' },
 ];
 
 export const AUTOFILL_KEY_DEFINITIONS: Record<string, { label: string; group: string }> = {
@@ -51,8 +50,6 @@ export const AUTOFILL_KEY_DEFINITIONS: Record<string, { label: string; group: st
     meta_deskripsi: { label: 'Deskripsi / Keterangan', group: 'Detail Kontrak' },
 
     meta_pic: { label: 'PIC', group: 'Tanda Tangan & Persetujuan' },
-    meta_vp_legal: { label: 'VP Legal / Management', group: 'Tanda Tangan & Persetujuan' },
-    meta_manager_legal: { label: 'Manager Legal', group: 'Tanda Tangan & Persetujuan' },
     meta_tax_required: { label: 'Status Pajak', group: 'Tanda Tangan & Persetujuan' },
 };
 
@@ -148,9 +145,6 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
         f2_price: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         meta_f2_price: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         meta_mekanisme_pembayaran: () => (contract as any).payment_terms ?? '',
-        meta_deskripsi: () => contract.description ?? '',
-        meta_manager_legal: () => (contract.approvals ?? []).find((a) => a.role === 'CEO')?.approver?.name ?? '',
-        meta_vp_legal: () => (contract.approvals ?? []).find((a) => a.role === 'VP')?.approver?.name ?? '',
         meta_tax_required: () => (contract.metadata?.tax_required === true || contract.metadata?.tax_required === '1' || contract.metadata?.tax_required === 1 || contract.metadata?.tax_required === 'Ya') ? 'Ya' : 'Tidak',
         meta_pajak: () => (contract.metadata?.tax_required === true || contract.metadata?.tax_required === '1' || contract.metadata?.tax_required === 1 || contract.metadata?.tax_required === 'Ya') ? 'Ya' : 'Tidak',
         pajak: () => (contract.metadata?.tax_required === true || contract.metadata?.tax_required === '1' || contract.metadata?.tax_required === 1 || contract.metadata?.tax_required === 'Ya') ? 'Ya' : 'Tidak',

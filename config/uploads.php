@@ -66,8 +66,8 @@ return [
 
         // Main agreement documents (F1 template, generated draft)
         'contract_agreement' => [
-            'allowed_mimes' => ['docx'],
-            'max_size' => 10240, // 10MB
+            'allowed_mimes' => ['docx', 'doc', 'pdf'],
+            'max_size' => 102400, // 100MB
         ],
     ],
 

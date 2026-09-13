@@ -28,6 +28,17 @@ class UpdateContractAction
 
         if (array_key_exists('assigned_pic_id', $validated) && $validated['assigned_pic_id']) {
             $newPicId = $validated['assigned_pic_id'];
+            if ($contract->assigned_pic_id !== $newPicId || ! $contract->assigned_at) {
+                $now = now();
+                $metadata = $contract->metadata ?? [];
+                $metadata['assigned_pic_id'] = $newPicId;
+                $metadata['assigned_at'] = $now->toIso8601String();
+                $metadata['pic_assigned_at'] = $now->toIso8601String();
+                $contract->update([
+                    'assigned_at' => $now,
+                    'metadata' => $metadata,
+                ]);
+            }
             $newPic = \App\Models\User::find($newPicId);
             if ($newPic) {
                 $picApprovals = \App\Models\Approval::where('contract_id', $contract->id)

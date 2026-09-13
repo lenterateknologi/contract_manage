@@ -26,6 +26,7 @@ import {
 
 import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, TRANSITION_OPTIONS, getActionTheme } from '../constants';
 import { cn } from '@/lib/utils';
+import LucideIcons from '@/lib/lucide-dynamic';
 import AuthoritySelector from './AuthoritySelector';
 import AuthorityTableManager from './AuthorityTableManager';
 
@@ -328,7 +329,7 @@ export function StepActionConfigCard({
                     </div>
 
                     {/* Status Kontrak Target di Header */}
-                    <div className="w-36 sm:w-48">
+                    <div className="w-40 sm:w-56">
                         <Select
                             value={act.target_status || 'default'}
                             onValueChange={(v) => {
@@ -340,11 +341,11 @@ export function StepActionConfigCard({
                             <SelectTrigger className="h-8 py-1 px-2.5 rounded-lg border-white/25 bg-white/20 hover:bg-white/25 text-white text-xs font-semibold focus:ring-1 focus:ring-white/40 focus:border-white shadow-none backdrop-blur-xs [&>svg]:text-white [&>svg]:opacity-80">
                                 <SelectValue placeholder="Pilih Status" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <SelectContent className="rounded-xl border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 max-h-72">
                                 <SelectItem value="default" className="py-2 text-xs font-medium text-slate-500 uppercase">
                                     <div className="flex items-center gap-2">
                                         <div
-                                            className="h-2.5 w-2.5 rounded-full border border-slate-300"
+                                            className="h-2.5 w-2.5 rounded-full border border-slate-300 shrink-0"
                                             style={{ backgroundColor: step?.meta?.target_status ? (contractStatuses.find((s: any) => s.code === step.meta.target_status)?.color || '#cbd5e1') : '#cbd5e1' }}
                                         />
                                         <span>
@@ -352,23 +353,33 @@ export function StepActionConfigCard({
                                         </span>
                                     </div>
                                 </SelectItem>
-                                {contractStatuses.map((status: any) => (
-                                    <SelectItem
-                                        key={status.id}
-                                        value={status.code}
-                                        className="py-2 text-xs font-medium uppercase"
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <div
-                                                className="h-2.5 w-2.5 rounded-full"
-                                                style={{ backgroundColor: status.color || '#cbd5e1' }}
-                                            />
-                                            <span className="font-semibold tracking-wide">
-                                                {status.code?.toUpperCase()}
-                                            </span>
-                                        </div>
-                                    </SelectItem>
-                                ))}
+                                {contractStatuses.map((status: any) => {
+                                    const StatusIcon = status.icon && (LucideIcons as any)[status.icon] ? (LucideIcons as any)[status.icon] : null;
+                                    return (
+                                        <SelectItem
+                                            key={status.id}
+                                            value={status.code}
+                                            className="py-2 text-xs font-medium uppercase"
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                {StatusIcon ? (
+                                                    <StatusIcon
+                                                        className="h-3.5 w-3.5 shrink-0"
+                                                        style={{ color: status.color || 'currentColor' }}
+                                                    />
+                                                ) : (
+                                                    <div
+                                                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                                                        style={{ backgroundColor: status.color || '#cbd5e1' }}
+                                                    />
+                                                )}
+                                                <span className="font-semibold tracking-wide">
+                                                    {status.code?.toUpperCase()}{status.label ? ` • ${status.label}` : ''}
+                                                </span>
+                                            </div>
+                                        </SelectItem>
+                                    );
+                                })}
                             </SelectContent>
                         </Select>
                     </div>

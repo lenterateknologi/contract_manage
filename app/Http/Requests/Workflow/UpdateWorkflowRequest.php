@@ -117,8 +117,10 @@ class UpdateWorkflowRequest extends FormRequest
             'steps.*.actions.*.assignee_config' => 'nullable|array',
             'steps.*.actions.*.reviewer_config' => 'nullable|array',
             'steps.*.actions.*.alias' => 'nullable|string',
+            'steps.*.actions.*.target_status' => 'nullable|string',
             'steps.*.actions.*.description' => 'nullable|string',
             'steps.*.actions.*.is_active' => 'nullable|boolean',
+            'steps.*.actions.*.is_visible' => 'nullable|boolean',
         ];
     }
 }

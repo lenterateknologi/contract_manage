@@ -12,10 +12,11 @@ export interface FormInputProps extends React.ComponentProps<typeof Input> {
     labelClassName?: string;
     inputSize?: 'default' | 'compact';
     icon?: React.ElementType;
+    rightAction?: React.ReactNode;
 }
 
 const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
-    ({ label, error, helperText, containerClassName, labelClassName, className, inputSize = 'default', icon: Icon, ...props }, ref) => {
+    ({ label, error, helperText, containerClassName, labelClassName, className, inputSize = 'default', icon: Icon, rightAction, ...props }, ref) => {
         const id = React.useId();
         const inputId = props.id || id;
         const isCompact = inputSize === 'compact';
@@ -59,11 +60,17 @@ const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
                         className={cn(
                             isCompact && 'h-9 px-3 text-sm rounded-lg',
                             Icon && (isCompact ? 'pl-9' : 'pl-11'),
+                            rightAction && 'pr-11',
                             error && 'border-rose-500 focus-visible:ring-rose-500 focus-visible:border-rose-500',
                             className
                         )}
                         {...props}
                     />
+                    {rightAction && (
+                        <div className="absolute right-0 top-0 bottom-0 flex items-center pr-3.5">
+                            {rightAction}
+                        </div>
+                    )}
                 </div>
                 {helperText && !error && (
                     <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">

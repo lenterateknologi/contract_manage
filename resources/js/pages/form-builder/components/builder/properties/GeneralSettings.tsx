@@ -61,8 +61,6 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                             </optgroup>
                             <optgroup label="Tanda Tangan & Persetujuan">
                                 <option value="meta_pic">PIC (meta_pic)</option>
-                                <option value="meta_vp_legal">VP Legal / Management (meta_vp_legal)</option>
-                                <option value="meta_manager_legal">Manager Legal (meta_manager_legal)</option>
                             </optgroup>
                         </select>
                     </div>

@@ -24,6 +24,7 @@ import {
     Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import LucideIcons from '@/lib/lucide-dynamic';
 import AuthorityTableManager from './AuthorityTableManager';
 import { MASTER_ACTIONS } from '../constants';
 
@@ -61,32 +62,6 @@ export const DEFAULT_FIXED_CUSTOM_ACTIONS: Omit<CustomActionItem, 'authorities'>
         step_ids: [],
         visibility_condition: 'always',
         unlocks_other_actions: false,
-    },
-    {
-        id: 'action_adhoc',
-        action_code: 'forward',
-        name: 'Tambah Approval Tambahan (Ad-Hoc)',
-        alias: 'Tambah Approver Ad-Hoc',
-        description: 'Aksi bersyarat untuk menambahkan reviewer / approver ad-hoc di luar alur utama.',
-        is_active: true,
-        scope: 'all_steps',
-        step_ids: [],
-        target_step_mode: 'current_step',
-        target_step_position: 'at',
-        visibility_condition: 'always',
-        unlocks_other_actions: false,
-    },
-    {
-        id: 'action_toggle_access',
-        action_code: 'toggle_access',
-        name: 'Buka / Kunci Akses Opsi Tambahan (Toggle Visibility)',
-        alias: 'Buka Akses Tombol Khusus',
-        description: 'Tombol kontrol untuk membuka atau mengunci/menyembunyikan akses aksi-aksi khusus lainnya bagi pengguna yang berwenang.',
-        is_active: true,
-        scope: 'all_steps',
-        step_ids: [],
-        visibility_condition: 'always',
-        unlocks_other_actions: true,
     },
 ];
 
@@ -479,21 +454,31 @@ export function CustomActionsManager({
                                                         <SelectTrigger className="h-7 py-1 px-2 rounded border-slate-200 bg-white text-[10.5px] font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
                                                             <SelectValue placeholder="Status Kontrak" />
                                                         </SelectTrigger>
-                                                        <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                        <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900 max-h-72">
                                                             <SelectItem value="default" className="text-xs font-medium text-slate-500">
                                                                 Status Tetap (Tidak Berubah)
                                                             </SelectItem>
-                                                            {contractStatuses.map((status: any) => (
-                                                                <SelectItem key={status.id} value={status.code} className="text-xs font-medium">
-                                                                    <div className="flex items-center gap-1.5">
-                                                                        <div
-                                                                            className="h-2 w-2 rounded-full"
-                                                                            style={{ backgroundColor: status.color || '#cbd5e1' }}
-                                                                        />
-                                                                        <span>{status.code?.toUpperCase()}</span>
-                                                                    </div>
-                                                                </SelectItem>
-                                                            ))}
+                                                            {contractStatuses.map((status: any) => {
+                                                                const StatusIcon = status.icon && (LucideIcons as any)[status.icon] ? (LucideIcons as any)[status.icon] : null;
+                                                                return (
+                                                                    <SelectItem key={status.id} value={status.code} className="text-xs font-medium uppercase">
+                                                                        <div className="flex items-center gap-2">
+                                                                            {StatusIcon ? (
+                                                                                <StatusIcon
+                                                                                    className="h-3.5 w-3.5 shrink-0"
+                                                                                    style={{ color: status.color || 'currentColor' }}
+                                                                                />
+                                                                            ) : (
+                                                                                <div
+                                                                                    className="h-2 w-2 rounded-full shrink-0"
+                                                                                    style={{ backgroundColor: status.color || '#cbd5e1' }}
+                                                                                />
+                                                                            )}
+                                                                            <span>{status.code?.toUpperCase()}{status.label ? ` • ${status.label}` : ''}</span>
+                                                                        </div>
+                                                                    </SelectItem>
+                                                                );
+                                                            })}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>

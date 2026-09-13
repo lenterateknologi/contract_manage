@@ -1,4 +1,5 @@
-import { cn, getStatusConfig } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { usePage } from '@inertiajs/react';
 import { SectionTitle } from './SectionTitle';
 import { StatusItem } from './types';
 
@@ -7,6 +8,8 @@ interface StatusDistributionProps {
 }
 
 export function StatusDistribution({ items }: StatusDistributionProps) {
+    const pageProps = usePage<any>()?.props;
+    const masterStatuses = pageProps?.masterContractStatuses || [];
     const total = items.reduce((sum, s) => sum + s.count, 0) || 1;
 
     return (
@@ -19,14 +22,16 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
                     <p className="text-text-desc/40 py-4 text-center text-[12px] font-semibold">Belum ada data</p>
                 ) : (
                     items.map((s) => {
-                        const cfg = getStatusConfig(s.status);
+                        const masterObj = masterStatuses.find((m: any) => m.code?.toLowerCase() === (s.status || '').toLowerCase());
+                        const label = masterObj?.label || (s.status || '').toUpperCase();
+                        const color = masterObj?.color || '#64748b';
                         const pct = Math.round((s.count / total) * 100);
                         return (
                             <div key={s.status}>
                                 <div className="mb-1.5 flex items-center justify-between">
                                     <div className="flex items-center gap-2">
-                                        <span className={cn('h-1.5 w-1.5 rounded-full', cfg.dot)} />
-                                        <span className={cn('text-[12px] font-medium uppercase', cfg.color)}>{cfg.label}</span>
+                                        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: color }} />
+                                        <span className="text-[12px] font-medium uppercase" style={{ color }}>{label}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-text-main text-[11px] font-semibold">{s.count}</span>
@@ -34,7 +39,7 @@ export function StatusDistribution({ items }: StatusDistributionProps) {
                                     </div>
                                 </div>
                                 <div className="bg-surface-muted/40 border-surface-border/10 h-1.5 w-full overflow-hidden rounded-full border">
-                                    <div className={cn('h-full rounded-full transition-all duration-700', cfg.dot)} style={{ width: `${pct}%` }} />
+                                    <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: color }} />
                                 </div>
                             </div>
                         );

@@ -1,12 +1,13 @@
 import { Head } from '@inertiajs/react';
-
-import { MasterDataSync } from '@/pages/admin/components/MasterDataSync';
-import { NavigationManagement } from '@/pages/admin/components/NavigationManagement';
-import { NumberingFormatManagement } from '@/pages/admin/components/NumberingFormatManagement';
-import { OrgHierarchyFlow } from '@/pages/admin/components/OrgHierarchyFlow';
-import { WorkflowManagement } from '@/pages/admin/components/WorkflowManagement';
-import { MembersPerDivision } from '@/pages/dashboard/components/MembersPerDivision';
+import React, { lazy, Suspense } from 'react';
+import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
+
+const MasterDataSync = lazy(() => import('@/pages/admin/components/MasterDataSync').then(m => ({ default: m.MasterDataSync })));
+const NavigationManagement = lazy(() => import('@/pages/admin/components/NavigationManagement').then(m => ({ default: m.NavigationManagement })));
+const NumberingFormatManagement = lazy(() => import('@/pages/admin/components/NumberingFormatManagement').then(m => ({ default: m.NumberingFormatManagement })));
+const OrgHierarchyFlow = lazy(() => import('@/pages/admin/components/OrgHierarchyFlow').then(m => ({ default: m.OrgHierarchyFlow })));
+const WorkflowManagement = lazy(() => import('@/pages/admin/components/WorkflowManagement').then(m => ({ default: m.WorkflowManagement })));
 
 interface PaginatedData<T> {
     data: T[];
@@ -161,7 +162,17 @@ export default function AdminIndex({
             <Head title={`Admin - ${viewTitle}`} />
 
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden h-full">
-                <div className="flex-1 min-h-0 flex flex-col h-full">{renderView()}</div>
+                <div className="flex-1 min-h-0 flex flex-col h-full">
+                    <Suspense
+                        fallback={
+                            <div className="flex flex-1 items-center justify-center min-h-[400px] w-full p-6">
+                                <LoadingLottie width={120} height={120} />
+                            </div>
+                        }
+                    >
+                        {renderView()}
+                    </Suspense>
+                </div>
             </div>
         </ToastProvider>
     );

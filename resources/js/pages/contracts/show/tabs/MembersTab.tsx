@@ -1,11 +1,13 @@
-import { ContractMembersTab } from '@/pages/contracts/components/tabs/ContractMembersTab';
+import ContractMembers from '@/components/members/ContractMembers';
 import { Contract } from '@/pages/contracts/types';
 
 interface MembersTabProps {
     contract: Contract;
-    users: any[];
+    users?: any[];
 }
 
-export const MembersTab = ({ contract, users }: MembersTabProps) => {
-    return <ContractMembersTab contract={contract} users={users} />;
+export const MembersTab = ({ contract, users = [] }: MembersTabProps) => {
+    return <ContractMembers contract={contract} users={users} />;
 };
+
+export default MembersTab;

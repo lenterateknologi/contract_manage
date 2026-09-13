@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 interface ContractInfoFormProps {
-    isDraft: boolean;
+    is_readonly?: boolean;
     title: string;
     setTitle: (val: string) => void;
     contractNo: string;
@@ -62,7 +62,7 @@ const FieldLabel = ({ icon: Icon, children }: { icon?: any; children: React.Reac
 export const MetaBadge = () => null;
 
 export function ContractInfoForm({
-    isDraft,
+    is_readonly = false,
     title,
     setTitle,
     contractNo,
@@ -92,6 +92,13 @@ export function ContractInfoForm({
     canEditPeriod = true,
     canEditTaxToggle = true,
 }: ContractInfoFormProps) {
+    const activeType = React.useMemo(() => types.find((t) => String(t.id) === String(typeId)), [types, typeId]);
+    const activeSubmissionType = React.useMemo(
+        () => submissionTypes.find((st) => String(st.id) === String(submissionTypeId)),
+        [submissionTypes, submissionTypeId]
+    );
+    const activeVendor = React.useMemo(() => vendors.find((v) => String(v.id) === String(vendorId)), [vendors, vendorId]);
+
     const vendorOptions = Array.isArray(vendors)
         ? vendors.map((v) => ({ value: String(v.id), label: v.name }))
         : [];
@@ -105,8 +112,8 @@ export function ContractInfoForm({
             : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
     }, [price, selected]);
 
-    // ── READ-ONLY PRESENTATION (WHEN NOT EDITABLE) ──
-    if (!isDraft) {
+    // ── READ-ONLY PRESENTATION (WHEN is_readonly) ──
+    if (is_readonly) {
         return (
             <div className="flex flex-col">
                 {/* 1. Judul Kontrak */}

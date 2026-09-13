@@ -123,7 +123,7 @@ class WorkflowAdminController extends Controller
 
             $sd['approver_config'] = $config;
 
-            $sd['actions'] = $s->actions->map(function ($action) {
+            $sd['actions'] = $s->actions->sortBy(fn ($action) => (int) data_get($action->transition_config, 'order', 999))->values()->map(function ($action) {
                 // ponytail: Reconstruct sub-flex arrays from additionalAuthorities
                 $addAuth = $action->additionalAuthorities->groupBy('additional_type');
 
@@ -162,6 +162,7 @@ class WorkflowAdminController extends Controller
                     'target_status' => $action->target_status,
                     'description' => $action->description,
                     'is_active' => $action->is_active,
+                    'is_visible' => $action->is_visible,
                 ];
             })->toArray();
 

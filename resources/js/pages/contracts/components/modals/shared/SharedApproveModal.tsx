@@ -1,10 +1,12 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Modal } from '@/components/ui/dialogs/Modal';
+import { ChipIcon, getFileIcon, AttachmentCategoryBadge } from '@/components/ui';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
+import { formatFileSize } from '@/lib/formatters';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
-import { CheckCircle2, Gavel, Loader2, Paperclip, Send, UserPen, X } from 'lucide-react';
+import { CheckCircle2, Gavel, Loader2, Paperclip, Plus, Send, Trash2, UserPen, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props {
@@ -12,7 +14,7 @@ interface Props {
     onClose: () => void;
     onSubmit: (
         note: string,
-        attachment?: File,
+        attachment?: File | File[],
         assignedPicId?: string,
         executionOrder?: string,
         signerUserIds?: string[],
@@ -32,20 +34,29 @@ interface Props {
 
 export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate, actionCode, actionId, actionAlias, users: initialUsers, isSubStep }: Props) {
     const [note, setNote] = useState('');
-    const [attachment, setAttachment] = useState<File | null>(null);
+    const [attachments, setAttachments] = useState<File[]>([]);
     const [executionOrder, setExecutionOrder] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [users, setUsers] = useState<any[]>(initialUsers || []);
     const [fetchingUsers, setFetchingUsers] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [allWorkflows, setAllWorkflows] = useState<any[]>([]);
+
+    const handleFileDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            setAttachments((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
+        }
+    };
 
     useEffect(() => {
         if (open) {
             contractApi.getWorkflows().then(setAllWorkflows).catch(console.error);
             fetchUsers();
             setNote('');
-            setAttachment(null);
+            setAttachments([]);
             setExecutionOrder('');
         }
     }, [open]);
@@ -278,7 +289,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         try {
             await onSubmit(
                 note,
-                attachment || undefined,
+                attachments.length > 0 ? (attachments.length === 1 ? attachments[0] : attachments) : undefined,
                 undefined, // assignedPicId
                 executionOrder || undefined,
                 undefined, // signerUserIds
@@ -598,27 +609,33 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                         );
                     })()}
 
+                <div className="space-y-3">
+                    {/* Urutan Eksekusi Joint Upload jika Next Step adalah joint_upload dan belum di-set */}
                     {contract?.next_step?.step_category === 'joint_upload' && !contract?.metadata?.step_12_order && (
-                        <div className="space-y-3">
-                            <label className="text-text-desc text-[11px] font-bold uppercase">
-                                Urutan Penyelesaian <span className="text-danger">*</span>
+                        <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+                            <label className="text-xs font-bold text-primary flex items-center gap-1.5">
+                                <UserPen size={14} />
+                                Pilih Urutan Unggah Dokumen Bersama
                             </label>
-                            <div className="grid grid-cols-2 gap-3">
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                Tahap berikutnya memerlukan unggahan berkas oleh Inisiator dan Reviewer. Tentukan siapa yang harus mengunggah terlebih dahulu.
+                            </p>
+                            <div className="grid grid-cols-2 gap-2.5 pt-1">
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={() => setExecutionOrder('legal_first')}
+                                    onClick={() => setExecutionOrder('reviewer_first')}
                                     className={cn(
-                                        'flex h-auto flex-col items-center justify-center gap-2 border p-4 transition-all duration-300',
-                                        executionOrder === 'legal_first'
-                                            ? 'border-primary bg-primary/[0.03] ring-primary/20 shadow-primary/5 shadow-lg ring-1'
-                                            : 'border-surface-border bg-surface-muted/50 hover:bg-surface-muted',
+                                        'flex flex-col items-center justify-center p-3 h-auto gap-1.5 rounded-xl border-2 transition-all',
+                                        executionOrder === 'reviewer_first'
+                                            ? 'border-primary bg-primary/10 text-primary shadow-xs'
+                                            : 'border-surface-border bg-surface hover:bg-surface-muted opacity-80',
                                     )}
                                 >
                                     <div
                                         className={cn(
                                             'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
-                                            executionOrder === 'legal_first'
+                                            executionOrder === 'reviewer_first'
                                                 ? 'bg-primary text-primary-foreground'
                                                 : 'bg-surface-muted text-text-soft',
                                         )}
@@ -628,22 +645,23 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                                     <span
                                         className={cn(
                                             'text-xs font-bold tracking-tight uppercase',
-                                            executionOrder === 'legal_first' ? 'text-primary' : 'text-text-main',
+                                            executionOrder === 'reviewer_first' ? 'text-primary' : 'text-text-main',
                                         )}
                                     >
                                         Reviewer Dulu
                                     </span>
                                     <span className="text-center text-[9px] leading-tight font-medium opacity-50">Reviewer upload, lalu Inisiator</span>
                                 </Button>
+
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() => setExecutionOrder('initiator_first')}
                                     className={cn(
-                                        'flex h-auto flex-col items-center justify-center gap-2 border p-4 transition-all duration-300',
+                                        'flex flex-col items-center justify-center p-3 h-auto gap-1.5 rounded-xl border-2 transition-all',
                                         executionOrder === 'initiator_first'
-                                            ? 'border-primary bg-primary/[0.03] ring-primary/20 shadow-primary/5 shadow-lg ring-1'
-                                            : 'border-surface-border bg-surface-muted/50 hover:bg-surface-muted',
+                                            ? 'border-primary bg-primary/10 text-primary shadow-xs'
+                                            : 'border-surface-border bg-surface hover:bg-surface-muted opacity-80',
                                     )}
                                 >
                                     <div
@@ -679,40 +697,130 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                     />
 
                     <div className="space-y-1.5">
-                        <label className="text-text-desc text-[11px] font-bold uppercase">Lampiran Pendukung (Optional)</label>
-                        <div className="mt-1">
-                            {!attachment ? (
-                                <Button
-                                    variant="outline"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="border-surface-border text-text-desc hover:border-primary hover:text-primary hover:bg-surface-muted flex h-auto w-full items-center justify-center gap-2 border-2 border-dashed py-6 transition-all"
-                                >
-                                    <Paperclip size={18} className="opacity-40" />
-                                    <span className="text-xs font-bold tracking-wide uppercase">Lampirkan File</span>
-                                </Button>
-                            ) : (
-                                <div className="border-surface-border bg-surface-muted flex items-center justify-between rounded-xl border p-4">
-                                    <div className="flex items-center gap-3 overflow-hidden">
-                                        <div className="bg-primary/10 rounded-lg p-2">
-                                            <Paperclip size={16} className="text-primary" />
+                        <div className="flex items-center justify-between">
+                            <label className="text-text-desc text-[11px] font-bold uppercase">Lampiran Berkas Pendukung (Opsional)</label>
+                            {attachments.length > 0 && (
+                                <span className="text-[10px] font-bold text-primary">
+                                    {attachments.length} Berkas Baru Dipilih
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Existing Contract Attachments notice if any */}
+                        {contract?.attachments && contract.attachments.length > 0 && (
+                            <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/40 p-2 text-xs">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                        Berkas Kontrak Saat Ini ({contract.attachments.length})
+                                    </span>
+                                </div>
+                                <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                                    {contract.attachments.map((at: any, i: number) => (
+                                        <div key={at.id || i} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                                            {getFileIcon(at.file_name || at.label || '')}
+                                            <span className="truncate max-w-[150px] font-medium">{at.file_name || at.label}</span>
+                                            <AttachmentCategoryBadge item={at} />
                                         </div>
-                                        <span className="text-text-main truncate text-xs font-bold">{attachment.name}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-1 space-y-2">
+                            {attachments.length === 0 ? (
+                                <div
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        setIsDragging(true);
+                                    }}
+                                    onDragLeave={(e) => {
+                                        e.preventDefault();
+                                        setIsDragging(false);
+                                    }}
+                                    onDrop={handleFileDrop}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            fileInputRef.current?.click();
+                                        }
+                                    }}
+                                    className={cn(
+                                        "border-surface-border text-text-desc hover:border-primary hover:text-primary hover:bg-surface-muted flex h-auto w-full flex-col items-center justify-center gap-1.5 border-2 border-dashed py-5 transition-all rounded-lg cursor-pointer",
+                                        isDragging && "border-primary bg-primary/10 scale-[0.99]"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Paperclip size={16} className="opacity-60" />
+                                        <span className="text-xs font-bold tracking-wide uppercase">Pilih / Drag & Drop Berkas</span>
                                     </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setAttachment(null)}
-                                        className="text-text-desc hover:text-danger hover:bg-danger/10 h-8 w-8"
+                                    <span className="text-[10px] text-muted-foreground font-normal">Mendukung format PDF, Gambar, Dokumen, dan Spreadsheet</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-1.5">
+                                    {attachments.map((file, idx) => (
+                                        <div key={idx} className="border-surface-border bg-surface-muted/70 flex items-center justify-between rounded-lg border px-3 py-2">
+                                            <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                                                {getFileIcon(file.name)}
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="text-text-main truncate text-xs font-bold">{file.name}</span>
+                                                    <span className="text-text-desc text-[10px] font-medium">{formatFileSize(file.size)}</span>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                                className="text-text-desc hover:text-danger hover:bg-danger/10 h-7 w-7 shrink-0"
+                                            >
+                                                <X size={14} />
+                                            </Button>
+                                        </div>
+                                    ))}
+
+                                    <div
+                                        role="button"
+                                        tabIndex={0}
+                                        onClick={() => fileInputRef.current?.click()}
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                            setIsDragging(true);
+                                        }}
+                                        onDragLeave={(e) => {
+                                            e.preventDefault();
+                                            setIsDragging(false);
+                                        }}
+                                        onDrop={handleFileDrop}
+                                        className={cn(
+                                            "w-full text-xs font-semibold flex items-center justify-center gap-1.5 border border-dashed border-primary/40 text-primary hover:bg-primary/5 h-8 mt-1 rounded-md cursor-pointer transition-all",
+                                            isDragging && "bg-primary/15 border-primary"
+                                        )}
                                     >
-                                        <X size={16} />
-                                    </Button>
+                                        <Plus size={14} />
+                                        <span>Tambah Berkas Lainnya</span>
+                                    </div>
                                 </div>
                             )}
-                            <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setAttachment(e.target.files?.[0] || null)} />
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                multiple
+                                className="hidden"
+                                onChange={(e) => {
+                                    if (e.target.files && e.target.files.length > 0) {
+                                        setAttachments((prev) => [...prev, ...Array.from(e.target.files!)]);
+                                    }
+                                    e.target.value = '';
+                                }}
+                            />
                         </div>
                     </div>
                 </div>
             </div>
-        </Modal>
-    );
+        </div>
+    </Modal>
+);
 }

@@ -27,7 +27,7 @@ trait HasWorkflowHelpers
             WorkflowStepAction::whereIn('id', $actionsToDelete)->forceDelete();
         }
 
-        foreach ($actionsData as $actData) {
+        foreach ($actionsData as $actIdx => $actData) {
             $code = $actData['action_code'] ?? $actData['master_action_id'] ?? null;
 
             if (! $code && ! empty($actData['master_action_name'])) {
@@ -65,6 +65,12 @@ trait HasWorkflowHelpers
                 }, $assigneeConfig['selectable_steps']);
             }
 
+            $transitionConfig = $actData['transition_config'] ?? [];
+            if (! is_array($transitionConfig)) {
+                $transitionConfig = [];
+            }
+            $transitionConfig['order'] = $actIdx + 1;
+
             $actionFields = [
                 'action_code' => $enumCode,
                 'next_step_id' => $nextStepId,
@@ -74,7 +80,7 @@ trait HasWorkflowHelpers
                 'autofilled_fields' => $actData['autofilled_fields'] ?? [],
                 'signing_parties' => $actData['signing_parties'] ?? [],
                 'assignee_config' => $assigneeConfig,
-                'transition_config' => $actData['transition_config'] ?? null,
+                'transition_config' => $transitionConfig,
                 'alias' => $actData['alias'] ?? null,
                 'target_status' => $actData['target_status'] ?? null,
                 'description' => $actData['description'] ?? null,

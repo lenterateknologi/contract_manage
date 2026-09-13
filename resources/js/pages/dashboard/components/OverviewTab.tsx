@@ -1,15 +1,19 @@
-import { Archive, Calendar, Clock, FileText, Layers, RotateCcw, Timer } from 'lucide-react';
+import { Archive, ArrowUpRight, Calendar, CheckCircle2, ChevronRight, Clock, FilePlus, FileText, Layers, RotateCcw, Sparkles, Timer, User } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
-import { MetricItem } from './MetricItem';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/cards/Card';
+import { ChipIcon } from '@/components/ui/feedback/ChipIcon';
+import { cn } from '@/lib/utils';
+import { router } from '@inertiajs/react';
 
 interface OverviewTabProps {
     data: any;
     onNavigate: (view: string, params?: any) => void;
+    meUser?: any;
+    onCreateContract?: () => void;
 }
 
-export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
+export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: OverviewTabProps) {
     const [isMounted, setIsMounted] = useState(false);
     const [datePreset, setDatePreset] = useState<'7d' | '14d' | 'this_month' | 'last_month' | 'custom'>('7d');
     const [startDate, setStartDate] = useState<string>('');
@@ -25,9 +29,14 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
         completed: 0,
         rejected: 0,
         approved: 0,
+        my_total: 0,
+        archived_total: 0,
+        pending_for_me: 0,
     };
 
     const overviewDailyTrend = data?.overviewDailyTrend || [];
+    const pendingApprovalsList = data?.pendingApprovalsList || [];
+    const upcomingRenewals = data?.upcomingRenewals || [];
 
     const filteredDailyTrend = useMemo(() => {
         if (!overviewDailyTrend || overviewDailyTrend.length === 0) return [];
@@ -73,27 +82,9 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
         return overviewDailyTrend;
     }, [overviewDailyTrend, datePreset, startDate, endDate]);
 
-    // Dynamically calculate summary KPI metrics from the selected date range
-    const summaryMetrics = useMemo(() => {
-        if (!filteredDailyTrend || filteredDailyTrend.length === 0) {
-            return { semua: 0, pending: 0, mine: 0, arsip: 0, inProgress: 0 };
-        }
-        return filteredDailyTrend.reduce(
-            (acc: any, item: any) => ({
-                semua:      acc.semua      + (item['Semua Dokumen']             || 0),
-                pending:    acc.pending    + (item['Menunggu Persetujuan Saya'] || 0),
-                mine:       acc.mine       + (item['Dokumen Saya']              || 0),
-                arsip:      acc.arsip      + (item['Dokumen Arsip']             || 0),
-                inProgress: acc.inProgress + (item['On Progress']              || 0),
-            }),
-            { semua: 0, pending: 0, mine: 0, arsip: 0, inProgress: 0 }
-        );
-    }, [filteredDailyTrend]);
-
     const categoriesList = ['Semua Dokumen', 'Menunggu Persetujuan Saya', 'Dokumen Saya', 'Dokumen Arsip', 'On Progress'];
-    const CHART_COLORS = ['#06b6d4', '#f59e0b', '#6366f1', '#10b981', '#8b5cf6'];
+    const CHART_COLORS = ['#06b6d4', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'];
 
-    // All-time values — same source as KPI cards, used for pie chart & legend
     const categoryValues: Record<string, number> = {
         'Semua Dokumen':             data?.metrics?.totalContracts ?? 0,
         'Menunggu Persetujuan Saya': m.pending_for_me             ?? 0,
@@ -108,216 +99,309 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
         setEndDate('');
     };
 
+    // Calculate days remaining helper
+    const getDaysRemaining = (endDateStr: string) => {
+        if (!endDateStr) return null;
+        const end = new Date(endDateStr).getTime();
+        const now = new Date().setHours(0, 0, 0, 0);
+        return Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+    };
+
+    // Formatted current date
+    const todayFormatted = useMemo(() => {
+        return new Date().toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+        });
+    }, []);
+
+    // SLA calculation helper for pending approvals (days waiting)
+    const getWaitingDurationText = (requestedAt: string) => {
+        if (!requestedAt) return null;
+        const requested = new Date(requestedAt).getTime();
+        const now = new Date().getTime();
+        const diffHours = Math.floor((now - requested) / (1000 * 60 * 60));
+        if (diffHours < 24) {
+            return `${Math.max(1, diffHours)} jam lalu`;
+        }
+        const diffDays = Math.floor(diffHours / 24);
+        return `${diffDays} hari lalu`;
+    };
+
+    const firstUrgentApproval = pendingApprovalsList && pendingApprovalsList.length > 0 ? pendingApprovalsList[0] : null;
+
+    const pendingCount = m.pending_for_me || 0;
+
     return (
         <div className="animate-in fade-in slide-in-from-bottom-4 space-y-4 duration-700">
-            {/* 5 KPI Metric Cards */}
-            <div className="grid grid-cols-1 gap-4 select-none sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {/* 1. Contextual Welcome & Quick Action Hero */}
+            <div className="relative overflow-hidden rounded-lg border border-surface-border bg-surface-base p-4 shadow-none">
+                <div className="flex flex-col gap-3.5 md:flex-row md:items-center md:justify-between">
+                    <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <h2 className="text-sm font-bold text-text-main">
+                                Halo, {meUser?.name || 'Rekan Kerja'}
+                            </h2>
+                            <span className="rounded-md border border-surface-border bg-surface-muted px-2 py-0.5 text-[10px] font-semibold text-text-main">
+                                {meUser?.role || 'Pengguna'}
+                            </span>
+                        </div>
+                        <p className="text-[11px] text-text-soft">
+                            {todayFormatted} • Ringkasan operasional dan prioritas tugas dokumen Anda
+                        </p>
+                        <div className="pt-0.5">
+                            {pendingCount > 0 ? (
+                                <div className="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-none">
+                                    <Clock size={12} className="text-white" />
+                                    <span>
+                                        Ada <strong>{pendingCount} dokumen</strong> memerlukan tindakan persetujuan Anda.
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-2.5 py-0.5 text-[11px] font-bold text-white shadow-none">
+                                    <span>Semua persetujuan yang ditugaskan kepada Anda telah selesai.</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Quick Action CTAs */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        {firstUrgentApproval && (
+                            <button
+                                type="button"
+                                onClick={() => router.get(`/contracts/${firstUrgentApproval.contract_id}`)}
+                                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-2 text-xs font-bold text-white shadow-none transition-all hover:bg-amber-700 active:scale-95"
+                                title="Langsung tinjau dokumen prioritas teratas"
+                            >
+                                <Clock size={14} className="text-white" />
+                                <span>Tinjau Dokumen ({pendingCount})</span>
+                            </button>
+                        )}
+                        {onCreateContract && (
+                            <button
+                                type="button"
+                                onClick={onCreateContract}
+                                className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground shadow-none transition-all hover:opacity-90 active:scale-95"
+                            >
+                                <FilePlus size={14} strokeWidth={2.2} />
+                                <span>Buat Pengajuan</span>
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => onNavigate('pending')}
+                            className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-surface-border bg-surface-base px-3.5 py-2 text-xs font-bold text-text-main shadow-none transition-all hover:bg-surface-muted active:scale-95"
+                        >
+                            <span>Daftar Persetujuan</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* 2. 5 KPI Metric Cards */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {[
                     {
                         label: 'Semua Dokumen',
                         value: data?.metrics?.totalContracts ?? 0,
                         icon: Layers,
-                        color: 'text-cyan-500',
-                        description: 'Seluruh dokumen aktif (non-arsip)',
-                        nav: () => onNavigate('contracts')
+                        color: 'bg-cyan-600 text-white border-transparent',
+                        badge: 'Aktif',
+                        badgeColor: 'bg-cyan-600 text-white border-transparent',
+                        description: 'Total seluruh dokumen aktif',
+                        nav: () => onNavigate('contracts'),
                     },
                     {
                         label: 'Menunggu Persetujuan',
-                        value: m.pending_for_me !== undefined ? m.pending_for_me : (data?.metrics?.pendingApprovals || 0),
+                        value: pendingCount,
                         icon: Clock,
-                        color: 'text-amber-500',
-                        description: 'Kontrak butuh persetujuan Anda',
-                        nav: () => onNavigate('pending')
+                        color: pendingCount > 0 ? 'bg-amber-600 text-white border-transparent' : 'bg-slate-700 text-white border-transparent',
+                        badge: pendingCount > 0 ? 'Perlu Tindakan' : 'Selesai',
+                        badgeColor: pendingCount > 0
+                            ? 'bg-amber-600 text-white border-transparent'
+                            : 'bg-slate-700 text-white border-transparent',
+                        description: 'Kontrak butuh review Anda',
+                        nav: () => onNavigate('pending'),
                     },
                     {
                         label: 'Dokumen Saya',
                         value: m.my_total ?? 0,
                         icon: FileText,
-                        color: 'text-primary',
-                        description: 'Kontrak yang Anda buat (tidak termasuk draft)',
-                        nav: () => onNavigate('mine')
+                        color: 'bg-blue-600 text-white border-transparent',
+                        badge: 'Dibuat Anda',
+                        badgeColor: 'bg-blue-600 text-white border-transparent',
+                        description: 'Kontrak yang Anda ajukan',
+                        nav: () => onNavigate('mine'),
                     },
                     {
                         label: 'Dokumen Arsip',
                         value: m.archived_total ?? 0,
                         icon: Archive,
-                        color: 'text-emerald-500',
-                        description: 'Kontrak yang telah diarsipkan',
-                        nav: () => onNavigate('archived')
+                        color: 'bg-emerald-600 text-white border-transparent',
+                        badge: 'Tersimpan',
+                        badgeColor: 'bg-emerald-600 text-white border-transparent',
+                        description: 'Kontrak selesai & diarsipkan',
+                        nav: () => onNavigate('archived'),
                     },
                     {
                         label: 'On Progress',
                         value: m.in_process ?? 0,
                         icon: Timer,
-                        color: 'text-violet-500',
-                        description: 'Kontrak dalam proses review/revisi',
-                        nav: () => onNavigate('in_progress')
+                        color: 'bg-purple-600 text-white border-transparent',
+                        badge: 'Dalam Proses',
+                        badgeColor: 'bg-purple-600 text-white border-transparent',
+                        description: 'Sedang tahap review / revisi',
+                        nav: () => onNavigate('in_progress'),
                     },
-                ].map((kpi, idx) => (
-                    <Card 
-                        key={idx} 
-                        className="relative cursor-pointer transition-all duration-200 overflow-hidden border border-surface-border/60 hover:border-primary/40 hover:shadow-xs bg-white dark:bg-zinc-900/50"
-                        onClick={kpi.nav}
-                        title="Klik untuk melihat detail tiket"
-                    >
-                        <CardContent className="p-4 pt-4 space-y-2">
-                            <MetricItem 
-                                label={kpi.label} 
-                                value={kpi.value} 
-                                icon={kpi.icon}
-                                color={kpi.color}
-                            />
-                            <p className="text-[10px] text-text-soft font-medium opacity-80 mt-1">
-                                {kpi.description}
-                            </p>
-                        </CardContent>
-                    </Card>
-                ))}
+                ].map((kpi, idx) => {
+                    const Icon = kpi.icon;
+                    return (
+                        <div
+                            key={idx}
+                            onClick={kpi.nav}
+                            className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-lg border border-surface-border bg-surface-base p-3.5 shadow-none transition-all duration-150 hover:border-primary active:scale-[0.99]"
+                            title="Klik untuk membuka daftar kontrak"
+                        >
+                            <div className="flex items-start justify-between gap-2">
+                                <span className="text-[10.5px] font-bold tracking-wider text-text-soft uppercase">
+                                    {kpi.label}
+                                </span>
+                                <span className={cn('rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-tight', kpi.badgeColor)}>
+                                    {kpi.badge}
+                                </span>
+                            </div>
+
+                            <div className="mt-2.5 flex items-baseline justify-between">
+                                <span className="text-2xl font-black tracking-tight text-text-main">
+                                    {kpi.value}
+                                </span>
+                                <ChipIcon icon={Icon} size="md" bg={kpi.color} shape="rounded" />
+                            </div>
+
+                            <div className="mt-2 flex items-center justify-between border-t border-surface-border pt-1.5 text-[10px] text-text-soft">
+                                <span className="truncate">{kpi.description}</span>
+                                <ChevronRight size={11} className="shrink-0 opacity-40 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100" />
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
-            {/* Daily Trend Line Chart with Separate Legend Card (70% / 30% split) */}
-            <div className="grid grid-cols-1 lg:grid-cols-10 gap-4 items-stretch">
-                {/* Line Chart Card (70%) */}
-                <Card className="lg:col-span-7 bg-white dark:bg-zinc-900/50 border border-surface-border/60 shadow-xs flex flex-col justify-between">
-                    <CardHeader className="p-4 pb-2 border-b border-surface-border/40 flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
-                        <div className="text-left flex-1 min-w-[200px]">
-                            <CardTitle className="text-sm font-bold text-text-main text-left">Tren Pembuatan Kontrak Harian</CardTitle>
-                            <p className="text-[10px] text-text-soft text-left">Perkembangan total volume pembuatan kontrak baru per kategori status utama</p>
+            {/* 3. Daily Trend Line Chart (65%) & Category Distribution (35%) */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-10">
+                {/* Line Chart Card (65%) */}
+                <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none lg:col-span-7">
+                    <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-surface-border p-4 pb-3 space-y-0">
+                        <div className="flex-1 min-w-[200px]">
+                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-text-main">Tren Pembuatan Kontrak</CardTitle>
+                            <p className="text-[10px] text-text-soft">Volume pembuatan kontrak per status dalam rentang waktu terpilih</p>
                         </div>
 
                         {/* Filter Presets & Custom Date Selector */}
                         <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center rounded-lg border border-surface-border bg-surface-muted/30 p-0.5">
-                                <button
-                                    type="button"
-                                    onClick={() => setDatePreset('7d')}
-                                    className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
-                                        datePreset === '7d'
-                                            ? 'bg-primary text-primary-foreground shadow-xs'
-                                            : 'text-text-soft hover:text-text-main'
-                                    }`}
-                                >
-                                    7 Hari
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setDatePreset('14d')}
-                                    className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
-                                        datePreset === '14d'
-                                            ? 'bg-primary text-primary-foreground shadow-xs'
-                                            : 'text-text-soft hover:text-text-main'
-                                    }`}
-                                >
-                                    14 Hari
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setDatePreset('this_month')}
-                                    className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
-                                        datePreset === 'this_month'
-                                            ? 'bg-primary text-primary-foreground shadow-xs'
-                                            : 'text-text-soft hover:text-text-main'
-                                    }`}
-                                >
-                                    Bulan Ini
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setDatePreset('last_month')}
-                                    className={`rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
-                                        datePreset === 'last_month'
-                                            ? 'bg-primary text-primary-foreground shadow-xs'
-                                            : 'text-text-soft hover:text-text-main'
-                                    }`}
-                                >
-                                    Bulan Lalu
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setDatePreset('custom')}
-                                    className={`flex items-center gap-1 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase transition-all ${
-                                        datePreset === 'custom'
-                                            ? 'bg-primary text-primary-foreground shadow-xs'
-                                            : 'text-text-soft hover:text-text-main'
-                                    }`}
-                                >
-                                    <Calendar size={11} /> Kustom
-                                </button>
+                            <div className="flex items-center rounded-md border border-surface-border bg-surface-base p-0.5">
+                                {[
+                                    { key: '7d', label: '7 Hari' },
+                                    { key: '14d', label: '14 Hari' },
+                                    { key: 'this_month', label: 'Bulan Ini' },
+                                    { key: 'last_month', label: 'Bulan Lalu' },
+                                    { key: 'custom', label: 'Kustom' },
+                                ].map((p) => (
+                                    <button
+                                        key={p.key}
+                                        type="button"
+                                        onClick={() => setDatePreset(p.key as any)}
+                                        className={cn(
+                                            'cursor-pointer rounded px-2 py-0.5 text-[10px] font-bold uppercase transition-all',
+                                            datePreset === p.key
+                                                ? 'bg-primary text-primary-foreground shadow-none'
+                                                : 'text-text-soft hover:text-text-main'
+                                        )}
+                                    >
+                                        {p.key === 'custom' ? (
+                                            <span className="flex items-center gap-1">
+                                                <Calendar size={10} /> Kustom
+                                            </span>
+                                        ) : (
+                                            p.label
+                                        )}
+                                    </button>
+                                ))}
                             </div>
 
-                            {/* Custom Date Range Inputs */}
                             {datePreset === 'custom' && (
                                 <div className="animate-in fade-in slide-in-from-right-2 flex items-center gap-1.5 duration-200">
                                     <input
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="h-7.5 rounded-lg border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                        className="h-7 rounded-md border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                                     />
                                     <span className="text-[10px] font-bold text-text-soft">s/d</span>
                                     <input
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="h-7.5 rounded-lg border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                        className="h-7 rounded-md border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
                                     />
                                     {(startDate || endDate) && (
                                         <button
                                             type="button"
                                             onClick={handleResetDateFilter}
-                                            className="flex h-7.5 w-7.5 items-center justify-center rounded-lg border border-surface-border bg-surface-base text-text-soft hover:text-rose-500 transition-colors"
+                                            className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md border border-surface-border bg-surface-base text-text-soft hover:text-rose-500 transition-colors shadow-none"
                                             title="Reset Filter Tanggal"
                                         >
-                                            <RotateCcw size={12} />
+                                            <RotateCcw size={11} />
                                         </button>
                                     )}
                                 </div>
                             )}
                         </div>
                     </CardHeader>
-                    <CardContent className="p-4 pt-2">
-                        <div className="h-[385px] w-full pt-2">
+                    <CardContent className="p-4 pt-3">
+                        <div className="h-[340px] w-full">
                             {!isMounted || filteredDailyTrend.length === 0 ? (
-                                <div className="text-center py-20 text-xs text-text-soft uppercase animate-in fade-in duration-300 font-semibold">
+                                <div className="flex h-full flex-col items-center justify-center text-center text-xs font-semibold uppercase text-text-soft">
                                     Tidak ada data tren harian untuk rentang tanggal ini
                                 </div>
                             ) : (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <LineChart data={filteredDailyTrend} margin={{ top: 15, right: 15, left: -25, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
-                                        <XAxis 
-                                            dataKey="date" 
-                                            stroke="#888888" 
-                                            fontSize={10} 
-                                            tickLine={false} 
-                                            axisLine={false} 
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(150,150,150,0.15)" />
+                                        <XAxis
+                                            dataKey="date"
+                                            stroke="#888888"
+                                            fontSize={10}
+                                            tickLine={false}
+                                            axisLine={false}
                                         />
-                                        <YAxis 
-                                            stroke="#888888" 
-                                            fontSize={10} 
-                                            tickLine={false} 
-                                            axisLine={false} 
+                                        <YAxis
+                                            stroke="#888888"
+                                            fontSize={10}
+                                            tickLine={false}
+                                            axisLine={false}
                                             allowDecimals={false}
                                         />
                                         <RechartsTooltip
-                                            content={({ active, payload, label }: any) => {
+                                            content={({ active, payload }: any) => {
                                                 if (active && payload && payload.length) {
                                                     const item = payload[0].payload;
                                                     return (
-                                                        <div className="rounded-xl border border-surface-border bg-surface-base p-2.5 shadow-md text-xs space-y-1.5 min-w-[170px]">
-                                                            <p className="font-bold text-text-main">{item.full_date}</p>
-                                                            <div className="space-y-1 border-t border-surface-border/40 pt-1.5">
-                                                                {payload.map((p: any, idx: number) => {
-                                                                    return (
-                                                                        <div key={idx} className="flex justify-between items-center gap-4">
-                                                                            <span className="text-text-soft flex items-center gap-1.5">
-                                                                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-                                                                                {p.name}
-                                                                            </span>
-                                                                            <span className="font-bold text-text-main">{p.value} Kontrak</span>
-                                                                        </div>
-                                                                    );
-                                                                })}
+                                                        <div className="rounded-md border border-surface-border bg-surface-base p-2.5 shadow-none text-xs space-y-1.5 min-w-[180px]">
+                                                            <p className="font-bold text-text-main border-b border-surface-border pb-1">{item.full_date || item.date}</p>
+                                                            <div className="space-y-1">
+                                                                {payload.map((p: any, idx: number) => (
+                                                                    <div key={idx} className="flex justify-between items-center gap-3">
+                                                                        <span className="text-text-soft flex items-center gap-1.5 text-[10.5px]">
+                                                                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                                                                            {p.name}
+                                                                        </span>
+                                                                        <span className="font-bold text-text-main text-[10.5px]">{p.value} Kontrak</span>
+                                                                    </div>
+                                                                ))}
                                                             </div>
                                                         </div>
                                                     );
@@ -328,39 +412,15 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                         {categoriesList.map((category: string, idx: number) => {
                                             const strokeColor = CHART_COLORS[idx % CHART_COLORS.length];
                                             return (
-                                                <Line 
+                                                <Line
                                                     key={category}
-                                                    type="linear" 
-                                                    dataKey={category} 
+                                                    type="monotone"
+                                                    dataKey={category}
                                                     name={category}
-                                                    stroke={strokeColor} 
+                                                    stroke={strokeColor}
                                                     strokeWidth={2}
-                                                    dot={(props: any) => {
-                                                        const { cx, cy, index, dataKey } = props;
-                                                        const isLast = index === filteredDailyTrend.length - 1;
-                                                        if (isLast) {
-                                                            return (
-                                                                <g key={`last-dot-${dataKey}-${index}`}>
-                                                                    <circle cx={cx} cy={cy} r={8.5} fill={strokeColor} stroke="#fff" strokeWidth={1.5} />
-                                                                    {/* Render SVG Icon Paths according to category */}
-                                                                    {category === 'Semua Dokumen' && (
-                                                                        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                    )}
-                                                                    {category === 'Menunggu Persetujuan Saya' && (
-                                                                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 6v6l4 2" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                    )}
-                                                                    {category === 'Dokumen Saya' && (
-                                                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                    )}
-                                                                    {category === 'On Progress' && (
-                                                                        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z M12 6v6l4 2" transform={`translate(${cx - 5}, ${cy - 5}) scale(0.42)`} fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                                                    )}
-                                                                </g>
-                                                            );
-                                                        }
-                                                        return <circle key={`dot-${dataKey}-${index}`} cx={cx} cy={cy} r={2} fill="#fff" stroke={strokeColor} strokeWidth={1} />;
-                                                    }}
-                                                    activeDot={{ r: 4 }}
+                                                    dot={false}
+                                                    activeDot={{ r: 4, stroke: '#ffffff', strokeWidth: 1.5 }}
                                                 />
                                             );
                                         })}
@@ -371,17 +431,17 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                     </CardContent>
                 </Card>
 
-                {/* Separate Legend & Pie Chart Card (30%) */}
-                <Card className="lg:col-span-3 bg-white dark:bg-zinc-900/50 border border-surface-border/60 shadow-xs flex flex-col justify-between">
+                {/* Donut Chart & Category Breakdown (35%) */}
+                <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none lg:col-span-3">
                     <div>
-                        <CardHeader className="p-4 pb-2 border-b border-surface-border/40 space-y-0">
-                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-text-main">Ringkasan Kategori</CardTitle>
-                            <p className="text-[9.5px] text-text-soft">Distribusi total keseluruhan kontrak per kategori</p>
+                        <CardHeader className="border-b border-surface-border p-4 pb-3 space-y-0">
+                            <CardTitle className="text-xs font-bold tracking-wider uppercase text-text-main">Ringkasan Distribusi</CardTitle>
+                            <p className="text-[10px] text-text-soft">Proporsi seluruh kontrak berdasarkan kategori</p>
                         </CardHeader>
                         <CardContent className="p-4 space-y-3">
-                            {/* Pie Chart Component displaying identical Line Chart Data */}
-                            <div className="h-40 w-full relative flex items-center justify-center">
-                                {isMounted && categoriesList.length > 0 && (
+                            {/* Centered Donut Chart */}
+                            <div className="relative flex h-36 w-full items-center justify-center">
+                                {isMounted && (
                                     <>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
@@ -389,12 +449,12 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                                     data={categoriesList.map((category: string, idx: number) => ({
                                                         name: category,
                                                         value: categoryValues[category] ?? 0,
-                                                        color: CHART_COLORS[idx % CHART_COLORS.length]
+                                                        color: CHART_COLORS[idx % CHART_COLORS.length],
                                                     })).filter((item: any) => item.value > 0)}
                                                     cx="50%"
                                                     cy="50%"
-                                                    innerRadius={35}
-                                                    outerRadius={55}
+                                                    innerRadius={38}
+                                                    outerRadius={58}
                                                     paddingAngle={3}
                                                     dataKey="value"
                                                 >
@@ -407,9 +467,9 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                                         if (active && payload && payload.length) {
                                                             const item = payload[0];
                                                             return (
-                                                                <div className="rounded-lg border border-surface-border bg-surface-base p-2 shadow-md text-xs space-y-0.5">
+                                                                <div className="rounded-md border border-surface-border bg-surface-base p-2 shadow-none text-xs">
                                                                     <p className="font-bold text-text-main text-[10px]">{item.name}</p>
-                                                                    <p className="font-extrabold text-primary text-[11px]">{item.value} Kontrak</p>
+                                                                    <p className="font-extrabold text-primary text-[11px] mt-0.5">{item.value} Kontrak</p>
                                                                 </div>
                                                             );
                                                         }
@@ -419,21 +479,21 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                             </PieChart>
                                         </ResponsiveContainer>
 
-                                        {/* Centered Total Count Overlay — show Semua Dokumen total */}
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                            <span className="text-[13px] font-black leading-none text-text-main">
+                                        {/* Center count overlay */}
+                                        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                                            <span className="text-sm font-black leading-none text-text-main">
                                                 {data?.metrics?.totalContracts ?? 0}
                                             </span>
-                                            <span className="text-[7.5px] font-extrabold uppercase tracking-widest text-text-soft mt-0.5">
-                                                Dokumen
+                                            <span className="mt-0.5 text-[8px] font-extrabold uppercase tracking-widest text-text-soft">
+                                                Total
                                             </span>
                                         </div>
                                     </>
                                 )}
                             </div>
 
-                            {/* Category List Items with matching Lucide icons */}
-                            <div className="space-y-2 pt-1 border-t border-surface-border/40">
+                            {/* Category Items List */}
+                            <div className="space-y-1.5 border-t border-surface-border pt-2">
                                 {categoriesList.map((category: string, idx: number) => {
                                     const categoryIcons: Record<string, any> = {
                                         'Semua Dokumen': Layers,
@@ -443,34 +503,228 @@ export function OverviewTab({ data, onNavigate }: OverviewTabProps) {
                                         'On Progress': Timer,
                                     };
                                     const CategoryIcon = categoryIcons[category] || FileText;
+                                    const val = categoryValues[category] ?? 0;
+                                    const total = data?.metrics?.totalContracts || 1;
+                                    const pct = Math.round((val / total) * 100);
+
+                                    const categoryNavMap: Record<string, string> = {
+                                        'Semua Dokumen': 'contracts',
+                                        'Menunggu Persetujuan Saya': 'pending',
+                                        'Dokumen Saya': 'mine',
+                                        'Dokumen Arsip': 'archived',
+                                        'On Progress': 'in_progress',
+                                    };
 
                                     return (
-                                        <div key={category} className="flex items-center justify-between gap-2 p-1.5 rounded-lg border border-surface-border/40 bg-surface-muted/20 hover:bg-surface-muted/40 transition-colors">
+                                        <div
+                                            key={category}
+                                            onClick={() => onNavigate(categoryNavMap[category] || 'contracts')}
+                                            className="flex cursor-pointer items-center justify-between gap-2 rounded-md border border-surface-border bg-surface-base p-1.5 px-2 transition-all hover:bg-surface-muted hover:border-primary active:scale-[0.99]"
+                                            title={`Klik untuk membuka ${category}`}
+                                        >
                                             <div className="flex items-center gap-2 min-w-0">
-                                                <div 
-                                                    className="w-5 h-5 rounded-full shrink-0 shadow-xs flex items-center justify-center text-white" 
+                                                <ChipIcon
+                                                    icon={CategoryIcon}
+                                                    size="xs"
+                                                    shape="rounded"
                                                     style={{ backgroundColor: CHART_COLORS[idx % CHART_COLORS.length] }}
-                                                >
-                                                    <CategoryIcon size={10} strokeWidth={2.5} />
-                                                </div>
-                                                <span className="text-[10px] font-bold text-text-main truncate">
+                                                    className="border-transparent"
+                                                />
+                                                <span className="truncate text-[10px] font-semibold text-text-main">
                                                     {category}
                                                 </span>
                                             </div>
-                                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-surface-base border border-surface-border/60 text-text-soft shrink-0">
-                                                {categoryValues[category] ?? 0}
-                                            </span>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                <span className="text-[9px] text-text-soft">
+                                                    {pct}%
+                                                </span>
+                                                <span className="rounded border border-surface-border bg-surface-base px-1.5 py-0.5 text-[9px] font-bold text-text-main">
+                                                    {val}
+                                                </span>
+                                                <ChevronRight size={10} className="text-text-soft opacity-50" />
+                                            </div>
                                         </div>
                                     );
                                 })}
                             </div>
                         </CardContent>
                     </div>
-                    <div className="p-3 pt-0 text-[8.5px] text-text-soft text-center border-t border-surface-border/30 mt-1">
-                        Total volume dari {filteredDailyTrend.length} titik data harian
+                </Card>
+            </div>
+
+            {/* 4. Action Center Grid: Priority Pending Approvals (50%) & Expiring Contracts (50%) */}
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {/* Column 1: Priority Pending Approvals */}
+                <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none">
+                    <div>
+                        <CardHeader className="flex flex-row items-center justify-between border-b border-surface-border p-4 pb-3 space-y-0">
+                            <div className="flex items-center gap-2">
+                                <ChipIcon icon={Clock} size="md" bg="bg-amber-600" shape="rounded" />
+                                <div>
+                                    <CardTitle className="text-xs font-bold text-text-main">Persetujuan Menunggu Aksi</CardTitle>
+                                    <p className="text-[10px] text-text-soft">Dokumen yang memerlukan tanda tangan / persetujuan Anda</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => onNavigate('pending')}
+                                className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-bold text-primary hover:underline shadow-none"
+                            >
+                                <span>Lihat Semua ({pendingCount})</span>
+                                <ArrowUpRight size={12} />
+                            </button>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-2">
+                            {pendingApprovalsList.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-7 text-center">
+                                    <ChipIcon icon={CheckCircle2} size="lg" bg="bg-emerald-600" shape="circle" className="mb-2" />
+                                    <p className="text-xs font-bold text-text-main">Tidak Ada Persetujuan Tertunda</p>
+                                    <p className="text-[10px] text-text-soft max-w-xs mt-0.5">
+                                         Seluruh pengajuan yang ditujukan ke Anda telah diproses.
+                                    </p>
+                                </div>
+                            ) : (
+                                pendingApprovalsList.map((item: any) => {
+                                    const waitingText = getWaitingDurationText(item.requested_at);
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => router.get(`/contracts/${item.contract_id}`)}
+                                            className="group flex cursor-pointer items-center justify-between gap-3 rounded-md border border-surface-border bg-surface-base p-3 shadow-none transition-all duration-150 hover:border-amber-500 hover:bg-surface-muted"
+                                        >
+                                            <div className="space-y-1 min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="rounded bg-surface-muted border border-surface-border px-1.5 py-0.5 text-[9px] font-bold text-text-main">
+                                                        {item.form_no || item.contract_no || 'DOKUMEN'}
+                                                    </span>
+                                                    {item.type && (
+                                                        <span className="truncate rounded border border-surface-border bg-surface-base px-1.5 py-0.5 text-[9px] font-semibold text-text-soft">
+                                                            {item.type}
+                                                        </span>
+                                                    )}
+                                                    {waitingText && (
+                                                        <span className="rounded bg-amber-600 px-1.5 py-0.5 text-[8.5px] font-bold text-white shadow-none">
+                                                            Menunggu {waitingText}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <h4 className="truncate text-xs font-bold text-text-main group-hover:text-primary transition-colors">
+                                                    {item.title || 'Tanpa Judul'}
+                                                </h4>
+                                                <div className="flex items-center gap-2 text-[10px] text-text-soft">
+                                                    <span className="flex items-center gap-1">
+                                                        <User size={10} />
+                                                        {item.creator || 'Pembuat'}
+                                                    </span>
+                                                    {item.step_name && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="font-semibold text-amber-700 dark:text-amber-300">Tahap: {item.step_name}</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                className="inline-flex shrink-0 items-center gap-1 rounded-md bg-amber-600 px-2.5 py-1 text-[10px] font-bold text-white shadow-none transition-all group-hover:bg-amber-700"
+                                            >
+                                                <span>Review</span>
+                                                <ChevronRight size={11} />
+                                            </button>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </CardContent>
+                    </div>
+                </Card>
+
+                {/* Column 2: Upcoming Expiring Contracts */}
+                <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none">
+                    <div>
+                        <CardHeader className="flex flex-row items-center justify-between border-b border-surface-border p-4 pb-3 space-y-0">
+                            <div className="flex items-center gap-2">
+                                <ChipIcon icon={Timer} size="md" bg="bg-rose-600" shape="rounded" />
+                                <div>
+                                    <CardTitle className="text-xs font-bold text-text-main">Mendekati Masa Berakhir</CardTitle>
+                                    <p className="text-[10px] text-text-soft">Kontrak yang akan segera jatuh tempo dalam waktu dekat</p>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => onNavigate('expiry')}
+                                className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-bold text-primary hover:underline shadow-none"
+                            >
+                                <span>Lihat Semua</span>
+                                <ArrowUpRight size={12} />
+                            </button>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-2">
+                            {upcomingRenewals.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-7 text-center">
+                                    <ChipIcon icon={Calendar} size="lg" bg="bg-slate-600" shape="circle" className="mb-2" />
+                                    <p className="text-xs font-bold text-text-main">Tidak Ada Kontrak Mendekati Jatuh Tempo</p>
+                                    <p className="text-[10px] text-text-soft max-w-xs mt-0.5">
+                                         Seluruh kontrak aktif memiliki masa berlaku yang masih panjang.
+                                    </p>
+                                </div>
+                            ) : (
+                                upcomingRenewals.map((item: any) => {
+                                    const daysLeft = getDaysRemaining(item.end_date);
+                                    let badgeStyle = 'bg-slate-700 text-white border-transparent';
+                                    if (daysLeft !== null && daysLeft <= 14) {
+                                        badgeStyle = 'bg-rose-600 text-white border-transparent';
+                                    } else if (daysLeft !== null && daysLeft <= 30) {
+                                        badgeStyle = 'bg-amber-600 text-white border-transparent';
+                                    }
+
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            onClick={() => router.get(`/contracts/${item.id}`)}
+                                            className="group flex cursor-pointer items-center justify-between gap-3 rounded-md border border-surface-border bg-surface-base p-3 shadow-none transition-all duration-150 hover:border-primary hover:bg-surface-muted"
+                                        >
+                                            <div className="space-y-1 min-w-0 flex-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="rounded bg-surface-muted border border-surface-border px-1.5 py-0.5 text-[9px] font-bold text-text-main">
+                                                        {item.contract_no || item.form_no || 'KONTRAK'}
+                                                    </span>
+                                                    {item.vendor_name && (
+                                                        <span className="truncate rounded border border-surface-border bg-surface-base px-1.5 py-0.5 text-[9px] font-semibold text-text-soft">
+                                                            {item.vendor_name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <h4 className="truncate text-xs font-bold text-text-main group-hover:text-primary transition-colors">
+                                                    {item.title || 'Tanpa Judul'}
+                                                </h4>
+                                                <div className="flex items-center gap-2 text-[10px] text-text-soft">
+                                                    <span>Berakhir: {item.end_date ? new Date(item.end_date).toLocaleDateString('id-ID') : '-'}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col items-end gap-1 shrink-0">
+                                                {daysLeft !== null && (
+                                                    <span className={cn('rounded px-1.5 py-0.5 text-[9px] font-bold shadow-none', badgeStyle)}>
+                                                        {daysLeft <= 0 ? 'Hari Ini' : `Sisa ${daysLeft} Hari`}
+                                                    </span>
+                                                )}
+                                                <span className="text-[10px] font-semibold text-primary opacity-0 transition-opacity group-hover:opacity-100 flex items-center gap-0.5">
+                                                    Lihat <ChevronRight size={10} />
+                                                </span>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </CardContent>
                     </div>
                 </Card>
             </div>
-    </div>
-);
+        </div>
+    );
 }
+
+
+

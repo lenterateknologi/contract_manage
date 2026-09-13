@@ -142,36 +142,36 @@ const NavTreeItem = memo(function NavTreeItem({
                         if (isMobile) setOpenMobile(false);
                         onNavigate?.();
                     }}
-                    className={cn(
-                        'group relative flex flex-1 items-start gap-3 rounded-xl px-3 py-2 text-[13px] font-medium transition-all duration-200 min-w-0',
-                        isSelfActive
-                            ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                            : isChildActive
-                                ? 'bg-primary/10 text-primary font-semibold'
-                                : 'text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground',
-                    )}
+                    className="group relative flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-[13px] font-medium transition-all duration-150 min-w-0 hover:bg-sidebar-accent/50"
                 >
-                    <ItemIcon
+                    {/* Active Icon Card (Hanya icon yang memiliki card aktif) */}
+                    <div
                         className={cn(
-                            'size-4.5 shrink-0 transition-colors mt-0.5',
+                            'flex size-7 shrink-0 items-center justify-center rounded-lg transition-all duration-200',
                             isSelfActive
-                                ? 'text-primary-foreground'
+                                ? 'bg-primary text-primary-foreground shadow-xs'
                                 : isChildActive
-                                    ? 'text-primary'
-                                    : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80',
+                                    ? 'bg-primary/15 text-primary'
+                                    : 'bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
                         )}
-                    />
-                    <div className="flex flex-col flex-1 min-w-0">
-                        <span className="truncate tracking-tight leading-tight">
+                    >
+                        <ItemIcon
+                            className={cn(
+                                'size-4 transition-colors',
+                                isSelfActive
+                                    ? 'text-primary-foreground'
+                                    : isChildActive
+                                        ? 'text-primary'
+                                        : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground',
+                            )}
+                        />
+                    </div>
+                    <div className="flex flex-col flex-1 min-w-0 justify-center">
+                        <span className="truncate tracking-tight leading-snug font-medium text-sidebar-foreground">
                             {item.title}
                         </span>
                         {item.description && (
-                            <span
-                                className={cn(
-                                    'text-[11px] leading-tight truncate mt-0.5 font-normal',
-                                    isSelfActive ? 'text-primary-foreground/80' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70',
-                                )}
-                            >
+                            <span className="text-[10.5px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70">
                                 {item.description}
                             </span>
                         )}
@@ -181,7 +181,7 @@ const NavTreeItem = memo(function NavTreeItem({
                             className={cn(
                                 'ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
                                 isSelfActive
-                                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                                    ? 'bg-primary text-primary-foreground'
                                     : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
                             )}
                             title={`${item.badge} data sistem aktif`}
@@ -225,32 +225,34 @@ const NavTreeItem = memo(function NavTreeItem({
                                     onNavigate?.();
                                 }}
                                 className={cn(
-                                    'relative group flex items-start gap-2.5 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-all duration-150 min-w-0',
+                                    'relative group flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12px] font-medium transition-all duration-150 min-w-0 hover:bg-sidebar-accent/40',
                                     'before:absolute before:-left-[15px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/80 before:rounded-full',
-                                    isSubActive
-                                        ? 'bg-primary text-primary-foreground shadow-xs font-semibold before:bg-primary'
-                                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
+                                    isSubActive && 'before:!bg-primary',
                                 )}
                             >
-                                <ChildIcon
+                                <div
                                     className={cn(
-                                        'size-3.5 shrink-0 transition-colors mt-0.5',
+                                        'flex size-5.5 shrink-0 items-center justify-center rounded-md transition-all',
                                         isSubActive
-                                            ? 'text-primary-foreground'
-                                            : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/80',
+                                            ? 'bg-primary text-primary-foreground shadow-xs'
+                                            : 'bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
                                     )}
-                                />
-                                <div className="flex flex-col flex-1 min-w-0">
-                                    <span className="truncate tracking-tight leading-tight">
+                                >
+                                    <ChildIcon
+                                        className={cn(
+                                            'size-3 transition-colors',
+                                            isSubActive
+                                                ? 'text-primary-foreground'
+                                                : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground',
+                                        )}
+                                    />
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0 justify-center">
+                                    <span className="truncate tracking-tight leading-snug text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-medium">
                                         {child.title}
                                     </span>
                                     {child.description && (
-                                        <span
-                                            className={cn(
-                                                'text-[10px] leading-tight truncate mt-0.5 font-normal',
-                                                isSubActive ? 'text-primary-foreground/80' : 'text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70',
-                                            )}
-                                        >
+                                        <span className="text-[10px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70">
                                             {child.description}
                                         </span>
                                     )}
@@ -260,7 +262,7 @@ const NavTreeItem = memo(function NavTreeItem({
                                         className={cn(
                                             'ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
                                             isSubActive
-                                                ? 'bg-primary-foreground/20 text-primary-foreground'
+                                                ? 'bg-primary text-primary-foreground'
                                                 : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
                                         )}
                                         title={`${child.badge} data aktif`}
@@ -315,27 +317,31 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                         onSelectTab(tab.id);
                     }
                 }}
-                className={cn(
-                    'group relative flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-150 cursor-pointer select-none',
-                    isParentActive && !isChildActive
-                        ? 'bg-primary text-primary-foreground shadow-xs font-bold'
-                        : isParentActive
-                          ? 'text-primary font-bold bg-primary/10 dark:bg-primary/20'
-                          : 'text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground',
-                )}
+                className="group relative flex items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer select-none hover:bg-sidebar-accent/50"
             >
                 <div className="flex items-center gap-2.5 min-w-0">
-                    <TabIcon
+                    <div
                         className={cn(
-                            'size-4 shrink-0 transition-colors',
+                            'flex size-7 shrink-0 items-center justify-center rounded-lg transition-all',
                             isParentActive && !isChildActive
-                                ? 'text-primary-foreground'
+                                ? 'bg-primary text-primary-foreground shadow-xs'
                                 : isParentActive
-                                  ? 'text-primary'
-                                  : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground',
+                                  ? 'bg-primary/15 text-primary'
+                                  : 'bg-sidebar-accent/70 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
                         )}
-                    />
-                    <span className="truncate">{tab.label}</span>
+                    >
+                        <TabIcon
+                            className={cn(
+                                'size-4 transition-colors',
+                                isParentActive && !isChildActive
+                                    ? 'text-primary-foreground'
+                                    : isParentActive
+                                      ? 'text-primary'
+                                      : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground',
+                            )}
+                        />
+                    </div>
+                    <span className="truncate text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-semibold">{tab.label}</span>
                 </div>
 
                 {hasChildren && (
@@ -742,18 +748,20 @@ export const AppSidebar = memo(function AppSidebar() {
                                                         setIsSubOpen(true);
                                                     }
                                                 }}
-                                                className={cn(
-                                                    'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-2 px-1 transition-all duration-200 cursor-pointer',
-                                                    subMode === 'detail'
-                                                        ? 'bg-white text-primary shadow-xs font-bold ring-2 ring-white/50'
-                                                        : 'text-white/80 hover:bg-white/15 hover:text-white',
-                                                )}
+                                                className="group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer"
                                             >
-                                                <FileText className={cn('size-5 shrink-0 transition-transform duration-200 group-hover:scale-110', subMode === 'detail' ? 'text-primary' : 'text-white/80 group-hover:text-white')} />
-                                                <span className={cn(
-                                                    'mt-1 max-w-[58px] truncate text-[9.5px] leading-tight tracking-tight text-center font-bold',
-                                                    subMode === 'detail' ? 'text-primary' : 'text-white/80 group-hover:text-white'
-                                                )}>
+                                                {/* Icon Card (Active Card on Icon only) */}
+                                                <div
+                                                    className={cn(
+                                                        'flex size-9 items-center justify-center rounded-xl transition-all duration-200',
+                                                        subMode === 'detail'
+                                                            ? 'bg-white text-primary shadow-xs ring-2 ring-white/50'
+                                                            : 'bg-white/10 text-white/80 group-hover:bg-white/20 group-hover:text-white',
+                                                    )}
+                                                >
+                                                    <FileText className="size-5 shrink-0" />
+                                                </div>
+                                                <span className="mt-1 max-w-[58px] truncate text-[9.5px] leading-tight tracking-tight text-center font-medium text-white/90 group-hover:text-white">
                                                     Pengajuan
                                                 </span>
                                             </button>
@@ -800,18 +808,20 @@ export const AppSidebar = memo(function AppSidebar() {
                                                             }
                                                         }
                                                     }}
-                                                    className={cn(
-                                                        'group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-2 px-1 transition-all duration-200 cursor-pointer',
-                                                        isSelected
-                                                            ? 'bg-white text-primary shadow-xs font-bold'
-                                                            : 'text-white/80 hover:bg-white/15 hover:text-white',
-                                                    )}
+                                                    className="group relative flex w-[64px] flex-col items-center justify-center rounded-xl py-1 px-1 transition-all duration-200 cursor-pointer"
                                                 >
-                                                    <GroupIcon className={cn('size-5 shrink-0 transition-transform duration-200 group-hover:scale-110', isSelected ? 'text-primary' : 'text-white/80 group-hover:text-white')} />
-                                                    <span className={cn(
-                                                        'mt-1 max-w-[58px] truncate text-[10px] leading-tight tracking-tight text-center',
-                                                        isSelected ? 'text-primary font-bold' : 'text-white/80 group-hover:text-white'
-                                                    )}>
+                                                    {/* Icon Card (Active Card on Icon only) */}
+                                                    <div
+                                                        className={cn(
+                                                            'flex size-9 items-center justify-center rounded-xl transition-all duration-200',
+                                                            isSelected
+                                                                ? 'bg-white text-primary shadow-xs'
+                                                                : 'bg-white/10 text-white/80 group-hover:bg-white/20 group-hover:text-white',
+                                                        )}
+                                                    >
+                                                        <GroupIcon className="size-5 shrink-0" />
+                                                    </div>
+                                                    <span className="mt-1 max-w-[58px] truncate text-[10px] leading-tight tracking-tight text-center font-medium text-white/90 group-hover:text-white">
                                                         {group.title}
                                                     </span>
                                                 </button>

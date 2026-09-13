@@ -1,16 +1,9 @@
-import { cn, formatDateShort, getContractTypeBadgeConfig } from '@/lib/utils';
+import { cn, formatDateShort } from '@/lib/utils';
+import { getContractTypeBadgeConfig } from '@/pages/contracts/components/ContractTableCells';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
-import { router } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import { SectionTitle } from './SectionTitle';
 import { ContractItem } from './types';
-
-// Accent status left border (refined border colors)
-const STATUS_ACCENT: Record<string, { border: string }> = {
-    draft: { border: 'border-l-slate-300 dark:border-l-slate-600' },
-    in_review: { border: 'border-l-amber-500' },
-    revision: { border: 'border-l-rose-500' },
-    approved: { border: 'border-l-emerald-500' },
-};
 
 interface RecentContractsProps {
     items: ContractItem[];
@@ -18,6 +11,9 @@ interface RecentContractsProps {
 }
 
 export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
+    const pageProps = usePage<any>()?.props;
+    const masterStatuses = pageProps?.masterContractStatuses || [];
+
     return (
         <div className="bg-white dark:bg-surface-base border border-surface-border/60 rounded-lg text-foreground w-full overflow-hidden">
             <div className="border-border/60 flex items-center justify-between border-b px-6 py-4 dark:border-slate-800/60">
@@ -53,7 +49,8 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                             </tr>
                         ) : (
                             items.map((c) => {
-                                const accentCfg = STATUS_ACCENT[c.status] ?? STATUS_ACCENT.draft;
+                                const masterStatus = masterStatuses.find((m: any) => m.code?.toLowerCase() === (c.status || '').toLowerCase());
+                                const statusColor = masterStatus?.color || '#cbd5e1';
                                 const cleanType = (c.type ?? '').replace('Perjanjian ', '').replace('Addendum / ', '').replace('Persetujuan ', '');
                                 const typeBadge = cleanType ? getContractTypeBadgeConfig(cleanType) : null;
 
@@ -61,10 +58,8 @@ export function RecentContracts({ items, onViewAll }: RecentContractsProps) {
                                     <tr
                                         key={c.id}
                                         onClick={() => router.get(`/contracts/${c.id}`)}
-                                        className={cn(
-                                            'group hover:bg-muted/40 text-foreground cursor-pointer transition-all duration-200 border-b',
-                                            accentCfg.border,
-                                        )}
+                                        className="group hover:bg-muted/40 text-foreground cursor-pointer transition-all duration-200 border-b"
+                                        style={{ borderLeft: `3px solid ${statusColor}` }}
                                     >
                                         {/* No. Kontrak */}
                                         <td className="px-5 py-3.5">

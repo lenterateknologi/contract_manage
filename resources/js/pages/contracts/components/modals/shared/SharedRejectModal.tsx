@@ -1,15 +1,17 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Modal } from '@/components/ui/dialogs/Modal';
+import { getFileIcon, AttachmentCategoryBadge } from '@/components/ui';
 import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
-import { AlertCircle, Loader2, Paperclip, X, XCircle } from 'lucide-react';
+import { formatFileSize } from '@/lib/formatters';
+import { AlertCircle, Loader2, Paperclip, Plus, X, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface Props {
     open: boolean;
     onClose: () => void;
-    onSubmit: (reason: string, attachment?: File) => Promise<void>;
+    onSubmit: (reason: string, attachment?: File | File[]) => Promise<void>;
     actionAlias?: string;
     actionId?: string;
     contract?: any;
@@ -17,16 +19,25 @@ interface Props {
 
 export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, actionId, contract }: Props) {
     const [reason, setReason] = useState('');
-    const [attachment, setAttachment] = useState<File | null>(null);
+    const [attachments, setAttachments] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [allWorkflows, setAllWorkflows] = useState<any[]>([]);
+
+    const handleFileDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            setAttachments((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
+        }
+    };
 
     useEffect(() => {
         if (open) {
             contractApi.getWorkflows().then(setAllWorkflows).catch(console.error);
             setReason('');
-            setAttachment(null);
+            setAttachments([]);
         }
     }, [open]);
 
@@ -125,7 +136,10 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, action
         if (!reason.trim()) return;
         setLoading(true);
         try {
-            await onSubmit(reason, attachment || undefined);
+            await onSubmit(
+                reason,
+                attachments.length === 0 ? undefined : attachments.length === 1 ? attachments[0] : attachments,
+            );
             onClose();
         } finally {
             setLoading(false);
@@ -191,37 +205,126 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, action
                     required
                 />
 
-                <div className="space-y-1">
-                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">Lampiran Pendukung (Optional)</label>
-                    <div className="mt-1">
-                        {!attachment ? (
-                            <Button
-                                variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="border-surface-border text-text-desc hover:border-danger hover:text-danger hover:bg-danger/5 flex h-auto w-full items-center justify-center gap-2 border-2 border-dashed py-6 transition-all"
-                            >
-                                <Paperclip size={18} className="opacity-40" />
-                                <span className="text-xs font-bold tracking-wide uppercase">Lampirkan File</span>
-                            </Button>
-                        ) : (
-                            <div className="border-surface-border bg-surface-muted flex items-center justify-between rounded-xl border p-4">
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    <div className="bg-danger/10 rounded-lg p-2">
-                                        <Paperclip size={16} className="text-danger" />
+                <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                        <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">Lampiran Berkas Pendukung (Opsional)</label>
+                        {attachments.length > 0 && (
+                            <span className="text-[10px] font-bold text-danger">
+                                {attachments.length} Berkas Baru Dipilih
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Existing Contract Attachments notice if any */}
+                    {contract?.attachments && contract.attachments.length > 0 && (
+                        <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/40 p-2 text-xs">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Berkas Kontrak Saat Ini ({contract.attachments.length})
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                                {contract.attachments.map((at: any, i: number) => (
+                                    <div key={at.id || i} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                                        {getFileIcon(at.file_name || at.label || '')}
+                                        <span className="truncate max-w-[150px] font-medium">{at.file_name || at.label}</span>
+                                        <AttachmentCategoryBadge item={at} />
                                     </div>
-                                    <span className="text-text-main truncate text-xs font-bold">{attachment.name}</span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-1 space-y-2">
+                        {attachments.length === 0 ? (
+                            <div
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => fileInputRef.current?.click()}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(true);
+                                }}
+                                onDragLeave={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(false);
+                                }}
+                                onDrop={handleFileDrop}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        fileInputRef.current?.click();
+                                    }
+                                }}
+                                className={cn(
+                                    "border-surface-border text-text-desc hover:border-danger hover:text-danger hover:bg-danger/5 flex h-auto w-full flex-col items-center justify-center gap-1.5 border-2 border-dashed py-5 transition-all rounded-lg cursor-pointer",
+                                    isDragging && "border-danger bg-danger/10 scale-[0.99]"
+                                )}
+                            >
+                                <div className="flex items-center gap-2">
+                                    <Paperclip size={16} className="opacity-60" />
+                                    <span className="text-xs font-bold tracking-wide uppercase">Pilih / Drag & Drop Berkas</span>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setAttachment(null)}
-                                    className="text-text-desc hover:text-danger hover:bg-danger/10 h-8 w-8"
+                                <span className="text-[10px] text-muted-foreground font-normal">Mendukung format PDF, Gambar, Dokumen, dan Spreadsheet</span>
+                            </div>
+                        ) : (
+                            <div className="space-y-1.5">
+                                {attachments.map((file, idx) => (
+                                    <div key={idx} className="border-surface-border bg-surface-muted/70 flex items-center justify-between rounded-lg border px-3 py-2">
+                                        <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                                            {getFileIcon(file.name)}
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-text-main truncate text-xs font-bold">{file.name}</span>
+                                                <span className="text-text-desc text-[10px] font-medium">{formatFileSize(file.size)}</span>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                            className="text-text-desc hover:text-danger hover:bg-danger/10 h-7 w-7 shrink-0"
+                                        >
+                                            <X size={14} />
+                                        </Button>
+                                    </div>
+                                ))}
+
+                                <div
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        setIsDragging(true);
+                                    }}
+                                    onDragLeave={(e) => {
+                                        e.preventDefault();
+                                        setIsDragging(false);
+                                    }}
+                                    onDrop={handleFileDrop}
+                                    className={cn(
+                                        "w-full text-xs font-semibold flex items-center justify-center gap-1.5 border border-dashed border-danger/40 text-danger hover:bg-danger/5 h-8 mt-1 rounded-md cursor-pointer transition-all",
+                                        isDragging && "bg-danger/15 border-danger"
+                                    )}
                                 >
-                                    <X size={16} />
-                                </Button>
+                                    <Plus size={14} />
+                                    <span>Tambah Berkas Lainnya</span>
+                                </div>
                             </div>
                         )}
-                        <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setAttachment(e.target.files?.[0] || null)} />
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                    setAttachments((prev) => [...prev, ...Array.from(e.target.files!)]);
+                                }
+                                e.target.value = '';
+                            }}
+                        />
                     </div>
                 </div>
             </div>

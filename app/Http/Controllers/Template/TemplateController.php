@@ -59,8 +59,32 @@ class TemplateController extends Controller
         $this->checkPermission('read');
 
         return Inertia::render('contract-templates/Index', [
-            'folders' => TemplateFolder::with('creator')->withCount('templates')->get(),
-            'templates' => ContractTemplate::with('folder', 'creator')->get(),
+            'folders' => TemplateFolder::query()
+                ->select(['id', 'parent_id', 'name', 'created_by', 'created_at', 'updated_at'])
+                ->with(['creator'])
+                ->withCount('templates')
+                ->orderBy('name')
+                ->get(),
+            'templates' => ContractTemplate::query()
+                ->select([
+                    'id',
+                    'template_folder_id',
+                    'name',
+                    'description',
+                    'file_path',
+                    'file_name',
+                    'file_size',
+                    'file_type',
+                    'created_by',
+                    'created_at',
+                    'updated_at',
+                ])
+                ->with([
+                    'folder:id,name',
+                    'creator',
+                ])
+                ->orderBy('name')
+                ->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#'],
                 ['title' => 'Template Kontrak', 'href' => route('admin.templates.index')],

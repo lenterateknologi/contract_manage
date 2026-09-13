@@ -10,6 +10,7 @@ import { cn, formatDateTime } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import { Badge } from '@/components/ui/feedback/Badge';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import * as LucideIcons from 'lucide-react';
 import {
     Check,
     Clock,
@@ -69,95 +70,18 @@ export default function ContractAuditTrail({ contract }: Props) {
         }
     };
 
-    const getActionConfig = (action: string, description?: string) => {
-        const a = (action || '').toUpperCase();
-        const d = (description || '').toLowerCase();
+    const getActionConfig = (h: any) => {
+        const label = h.badge_label || (h.action || '').replace(/_/g, ' ').toUpperCase() || 'AKTIVITAS';
+        const color = h.color || '#64748b';
+        const iconName = h.icon;
 
-        if (a === 'WORKFLOW_BRANCHED' || d.includes('pindah workflow') || d.includes('persetujuan tambahan')) {
-            return {
-                label: 'PINDAH WORKFLOW',
-                badgeClass: 'border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400',
-                iconBgClass: 'bg-sky-500 text-white',
-                icon: <GitBranch size={10} strokeWidth={2.5} />,
-            };
-        }
-        if (a === 'WORKFLOW_ADVANCED' || a === 'WORKFLOW_AUTO_ADVANCED' || a === 'STAGE_TRANSITION') {
-            return {
-                label: 'LANJUT TAHAP',
-                badgeClass: 'border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400',
-                iconBgClass: 'bg-blue-500 text-white',
-                icon: <ArrowRight size={10} strokeWidth={2.5} />,
-            };
-        }
-        if (a === 'WORKFLOW_ASSIGNED' || a.includes('ASSIGN')) {
-            return {
-                label: 'PENUGASAN PIC',
-                badgeClass: 'border-purple-500/30 bg-purple-500/10 text-purple-600 dark:text-purple-400',
-                iconBgClass: 'bg-purple-500 text-white',
-                icon: <UserCheck size={10} strokeWidth={2.5} />,
-            };
-        }
-        if (a.includes('ADHOC') || a.includes('PARTICIPANT')) {
-            return {
-                label: 'APPROVER TAMBAHAN',
-                badgeClass: 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400',
-                iconBgClass: 'bg-amber-500 text-white',
-                icon: <Users size={10} strokeWidth={2.5} />,
-            };
-        }
-        if (a === 'APPROVAL_APPROVED' || a.includes('APPROVED')) {
-            return {
-                label: 'DISETUJUI',
-                badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-                iconBgClass: 'bg-emerald-500 text-white',
-                icon: <Check size={10} strokeWidth={3} />,
-            };
-        }
-        if (a === 'APPROVAL_REJECTED' || a.includes('REJECT')) {
-            return {
-                label: 'DITOLAK',
-                badgeClass: 'border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400',
-                iconBgClass: 'bg-rose-500 text-white',
-                icon: <X size={10} strokeWidth={3} />,
-            };
-        }
-        if (a.includes('SIGN')) {
-            return {
-                label: 'PENANDATANGANAN',
-                badgeClass: 'border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400',
-                iconBgClass: 'bg-violet-500 text-white',
-                icon: <FileText size={10} strokeWidth={2.5} />,
-            };
-        }
-        if (a.includes('FORM') || a.includes('SUBMITTED')) {
-            return {
-                label: 'SUBMIT FORM',
-                badgeClass: 'border-teal-500/30 bg-teal-500/10 text-teal-600 dark:text-teal-400',
-                iconBgClass: 'bg-teal-500 text-white',
-                icon: <FileSpreadsheet size={10} strokeWidth={2.5} />,
-            };
-        }
-        if (a === 'CONTRACT_SENT') {
-            return {
-                label: 'KONTRAK DIKIRIM',
-                badgeClass: 'border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-400',
-                iconBgClass: 'bg-sky-500 text-white',
-                icon: <Send size={10} strokeWidth={2.5} />,
-            };
-        }
-        if (a === 'CONTRACT_CREATED') {
-            return {
-                label: 'KONTRAK DIBUAT',
-                badgeClass: 'border-primary/30 bg-primary/10 text-primary',
-                iconBgClass: 'bg-primary text-white',
-                icon: <ExternalLink size={10} strokeWidth={2.5} />,
-            };
-        }
+        // Render dynamic lucide icon or fallback
+        const IconComponent = iconName && (LucideIcons as any)[iconName] ? (LucideIcons as any)[iconName] : FileText;
+
         return {
-            label: a.replace(/_/g, ' '),
-            badgeClass: 'border-border bg-muted/60 text-muted-foreground',
-            iconBgClass: 'bg-black text-white dark:bg-white dark:text-black',
-            icon: <FileText size={10} strokeWidth={2.5} />,
+            label,
+            color,
+            icon: <IconComponent size={10} strokeWidth={2.5} />,
         };
     };
 
@@ -299,14 +223,14 @@ export default function ContractAuditTrail({ contract }: Props) {
                         )}
                         <div className="flex flex-col gap-2.5">
                             {histories.map((h) => {
-                                const config = getActionConfig(h.action, h.description);
+                                const config = getActionConfig(h);
 
                                 return (
                                     <div key={h.id} className="relative flex gap-3 group items-start">
-                                        <div className={cn(
-                                            'relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-xs ring-1 ring-black/10 dark:ring-white/10 mt-0.5',
-                                            config.iconBgClass
-                                        )}>
+                                        <div
+                                            className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full shadow-xs ring-1 ring-black/10 dark:ring-white/10 mt-0.5 text-white"
+                                            style={{ backgroundColor: config.color }}
+                                        >
                                             <div className="scale-90">{config.icon}</div>
                                         </div>
                                         <div className="flex min-w-0 flex-1 flex-col pb-2 border-b border-border/30 last:border-b-0 last:pb-0">
@@ -317,10 +241,12 @@ export default function ContractAuditTrail({ contract }: Props) {
                                                     </span>
                                                     <Badge
                                                         variant="outline"
-                                                        className={cn(
-                                                            'px-1.5 py-0 text-[8px] font-bold uppercase tracking-wider rounded-sm shrink-0',
-                                                            config.badgeClass,
-                                                        )}
+                                                        className="px-1.5 py-0 text-[8px] font-bold uppercase tracking-wider rounded-sm shrink-0 border"
+                                                        style={{
+                                                            backgroundColor: `${config.color}15`,
+                                                            borderColor: `${config.color}40`,
+                                                            color: config.color,
+                                                        }}
                                                     >
                                                         {config.label}
                                                     </Badge>

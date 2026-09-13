@@ -177,11 +177,24 @@ export default function Templates({ folders = [], templates = [] }: Props) {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     };
 
+    // O(1) Quick Lookup Maps
+    const folderMap = useMemo(() => new Map(folders.map((f) => [f.id, f])), [folders]);
+    const templatesByFolder = useMemo(() => {
+        const map = new Map<string | null, ContractTemplate[]>();
+        templates.forEach((t) => {
+            const key = t.template_folder_id;
+            const existing = map.get(key);
+            if (existing) existing.push(t);
+            else map.set(key, [t]);
+        });
+        return map;
+    }, [templates]);
+
     const getFolderPath = (folderId: string | null): TemplateFolder[] => {
         const path: TemplateFolder[] = [];
         let currId = folderId;
         while (currId) {
-            const f = folders.find((folder) => folder.id === currId);
+            const f = folderMap.get(currId);
             if (f) {
                 path.unshift(f);
                 currId = f.parent_id;
@@ -190,18 +203,27 @@ export default function Templates({ folders = [], templates = [] }: Props) {
         return path;
     };
 
-    const currentFolder = useMemo(() => folders.find((f) => f.id === currentFolderId), [folders, currentFolderId]);
-    const folderPath = useMemo(() => getFolderPath(currentFolderId), [folders, currentFolderId]);
+    const currentFolder = useMemo(() => (currentFolderId ? folderMap.get(currentFolderId) || null : null), [folderMap, currentFolderId]);
+    const folderPath = useMemo(() => getFolderPath(currentFolderId), [currentFolderId, folderMap]);
 
-    // Build Folder Tree Hierarchy
+    // Build Folder Tree Hierarchy efficiently using pre-grouped children
     const folderTree = useMemo(() => {
+        const childrenMap = new Map<string | null, TemplateFolder[]>();
+        folders.forEach((f) => {
+            const pid = f.parent_id;
+            const existing = childrenMap.get(pid);
+            if (existing) existing.push(f);
+            else childrenMap.set(pid, [f]);
+        });
+
         const buildNode = (parentId: string | null): FolderTreeNode[] => {
-            return folders
-                .filter((f) => f.parent_id === parentId)
+            const childFolders = childrenMap.get(parentId) || [];
+            return childFolders
+                .slice()
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map((folder) => {
                     const children = buildNode(folder.id);
-                    const directTemplateCount = templates.filter((t) => t.template_folder_id === folder.id).length;
+                    const directTemplateCount = (templatesByFolder.get(folder.id) || []).length;
                     const childTemplatesCount = children.reduce((acc, c) => acc + c.totalTemplatesCount, 0);
                     return {
                         ...folder,
@@ -211,11 +233,11 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                 });
         };
         return buildNode(null);
-    }, [folders, templates]);
+    }, [folders, templatesByFolder]);
 
     const rootTemplatesCount = useMemo(() => {
-        return templates.filter((t) => !t.template_folder_id).length;
-    }, [templates]);
+        return (templatesByFolder.get(null) || []).length;
+    }, [templatesByFolder]);
 
     const totalAllTemplates = templates.length;
 
@@ -243,7 +265,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                 return next;
             });
         }
-    }, [currentFolderId]);
+    }, [currentFolderId, folderMap]);
 
     // Available File Types for Filter
     const availableFileTypes = useMemo(() => {
@@ -272,7 +294,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
         [availableFileTypes],
     );
 
-    // Filtered data combined into a unified list
+    // Filtered data combined into a unified list with O(1) folder and count lookups
     const processedRows = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
 
@@ -284,7 +306,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                 return f.parent_id === currentFolderId;
             })
             .map((f) => {
-                const directCount = templates.filter((t) => t.template_folder_id === f.id).length;
+                const directCount = (templatesByFolder.get(f.id) || []).length;
                 return {
                     id: f.id,
                     itemType: 'folder',
@@ -309,7 +331,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                 return matchesFolder && matchesSearch;
             })
             .map((t) => {
-                const parentFolder = folders.find((f) => f.id === t.template_folder_id);
+                const parentFolder = t.template_folder_id ? folderMap.get(t.template_folder_id) : null;
                 return {
                     id: t.id,
                     itemType: 'template',
@@ -333,7 +355,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
         }
 
         return all;
-    }, [folders, templates, currentFolderId, searchQuery, fileTypeFilter]);
+    }, [folders, templates, currentFolderId, searchQuery, fileTypeFilter, folderMap, templatesByFolder]);
 
     // Actions
     const handleCreateFolder = (e?: React.FormEvent) => {
@@ -552,10 +574,8 @@ export default function Templates({ folders = [], templates = [] }: Props) {
             cell: (row) => {
                 if (row.itemType === 'folder') {
                     return (
-                        <div className="flex items-center gap-3 py-0.5">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-200/70 dark:bg-amber-950/40 dark:border-amber-800/60 dark:text-amber-400">
-                                <Folder size={18} className="fill-current opacity-80" />
-                            </div>
+                        <div className="flex items-center gap-2.5 py-0.5">
+                            <Folder size={18} className="shrink-0 text-amber-500 fill-amber-500" />
                             <div className="flex flex-col min-w-0">
                                 <span className="font-semibold text-xs text-text-main group-hover:text-primary transition-colors truncate max-w-md">
                                     {row.name}
@@ -572,19 +592,18 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                 const isExcel = ['xls', 'xlsx'].includes(row.file_type);
 
                 return (
-                    <div className="flex items-center gap-3 py-0.5">
-                        <div
+                    <div className="flex items-center gap-2.5 py-0.5">
+                        <FileText
+                            size={18}
                             className={cn(
-                                'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border',
+                                'shrink-0',
                                 isPdf
-                                    ? 'bg-rose-50 text-rose-600 border-rose-200/70 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-400'
+                                    ? 'text-rose-600 fill-rose-600/20'
                                     : isExcel
-                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200/70 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-400'
-                                    : 'bg-blue-50 text-blue-600 border-blue-200/70 dark:bg-blue-950/40 dark:border-blue-800/60 dark:text-blue-400',
+                                    ? 'text-emerald-600 fill-emerald-600/20'
+                                    : 'text-blue-600 fill-blue-600/20',
                             )}
-                        >
-                            <FileText size={18} />
-                        </div>
+                        />
                         <div className="flex flex-col min-w-0">
                             <span className="font-semibold text-xs text-text-main group-hover:text-primary transition-colors truncate max-w-md">
                                 {row.name}
@@ -600,38 +619,6 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                             )}
                         </div>
                     </div>
-                );
-            },
-        },
-        {
-            header: 'Tipe',
-            accessorKey: 'file_type',
-            className: 'w-32',
-            cell: (row) => {
-                if (row.itemType === 'folder') {
-                    return (
-                        <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold tracking-tight bg-amber-50 text-amber-700 border border-amber-200/70 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/50 uppercase">
-                            Folder
-                        </span>
-                    );
-                }
-
-                const isPdf = row.file_type === 'pdf';
-                const isExcel = ['xls', 'xlsx'].includes(row.file_type);
-
-                return (
-                    <span
-                        className={cn(
-                            'inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold tracking-tight border uppercase',
-                            isPdf
-                                ? 'bg-rose-50 text-rose-700 border-rose-200/70 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/50'
-                                : isExcel
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/50'
-                                : 'bg-blue-50 text-blue-700 border-blue-200/70 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/50',
-                        )}
-                    >
-                        {row.file_type}
-                    </span>
                 );
             },
         },
@@ -820,7 +807,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                     className={cn(
                         'group flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium transition-all cursor-pointer border border-transparent',
                         isSelected
-                            ? 'bg-primary/10 text-primary font-bold border-primary/20 shadow-xs'
+                            ? 'bg-primary/10 text-primary font-bold border-primary/20'
                             : 'text-text-main hover:bg-surface-muted/70 hover:text-text-main',
                     )}
                     style={{ paddingLeft: `${Math.max(8, depth * 14 + 8)}px` }}
@@ -843,9 +830,9 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                         )}
 
                         {isSelected || isExpanded ? (
-                            <FolderOpen size={14} className="shrink-0 text-amber-500 fill-amber-500/20" />
+                            <FolderOpen size={14} className="shrink-0 text-amber-500 fill-amber-500" />
                         ) : (
-                            <Folder size={14} className="shrink-0 text-amber-500/90" />
+                            <Folder size={14} className="shrink-0 text-amber-500 fill-amber-500" />
                         )}
 
                         <span className="truncate text-[11.5px]">{node.name}</span>
@@ -872,7 +859,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                     <MoreHorizontal size={12} />
                                 </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start" className="w-40 p-1 shadow-lg border-surface-border">
+                            <DropdownMenuContent align="start" className="w-40 p-1 border-surface-border">
                                 {canCreate && (
                                     <>
                                         <DropdownMenuItem
@@ -951,15 +938,13 @@ export default function Templates({ folders = [], templates = [] }: Props) {
             <MasterPageLayout>
                 {/* ── LEFT SIDEBAR: FOLDER TREE MAP NAVIGATION ── */}
                 <FloatingPanel className="w-72 shrink-0 border-r border-surface-border bg-surface-card/50 flex flex-col h-full overflow-hidden">
-                    {/* Header Sidebar */}
-                    <div className="p-3.5 border-b border-surface-border flex items-center justify-between bg-surface-muted/20 shrink-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-900/50">
-                                <FolderTree size={14} />
-                            </div>
-                            <div>
-                                <h3 className="text-xs font-bold text-text-main">Direktori Folder</h3>
-                                <p className="text-[10px] text-text-desc font-medium">Pohon struktur templat</p>
+                    {/* Header Sidebar - Height h-16 (64px) perfectly balanced with sub side nav header */}
+                    <div className="flex h-16 min-h-[64px] max-h-[64px] items-center justify-between border-b border-surface-border px-4 bg-surface-muted/20 shrink-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <FolderTree size={18} className="text-amber-500 shrink-0" />
+                            <div className="flex flex-col justify-center min-w-0">
+                                <h3 className="text-xs font-bold text-text-main leading-tight truncate">Direktori Folder</h3>
+                                <p className="text-[10px] text-text-desc font-medium leading-tight truncate mt-0.5">Pohon struktur templat</p>
                             </div>
                         </div>
 
@@ -973,23 +958,23 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                                     setNewFolderName('');
                                     setIsFolderModalOpen(true);
                                 }}
-                                className="h-7 w-7 rounded-lg text-text-desc hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                                className="h-8 w-8 rounded-lg text-text-desc hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40 cursor-pointer"
                                 title="Buat Sub-Folder Baru"
                             >
-                                <FolderPlus size={15} />
+                                <FolderPlus size={16} />
                             </Button>
                         )}
                     </div>
 
-                    {/* Filter / Search Tree */}
-                    <div className="p-2 border-b border-surface-border/60 shrink-0">
-                        <div className="relative">
+                    {/* Filter / Search Tree - Height h-11 (44px) perfectly matching sub sidebar module title & breadcrumb banner */}
+                    <div className="flex h-11 min-h-[44px] max-h-[44px] items-center border-b border-surface-border/60 px-3 shrink-0">
+                        <div className="relative w-full">
                             <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-desc" />
                             <Input
                                 value={treeSearch}
                                 onChange={(e) => setTreeSearch(e.target.value)}
                                 placeholder="Cari folder..."
-                                className="h-7.5 pl-8 pr-2.5 text-[11px] rounded-md bg-surface-base"
+                                className="h-7.5 w-full pl-7.5 pr-2.5 text-[11px] rounded-md bg-surface-base"
                             />
                         </div>
                     </div>
@@ -1011,7 +996,7 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                             className={cn(
                                 'group flex items-center justify-between rounded-lg px-2 py-1.5 text-xs font-medium transition-all cursor-pointer border border-transparent select-none',
                                 currentFolderId === null
-                                    ? 'bg-primary/10 text-primary font-bold border-primary/20 shadow-xs'
+                                    ? 'bg-primary/10 text-primary font-bold border-primary/20'
                                     : 'text-text-main hover:bg-surface-muted/70',
                             )}
                         >

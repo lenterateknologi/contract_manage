@@ -109,17 +109,18 @@ class ContractWorkflowService
             throw new \Exception('Tidak ada tahapan alur kerja yang valid untuk permintaan ini.');
         }
 
-        $minStepVal = $workflow->steps->min('step') ?? 1;
-        $statusStr = ($firstStep->meta && isset($firstStep->meta['target_status']) && ! empty($firstStep->meta['target_status']))
+        $statusStr = ($firstStep->meta && ! empty($firstStep->meta['target_status']))
             ? $firstStep->meta['target_status']
-            : ($firstStep->step === $minStepVal ? 'draft' : 'in_review');
+            : ($firstStep->actions()->whereIn('action_code', ['approve', 'submit'])->value('target_status') 
+                ?? data_get($workflow->meta, 'initial_status') 
+                ?? $contract->status);
         $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
         $updateData = [
             'workflow_id' => $workflow->id,
             'workflow_step_id' => $firstStep->id,
             'status' => $nextStatus?->code ?: $statusStr,
-            'submitted_at' => $firstStep->step === $minStepVal ? $contract->submitted_at : now(),
+            'submitted_at' => now(),
         ];
 
         if (empty($contract->origin_workflow_id)) {
@@ -746,27 +747,34 @@ class ContractWorkflowService
 
         $approval->approve($comment, $attachmentPath, $actionIdToSave, $actionCodeToSave, $actionAliasToSave);
 
+        $stepName = $approval->workflowStep?->name ?: "Tahap {$approval->sequence}";
+        $commentSuffix = $comment ? " (Catatan: {$comment})" : '';
+
         if (in_array($actionCodeToSave, ['branch', 'forward'])) {
             $actionLabel = $actionAliasToSave ?: ($actionCodeToSave === 'branch' ? 'Pindah Workflow' : 'Teruskan');
-            $this->queryService->logHistory($contract, 'WORKFLOW_BRANCHED', "{$actionLabel} oleh {$approval->approver_name} ({$approval->role})", Auth::id());
+            $this->queryService->logHistory($contract, 'WORKFLOW_BRANCHED', "{$actionLabel} pada [{$stepName}] oleh {$approval->approver_name} ({$approval->role}){$commentSuffix}", Auth::id());
         } elseif (in_array($actionCodeToSave, ['assign', 'assign_pic'])) {
             $actionLabel = $actionAliasToSave ?: 'Persetujuan & Penugasan PIC';
-            $this->queryService->logHistory($contract, 'APPROVAL_APPROVED', "{$actionLabel} oleh {$approval->approver_name} ({$approval->role})", Auth::id());
+            $this->queryService->logHistory($contract, 'APPROVAL_APPROVED', "{$actionLabel} pada [{$stepName}] oleh {$approval->approver_name} ({$approval->role}){$commentSuffix}", Auth::id());
         } else {
             $actionLabel = $actionAliasToSave ?: 'Disetujui';
-            $this->queryService->logHistory($contract, 'APPROVAL_APPROVED', "{$actionLabel} oleh {$approval->approver_name} ({$approval->role})", Auth::id());
+            $this->queryService->logHistory($contract, 'APPROVAL_APPROVED', "{$actionLabel} pada [{$stepName}] oleh {$approval->approver_name} ({$approval->role}){$commentSuffix}", Auth::id());
         }
 
         $this->activateNextApprovers($contract, $approval);
 
         if ($assignedPicId) {
+            $now = now();
             $metadata = $contract->metadata ?? [];
             $metadata['assigned_pic_id'] = $assignedPicId;
             $metadata['assigned_by_id'] = Auth::id();
+            $metadata['assigned_at'] = $now->toIso8601String();
+            $metadata['pic_assigned_at'] = $now->toIso8601String();
 
             $contract->update([
                 'assigned_pic_id' => $assignedPicId,
                 'assigned_by_id' => Auth::id(),
+                'assigned_at' => $now,
                 'metadata' => $metadata,
             ]);
 
@@ -901,7 +909,9 @@ class ContractWorkflowService
             } else {
                 $approval->update(['status' => 'approved', 'comment' => $comment]);
 
-                $statusStr = $targetStep->meta['target_status'] ?? 'locked';
+                $statusStr = $targetStep->meta['target_status'] 
+                    ?? $targetStep->actions()->where('action_code', 'approve')->value('target_status') 
+                    ?? $contract->status;
                 $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
                 $contract->update([
@@ -1116,9 +1126,12 @@ class ContractWorkflowService
         }
 
         if ($nextStep) {
-            $minStepVal = $contract->workflow ? $contract->workflow->loadMissing('steps')->steps->min('step') : 1;
             $statusStr = $stepAction?->target_status
-                ?: ($nextStep->id === $approval->workflow_step_id ? $contract->status : ($nextStep->meta['target_status'] ?? ($nextStep->step_category === 'signing' ? 'locked' : ($nextStep->step === $minStepVal ? 'draft' : 'in_review'))));
+                ?: ($nextStep->id === $approval->workflow_step_id 
+                    ? $contract->status 
+                    : ($nextStep->meta['target_status'] 
+                        ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status') 
+                        ?? $contract->status));
             $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
             $isSameStep = $nextStep->id === $approval->workflow_step_id;
@@ -1131,20 +1144,18 @@ class ContractWorkflowService
             if (! $isSameStep) {
                 $this->createApprovalForStep($contract, $nextStep);
                 $this->handleAutoApproval($contract, Auth::user());
-                $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke tahap {$nextStep->step}: {$nextStep->description}", Auth::id());
+                $nextStepLabel = $nextStep->name ?: $nextStep->description ?: "Tahap {$nextStep->step}";
+                $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke Tahap {$nextStep->step}: {$nextStepLabel}", Auth::id());
                 $this->handleAutoAdvanceStep($contract, $nextStep);
             }
         } else {
-            $archivedStatus = ContractStatus::where('code', 'archived')->first();
-            $targetStat = $stepAction?->target_status;
-            if (($approval->workflowStep->step_category === 'closing' || $targetStat === 'archived') && $archivedStatus) {
-                $contract->update(['status' => $archivedStatus->code, 'workflow_step_id' => null]);
-                $this->queryService->logHistory($contract, 'CONTRACT_COMPLETED', 'Alur kerja selesai (Arsip).', Auth::id());
-            } else {
-                $approvedStatus = ContractStatus::where('code', 'approved')->first();
-                $contract->update(['status' => $targetStat ?: 'approved', 'workflow_step_id' => null]);
-                $this->queryService->logHistory($contract, 'CONTRACT_APPROVED', 'Seluruh persetujuan selesai. Kontrak disetujui.', Auth::id());
-            }
+            $targetStat = $stepAction?->target_status
+                ?: $approval->workflowStep?->actions()->where('action_code', 'approve')->value('target_status')
+                ?: data_get($contract->workflow?->meta, 'completed_status')
+                ?: 'approved';
+
+            $contract->update(['status' => $targetStat, 'workflow_step_id' => null]);
+            $this->queryService->logHistory($contract, 'CONTRACT_COMPLETED', 'Seluruh persetujuan alur kerja selesai.', Auth::id());
         }
     }
 
@@ -1171,12 +1182,18 @@ class ContractWorkflowService
 
         $targetStep = $stepAction ? ($this->evaluateTransition($contract, $approval->workflowStep, $stepAction) ?: WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', 1)->first()) : WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', 1)->first();
 
-        $statusStr = $targetStep->meta['target_status'] ?? 'revision';
+        $statusStr = $stepAction?->target_status 
+            ?? $targetStep->meta['target_status'] 
+            ?? $targetStep->actions()->where('action_code', 'reject')->value('target_status') 
+            ?? data_get($contract->workflow?->meta, 'rejected_status') 
+            ?? $contract->status;
         $revisionStatus = ContractStatus::where('code', $statusStr)->first();
 
         $actionLabel = $actionAliasToSave ?: 'Ditolak';
+        $stepName = $approval->workflowStep?->name ?: "Tahap {$approval->sequence}";
+        $targetStepLabel = $targetStep ? ($targetStep->name ?: $targetStep->description ?: "Tahap {$targetStep->step}") : null;
         // ponytail: log rejection to contract history audit before resetting approvals
-        $description = "{$actionLabel} oleh {$approval->approver_name} ({$approval->role}): {$reason}. ".($targetStep ? "Dikembalikan ke tahap {$targetStep->step}: {$targetStep->description}." : 'Dikembalikan ke Inisiator untuk revisi.');
+        $description = "{$actionLabel} pada [{$stepName}] oleh {$approval->approver_name} ({$approval->role}): {$reason}. ".($targetStep ? "Dikembalikan ke Tahap {$targetStep->step}: {$targetStepLabel}." : 'Dikembalikan ke Inisiator untuk revisi.');
         $this->queryService->logHistory($contract, 'APPROVAL_REJECTED', $description, Auth::id());
 
         // Clear adhoc metadata if returning to step 1
@@ -1241,10 +1258,10 @@ class ContractWorkflowService
 
                 $nextStep = $this->evaluateTransition($contract, $step, $action);
                 if ($nextStep && $nextStep->id !== $step->id) {
-                    $targetWorkflow = $nextStep->relationLoaded('workflow') ? $nextStep->workflow : $nextStep->workflow()->first();
-                    $minStepVal = $targetWorkflow ? $targetWorkflow->steps()->min('step') : 1;
                     $statusStr = $action->target_status
-                        ?: ($nextStep->meta['target_status'] ?? ($nextStep->step_category === 'signing' ? 'locked' : ($nextStep->step === $minStepVal ? 'draft' : 'in_review')));
+                        ?: ($nextStep->meta['target_status'] 
+                            ?? $nextStep->actions()->where('action_code', 'approve')->value('target_status') 
+                            ?? $contract->status);
                     $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
                     // ponytail: Mark auto step approvals as approved so they do not stay pending

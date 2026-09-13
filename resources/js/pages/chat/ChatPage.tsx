@@ -1,16 +1,11 @@
-import { AppSidebar } from '@/layouts/app/components/AppSidebar';
-import { AppSidebarHeader } from '@/layouts/app/components/AppSidebarHeader';
-import { SidebarInset, SidebarProvider } from '@/components/ui/navigation/Sidebar';
 import { Head, usePage, usePoll } from '@inertiajs/react';
-import { useState, useMemo, useEffect } from 'react';
-import { Building2, Calendar, ExternalLink, FileText, MessageSquare, Search, X } from 'lucide-react';
-import { SearchInput } from '@/components/ui/inputs/SearchInput';
-import ContractChat from '@/pages/contracts/components/tabs/ContractChat';
+import React, { useState, useMemo, useEffect } from 'react';
+import { MessageSquare } from 'lucide-react';
+import ContractChat from '@/components/chat/ContractChat';
 import { Contract } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
-import { ContractListItem } from './ui/ContractListItem';
-import { ToastProvider } from '@/components/ui/feedback/Toast';
 import { formatDate } from '@/lib/utils';
+import { ContractListSidebar } from './components/ContractListSidebar';
 
 interface Props {
     contracts: Contract[];
@@ -18,7 +13,7 @@ interface Props {
     breadcrumbs: any[];
 }
 
-export default function ChatPage({ contracts: initialContracts, initialContractId, breadcrumbs }: Props) {
+export default function ChatPage({ contracts: initialContracts, initialContractId }: Props) {
     const { auth } = usePage<any>().props;
     const [search, setSearch] = useState('');
     const [showChatSearch, setShowChatSearch] = useState(false);
@@ -29,7 +24,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
     // Manage local contracts state to reflect new messages immediately
     const [contracts, setContracts] = useState(initialContracts);
 
-    // ponytail: usePoll to fetch real-time updates for the involved contracts every 4 seconds
+    // Polling to fetch real-time updates for the involved contracts every 4 seconds
     usePoll(4000, { only: ['contracts'] });
 
     // Sync local contracts state when initialContracts updates via polling
@@ -37,7 +32,7 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
         setContracts(initialContracts);
     }, [initialContracts]);
 
-    // ponytail: mark contract chat as read on select, update URL state without full page reload
+    // Mark contract chat as read on select, update URL state without full page reload
     useEffect(() => {
         if (selectedContractId) {
             contractApi.messages.markRead(selectedContractId).catch(console.error);
@@ -63,10 +58,18 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                 if (search) {
                     const s = search.toLowerCase();
                     const matchesSearch =
-                        c.title.toLowerCase().includes(s) ||
+                        c.title?.toLowerCase().includes(s) ||
                         c.form_no?.toLowerCase().includes(s) ||
                         c.contract_no?.toLowerCase().includes(s);
                     if (!matchesSearch) return false;
+                }
+                if (dateFrom) {
+                    const cDate = c.updated_at || c.created_at;
+                    if (cDate && new Date(cDate) < new Date(dateFrom)) return false;
+                }
+                if (dateTo) {
+                    const cDate = c.updated_at || c.created_at;
+                    if (cDate && new Date(cDate) > new Date(`${dateTo}T23:59:59`)) return false;
                 }
                 return true;
             })
@@ -75,14 +78,14 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
                 const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
                 return dateB - dateA;
             });
-    }, [contracts, search]);
+    }, [contracts, search, dateFrom, dateTo]);
 
     const selectedContract = useMemo(() => {
-        return contracts.find(c => c.id === selectedContractId) || null;
+        return contracts.find((c) => c.id === selectedContractId) || null;
     }, [contracts, selectedContractId]);
 
     const handleNewMessage = (updatedContract: Contract) => {
-        setContracts(prev => prev.map(c => c.id === updatedContract.id ? updatedContract : c));
+        setContracts((prev) => prev.map((c) => (c.id === updatedContract.id ? updatedContract : c)));
     };
 
     // Group contracts strictly by date (DD MMM YYYY) maintaining latest-first order
@@ -101,202 +104,47 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
     }, [filteredContracts]);
 
     return (
-        <ToastProvider>
-            <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset className="bg-background font-sans overflow-hidden">
-                <Head title="Chat Center" />
+        <div className="flex-1 flex h-[calc(100vh-64px)] w-full overflow-hidden">
+            <Head title="Chat Center - Diskusi Kontrak" />
 
-                <div className="flex h-screen w-full overflow-hidden font-sans bg-background">
-                    {/* Full edge-to-edge Container for Chat Interface (No margin, padding or card effect) */}
-                    <div className="flex flex-1 w-full h-full overflow-hidden min-w-0 bg-background">
-                        {/* Sidebar: Left Panel (Daftar Percakapan - Matching Sub Side Nav Style) */}
-                        <div className="flex w-80 flex-col border-r border-sidebar-border/60 bg-sidebar/20 backdrop-blur-xs shrink-0 h-full">
-                            {/* Top Header (Daftar Percakapan & Count Badge) */}
-                            <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border/40 shrink-0">
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className="h-8 w-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
-                                        <MessageSquare className="h-4 w-4 text-primary" />
-                                    </div>
-                                    <div className="flex flex-col justify-center truncate">
-                                        <span className="text-sidebar-foreground text-[14px] leading-tight font-bold tracking-tight truncate">
-                                            Daftar Percakapan
-                                        </span>
-                                        <span className="text-sidebar-foreground/50 text-[10px] leading-tight font-medium truncate mt-0.5">
-                                            Diskusi pengajuan kontrak
-                                        </span>
-                                    </div>
-                                </div>
-                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-muted text-foreground font-bold border border-border shrink-0">
-                                    {filteredContracts.length} room
-                                </span>
-                            </div>
+            {/* Left Sidebar: Contract list & Filters */}
+            <ContractListSidebar
+                search={search}
+                setSearch={setSearch}
+                showChatSearch={showChatSearch}
+                setShowChatSearch={setShowChatSearch}
+                dateFrom={dateFrom}
+                setDateFrom={setDateFrom}
+                dateTo={dateTo}
+                setDateTo={setDateTo}
+                groupedContracts={groupedContracts}
+                selectedContractId={selectedContractId}
+                onSelectContract={(id) => setSelectedContractId(id)}
+            />
 
-                            {/* Search Bar (Positioned directly below top header) */}
-                            <div className="px-3 py-2 border-b border-sidebar-border/40 bg-sidebar/30 backdrop-blur-xs shrink-0 flex items-center">
-                                <SearchInput
-                                    placeholder="Cari percakapan..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="h-8 w-full text-xs font-normal bg-background text-foreground placeholder:text-muted-foreground border-border rounded-lg"
-                                />
-                            </div>
-
-                            {/* List items - Rounded item styling with spacing */}
-                            <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden p-2 space-y-2">
-                                {filteredContracts.length === 0 ? (
-                                    <div className="p-6 text-center">
-                                        <Search size={18} className="mx-auto mb-2 text-muted-foreground" />
-                                        <p className="text-xs font-medium text-muted-foreground">Tidak ada percakapan ditemukan</p>
-                                    </div>
-                                ) : (
-                                    Object.entries(groupedContracts).map(([groupLabel, items]) => (
-                                        <div key={groupLabel} className="space-y-1">
-                                            <div className="sticky top-0 z-10 px-2 py-1 bg-background/95 backdrop-blur-xs flex items-center justify-between">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Calendar size={11} className="text-muted-foreground shrink-0" />
-                                                    <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
-                                                        {groupLabel}
-                                                    </span>
-                                                </div>
-                                                <span className="text-[9px] font-medium text-muted-foreground">
-                                                    {items.length} Percakapan
-                                                </span>
-                                            </div>
-                                            <div className="space-y-1">
-                                                {items.map((c) => (
-                                                    <ContractListItem
-                                                        key={c.id}
-                                                        contract={c}
-                                                        isSelected={selectedContractId === c.id}
-                                                        onClick={() => setSelectedContractId(c.id)}
-                                                    />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
+            {/* Right Area: Chat Content View */}
+            <div className="flex-1 flex flex-col h-full bg-background min-w-0 overflow-hidden">
+                {selectedContract ? (
+                    <ContractChat
+                        key={selectedContract.id}
+                        contract={selectedContract}
+                        meId={auth?.user?.id}
+                        onNewMessage={handleNewMessage}
+                    />
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-muted-foreground gap-3">
+                        <div className="p-5 rounded-full bg-muted/60 text-muted-foreground">
+                            <MessageSquare size={36} />
                         </div>
-
-                        {/* Main: Right Panel (Chat Area) */}
-                        {selectedContract ? (
-                            <>
-                                <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
-                                    <div className="px-5 py-2.5 border-b border-border flex items-center justify-between bg-card text-card-foreground z-10 h-16 shrink-0 relative">
-                                        {showChatSearch ? (
-                                            <div className="flex items-center gap-2 w-full animate-in fade-in duration-200">
-                                                <SearchInput
-                                                    placeholder="Cari dalam percakapan..."
-                                                    value={search}
-                                                    onChange={(e) => setSearch(e.target.value)}
-                                                    className="h-9 flex-1 text-xs font-normal bg-background text-foreground placeholder:text-muted-foreground border-border rounded-xl"
-                                                    autoFocus
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() => { setShowChatSearch(false); setSearch(''); }}
-                                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-muted hover:bg-muted/80 text-xs font-bold text-foreground border border-border transition-all active:scale-95 cursor-pointer shrink-0"
-                                                >
-                                                    <X size={14} className="text-muted-foreground" />
-                                                    <span>Tutup</span>
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
-                                                    <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-semibold border border-primary/20">
-                                                        <FileText className="w-4.5 h-4.5 text-primary" />
-                                                    </div>
-                                                    <div className="flex flex-col min-w-0 flex-1">
-                                                        <div className="flex items-center gap-2 mb-0.5 min-w-0">
-                                                            <h3 className="text-xs font-semibold text-foreground tracking-tight leading-none truncate">
-                                                                {selectedContract.title}
-                                                            </h3>
-                                                        </div>
-                                                        <div className="flex items-center gap-2.5 text-[11px] text-muted-foreground truncate">
-                                                            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-muted text-foreground text-[9.5px] font-mono font-bold border border-border shrink-0">
-                                                                #{selectedContract.form_no || selectedContract.contract_no || 'DRAFT'}
-                                                            </span>
-                                                            <span>•</span>
-                                                            <span className="flex items-center gap-1 shrink-0">
-                                                                <Building2 size={11} className="text-muted-foreground" />
-                                                                {selectedContract.contract_type || 'General Contract'}
-                                                            </span>
-                                                            <span>•</span>
-                                                            <span className="truncate">Dibuat: <strong className="font-semibold text-foreground">{selectedContract.creator?.name || 'System'}</strong></span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2 shrink-0">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowChatSearch(true)}
-                                                        title="Cari dalam chat"
-                                                        className="inline-flex items-center justify-center p-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground border border-border transition-all active:scale-95 cursor-pointer"
-                                                    >
-                                                        <Search size={15} className="text-muted-foreground" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => window.open(`/contracts/${selectedContract.id}`, '_blank')}
-                                                        title="Buka Kontrak"
-                                                        className="inline-flex items-center justify-center p-2 rounded-lg bg-muted hover:bg-muted/80 text-foreground border border-border transition-all active:scale-95 cursor-pointer shrink-0"
-                                                    >
-                                                        <ExternalLink size={15} className="text-muted-foreground" />
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 overflow-hidden">
-                                        <ContractChat
-                                            key={selectedContract.id}
-                                            contract={selectedContract}
-                                            meId={auth.user.id}
-                                            onNewMessage={handleNewMessage}
-                                        />
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
-                                {/* Header for Empty State */}
-                                <div className="px-5 py-2.5 border-b border-border flex items-center justify-between bg-card text-card-foreground z-10 h-16 shrink-0">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-9 w-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 font-semibold border border-primary/20">
-                                            <MessageSquare className="w-4.5 h-4.5 text-primary" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <h3 className="text-xs font-semibold text-foreground tracking-tight leading-none mb-1">
-                                                Ruang Percakapan
-                                            </h3>
-                                            <p className="text-[11px] text-muted-foreground">
-                                                Pilih percakapan dari daftar di sebelah kiri untuk memulai diskusi
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 flex flex-col items-center justify-center h-full gap-3 text-muted-foreground bg-background/50">
-                                    <div className="bg-primary/10 p-5 rounded-2xl text-primary border border-primary/20">
-                                        <MessageSquare size={36} strokeWidth={1.5} />
-                                    </div>
-                                    <div className="text-center max-w-xs px-4">
-                                        <h3 className="text-sm font-semibold text-foreground tracking-tight mb-1">Chat Center</h3>
-                                        <p className="text-xs text-muted-foreground leading-relaxed">
-                                            Pilih percakapan dari daftar kontrak di sebelah kiri untuk melihat pesan dan memulai diskusi.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        <div className="flex flex-col gap-1 max-w-sm">
+                            <span className="text-sm font-bold text-foreground">Pilih Dokumen Percakapan</span>
+                            <span className="text-xs leading-relaxed">
+                                Pilih salah satu dokumen kontrak dari panel di sebelah kiri untuk membuka ruang diskusi dan riwayat pesan.
+                            </span>
+                        </div>
                     </div>
-                </div>
-            </SidebarInset>
-        </SidebarProvider>
-        </ToastProvider>
+                )}
+            </div>
+        </div>
     );
 }
-
-ChatPage.layout = (page: React.ReactNode) => <>{page}</>;

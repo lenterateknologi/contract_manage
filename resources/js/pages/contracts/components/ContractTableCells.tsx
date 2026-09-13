@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
-import { cn, formatDate, formatDateAndTimeParts, getContractTypeBadgeConfig, getExpiryBadgeConfig, getSlaCountdownConfig } from '@/lib/utils';
+import { cn, formatDate, formatDateAndTimeParts } from '@/lib/utils';
 import { UserAvatar, UserAvatarIcon, UserAvatarWithName, UserAvatarWithRole } from '@/components/profile/UserAvatar';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { AppIcon, Icons } from '@/components/ui';
+import type { LucideIcon } from 'lucide-react';
 
 const {
     AlertCircle,
@@ -18,6 +19,224 @@ const {
     Trash2,
 } = Icons;
 import { useEffect, useState } from 'react';
+
+export function isStatusTerminal(status?: string | null): boolean {
+    return ['approved', 'rejected', 'archived', 'expired', 'cancelled'].includes((status || '').toLowerCase());
+}
+
+export function formatExpiryDurationText(diffDays: number): string {
+    if (diffDays < 0) {
+        const absDays = Math.abs(diffDays);
+        if (absDays >= 365) {
+            const years = Math.floor(absDays / 365);
+            const remainingMonths = Math.floor((absDays % 365) / 30);
+            return remainingMonths > 0 ? `Expired sejak ${years} thn ${remainingMonths} bln lalu` : `Expired sejak ${years} thn lalu`;
+        }
+        if (absDays >= 30) {
+            const months = Math.floor(absDays / 30);
+            const remainingDays = absDays % 30;
+            return remainingDays > 0 ? `Expired sejak ${months} bln ${remainingDays} hr lalu` : `Expired sejak ${months} bln lalu`;
+        }
+        return `Expired sejak ${absDays} hari lalu`;
+    }
+
+    if (diffDays === 0) {
+        return 'Expired hari ini';
+    }
+
+    if (diffDays >= 365) {
+        const years = Math.floor(diffDays / 365);
+        const remainingMonths = Math.floor((diffDays % 365) / 30);
+        return remainingMonths > 0 ? `Expired dalam waktu ${years} thn ${remainingMonths} bln` : `Expired dalam waktu ${years} thn`;
+    }
+
+    if (diffDays >= 30) {
+        const months = Math.floor(diffDays / 30);
+        const remainingDays = diffDays % 30;
+        return remainingDays > 0 ? `Expired dalam waktu ${months} bln ${remainingDays} hr` : `Expired dalam waktu ${months} bln`;
+    }
+
+    return `Expired dalam waktu ${diffDays} hari`;
+}
+
+export interface ExpiryBadgeConfig {
+    label: string;
+    countdownLabel: string;
+    color: string;
+    icon: LucideIcon;
+    diffDays: number;
+    isExpired: boolean;
+    isToday: boolean;
+    urgency: 'expired' | 'critical' | 'warning' | 'normal';
+}
+
+export function getExpiryBadgeConfig(endDate?: string | null): ExpiryBadgeConfig | null {
+    if (!endDate) return null;
+    const end = new Date(endDate);
+    if (isNaN(end.getTime())) return null;
+
+    const now = new Date();
+    const endMidnight = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    const diffTime = endMidnight.getTime() - nowMidnight.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    const isExpired = diffDays < 0;
+    const isToday = diffDays === 0;
+    const countdownLabel = formatExpiryDurationText(diffDays);
+
+    let color = 'bg-emerald-600 text-white border-transparent';
+    let icon: LucideIcon = CheckCircle2;
+    let label = `${diffDays} Hari Lagi`;
+    let urgency: 'expired' | 'critical' | 'warning' | 'normal' = 'normal';
+
+    if (isExpired) {
+        color = 'bg-rose-600 text-white border-transparent';
+        icon = AlertCircle;
+        label = `Expired ${Math.abs(diffDays)} Hari`;
+        urgency = 'expired';
+    } else if (isToday) {
+        color = 'bg-rose-700 text-white border-transparent animate-pulse';
+        icon = AlertTriangle;
+        label = 'Expired Hari Ini';
+        urgency = 'critical';
+    } else if (diffDays <= 7) {
+        color = 'bg-rose-600 text-white border-transparent';
+        icon = AlertTriangle;
+        label = `${diffDays} Hari Lagi`;
+        urgency = 'critical';
+    } else if (diffDays <= 30) {
+        color = 'bg-amber-600 text-white border-transparent';
+        icon = AlertTriangle;
+        label = `${diffDays} Hari Lagi`;
+        urgency = 'warning';
+    } else if (diffDays <= 90) {
+        color = 'bg-sky-600 text-white border-transparent';
+        icon = Clock;
+        label = `${diffDays} Hari Lagi`;
+        urgency = 'normal';
+    }
+
+    return {
+        label,
+        countdownLabel,
+        color,
+        icon,
+        diffDays,
+        isExpired,
+        isToday,
+        urgency,
+    };
+}
+
+export interface SlaCountdownConfig {
+    timeLeft: string;
+    urgency: 'normal' | 'warning' | 'danger';
+    isOverdue: boolean;
+}
+
+export function getSlaCountdownConfig(deadline?: string | null, status?: string | null): SlaCountdownConfig {
+    if (!deadline || isStatusTerminal(status)) {
+        return {
+            timeLeft: '-',
+            urgency: 'normal',
+            isOverdue: false,
+        };
+    }
+
+    const target = new Date(deadline).getTime();
+    if (isNaN(target)) {
+        return {
+            timeLeft: '-',
+            urgency: 'normal',
+            isOverdue: false,
+        };
+    }
+
+    const now = Date.now();
+    const diff = target - now;
+
+    if (diff <= 0) {
+        return {
+            timeLeft: 'OVERDUE',
+            urgency: 'danger',
+            isOverdue: true,
+        };
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days > 0) {
+        return {
+            timeLeft: `${days}d ${hours}h`,
+            urgency: days < 1 ? 'warning' : 'normal',
+            isOverdue: false,
+        };
+    }
+
+    return {
+        timeLeft: `${hours}h ${minutes}m`,
+        urgency: hours < 4 ? 'danger' : 'warning',
+        isOverdue: false,
+    };
+}
+
+export interface ContractTypeBadgeConfig {
+    label: string;
+    bgClass: string;
+    textClass: string;
+    borderClass: string;
+}
+
+export function getContractTypeBadgeConfig(typeName?: string | null): ContractTypeBadgeConfig {
+    const name = (typeName || 'UMUM').toUpperCase().trim();
+
+    if (name.includes('NDA') || name.includes('RAHASIA')) {
+        return {
+            label: name,
+            bgClass: 'bg-purple-600',
+            textClass: 'text-white',
+            borderClass: 'border-transparent',
+        };
+    }
+
+    if (name.includes('MOU') || name.includes('NOTA')) {
+        return {
+            label: name,
+            bgClass: 'bg-blue-600',
+            textClass: 'text-white',
+            borderClass: 'border-transparent',
+        };
+    }
+
+    if (name.includes('VENDOR') || name.includes('PKS') || name.includes('KERJASAMA')) {
+        return {
+            label: name,
+            bgClass: 'bg-indigo-600',
+            textClass: 'text-white',
+            borderClass: 'border-transparent',
+        };
+    }
+
+    if (name.includes('SPK') || name.includes('PERINTAH')) {
+        return {
+            label: name,
+            bgClass: 'bg-amber-600',
+            textClass: 'text-white',
+            borderClass: 'border-transparent',
+        };
+    }
+
+    return {
+        label: name,
+        bgClass: 'bg-slate-700',
+        textClass: 'text-white',
+        borderClass: 'border-transparent',
+    };
+}
 
 export function ExpiryBadge({ endDate, className }: Readonly<{ endDate: string | null; className?: string }>) {
     const config = getExpiryBadgeConfig(endDate);
@@ -65,8 +284,8 @@ export const SLACountdown = ({ deadline, status }: Readonly<{ deadline: string |
                 getUrgencyStyles(),
             )}
         >
-            <Clock size={10} className={urgency === 'danger' ? 'animate-pulse' : ''} />
-            {timeLeft}
+            <Clock size={10} className={config.urgency === 'danger' ? 'animate-pulse' : ''} />
+            {config.timeLeft}
         </div>
     );
 };

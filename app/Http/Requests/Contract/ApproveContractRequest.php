@@ -24,7 +24,9 @@ class ApproveContractRequest extends FormRequest
     {
         return [
             'note' => 'nullable|string',
-            'attachment' => 'nullable|file|max:10240', // 10MB limit
+            'attachment' => 'nullable|file|max:20480', // 20MB limit
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'nullable|file|max:20480',
             'assigned_pic_id' => 'nullable|uuid|exists:m_users,id',
             'execution_order' => 'nullable|string',
             'signer_user_ids' => 'nullable|array',

@@ -12,9 +12,12 @@ export * from './dialogs/Popover';
 export * from './dialogs/Sheet';
 
 // Feedback
+export * from './feedback/ActionTag';
 export * from './feedback/Alert';
 export * from './feedback/Badge';
+export * from './feedback/ChipIcon';
 export * from './feedback/ContractSkeleton';
+export * from './feedback/DocumentTag';
 export * from './feedback/EmptyState';
 export * from './feedback/LoadingLottie';
 export * from './feedback/Skeleton';

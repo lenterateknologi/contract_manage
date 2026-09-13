@@ -7,8 +7,8 @@ import { contractApi } from '@/pages/contracts/utils';
 import { cn } from '@/lib/utils';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
-import { router } from '@inertiajs/react';
-import { AppIcon, Icons } from '@/components/ui';
+import { router, usePage } from '@inertiajs/react';
+import { AppIcon, Icons, getActionConfig } from '@/components/ui';
 
 const {
     AlertCircle,
@@ -49,6 +49,8 @@ import { TooltipProvider } from '@/components/ui/feedback/Tooltip';
 import { ActionPreviewTooltip, getActionTransitionPreview } from '@/pages/contracts/components/parts/ActionPreviewTooltip';
 
 import { DraftEditableInfoCard, RequesterInfoCard, VendorInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
+import { ContractDetailHeader } from '@/pages/contracts/components/parts/ContractDetailHeader';
+import { ContractActionSection } from '@/pages/contracts/components/parts/ContractActionSection';
 
 // Lazy load modals
 const SharedAddhocModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
@@ -112,8 +114,11 @@ const ContractDetailView = ({
     setPreviewHasFile: (has: boolean) => void;
     setPreviewOpen: (open: boolean) => void;
 }) => {
+    const { masterContractStatuses } = usePage<any>().props;
     const params = new URLSearchParams(window.location.search);
-    const [detailTab, setDetailTabState] = useState((params.get('tab') as any) || 'documents');
+    const rawTab = (params.get('tab') as string) || 'documents';
+    const initialTab = rawTab === 'reference' ? 'references' : rawTab;
+    const [detailTab, setDetailTabState] = useState(initialTab);
     const [docSubTab, setDocSubTabState] = useState<'f1' | 'f2' | 'agreement'>((params.get('subtab') as any) || 'f1');
     const [partySubTab, setPartySubTabState] = useState<'requester' | 'vendor'>((params.get('partysubtab') as any) || 'requester');
     const [discSubTab, setDiscSubTabState] = useState<'chat' | 'members'>((params.get('discsubtab') as any) || 'chat');
@@ -161,29 +166,43 @@ const ContractDetailView = ({
     const [rejectOpen, setRejectOpen] = useState(false);
     const [addhocOpen, setAddhocOpen] = useState(false);
     const [showSpecialActions, setShowSpecialActions] = useState(false);
-
-    const [headerTitle, setHeaderTitle] = useState(contract.title);
-    const [isEditingTitle, setIsEditingTitle] = useState(false);
-    const isDraftTitle = contract.status === 'draft' && contract.workflow_step?.meta?.allow_info_edit !== false && (contract.can_approve || contract.created_by === meId);
+    const canEditTitle =
+        contract.workflow_step?.meta?.allow_info_edit !== false &&
+        (contract.can_approve || contract.created_by === meId || contract.initiated_by_id === meId);
 
     const [hasInfoChanges, setHasInfoChanges] = useState(false);
     const [infoSaving, setInfoSaving] = useState(false);
-    const saveInfoRef = React.useRef<(() => Promise<void>) | null>(null);
-    const resetInfoRef = React.useRef<(() => void) | null>(null);
+    const [hasFormChanges, setHasFormChanges] = useState(false);
+    const saveInfoCardRef = React.useRef<(() => Promise<void>) | null>(null);
+    const resetInfoCardRef = React.useRef<(() => void) | null>(null);
+    const saveFormRef = React.useRef<(() => Promise<void>) | null>(null);
 
-    const onSaveInfoChanges = () => saveInfoRef.current?.();
-    const onResetInfoChanges = () => resetInfoRef.current?.();
+    const isAnyDirty = hasInfoChanges || hasFormChanges;
 
-    useEffect(() => {
-        setHeaderTitle(contract.title);
-    }, [contract.title]);
+    const onSaveAllChanges = async () => {
+        setInfoSaving(true);
+        try {
+            if (hasInfoChanges && saveInfoCardRef.current) {
+                await saveInfoCardRef.current();
+            }
+            if (hasFormChanges && saveFormRef.current) {
+                await saveFormRef.current();
+            }
+        } finally {
+            setInfoSaving(false);
+        }
+    };
 
-    const handleTitleBlur = () => {
-        setIsEditingTitle(false);
-        if (headerTitle.trim() && headerTitle !== contract.title) {
-            handleUpdate({ title: headerTitle }, true);
-        } else {
-            setHeaderTitle(contract.title);
+    const onResetAllChanges = () => {
+        resetInfoCardRef.current?.();
+    };
+
+    const autoSaveDirtyDataBeforeAction = async () => {
+        if (hasInfoChanges && saveInfoCardRef.current) {
+            await saveInfoCardRef.current();
+        }
+        if (hasFormChanges && saveFormRef.current) {
+            await saveFormRef.current();
         }
     };
 
@@ -207,7 +226,7 @@ const ContractDetailView = ({
 
     const handleApprove = async (
         note: string,
-        attachment?: File,
+        attachment?: File | File[],
         assignedPicId?: string,
         executionOrder?: string,
         signerUserIds?: string[],
@@ -217,6 +236,7 @@ const ContractDetailView = ({
         actionId?: string,
     ) => {
         try {
+            await autoSaveDirtyDataBeforeAction();
             let c: Contract;
             c = await contractApi.approve(
                 contract.id,
@@ -245,8 +265,9 @@ const ContractDetailView = ({
         }
     };
 
-    const handleReject = async (reason: string, attachment?: File) => {
+    const handleReject = async (reason: string, attachment?: File | File[]) => {
         try {
+            await autoSaveDirtyDataBeforeAction();
             const updated = await contractApi.reject(contract.id, reason, attachment, activeStepAction?.id);
             onUpdate(updated);
             showToast('Kontrak ditolak.', 'info');
@@ -304,7 +325,12 @@ const ContractDetailView = ({
     }, [activePendingApproval, contract.approvals]);
 
     const applicableStepActions = useMemo(() => {
-        return contract.workflow_step?.actions || [];
+        const rawActions = contract.workflow_step?.actions || [];
+        return [...rawActions].sort((a: any, b: any) => {
+            const orderA = a.transition_config?.order ?? 999;
+            const orderB = b.transition_config?.order ?? 999;
+            return orderA - orderB;
+        });
     }, [contract.workflow_step?.actions]);
 
     // Custom / Default Actions Evaluation
@@ -633,87 +659,18 @@ const ContractDetailView = ({
 
     return (
         <div className="mx-auto flex w-full max-w-full flex-1 flex-col relative h-full overflow-hidden">
-            {/* Action & Status Header Bar (h-16 matching sub side nav, no shadow) */}
-            <div className="sticky top-0 z-50 flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between px-5 bg-background border-b border-border transition-all duration-200 box-border gap-3">
-                {/* Left Side: Document Title (Editable) + Section Breadcrumb */}
-                <div className="flex items-center gap-2.5 min-w-0 flex-shrink">
-                    <div className="flex flex-col justify-center min-w-0">
-                        {isEditingTitle && isDraftTitle ? (
-                            <input
-                                autoFocus
-                                value={headerTitle}
-                                onChange={(e) => setHeaderTitle(e.target.value)}
-                                onBlur={handleTitleBlur}
-                                onKeyDown={(e) => { if (e.key === 'Enter') handleTitleBlur(); }}
-                                className="text-foreground text-[14px] font-bold bg-muted border-b border-primary focus:outline-none min-w-[280px] md:min-w-[450px] px-2 py-0.5 rounded leading-tight"
-                                placeholder="Masukkan judul dokumen..."
-                            />
-                        ) : (
-                            <div className="flex items-center gap-2 min-w-0">
-                                <h1 
-                                    className={cn(
-                                        'text-foreground text-[14px] font-bold tracking-tight truncate max-w-[360px] md:max-w-[550px] leading-tight',
-                                        isDraftTitle && 'cursor-pointer hover:text-primary transition-colors'
-                                    )}
-                                    onClick={() => { if (isDraftTitle) setIsEditingTitle(true); }}
-                                    title={isDraftTitle ? "Klik untuk mengedit judul" : contract.title}
-                                >
-                                    {contract.title || <span className="italic text-muted-foreground">Tanpa Judul</span>}
-                                </h1>
-                                {isDraftTitle && (
-                                    <span className="text-[10px] text-muted-foreground/60 font-normal select-none">(edit)</span>
-                                )}
-                            </div>
-                        )}
-                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 leading-tight truncate">
-                            <span>{currentActiveTab?.label || 'Dokumen'}</span>
-                            {currentActiveSubLabel && (
-                                <>
-                                    <span className="opacity-40">/</span>
-                                    <span className="text-primary font-semibold">{currentActiveSubLabel}</span>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Column: Status & Save Buttons */}
-                <div className="flex items-center gap-3 shrink-0">
-                    <StatusBadge status={contract.status} statusInfo={contract.status_info} />
-
-                    {/* Save button in navbar when contract info has changes */}
-                    {hasInfoChanges && (
-                        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-right-3 duration-200">
-                            <button
-                                type="button"
-                                onClick={() => onResetInfoChanges?.()}
-                                disabled={infoSaving}
-                                className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-all cursor-pointer disabled:opacity-50"
-                            >
-                                Batal
-                            </button>
-                            <Button
-                                variant="primary"
-                                onClick={() => onSaveInfoChanges?.()}
-                                disabled={infoSaving}
-                                className="h-8 px-4 text-xs font-bold shadow-xs transition-all flex items-center gap-1.5"
-                            >
-                                {infoSaving ? (
-                                    <>
-                                        <Loader2 size={14} className="animate-spin" />
-                                        <span>Menyimpan...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Check size={14} />
-                                        <span>Simpan Perubahan</span>
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/* Action & Status Header Bar */}
+            <ContractDetailHeader
+                contract={contract}
+                canEditTitle={canEditTitle}
+                currentActiveTabLabel={currentActiveTab?.label || 'Dokumen'}
+                currentActiveSubLabel={currentActiveSubLabel}
+                isAnyDirty={isAnyDirty}
+                infoSaving={infoSaving}
+                onUpdateTitle={(newTitle) => handleUpdate({ title: newTitle }, true)}
+                onResetAllChanges={onResetAllChanges}
+                onSaveAllChanges={onSaveAllChanges}
+            />
 
             <div className="flex-1 min-h-0 overflow-hidden p-3 lg:p-4 h-[calc(100vh-64px)]">
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_390px] h-full min-h-0 items-start">
@@ -779,9 +736,9 @@ const ContractDetailView = ({
                                                         vendors={vendors}
                                                         meUser={meUser}
                                                         onUpdate={onUpdate}
-                                                        onFormDirty={(dirty) => setHasInfoChanges(dirty)}
+                                                        onFormDirty={(dirty) => setHasFormChanges(dirty)}
                                                         onFormSave={(fn) => {
-                                                            saveInfoRef.current = fn;
+                                                            saveFormRef.current = fn;
                                                         }}
                                                     />
                                                 )}
@@ -792,9 +749,9 @@ const ContractDetailView = ({
                                                         vendors={vendors}
                                                         meUser={meUser}
                                                         onUpdate={onUpdate}
-                                                        onFormDirty={(dirty) => setHasInfoChanges(dirty)}
+                                                        onFormDirty={(dirty) => setHasFormChanges(dirty)}
                                                         onFormSave={(fn) => {
-                                                            saveInfoRef.current = fn;
+                                                            saveFormRef.current = fn;
                                                         }}
                                                     />
                                                 )}
@@ -879,388 +836,47 @@ const ContractDetailView = ({
                 {/* Right Column: Panel Informasi & Aksi */}
                 <div className="flex flex-col gap-3.5 min-w-0 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-6">
                     {/* SECTION: AKSI PERSYARATAN & APPROVAL (WRAPPED IN CARD) */}
-                    {(availableCustomActions.length > 0 || (canApprove && contract.workflow_step?.meta?.show_action_panel !== false)) && (
-                        <TooltipProvider delayDuration={100}>
-                            <div className="bg-card text-card-foreground border-border/80 shadow-xs rounded-xl border p-4 space-y-3.5">
-                                <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                                    <div className="flex items-center gap-2">
-                                        <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
-                                            <CheckCircle2 size={16} />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xs font-bold text-foreground">Aksi & Persetujuan</h3>
-                                            <p className="text-[10px] text-muted-foreground">Tindakan yang tersedia pada tahap ini</p>
-                                        </div>
-                                    </div>
-                                    {contract.workflow_step?.name && (
-                                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground">
-                                            {contract.workflow_step.name}
-                                        </span>
-                                    )}
-                                </div>
+                    <ContractActionSection
+                        contract={contract}
+                        canApprove={canApprove}
+                        availableCustomActions={availableCustomActions}
+                        applicableStepActions={applicableStepActions}
+                        isStepActionLocked={isStepActionLocked}
+                        isSubStepReviewer={isSubStepReviewer}
+                        isSigner={isSigner}
+                        stepDownloaded={stepDownloaded}
+                        signingUploading={signingUploading}
+                        showSpecialActions={showSpecialActions}
+                        masterContractStatuses={masterContractStatuses}
+                        onToggleSpecialActions={() => setShowSpecialActions(!showSpecialActions)}
+                        onActionClick={(action, actionCode) => {
+                            const code = (actionCode || action?.action_code)?.toLowerCase();
+                            setActiveStepAction(action);
+                            setActiveActionCode(actionCode || action?.action_code);
 
-                                {/* CUSTOM / SPECIAL ACTIONS */}
-                                {(() => {
-                                    const hasPic = !!(
-                                        contract.assigned_pic_id ||
-                                        contract.metadata?.assigned_pic_id ||
-                                        (contract as any)?.assigned_pic ||
-                                        (contract as any)?.assignedPic
-                                    );
-                                    const assignedPicName = contract.assigned_pic?.name || (contract as any)?.assignedPic?.name;
-                                    const hasSigners = (contract.approvals || []).some(
-                                        (a: any) => a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'
-                                    );
-
-                                    const canToggleAccess = availableCustomActions.some((a) => a.action_code === 'toggle_access' || a.id === 'action_toggle_access');
-                                    const canAssignPic = availableCustomActions.some((a) => a.action_code === 'assign' || a.id === 'action_assign_pic');
-                                    const canSignature = availableCustomActions.some((a) => a.action_code === 'signature' || a.id === 'action_signature');
-                                    const canAdhoc = availableCustomActions.some((a) => a.action_code === 'forward' || a.id === 'action_adhoc');
-
-                                    const picAction = availableCustomActions.find((a) => a.action_code === 'assign' || a.id === 'action_assign_pic');
-                                    const sigAction = availableCustomActions.find((a) => a.action_code === 'signature' || a.id === 'action_signature');
-                                    const adhocAction = availableCustomActions.find((a) => a.action_code === 'forward' || a.id === 'action_adhoc');
-                                    const toggleAction = availableCustomActions.find((a) => a.action_code === 'toggle_access' || a.id === 'action_toggle_access');
-
-                                    const visibleActionCount = [canAssignPic, canSignature, canAdhoc].filter(Boolean).length;
-                                    if (visibleActionCount === 0 && !canToggleAccess) return null;
-
-                                    return (
-                                        <div className="flex flex-col gap-2">
-                                            {/* 0. BUTTON KHUSUS: BUKA / KUNCI SEMUA AKSI TAMBAHAN */}
-                                            {canToggleAccess && (
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={() => setShowSpecialActions(!showSpecialActions)}
-                                                    className="w-full justify-between font-bold bg-slate-700 hover:bg-slate-800 text-white cursor-pointer shadow-md transition-all h-9"
-                                                >
-                                                    <div className="flex items-center gap-2">
-                                                        {showSpecialActions ? (
-                                                            <Unlock size={15} className="text-amber-300" />
-                                                        ) : (
-                                                            <Lock size={15} className="text-slate-300" />
-                                                        )}
-                                                        <span>
-                                                            {showSpecialActions 
-                                                                ? 'Sembunyikan Opsi Tambahan' 
-                                                                : (toggleAction?.alias || 'Buka Semua Opsi Tambahan')}
-                                                        </span>
-                                                    </div>
-                                                    {showSpecialActions ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                                                </Button>
-                                            )}
-
-                                            {/* 1. BUTTON TENTUKAN / GANTI PIC */}
-                                            {canAssignPic && (
-                                                <ActionPreviewTooltip preview={getActionTransitionPreview(picAction || { action_code: 'assign' }, contract)}>
-                                                    <Button
-                                                        variant="primary"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setActiveActionCode('assign');
-                                                            setAssignOpen(true);
-                                                        }}
-                                                        className="w-full justify-between bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3"
-                                                    >
-                                                        <div className="flex items-center gap-2 truncate">
-                                                            <UserCheck size={16} className="shrink-0" />
-                                                            <span className="text-xs truncate">{hasPic ? (picAction?.alias ? `Ubah ${picAction.alias}` : 'Ubah / Ganti PIC') : (picAction?.alias || 'Tentukan PIC Kontrak')}</span>
-                                                        </div>
-                                                        <span className={cn(
-                                                            "text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 border",
-                                                            hasPic 
-                                                                ? "bg-emerald-500/20 text-emerald-100 border-emerald-400/40" 
-                                                                : "bg-amber-400/20 text-amber-100 border-amber-300/40"
-                                                        )}>
-                                                            {hasPic 
-                                                                ? (contract.assigned_pic?.name || contract.assignedPic?.name || 'Sudah Ada PIC') 
-                                                                : 'Belum Ada PIC'}
-                                                        </span>
-                                                    </Button>
-                                                </ActionPreviewTooltip>
-                                            )}
-
-                                            {/* 2. BUTTON TENTUKAN TANDA TANGAN */}
-                                            {canSignature && (
-                                                <ActionPreviewTooltip preview={getActionTransitionPreview(sigAction || { action_code: 'signature' }, contract)}>
-                                                    <Button
-                                                        variant="primary"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setActiveActionCode('signature');
-                                                            setSignerOpen(true);
-                                                        }}
-                                                        className="w-full justify-center bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
-                                                    >
-                                                        <PenTool size={16} />
-                                                        <span className="text-xs">{hasSigners ? (sigAction?.alias ? `Ubah ${sigAction.alias}` : 'Ubah Penandatangan') : (sigAction?.alias || 'Tentukan Penandatangan')}</span>
-                                                    </Button>
-                                                </ActionPreviewTooltip>
-                                            )}
-
-                                            {/* 3. BUTTON TAMBAH APPROVAL TAMBAHAN / AD-HOC */}
-                                            {canAdhoc && (
-                                                <ActionPreviewTooltip preview={getActionTransitionPreview(adhocAction || { action_code: 'forward' }, contract)}>
-                                                    <Button
-                                                        variant="primary"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setActiveActionCode('forward');
-                                                            setAddhocOpen(true);
-                                                        }}
-                                                        className="w-full justify-center bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
-                                                    >
-                                                        <UserPlus size={16} />
-                                                        <span className="text-xs">{adhocAction?.alias || 'Tambah Persetujuan Ad-Hoc'}</span>
-                                                    </Button>
-                                                </ActionPreviewTooltip>
-                                            )}
-                                        </div>
-                                    );
-                                })()}
-
-                                {/* MAIN STEP ACTIONS */}
-                                {canApprove && contract.workflow_step?.meta?.show_action_panel !== false && (
-                                    <div className="flex flex-col gap-2 pt-1 border-t border-border/40 mt-1">
-                                        {isStepActionLocked && !isSubStepReviewer ? (
-                                            <div className="flex flex-col items-center justify-center p-3 text-center bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-1.5">
-                                                <AlertCircle size={20} className="text-amber-600 dark:text-amber-400" />
-                                                <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
-                                                    Aksi Utama Terkunci
-                                                </span>
-                                                <p className="text-[10px] text-amber-600/90 dark:text-amber-400/90 leading-tight">
-                                                    Harap selesaikan aksi khusus yang dipersyaratkan di atas terlebih dahulu untuk membuka tombol persetujuan ini.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                {applicableStepActions.length > 0 ? (
-                                                    <div className="flex flex-col gap-2">
-                                                        {applicableStepActions.map((action: any) => {
-                                                            const isApproveType = ['approve', 'assign', 'sign', 'signature'].includes(
-                                                                action.action_code?.toLowerCase(),
-                                                            );
-                                                            const isRejectType = ['reject'].includes(action.action_code?.toLowerCase());
-                                                            const isForwardType = ['forward', 'add_adhoc'].includes(action.action_code?.toLowerCase());
-                                                            const isBranchType = ['branch', 'cross_workflow'].includes(action.action_code?.toLowerCase());
-
-                                                            let customColorClass = 'bg-slate-700 hover:bg-slate-800 text-white';
-                                                            let Icon = CheckCircle2;
-
-                                                            if (isApproveType) {
-                                                                Icon = CheckCircle2;
-                                                                if (action.action_code === 'assign') Icon = UserCheck;
-                                                                if (['sign', 'signature'].includes(action.action_code)) Icon = PenTool;
-                                                                customColorClass = 'bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white shadow-md hover:shadow-lg';
-                                                            } else if (isRejectType) {
-                                                                Icon = AlertCircle;
-                                                                customColorClass = 'bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white shadow-md hover:shadow-lg';
-                                                            } else if (isForwardType) {
-                                                                Icon = UserPlus;
-                                                                customColorClass = 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white shadow-md hover:shadow-lg';
-                                                            } else if (isBranchType) {
-                                                                Icon = GitBranch;
-                                                                customColorClass = 'bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white shadow-md hover:shadow-lg';
-                                                            }
-
-                                                            const preview = getActionTransitionPreview(action, contract);
-
-                                                            const isAssignPicAction = action.action_code === 'assign' || action.action_code === 'assign_pic' || (action.action_code === 'approve' && contract.requires_pic_assignment);
-                                                            const hasPicAssigned = !!(contract.assigned_pic_id || contract.assigned_pic || contract.assignedPic);
-
-                                                            return (
-                                                                <ActionPreviewTooltip key={action.id} preview={preview}>
-                                                                    <Button
-                                                                        onClick={() => {
-                                                                            const code = action.action_code?.toLowerCase();
-                                                                            setActiveStepAction(action);
-                                                                            setActiveActionCode(action.action_code);
-                                                                            if (isForwardType) {
-                                                                                setAddhocOpen(true);
-                                                                            } else if (isRejectType) {
-                                                                                setRejectOpen(true);
-                                                                            } else if (code === 'assign' || code === 'assign_pic') {
-                                                                                setAssignOpen(true);
-                                                                            } else if (code === 'sign' || code === 'signature') {
-                                                                                const hasSignersAssigned = (contract?.approvals || []).some(
-                                                                                    (a: any) => String(a.workflow_step_id) === String(contract.workflow_step_id) && 
-                                                                                                (a.role === 'Penandatangan' || a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === action.alias)
-                                                                                );
-                                                                                if (hasSignersAssigned) {
-                                                                                    setApproveOpen(true);
-                                                                                } else {
-                                                                                    setSignerOpen(true);
-                                                                                }
-                                                                            } else {
-                                                                                setApproveOpen(true);
-                                                                            }
-                                                                        }}
-                                                                        className={cn(
-                                                                            "w-full h-9.5 font-bold shadow-md cursor-pointer gap-2 transition-all", 
-                                                                            isAssignPicAction ? "justify-between px-3" : "justify-center",
-                                                                            customColorClass
-                                                                        )}
-                                                                    >
-                                                                        <div className="flex items-center gap-2 truncate">
-                                                                            <Icon size={16} className="shrink-0" />
-                                                                            <span className="truncate">
-                                                                                {action.alias ||
-                                                                                    (action.action_code === 'approve'
-                                                                                        ? contract.workflow_step?.step === 1
-                                                                                            ? 'Kirim Persetujuan'
-                                                                                            : contract.requires_pic_assignment
-                                                                                                ? 'Tugaskan PIC'
-                                                                                                : 'Setujui Kontrak'
-                                                                                        : action.action_code === 'forward'
-                                                                                            ? 'Approval Tambahan'
-                                                                                        : action.action_code === 'branch'
-                                                                                            ? 'Pindah Workflow'
-                                                                                        : action.action_code === 'reject'
-                                                                                            ? 'Tolak Kontrak'
-                                                                                        : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
-                                                                                            ? 'Upload Tanda Tangan'
-                                                                                            : action.action_code)}
-                                                                            </span>
-                                                                        </div>
-                                                                        {isAssignPicAction && (
-                                                                            <span className={cn(
-                                                                                "text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 border",
-                                                                                hasPicAssigned 
-                                                                                    ? "bg-emerald-500/20 text-emerald-100 border-emerald-400/40" 
-                                                                                    : "bg-amber-400/20 text-amber-100 border-amber-300/40"
-                                                                            )}>
-                                                                                {hasPicAssigned 
-                                                                                    ? (contract.assigned_pic?.name || contract.assignedPic?.name || 'Sudah Ada PIC') 
-                                                                                    : 'Belum Ada PIC'}
-                                                                            </span>
-                                                                        )}
-                                                                    </Button>
-                                                                </ActionPreviewTooltip>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                ) : isSubStepReviewer ? (
-                                                    <div className="flex flex-col gap-2">
-                                                        <ActionPreviewTooltip preview={getActionTransitionPreview(null, contract, { isSubStep: true, actionCode: 'approve' })}>
-                                                            <Button
-                                                                onClick={() => {
-                                                                    setActiveStepAction(null);
-                                                                    setActiveActionCode('approve');
-                                                                    setApproveOpen(true);
-                                                                }}
-                                                                className="w-full h-9.5 font-bold shadow-md cursor-pointer gap-2 transition-all bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white"
-                                                            >
-                                                                <CheckCircle2 size={16} className="shrink-0" />
-                                                                <span>Setujui Penelaahan</span>
-                                                            </Button>
-                                                        </ActionPreviewTooltip>
-
-                                                        <ActionPreviewTooltip preview={getActionTransitionPreview(null, contract, { isSubStep: true, actionCode: 'reject' })}>
-                                                            <Button
-                                                                onClick={() => {
-                                                                    setActiveStepAction(null);
-                                                                    setActiveActionCode('reject');
-                                                                    setRejectOpen(true);
-                                                                }}
-                                                                className="w-full h-9.5 font-bold shadow-md cursor-pointer gap-2 transition-all bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white"
-                                                            >
-                                                                <AlertCircle size={16} className="shrink-0" />
-                                                                <span>Tolak / Kembalikan Catatan</span>
-                                                            </Button>
-                                                        </ActionPreviewTooltip>
-                                                    </div>
-                                                ) : isSigner ? (
-                                                    <div className="flex flex-col gap-2">
-                                                        <Button
-                                                            variant="primary"
-                                                            onClick={() => handleSigningAction('download')}
-                                                            className="w-full gap-2 bg-blue-600 hover:bg-blue-700 text-xs text-white font-bold uppercase shadow-md hover:shadow-lg transition-all h-9"
-                                                        >
-                                                            <Download size={16} /> Download Draft
-                                                        </Button>
-
-                                                        <div>
-                                                            <input
-                                                                type="file"
-                                                                id="sidebar-upload-draft"
-                                                                className="hidden"
-                                                                accept=".docx,.DOCX"
-                                                                onChange={(e) => {
-                                                                    const f = e.target.files?.[0];
-                                                                    if (f) handleSigningAction('upload', f);
-                                                                }}
-                                                                disabled={!stepDownloaded || signingUploading}
-                                                            />
-                                                            <ActionPreviewTooltip preview={getActionTransitionPreview(null, contract, { isSigner: true })}>
-                                                                <Button
-                                                                    variant="primary"
-                                                                    onClick={() => document.getElementById('sidebar-upload-draft')?.click()}
-                                                                    disabled={!stepDownloaded || signingUploading}
-                                                                    className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-xs font-bold text-white uppercase shadow-md hover:shadow-lg transition-all h-9"
-                                                                >
-                                                                    {signingUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-                                                                    Upload TTD
-                                                                </Button>
-                                                            </ActionPreviewTooltip>
-                                                        </div>
-
-                                                        {!stepDownloaded && (
-                                                            <div className="mt-1 flex items-start gap-1.5 rounded-lg border border-rose-300 bg-rose-100 px-3 py-2 text-rose-900">
-                                                                <AlertCircle size={14} className="mt-0.5 shrink-0 text-rose-600" />
-                                                                <p className="text-[10px] leading-relaxed font-semibold">
-                                                                    Anda wajib mengunduh draft terlebih dahulu sebelum mengunggah hasil TTD.
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <ActionPreviewTooltip preview={getActionTransitionPreview({ action_code: 'approve' }, contract)}>
-                                                            <Button
-                                                                onClick={() => {
-                                                                    setActiveStepAction(null);
-                                                                    setActiveActionCode('approve');
-                                                                    if (contract.requires_pic_assignment) {
-                                                                        setAssignOpen(true);
-                                                                    } else {
-                                                                        setApproveOpen(true);
-                                                                    }
-                                                                }}
-                                                                className="w-full h-9.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold shadow-md hover:shadow-lg cursor-pointer gap-2 transition-all"
-                                                            >
-                                                                <CheckCircle2 size={16} />
-                                                                <span>
-                                                                    {contract.workflow_step?.step === 1
-                                                                        ? 'Kirim Persetujuan'
-                                                                        : contract.requires_pic_assignment
-                                                                            ? 'Tugaskan PIC'
-                                                                            : 'Setujui Kontrak'}
-                                                                </span>
-                                                            </Button>
-                                                        </ActionPreviewTooltip>
-                                                        <ActionPreviewTooltip preview={getActionTransitionPreview({ action_code: 'reject' }, contract)}>
-                                                            <Button
-                                                                onClick={() => {
-                                                                    setActiveStepAction(null);
-                                                                    setActiveActionCode('reject');
-                                                                    setRejectOpen(true);
-                                                                }}
-                                                                className="w-full h-9.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white font-bold shadow-md hover:shadow-lg cursor-pointer gap-2 transition-all"
-                                                            >
-                                                                <AlertCircle size={16} />
-                                                                <span>Tolak Kontrak</span>
-                                                            </Button>
-                                                        </ActionPreviewTooltip>
-                                                    </>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </TooltipProvider>
-                    )}
+                            if (['forward', 'add_adhoc'].includes(code)) {
+                                setAddhocOpen(true);
+                            } else if (['reject'].includes(code)) {
+                                setRejectOpen(true);
+                            } else if (code === 'assign' || code === 'assign_pic' || (code === 'approve' && contract.requires_pic_assignment)) {
+                                setAssignOpen(true);
+                            } else if (code === 'sign' || code === 'signature') {
+                                const hasSignersAssigned = (contract?.approvals || []).some(
+                                    (a: any) =>
+                                        String(a.workflow_step_id) === String(contract.workflow_step_id) &&
+                                        (a.role === 'Penandatangan' || a.role === 'Pihak 1' || a.role === 'Pihak 2' || (action && a.role === action.alias)),
+                                );
+                                if (hasSignersAssigned) {
+                                    setApproveOpen(true);
+                                } else {
+                                    setSignerOpen(true);
+                                }
+                            } else {
+                                setApproveOpen(true);
+                            }
+                        }}
+                        onSigningAction={handleSigningAction}
+                    />
 
                     {contract.workflow_step?.meta?.show_info !== false && (
                         <DraftEditableInfoCard
@@ -1281,8 +897,8 @@ const ContractDetailView = ({
                                 setHasInfoChanges(hasChanges);
                                 setInfoSaving(isSaving);
                             }}
-                            saveRef={saveInfoRef}
-                            resetRef={resetInfoRef}
+                            saveRef={saveInfoCardRef}
+                            resetRef={resetInfoCardRef}
                         />
                     )}
 

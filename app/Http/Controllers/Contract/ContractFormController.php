@@ -262,10 +262,11 @@ class ContractFormController extends Controller
         }
 
         // Log to contract history
+        $stepName = $contract->workflowStep?->name ? " pada [{$contract->workflowStep->name}]" : '';
         $action = $isNew ? "form_{$docType}_submitted" : "form_{$docType}_updated";
         $desc = $isNew
-            ? 'Form '.strtoupper($docType).' telah diisi (v1)'
-            : 'Form '.strtoupper($docType)." diperbarui ke v{$versionNo}".($changeSummary ? ". {$changeSummary}" : '');
+            ? 'Form '.strtoupper($docType)." telah diisi (v1){$stepName}"
+            : 'Form '.strtoupper($docType)." diperbarui ke v{$versionNo}{$stepName}".($changeSummary ? ". {$changeSummary}" : '');
 
         ContractHistory::create([
             'contract_id' => $contract->id,
@@ -495,7 +496,7 @@ class ContractFormController extends Controller
             ]]);
         }
 
-        return Inertia::render('contracts/compare-forms', [
+        return Inertia::render('contracts/compare/compare-forms', [
             'contract' => ContractFormatter::formatContract($contract),
             'docType' => $type,
             'initialV1' => request()->filled('v1') ? (int) request('v1') : null,

@@ -71,30 +71,28 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                         className="rounded-xl"
                     />
 
-                    <div className="grid gap-2">
-                        <div className="relative">
-                            <FormInput
-                                id="password"
-                                label="Kata Sandi"
-                                type={showPassword ? 'text' : 'password'}
-                                required
-                                autoComplete="current-password"
-                                value={data.password}
-                                onChange={(e) => setData('password', e.target.value)}
-                                placeholder="Kata sandi Anda"
-                                error={errors.password}
-                                className="rounded-xl pr-12"
-                            />
+                    <FormInput
+                        id="password"
+                        label="Kata Sandi"
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        autoComplete="current-password"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                        placeholder="Kata sandi Anda"
+                        error={errors.password}
+                        className="rounded-xl"
+                        rightAction={
                             <button
                                 type="button"
                                 tabIndex={-1}
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute top-10 right-4 text-slate-400 hover:text-slate-600"
+                                className="flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
                             >
                                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                             </button>
-                        </div>
-                    </div>
+                        }
+                    />
 
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">

@@ -53,6 +53,10 @@ export interface ContractApproval {
     action_alias?: string | null;
     is_active?: boolean;
     comment: string | null;
+    attachment_path?: string | null;
+    attachment_name?: string | null;
+    file_size?: number | null;
+    has_attachment?: boolean;
     decided_at: string | null;
     created_at?: string;
     step_type?: string;
@@ -103,6 +107,7 @@ export interface ContractAttachment {
     category: string;
     file_name: string;
     file_type: string;
+    file_size?: number | null;
     created_at: string;
     uploader?: UserProfile;
 }
@@ -190,6 +195,8 @@ export interface Contract {
     updated_at: string;
     updated_at_formatted?: string;
     submitted_at: string | null;
+    submitted_at_formatted?: string | null;
+    pic_assigned_at?: string | null;
     creator: UserProfile;
     metadata?: {
         tax_required?: boolean;

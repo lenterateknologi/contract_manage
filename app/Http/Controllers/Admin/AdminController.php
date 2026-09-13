@@ -33,6 +33,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
@@ -84,64 +85,66 @@ class AdminController extends Controller
 
     public function members(Request $request)
     {
-        // ponytail: lightweight select with eager relations for organizational tree mapping
-        $users = User::query()
-            ->where('is_active', true)
-            ->select([
-                'id', 'name', 'email', 'nik', 'code', 'image_src', 'is_used',
-                'company_group_id', 'region_id', 'location_id', 'company_id', 'division_id', 'department_id', 'job_position_id', 'job_level_id', 'role_id'
-            ])
-            ->with([
-                'companyGroup:id,name,code,is_used',
-                'region:id,name,code,is_used',
-                'location:id,name,code,is_used',
-                'company:id,name,code,is_used',
-                'division:id,name,code',
-                'department:id,name,code,is_used',
-                'jobTitle:id,name,code,is_used',
-                'jobLevel:id,name,code,is_used',
-                'roleRelation:id,name',
-            ])
-            ->orderBy('name')
-            ->get()
-            ->map(function ($u) {
-                return [
-                    'id' => $u->id,
-                    'name' => $u->name,
-                    'email' => $u->email,
-                    'nik' => $u->nik ?? $u->code ?? '-',
-                    'is_used' => (bool) $u->is_used,
-                    'group_id' => $u->company_group_id,
-                    'group_name' => $u->companyGroup?->name ?? 'No Group',
-                    'region_id' => $u->region_id,
-                    'region_name' => $u->region?->name ?? 'No Region',
-                    'location_id' => $u->location_id,
-                    'location_name' => $u->location?->name ?? 'No Location',
-                    'company_id' => $u->company_id,
-                    'company_name' => $u->company?->name ?? 'No Company',
-                    'division_id' => $u->division_id,
-                    'division_name' => $u->division?->name ?? $u->division_name ?? 'No Division',
-                    'department_id' => $u->department_id,
-                    'department_name' => $u->department?->name ?? 'No Department',
-                    'job_title_id' => $u->job_position_id,
-                    'job_title_name' => $u->jobTitle?->name ?? $u->jobtitle_name ?? 'No Job Title',
-                    'job_level_id' => $u->job_level_id,
-                    'job_level_name' => $u->jobLevel?->name ?? $u->joblevel_name ?? 'No Job Level',
-                    'role_name' => $u->roleRelation?->name ?? 'Member',
-                ];
-            });
+        // Cache master data and users payload for high performance (5 min TTL)
+        $users = Cache::remember('admin_members_tree_users_v2', 300, function () {
+            return User::query()
+                ->where('is_active', true)
+                ->select([
+                    'id', 'name', 'email', 'nik', 'code', 'image_src', 'is_used',
+                    'company_group_id', 'region_id', 'location_id', 'company_id', 'division_id', 'department_id', 'job_position_id', 'job_level_id', 'role_id'
+                ])
+                ->with([
+                    'companyGroup:id,name,code,is_used',
+                    'region:id,name,code,is_used',
+                    'location:id,name,code,is_used',
+                    'company:id,name,code,is_used',
+                    'division:id,name,code',
+                    'department:id,name,code,is_used',
+                    'jobTitle:id,name,code,is_used',
+                    'jobLevel:id,name,code,is_used',
+                    'roleRelation:id,name',
+                ])
+                ->orderBy('name')
+                ->get()
+                ->map(function ($u) {
+                    return [
+                        'id' => $u->id,
+                        'name' => $u->name,
+                        'email' => $u->email,
+                        'nik' => $u->nik ?? $u->code ?? '-',
+                        'is_used' => (bool) $u->is_used,
+                        'group_id' => $u->company_group_id,
+                        'group_name' => $u->companyGroup?->name ?? 'No Group',
+                        'region_id' => $u->region_id,
+                        'region_name' => $u->region?->name ?? 'No Region',
+                        'location_id' => $u->location_id,
+                        'location_name' => $u->location?->name ?? 'No Location',
+                        'company_id' => $u->company_id,
+                        'company_name' => $u->company?->name ?? 'No Company',
+                        'division_id' => $u->division_id,
+                        'division_name' => $u->division?->name ?? $u->division_name ?? 'No Division',
+                        'department_id' => $u->department_id,
+                        'department_name' => $u->department?->name ?? 'No Department',
+                        'job_title_id' => $u->job_position_id,
+                        'job_title_name' => $u->jobTitle?->name ?? $u->jobtitle_name ?? 'No Job Title',
+                        'job_level_id' => $u->job_level_id,
+                        'job_level_name' => $u->jobLevel?->name ?? $u->joblevel_name ?? 'No Job Level',
+                        'role_name' => $u->roleRelation?->name ?? 'Member',
+                    ];
+                });
+        });
 
-        $divisions = Division::query()->orderBy('name')->get(['id', 'name', 'code']);
-        $departments = Department::query()->orderBy('name')->get(['id', 'name', 'code', 'company_id', 'is_used']);
-        $departmentTraffic = $this->organizationQuery->getDepartmentTraffic();
+        $divisions = Cache::remember('admin_members_divisions', 600, fn () => Division::query()->orderBy('name')->get(['id', 'name', 'code']));
+        $departments = Cache::remember('admin_members_departments', 600, fn () => Department::query()->orderBy('name')->get(['id', 'name', 'code', 'company_id', 'is_used']));
+        $departmentTraffic = Cache::remember('admin_members_dept_traffic', 300, fn () => $this->organizationQuery->getDepartmentTraffic());
 
-        $companyGroups = CompanyGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
-        $regions = Region::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
-        $locations = Location::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
-        $companies = Company::query()->orderBy('name')->get(['id', 'name', 'code', 'company_group_id', 'region_id', 'is_used']);
-        $jobTitles = JobTitle::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
-        $jobLevels = JobLevel::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']);
-        $roles = Role::query()->orderBy('name')->get(['id', 'name']);
+        $companyGroups = Cache::remember('admin_members_company_groups', 600, fn () => CompanyGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $regions = Cache::remember('admin_members_regions', 600, fn () => Region::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $locations = Cache::remember('admin_members_locations', 600, fn () => Location::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $companies = Cache::remember('admin_members_companies', 600, fn () => Company::query()->orderBy('name')->get(['id', 'name', 'code', 'company_group_id', 'region_id', 'is_used']));
+        $jobTitles = Cache::remember('admin_members_job_titles', 600, fn () => JobTitle::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $jobLevels = Cache::remember('admin_members_job_levels', 600, fn () => JobLevel::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $roles = Cache::remember('admin_members_roles', 600, fn () => Role::query()->orderBy('name')->get(['id', 'name']));
 
         return Inertia::render('admin/Index', [
             'currentView' => 'members',

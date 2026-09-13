@@ -1,3 +1,4 @@
+import { ChipIcon } from '@/components/ui/feedback/ChipIcon';
 import { cn } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { Building2, Mail, Users } from 'lucide-react';
@@ -113,9 +114,7 @@ export function MembersPerDivision({ users: propUsers, departments: propDepts, d
                             {/* Department Header */}
                             <div className="border-surface-border/20 mb-3 flex items-start justify-between border-b pb-2">
                                 <div className="flex min-w-0 items-center gap-2">
-                                    <div className="bg-primary/10 text-primary border-primary/10 shrink-0 rounded-md border p-1.5">
-                                        <Building2 size={14} />
-                                    </div>
+                                    <ChipIcon icon={Building2} size="md" bg="bg-primary" shape="rounded" />
                                     <div className="min-w-0">
                                         <h3 className="text-text-main truncate text-xs font-semibold tracking-tight uppercase" title={deptName}>
                                             {deptName}
@@ -125,7 +124,7 @@ export function MembersPerDivision({ users: propUsers, departments: propDepts, d
                                         </span>
                                     </div>
                                 </div>
-                                <span className="bg-primary/10 text-primary/80 border-primary/10 shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase">
+                                <span className="bg-primary text-white border-transparent shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase shadow-none">
                                     {deptMembers.length}
                                 </span>
                             </div>

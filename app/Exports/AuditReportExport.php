@@ -45,13 +45,23 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, W
 
     public function map($history): array
     {
+        $desc = $history->description ?? '';
+        $customLabel = null;
+        if (preg_match('/^([^\n]+?)(?:\s+pada\s+\[|\s+oleh\s+:?)/iu', $desc, $matches)) {
+            $candidate = trim($matches[1]);
+            if (mb_strlen($candidate) <= 35) {
+                $customLabel = $candidate;
+            }
+        }
+        $label = $customLabel ?: ucwords(str_replace('_', ' ', strtolower($history->action)));
+
         return [
-            $history->created_at ? $history->created_at->toDateTimeString() : '—',
+            $history->created_at ? $history->created_at->format('d/m/Y H:i') : '—',
             $this->contract->form_no ?? '—',
             $this->contract->title ?? '—',
-            strtoupper($history->action),
+            mb_strtoupper($label),
             $history->description,
-            $history->actor->name ?? '—',
+            $history->actor->name ?? 'System',
         ];
     }
 

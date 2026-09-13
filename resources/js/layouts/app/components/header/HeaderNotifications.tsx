@@ -19,7 +19,7 @@ import {
     UserCheck,
     XCircle,
 } from 'lucide-react';
-import { memo, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useState } from 'react';
 
 interface NotificationItem {
     id: string;
@@ -48,7 +48,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
         }
     });
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const { data } = await axios.get<NotificationItem[]>('/api/services/notifications');
             setNotifications(data);
@@ -57,13 +57,43 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 15000);
-        return () => clearInterval(interval);
-    }, []);
+
+        let interval: NodeJS.Timeout | null = null;
+
+        const startPolling = () => {
+            if (!interval) {
+                interval = setInterval(fetchNotifications, 20000);
+            }
+        };
+
+        const stopPolling = () => {
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                fetchNotifications();
+                startPolling();
+            }
+        };
+
+        startPolling();
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            stopPolling();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+    }, [fetchNotifications]);
 
     const saveReadIds = (ids: string[]) => {
         setReadIds(ids);

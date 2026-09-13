@@ -194,9 +194,14 @@ class ContractDashboardQuery
             ->pluck('count', 'assigned_pic_id');
 
         $pendingCounts = DB::table('t_approvals')
-            ->where('status', 'pending')
-            ->select('user_id', DB::raw('count(*) as count'))
-            ->groupBy('user_id')
+            ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
+            ->where('t_approvals.status', 'pending')
+            ->whereIn('t_contracts.status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value, 'pending'])
+            ->whereNull('t_contracts.deleted_at')
+            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+            ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
+            ->select('t_approvals.user_id', DB::raw('count(DISTINCT t_approvals.contract_id) as count'))
+            ->groupBy('t_approvals.user_id')
             ->pluck('count', 'user_id');
 
         $initiatedCounts = DB::table('mv_dashboard_contracts')
@@ -205,10 +210,15 @@ class ContractDashboardQuery
             ->pluck('count', 'user_id');
 
         $pendingThisMonth = DB::table('t_approvals')
-            ->where('status', 'pending')
-            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-            ->select('user_id', DB::raw('count(*) as count'))
-            ->groupBy('user_id')
+            ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
+            ->where('t_approvals.status', 'pending')
+            ->whereIn('t_contracts.status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value, 'pending'])
+            ->whereNull('t_contracts.deleted_at')
+            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+            ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
+            ->whereBetween('t_contracts.created_at', [$startOfMonth, $endOfMonth])
+            ->select('t_approvals.user_id', DB::raw('count(DISTINCT t_approvals.contract_id) as count'))
+            ->groupBy('t_approvals.user_id')
             ->pluck('count', 'user_id');
 
         $activeThisMonth = DB::table('mv_dashboard_contracts')
@@ -219,10 +229,13 @@ class ContractDashboardQuery
             ->pluck('count', 'assigned_pic_id');
 
         $completedApprovalsThisMonth = DB::table('t_approvals')
-            ->where('status', 'approved')
-            ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
-            ->select('user_id', DB::raw('count(*) as count'))
-            ->groupBy('user_id')
+            ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
+            ->where('t_approvals.status', 'approved')
+            ->whereNull('t_contracts.deleted_at')
+            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+            ->whereBetween('t_approvals.updated_at', [$startOfMonth, $endOfMonth])
+            ->select('t_approvals.user_id', DB::raw('count(DISTINCT t_approvals.contract_id) as count'))
+            ->groupBy('t_approvals.user_id')
             ->pluck('count', 'user_id');
 
         $completedContractsThisMonth = DB::table('mv_dashboard_contracts')
@@ -885,10 +898,13 @@ class ContractDashboardQuery
 
         // 2. Menunggu Persetujuan Saya — approvals pending for me, grouped by created_at date
         $pendingByDay = DB::table('t_approvals')
-            ->where('user_id', $userId)
-            ->where('status', 'pending')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
+            ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
+            ->where('t_approvals.user_id', $userId)
+            ->where('t_approvals.status', 'pending')
+            ->whereIn('t_contracts.status', ['in_review', 'revision', 'pending'])
+            ->whereNull('t_contracts.deleted_at')
+            ->whereBetween('t_approvals.created_at', [$startDate, $endDate])
+            ->select(DB::raw('DATE(t_approvals.created_at) as day'), DB::raw('count(DISTINCT t_approvals.contract_id) as total'))
             ->groupBy('day')
             ->pluck('total', 'day')
             ->all();

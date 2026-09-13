@@ -4,10 +4,13 @@ import { CompactSwitch } from '@/components/ui/selection/CompactSwitch';
 import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Modal } from '@/components/ui/dialogs/Modal';
+import { getFileIcon, AttachmentCategoryBadge } from '@/components/ui';
+import { cn } from '@/lib/utils';
+import { formatFileSize } from '@/lib/formatters';
 import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
-import { CheckCircle2, Loader2, UserPlus, Users, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { CheckCircle2, Loader2, Paperclip, Plus, UserPlus, Users, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface Props {
     open: boolean;
@@ -22,6 +25,7 @@ interface Props {
 export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast, actionCode, actionAlias }: Props) {
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [note, setNote] = useState('');
+    const [attachments, setAttachments] = useState<File[]>([]);
     const [isSequential, setIsSequential] = useState(false);
     const [approvalRule, setApprovalRule] = useState<'all' | 'any' | 'quorum'>('all');
     const [minApprovals, setMinApprovals] = useState<number>(1);
@@ -29,6 +33,16 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const [users, setUsers] = useState<any[]>([]);
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [selectedTargetStepId, setSelectedTargetStepId] = useState<string | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleFileDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            setAttachments((prev) => [...prev, ...Array.from(e.dataTransfer.files)]);
+        }
+    };
 
     // Helper to accurately resolve target step (supports custom_actions settings, relative transition, next_step_id, and adhoc authority lookup)
     const resolveTargetStepId = (contractData: any, actCode?: string): string | null => {
@@ -121,6 +135,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
 
             setSelectedTargetStepId(initialTargetStepId);
             setNote('');
+            setAttachments([]);
 
             // Read saved adhoc settings from contract metadata if available
             const savedAdhocMeta = contract?.metadata?.adhoc_steps?.[initialTargetStepId || ''] || {};
@@ -130,6 +145,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         } else {
             // Reset state when closed
             setSelectedUserIds([]);
+            setAttachments([]);
         }
     }, [open, contract?.id]);
 
@@ -266,6 +282,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 undefined,
                 approvalRule,
                 approvalRule === 'quorum' ? minApprovals : undefined,
+                attachments.length > 0 ? (attachments.length === 1 ? attachments[0] : attachments) : undefined,
             );
             onUpdate(updatedContract);
             showToast('Persetujuan tambahan berhasil dikaitkan.', 'success');
@@ -515,6 +532,130 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                         placeholder="Tuliskan catatan atau alasan penambahan approver..."
                         className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:border-indigo-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 resize-none"
                     />
+                </div>
+
+                {/* File Upload Section */}
+                <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                        <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-bold uppercase">Lampiran Berkas Pendukung (Opsional)</label>
+                        {attachments.length > 0 && (
+                            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                                {attachments.length} Berkas Baru Dipilih
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Existing Contract Attachments notice if any */}
+                    {contract?.attachments && contract.attachments.length > 0 && (
+                        <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/40 p-2 text-xs">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Berkas Kontrak Saat Ini ({contract.attachments.length})
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                                {contract.attachments.map((at: any, i: number) => (
+                                    <div key={at.id || i} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
+                                        {getFileIcon(at.file_name || at.label || '')}
+                                        <span className="truncate max-w-[150px] font-medium">{at.file_name || at.label}</span>
+                                        <AttachmentCategoryBadge item={at} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="mt-1 space-y-2">
+                        {attachments.length === 0 ? (
+                            <div
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => fileInputRef.current?.click()}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(true);
+                                }}
+                                onDragLeave={(e) => {
+                                    e.preventDefault();
+                                    setIsDragging(false);
+                                }}
+                                onDrop={handleFileDrop}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        fileInputRef.current?.click();
+                                    }
+                                }}
+                                className={cn(
+                                    "border-slate-200 text-slate-600 hover:border-indigo-500 hover:text-indigo-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-indigo-400 flex h-auto w-full flex-col items-center justify-center gap-1 border-2 border-dashed py-3.5 transition-all rounded-lg cursor-pointer",
+                                    isDragging && "border-indigo-500 bg-indigo-50/20 scale-[0.99]"
+                                )}
+                            >
+                                <div className="flex items-center gap-1.5">
+                                    <Paperclip size={14} className="opacity-60" />
+                                    <span className="text-xs font-bold tracking-wide">Pilih / Drag & Drop Berkas</span>
+                                </div>
+                                <span className="text-[10px] text-muted-foreground font-normal">Mendukung format PDF, Gambar, Dokumen, dan Spreadsheet</span>
+                            </div>
+                        ) : (
+                            <div className="space-y-1.5">
+                                {attachments.map((file, idx) => (
+                                    <div key={idx} className="border-slate-200 bg-slate-50/70 dark:border-slate-800 dark:bg-slate-900/40 flex items-center justify-between rounded-lg border px-3 py-1.5">
+                                        <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                                            {getFileIcon(file.name)}
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-slate-800 dark:text-slate-200 truncate text-xs font-semibold">{file.name}</span>
+                                                <span className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">{formatFileSize(file.size)}</span>
+                                            </div>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                            className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20 h-7 w-7 shrink-0"
+                                        >
+                                            <X size={14} />
+                                        </Button>
+                                    </div>
+                                ))}
+
+                                <div
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        setIsDragging(true);
+                                    }}
+                                    onDragLeave={(e) => {
+                                        e.preventDefault();
+                                        setIsDragging(false);
+                                    }}
+                                    onDrop={handleFileDrop}
+                                    className={cn(
+                                        "w-full text-xs font-semibold flex items-center justify-center gap-1.5 border border-dashed border-indigo-400/40 text-indigo-600 hover:bg-indigo-50/50 dark:text-indigo-400 h-7 mt-1 rounded-md cursor-pointer transition-all",
+                                        isDragging && "bg-indigo-50/30 border-indigo-500"
+                                    )}
+                                >
+                                    <Plus size={13} />
+                                    <span>Tambah Berkas Lainnya</span>
+                                </div>
+                            </div>
+                        )}
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            multiple
+                            className="hidden"
+                            onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                    setAttachments((prev) => [...prev, ...Array.from(e.target.files!)]);
+                                }
+                                e.target.value = '';
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
         </Modal>

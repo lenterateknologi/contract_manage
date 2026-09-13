@@ -10,14 +10,41 @@ class AttachmentFileAction
 {
     public function execute(Contract $contract, string $atId): mixed
     {
-        /** @var ContractAttachment $attachment */
-        $attachment = $contract->attachments()->findOrFail($atId);
+        $filePath = null;
+        $fileName = 'attachment';
 
-        if ($attachment->file_path && Storage::disk('local')->exists($attachment->file_path)) {
-            return response()->download(
-                Storage::disk('local')->path($attachment->file_path),
-                $attachment->file_name,
-            );
+        /** @var ContractAttachment|null $attachment */
+        $attachment = $contract->attachments()->find($atId);
+        $disk = 'local';
+        if ($attachment) {
+            $filePath = $attachment->file_path;
+            $fileName = $attachment->file_name;
+        } else {
+            /** @var \App\Models\Approval|null $approval */
+            $approval = $contract->approvals()->find($atId) ?? \App\Models\Approval::withTrashed()->where('contract_id', $contract->id)->find($atId);
+            if ($approval && $approval->attachment_path) {
+                $filePath = $approval->attachment_path;
+                $fileName = $approval->attachment_name ?: basename($approval->attachment_path);
+            } else {
+                /** @var \App\Models\ContractMessage|null $message */
+                $message = $contract->messages()->find($atId);
+                if ($message && $message->attachment_path) {
+                    $filePath = $message->attachment_path;
+                    $fileName = $message->attachment_name ?: basename($message->attachment_path);
+                    $disk = 'public';
+                }
+            }
+        }
+
+        if ($filePath && Storage::disk($disk)->exists($filePath)) {
+            $path = Storage::disk($disk)->path($filePath);
+            $mime = Storage::disk($disk)->mimeType($filePath) ?? 'application/octet-stream';
+            $disposition = request()->boolean('download') ? 'attachment' : 'inline';
+
+            return response()->file($path, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => "{$disposition}; filename=\"".basename($fileName).'"',
+            ]);
         }
 
         return response()->json(['message' => 'File not found.'], 404);

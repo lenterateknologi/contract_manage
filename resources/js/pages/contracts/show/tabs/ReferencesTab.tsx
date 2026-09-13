@@ -1,4 +1,4 @@
-import { ContractReferenceCard } from '@/pages/contracts/components/tabs/ContractReferenceCard';
+import ContractReferences from '@/components/references/ContractReferences';
 import { Contract } from '@/pages/contracts/types';
 
 interface ReferencesTabProps {
@@ -10,5 +10,7 @@ interface ReferencesTabProps {
 }
 
 export const ReferencesTab = ({ contract, canUpdate, onUpdate, processing, meId }: ReferencesTabProps) => {
-    return <ContractReferenceCard selected={contract} canUpdate={canUpdate} onUpdate={onUpdate} processing={processing} meId={meId} />;
+    return <ContractReferences contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} processing={processing} meId={meId} />;
 };
+
+export default ReferencesTab;

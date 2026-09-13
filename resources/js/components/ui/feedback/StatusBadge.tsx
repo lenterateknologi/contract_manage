@@ -1,6 +1,14 @@
 import React from 'react';
-import { cn, getStatusConfig, isLightColor, type StatusInfo } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { usePage } from '@inertiajs/react';
 import LucideIcons from '@/lib/lucide-dynamic';
+
+export interface StatusInfo {
+    label?: string;
+    color?: string;
+    bg_color?: string;
+    icon?: string | null;
+}
 
 export interface StatusBadgeProps {
     status: string;
@@ -17,15 +25,16 @@ export const StatusBadge = ({
     size = 'md',
     showIcon = true,
 }: StatusBadgeProps) => {
-    const s = getStatusConfig(status, statusInfo);
+    const pageProps = usePage<any>()?.props;
+    const masterStatuses = pageProps?.masterContractStatuses || [];
+    const masterObj = masterStatuses.find((m: any) => m.code?.toLowerCase() === (status || '').toLowerCase());
 
-    const label = statusInfo?.label || s.label;
-    const color = statusInfo?.color;
-    const bgColor = statusInfo?.bg_color;
-    const iconName = statusInfo?.icon || s.icon;
+    const label = statusInfo?.label || masterObj?.label || (status || '').toUpperCase();
+    const color = statusInfo?.color || masterObj?.color;
+    const bgColor = statusInfo?.bg_color || masterObj?.bg_color;
+    const iconName = statusInfo?.icon || masterObj?.icon;
 
     const hasCustomColors = Boolean(color || bgColor);
-    const lightBg = isLightColor(bgColor);
 
     const IconComp = showIcon && iconName && (LucideIcons as any)[iconName]
         ? (LucideIcons as any)[iconName]
@@ -50,17 +59,14 @@ export const StatusBadge = ({
             className={cn(
                 'inline-flex items-center rounded-full font-semibold tracking-tight uppercase whitespace-nowrap shadow-xs border',
                 sizeClasses,
-                !hasCustomColors && s.bg,
-                !hasCustomColors && s.text,
-                !hasCustomColors && (s.border || 'border-transparent'),
-                hasCustomColors && lightBg && 'dark:!bg-slate-800 dark:!text-slate-200',
+                !hasCustomColors && 'bg-slate-700 text-white border-transparent',
                 className,
             )}
             style={
                 hasCustomColors
                     ? {
                           backgroundColor: bgColor || undefined,
-                          color: color || undefined,
+                          color: color || '#ffffff',
                           borderColor: color ? `${color}30` : undefined,
                       }
                     : undefined
@@ -70,8 +76,8 @@ export const StatusBadge = ({
                 <IconComp size={iconSize} className="shrink-0" />
             ) : (
                 <span
-                    className={cn('h-1.5 w-1.5 rounded-full shrink-0', !color && s.dot)}
-                    style={color ? { backgroundColor: color } : undefined}
+                    className="h-1.5 w-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: color || '#ffffff' }}
                 />
             )}
             <span>{label}</span>

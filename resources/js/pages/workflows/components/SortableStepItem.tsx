@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import { cn } from '@/lib/utils';
+import LucideIcons from '@/lib/lucide-dynamic';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AppIcon, Icons } from '@/components/ui';
@@ -958,27 +959,37 @@ export default function SortableStepItem({
                                                 <SelectTrigger className="h-9.5 rounded-lg border-slate-200/80 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium focus:border-primary dark:border-zinc-700">
                                                     <SelectValue placeholder="Pilih Status" />
                                                 </SelectTrigger>
-                                                <SelectContent className="rounded-xl bg-white dark:bg-zinc-950">
+                                                <SelectContent className="rounded-xl bg-white dark:bg-zinc-950 max-h-72">
                                                     <SelectItem value="default" className="py-1.5 text-xs font-medium text-slate-500 uppercase">
                                                         DEFAULT (OTOMATIS)
                                                     </SelectItem>
-                                                    {contractStatuses.map((status: any) => (
-                                                        <SelectItem
-                                                            key={status.id}
-                                                            value={status.code}
-                                                            className="py-1.5 text-xs font-medium uppercase"
-                                                        >
-                                                            <div className="flex items-center gap-1.5">
-                                                                <div
-                                                                    className="h-2 w-2 rounded-full shrink-0"
-                                                                    style={{ backgroundColor: status.color || '#cbd5e1' }}
-                                                                />
-                                                                <span>
-                                                                    {status.code?.toUpperCase()}
-                                                                </span>
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
+                                                    {contractStatuses.map((status: any) => {
+                                                        const StatusIcon = status.icon && (LucideIcons as any)[status.icon] ? (LucideIcons as any)[status.icon] : null;
+                                                        return (
+                                                            <SelectItem
+                                                                key={status.id}
+                                                                value={status.code}
+                                                                className="py-1.5 text-xs font-medium uppercase"
+                                                            >
+                                                                <div className="flex items-center gap-2">
+                                                                    {StatusIcon ? (
+                                                                        <StatusIcon
+                                                                            className="h-3.5 w-3.5 shrink-0"
+                                                                            style={{ color: status.color || 'currentColor' }}
+                                                                        />
+                                                                    ) : (
+                                                                        <div
+                                                                            className="h-2 w-2 rounded-full shrink-0"
+                                                                            style={{ backgroundColor: status.color || '#cbd5e1' }}
+                                                                        />
+                                                                    )}
+                                                                    <span className="font-medium">
+                                                                        {status.code?.toUpperCase()}{status.label ? ` • ${status.label}` : ''}
+                                                                    </span>
+                                                                </div>
+                                                            </SelectItem>
+                                                        );
+                                                    })}
                                                 </SelectContent>
                                             </Select>
                                         </div>

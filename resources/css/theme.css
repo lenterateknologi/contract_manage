@@ -92,12 +92,12 @@
     --background: #141518;
     --foreground: #e3e5ec;
 
-    /* Primary (Soft Matte Silver-White) */
-    --primary: #e3e5ec;
-    --primary-foreground: #141518;
-    --primary-hover: #d2d5e1;
-    --primary-active: #c1c5d5;
-    --primary-muted: #25272e;
+    /* Primary (Deep Navy / Dark Blue identical to light mode) */
+    --primary: #1e3a8a; /* blue-900 */
+    --primary-foreground: #ffffff;
+    --primary-hover: #1e40af; /* blue-800 */
+    --primary-active: #172554; /* blue-950 */
+    --primary-muted: rgba(30, 58, 138, 0.25);
 
     /* Secondary (Soft Surface) */
     --secondary: #1e2026;
@@ -123,17 +123,17 @@
     /* Border & Inputs */
     --border: #282b33;
     --input: #1a1c21;
-    --ring: #d2d5e1;
+    --ring: #1e3a8a;
 
-    /* Sidebar - Dark (Soft Charcoal) */
+    /* Sidebar - Dark (Main Side with Deep Navy Blue like light mode) */
     --sidebar-background: #141518;
     --sidebar-foreground: #e3e5ec;
-    --sidebar-primary: #e3e5ec;
-    --sidebar-primary-foreground: #141518;
-    --sidebar-accent: #1e2026;
-    --sidebar-accent-foreground: #ffffff;
+    --sidebar-primary: #1e3a8a;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: rgba(30, 58, 138, 0.25);
+    --sidebar-accent-foreground: #93c5fd;
     --sidebar-border: #282b33;
-    --sidebar-ring: #d2d5e1;
+    --sidebar-ring: #1e3a8a;
 
     /* Semantic Surface Colors for Dark Mode */
     --surface-base: #1a1c21;

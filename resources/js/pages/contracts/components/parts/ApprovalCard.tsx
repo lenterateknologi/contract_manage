@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { cn, formatDateTime } from '@/lib/utils';
+import { formatFileSize } from '@/lib/formatters';
 import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { Check, Clock, ChevronDown, CheckCircle2, X, Lock, GitBranch, UserCheck } from 'lucide-react';
+import { Check, Clock, ChevronDown, CheckCircle2, X, Lock, GitBranch, UserCheck, Paperclip, Download } from 'lucide-react';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 import { Badge } from '@/components/ui/feedback/Badge';
+import { ChipIcon, FileChipIcon, ActionBadge } from '@/components/ui';
 import { StatusBadge } from '../ui/ui';
 
 interface ApprovalCardProps {
@@ -144,23 +146,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 <div className="flex items-center gap-1.5 shrink-0">
                     {/* Status Badge */}
                     {a.action_code && a.action_code !== 'approve' && (isApproved || isRejected) ? (
-                        <span className={cn(
-                            "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase",
-                            (a.action_code === 'branch' || a.action_code === 'forward')
-                                ? "bg-sky-500/10 border-sky-500/25 text-sky-600 dark:text-sky-400"
-                                : (a.action_code === 'assign' || a.action_code === 'assign_pic')
-                                ? "bg-purple-500/10 border-purple-500/25 text-purple-600 dark:text-purple-400"
-                                : isRejected
-                                ? "bg-rose-500/10 border-rose-500/25 text-rose-600 dark:text-rose-400"
-                                : "bg-emerald-500/10 border-emerald-500/25 text-emerald-600 dark:text-emerald-400"
-                        )}>
-                            {a.action_code === 'branch' ? (
-                                <GitBranch size={9} className="shrink-0" />
-                            ) : (a.action_code === 'assign' || a.action_code === 'assign_pic') ? (
-                                <UserCheck size={9} className="shrink-0" />
-                            ) : null}
-                            <span>{a.action_alias || (a.action_code === 'branch' ? 'Pindah Workflow' : a.action_code === 'forward' ? 'Teruskan' : a.action_code)}</span>
-                        </span>
+                        <ActionBadge actionCode={a.action_code} alias={a.action_alias} size="xs" isApproved={isApproved} isRejected={isRejected} />
                     ) : a.status === 'waiting' ? (
                         targetStatusCode ? (
                             <StatusBadge status={targetStatusCode} size="sm" />
@@ -386,6 +372,45 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                         )}
                         <div className="leading-relaxed font-normal whitespace-pre-wrap">
                             {isLite ? `“${a.comment}”` : a.comment}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Action Attachment */}
+            {a.attachment_path && contract && (
+                <div className="mt-0.5 w-full pl-0.5">
+                    <div className={cn(
+                        "flex items-center justify-between gap-2 rounded-md border border-primary/20 bg-primary/5 px-2.5 py-1.5 transition-colors",
+                        isLite ? "text-[9.5px]" : "text-[10.5px]"
+                    )}>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <FileChipIcon fileName={a.attachment_name || a.attachment_path || ''} size="xs" />
+                            <div className="flex flex-col min-w-0">
+                                <span className="font-semibold text-primary truncate max-w-[200px] sm:max-w-[300px] flex items-center gap-1.5">
+                                    <span className="truncate">{a.attachment_name || 'Lampiran Aksi'}</span>
+                                    {a.file_size ? (
+                                        <span className="text-[9px] text-muted-foreground/80 font-normal shrink-0">
+                                            ({formatFileSize(a.file_size)})
+                                        </span>
+                                    ) : null}
+                                </span>
+                                <span className="text-[8.5px] text-muted-foreground uppercase font-bold">
+                                    Lampiran {a.action_alias || a.action_code || (isApproved ? 'Persetujuan' : isRejected ? 'Penolakan' : 'Aksi')}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <a
+                                href={`/api/contracts/${contract.id}/attachment/${a.id}?download=1`}
+                                download
+                                className="flex items-center gap-1 rounded bg-primary/10 hover:bg-primary/20 text-primary px-2 py-0.5 font-bold uppercase text-[8.5px] transition-all cursor-pointer"
+                                title="Unduh Lampiran"
+                            >
+                                <Download size={10} />
+                                <span>Unduh</span>
+                            </a>
                         </div>
                     </div>
                 </div>

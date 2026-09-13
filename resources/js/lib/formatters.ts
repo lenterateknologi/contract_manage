@@ -4,6 +4,7 @@
 
 export * from './time-utils';
 
+
 /**
  * Format a number or string to Indonesian Rupiah currency.
  * Format: Rp 1.000.000
@@ -43,4 +44,19 @@ export function parseCurrency(price: string | null | undefined): number {
 
     const val = parseFloat(result);
     return isNaN(val) ? 0 : val;
+}
+
+/**
+ * Format bytes into human-readable file size string (e.g. 2.4 MB, 500 KB).
+ */
+export function formatFileSize(bytes: number | null | undefined): string {
+    if (bytes == null || isNaN(bytes) || bytes <= 0) return '';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    let size = bytes;
+    while (size >= 1024 && i < units.length - 1) {
+        size /= 1024;
+        i++;
+    }
+    return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }

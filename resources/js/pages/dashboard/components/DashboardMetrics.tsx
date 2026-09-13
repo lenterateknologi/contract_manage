@@ -136,7 +136,17 @@ function DropdownSearchFilter({ label, options, selectedValues, onChange, placeh
     );
 }
 
-export function DashboardMetrics({ metrics, activeTab }: { metrics: any; activeTab: 'overview' | 'workload' | 'master_data' }) {
+export function DashboardMetrics({
+    metrics,
+    activeTab,
+    meUser,
+    onCreateContract,
+}: {
+    metrics: any;
+    activeTab: 'overview' | 'workload' | 'master_data';
+    meUser?: any;
+    onCreateContract?: () => void;
+}) {
     if (!metrics) return null;
 
     const config = metrics.dashboardConfig;
@@ -147,7 +157,7 @@ export function DashboardMetrics({ metrics, activeTab }: { metrics: any; activeT
 
     if (!hasAnyTab) {
         return (
-            <div className="flex h-[320px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-surface-border bg-surface-base/50 p-8 text-center animate-in fade-in duration-300">
+            <div className="flex h-[320px] w-full flex-col items-center justify-center rounded-lg border border-dashed border-surface-border bg-surface-base p-8 text-center animate-in fade-in duration-300">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 mb-3">
                     <Briefcase size={24} />
                 </div>
@@ -182,13 +192,18 @@ export function DashboardMetrics({ metrics, activeTab }: { metrics: any; activeT
                 <Suspense fallback={<TabLoading />}>
                     {activeTab === 'overview' && config?.show_overview && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <OverviewTab data={metrics} onNavigate={handleNavigate} />
+                            <OverviewTab
+                                data={metrics}
+                                onNavigate={handleNavigate}
+                                meUser={meUser}
+                                onCreateContract={onCreateContract}
+                            />
                         </div>
                     )}
 
                     {activeTab === 'workload' && config?.show_workload && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-                            <WorkloadTab data={metrics} />
+                            <WorkloadTab data={metrics} onNavigate={handleNavigate} />
                         </div>
                     )}
 

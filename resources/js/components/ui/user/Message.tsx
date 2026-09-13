@@ -86,12 +86,14 @@ const MessageFooter = React.forwardRef<
 MessageFooter.displayName = "MessageFooter";
 
 const bubbleVariants = cva(
-  "relative w-fit max-w-xl rounded-2xl px-4 py-2.5 text-xs font-normal transition-all",
+  "relative w-fit max-w-xl rounded-2xl px-3.5 py-2 text-[13px] font-normal transition-all leading-snug",
   {
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground font-medium",
-        muted: "bg-slate-100 dark:bg-zinc-800/90 text-slate-900 dark:text-zinc-100 border border-slate-200/80 dark:border-zinc-700/80 font-medium",
+        sent: "bg-primary text-primary-foreground font-medium rounded-br-xs",
+        received: "bg-card text-card-foreground border border-border/70 shadow-2xs font-normal rounded-bl-xs dark:bg-muted/60 dark:border-border/80",
+        muted: "bg-muted text-foreground border border-border/50 font-normal",
       },
     },
     defaultVariants: {
@@ -130,7 +132,7 @@ const BubbleReactions = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "absolute -bottom-2 right-2 flex items-center gap-1 rounded-full border border-border bg-background px-1.5 py-0.5 text-[11px] font-medium shadow-xs transition-transform hover:scale-105 select-none cursor-pointer",
+      "flex flex-wrap items-center gap-1 mt-1 text-[11px] font-medium select-none cursor-pointer",
       className
     )}
     {...props}

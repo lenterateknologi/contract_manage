@@ -19,9 +19,15 @@ class PdfService
             return true;
         }
 
-        // Sanitize & repair source file if it has corrupt bytes/whitespace or missing EOF byte
+        // If the uploaded source file is already a PDF, copy it directly to destination
         if (file_exists($sourcePath)) {
             $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+            if ($ext === 'pdf') {
+                if ($sourcePath !== $pdfPath) {
+                    copy($sourcePath, $pdfPath);
+                }
+                return true;
+            }
             if (in_array($ext, ['docx', 'xlsx', 'pptx'])) {
                 $content = file_get_contents($sourcePath);
                 $modified = false;

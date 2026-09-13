@@ -531,9 +531,43 @@ function GenericFormTab({
 
     if (loading)
         return (
-            <div className="text-text-soft flex flex-col items-center justify-center py-20 text-[10px] font-semibold uppercase">
-                <LoadingLottie width={80} height={80} className="mb-4" />
-                Memuat form {docType.toUpperCase()}...
+            <div className="bg-surface-base animate-in fade-in flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden duration-300 p-3 lg:p-4 gap-3">
+                {/* Header Skeleton */}
+                <div className="bg-primary/80 shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs animate-pulse">
+                    <div className="flex items-center gap-2">
+                        <FileText size={15} className="text-white/80" />
+                        <div className="h-3 w-40 rounded bg-white/30" />
+                    </div>
+                    <div className="h-6 w-20 rounded-lg bg-white/20" />
+                </div>
+
+                {/* Form Document Skeleton */}
+                <div className="flex-1 flex justify-center overflow-y-auto p-4 bg-slate-50/60 dark:bg-zinc-950/60 rounded-xl border border-surface-border">
+                    <div className="w-full max-w-[210mm] bg-white dark:bg-zinc-900 rounded-xl shadow-md border border-slate-200 dark:border-zinc-800 p-8 space-y-6 animate-pulse">
+                        <div className="flex justify-between items-center pb-6 border-b border-slate-100 dark:border-zinc-800">
+                            <div className="h-8 w-44 rounded bg-slate-200 dark:bg-zinc-800" />
+                            <div className="h-6 w-28 rounded-full bg-slate-200 dark:bg-zinc-800" />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <div className="h-3 w-20 rounded bg-slate-200 dark:bg-zinc-800" />
+                                <div className="h-9 w-full rounded-lg bg-slate-100 dark:bg-zinc-800/60" />
+                            </div>
+                            <div className="space-y-2">
+                                <div className="h-3 w-24 rounded bg-slate-200 dark:bg-zinc-800" />
+                                <div className="h-9 w-full rounded-lg bg-slate-100 dark:bg-zinc-800/60" />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <div className="h-3 w-32 rounded bg-slate-200 dark:bg-zinc-800" />
+                            <div className="h-20 w-full rounded-lg bg-slate-100 dark:bg-zinc-800/60" />
+                        </div>
+                        <div className="flex items-center justify-center gap-2 pt-8 text-xs font-semibold text-primary">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Memuat Formulir {docType.toUpperCase()}...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         );
 

@@ -8,15 +8,10 @@ export const AVAILABLE_FIELDS = [
 ];
 
 export const AUTOFILLED_PARAMS = [
-    { value: 'received_at', label: 'Isi Waktu diterima' },
-    { value: 'assigned_at', label: 'Isi Waktu ditugaskan' },
-    { value: 'finished_at', label: 'Isi Waktu diselesaikan' },
-    { value: 'closed_at', label: 'Isi Waktu ditutup' },
-    { value: 'received_at-null', label: 'Kosongkan Waktu diterima' },
-    { value: 'assigned_at-null', label: 'Kosongkan Waktu ditugaskan' },
-    { value: 'finished_at-null', label: 'Kosongkan Waktu diselesaikan' },
-    { value: 'closed_at-null', label: 'Kosongkan Waktu ditutup' },
-    { value: 'renew_number', label: 'Pembuatan nomor baru' },
+    { value: 'received_at', label: 'Isi Waktu Diterima' },
+    { value: 'assigned_at', label: 'Isi Waktu Ditugaskan' },
+    { value: 'finished_at', label: 'Isi Waktu Diselesaikan' },
+    { value: 'closed_at', label: 'Isi Waktu Ditutup' },
 ];
 
 export const MASTER_ACTIONS = [

@@ -50,78 +50,110 @@ class ContractOptionsQuery
             // ── Organisasi ──────────────────────────────────────────────────
 
             'companyGroups' => function () use ($allowedGroups) {
-                $q = CompanyGroup::query()->where('is_used', true);
-                if ($allowedGroups !== null) {
-                    $q->whereIn('id', $allowedGroups);
-                }
+                $cacheKey = 'contract_opts_groups_'.($allowedGroups ? md5(json_encode($allowedGroups)) : 'all');
 
-                return $q->orderBy('name')->get();
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedGroups) {
+                    $q = CompanyGroup::query()->where('is_used', true);
+                    if ($allowedGroups !== null) {
+                        $q->whereIn('id', $allowedGroups);
+                    }
+
+                    return $q->orderBy('name')->get();
+                });
             },
 
             'regions' => function () use ($allowedRegions) {
-                $q = Region::query()->where('is_used', true);
-                if ($allowedRegions !== null) {
-                    $q->whereIn('id', $allowedRegions);
-                }
+                $cacheKey = 'contract_opts_regions_'.($allowedRegions ? md5(json_encode($allowedRegions)) : 'all');
 
-                return $q->orderBy('name')->get();
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedRegions) {
+                    $q = Region::query()->where('is_used', true);
+                    if ($allowedRegions !== null) {
+                        $q->whereIn('id', $allowedRegions);
+                    }
+
+                    return $q->orderBy('name')->get();
+                });
             },
 
             'locations' => function () {
-                return Location::query()->where('is_used', true)->orderBy('name')->get();
+                return Cache::remember('contract_opts_locations', now()->addMinutes(10), function () {
+                    return Location::query()->where('is_used', true)->orderBy('name')->get();
+                });
             },
 
             'companies' => function () use ($allowedCompanies, $isManager, $userCompany) {
-                $q = Company::query()->where('is_used', true);
-                if ($allowedCompanies !== null) {
-                    $q->whereIn('id', $allowedCompanies);
-                } elseif ($isManager && $userCompany) {
-                    $q->where('company_group_id', $userCompany->company_group_id);
-                }
+                $cacheKey = 'contract_opts_companies_'.($allowedCompanies ? md5(json_encode($allowedCompanies)) : ($isManager ? 'mgr_'.$userCompany?->company_group_id : 'all'));
 
-                return $q->orderBy('name')->get();
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedCompanies, $isManager, $userCompany) {
+                    $q = Company::query()->where('is_used', true);
+                    if ($allowedCompanies !== null) {
+                        $q->whereIn('id', $allowedCompanies);
+                    } elseif ($isManager && $userCompany) {
+                        $q->where('company_group_id', $userCompany->company_group_id);
+                    }
+
+                    return $q->orderBy('name')->get();
+                });
             },
 
             'divisions' => function () use ($allowedDivisions) {
-                $q = Division::query();
-                if ($allowedDivisions !== null) {
-                    $q->whereIn('id', $allowedDivisions);
-                }
+                $cacheKey = 'contract_opts_divisions_'.($allowedDivisions ? md5(json_encode($allowedDivisions)) : 'all');
 
-                return $q->orderBy('name')->get();
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedDivisions) {
+                    $q = Division::query();
+                    if ($allowedDivisions !== null) {
+                        $q->whereIn('id', $allowedDivisions);
+                    }
+
+                    return $q->orderBy('name')->get();
+                });
             },
 
             'departments' => function () use ($allowedDepts, $isManager, $user) {
-                $q = Department::query()->where('is_used', true);
-                if ($allowedDepts !== null) {
-                    $q->whereIn('id', $allowedDepts);
-                } elseif ($isManager) {
-                    $q->where('company_id', $user->company_id);
-                }
+                $cacheKey = 'contract_opts_depts_'.($allowedDepts ? md5(json_encode($allowedDepts)) : ($isManager ? 'mgr_'.$user?->company_id : 'all'));
 
-                return $q->orderBy('name')->get();
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($allowedDepts, $isManager, $user) {
+                    $q = Department::query()->where('is_used', true);
+                    if ($allowedDepts !== null) {
+                        $q->whereIn('id', $allowedDepts);
+                    } elseif ($isManager && $user) {
+                        $q->where('company_id', $user->company_id);
+                    }
+
+                    return $q->orderBy('name')->get();
+                });
             },
 
             // ── Users & Vendors ──────────────────────────────────────────────
 
-            'users' => fn () => User::with(['department', 'roleRelation'])
-                ->where('is_used', true)
-                ->when($isManager && ! request()->boolean('all'), fn ($q) => $q->where('division_id', $user->division_id))
-                ->orderBy('name')
-                ->get()
-                ->map(fn ($u) => ContractFormatter::formatUser($u))
-                ->toArray(),
+            'users' => function () use ($isManager, $user) {
+                $cacheKey = 'contract_opts_users_'.($isManager && ! request()->boolean('all') ? 'div_'.$user?->division_id : 'all');
 
-            'vendors' => fn () => Vendor::where('is_active', true)
-                ->orderBy('vendor_name')
-                ->get()
-                ->map(fn ($v) => [
-                    'id' => $v->id,
-                    'name' => $v->vendor_name,
-                    'code' => $v->vendor_code,
-                    'detail' => $v->vendor_detail,
-                ])
-                ->toArray(),
+                return Cache::remember($cacheKey, now()->addMinutes(3), function () use ($isManager, $user) {
+                    return User::with(['department:id,name', 'roleRelation:id,name'])
+                        ->where('is_used', true)
+                        ->when($isManager && ! request()->boolean('all') && $user?->division_id, fn ($q) => $q->where('division_id', $user->division_id))
+                        ->orderBy('name')
+                        ->get()
+                        ->map(fn ($u) => ContractFormatter::formatUser($u))
+                        ->toArray();
+                });
+            },
+
+            'vendors' => function () {
+                return Cache::remember('contract_opts_vendors', now()->addMinutes(5), function () {
+                    return Vendor::where('is_active', true)
+                        ->orderBy('vendor_name')
+                        ->get(['id', 'vendor_name', 'vendor_code', 'vendor_detail'])
+                        ->map(fn ($v) => [
+                            'id' => $v->id,
+                            'name' => $v->vendor_name,
+                            'code' => $v->vendor_code,
+                            'detail' => $v->vendor_detail,
+                        ])
+                        ->toArray();
+                });
+            },
 
             // ── Templates & Meta ─────────────────────────────────────────────
 

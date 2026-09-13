@@ -49,6 +49,7 @@ class ContractListQuery
         'workflow_id', 'origin_workflow_id', 'workflow_step_id', 'created_by', 'submitted_at',
         'created_at', 'updated_at', 'initiated_by_id', 'vendor_id', 'parent_id',
         'submission_type_id', 'contract_no', 'assigned_pic_id', 'assigned_by_id',
+        'received_at', 'assigned_at', 'finished_at', 'closed_at', 'closed_by',
         'contract_type_parent_id',
     ];
 
@@ -81,6 +82,7 @@ class ContractListQuery
         }
 
         $this->applyDateRangeFilter($query, $request);
+        $this->applyPicFilter($query, $request);
         $this->applySubmissionTypeFilter($query, $request);
 
         return $query;
@@ -226,7 +228,11 @@ class ContractListQuery
                 } elseif ($parentTab === 'in_progress') {
                     $query->whereIn('status', ['in_review', 'pending', 'locked']);
                 } else {
-                    $query->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+                    $hasStatusFilter = $request->filled('status') || $request->filled('statuses');
+                    $hasSearch = $request->filled('search');
+                    if (! $hasStatusFilter && ! $hasSearch) {
+                        $query->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+                    }
 
                     if (in_array($parentTab, ['kontrak', 'non_kontrak', 'nda'])) {
                         $parents = DB::table('m_contract_types')->whereNull('parent_id')->get();
@@ -265,7 +271,7 @@ class ContractListQuery
     }
 
     /**
-     * Apply full-text search filter across title, form_no, contract_no and creator name.
+     * Apply full-text search filter across title, form_no, contract_no, creator name, PIC name, and approver name.
      */
     private function applySearchFilter(Builder $query, Request $request): void
     {
@@ -278,7 +284,9 @@ class ContractListQuery
             $q->where(DB::raw('LOWER(title)'), 'like', "%{$search}%")
                 ->orWhere(DB::raw('LOWER(form_no)'), 'like', "%{$search}%")
                 ->orWhere(DB::raw('LOWER(contract_no)'), 'like', "%{$search}%")
-                ->orWhereHas('creator', fn (Builder $uq) => $uq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%"));
+                ->orWhereHas('creator', fn (Builder $uq) => $uq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%"))
+                ->orWhereHas('assignedPic', fn (Builder $uq) => $uq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%"))
+                ->orWhereHas('approvals.approver', fn (Builder $uq) => $uq->where(DB::raw('LOWER(name)'), 'like', "%{$search}%"));
         });
     }
 
@@ -287,12 +295,13 @@ class ContractListQuery
      */
     private function applyStatusFilter(Builder $query, Request $request, string $view): void
     {
-        if (! $request->filled('status') || $request->status === 'all') {
+        $statusInput = $request->input('status') ?? $request->input('statuses');
+        if (! $statusInput || $statusInput === 'all') {
             return;
         }
 
-        if (is_array($request->status)) {
-            $statuses = $request->status;
+        if (is_array($statusInput)) {
+            $statuses = array_values(array_filter($statusInput));
             if ($view !== 'mine') {
                 $statuses = array_filter($statuses, fn ($s) => strtoupper($s) !== 'DRAFT');
             }
@@ -302,10 +311,10 @@ class ContractListQuery
                 $query->whereIn(\DB::raw('UPPER(status)'), array_map('strtoupper', array_values($statuses)));
             }
         } else {
-            if ($view !== 'mine' && strtoupper($request->status) === 'DRAFT') {
+            if ($view !== 'mine' && strtoupper($statusInput) === 'DRAFT') {
                 $query->whereRaw('1 = 0');
             } else {
-                $query->whereRaw('UPPER(status) = ?', [strtoupper($request->status)]);
+                $query->whereRaw('UPPER(status) = ?', [strtoupper($statusInput)]);
             }
         }
     }
@@ -354,6 +363,24 @@ class ContractListQuery
         }
 
         return $descendants;
+    }
+
+    /**
+     * Apply assigned PIC filter (single value or array).
+     */
+    private function applyPicFilter(Builder $query, Request $request): void
+    {
+        $picInput = $request->input('pic_ids') ?? $request->input('assigned_pic_id') ?? $request->input('pic_id');
+        if (empty($picInput) || $picInput === 'all') {
+            return;
+        }
+
+        $picIds = is_array($picInput) ? $picInput : [$picInput];
+        $picIds = array_values(array_filter($picIds));
+
+        if (! empty($picIds)) {
+            $query->whereIn('assigned_pic_id', $picIds);
+        }
     }
 
     /**

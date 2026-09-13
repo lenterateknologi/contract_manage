@@ -1,3 +1,4 @@
+import { ChipIcon } from '@/components/ui/feedback/ChipIcon';
 import { cn } from '@/lib/utils';
 import { AlertTriangle, Clock, FileText, ShieldCheck } from 'lucide-react';
 import React from 'react';
@@ -7,7 +8,7 @@ interface KpiCardProps {
     label: string;
     value: number | string;
     subtext: string;
-    icon: React.ReactNode;
+    icon: any;
     accentClass: string;
     bgClass: string;
     onClick?: () => void;
@@ -23,14 +24,13 @@ function KpiCard({ label, value, subtext, icon, accentClass, bgClass, onClick }:
             )}
         >
             <div className="flex items-start justify-between">
-                <div
-                    className={cn(
-                        'border-surface-border/10 flex h-10 w-10 items-center justify-center rounded-lg border shadow-xs transition-transform duration-300 group-hover:scale-105',
-                        accentClass,
-                    )}
-                >
-                    {icon}
-                </div>
+                <ChipIcon
+                    icon={icon}
+                    size="md"
+                    bg={accentClass}
+                    shape="rounded"
+                    className="shadow-none group-hover:scale-105"
+                />
                 <span className="text-text-desc text-[9px] font-medium  uppercase">{subtext}</span>
             </div>
             <div>
@@ -53,8 +53,8 @@ export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
                 label="Total Kontrak"
                 value={m.totalContracts}
                 subtext="Keseluruhan"
-                icon={<FileText className="h-4.5 w-4.5" />}
-                accentClass="bg-primary/10 text-primary"
+                icon={FileText}
+                accentClass="bg-primary text-white border-transparent"
                 bgClass="bg-primary/5 dark:bg-primary/10"
                 onClick={() => onNavigate('contracts')}
             />
@@ -62,8 +62,8 @@ export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
                 label="Menunggu Saya"
                 value={m.pendingApprovals}
                 subtext="Perlu Tindakan"
-                icon={<Clock className="h-4.5 w-4.5" />}
-                accentClass="bg-warning/10 text-warning"
+                icon={Clock}
+                accentClass="bg-amber-600 text-white border-transparent"
                 bgClass="bg-warning/5 dark:bg-warning/10"
                 onClick={() => onNavigate('pending')}
             />
@@ -71,16 +71,16 @@ export function KpiStrip({ metrics: m, onNavigate }: KpiStripProps) {
                 label="Disetujui Bulan Ini"
                 value={m.approvedThisMonth}
                 subtext="Output Bulanan"
-                icon={<ShieldCheck className="h-4.5 w-4.5" />}
-                accentClass="bg-success/10 text-success"
+                icon={ShieldCheck}
+                accentClass="bg-emerald-600 text-white border-transparent"
                 bgClass="bg-success/5 dark:bg-success/10"
             />
             <KpiCard
                 label="Butuh Perhatian"
                 value={m.attentionCount}
                 subtext="Revisi & Segera Berakhir"
-                icon={<AlertTriangle className="h-4.5 w-4.5" />}
-                accentClass={m.attentionCount > 0 ? 'bg-danger/10 text-danger' : 'bg-surface-muted/60 text-text-desc'}
+                icon={AlertTriangle}
+                accentClass={m.attentionCount > 0 ? 'bg-rose-600 text-white border-transparent' : 'bg-slate-600 text-white border-transparent'}
                 bgClass={m.attentionCount > 0 ? 'bg-danger/5 dark:bg-danger/10' : 'bg-surface-muted/20'}
             />
         </div>

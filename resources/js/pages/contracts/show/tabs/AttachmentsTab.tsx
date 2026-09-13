@@ -1,4 +1,4 @@
-import ContractAttachments from '@/pages/contracts/components/tabs/ContractAttachments';
+import ContractAttachments from '@/components/attachments/ContractAttachments';
 import { Contract } from '@/pages/contracts/types';
 
 interface AttachmentsTabProps {
@@ -12,3 +12,5 @@ interface AttachmentsTabProps {
 export const AttachmentsTab = ({ contract, canUpdate, onUpdate, showToast, meUser }: AttachmentsTabProps) => {
     return <ContractAttachments contract={contract} canUpdate={canUpdate} onUpdated={onUpdate} showToast={showToast} meId={meUser?.id} />;
 };
+
+export default AttachmentsTab;

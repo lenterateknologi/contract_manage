@@ -16,7 +16,7 @@ interface ContractReferenceCardProps {
 
 export function ContractReferenceCard({ selected, canUpdate, onUpdate, processing, meId }: ContractReferenceCardProps & { meId?: string }) {
     const parent = selected.parent;
-    const isActor = (selected as any).can_approve || selected.created_by === meId;
+    const isActor = (selected as any).can_approve || selected.created_by === meId || (selected as any).initiated_by_id === meId;
     const canModifyRef = selected.allow_reference !== false && (isActor || canUpdate);
     const [isEditing, setIsEditing] = useState(false);
     const [search, setSearch] = useState('');

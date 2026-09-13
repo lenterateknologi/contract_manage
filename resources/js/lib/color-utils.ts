@@ -37,17 +37,6 @@ export const VENDOR_COLORS = [
     'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
 ];
 
-export const AVATAR_COLORS = [
-    'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-    'bg-info/10 text-info dark:bg-info/20 dark:text-info',
-    'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-    'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-    'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-    'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
-    'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
-];
-
 /**
  * Deterministically retrieves a color class from a given list of colors based on a string name.
  */
@@ -80,6 +69,3 @@ export function vendorColor(name: string): string {
     return getDeterministicColor(name, VENDOR_COLORS);
 }
 
-export function avatarColor(name: string): string {
-    return getDeterministicColor(name, AVATAR_COLORS);
-}

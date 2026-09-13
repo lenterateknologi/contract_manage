@@ -14,18 +14,37 @@ class AttachmentPdfPreviewAction
 
     public function execute(Contract $contract, string $atId): mixed
     {
-        /** @var ContractAttachment $attachment */
-        $attachment = $contract->attachments()->findOrFail($atId);
+        $filePath = null;
 
-        if (! $attachment->file_path || ! Storage::disk('local')->exists($attachment->file_path)) {
+        /** @var ContractAttachment|null $attachment */
+        $attachment = $contract->attachments()->find($atId);
+        $disk = 'local';
+        if ($attachment) {
+            $filePath = $attachment->file_path;
+        } else {
+            /** @var \App\Models\Approval|null $approval */
+            $approval = $contract->approvals()->find($atId) ?? \App\Models\Approval::withTrashed()->where('contract_id', $contract->id)->find($atId);
+            if ($approval && $approval->attachment_path) {
+                $filePath = $approval->attachment_path;
+            } else {
+                /** @var \App\Models\ContractMessage|null $message */
+                $message = $contract->messages()->find($atId);
+                if ($message && $message->attachment_path) {
+                    $filePath = $message->attachment_path;
+                    $disk = 'public';
+                }
+            }
+        }
+
+        if (! $filePath || ! Storage::disk($disk)->exists($filePath)) {
             return response()->json(['message' => 'File not found.'], 404);
         }
 
-        $sourcePath = Storage::disk('local')->path($attachment->file_path);
+        $sourcePath = Storage::disk($disk)->path($filePath);
         $pdfDir = Storage::disk('local')->path("contracts/{$contract->id}/attachments/pdfs");
-        $pdfPath = $pdfDir.'/'.pathinfo($attachment->file_path, PATHINFO_FILENAME).'.pdf';
+        $pdfPath = $pdfDir.'/'.pathinfo($filePath, PATHINFO_FILENAME).'.pdf';
 
-        if (strtolower(pathinfo($attachment->file_path, PATHINFO_EXTENSION)) === 'pdf') {
+        if (strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === 'pdf') {
             if (! file_exists($pdfDir)) {
                 mkdir($pdfDir, 0755, true);
             }

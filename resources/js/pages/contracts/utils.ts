@@ -42,13 +42,24 @@ export const contractApi = {
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>
         unwrap(api.post(`/api/contracts/${id}/send`, data)),
 
-    assignPic: (id: string, assignedPicId: string, note?: string): Promise<Contract> =>
-        unwrap(api.post(`/api/contracts/${id}/assign-pic`, { assigned_pic_id: assignedPicId, note })),
+    assignPic: (id: string, assignedPicId: string, note?: string, attachments?: File | File[]): Promise<Contract> => {
+        const fd = new FormData();
+        fd.append('assigned_pic_id', assignedPicId);
+        if (note) fd.append('note', note);
+        if (attachments) {
+            if (Array.isArray(attachments)) {
+                attachments.forEach((f) => fd.append('attachments[]', f));
+            } else {
+                fd.append('attachment', attachments);
+            }
+        }
+        return unwrap(api.post(`/api/contracts/${id}/assign-pic`, fd));
+    },
 
     approve: (
         id: string,
         note: string,
-        attachment?: File,
+        attachment?: File | File[],
         assignedPicId?: string,
         executionOrder?: string,
         signerUserIds?: string[],
@@ -59,7 +70,13 @@ export const contractApi = {
     ): Promise<Contract> => {
         const fd = new FormData();
         fd.append('note', note);
-        if (attachment) fd.append('attachment', attachment);
+        if (attachment) {
+            if (Array.isArray(attachment)) {
+                attachment.forEach((f) => fd.append('attachments[]', f));
+            } else {
+                fd.append('attachment', attachment);
+            }
+        }
         if (assignedPicId) fd.append('assigned_pic_id', assignedPicId);
         if (executionOrder) fd.append('execution_order', executionOrder);
         if (signerUserIds && Array.isArray(signerUserIds)) {
@@ -72,10 +89,16 @@ export const contractApi = {
         return unwrap(api.post(`/api/contracts/${id}/approve`, fd));
     },
 
-    reject: (id: string, reason: string, attachment?: File, actionId?: string): Promise<Contract> => {
+    reject: (id: string, reason: string, attachment?: File | File[], actionId?: string): Promise<Contract> => {
         const fd = new FormData();
         fd.append('reason', reason);
-        if (attachment) fd.append('attachment', attachment);
+        if (attachment) {
+            if (Array.isArray(attachment)) {
+                attachment.forEach((f) => fd.append('attachments[]', f));
+            } else {
+                fd.append('attachment', attachment);
+            }
+        }
         if (actionId) fd.append('action_id', actionId);
         return unwrap(api.post(`/api/contracts/${id}/reject`, fd));
     },
@@ -89,19 +112,25 @@ export const contractApi = {
         role?: string,
         approvalRule: string = 'all',
         minApprovals?: number,
+        attachments?: File | File[],
     ): Promise<Contract> => {
         const uids = Array.isArray(userIds) ? userIds : [userIds];
-        return unwrap(
-            api.post(`/api/contracts/${id}/add-approver`, {
-                user_ids: uids,
-                note,
-                is_sequential: isSequential,
-                target_step_id: targetStepId,
-                role,
-                approval_rule: approvalRule,
-                min_approvals: minApprovals,
-            }),
-        );
+        const fd = new FormData();
+        uids.forEach((uid) => fd.append('user_ids[]', uid));
+        if (note) fd.append('note', note);
+        if (isSequential) fd.append('is_sequential', '1');
+        if (targetStepId) fd.append('target_step_id', targetStepId);
+        if (role) fd.append('role', role);
+        if (approvalRule) fd.append('approval_rule', approvalRule);
+        if (minApprovals) fd.append('min_approvals', String(minApprovals));
+        if (attachments) {
+            if (Array.isArray(attachments)) {
+                attachments.forEach((f) => fd.append('attachments[]', f));
+            } else {
+                fd.append('attachment', attachments);
+            }
+        }
+        return unwrap(api.post(`/api/contracts/${id}/add-approver`, fd));
     },
 
     removeAdhocApprover: (id: string, approvalId: string): Promise<Contract> =>
@@ -137,6 +166,20 @@ export const contractApi = {
             return unwrap(api.post(`/api/contracts/${contractId}/messages`, fd));
         },
         markRead: (contractId: string) => unwrap(api.post(`/api/contracts/${contractId}/messages/read`)),
+    },
+
+    // 5.1 Contract Members & Personnel
+    members: {
+        list: (contractId: string) => unwrap(api.get(`/api/contracts/${contractId}/members`)),
+    },
+
+    // 5.2 Contract Parent & References
+    references: {
+        get: (contractId: string) => unwrap(api.get(`/api/contracts/${contractId}/reference`)),
+        search: (contractId: string, query: string, limit: number = 10) =>
+            unwrap(api.get(`/api/contracts/${contractId}/reference/search`, { params: { query, limit } })),
+        update: (contractId: string, parentId: string | null) =>
+            unwrap(api.patch(`/api/contracts/${contractId}/reference`, { parent_id: parentId })),
     },
 
     // 6. Dynamic Form Submissions (F1 / F2)

@@ -15,9 +15,13 @@ class UploadAttachmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'label' => 'required|string|max:255',
+            'label' => 'nullable|string|max:255',
             'category' => 'nullable|string|max:255',
-            'file' => [new FileValidationRule('contract_attachment')],
+            'file' => ['nullable', new FileValidationRule('contract_attachment', false)],
+            'files' => 'nullable|array',
+            'files.*' => [new FileValidationRule('contract_attachment', false)],
+            'attachments' => 'nullable|array',
+            'attachments.*' => [new FileValidationRule('contract_attachment', false)],
         ];
     }
 }

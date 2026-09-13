@@ -78,20 +78,3 @@ export interface DashboardData {
     userWorkloads: UserWorkload[];
     categoryTraffic: CategoryTraffic[];
 }
-
-// ─── Shared Constants ─────────────────────────────────────────────────────────
-
-export const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; dot: string }> = {
-    draft: { label: 'Draft', color: 'text-slate-500', bg: 'bg-slate-100', dot: 'bg-slate-400' },
-    in_review: { label: 'Review', color: 'text-amber-700', bg: 'bg-amber-50', dot: 'bg-amber-500' },
-    revision: { label: 'Revisi', color: 'text-rose-700', bg: 'bg-rose-50', dot: 'bg-rose-500' },
-    approved: { label: 'Disetujui', color: 'text-emerald-700', bg: 'bg-emerald-50', dot: 'bg-emerald-500' },
-};
-
-import { formatRelativeTime } from '@/lib/utils';
-
-// ─── Shared Utilities ─────────────────────────────────────────────────────────
-
-export function relativeTime(dateStr: string): string {
-    return formatRelativeTime(dateStr);
-}

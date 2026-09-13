@@ -89,6 +89,11 @@ class Contract extends Model
         'parent_id',
         'assigned_pic_id',
         'assigned_by_id',
+        'received_at',
+        'assigned_at',
+        'finished_at',
+        'closed_at',
+        'closed_by',
 
         // Meta columns transparently handled by HasContractMeta
         'kop_topik', 'kop_sub_topik', 'p1_entity', 'p1_address', 'p1_contact_person',
@@ -101,6 +106,10 @@ class Contract extends Model
     protected $casts = [
         'metadata' => 'array',
         'submitted_at' => 'datetime',
+        'received_at' => 'datetime',
+        'assigned_at' => 'datetime',
+        'finished_at' => 'datetime',
+        'closed_at' => 'datetime',
         'contract_date' => 'date',
         'end_date' => 'date',
     ];

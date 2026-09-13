@@ -95,6 +95,9 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarNavGroups' => $this->getSidebarNavGroups($request),
             'povOptions' => $this->getPovOptions($request),
+            'masterContractStatuses' => Cache::remember('master_contract_statuses_global', now()->addMinutes(10), function () {
+                return \App\Models\ContractStatus::select('id', 'code', 'label', 'color', 'bg_color', 'icon')->get();
+            }),
             'upload_configs' => config('uploads.categories'),
             'flash' => [
                 'success' => $hasSession ? $request->session()->get('success') : null,

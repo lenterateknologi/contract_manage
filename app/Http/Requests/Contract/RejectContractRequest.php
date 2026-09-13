@@ -24,7 +24,9 @@ class RejectContractRequest extends FormRequest
     {
         return [
             'reason' => 'required|string',
-            'attachment' => 'nullable|file|max:10240', // 10MB limit
+            'attachment' => 'nullable|file|max:20480', // 20MB limit
+            'attachments' => 'nullable|array',
+            'attachments.*' => 'nullable|file|max:20480',
         ];
     }
 }

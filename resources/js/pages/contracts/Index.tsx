@@ -28,7 +28,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { usePermissions } from '@/hooks/use-permissions';
 import { usePov } from '@/stores/usePovStore';
 import { contractApi } from '@/pages/contracts/utils';
-import { cn, STATUS_FILTER_OPTIONS } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Contract, ContractType, PaginatedData } from '@/pages/contracts/types';
 import { Head, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
@@ -70,11 +70,11 @@ const {
     Briefcase,
 } = Icons;
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, memo } from 'react';
-import ContractDetailView from './components/ContractDetailView';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
 import { PageFilter } from './components/PageFilter';
 
-// Lazy loaded modals for performance
+// Lazy loaded views and modals for fast initial page render
+const ContractDetailView = lazy(() => import('./components/ContractDetailView'));
 const CreateContractModal = lazy(() => import('@/pages/contracts/components/modals/CreateContractModal'));
 const EditContractModal = lazy(() => import('@/pages/contracts/components/modals/EditContractModal').then(m => ({ default: m.EditContractModal })));
 const PreviewModal = lazy(() => import('@/pages/contracts/components/modals/PreviewModal'));
@@ -440,10 +440,32 @@ function ContractPage({
     organizationTree?: any[];
 }>) {
     const { showToast } = useToast();
+    const { masterContractStatuses } = usePage<any>().props;
     const { canUpdate } = usePermissions('CONTRACTS');
     const pov = usePov();
     const [view, setView] = useState<View>(currentView);
-    const [dashboardTab, setDashboardTab] = useState<'overview' | 'workload' | 'master_data'>('overview');
+    const [dashboardTab, setDashboardTab] = useState<'overview' | 'workload' | 'master_data'>(() => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tabParam = urlParams.get('dashboard_tab') || urlParams.get('tab');
+            if (tabParam === 'overview' || tabParam === 'workload' || tabParam === 'master_data') {
+                return tabParam;
+            }
+            const saved = sessionStorage.getItem('dashboard_active_tab') || localStorage.getItem('dashboard_active_tab');
+            if (saved === 'overview' || saved === 'workload' || saved === 'master_data') {
+                return saved;
+            }
+        }
+        return 'overview';
+    });
+
+    const handleDashboardTabChange = (newTab: 'overview' | 'workload' | 'master_data') => {
+        setDashboardTab(newTab);
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem('dashboard_active_tab', newTab);
+            localStorage.setItem('dashboard_active_tab', newTab);
+        }
+    };
 
     const effectiveDashboardConfig = useMemo(() => {
         const baseConfig = metrics?.dashboardConfig || {
@@ -466,14 +488,14 @@ function ContractPage({
         const config = effectiveDashboardConfig;
         if (config) {
             if (dashboardTab === 'overview' && !config.show_overview) {
-                if (config.show_workload) setDashboardTab('workload');
-                else if (config.show_master_data) setDashboardTab('master_data');
+                if (config.show_workload) handleDashboardTabChange('workload');
+                else if (config.show_master_data) handleDashboardTabChange('master_data');
             } else if (dashboardTab === 'workload' && !config.show_workload) {
-                if (config.show_overview) setDashboardTab('overview');
-                else if (config.show_master_data) setDashboardTab('master_data');
+                if (config.show_overview) handleDashboardTabChange('overview');
+                else if (config.show_master_data) handleDashboardTabChange('master_data');
             } else if (dashboardTab === 'master_data' && !config.show_master_data) {
-                if (config.show_overview) setDashboardTab('overview');
-                else if (config.show_workload) setDashboardTab('workload');
+                if (config.show_overview) handleDashboardTabChange('overview');
+                else if (config.show_workload) handleDashboardTabChange('workload');
             }
         }
     }, [effectiveDashboardConfig, dashboardTab]);
@@ -860,7 +882,10 @@ function ContractPage({
             label: 'Status Pengajuan',
             key: 'status',
             type: 'multiselect',
-            options: STATUS_FILTER_OPTIONS.filter((o) => o.value !== 'all'),
+            options: (masterContractStatuses || []).map((s: any) => ({
+                label: s.label || s.code,
+                value: s.code,
+            })),
         });
 
         list.push({
@@ -870,7 +895,7 @@ function ContractPage({
         });
 
         return list;
-    }, [companyGroups, regions, companies, divisions, departments, types]);
+    }, [companyGroups, regions, companies, divisions, departments, types, masterContractStatuses]);
 
     const activeFiltersCount = useMemo(() => {
         const getCount = (val: any) => {
@@ -1193,7 +1218,7 @@ function ContractPage({
                                 className={cn(
                                     'text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
                                     tab.isActive
-                                        ? 'bg-primary-foreground/20 text-primary-foreground'
+                                        ? 'bg-white text-primary dark:bg-black dark:text-white'
                                         : 'bg-muted text-muted-foreground group-hover:text-foreground',
                                 )}
                             >
@@ -1212,25 +1237,33 @@ function ContractPage({
             <div className="flex min-h-0 flex-1 flex-col w-full h-full bg-slate-100/60 dark:bg-zinc-950 overflow-hidden">
                 {selected ? (
                     <div className="animate-in fade-in slide-in-from-bottom-3 flex w-full flex-1 min-h-0 flex-col duration-300 ease-in-out h-full overflow-hidden">
-                        <ContractDetailView
-                            contract={selected}
-                            meId={meId}
-                            types={types}
-                            submissionTypes={submissionTypes}
-                            vendors={vendors}
-                            formTemplates={formTemplates}
-                            users={users}
-                            canUpdate={!!canUpdate || selected?.created_by === meId}
-                            onClose={closeDetail}
-                            onUpdate={updateContract}
-                            showToast={showToast}
-                            setDeleteOpen={setDeleteOpen}
-                            setPreviewTitle={setPreviewTitle}
-                            setPreviewUrl={setPreviewUrl}
-                            setPreviewHasFile={setPreviewHasFile}
-                            setPreviewOpen={setPreviewOpen}
-                            meUser={meUser}
-                        />
+                        <Suspense
+                            fallback={
+                                <div className="flex flex-1 items-center justify-center min-h-[400px] w-full p-6">
+                                    <LoadingLottie width={140} height={140} />
+                                </div>
+                            }
+                        >
+                            <ContractDetailView
+                                contract={selected}
+                                meId={meId}
+                                types={types}
+                                submissionTypes={submissionTypes}
+                                vendors={vendors}
+                                formTemplates={formTemplates}
+                                users={users}
+                                canUpdate={!!canUpdate || selected?.created_by === meId}
+                                onClose={closeDetail}
+                                onUpdate={updateContract}
+                                showToast={showToast}
+                                setDeleteOpen={setDeleteOpen}
+                                setPreviewTitle={setPreviewTitle}
+                                setPreviewUrl={setPreviewUrl}
+                                setPreviewHasFile={setPreviewHasFile}
+                                setPreviewOpen={setPreviewOpen}
+                                meUser={meUser}
+                            />
+                        </Suspense>
                     </div>
                 ) : (
                     <MasterPageLayout>
@@ -1254,7 +1287,7 @@ function ContractPage({
                                                 {showOverview && (
                                                     <DashboardTab
                                                         active={dashboardTab === 'overview'}
-                                                        onClick={() => setDashboardTab('overview')}
+                                                        onClick={() => handleDashboardTabChange('overview')}
                                                         label="Ringkasan"
                                                         icon={LayoutDashboard}
                                                     />
@@ -1262,7 +1295,7 @@ function ContractPage({
                                                 {showWorkload && (
                                                     <DashboardTab
                                                         active={dashboardTab === 'workload'}
-                                                        onClick={() => setDashboardTab('workload')}
+                                                        onClick={() => handleDashboardTabChange('workload')}
                                                         label="Beban Kerja"
                                                         icon={Briefcase}
                                                     />
@@ -1270,7 +1303,7 @@ function ContractPage({
                                                 {showMasterData && (
                                                     <DashboardTab
                                                         active={dashboardTab === 'master_data'}
-                                                        onClick={() => setDashboardTab('master_data')}
+                                                        onClick={() => handleDashboardTabChange('master_data')}
                                                         label="Master Data"
                                                         icon={Layers}
                                                     />
@@ -1347,7 +1380,12 @@ function ContractPage({
                                 <div className="flex-1 min-h-0 h-full overflow-hidden flex flex-col">
                                     {view === 'dashboard' && (
                                         <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar p-5">
-                                            <DashboardMetrics metrics={metrics ? { ...metrics, dashboardConfig: effectiveDashboardConfig } : null} activeTab={dashboardTab} />
+                                            <DashboardMetrics
+                                                metrics={metrics ? { ...metrics, dashboardConfig: effectiveDashboardConfig } : null}
+                                                activeTab={dashboardTab}
+                                                meUser={meUser}
+                                                onCreateContract={() => setCreateOpen(true)}
+                                            />
                                         </div>
                                     )}
                                     {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}

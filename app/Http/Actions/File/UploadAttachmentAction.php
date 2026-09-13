@@ -20,27 +20,54 @@ class UploadAttachmentAction
     {
         Gate::authorize('updateAttachment', $contract);
 
-        $file = $request->file('file');
-        $name = $file->getClientOriginalName();
-        $ext = $file->getClientOriginalExtension();
-        $path = $file->storeAs("contracts/{$contract->id}/attachments", Str::uuid().".{$ext}", 'local');
+        $uploadedFiles = [];
+        if ($request->hasFile('files')) {
+            $files = $request->file('files');
+            $uploadedFiles = is_array($files) ? $files : [$files];
+        } elseif ($request->hasFile('attachments')) {
+            $files = $request->file('attachments');
+            $uploadedFiles = is_array($files) ? $files : [$files];
+        } elseif ($request->hasFile('file')) {
+            $uploadedFiles = [$request->file('file')];
+        }
 
-        ContractAttachment::create([
-            'contract_id' => $contract->id,
-            'label' => $request->label,
-            'category' => $request->category,
-            'file_name' => $name,
-            'file_path' => $path,
-            'file_type' => $file->getMimeType(),
-            'uploaded_by' => Auth::id(),
-        ]);
+        if (empty($uploadedFiles)) {
+            return response()->json(['message' => 'Tidak ada berkas yang diunggah.'], 422);
+        }
 
-        ContractHistory::create([
-            'contract_id' => $contract->id,
-            'action' => 'FILE_UPLOADED',
-            'description' => "Upload lampiran: {$request->label} ({$name})",
-            'actor_id' => Auth::id(),
-        ]);
+        $category = $request->input('category', 'Additional');
+        $customLabel = $request->input('label');
+
+        foreach ($uploadedFiles as $file) {
+            if (!$file || !$file->isValid()) {
+                continue;
+            }
+
+            $name = $file->getClientOriginalName();
+            $ext = $file->getClientOriginalExtension();
+            $label = (count($uploadedFiles) === 1 && $customLabel)
+                ? $customLabel
+                : pathinfo($name, PATHINFO_FILENAME);
+
+            $path = $file->storeAs("contracts/{$contract->id}/attachments", Str::uuid().".{$ext}", 'local');
+
+            ContractAttachment::create([
+                'contract_id' => $contract->id,
+                'label' => $label,
+                'category' => $category,
+                'file_name' => $name,
+                'file_path' => $path,
+                'file_type' => $file->getMimeType(),
+                'uploaded_by' => Auth::id(),
+            ]);
+
+            ContractHistory::create([
+                'contract_id' => $contract->id,
+                'action' => 'FILE_UPLOADED',
+                'description' => "Upload lampiran: {$label} ({$name})",
+                'actor_id' => Auth::id(),
+            ]);
+        }
 
         $contract->load(['creator', 'versions.uploader', 'approvals.approver', 'histories.actor', 'messages.user', 'attachments.uploader']);
 

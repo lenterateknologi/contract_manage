@@ -54,6 +54,11 @@ export default function AgreementView({
     const [versions, setVersions] = useState<AgreementVersion[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadPhase, setUploadPhase] = useState<'idle' | 'uploading' | 'processing' | 'rendering'>('idle');
+    const [uploadFileName, setUploadFileName] = useState('');
+    const [uploadFileSize, setUploadFileSize] = useState('');
+    const [isIframeLoading, setIsIframeLoading] = useState(false);
     const [selectedVno, setSelectedVno] = useState<number | null>(null);
     const [showVersions, setShowVersions] = useState(false);
     const [showMoreActions, setShowMoreActions] = useState(false);
@@ -191,16 +196,41 @@ export default function AgreementView({
     // (Admins who are neither will be read-only on frontend unless we pass their role)
     const canEdit = (isCreator || isApprover || isSigner) && allowFlag !== false;
 
+    const formatSize = (bytes: number): string => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (!isRevision && !file.name.toLowerCase().endsWith('.docx')) {
-            showToast('Hanya file .docx yang diijinkan untuk Draft Perjanjian.', 'danger');
+        const lowerName = file.name.toLowerCase();
+        const isValidExt = lowerName.endsWith('.docx') || lowerName.endsWith('.doc') || lowerName.endsWith('.pdf');
+        if (!isValidExt) {
+            showToast('Hanya file .docx, .doc, atau .pdf yang diijinkan.', 'danger');
             return;
         }
 
         setUploading(true);
+        setUploadPhase('uploading');
+        setUploadProgress(0);
+        setUploadFileName(file.name);
+        setUploadFileSize(formatSize(file.size));
+        setIsIframeLoading(true);
+
+        const uploadConfig = {
+            onUploadProgress: (progressEvent: any) => {
+                if (progressEvent.total) {
+                    const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(Math.min(percent, 98));
+                    if (percent >= 98) {
+                        setUploadPhase('processing');
+                    }
+                }
+            },
+        };
 
         // If it's a signer, use the approval/signing API
         if (isSigner) {
@@ -210,14 +240,19 @@ export default function AgreementView({
             formData.append('action_code', 'approve');
 
             try {
-                const res = await axios.post(`/api/contracts/${contract.id}/approve`, formData);
+                const res = await axios.post(`/api/contracts/${contract.id}/approve`, formData, uploadConfig);
+                setUploadProgress(100);
+                setUploadPhase('rendering');
                 if (onUpdate && res.data) onUpdate(res.data);
                 showToast('Persetujuan Tanda Tangan berhasil diunggah.', 'success');
                 await loadVersions(true, true);
             } catch (err: any) {
                 showToast(err.response?.data?.message || 'Gagal mengunggah persetujuan.', 'danger');
             } finally {
-                setUploading(false);
+                setTimeout(() => {
+                    setUploading(false);
+                    setUploadPhase('idle');
+                }, 500);
             }
             return;
         }
@@ -233,7 +268,9 @@ export default function AgreementView({
 
         try {
             const url = isRevision ? `/api/contracts/${contract.id}/revision` : `/api/contracts/${contract.id}/agreement`;
-            const res = await axios.post(url, formData);
+            const res = await axios.post(url, formData, uploadConfig);
+            setUploadProgress(100);
+            setUploadPhase('rendering');
             setUploadNote('');
             if (onUpdate && res.data) onUpdate(res.data);
             await loadVersions(true, true);
@@ -243,7 +280,10 @@ export default function AgreementView({
             console.error('Upload failed', err);
             showToast(err.response?.data?.message || 'Gagal mengupload agreement.', 'danger');
         } finally {
-            setUploading(false);
+            setTimeout(() => {
+                setUploading(false);
+                setUploadPhase('idle');
+            }, 600);
         }
     };
 
@@ -454,7 +494,7 @@ export default function AgreementView({
                                 ref={fileInputRef}
                                 type="file"
                                 className="hidden"
-                                accept={isRevision ? '.pdf,.doc,.docx,.DOC,.DOCX,.PDF' : '.docx,.DOCX'}
+                                accept=".docx,.DOCX,.doc,.DOC,.pdf,.PDF"
                                 onChange={handleFileChange}
                                 onClick={(e) => {
                                     // Reset value so re-selecting same file triggers onChange
@@ -483,34 +523,147 @@ export default function AgreementView({
 
             {/* Main Preview Area - PDF Iframe (Full Width & Height, No Padding/Margin) */}
             <div ref={previewContainerRef} className="relative flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden bg-white dark:bg-zinc-900 rounded-xl border border-surface-border p-0 m-0">
+                {/* Uploading / Processing Glassmorphism Overlay */}
+                {uploading && (
+                    <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md transition-all duration-300 animate-in fade-in">
+                        <div className="w-full max-w-md mx-4 p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 shadow-2xl text-slate-800 dark:text-zinc-100 flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+                            <div className="relative mb-4">
+                                <div className="h-16 w-16 rounded-2xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary">
+                                    {uploadPhase === 'uploading' ? (
+                                        <Upload className="h-8 w-8 animate-bounce text-primary" />
+                                    ) : uploadPhase === 'processing' ? (
+                                        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                                    ) : (
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                    )}
+                                </div>
+                                <span className="absolute -bottom-1 -right-1 flex h-4 w-4">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-4 w-4 bg-primary"></span>
+                                </span>
+                            </div>
+
+                            <h4 className="text-sm font-bold tracking-tight mb-1 text-slate-900 dark:text-white">
+                                {uploadPhase === 'uploading' && 'Mengunggah Berkas...'}
+                                {uploadPhase === 'processing' && 'Memproses & Mengonversi Dokumen ke PDF...'}
+                                {uploadPhase === 'rendering' && 'Menyiapkan Tampilan Preview...'}
+                            </h4>
+
+                            {uploadFileName && (
+                                <p className="text-xs text-slate-500 dark:text-zinc-400 font-medium mb-4 truncate max-w-xs">
+                                    {uploadFileName} {uploadFileSize ? `(${uploadFileSize})` : ''}
+                                </p>
+                            )}
+
+                            {/* Progress bar */}
+                            <div className="w-full bg-slate-100 dark:bg-zinc-800 rounded-full h-2.5 overflow-hidden mb-2.5">
+                                <div
+                                    className={cn(
+                                        "h-full rounded-full transition-all duration-300 bg-primary",
+                                        uploadPhase === 'processing' && "animate-pulse"
+                                    )}
+                                    style={{
+                                        width: uploadPhase === 'processing' ? '100%' : `${uploadProgress}%`,
+                                    }}
+                                />
+                            </div>
+
+                            <div className="w-full flex justify-between items-center text-[10px] font-semibold text-slate-400 dark:text-zinc-500 uppercase tracking-wider">
+                                <span>
+                                    {uploadPhase === 'uploading' ? 'Upload ke server' : uploadPhase === 'processing' ? 'Konversi PDF' : 'Finalisasi'}
+                                </span>
+                                <span>{uploadProgress}%</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {loading ? (
-                    <div className="flex h-full w-full flex-col items-center justify-center gap-4 py-20">
-                        <LoadingLottie width={120} height={120} />
-                        <span className="text-[10px] font-semibold tracking-[0.2em] text-[#172554] uppercase dark:text-white">Memuat Dokumen...</span>
+                    /* High-polish Document Skeleton during initial loading */
+                    <div className="flex flex-1 flex-col items-center justify-center p-8 bg-slate-50/50 dark:bg-zinc-950/50 animate-pulse">
+                        <div className="w-full max-w-[210mm] h-[85vh] max-h-[700px] bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-slate-200 dark:border-zinc-800 p-8 flex flex-col justify-between">
+                            <div className="space-y-6">
+                                {/* Header skeleton */}
+                                <div className="flex justify-between items-center pb-6 border-b border-slate-100 dark:border-zinc-800">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-lg bg-slate-200 dark:bg-zinc-800" />
+                                        <div className="space-y-2">
+                                            <div className="h-3.5 w-36 rounded bg-slate-200 dark:bg-zinc-800" />
+                                            <div className="h-2.5 w-24 rounded bg-slate-100 dark:bg-zinc-800/60" />
+                                        </div>
+                                    </div>
+                                    <div className="h-6 w-20 rounded-full bg-slate-200 dark:bg-zinc-800" />
+                                </div>
+
+                                {/* Body skeleton lines */}
+                                <div className="space-y-3 pt-4">
+                                    <div className="h-3 w-3/4 rounded bg-slate-200 dark:bg-zinc-800" />
+                                    <div className="h-3 w-full rounded bg-slate-100 dark:bg-zinc-800/60" />
+                                    <div className="h-3 w-5/6 rounded bg-slate-100 dark:bg-zinc-800/60" />
+                                    <div className="h-3 w-2/3 rounded bg-slate-100 dark:bg-zinc-800/60" />
+                                </div>
+
+                                <div className="space-y-3 pt-6">
+                                    <div className="h-4 w-48 rounded bg-slate-200 dark:bg-zinc-800" />
+                                    <div className="h-3 w-full rounded bg-slate-100 dark:bg-zinc-800/60" />
+                                    <div className="h-3 w-11/12 rounded bg-slate-100 dark:bg-zinc-800/60" />
+                                    <div className="h-3 w-4/5 rounded bg-slate-100 dark:bg-zinc-800/60" />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-2 py-4 text-xs font-semibold text-primary">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Menyiapkan Dokumen {titleLabel}...</span>
+                            </div>
+                        </div>
                     </div>
                 ) : versions.length === 0 ? (
-                    <div className="flex flex-1 flex-col items-center justify-center p-20 text-center">
-                        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-black/20 dark:border-white/20">
-                            <FileText size={40} className="text-black/40 dark:text-white/40" />
+                    <div className="flex flex-1 flex-col items-center justify-center p-12 text-center bg-slate-50/50 dark:bg-zinc-950/50">
+                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20">
+                            <FileText size={32} />
                         </div>
-                        <h4 className="mb-2 text-xs font-medium text-black dark:text-white">Dokumen Tidak Tersedia</h4>
-                        <p className="max-w-sm text-[11px] font-medium text-black/40 dark:text-white/40">
-                            Upload draf final {titleLabel.toLowerCase()} Anda ({isRevision ? '.pdf, .docx' : '.docx'}) untuk mulai melacak versi
-                            secara dinamis.
+                        <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">Dokumen {titleLabel} Belum Tersedia</h4>
+                        <p className="max-w-md text-xs text-slate-500 dark:text-zinc-400 mb-5">
+                            Upload berkas {titleLabel.toLowerCase()} (.pdf, .docx, atau .doc) untuk mulai melihat pratinjau dan riwayat versi dokumen.
                         </p>
+                        {canEdit && (
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 shadow-md transition-all cursor-pointer"
+                            >
+                                <Upload size={14} />
+                                <span>Pilih Berkas untuk Diunggah</span>
+                            </button>
+                        )}
                     </div>
                 ) : (
-                    <>
-                        {pdfUrl ? (
-                            <div className="w-full h-full min-h-0 flex-1 p-0 m-0 border-none overflow-hidden">
-                                <iframe src={pdfUrl} className="w-full h-full min-h-0 flex-1 border-none p-0 m-0" title="Agreement Preview" />
+                    <div className="relative w-full h-full min-h-0 flex-1 p-0 m-0 border-none overflow-hidden bg-slate-100 dark:bg-zinc-950">
+                        {/* Iframe Loading Spinner overlay */}
+                        {isIframeLoading && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xs transition-opacity duration-300">
+                                <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-slate-200 dark:border-zinc-700">
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                    <span className="text-xs font-semibold text-slate-700 dark:text-zinc-200">
+                                        Merender Pratinjau PDF...
+                                    </span>
+                                </div>
                             </div>
+                        )}
+
+                        {pdfUrl ? (
+                            <iframe
+                                src={pdfUrl}
+                                onLoad={() => setIsIframeLoading(false)}
+                                className="w-full h-full min-h-0 flex-1 border-none p-0 m-0"
+                                title="Agreement Preview"
+                            />
                         ) : (
                             <div className="flex flex-1 items-center justify-center py-20">
                                 <LoadingLottie width={120} height={120} />
                             </div>
                         )}
-                    </>
+                    </div>
                 )}
             </div>
         </div>
