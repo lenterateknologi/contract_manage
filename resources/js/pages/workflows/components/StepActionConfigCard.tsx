@@ -777,12 +777,12 @@ export function StepActionConfigCard({
 
                 {/* Cell 4: Autofill Fields */}
                 <div className="relative space-y-1.5 z-10 focus-within:z-40">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Kolom Isi Otomatis (Autofill)</label>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Kolom Isi / Hapus Otomatis (Autofill)</label>
                     <SearchableMultiSelectPortal
                         values={act.autofilled_fields || []}
                         onValuesChange={(vals: string[]) => updateAction(actIdx, { autofilled_fields: vals })}
                         options={AUTOFILLED_PARAMS}
-                        placeholder="Pilih Kolom..."
+                        placeholder="Pilih Kolom Isi / Hapus..."
                     />
                 </div>
 

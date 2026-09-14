@@ -18,7 +18,7 @@ const {
     MoreVertical,
     Trash2,
 } = Icons;
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 
 export function isStatusTerminal(status?: string | null): boolean {
     return ['approved', 'rejected', 'archived', 'expired', 'cancelled'].includes((status || '').toLowerCase());
@@ -359,89 +359,89 @@ export const ContractNoCell = ({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-primary font-mono text-xs font-medium">{c.form_no || 'N/A'}</span>
 );
 
-export const TitleCell = ({ c }: Readonly<{ c: Contract }>) => (
+export const TitleCell = memo(({ c }: Readonly<{ c: Contract }>) => (
     <span className="text-text-main line-clamp-1 text-xs font-semibold">{c.title}</span>
-);
+));
+TitleCell.displayName = 'TitleCell';
 
-export const ContractNoAndTitleCell = ({ c, types = [] }: Readonly<{ c: Contract; types?: ContractType[] }>) => {
+export const ContractNoAndTitleCell = memo(({ c, types = [] }: Readonly<{ c: Contract; types?: ContractType[] }>) => {
     const type = types?.find((t) => t.id === c.contract_type_id);
     const typeName = type?.name || c.contract_type || '';
     const cleanTypeName = typeName ? typeName.replace('Perjanjian ', '').replace('Addendum / ', '') : '';
-    const typeBadge = cleanTypeName ? getContractTypeBadgeConfig(cleanTypeName) : null;
 
     return (
-        <div className="flex flex-col gap-1 py-1 max-w-[360px]">
-            {/* Top row: Title + Version Chip */}
+        <div className="flex flex-col gap-0.5 py-0.5 max-w-[340px]">
             <div className="flex items-center gap-1.5 min-w-0">
                 <span
-                    className="text-text-main group-hover:text-primary font-semibold text-[12.5px] leading-snug line-clamp-1 transition-colors"
+                    className="text-text-main group-hover:text-primary font-semibold text-[12px] leading-snug line-clamp-1 transition-colors"
                     title={c.title}
                 >
                     {c.title}
                 </span>
                 {!!c.current_version && c.current_version > 0 && (
-                    <span className="shrink-0 inline-flex items-center px-1.5 py-0.2 rounded text-[8.5px] font-bold font-mono bg-primary/10 text-primary border border-primary/20 leading-tight">
+                    <span className="shrink-0 px-1 py-0.2 rounded text-[8.5px] font-bold font-mono bg-primary/10 text-primary leading-tight">
                         v{c.current_version}
                     </span>
                 )}
             </div>
 
-            {/* Bottom row: Type Pill + Form / Contract Code */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-                {!!typeBadge && (
-                    <span
-                        className={cn(
-                            'inline-flex items-center rounded-md px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide uppercase border leading-none',
-                            typeBadge.bgClass,
-                            typeBadge.textClass,
-                            typeBadge.borderClass,
-                        )}
-                    >
+            <div className="flex items-center gap-1.5 text-[10px] text-text-desc font-medium truncate">
+                {cleanTypeName && (
+                    <span className="font-semibold uppercase text-text-soft">
                         {cleanTypeName}
                     </span>
                 )}
-                <span className="font-mono text-[10px] font-medium text-text-desc bg-surface-muted/60 dark:bg-slate-800/80 px-1.5 py-0.5 rounded border border-surface-border/60 leading-none">
+                {cleanTypeName && <span className="text-text-soft/40">•</span>}
+                <span className="font-mono text-text-desc">
                     {c.form_no || 'N/A'}
                 </span>
                 {c.contract_no && c.contract_no !== c.form_no && (
-                    <span className="font-mono text-[9.5px] text-text-soft truncate max-w-[150px] leading-none" title={`No. Kontrak: ${c.contract_no}`}>
-                        {c.contract_no}
-                    </span>
+                    <>
+                        <span className="text-text-soft/40">•</span>
+                        <span className="font-mono text-[9.5px] text-text-soft truncate" title={`No. Kontrak: ${c.contract_no}`}>
+                            {c.contract_no}
+                        </span>
+                    </>
                 )}
             </div>
         </div>
     );
-};
+});
+ContractNoAndTitleCell.displayName = 'ContractNoAndTitleCell';
 
-export const VendorCell = ({ c }: Readonly<{ c: Contract }>) => (
+export const VendorCell = memo(({ c }: Readonly<{ c: Contract }>) => (
     <div className="flex flex-col py-0.5">
         <span className="text-text-normal truncate text-[12px] font-medium">{c.vendor?.name || '—'}</span>
     </div>
-);
+));
+VendorCell.displayName = 'VendorCell';
 
-export const TypeAndVendorCell = ({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => (
+export const TypeAndVendorCell = memo(({ c, types }: Readonly<{ c: Contract; types: ContractType[] }>) => (
     <VendorCell c={c} />
-);
+));
+TypeAndVendorCell.displayName = 'TypeAndVendorCell';
 
-export const InitiatorCell = ({ c }: Readonly<{ c: Contract }>) => {
+export const InitiatorCell = memo(({ c }: Readonly<{ c: Contract }>) => {
     if (!c.initiator?.name) {
         return <span className="text-text-soft text-[11px] font-normal">—</span>;
     }
 
-    return (
-        <UserAvatarWithRole
-            user={c.initiator}
-            name={c.initiator.name}
-            role={c.initiator.role || ''}
-            department={c.initiator.department_name || 'UMUM'}
-            size="sm"
-            nameClassName="text-[11px] font-normal text-text-main"
-            roleClassName="text-[9.5px] text-text-desc"
-        />
-    );
-};
+    const sub = c.initiator.department_name || c.initiator.role || 'UMUM';
 
-export const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
+    return (
+        <div className="flex flex-col min-w-0 max-w-[170px] leading-tight">
+            <span className="text-[11px] font-medium text-text-main truncate" title={c.initiator.name}>
+                {c.initiator.name}
+            </span>
+            <span className="text-[9.5px] text-text-desc truncate" title={sub}>
+                {sub}
+            </span>
+        </div>
+    );
+});
+InitiatorCell.displayName = 'InitiatorCell';
+
+export const StatusAndStepCell = memo(({ c }: Readonly<{ c: Contract }>) => {
     let stepDesc = c.workflow_step?.description || c.workflow_step?.role || '';
     if (!stepDesc && c.status === 'draft') {
         stepDesc = c.initiator?.role || '';
@@ -452,45 +452,54 @@ export const StatusAndStepCell = ({ c }: Readonly<{ c: Contract }>) => {
             <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
         </div>
     );
-};
+});
+StatusAndStepCell.displayName = 'StatusAndStepCell';
 
-export const AssignedByCell = ({ c }: Readonly<{ c: Contract }>) => {
+export const AssignedByCell = memo(({ c }: Readonly<{ c: Contract }>) => {
     if (!c.assigned_by?.name) {
         return <span className="text-text-soft text-[11px] font-normal">—</span>;
     }
 
-    return (
-        <UserAvatarWithRole
-            user={c.assigned_by}
-            name={c.assigned_by.name}
-            role={c.assigned_by.role || ''}
-            department={c.assigned_by.department_name || ''}
-            size="sm"
-            nameClassName="text-[11px] font-normal text-text-main"
-            roleClassName="text-[9.5px] text-text-desc"
-        />
-    );
-};
+    const sub = c.assigned_by.department_name || c.assigned_by.role || '';
 
-export const AssignedPicCell = ({ c }: Readonly<{ c: Contract }>) => {
+    return (
+        <div className="flex flex-col min-w-0 max-w-[170px] leading-tight">
+            <span className="text-[11px] font-medium text-text-main truncate" title={c.assigned_by.name}>
+                {c.assigned_by.name}
+            </span>
+            {sub && (
+                <span className="text-[9.5px] text-text-desc truncate" title={sub}>
+                    {sub}
+                </span>
+            )}
+        </div>
+    );
+});
+AssignedByCell.displayName = 'AssignedByCell';
+
+export const AssignedPicCell = memo(({ c }: Readonly<{ c: Contract }>) => {
     if (!c.assigned_pic?.name) {
         return <span className="text-text-soft text-[11px] font-normal">—</span>;
     }
 
-    return (
-        <UserAvatarWithRole
-            user={c.assigned_pic}
-            name={c.assigned_pic.name}
-            role={c.assigned_pic.role || ''}
-            department={c.assigned_pic.department_name || ''}
-            size="sm"
-            nameClassName="text-[11px] font-normal text-text-main"
-            roleClassName="text-[9.5px] text-text-desc"
-        />
-    );
-};
+    const sub = c.assigned_pic.department_name || c.assigned_pic.role || '';
 
-export const ContractPeriodCell = ({ c, isExpiryView }: Readonly<{ c: Contract; isExpiryView?: boolean }>) => {
+    return (
+        <div className="flex flex-col min-w-0 max-w-[170px] leading-tight">
+            <span className="text-[11px] font-medium text-text-main truncate" title={c.assigned_pic.name}>
+                {c.assigned_pic.name}
+            </span>
+            {sub && (
+                <span className="text-[9.5px] text-text-desc truncate" title={sub}>
+                    {sub}
+                </span>
+            )}
+        </div>
+    );
+});
+AssignedPicCell.displayName = 'AssignedPicCell';
+
+export const ContractPeriodCell = memo(({ c, isExpiryView }: Readonly<{ c: Contract; isExpiryView?: boolean }>) => {
     const startDate = c.contract_date ? formatDate(c.contract_date, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
     const endDate = c.end_date ? formatDate(c.end_date, { day: 'numeric', month: 'short', year: 'numeric' }) : null;
 
@@ -501,14 +510,14 @@ export const ContractPeriodCell = ({ c, isExpiryView }: Readonly<{ c: Contract; 
     const showExpiry = Boolean(isExpiryView || (typeof window !== 'undefined' && window.location.pathname.includes('/contracts/expiry')));
 
     return (
-        <div className="flex flex-col gap-1 py-0.5 min-w-[145px]">
+        <div className="flex flex-col gap-0.5 py-0.5 min-w-[130px]">
             <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-1.5 text-[11px] leading-tight font-medium text-text-normal">
-                    <span className="text-text-desc text-[10px] uppercase font-semibold">Mulai:</span>
+                <div className="flex items-center gap-1 text-[11px] leading-tight font-medium text-text-normal">
+                    <span className="text-text-desc text-[9.5px] uppercase font-semibold">Mulai:</span>
                     <span>{startDate || '—'}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[11px] leading-tight font-medium text-text-normal">
-                    <span className="text-text-desc text-[10px] uppercase font-semibold">S/d:</span>
+                <div className="flex items-center gap-1 text-[11px] leading-tight font-medium text-text-normal">
+                    <span className="text-text-desc text-[9.5px] uppercase font-semibold">S/d:</span>
                     <span className={cn(c.end_date ? 'font-semibold text-text-main' : '')}>{endDate || '—'}</span>
                 </div>
             </div>
@@ -519,7 +528,8 @@ export const ContractPeriodCell = ({ c, isExpiryView }: Readonly<{ c: Contract; 
             )}
         </div>
     );
-};
+});
+ContractPeriodCell.displayName = 'ContractPeriodCell';
 
 export const renderContractNoAndTitle = (c: Contract) => <ContractNoAndTitleCell c={c} />;
 export const renderVendor = (c: Contract) => <VendorCell c={c} />;

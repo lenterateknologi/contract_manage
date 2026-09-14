@@ -13,7 +13,11 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'corixa'),
+    'tagline' => env('APP_TAGLINE', 'Legal Management System'),
+    'meta_title' => env('APP_META_TITLE', 'corixa - Legal Management System'),
+    'logo' => env('APP_LOGO', '/images/logo.png'),
+    'favicon' => env('APP_FAVICON', '/favicon.ico'),
 
     /*
     |--------------------------------------------------------------------------

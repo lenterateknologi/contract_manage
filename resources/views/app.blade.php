@@ -5,7 +5,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ config('app.meta_title') ?: (config('app.name', 'corixa') . ' - ' . config('app.tagline', 'Legal Management System')) }}</title>
+        <meta name="title" content="{{ config('app.meta_title') ?: (config('app.name', 'corixa') . ' - ' . config('app.tagline', 'Legal Management System')) }}">
+        <meta name="description" content="{{ config('app.tagline', 'Legal Management System') }}">
+
+        <link rel="icon" href="{{ config('app.favicon', '/images/logo.png') }}">
+        <link rel="shortcut icon" href="{{ config('app.favicon', '/images/logo.png') }}">
+        <link rel="apple-touch-icon" href="{{ config('app.logo', '/images/logo.png') }}">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600|inter:400,500,600,700|lora:400,500,600,700|montserrat:400,500,600,700,800,900|open-sans:400,500,600,700|roboto:400,500,700|lato:400,700|playfair-display:400,700" rel="stylesheet" />

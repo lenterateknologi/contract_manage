@@ -103,29 +103,30 @@ class ContractController extends Controller
                 ->withQueryString()
                 ->through(fn ($c) => ContractFormatter::formatContract($c, false));
 
-        $data = [
+        $counts = $this->getCachedContractCounts(Auth::id());
+        $meta = $this->getViewMetadata($view);
+
+        $data = array_merge([
             'currentView' => $view,
             'contracts' => $contracts,
-            'types' => Inertia::defer($loaders['types']),
-            'submissionTypes' => Inertia::defer($loaders['submissionTypes']),
-            'users' => Inertia::defer($loaders['users']),
-            'vendors' => Inertia::defer($loaders['vendors']),
-            'formTemplates' => Inertia::defer($loaders['formTemplates']),
-            'departments' => Inertia::defer($loaders['departments']),
-            'divisions' => Inertia::defer($loaders['divisions']),
-            'roles' => Inertia::defer($loaders['roles']),
-            'regions' => Inertia::defer($loaders['regions']),
-            'locations' => Inertia::defer($loaders['locations']),
-            'companyGroups' => Inertia::defer($loaders['companyGroups']),
-            'companies' => Inertia::defer($loaders['companies']),
-            'organizationTree' => Inertia::defer(function () use ($loaders) {
-                return ContractFilterScopeService::buildOrganizationTree(
-                    $loaders['companyGroups'](),
-                    $loaders['regions'](),
-                    $loaders['companies']()
-                );
-            }),
-            'contractStatuses' => Inertia::defer($loaders['contractStatuses']),
+            'types' => $loaders['types'](),
+            'submissionTypes' => $loaders['submissionTypes'](),
+            'users' => $loaders['users'](),
+            'vendors' => $loaders['vendors'](),
+            'formTemplates' => $loaders['formTemplates'](),
+            'departments' => $loaders['departments'](),
+            'divisions' => $loaders['divisions'](),
+            'roles' => $loaders['roles'](),
+            'regions' => $loaders['regions'](),
+            'locations' => $loaders['locations'](),
+            'companyGroups' => $loaders['companyGroups'](),
+            'companies' => $loaders['companies'](),
+            'organizationTree' => ContractFilterScopeService::buildOrganizationTree(
+                $loaders['companyGroups'](),
+                $loaders['regions'](),
+                $loaders['companies']()
+            ),
+            'contractStatuses' => $loaders['contractStatuses'](),
             'filters' => array_merge($request->only([
                 'search', 'status', 'contract_type_id', 'role_id', 'department_id',
                 'created_from', 'created_to', 'region_ids', 'vendor_ids', 'statuses',
@@ -136,14 +137,45 @@ class ContractController extends Controller
             ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),
-        ];
+            'breadcrumbs' => [
+                ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
+                ['title' => $meta['title'], 'href' => '#', 'description' => $meta['description'], 'icon' => $meta['icon']],
+            ],
+        ], $counts);
 
-        $viewTitle = 'Semua Pengajuan';
-        $viewDesc = 'Daftar seluruh dokumen pengajuan dalam sistem.';
-        $viewIcon = 'FileText';
+        if ($view === 'dashboard') {
+            $data['metrics'] = Inertia::defer(fn () => (new ContractDashboardQuery)->getMetrics($request));
+        }
 
-        $userId = Auth::id();
-        $cachedCounts = Cache::remember("contract_category_counts_{$userId}", now()->addSeconds(30), function () use ($userId, $request) {
+        return Inertia::render('contracts/Index', $data);
+    }
+
+    /**
+     * Get view metadata including title, description, and icon.
+     *
+     * @return array{title: string, description: string, icon: string}
+     */
+    private function getViewMetadata(string $view): array
+    {
+        return match ($view) {
+            'dashboard' => ['title' => 'Dashboard', 'description' => 'Statistik dan ringkasan aktivitas kontrak.', 'icon' => 'LayoutGrid'],
+            'mine' => ['title' => 'Pengajuan Saya', 'description' => 'Daftar dokumen pengajuan yang Anda buat.', 'icon' => 'FileEdit'],
+            'pending' => ['title' => 'Persetujuan Saya', 'description' => 'Dokumen pengajuan yang menunggu atau telah diproses persetujuan Anda.', 'icon' => 'Clock'],
+            'expiry' => ['title' => 'Masa Berlaku Dokumen', 'description' => 'Dokumen yang akan atau telah berakhir masa berlakunya.', 'icon' => 'History'],
+            'archived' => ['title' => 'Arsip Dokumen', 'description' => 'Kontrak yang telah diarsipkan.', 'icon' => 'FolderClosed'],
+            'in_progress' => ['title' => 'On Progress', 'description' => 'Kontrak yang sedang dalam proses pengerjaan.', 'icon' => 'Clock'],
+            'f1' => ['title' => 'Formulir F1', 'description' => 'Daftar kontrak dengan dokumen F1.', 'icon' => 'FilePlus'],
+            'f2' => ['title' => 'Formulir F2', 'description' => 'Daftar kontrak dengan dokumen F2.', 'icon' => 'FilePlus'],
+            default => ['title' => 'Semua Pengajuan', 'description' => 'Daftar seluruh dokumen pengajuan dalam sistem.', 'icon' => 'FileText'],
+        };
+    }
+
+    /**
+     * Compute and cache contract counts per category for navigation tabs.
+     */
+    private function getCachedContractCounts(string|int|null $userId): array
+    {
+        return Cache::remember("contract_category_counts_{$userId}", now()->addMinutes(5), function () use ($userId) {
             $allTypes = DB::table('m_contract_types')->whereNull('deleted_at')->get();
 
             $getDescendantIds = function ($parentId) use (&$getDescendantIds, $allTypes) {
@@ -177,12 +209,16 @@ class ContractController extends Controller
                 'kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
                 'non_kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
                 'nda' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
-                'in_progress' => (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked']),
+                'in_progress' => (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
                 'archived' => (clone $scopedAllQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
             ];
-            $parentCategoryCounts['in_progress'] = is_numeric($parentCategoryCounts['in_progress']) ? $parentCategoryCounts['in_progress'] : (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count();
 
-            $myBaseQuery = DB::table('t_contracts')->whereNull('deleted_at')->where('created_by', $userId);
+            $myBaseQuery = DB::table('t_contracts')
+                ->whereNull('deleted_at')
+                ->where(function ($q) use ($userId) {
+                    $q->where('created_by', $userId)
+                        ->orWhere('initiated_by_id', $userId);
+                });
             $myActiveQuery = (clone $myBaseQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
 
             $mineCounts = [
@@ -229,79 +265,6 @@ class ContractController extends Controller
                 'expiryCategoryCounts' => $expiryCategoryCounts,
             ];
         });
-
-        $data['parentCategoryCounts'] = $cachedCounts['parentCategoryCounts'];
-        $data['mineCounts'] = $cachedCounts['mineCounts'];
-        $data['pendingCounts'] = $cachedCounts['pendingCounts'];
-        $data['expiryCategoryCounts'] = $cachedCounts['expiryCategoryCounts'];
-
-        switch ($view) {
-            case 'contracts':
-                $viewTitle = 'Semua Pengajuan';
-                $viewDesc = 'Daftar seluruh dokumen pengajuan dalam sistem.';
-                $viewIcon = 'FileText';
-
-                break;
-            case 'dashboard':
-                $viewTitle = 'Dashboard';
-                $viewDesc = 'Statistik dan ringkasan aktivitas kontrak.';
-                $viewIcon = 'LayoutGrid';
-
-                break;
-            case 'mine':
-                $viewTitle = 'Pengajuan Saya';
-                $viewDesc = 'Daftar dokumen pengajuan yang Anda buat.';
-                $viewIcon = 'FileEdit';
-
-                break;
-            case 'pending':
-                $viewTitle = 'Persetujuan Saya';
-                $viewDesc = 'Dokumen pengajuan yang menunggu atau telah diproses persetujuan Anda.';
-                $viewIcon = 'Clock';
-
-                break;
-            case 'expiry':
-                $viewTitle = 'Masa Berlaku Dokumen';
-                $viewDesc = 'Dokumen yang akan atau telah berakhir masa berlakunya.';
-                $viewIcon = 'History';
-
-                break;
-            case 'archived':
-                $viewTitle = 'Arsip Dokumen';
-                $viewDesc = 'Kontrak yang telah diarsipkan.';
-                $viewIcon = 'FolderClosed';
-
-                break;
-            case 'in_progress':
-                $viewTitle = 'On Progress';
-                $viewDesc = 'Kontrak yang sedang dalam proses pengerjaan.';
-                $viewIcon = 'Clock';
-
-                break;
-            case 'f1':
-                $viewTitle = 'Formulir F1';
-                $viewDesc = 'Daftar kontrak dengan dokumen F1.';
-                $viewIcon = 'FilePlus';
-
-                break;
-            case 'f2':
-                $viewTitle = 'Formulir F2';
-                $viewDesc = 'Daftar kontrak dengan dokumen F2.';
-                $viewIcon = 'FilePlus';
-
-                break;
-        }
-
-        if ($view === 'dashboard') {
-            $data['metrics'] = Inertia::defer(fn () => (new ContractDashboardQuery)->getMetrics($request));
-        }
-
-        $data['breadcrumbs'] = [
-            ['title' => 'Manajemen Kontrak', 'href' => route('contracts'), 'icon' => 'FileText'],
-            ['title' => $viewTitle, 'href' => '#', 'description' => $viewDesc, 'icon' => $viewIcon],
-        ];
-
-        return Inertia::render('contracts/Index', $data);
     }
 
     public function showView(Request $request, string $id): Response

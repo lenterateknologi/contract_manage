@@ -10,12 +10,12 @@ declare global {
     const route: typeof routeFn;
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'corixa';
 
 import AppLayout from './layouts/app-layout';
 
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => (title ? `${title} - ${appName}` : (import.meta.env.VITE_APP_META_TITLE || appName)),
     resolve: async (name) => {
         const page = (await resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx'))) as any;
         if (page.default.layout === undefined && !name.startsWith('auth/') && !name.startsWith('errors/') && name !== 'Error' && name !== 'welcome') {

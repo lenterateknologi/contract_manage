@@ -399,7 +399,10 @@ import { UserSwitchModal } from '@/components/impersonation/UserSwitchModal';
 export const AppSidebar = memo(function AppSidebar() {
     const detailSidebar = useDetailSidebar();
     const page = usePage<SharedData>();
-    const { sidebarNavGroups, auth, povOptions } = page.props;
+    const { sidebarNavGroups, auth, povOptions, name, tagline, logo } = page.props;
+    const appName = name || (import.meta.env.VITE_APP_NAME as string) || 'corixa';
+    const appTagline = tagline || (import.meta.env.VITE_APP_TAGLINE as string) || 'Legal Management System';
+    const appLogo = logo || (import.meta.env.VITE_APP_LOGO as string) || '/images/logo.png';
     const currentPath = page.url.split('?')[0];
     const { setOpenMobile, isMobile } = useSidebar();
 
@@ -693,7 +696,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 transition-all hover:scale-105"
                                     >
                                         <img
-                                            src="/images/logo.png"
+                                            src={appLogo}
                                             alt="Logo"
                                             className="size-9 object-contain brightness-0 invert"
                                         />
@@ -1151,10 +1154,10 @@ export const AppSidebar = memo(function AppSidebar() {
                                 <div className="flex h-16 items-center px-4 border-b border-sidebar-border/40 shrink-0">
                                     <div className="flex flex-col justify-center truncate">
                                         <span className="text-sidebar-foreground text-[15px] leading-tight font-bold tracking-tight">
-                                            corexa
+                                            {appName}
                                         </span>
                                         <span className="text-sidebar-foreground/50 text-[10px] leading-tight font-medium truncate mt-0.5">
-                                            Legal Management System
+                                            {appTagline}
                                         </span>
                                     </div>
                                 </div>

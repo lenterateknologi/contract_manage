@@ -592,7 +592,7 @@ function GenericFormTab({
         }
     };
 
-    if (loading)
+    if (loading || !formTemplates || (formTemplates.length === 0 && !matchingTemplate)) {
         return (
             <div className="bg-surface-base animate-in fade-in flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden duration-300 p-3 lg:p-4 gap-3">
                 {/* Header Skeleton */}
@@ -633,6 +633,7 @@ function GenericFormTab({
                 </div>
             </div>
         );
+    }
 
     if (!matchingTemplate) {
         return (

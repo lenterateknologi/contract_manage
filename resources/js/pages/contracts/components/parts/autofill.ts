@@ -129,7 +129,13 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
             return formatLampiranList(combinedDocs);
         },
         meta_tgl_dibuat: () => formatDateWithOptionalTime(contract.created_at, field),
-        meta_masa_berlaku: () => (contract.contract_date && contract.end_date) ? `${contract.contract_date.split(' ')[0]} s/d ${contract.end_date.split(' ')[0]}` : '',
+        meta_masa_berlaku: () => {
+            if (!contract.contract_date && !contract.end_date) return '';
+            const start = contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '';
+            const end = contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '';
+            if (start && end) return `${start} s/d ${end}`;
+            return start || end;
+        },
         meta_p1_entity: () => 'PT. LENTERA TEKNOLOGI',
         meta_p1_signer: () => contract.p1_signer ?? (contract as any).initiator?.name ?? '',
         meta_p1_signer_position: () => contract.p1_signer_position ?? (contract as any).initiator?.role ?? '',
@@ -149,14 +155,14 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
         meta_pajak: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
         pajak: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
         tax_required: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
-        field_tanggal_mulai: () => contract.contract_date ? String(contract.contract_date).split(' ')[0] : '',
-        field_tanggal_berakhir: () => contract.end_date ? String(contract.end_date).split(' ')[0] : '',
-        field_tanggal_mulai_pelaksanaan_jasa_18: () => contract.contract_date ? String(contract.contract_date).split(' ')[0] : '',
-        field_tanggal_berakhir_pelaksanaan_jasa_19: () => contract.end_date ? String(contract.end_date).split(' ')[0] : '',
-        field_tanggal_mulai_pelaksanaan_jasa_23: () => contract.contract_date ? String(contract.contract_date).split(' ')[0] : '',
-        field_tanggal_berakhir_pelaksanaan_jasa_24: () => contract.end_date ? String(contract.end_date).split(' ')[0] : '',
-        field_tanggal_mulai_berlaku_20: () => contract.contract_date ? String(contract.contract_date).split(' ')[0] : '',
-        field_tanggal_berakhir_21: () => contract.end_date ? String(contract.end_date).split(' ')[0] : '',
+        field_tanggal_mulai: () => contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '',
+        field_tanggal_berakhir: () => contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '',
+        field_tanggal_mulai_pelaksanaan_jasa_18: () => contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '',
+        field_tanggal_berakhir_pelaksanaan_jasa_19: () => contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '',
+        field_tanggal_mulai_pelaksanaan_jasa_23: () => contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '',
+        field_tanggal_berakhir_pelaksanaan_jasa_24: () => contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '',
+        field_tanggal_mulai_berlaku_20: () => contract.contract_date ? String(contract.contract_date).split('T')[0].split(' ')[0] : '',
+        field_tanggal_berakhir_21: () => contract.end_date ? String(contract.end_date).split('T')[0].split(' ')[0] : '',
         field_harga_jasa_23: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         field_harga_jasa_28: () => contract.metadata?.meta_harga ?? (contract as any).amount ?? '',
         field_pajak_26: () => ((contract.metadata?.tax_required as any) === true || (contract.metadata?.tax_required as any) === '1' || (contract.metadata?.tax_required as any) === 1 || (contract.metadata?.tax_required as any) === 'Ya') ? 'Ya' : 'Tidak',
@@ -170,7 +176,11 @@ export const getAutofillValue = (field: any, contract: Contract, docType?: 'f1' 
     // Fallback to direct metadata match
     if (contract.metadata && (contract.metadata as any)[field.name] !== undefined) {
         const val = (contract.metadata as any)[field.name];
-        return val === null ? '' : String(val);
+        if (val === null || val === undefined) return '';
+        if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+            return val.split('T')[0];
+        }
+        return String(val);
     }
 
     return null;

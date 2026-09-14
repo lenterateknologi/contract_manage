@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
+import { type SharedData } from '@/types';
 import React, { useEffect, useState } from 'react';
 
 interface AuthSplitLayoutProps {
@@ -25,6 +26,11 @@ const loadLottie = (): Promise<void> => {
 };
 
 export default function AuthSplitLayout({ children, title, description, isSuccess = false, image }: Readonly<AuthSplitLayoutProps>) {
+    const { name, tagline, logo } = usePage<SharedData>().props;
+    const appName = name || import.meta.env.VITE_APP_NAME || 'corixa';
+    const appTagline = tagline || import.meta.env.VITE_APP_TAGLINE || 'Legal Management System';
+    const appLogo = logo || import.meta.env.VITE_APP_LOGO || '/images/logo.png';
+
     const [isSliding, setIsSliding] = useState(true);
     const [isExiting, setIsExiting] = useState(false);
 
@@ -85,14 +91,14 @@ export default function AuthSplitLayout({ children, title, description, isSucces
                         <div className="mb-6 flex items-center gap-3">
                             <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 p-2 shadow-xs ring-1 ring-primary/15 backdrop-blur-md dark:bg-primary/20 dark:ring-primary/30">
                                 <img
-                                    src="/images/logo.png"
-                                    alt="corexa Logo"
+                                    src={appLogo}
+                                    alt={`${appName} Logo`}
                                     className="h-7 w-auto object-contain dark:brightness-0 dark:invert"
                                 />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-base leading-none font-bold tracking-tight text-text-main">corexa</span>
-                                <span className="mt-1 text-[10px] leading-none font-medium text-text-desc">Legal Management System</span>
+                                <span className="text-base leading-none font-bold tracking-tight text-text-main">{appName}</span>
+                                <span className="mt-1 text-[10px] leading-none font-medium text-text-desc">{appTagline}</span>
                             </div>
                         </div>
 

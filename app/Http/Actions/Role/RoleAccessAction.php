@@ -4,6 +4,7 @@ namespace App\Http\Actions\Role;
 
 use App\Models\AccessModule;
 use App\Models\Module;
+use App\Models\ModuleGroup;
 use App\Models\Role;
 use App\Models\RoleModuleGroup;
 use Illuminate\Support\Facades\DB;
@@ -117,5 +118,59 @@ class RoleAccessAction
                     'sequence' => null,
                 ]);
         });
+    }
+
+    /**
+     * Get role configuration data including modules matrix, navigation structure, and list of roles.
+     */
+    public function getRoleConfigData(Role $role): array
+    {
+        // 1. Get All Active Modules with Role Access for the Matrix Tab
+        $modules = Module::where('is_active', true)
+            ->with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
+                $query->where('role_id', $role->id);
+            }])
+            ->orderBy('module_group_id')
+            ->orderBy('name')
+            ->get();
+
+        $modules->transform(function ($module) {
+            $module->access = $module->accessModules->first();
+            unset($module->accessModules);
+
+            return $module;
+        });
+
+        // 2. Get Navigation Structure for the Drag & Drop Tab
+        $groups = ModuleGroup::select('m_module_groups.*')
+            ->join('m_role_module_groups', function ($join) use ($role) {
+                $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
+                    ->where('m_role_module_groups.role_id', '=', $role->id);
+            })
+            ->orderBy('m_role_module_groups.sequence', 'asc')
+            ->get()
+            ->map(function ($group) use ($role) {
+                $group->modules = Module::select('m_modules.*')
+                    ->join('m_access_modules', 'm_modules.id', '=', 'm_access_modules.module_id')
+                    ->where('m_access_modules.role_id', $role->id)
+                    ->where('m_access_modules.module_group_id', $group->id)
+                    ->where('m_access_modules.can_read', true)
+                    ->orderByRaw('COALESCE(m_access_modules.sequence, 9999) ASC')
+                    ->orderBy('m_modules.name')
+                    ->get();
+
+                return $group;
+            })->values();
+
+        $allModules = Module::where('is_active', true)->orderBy('name')->get();
+        $allRoles = Role::orderBy('name')->get();
+
+        return [
+            'role' => $role,
+            'roles' => $allRoles,
+            'modules' => $modules,
+            'navigation' => $groups,
+            'allModules' => $allModules,
+        ];
     }
 }

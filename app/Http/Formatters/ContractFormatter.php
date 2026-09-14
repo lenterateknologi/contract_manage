@@ -22,23 +22,25 @@ class ContractFormatter
      */
     public static function formatContract(Contract $c, bool $isDetail = true): array
     {
-        $c->loadMissing([
-            'initiator.department', 'initiator.company',
-            'creator.department', 'creator.company',
-            'approvals.approver.department', 'approvals.workflowStep',
-            'workflowStep.actions', 'histories.actor.department',
-            'contractType', 'submissionType', 'vendor', 'parent', 'workflow.steps', 'workflow.contractType',
-            'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
-            'assignedPic.department', 'assignedBy.department', 'statusDetail',
-        ]);
-        $nextStep = self::getNextStep($c);
+        if ($isDetail) {
+            $c->loadMissing([
+                'initiator.department', 'initiator.company',
+                'creator.department', 'creator.company',
+                'approvals.approver.department', 'approvals.workflowStep',
+                'workflowStep.actions', 'histories.actor.department',
+                'contractType', 'submissionType', 'vendor', 'parent', 'workflow.steps', 'workflow.contractType',
+                'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
+                'assignedPic.department', 'assignedBy.department', 'statusDetail',
+            ]);
+        }
+        $nextStep = $isDetail ? self::getNextStep($c) : null;
         $requiresPicAssignment = $nextStep && $nextStep->approver_type === 'assigned_pic';
-        $effectiveStep = $c->workflowStep ?: ($c->workflow ? $c->workflow->steps->first() : null);
+        $effectiveStep = $c->workflowStep ?: ($c->workflow && $c->workflow->relationLoaded('steps') ? $c->workflow->steps->first() : null);
         $progress = $c->progressData();
         $shortId = ShortIdService::encode($c->id);
 
         $actionReqFields = [];
-        if ($effectiveStep) {
+        if ($effectiveStep && $isDetail) {
             $actions = $effectiveStep->relationLoaded('actions') ? $effectiveStep->actions : $effectiveStep->actions()->get();
             foreach ($actions as $act) {
                 if (! empty($act->required_fields) && is_array($act->required_fields)) {
@@ -92,11 +94,7 @@ class ContractFormatter
                 return $c->status;
             })(),
             'status_info' => (function () use ($c, $effectiveStep) {
-                $statusToUse = $c->status;
-                if ($effectiveStep && ! empty($effectiveStep->meta['target_status']) && ! in_array($c->status, ['approved', 'rejected', 'closed', 'archived'])) {
-                    $statusToUse = $effectiveStep->meta['target_status'];
-                }
-                $statusDetail = ContractStatus::where('code', $statusToUse)->first() ?: $c->statusDetail;
+                $statusDetail = $c->relationLoaded('statusDetail') ? $c->statusDetail : null;
                 return $statusDetail ? [
                     'code' => data_get($statusDetail, 'code'),
                     'label' => data_get($statusDetail, 'label'),
@@ -146,9 +144,9 @@ class ContractFormatter
             'require_period' => (bool) (data_get($effectiveStep?->meta, 'require_period', false) || in_array('period', $actionReqFields)),
 
 
-            'f1_file' => $c->versions->where('document_type', 'f1')->first()?->file_name,
-            'f2_file' => $c->versions->where('document_type', 'f2')->first()?->file_name,
-            'agreement_file' => $c->versions->where('document_type', 'agreement')->first()?->file_name ?: ($c->versions->where('document_type', 'contract')->first()?->file_name),
+            'f1_file' => $c->relationLoaded('versions') ? $c->versions->where('document_type', 'f1')->first()?->file_name : null,
+            'f2_file' => $c->relationLoaded('versions') ? $c->versions->where('document_type', 'f2')->first()?->file_name : null,
+            'agreement_file' => $c->relationLoaded('versions') ? ($c->versions->where('document_type', 'agreement')->first()?->file_name ?: ($c->versions->where('document_type', 'contract')->first()?->file_name)) : null,
 
             'current_version' => $c->current_version,
             'created_at' => $c->created_at->translatedFormat('j M Y, H:i'),
@@ -164,7 +162,7 @@ class ContractFormatter
             'assigned_pic' => self::formatUser($c->assignedPic),
             'assigned_at' => $c->assigned_at ? $c->assigned_at->toIso8601String() : ($c->metadata['assigned_at'] ?? null),
             'assigned_at_formatted' => $c->assigned_at ? $c->assigned_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['assigned_at']) ? Carbon::parse($c->metadata['assigned_at'])->translatedFormat('j M Y, H:i') : null),
-            'pic_assigned_at' => (function () use ($c) {
+            'pic_assigned_at' => (function () use ($c, $isDetail) {
                 if ($c->assigned_at) {
                     return $c->assigned_at->translatedFormat('j M Y, H:i');
                 }
@@ -180,7 +178,7 @@ class ContractFormatter
                         return $hist->created_at->translatedFormat('j M Y, H:i');
                     }
                 }
-                if ($c->assigned_pic_id || ! empty($c->metadata['assigned_pic_id'])) {
+                if ($isDetail && ($c->assigned_pic_id || ! empty($c->metadata['assigned_pic_id']))) {
                     $hist = $c->histories()->where('action', 'WORKFLOW_ASSIGNED')->latest()->first();
                     if ($hist && $hist->created_at) {
                         return $hist->created_at->translatedFormat('j M Y, H:i');
@@ -205,7 +203,7 @@ class ContractFormatter
             'progress' => $progress,
             'workflow_id' => $c->workflow_id,
             'origin_workflow_id' => $c->origin_workflow_id,
-            'origin_workflow' => $c->origin_workflow_id ? [
+            'origin_workflow' => ($isDetail && $c->origin_workflow_id) ? [
                 'id' => $c->origin_workflow_id,
                 'name' => Workflow::where('id', $c->origin_workflow_id)->value('name') ?? $c->workflow?->name,
                 'meta' => Workflow::where('id', $c->origin_workflow_id)->value('meta') ?? [],
@@ -216,7 +214,7 @@ class ContractFormatter
                 'name' => $c->workflow->name,
                 'contract_type' => $c->workflow->relationLoaded('contractType') ? $c->workflow->contractType : null,
                 'meta' => $c->workflow->meta ?? [],
-                'steps' => $c->workflow->relationLoaded('steps') ? $c->workflow->steps->map(fn ($s) => [
+                'steps' => ($isDetail && $c->workflow->relationLoaded('steps')) ? $c->workflow->steps->map(fn ($s) => [
                     'id' => $s->id,
                     'step' => $s->step,
                     'description' => $s->description,
@@ -246,7 +244,7 @@ class ContractFormatter
                 'approver_config' => $nextStep->approver_config,
             ] : null,
             'requires_pic_assignment' => $requiresPicAssignment,
-            'versions' => $c->versions->map(fn ($v) => [
+            'versions' => $isDetail ? $c->versions->map(fn ($v) => [
                 'id' => $v->id,
                 'document_type' => $v->document_type,
                 'version_no' => $v->version_no,
@@ -259,20 +257,20 @@ class ContractFormatter
                 'created_at' => $v->created_at->toDateString(),
                 'created_at_raw' => $v->created_at->toIso8601String(),
                 'uploader' => self::formatUser($v->uploader),
-            ])->sortByDesc('version_no')->values(),
+            ])->sortByDesc('version_no')->values() : [],
             'approvals' => self::mapApprovalTimeline($c, $isDetail),
-            'histories' => $c->histories->map(fn ($h) => [
+            'histories' => $isDetail ? $c->histories->map(fn ($h) => [
                 'action' => $h->action,
                 'description' => $h->description,
                 'actor_id' => $h->actor_id,
                 'created_at' => $h->created_at->format('Y-m-d H:i'),
                 'actor' => self::formatUser($h->actor),
-            ])->sortByDesc('created_at')->values(),
-            'messages' => (function () use ($c) {
+            ])->sortByDesc('created_at')->values() : [],
+            'messages' => $isDetail ? (function () use ($c) {
                 $chatService = app(ChatService::class);
                 return $chatService->formatMessages($c->messages, Auth::id());
-            })(),
-            'attachments' => $c->attachments->map(fn ($at) => [
+            })() : [],
+            'attachments' => $isDetail ? $c->attachments->map(fn ($at) => [
                 'id' => $at->id,
                 'label' => $at->label,
                 'category' => $at->category,
@@ -283,15 +281,15 @@ class ContractFormatter
                     : null,
                 'created_at' => $at->created_at->toDateString(),
                 'uploader' => self::formatUser($at->uploader),
-            ]),
-            'form_submissions' => $c->formSubmissions->map(fn ($fs) => [
+            ]) : [],
+            'form_submissions' => $isDetail ? $c->formSubmissions->map(fn ($fs) => [
                 'id' => $fs->id,
                 'document_type' => $fs->document_type,
                 'form_template_id' => $fs->form_template_id,
                 'current_version' => $fs->current_version,
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
-            ]),
+            ]) : [],
             'can_approve' => (function () use ($c) {
                 if ($c->status === 'in_review' && $c->workflow_step_id && $c->workflowStep) {
                     $hasPendingOrWaiting = $c->approvals
@@ -396,14 +394,18 @@ class ContractFormatter
     private static function getEffectiveMode(Contract $c, string $type, string $default): string
     {
         // 1. Check if interactive data exists (form submissions)
-        $hasInteractive = $c->formSubmissions->where('document_type', $type)->isNotEmpty();
+        $hasInteractive = $c->relationLoaded('formSubmissions')
+            ? $c->formSubmissions->where('document_type', $type)->isNotEmpty()
+            : false;
         if ($hasInteractive) {
             return 'interactive';
         }
 
         // 2. Check if uploaded files exist (versions)
         $docType = $type === 'contract' ? 'agreement' : $type;
-        $hasUpload = $c->versions->where('document_type', $docType)->isNotEmpty();
+        $hasUpload = $c->relationLoaded('versions')
+            ? $c->versions->where('document_type', $docType)->isNotEmpty()
+            : false;
         if ($hasUpload) {
             return 'upload';
         }

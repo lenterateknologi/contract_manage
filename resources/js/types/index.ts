@@ -84,6 +84,10 @@ export interface PovOptions {
 
 export interface SharedData {
     name: string;
+    tagline?: string;
+    meta_title?: string;
+    logo?: string;
+    favicon?: string;
     quote: { message: string; author: string };
     auth: Auth;
     breadcrumbs?: BreadcrumbItem[];

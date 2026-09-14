@@ -154,7 +154,7 @@ export default function Profile({ department, recentContracts = [] }: ProfilePro
         <>
             <Head title="Profil" />
             <SettingsLayout>
-                <div className="dark:bg-background min-h-screen w-full bg-white md:-m-[9px] md:w-[calc(100%+18px)]">
+                <div className="dark:bg-background min-h-full w-full bg-white md:-m-[9px] md:w-[calc(100%+18px)] pb-20">
 
                     {/* Header */}
                     <div className="dark:bg-surface-base border-surface-border bg-white border-b">

@@ -1149,11 +1149,7 @@ class ContractWorkflowService
             $stepAction = $approval->workflowStep->actions()->whereIn('action_code', ['approve', 'assign', 'assign_pic'])->first();
         }
         if ($stepAction && ! empty($stepAction->autofilled_fields)) {
-            $metadata = $contract->metadata ?? [];
-            foreach ($stepAction->autofilled_fields as $field) {
-                $metadata[$field] = now()->toIso8601String();
-            }
-            $contract->update(['metadata' => $metadata]);
+            $this->applyAutofilledFields($contract, $stepAction->autofilled_fields);
         }
 
         $hasExplicitTransition = $stepAction && (
@@ -1294,11 +1290,7 @@ class ContractWorkflowService
             if ($action) {
                 // Execute autofill if configured
                 if (! empty($action->autofilled_fields)) {
-                    $metadata = $contract->metadata ?? [];
-                    foreach ($action->autofilled_fields as $field) {
-                        $metadata[$field] = now()->toIso8601String();
-                    }
-                    $contract->update(['metadata' => $metadata]);
+                    $this->applyAutofilledFields($contract, $action->autofilled_fields);
                 }
 
                 $nextStep = $this->evaluateTransition($contract, $step, $action);
@@ -1500,5 +1492,183 @@ class ContractWorkflowService
         }
 
         return $query;
+    }
+
+    /**
+     * Apply automatic filling or clearing of fields on a contract based on step action configuration.
+     */
+    public function applyAutofilledFields(Contract $contract, array $fields): void
+    {
+        if (empty($fields)) {
+            return;
+        }
+
+        $metadata = $contract->metadata ?? [];
+        $updates = [];
+        $metaUpdated = false;
+
+        foreach ($fields as $field) {
+            if (! is_string($field)) {
+                continue;
+            }
+
+            switch ($field) {
+                // ── OPSI ISI / SET VALUES ──
+                case 'received_at':
+                    $updates['received_at'] = now();
+                    $metadata['received_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                case 'assigned_at':
+                    $updates['assigned_at'] = now();
+                    $metadata['assigned_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                case 'finished_at':
+                    $updates['finished_at'] = now();
+                    $metadata['finished_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                case 'closed_at':
+                    $updates['closed_at'] = now();
+                    $updates['closed_by'] = Auth::id();
+                    $metadata['closed_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                case 'signed_at':
+                    $metadata['signed_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                case 'approved_at':
+                    $metadata['approved_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                case 'started_at':
+                    $metadata['started_at'] = now()->toIso8601String();
+                    $metaUpdated = true;
+                    break;
+
+                // ── OPSI HAPUS / CLEAR VALUES ──
+                case 'clear_received_at':
+                    $updates['received_at'] = null;
+                    unset($metadata['received_at']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_assigned_at':
+                    $updates['assigned_at'] = null;
+                    unset($metadata['assigned_at']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_finished_at':
+                    $updates['finished_at'] = null;
+                    unset($metadata['finished_at']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_closed_at':
+                    $updates['closed_at'] = null;
+                    $updates['closed_by'] = null;
+                    unset($metadata['closed_at']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_signed_at':
+                    unset($metadata['signed_at']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_approved_at':
+                    unset($metadata['approved_at']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_started_at':
+                    unset($metadata['started_at']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_pic':
+                    $updates['assigned_pic_id'] = null;
+                    $updates['assigned_by_id'] = null;
+                    unset($metadata['pic'], $metadata['assigned_pic']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_contract_no':
+                    $updates['contract_no'] = null;
+                    unset($metadata['contract_no'], $metadata['meta_no_kontrak']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_price':
+                    unset($metadata['meta_harga'], $metadata['price'], $metadata['f2_price']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_period':
+                    $updates['contract_date'] = null;
+                    $updates['end_date'] = null;
+                    unset($metadata['meta_masa_berlaku']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_tax':
+                    $updates['tax_required'] = null;
+                    unset($metadata['tax_required'], $metadata['meta_tax_required']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_vendor':
+                    $updates['vendor_id'] = null;
+                    unset($metadata['vendor_id']);
+                    $metaUpdated = true;
+                    break;
+
+                case 'clear_f1':
+                    $contract->formSubmissions()->where('document_type', 'f1')->delete();
+                    break;
+
+                case 'clear_f2':
+                    $contract->formSubmissions()->where('document_type', 'f2')->delete();
+                    break;
+
+                case 'clear_agreement':
+                    $contract->files()->where('file_type', 'agreement')->delete();
+                    break;
+
+                case 'clear_description':
+                    $updates['description'] = null;
+                    unset($metadata['meta_deskripsi']);
+                    $metaUpdated = true;
+                    break;
+
+                default:
+                    if (str_starts_with($field, 'clear_') || str_starts_with($field, 'remove_')) {
+                        $rawKey = preg_replace('/^(clear_|remove_)/', '', $field);
+                        unset($metadata[$rawKey]);
+                        $metaUpdated = true;
+                    } else {
+                        $metadata[$field] = now()->toIso8601String();
+                        $metaUpdated = true;
+                    }
+                    break;
+            }
+        }
+
+        if ($metaUpdated) {
+            $updates['metadata'] = $metadata;
+        }
+
+        if (! empty($updates)) {
+            $contract->update($updates);
+        }
     }
 }

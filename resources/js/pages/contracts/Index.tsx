@@ -1444,10 +1444,10 @@ function ContractPage({
                                                                 <button
                                                                     key={c.id}
                                                                     onClick={() => openDetail(c)}
-                                                                    className="group border-surface-border bg-surface-base/60 hover:border-primary hover:shadow-primary/5 focus:ring-primary relative flex cursor-pointer flex-col gap-2.5 rounded-xl border p-3 text-left backdrop-blur-sm transition-all hover:shadow-md focus:ring-2 focus:outline-none"
+                                                                    className="group border-surface-border bg-white dark:bg-zinc-900 hover:border-primary/50 focus:ring-primary relative flex cursor-pointer flex-col gap-2 rounded-xl border p-3 text-left transition-colors hover:shadow-xs focus:ring-2 focus:outline-none"
                                                                 >
                                                                     <div className="flex items-center justify-between gap-2">
-                                                                        <span className="group-hover:text-primary text-text-soft text-[9px] font-bold tracking-wider uppercase transition-all">
+                                                                        <span className="group-hover:text-primary text-text-soft text-[9px] font-bold tracking-wider uppercase transition-colors">
                                                                             {c.form_no || 'No Req'}
                                                                         </span>
                                                                         <div className="flex-shrink-0 origin-right scale-[0.75]">
@@ -1459,24 +1459,24 @@ function ContractPage({
                                                                         <h3 className="group-hover:text-primary text-text-main truncate text-xs font-semibold tracking-tight uppercase transition-colors">
                                                                             {c.title}
                                                                         </h3>
-                                                                        <span className="text-text-desc text-[9px] font-medium uppercase italic truncate">
+                                                                        <span className="text-text-desc text-[9px] font-medium uppercase truncate">
                                                                             {c.contract_type}
                                                                         </span>
                                                                         {isExpiryView && c.end_date && (
-                                                                            <div className="pt-1">
+                                                                            <div className="pt-0.5">
                                                                                 <ExpiryBadge endDate={c.end_date} />
                                                                             </div>
                                                                         )}
                                                                     </div>
 
-                                                                    <div className="flex items-center justify-between border-t border-surface-border/40 pt-2.5 text-[9px] font-semibold text-text-soft uppercase">
+                                                                    <div className="flex items-center justify-between border-t border-surface-border/40 pt-2 text-[9px] font-semibold text-text-soft uppercase">
                                                                         <div className="flex items-center gap-1.5 truncate max-w-[60%]">
                                                                             <span className="truncate">{c.initiator?.department_name || 'Umum'}</span>
                                                                             <span className="text-text-soft/40">•</span>
                                                                             <span className="truncate font-normal">{c.assigned_pic?.name || 'No PIC'}</span>
                                                                         </div>
                                                                         <div className="flex items-center gap-2 shrink-0">
-                                                                            <span className="text-primary bg-primary/5 rounded-md px-1.5 py-0.5 font-bold">
+                                                                            <span className="text-primary bg-primary/5 rounded px-1.5 py-0.5 font-bold">
                                                                                 {c.progress.done}/{c.progress.total}
                                                                             </span>
                                                                             <div className="origin-right scale-[0.65]">
@@ -1627,106 +1627,34 @@ export default function ContractsIndex({
     const meId = auth?.user?.id ?? '';
     const meUser = auth?.user ?? null;
 
-    const [contractsPaged, setContractsPaged] = useState<PaginatedData<Contract>>(initialContractsPaged);
-    const [types, setTypes] = useState<ContractType[]>(initialTypes);
-    const [submissionTypes, setSubmissionTypes] = useState<any[]>(initialSubmissionTypes);
-    const [metrics, setMetrics] = useState<any>(initialMetrics);
-
-    const [bootLoading, setBootLoading] = useState(
-        initialContractsPaged.data.length === 0 && !initialMetrics && !initialSelectedProp && initialTypes.length === 0,
-    );
-
-    useEffect(() => {
-        setContractsPaged(initialContractsPaged);
-    }, [initialContractsPaged]);
-    useEffect(() => {
-        if (initialTypes.length > 0) setTypes(initialTypes);
-    }, [initialTypes]);
-    useEffect(() => {
-        if (initialSubmissionTypes.length > 0) setSubmissionTypes(initialSubmissionTypes);
-    }, [initialSubmissionTypes]);
-    useEffect(() => {
-        if (initialMetrics) setMetrics(initialMetrics);
-    }, [initialMetrics]);
-
-    useEffect(() => {
-        const hasCriticalData = initialContractsPaged.data.length > 0 || initialSelectedProp || initialMetrics;
-        if (hasCriticalData && initialTypes.length > 0) {
-            setBootLoading(false);
-            return;
-        }
-        if (hasCriticalData) {
-            setBootLoading(false);
-        } else {
-            setBootLoading(true);
-            Promise.all([
-                contractApi.list({ view: currentView }),
-                contractApi.getTypes(),
-                axios
-                    .get('/api/contracts/submission-types')
-                    .then((res) => res.data)
-                    .catch(() => []),
-                axios
-                    .get('/contracts/dashboard-metrics')
-                    .then((res) => res.data)
-                    .catch(() => null),
-            ])
-                .then(([cData, tData, sData, mData]) => {
-                    setContractsPaged(cData as any);
-                    setTypes(tData);
-                    setSubmissionTypes(sData);
-                    setMetrics(mData);
-                    setBootLoading(false);
-                })
-                .catch(() => setBootLoading(false));
-        }
-    }, [currentView]);
-
     return (
         <>
             <Head title="Contract Manager" />
             <ToastProvider>
-                {bootLoading ? (
-                    <div className="bg-background flex h-screen flex-col items-center justify-center gap-6">
-                        <div className="relative flex items-center justify-center">
-                            <LoadingLottie width={180} height={180} />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="border-primary h-32 w-32 animate-spin rounded-full border-b-2 opacity-20" />
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-text-desc animate-pulse text-xs font-semibold tracking-wider uppercase">Memuat Sistem Kontrak</span>
-                            <div className="bg-surface-muted h-0.5 w-48 overflow-hidden rounded-full">
-                                <div className="animate-progress bg-primary h-full w-full origin-left" />
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <ContractPage
-                        contracts={contractsPaged}
-                        meId={meId}
-                        meUser={meUser}
-                        initialSelected={initialSelectedProp}
-                        types={types}
-                        submissionTypes={submissionTypes}
-                        vendors={vendors}
-                        formTemplates={initialFormTemplates}
-                        currentView={currentView}
-                        metrics={metrics}
-                        filters={filters}
-                        users={users}
-                        departments={departments}
-                        roles={roles}
-                        companyGroups={companyGroups}
-                        regions={regions}
-                        companies={companies}
-                        organizationTree={organizationTree}
-                        mineCounts={mineCounts}
-                        parentCategoryCounts={parentCategoryCounts}
-                        pendingCounts={pendingCounts}
-                        expiryCategoryCounts={expiryCategoryCounts}
-                    />
-                )}
+                <ContractPage
+                    contracts={initialContractsPaged}
+                    meId={meId}
+                    meUser={meUser}
+                    initialSelected={initialSelectedProp}
+                    types={initialTypes}
+                    submissionTypes={initialSubmissionTypes}
+                    vendors={vendors}
+                    formTemplates={initialFormTemplates}
+                    currentView={currentView}
+                    metrics={initialMetrics}
+                    filters={filters}
+                    users={users}
+                    departments={departments}
+                    roles={roles}
+                    companyGroups={companyGroups}
+                    regions={regions}
+                    companies={companies}
+                    organizationTree={organizationTree}
+                    mineCounts={mineCounts}
+                    parentCategoryCounts={parentCategoryCounts}
+                    pendingCounts={pendingCounts}
+                    expiryCategoryCounts={expiryCategoryCounts}
+                />
             </ToastProvider>
         </>
     );

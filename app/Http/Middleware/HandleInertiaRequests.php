@@ -63,6 +63,10 @@ class HandleInertiaRequests extends Middleware
 
         return array_merge(parent::share($request), [
             'name' => config('app.name'),
+            'tagline' => config('app.tagline', 'Legal Management System'),
+            'meta_title' => config('app.meta_title', 'corixa - Legal Management System'),
+            'logo' => config('app.logo', '/images/logo.png'),
+            'favicon' => config('app.favicon', '/favicon.ico'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
             'auth' => [
                 'user' => $request->user() ? array_merge($request->user()->toArray(), [

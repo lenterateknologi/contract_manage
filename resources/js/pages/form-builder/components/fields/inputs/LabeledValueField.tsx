@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/time-utils';
 import { Calendar, ChevronDown } from 'lucide-react';
 import React from 'react';
 import { getTypographyStyle } from '../../utils';
@@ -78,8 +79,26 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             }
         } else if (valueType === 'checkbox') {
             displayValue = value ? 'Ya' : 'Tidak';
+        } else if (valueType === 'date') {
+            if (value) {
+                const str = String(value).trim();
+                const formatted = formatDate(str);
+                displayValue = formatted !== '-' ? formatted : str.split('T')[0].split(' ')[0];
+            } else {
+                displayValue = '';
+            }
         } else {
-            displayValue = value || '';
+            if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+                const isDateName = field.name?.includes('tgl') || field.name?.includes('tanggal') || field.name?.includes('date');
+                if (isDateName) {
+                    const formatted = formatDate(value);
+                    displayValue = formatted !== '-' ? formatted : value.split('T')[0];
+                } else {
+                    displayValue = value.split('T')[0];
+                }
+            } else {
+                displayValue = value || '';
+            }
         }
 
         const maxLines = field.options?.max_lines ? Number(field.options.max_lines) : (valueType === 'textarea' ? 3 : 1);
@@ -152,11 +171,16 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
         const customPlaceholder = field.placeholder;
 
         if (valueType === 'date') {
+            const rawDateStr = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)
+                ? value.split('T')[0]
+                : (value || '');
+            const isoDateOnly = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.substring(0, 10) : '';
+
             return (
                 <div className="flex w-full min-w-0 items-center gap-1.5">
                     <input
                         type="text"
-                        value={value || ''}
+                        value={rawDateStr}
                         onChange={(e) => onChange?.(e.target.value)}
                         placeholder={customPlaceholder || (allowDirectEdit ? "Ketik atau pilih tanggal..." : "Pilih tanggal dari kalender...")}
                         readOnly={!allowDirectEdit}
@@ -180,7 +204,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                             </button>
                             <input
                                 type="date"
-                                value={typeof value === 'string' && value.includes('-') ? value : ''}
+                                value={isoDateOnly}
                                 onChange={(e) => onChange?.(e.target.value)}
                                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                             />
@@ -347,10 +371,14 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             );
         }
 
+        const cleanInputValue = typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)
+            ? value.split('T')[0]
+            : (value || '');
+
         return (
             <input
                 type="text"
-                value={value || ''}
+                value={cleanInputValue}
                 readOnly={!allowDirectEdit}
                 onChange={(e) => {
                     if (!allowDirectEdit) return;

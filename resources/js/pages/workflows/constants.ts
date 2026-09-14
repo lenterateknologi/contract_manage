@@ -15,10 +15,33 @@ export const AVAILABLE_FIELDS = [
 ];
 
 export const AUTOFILLED_PARAMS = [
+    // ── Opsi Isi Otomatis (Set Value) ──
     { value: 'received_at', label: 'Isi Waktu Diterima' },
     { value: 'assigned_at', label: 'Isi Waktu Ditugaskan' },
     { value: 'finished_at', label: 'Isi Waktu Diselesaikan' },
     { value: 'closed_at', label: 'Isi Waktu Ditutup' },
+    { value: 'signed_at', label: 'Isi Waktu Ditandatangani' },
+    { value: 'approved_at', label: 'Isi Waktu Disetujui' },
+    { value: 'started_at', label: 'Isi Waktu Dimulai' },
+
+    // ── Opsi Hapus Otomatis (Clear Value) ──
+    { value: 'clear_received_at', label: 'Hapus Waktu Diterima' },
+    { value: 'clear_assigned_at', label: 'Hapus Waktu Ditugaskan' },
+    { value: 'clear_finished_at', label: 'Hapus Waktu Diselesaikan' },
+    { value: 'clear_closed_at', label: 'Hapus Waktu Ditutup' },
+    { value: 'clear_signed_at', label: 'Hapus Waktu Ditandatangani' },
+    { value: 'clear_approved_at', label: 'Hapus Waktu Disetujui' },
+    { value: 'clear_started_at', label: 'Hapus Waktu Dimulai' },
+    { value: 'clear_pic', label: 'Hapus / Kosongkan PIC (Penanggung Jawab)' },
+    { value: 'clear_contract_no', label: 'Hapus / Kosongkan No. Kontrak (F2)' },
+    { value: 'clear_price', label: 'Hapus / Kosongkan Nilai / Harga Kontrak' },
+    { value: 'clear_period', label: 'Hapus / Kosongkan Masa Berlaku Kontrak' },
+    { value: 'clear_tax', label: 'Hapus / Reset Penentuan Pajak' },
+    { value: 'clear_vendor', label: 'Hapus / Kosongkan Pihak Kedua (Vendor)' },
+    { value: 'clear_f1', label: 'Hapus Sub-dokumen F1 (Permohonan)' },
+    { value: 'clear_f2', label: 'Hapus Sub-dokumen F2 (Ringkasan)' },
+    { value: 'clear_agreement', label: 'Hapus Sub-dokumen Perjanjian / Draft' },
+    { value: 'clear_description', label: 'Hapus / Kosongkan Deskripsi Kontrak' },
 ];
 
 export const MASTER_ACTIONS = [

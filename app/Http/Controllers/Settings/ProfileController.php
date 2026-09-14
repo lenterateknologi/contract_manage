@@ -22,8 +22,24 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
-        // Fetch recent contracts created by user or where user is an approver
-        $recentContracts = Contract::where('created_by', $user->id)
+        return Inertia::render('settings/profile', [
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
+            'status' => $request->session()->get('status'),
+            'department' => $user->department->name ?? 'N/A',
+            'recentContracts' => $this->getRecentContracts($user),
+            'collaborators' => $this->getCollaborators($user),
+            'user' => $this->formatUserProfile($user),
+        ]);
+    }
+
+    /**
+     * Fetch recent contracts created by user or where user is an approver.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getRecentContracts(User $user): array
+    {
+        return Contract::where('created_by', $user->id)
             ->orWhereHas('approvals', fn ($q) => $q->where('user_id', $user->id))
             ->with(['contractType', 'creator', 'workflow', 'approvals'])
             ->latest()
@@ -38,10 +54,22 @@ class ProfileController extends Controller
                 'status' => $c->status,
                 'progress' => $c->progressData(),
                 'time_ago' => $c->created_at->diffForHumans(),
-            ]);
+            ])
+            ->all();
+    }
 
-        // Fetch colleagues (collaborators) from the same department
-        $collaborators = User::where('division_id', $user->division_id)
+    /**
+     * Fetch colleagues (collaborators) from the same department/division.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getCollaborators(User $user): array
+    {
+        if (! $user->division_id) {
+            return [];
+        }
+
+        return User::where('division_id', $user->division_id)
             ->where('id', '!=', $user->id)
             ->take(8)
             ->get()
@@ -49,30 +77,33 @@ class ProfileController extends Controller
                 'id' => $u->id,
                 'name' => $u->name,
                 'initials' => $u->initials,
-            ]);
+            ])
+            ->all();
+    }
 
-        return Inertia::render('settings/profile', [
-            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
-            'status' => $request->session()->get('status'),
-            'department' => $user->department->name ?? 'N/A',
-            'recentContracts' => $recentContracts,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'username' => $user->username,
-                'phone_number' => $user->phone_number,
-                'company' => $user->company?->name,
-                'location' => $user->company?->address,
-                'group' => $user->company?->group?->name,
-                'region' => $user->company?->region?->name,
-                'role' => $user->role,
-                'initials' => $user->initials,
-                'division_id' => $user->division_id,
-                'department_id' => $user->division_id,
-                'created_at' => $user->created_at->isoFormat('D MMMM YYYY'),
-            ],
-        ]);
+    /**
+     * Format user details for profile view.
+     *
+     * @return array<string, mixed>
+     */
+    private function formatUserProfile(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'username' => $user->username,
+            'phone_number' => $user->phone_number,
+            'company' => $user->company?->name,
+            'location' => $user->company?->address,
+            'group' => $user->company?->group?->name,
+            'region' => $user->company?->region?->name,
+            'role' => $user->role,
+            'initials' => $user->initials,
+            'division_id' => $user->division_id,
+            'department_id' => $user->division_id,
+            'created_at' => $user->created_at->isoFormat('D MMMM YYYY'),
+        ];
     }
 
     /**

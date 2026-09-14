@@ -273,55 +273,13 @@ class AdminController extends Controller
         return $this->roleConfig($role, $request, 'navigation');
     }
 
-    public function roleConfig(Role $role, Request $request, ?string $forcedTab = null)
+    public function roleConfig(Role $role, Request $request, ?string $forcedTab = null, ?RoleAccessAction $action = null)
     {
-        // 1. Get All Active Modules with Role Access for the Matrix Tab
-        $modules = Module::where('is_active', true)
-            ->with(['moduleGroup', 'accessModules' => function ($query) use ($role) {
-                $query->where('role_id', $role->id);
-            }])
-            ->orderBy('module_group_id')
-            ->orderBy('name')
-            ->get();
-
-        $modules->transform(function ($module) {
-            $module->access = $module->accessModules->first();
-            unset($module->accessModules);
-
-            return $module;
-        });
-
-        // 2. Get Navigation Structure for the Drag & Drop Tab
-        $groups = ModuleGroup::select('m_module_groups.*')
-            ->join('m_role_module_groups', function ($join) use ($role) {
-                $join->on('m_module_groups.id', '=', 'm_role_module_groups.module_group_id')
-                    ->where('m_role_module_groups.role_id', '=', $role->id);
-            })
-            ->orderBy('m_role_module_groups.sequence', 'asc')
-            ->get()
-            ->map(function ($group) use ($role) {
-                $group->modules = Module::select('m_modules.*')
-                    ->join('m_access_modules', 'm_modules.id', '=', 'm_access_modules.module_id')
-                    ->where('m_access_modules.role_id', $role->id)
-                    ->where('m_access_modules.module_group_id', $group->id)
-                    ->where('m_access_modules.can_read', true)
-                    ->orderByRaw('COALESCE(m_access_modules.sequence, 9999) ASC')
-                    ->orderBy('m_modules.name')
-                    ->get();
-
-                return $group;
-            })->values();
-
-        $allModules = Module::where('is_active', true)->orderBy('name')->get();
-
-        $allRoles = Role::orderBy('name')->get();
+        $action = $action ?? app(RoleAccessAction::class);
+        $configData = $action->getRoleConfigData($role);
 
         return Inertia::render('roles/Config', [
-            'role' => $role,
-            'roles' => $allRoles,
-            'modules' => $modules,
-            'navigation' => $groups,
-            'allModules' => $allModules,
+            ...$configData,
             'defaultTab' => $forcedTab ?? $request->query('tab', 'access'),
             'isIndependent' => ! is_null($forcedTab),
             'breadcrumbs' => [

@@ -32,8 +32,14 @@ class ContractFilterScopeService
         $globalFullAccess = $isAdmin || in_array($user->role, ['Director', 'CEO', 'VP']);
 
         // Resolusi region_id user dari company jika tidak tersimpan langsung di user
-        $userCompany = $user->company;
-        $userRegionId = $user->region_id ?? $userCompany?->region_id;
+        $userRegionId = $user->region_id;
+        if (! $userRegionId) {
+            if ($user->relationLoaded('company') && $user->company) {
+                $userRegionId = $user->company->region_id;
+            } elseif (! empty($user->company_id)) {
+                $userRegionId = \App\Models\Company::where('id', $user->company_id)->value('region_id');
+            }
+        }
 
         // Tentukan full access per dimensi berdasarkan status admin global atau toggle pengaturan user/role
         // ponytail: Gunakan permission spesifik per dimensi untuk mendukung 3 level scope (Full, Group-only, Division-only)

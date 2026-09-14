@@ -245,7 +245,7 @@ class ApprovalTimelineFormatter
                 $deptNames = (array) $step->department_names;
                 $deptName = count($deptNames) > 0 ? implode(', ', $deptNames) : null;
 
-                if (! $deptName && $step->approver_type === 'initiator' && $c->initiator?->department) {
+                if (! $deptName && $step->approver_type === 'initiator' && $c->relationLoaded('initiator') && $c->initiator?->relationLoaded('department') && $c->initiator?->department) {
                     $deptName = $c->initiator->department->name;
                 }
 
@@ -276,6 +276,9 @@ class ApprovalTimelineFormatter
                 // 1. ADD AD-HOC (SUB-STEPS) FIRST
                 foreach ($adhocApprovals as $a) {
                     $isSigner = $a->role === 'Penandatangan';
+                    $approverDeptName = ($a->relationLoaded('approver') && $a->approver?->relationLoaded('department'))
+                        ? $a->approver?->department?->name
+                        : null;
 
                     $timeline[] = [
                         'id' => $a->id,
@@ -283,7 +286,7 @@ class ApprovalTimelineFormatter
                         'user_id' => $a->user_id,
                         'approver_name' => $a->approver_name,
                         'role' => $a->role,
-                        'department_name' => $a->approver?->department->name ?? $deptName,
+                        'department_name' => $approverDeptName ?? $deptName,
                         'target_approvers' => $a->approver_name,
                         'target_emails' => $a->approver?->email,
                         'sequence' => $step->step,

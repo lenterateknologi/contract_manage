@@ -1,4 +1,5 @@
 import { Label } from '@/components/ui/forms/Label';
+import { formatDate } from '@/lib/time-utils';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { getTypographyStyle } from '../../utils';
@@ -17,6 +18,25 @@ export const TextField: React.FC<FieldProps> = ({ field, value, onChange, readOn
     const isSolid = field.options?.field_style === 'solid';
 
     if (readOnly) {
+        let displayVal = value;
+        if (field.type === 'date' || field.options?.value_type === 'date') {
+            if (value) {
+                const str = String(value).trim();
+                const formatted = formatDate(str);
+                displayVal = formatted !== '-' ? formatted : str.split('T')[0].split(' ')[0];
+            } else {
+                displayVal = '—';
+            }
+        } else if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+            const isDateName = field.name?.includes('tgl') || field.name?.includes('tanggal') || field.name?.includes('date');
+            if (isDateName) {
+                const formatted = formatDate(value);
+                displayVal = formatted !== '-' ? formatted : value.split('T')[0];
+            } else {
+                displayVal = value.split('T')[0];
+            }
+        }
+
         return (
             <div className={cn("flex w-full gap-2 py-0.5", maxLines > 1 ? 'items-start' : 'items-baseline')}>
                 {field.label && (
@@ -39,7 +59,7 @@ export const TextField: React.FC<FieldProps> = ({ field, value, onChange, readOn
                                 )}
                                 style={getTypographyStyle(field)}
                             >
-                                {isFirst ? (value || '—') : <span className="invisible">&nbsp;</span>}
+                                {isFirst ? (displayVal || '—') : <span className="invisible">&nbsp;</span>}
                             </span>
                         );
                     })}
@@ -47,6 +67,10 @@ export const TextField: React.FC<FieldProps> = ({ field, value, onChange, readOn
             </div>
         );
     }
+
+    const cleanVal = field.type === 'date'
+        ? (typeof value === 'string' ? value.split('T')[0].split(' ')[0] : (value || ''))
+        : (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value) ? value.split('T')[0] : (value || ''));
 
     return (
         <div className={cn('relative w-full', isBuilder && 'bg-primary/5 ring-primary/20 rounded p-0.5 ring-1')}>
@@ -63,7 +87,7 @@ export const TextField: React.FC<FieldProps> = ({ field, value, onChange, readOn
                 <input
                     type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'}
                     placeholder={field.placeholder}
-                    value={field.type === 'date' && typeof value === 'string' ? value.split('T')[0].split(' ')[0] : value || ''}
+                    value={cleanVal}
                     onChange={(e) => onChange?.(e.target.value)}
                     className={cn(
                         'placeholder:text-muted-foreground/50 flex min-h-[32px] w-full text-[11px] font-semibold transition-all placeholder:italic',
