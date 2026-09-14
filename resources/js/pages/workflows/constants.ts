@@ -5,6 +5,13 @@ export const AVAILABLE_FIELDS = [
     { value: 'f1', label: 'Sub-dokumen F1 (Permohonan)' },
     { value: 'f2', label: 'Sub-dokumen F2 (Ringkasan)' },
     { value: 'agreement', label: 'Sub-dokumen Perjanjian / Draft' },
+    { value: 'title', label: 'Field Judul Kontrak' },
+    { value: 'vendor', label: 'Field Pihak Kedua ' },
+    { value: 'category', label: 'Field Kategori Kontrak' },
+    { value: 'contract_no', label: 'Field No. Kontrak (F2)' },
+    { value: 'tax_toggle', label: 'Field Penentuan Pajak' },
+    { value: 'price', label: 'Field Nilai / Harga Kontrak' },
+    { value: 'period', label: 'Field Masa Berlaku Kontrak' },
 ];
 
 export const AUTOFILLED_PARAMS = [

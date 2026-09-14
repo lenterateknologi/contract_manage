@@ -35,8 +35,18 @@ class ContractFormatter
         $requiresPicAssignment = $nextStep && $nextStep->approver_type === 'assigned_pic';
         $effectiveStep = $c->workflowStep ?: ($c->workflow ? $c->workflow->steps->first() : null);
         $progress = $c->progressData();
-
         $shortId = ShortIdService::encode($c->id);
+
+        $actionReqFields = [];
+        if ($effectiveStep) {
+            $actions = $effectiveStep->relationLoaded('actions') ? $effectiveStep->actions : $effectiveStep->actions()->get();
+            foreach ($actions as $act) {
+                if (! empty($act->required_fields) && is_array($act->required_fields)) {
+                    $actionReqFields = array_merge($actionReqFields, $act->required_fields);
+                }
+            }
+        }
+        $actionReqFields = array_unique($actionReqFields);
 
         return [
             'id' => $c->id,
@@ -48,6 +58,7 @@ class ContractFormatter
             'description' => $c->description,
             'contract_date' => $c->contract_date,
             'end_date' => $c->end_date,
+            'tax_required' => (bool) $c->tax_required,
             'contract_type' => $c->contractType->name ?? '—',
             'contract_type_id' => $c->contract_type_id,
             'submission_type' => $c->submissionType->name ?? '—',
@@ -123,6 +134,16 @@ class ContractFormatter
             'show_tax_toggle' => (bool) data_get($effectiveStep?->meta, 'show_tax_toggle', true),
             'show_price' => (bool) data_get($effectiveStep?->meta, 'show_price', true),
             'show_period' => (bool) data_get($effectiveStep?->meta, 'show_period', true),
+            'require_f1' => (bool) (data_get($effectiveStep?->meta, 'require_f1', false) || in_array('f1', $actionReqFields)),
+            'require_f2' => (bool) (data_get($effectiveStep?->meta, 'require_f2', false) || in_array('f2', $actionReqFields)),
+            'require_agreement' => (bool) (data_get($effectiveStep?->meta, 'require_agreement', false) || in_array('agreement', $actionReqFields)),
+            'require_title' => (bool) (data_get($effectiveStep?->meta, 'require_title', false) || in_array('title', $actionReqFields)),
+            'require_vendor' => (bool) (data_get($effectiveStep?->meta, 'require_vendor', false) || in_array('vendor', $actionReqFields)),
+            'require_category' => (bool) (data_get($effectiveStep?->meta, 'require_category', false) || in_array('category', $actionReqFields)),
+            'require_f2_contract_no' => (bool) (data_get($effectiveStep?->meta, 'require_f2_contract_no', false) || in_array('contract_no', $actionReqFields) || in_array('f2_contract_no', $actionReqFields)),
+            'require_tax_toggle' => (bool) (data_get($effectiveStep?->meta, 'require_tax_toggle', false) || in_array('tax_toggle', $actionReqFields) || in_array('tax', $actionReqFields)),
+            'require_price' => (bool) (data_get($effectiveStep?->meta, 'require_price', false) || in_array('price', $actionReqFields)),
+            'require_period' => (bool) (data_get($effectiveStep?->meta, 'require_period', false) || in_array('period', $actionReqFields)),
 
 
             'f1_file' => $c->versions->where('document_type', 'f1')->first()?->file_name,

@@ -88,7 +88,6 @@ export function ContractActionSection({
                         </div>
                         <div>
                             <h3 className="text-xs font-bold text-foreground">Aksi & Persetujuan</h3>
-                            <p className="text-[10px] text-muted-foreground">Tindakan yang tersedia pada tahap ini</p>
                         </div>
                     </div>
                     {((contract.workflow_step as any)?.name || contract.workflow_step?.description) && (

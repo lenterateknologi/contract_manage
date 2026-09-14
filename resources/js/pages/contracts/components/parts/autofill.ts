@@ -35,7 +35,7 @@ export const AUTOFILL_KEY_DEFINITIONS: Record<string, { label: string; group: st
     meta_p1_signer_position: { label: 'Jabatan Penandatangan Pihak I', group: 'Para Pihak' },
     meta_p1_alamat: { label: 'Alamat Pihak I', group: 'Para Pihak' },
 
-    meta_p2_entity: { label: 'Nama Pihak II (Vendor)', group: 'Para Pihak' },
+    meta_p2_entity: { label: 'Nama Pihak II ', group: 'Para Pihak' },
     meta_p2_signer: { label: 'Penandatangan Pihak II', group: 'Para Pihak' },
     meta_p2_signer_position: { label: 'Jabatan Penandatangan Pihak II', group: 'Para Pihak' },
     meta_p2_alamat: { label: 'Alamat Pihak II / Vendor', group: 'Alamat & Kontak Resmi' },

@@ -14,6 +14,10 @@ Route::prefix('admin/form-templates')->controller(FormTemplateController::class)
     Route::get('/{template}/render-print', 'renderPrint')->name('admin.form-templates.render-print')->middleware('signed');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/form-templates/pdf-status/{jobId}', [FormTemplateController::class, 'checkPdfStatus'])->name('admin.form-templates.pdf-status');
+});
+
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     // Form Builder Management
@@ -25,7 +29,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
         Route::post('/import', 'import')->name('admin.form-templates.import');
         Route::post('/export-adhoc', 'exportAdhoc')->name('admin.form-templates.export-adhoc');
         Route::post('/export-queue', 'exportAdhocQueue')->name('admin.form-templates.export-queue');
-        Route::get('/pdf-status/{jobId}', 'checkPdfStatus')->name('admin.form-templates.pdf-status');
         Route::post('/{template}/export-pdf', 'exportPdf')->name('admin.form-templates.export-pdf');
         Route::post('/{template}/stream-pdf', 'streamPdf')->name('admin.form-templates.stream-pdf');
         Route::delete('/{template}', 'destroy')->name('admin.form-templates.destroy');

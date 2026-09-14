@@ -94,6 +94,7 @@ class Contract extends Model
         'finished_at',
         'closed_at',
         'closed_by',
+        'tax_required',
 
         // Meta columns transparently handled by HasContractMeta
         'kop_topik', 'kop_sub_topik', 'p1_entity', 'p1_address', 'p1_contact_person',
@@ -245,6 +246,29 @@ class Contract extends Model
         }
 
         return ['done' => 0, 'total' => 0, 'pct' => 0];
+    }
+
+    public function getTaxRequiredAttribute(): ?bool
+    {
+        if (array_key_exists('tax_required', $this->attributes) && $this->attributes['tax_required'] !== null) {
+            return (bool) $this->attributes['tax_required'];
+        }
+
+        $tax = $this->metadata['tax_required'] ?? ($this->metadata['meta_tax_required'] ?? null);
+        if ($tax === null) {
+            return false;
+        }
+
+        return ($tax === true || $tax === '1' || $tax === 1 || $tax === 'Ya' || $tax === 'ya' || $tax === 'true');
+    }
+
+    public function setTaxRequiredAttribute($value): void
+    {
+        $metadata = $this->metadata ?? [];
+        $isTax = ($value === true || $value === '1' || $value === 1 || $value === 'Ya' || $value === 'ya' || $value === 'true');
+        $metadata['tax_required'] = $isTax;
+        $metadata['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
+        $this->metadata = $metadata;
     }
 
     public function meta(): HasOne

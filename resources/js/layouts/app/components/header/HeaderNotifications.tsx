@@ -6,9 +6,10 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/selection/DropdownMenu';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import {
+    AtSign,
     Bell,
     CheckCircle2,
     Clock,
@@ -37,16 +38,28 @@ interface NotificationItem {
 }
 
 export const HeaderNotifications = memo(function HeaderNotifications() {
+    const pageProps = usePage().props;
+    const currentUserId = (pageProps.auth as any)?.user?.id || 'guest';
+    const storageKey = `read_notifications_${currentUserId}`;
+
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'unread' | 'approvals'>('all');
     const [readIds, setReadIds] = useState<string[]>(() => {
         try {
-            return JSON.parse(localStorage.getItem('read_notification_ids') || '[]');
+            return JSON.parse(localStorage.getItem(storageKey) || '[]');
         } catch {
             return [];
         }
     });
+
+    useEffect(() => {
+        try {
+            setReadIds(JSON.parse(localStorage.getItem(storageKey) || '[]'));
+        } catch {
+            setReadIds([]);
+        }
+    }, [storageKey]);
 
     const fetchNotifications = useCallback(async () => {
         try {
@@ -66,7 +79,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
 
         const startPolling = () => {
             if (!interval) {
-                interval = setInterval(fetchNotifications, 20000);
+                interval = setInterval(fetchNotifications, 4000);
             }
         };
 
@@ -86,18 +99,24 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
             }
         };
 
+        const handleWindowFocus = () => {
+            fetchNotifications();
+        };
+
         startPolling();
         document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleWindowFocus);
 
         return () => {
             stopPolling();
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleWindowFocus);
         };
     }, [fetchNotifications]);
 
     const saveReadIds = (ids: string[]) => {
         setReadIds(ids);
-        localStorage.setItem('read_notification_ids', JSON.stringify(ids));
+        localStorage.setItem(storageKey, JSON.stringify(ids));
     };
 
     const handleNotificationClick = (item: NotificationItem) => {
@@ -132,11 +151,20 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
             };
         }
         if (item.type === 'new_message') {
+            const isMention = item.category === 'MENTION';
             return {
-                icon: <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />,
-                bg: 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300',
-                badgeBg: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
-                label: item.badge || 'Diskusi',
+                icon: isMention ? (
+                    <AtSign className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                ) : (
+                    <MessageSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                ),
+                bg: isMention
+                    ? 'bg-purple-500/10 border-purple-500/20 text-purple-700 dark:text-purple-300'
+                    : 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-300',
+                badgeBg: isMention
+                    ? 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20'
+                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
+                label: item.badge || (isMention ? 'Menandai Anda (@Mention)' : 'Pesan Diskusi'),
             };
         }
 

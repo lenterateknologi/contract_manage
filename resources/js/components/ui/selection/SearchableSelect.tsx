@@ -19,6 +19,7 @@ interface SearchableSelectProps {
     emptyText?: string;
     disabled?: boolean;
     allowClear?: boolean;
+    size?: 'default' | 'sm';
 }
 
 export function SearchableSelect({
@@ -32,10 +33,12 @@ export function SearchableSelect({
     emptyText = 'Tidak ada hasil',
     disabled = false,
     allowClear = false,
+    size = 'default',
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [search, setSearch] = React.useState('');
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const isSmall = size === 'sm';
 
     const selected = options.find(o => o.value === value);
 
@@ -64,7 +67,8 @@ export function SearchableSelect({
                     disabled={disabled}
                     onClick={() => { if (!disabled) { setOpen(o => !o); setSearch(''); } }}
                     className={cn(
-                        'flex h-10 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3.5 py-2 text-sm font-normal ring-offset-background transition-all outline-hidden text-left',
+                        'flex w-full items-center justify-between rounded-lg border border-border bg-surface-base font-normal ring-offset-background transition-all outline-hidden text-left',
+                        isSmall ? 'h-9 px-3 text-xs' : 'h-10 px-3.5 py-2 text-sm',
                         'placeholder:text-muted-foreground',
                         !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
                         disabled && 'cursor-not-allowed opacity-50 bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500',
@@ -72,7 +76,7 @@ export function SearchableSelect({
                         triggerClassName
                     )}
                 >
-                    <span className={cn('block truncate text-sm', selected ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
+                    <span className={cn('block truncate', isSmall ? 'text-xs' : 'text-sm', selected ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
                         {selected ? selected.label : placeholder}
                     </span>
                     <ChevronsUpDown size={15} className="text-muted-foreground shrink-0 ml-2" />

@@ -270,6 +270,28 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                 if (!hasAgreement) missingDocs.push('Sub-dokumen Perjanjian / Draft');
             }
 
+            if (stepMeta.require_title && !contract.title) {
+                missingDocs.push('Field Judul Kontrak');
+            }
+            if (stepMeta.require_vendor && !contract.vendor_id && !contract.vendor?.id) {
+                missingDocs.push('Field Pihak Kedua ');
+            }
+            if (stepMeta.require_category && !contract.contract_type_id && !contract.contract_type) {
+                missingDocs.push('Field Kategori Kontrak');
+            }
+            if (stepMeta.require_f2_contract_no && !contract.contract_no) {
+                missingDocs.push('Field Nomor Kontrak');
+            }
+            if (stepMeta.require_tax_toggle && contract.tax_required === undefined && contract.metadata?.tax_required === undefined) {
+                missingDocs.push('Field Penentuan Pajak');
+            }
+            if (stepMeta.require_price && (contract.price === undefined || contract.price === null || contract.price === '')) {
+                missingDocs.push('Field Nilai / Harga Kontrak');
+            }
+            if (stepMeta.require_period && ((!contract.contract_date && !contract.start_date) || !contract.end_date)) {
+                missingDocs.push('Field Masa Berlaku Kontrak');
+            }
+
             if (missingDocs.length > 0) {
                 alert(`Tidak dapat melanjutkan persetujuan. Data/dokumen berikut wajib diisi terlebih dahulu:\n- ${missingDocs.join('\n- ')}`);
                 return;
@@ -405,6 +427,14 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
             );
             if (!hasAgreement) return true;
         }
+
+        if (stepMeta.require_title && !contract?.title) return true;
+        if (stepMeta.require_vendor && !contract?.vendor_id && !contract?.vendor?.id) return true;
+        if (stepMeta.require_category && !contract?.contract_type_id && !contract?.contract_type) return true;
+        if (stepMeta.require_f2_contract_no && !contract?.contract_no) return true;
+        if (stepMeta.require_tax_toggle && contract?.tax_required === undefined && contract?.metadata?.tax_required === undefined) return true;
+        if (stepMeta.require_price && (contract?.price === undefined || contract?.price === null || contract?.price === '')) return true;
+        if (stepMeta.require_period && ((!contract?.contract_date && !contract?.start_date) || !contract?.end_date)) return true;
 
         return false;
     };
@@ -566,6 +596,28 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                                 (contract.versions && (contract.versions as any[]).some((v: any) => v.document_type === 'agreement' || v.document_type === 'contract'))
                             );
                             reqList.push({ label: 'Sub-dokumen Perjanjian / Draft', isFilled });
+                        }
+
+                        if (stepMeta.require_title) {
+                            reqList.push({ label: 'Judul Kontrak', isFilled: !!contract.title });
+                        }
+                        if (stepMeta.require_vendor) {
+                            reqList.push({ label: 'Pihak Kedua ', isFilled: !!(contract.vendor_id || contract.vendor?.id) });
+                        }
+                        if (stepMeta.require_category) {
+                            reqList.push({ label: 'Kategori Kontrak', isFilled: !!(contract.contract_type_id || contract.contract_type) });
+                        }
+                        if (stepMeta.require_f2_contract_no) {
+                            reqList.push({ label: 'No. Kontrak (F2)', isFilled: !!contract.contract_no });
+                        }
+                        if (stepMeta.require_tax_toggle) {
+                            reqList.push({ label: 'Penentuan Pajak', isFilled: contract.tax_required !== undefined || contract.metadata?.tax_required !== undefined });
+                        }
+                        if (stepMeta.require_price) {
+                            reqList.push({ label: 'Nilai / Harga', isFilled: contract.price !== undefined && contract.price !== null && contract.price !== '' });
+                        }
+                        if (stepMeta.require_period) {
+                            reqList.push({ label: 'Masa Berlaku', isFilled: !!((contract.contract_date || contract.start_date) && contract.end_date) });
                         }
 
                         if (reqList.length === 0) return null;

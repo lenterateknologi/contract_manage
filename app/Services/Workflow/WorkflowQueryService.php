@@ -204,7 +204,8 @@ class WorkflowQueryService
                 ->where('is_used', true)
                 ->where('is_active', true);
 
-            if ($step && $step->filter_company && $initiator->company_id) {
+            $filterCompany = (bool) data_get($step?->getAttributes(), 'filter_company', false);
+            if ($step && $filterCompany && $initiator->company_id) {
                 $fallbackQuery->where('company_id', $initiator->company_id);
             }
 
@@ -220,28 +221,33 @@ class WorkflowQueryService
     public function applyStepFilters(Builder $query, WorkflowStep $step, User $initiator): void
     {
         $config = $step->approver_config;
-        $isInitDept = $step->filter_department || (! empty($config) && ! empty($config['is_initiator_department']));
+        $filterDept = (bool) data_get($step->getAttributes(), 'filter_department', false);
+        $filterCompany = (bool) data_get($step->getAttributes(), 'filter_company', false);
+        $filterCompanyGroup = (bool) data_get($step->getAttributes(), 'filter_company_group', false);
+        $filterRegion = (bool) data_get($step->getAttributes(), 'filter_region', false);
+
+        $isInitDept = $filterDept || (! empty($config) && ! empty($config['is_initiator_department']));
 
         if ($isInitDept) {
             $query->where('division_id', $initiator->division_id ?? '00000000-0000-0000-0000-000000000000');
         }
 
-        if ($step->filter_company) {
+        if ($filterCompany) {
             $query->where('company_id', $initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
         }
 
-        if ($step->filter_company_group || $step->filter_region) {
+        if ($filterCompanyGroup || $filterRegion) {
             if (! $initiator->relationLoaded('company')) {
                 $initiator->load('company');
             }
             $initiatorCompany = $initiator->company;
 
-            $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
-                if ($step->filter_company_group) {
+            $query->whereHas('company', function ($q) use ($filterCompanyGroup, $filterRegion, $initiatorCompany) {
+                if ($filterCompanyGroup) {
                     $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
                     $q->where('company_group_id', $groupId);
                 }
-                if ($step->filter_region) {
+                if ($filterRegion) {
                     $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
                     $q->where('region_id', $regionId);
                 }

@@ -1073,6 +1073,7 @@ function ContractPage({
                     </div>
                 ),
                 cell: renderContractWithTypes,
+                sortable: true,
             },
             {
                 accessorKey: 'vendor',
@@ -1083,6 +1084,7 @@ function ContractPage({
                     </div>
                 ),
                 cell: renderVendor,
+                sortable: true,
             },
             {
                 accessorKey: 'period',
@@ -1093,6 +1095,7 @@ function ContractPage({
                     </div>
                 ),
                 cell: renderPeriodWithExpiry,
+                sortable: true,
             },
             {
                 accessorKey: 'initiator',
@@ -1103,6 +1106,7 @@ function ContractPage({
                     </div>
                 ),
                 cell: renderInitiator,
+                sortable: true,
             },
             {
                 accessorKey: 'status',
@@ -1113,6 +1117,7 @@ function ContractPage({
                     </div>
                 ),
                 cell: renderStatusAndStep,
+                sortable: true,
             },
             {
                 accessorKey: 'assigned_pic',
@@ -1123,6 +1128,7 @@ function ContractPage({
                     </div>
                 ),
                 cell: renderAssignedPic,
+                sortable: true,
             },
             {
                 accessorKey: 'created_at',
@@ -1133,6 +1139,7 @@ function ContractPage({
                     </div>
                 ),
                 cell: renderCreatedAt,
+                sortable: true,
             },
         ],
         [renderContractWithTypes, renderPeriodWithExpiry, isExpiryView],
@@ -1422,6 +1429,11 @@ function ContractPage({
                                                         onSelectionChange={hasAnyBulkAction ? setSelectedRows : undefined}
                                                         selectedRows={hasAnyBulkAction ? selectedRows : []}
                                                         bulkActions={hasAnyBulkAction ? renderBulkActions(selectedRows) : undefined}
+                                                        sortBy={filters?.sort_by || filters?.sortBy || 'created_at'}
+                                                        sortDir={(filters?.sort_dir || filters?.sortDir || 'desc') as 'asc' | 'desc'}
+                                                        onSortChange={(newSortBy, newSortDir) => {
+                                                            handleFilterChange({ sort_by: newSortBy, sort_dir: newSortDir, page: 1 });
+                                                        }}
                                                     />
                                                 ) : processing ? (
                                                     <ContractCardSkeleton />

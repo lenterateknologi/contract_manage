@@ -17,15 +17,27 @@ export default function FormPrint({ template, formData, printedBy }: Props) {
     const [ready, setReady] = React.useState(false);
 
     React.useEffect(() => {
-        // Ensure fonts are loaded and give a small buffer for layout calculation
+        let timer: any;
         if (typeof document !== 'undefined' && (document as any).fonts) {
-            (document as any).fonts.ready.then(() => {
-                setTimeout(() => setReady(true), 1000);
-            });
-        } else {
-            setTimeout(() => setReady(true), 1500);
+            (document as any).fonts.ready
+                .then(() => {
+                    timer = setTimeout(() => setReady(true), 500);
+                })
+                .catch(() => {
+                    setReady(true);
+                });
         }
+        // Safety fallback timer so it never hangs
+        const fallbackTimer = setTimeout(() => setReady(true), 1500);
+
+        return () => {
+            clearTimeout(timer);
+            clearTimeout(fallbackTimer);
+        };
     }, []);
+
+    const marginTop = template?.letterhead_json?.margins?.top ?? 15;
+    const marginBottom = template?.letterhead_json?.margins?.bottom ?? 15;
 
     return (
         <div className="min-h-screen bg-white flex flex-col justify-between">
@@ -55,23 +67,25 @@ export default function FormPrint({ template, formData, printedBy }: Props) {
             )}
 
             {/* Signal for Browsershot that React has finished mounting and rendering */}
-            {ready && <div id="pdf-render-complete" style={{ display: 'none' }} aria-hidden="true" />}
+            {ready && <div id="pdf-render-complete" style={{ width: 1, height: 1, opacity: 0, position: 'absolute', pointerEvents: 'none' }} aria-hidden="true" />}
 
             {/* Print-specific style to ensure no backgrounds are lost and margins are handled */}
-
             <style
                 dangerouslySetInnerHTML={{
                     __html: `
                 @page {
                     size: A4;
-                    margin: 0;
+                    margin-top: ${marginTop}mm;
+                    margin-bottom: ${marginBottom}mm;
+                    margin-left: 0;
+                    margin-right: 0;
                 }
                 body {
                     margin: 0;
                     padding: 0;
                     -webkit-print-color-adjust: exact;
                 }
-                /* Hide Interia progress bar if present */
+                /* Hide Inertia progress bar if present */
                 #nprogress { display: none !important; }
                 
                 /* Ensure InteractiveForm padding is respected as the paper margin */
@@ -81,6 +95,22 @@ export default function FormPrint({ template, formData, printedBy }: Props) {
                     ring: 0 !important;
                     width: 100% !important;
                     max-width: none !important;
+                    margin-top: 0 !important;
+                    margin-bottom: 0 !important;
+                }
+
+                /* Zero out top/bottom padding on the paper container so @page handles top/bottom margins uniformly across all pages */
+                .form-print-container .force-light {
+                    padding-top: 0 !important;
+                    padding-bottom: 0 !important;
+                }
+
+                /* Support explicit page breaks */
+                .print\\:break-before-page,
+                [data-page-number]:not([data-page-number="1"]) {
+                    break-before: page !important;
+                    page-break-before: always !important;
+                    margin-top: 0 !important;
                 }
 
                 /* Prevent breaking in the middle of an atomic field, but allow breaking inside containers */

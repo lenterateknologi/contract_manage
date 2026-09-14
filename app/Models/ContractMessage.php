@@ -62,6 +62,12 @@ class ContractMessage extends Model
                 ->unique()
                 ->reject(fn ($id) => $id === $message->user_id);
 
+            // Invalidate notification caches for all involved users
+            foreach ($involvedUserIds as $uId) {
+                \Illuminate\Support\Facades\Cache::forget("notifications_payload_user_{$uId}");
+                \Illuminate\Support\Facades\Cache::forget("user_involved_contracts_{$uId}");
+            }
+
             if (config('notifications.email.enabled', true)) {
                 $users = User::whereIn('id', $involvedUserIds)->get();
                 foreach ($users as $user) {

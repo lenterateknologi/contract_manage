@@ -59,14 +59,18 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
 
     // Reactive Preview Logic
     useEffect(() => {
-        if (!previewAt) return;
+        if (!previewAt) {
+            setPreviewLoading(false);
+            return;
+        }
+
+        setPreviewLoading(true);
 
         const fileName = (previewAt.file_name || '').toLowerCase();
         const isDocx = fileName.endsWith('.docx');
 
         if (isDocx) {
             const fetchAndRender = async () => {
-                setPreviewLoading(true);
                 try {
                     const url = (previewAt as any).is_vendor_doc
                         ? contractApi.vendorDocumentPdfPreviewUrl(contract.id, previewAt.id, previewAt.file_name)
@@ -317,7 +321,7 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                                 className="bg-white/15 border-white/25 text-white px-1.5 py-0 text-[8.5px] font-bold uppercase"
                             >
                                 {(previewAt as any).is_vendor_doc
-                                    ? 'Dokumen Vendor'
+                                    ? 'Dokumen Catalog'
                                     : previewAt.category || 'Lampiran'}
                             </Badge>
                             <span className="hidden sm:inline text-white/80 text-[10px] truncate max-w-[200px]">
@@ -347,12 +351,14 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                 </div>
 
                 <div className="relative flex flex-1 flex-col w-full h-full min-h-0 overflow-hidden bg-white dark:bg-zinc-900 rounded-xl border border-surface-border p-0 m-0">
-                    {previewLoading ? (
-                        <div className="flex h-full w-full flex-col items-center justify-center gap-4 py-20">
+                    {previewLoading && (
+                        <div className="absolute inset-0 z-20 flex h-full w-full flex-col items-center justify-center gap-4 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xs py-20 animate-in fade-in duration-200">
                             <LoadingLottie width={120} height={120} />
                             <span className="text-[10px] font-semibold tracking-[0.2em] text-[#172554] uppercase dark:text-white">Memuat Dokumen...</span>
                         </div>
-                    ) : isDocx ? (
+                    )}
+
+                    {isDocx ? (
                         <div className="custom-scrollbar h-full w-full overflow-y-auto p-4">
                             <div className="mx-auto max-w-[900px]">
                                 <div ref={previewContainerRef} className="docx-preview-container" />
@@ -360,22 +366,21 @@ export default function ContractAttachments({ contract, canUpdate, onUpdated, sh
                         </div>
                     ) : isImage ? (
                         <div className="custom-scrollbar flex h-full w-full items-center justify-center overflow-auto p-4">
-                            <img src={previewUrl} alt="Preview" className="max-h-full max-w-full object-contain" />
-                        </div>
-                    ) : isPdf ? (
-                        <div className="w-full h-full min-h-0 flex-1 p-0 m-0 border-none overflow-hidden">
-                            <iframe
-                                src={`${previewUrl}#view=FitH`}
-                                className="w-full h-full min-h-0 flex-1 border-none p-0 m-0"
-                                title="Attachment Preview"
+                            <img
+                                src={previewUrl}
+                                alt="Preview"
+                                onLoad={() => setPreviewLoading(false)}
+                                onError={() => setPreviewLoading(false)}
+                                className="max-h-full max-w-full object-contain"
                             />
                         </div>
                     ) : (
                         <div className="w-full h-full min-h-0 flex-1 p-0 m-0 border-none overflow-hidden">
                             <iframe
-                                src={previewUrl}
+                                src={isPdf ? `${previewUrl}#view=FitH` : previewUrl}
                                 className="w-full h-full min-h-0 flex-1 border-none p-0 m-0"
                                 title="Attachment Preview"
+                                onLoad={() => setPreviewLoading(false)}
                             />
                         </div>
                     )}

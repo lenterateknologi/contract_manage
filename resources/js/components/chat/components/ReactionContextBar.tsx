@@ -28,8 +28,8 @@ export function ReactionContextBar({
         <div
             ref={pickerRef}
             className={cn(
-                "absolute -top-10 z-40 flex items-center gap-1 rounded-full border border-border/80 bg-popover px-2 py-1 shadow-xl animate-in fade-in zoom-in-95 duration-150",
-                isMe ? "right-2" : "left-2"
+                "absolute -top-16 z-40 flex items-center gap-1 rounded-full border border-border/80 bg-popover px-2 py-1 shadow-xl animate-in fade-in zoom-in-95 duration-150",
+                isMe ? "left-0" : "right-0"
             )}
         >
             {REACTION_EMOJIS.map((emoji) => {

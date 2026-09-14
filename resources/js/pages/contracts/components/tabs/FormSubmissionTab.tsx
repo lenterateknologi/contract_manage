@@ -230,10 +230,13 @@ function GenericFormTab({
 
     const loadData = useCallback(async () => {
         if (!matchingTemplate) {
-            setLoading(false);
+            // Only stop loading if formTemplates is actually populated and definitely no template matches
+            if (formTemplates && formTemplates.length > 0) {
+                setLoading(false);
+            }
             return;
         }
-        if (fields.length === 0) setLoading(true);
+        setLoading(true);
         try {
             const [tplRes, subRes] = await Promise.all([
                 api.get(`/api/form-templates/${matchingTemplate.id}/fields`),
@@ -326,7 +329,7 @@ function GenericFormTab({
         } finally {
             setLoading(false);
         }
-    }, [matchingTemplate?.id, selected.id, docType]);
+    }, [matchingTemplate?.id, selected.id, docType, formTemplates?.length]);
 
     useEffect(() => {
         loadData();
@@ -436,6 +439,11 @@ function GenericFormTab({
                             h2 { font-size: 14px; font-weight: 900; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 12px; }
                             p { font-size: 11px; color: #64748b; font-weight: 500; line-height: 1.6; }
                         </style>
+                        <script>
+                            window.onPdfReady = function(url) {
+                                window.location.replace(url);
+                            };
+                        </script>
                     </head>
                     <body>
                         <div class="card">
@@ -467,7 +475,12 @@ function GenericFormTab({
             setPdfJobId(jobId);
 
             // Start Polling
+            let pollCount = 0;
+            let errorCount = 0;
+            const maxPollCount = 60; // 2 minutes max
+
             const interval = setInterval(async () => {
+                pollCount++;
                 try {
                     const statusRes = await axios.get(`/admin/form-templates/pdf-status/${jobId}`, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json' },
@@ -484,50 +497,100 @@ function GenericFormTab({
                         setIsExporting(false);
                         setPdfJobId(null);
 
+                        const fullUrl = statusData.url.startsWith('http')
+                            ? statusData.url
+                            : window.location.origin + (statusData.url.startsWith('/') ? '' : '/') + statusData.url;
+
                         // Update the already opened window
-                        if ((window as any)._pdfWindow) {
-                            (window as any)._pdfWindow.location.href = statusData.url;
+                        const targetWin = (window as any)._pdfWindow;
+                        if (targetWin && !targetWin.closed) {
+                            try {
+                                if (typeof targetWin.onPdfReady === 'function') {
+                                    targetWin.onPdfReady(fullUrl);
+                                } else {
+                                    targetWin.location.replace(fullUrl);
+                                }
+                            } catch (e) {
+                                console.warn('Direct popup navigation fallback:', e);
+                                try {
+                                    targetWin.location.href = fullUrl;
+                                } catch (e2) {
+                                    window.open(fullUrl, '_blank');
+                                }
+                            }
                             (window as any)._pdfWindow = null;
                         } else {
-                            // Fallback if window was closed or not opened
-                            window.open(statusData.url, '_blank');
+                            window.open(fullUrl, '_blank');
                         }
 
-                        setIsExporting(false);
-                        setPdfJobId(null);
                         hideProgress(jobId);
                     } else if (statusData.status === 'failed') {
                         clearInterval(interval);
                         setIsExporting(false);
                         setPdfJobId(null);
                         hideProgress(jobId);
-                        showToast('Gagal mendownload PDF: ' + (statusData.error || 'Unknown error'), 'danger');
+
+                        const errMsg = statusData.error || 'Terjadi kesalahan saat memproses PDF.';
+                        if ((window as any)._pdfWindow && !(window as any)._pdfWindow.closed) {
+                            (window as any)._pdfWindow.document.body.innerHTML = `
+                                <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+                                    <h2 style="color: #ef4444;">Gagal Membuat Dokumen</h2>
+                                    <p style="color: #64748b;">${errMsg}</p>
+                                    <button onclick="window.close()" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px;">Tutup Halaman</button>
+                                </div>
+                            `;
+                        }
+                        showToast('Gagal mendownload PDF: ' + errMsg, 'danger');
                     }
-                } catch (err) {
+                } catch (err: any) {
                     console.error('Polling failed:', err);
+                    errorCount++;
+                    if (errorCount >= 5) {
+                        clearInterval(interval);
+                        setIsExporting(false);
+                        setPdfJobId(null);
+                        hideProgress(jobId);
+                        if ((window as any)._pdfWindow && !(window as any)._pdfWindow.closed) {
+                            (window as any)._pdfWindow.document.body.innerHTML = `
+                                <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+                                    <h2 style="color: #ef4444;">Koneksi Terputus</h2>
+                                    <p style="color: #64748b;">Gagal memeriksa status pembuatan PDF dari server.</p>
+                                    <button onclick="window.close()" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px;">Tutup Halaman</button>
+                                </div>
+                            `;
+                        }
+                        showToast('Gagal memverifikasi status PDF dari server.', 'danger');
+                    }
+                }
+
+                if (pollCount >= maxPollCount) {
+                    clearInterval(interval);
+                    setIsExporting(false);
+                    setPdfJobId(null);
+                    hideProgress(jobId);
+                    if ((window as any)._pdfWindow && !(window as any)._pdfWindow.closed) {
+                        (window as any)._pdfWindow.document.body.innerHTML = `
+                            <div style="font-family: sans-serif; text-align: center; padding: 50px;">
+                                <h2 style="color: #ef4444;">Waktu Habis (Timeout)</h2>
+                                <p style="color: #64748b;">Proses pembuatan dokumen memakan waktu terlalu lama. Silakan coba lagi.</p>
+                                <button onclick="window.close()" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px;">Tutup Halaman</button>
+                            </div>
+                        `;
+                    }
+                    showToast('Waktu pembuatan PDF habis (timeout). Silakan coba lagi.', 'danger');
                 }
             }, 2000);
         } catch (error: any) {
             console.error('Queue failed:', error);
             setIsExporting(false);
             setPdfJobId(null);
+            if ((window as any)._pdfWindow && !(window as any)._pdfWindow.closed) {
+                (window as any)._pdfWindow.close();
+            }
             const msg = error.response?.data?.message || 'Gagal antrikan PDF. Silakan coba lagi nanti.';
             showToast(msg, 'danger');
         }
     };
-
-    if (!matchingTemplate) {
-        return (
-            <div className="border-surface-border bg-white dark:bg-zinc-900 rounded-xl border border-dashed py-20 text-center">
-                <div className="bg-surface-base mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full shadow-sm">
-                    <FileText className="text-text-soft" size={24} />
-                </div>
-                <h5 className="text-text-main mb-1 font-semibold uppercase" style={{ fontSize: 12 }}>
-                    Belum Ada Template {docType.toUpperCase()}
-                </h5>
-            </div>
-        );
-    }
 
     if (loading)
         return (
@@ -570,6 +633,22 @@ function GenericFormTab({
                 </div>
             </div>
         );
+
+    if (!matchingTemplate) {
+        return (
+            <div className="flex flex-1 flex-col items-center justify-center p-12 text-center bg-transparent">
+                <div className="mb-4 text-black dark:text-zinc-200">
+                    <FileText size={40} strokeWidth={1.5} />
+                </div>
+                <h4 className="mb-1 text-sm font-bold text-black dark:text-white">
+                    Template {docType.toUpperCase()} Belum Tersedia
+                </h4>
+                <p className="max-w-md text-xs text-black/80 dark:text-zinc-400 mb-5">
+                    Template formulir untuk tipe dokumen ini belum dikonfigurasi pada alur kerja atau jenis kontrak saat ini.
+                </p>
+            </div>
+        );
+    }
 
     const submissionInfo = selected.form_submissions?.find((s) => s.document_type === docType);
     const templateForRenderer = {

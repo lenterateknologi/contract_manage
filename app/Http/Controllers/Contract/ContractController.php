@@ -132,6 +132,7 @@ class ContractController extends Controller
                 'contract_type_ids', 'pic_ids', 'department_ids', 'submission_type_id',
                 'period', 'company_group_ids', 'company_ids',
                 'company_group_id', 'region_id', 'company_id', 'division_id', 'mine_tab', 'contract_tab', 'parent_tab', 'pending_tab', 'expiry_tab',
+                'sort_by', 'sort_dir', 'sortBy', 'sortDir',
             ]), [
                 'per_page' => $request->integer('per_page', 10),
             ]),

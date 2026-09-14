@@ -1327,6 +1327,18 @@ export default function SortableStepItem({
                                 'show_tab_attachments', 'show_tab_references', 'show_action_panel', 'show_document_detail',
                             ];
 
+                            const ALL_REQUIRE_KEYS = [
+                                'require_f1', 'require_f2', 'require_agreement',
+                                'require_title', 'require_vendor', 'require_category',
+                                'require_f2_contract_no', 'require_tax_toggle', 'require_price', 'require_period',
+                            ];
+
+                            const DOC_REQUIRE_KEYS = ['require_f1', 'require_f2', 'require_agreement'];
+                            const INFO_REQUIRE_KEYS = [
+                                'require_title', 'require_vendor', 'require_category',
+                                'require_f2_contract_no', 'require_tax_toggle', 'require_price', 'require_period',
+                            ];
+
                             const isSectionChecked = (keys: string[]) => {
                                 if (keys.length === 0) return false;
                                 return keys.every((k) => step.meta?.[k] !== false);
@@ -1335,6 +1347,27 @@ export default function SortableStepItem({
                             const toggleSection = (keys: string[]) => {
                                 if (keys.length === 0) return;
                                 const allChecked = isSectionChecked(keys);
+                                const newVal = !allChecked;
+                                const updates: Record<string, boolean> = {};
+                                keys.forEach((k) => {
+                                    updates[k] = newVal;
+                                });
+                                updateLocalStep(idx, {
+                                    meta: {
+                                        ...(step.meta || {}),
+                                        ...updates,
+                                    },
+                                });
+                            };
+
+                            const isRequireSectionChecked = (keys: string[]) => {
+                                if (keys.length === 0) return false;
+                                return keys.every((k) => !!step.meta?.[k]);
+                            };
+
+                            const toggleRequireSection = (keys: string[]) => {
+                                if (keys.length === 0) return;
+                                const allChecked = isRequireSectionChecked(keys);
                                 const newVal = !allChecked;
                                 const updates: Record<string, boolean> = {};
                                 keys.forEach((k) => {
@@ -1368,6 +1401,7 @@ export default function SortableStepItem({
                                                     meta: {
                                                         ...(step.meta || {}),
                                                         allow_info_edit: true, allow_f1_edit: true, allow_f2_edit: true, allow_agreement_edit: true, allow_attachment_edit: true, allow_reference: true, show_f2_contract_no: true, show_tax_toggle: true, show_price: true, show_period: true, show_tab_f1: true, show_tab_f2: true, show_tab_agreement: true, show_tab_attachments: true, show_tab_references: true, show_tab_timeline: true, show_tab_chat: true, allow_f2_contract_no_edit: true, allow_tax_toggle_edit: true, allow_price_edit: true, allow_period_edit: true, show_info: true, allow_timeline_edit: true, allow_chat_edit: true, show_action_panel: true, show_document_detail: true, show_tab_members: true,
+                                                        require_f1: true, require_f2: true, require_agreement: true, require_title: true, require_vendor: true, require_category: true, require_f2_contract_no: true, require_tax_toggle: true, require_price: true, require_period: true,
                                                     },
                                                 });
                                             }}
@@ -1384,6 +1418,7 @@ export default function SortableStepItem({
                                                     meta: {
                                                         ...(step.meta || {}),
                                                         allow_info_edit: false, allow_f1_edit: false, allow_f2_edit: false, allow_agreement_edit: false, allow_attachment_edit: false, allow_reference: false, show_f2_contract_no: false, show_tax_toggle: false, show_price: false, show_period: false, show_tab_f1: false, show_tab_f2: false, show_tab_agreement: false, show_tab_attachments: false, show_tab_references: false, show_tab_timeline: false, show_tab_chat: false, allow_f2_contract_no_edit: false, allow_tax_toggle_edit: false, allow_price_edit: false, allow_period_edit: false, show_info: false, allow_timeline_edit: false, allow_chat_edit: false, show_action_panel: false, show_document_detail: false, show_tab_members: false,
+                                                        require_f1: false, require_f2: false, require_agreement: false, require_title: false, require_vendor: false, require_category: false, require_f2_contract_no: false, require_tax_toggle: false, require_price: false, require_period: false,
                                                     },
                                                 });
                                             }}
@@ -1403,7 +1438,7 @@ export default function SortableStepItem({
                                                         Fitur / Tab
                                                     </span>
                                                 </th>
-                                                <th className="px-4 py-2.5 font-bold text-center w-36 text-white dark:text-zinc-200">
+                                                <th className="px-4 py-2.5 font-bold text-center w-32 text-white dark:text-zinc-200">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Checkbox
                                                             checked={isSectionChecked(ALL_EDIT_KEYS)}
@@ -1416,7 +1451,7 @@ export default function SortableStepItem({
                                                         </span>
                                                     </div>
                                                 </th>
-                                                <th className="px-4 py-2.5 font-bold text-center w-36 text-white dark:text-zinc-200">
+                                                <th className="px-4 py-2.5 font-bold text-center w-32 text-white dark:text-zinc-200">
                                                     <div className="flex items-center justify-center gap-2">
                                                         <Checkbox
                                                             checked={isSectionChecked(ALL_SHOW_KEYS)}
@@ -1426,6 +1461,19 @@ export default function SortableStepItem({
                                                         <span className="flex items-center gap-1">
                                                             <Eye size={13} className="text-white/80 dark:text-zinc-400" />
                                                             Tampilkan
+                                                        </span>
+                                                    </div>
+                                                </th>
+                                                <th className="px-4 py-2.5 font-bold text-center w-32 text-white dark:text-zinc-200">
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <Checkbox
+                                                            checked={isRequireSectionChecked(ALL_REQUIRE_KEYS)}
+                                                            onCheckedChange={() => toggleRequireSection(ALL_REQUIRE_KEYS)}
+                                                            title="Centang / Kosongkan Seluruh Kolom Wajib Diisi"
+                                                        />
+                                                        <span className="flex items-center gap-1">
+                                                            <CheckSquare2 size={13} className="text-white/80 dark:text-zinc-400" />
+                                                            Wajib Diisi
                                                         </span>
                                                     </div>
                                                 </th>
@@ -1451,6 +1499,13 @@ export default function SortableStepItem({
                                                         title="Centang/Kosongkan Semua Tampilkan di Dokumen"
                                                     />
                                                 </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isRequireSectionChecked(DOC_REQUIRE_KEYS)}
+                                                        onCheckedChange={() => toggleRequireSection(DOC_REQUIRE_KEYS)}
+                                                        title="Centang/Kosongkan Semua Wajib Diisi di Dokumen"
+                                                    />
+                                                </td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
@@ -1459,6 +1514,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_f1_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_f1_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_f1 !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_f1: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_f1} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_f1: !!c } })} /></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
@@ -1467,6 +1523,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_f2_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_f2_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_f2 !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_f2: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_f2} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_f2: !!c } })} /></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
@@ -1475,6 +1532,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_agreement_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_agreement_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_agreement !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_agreement: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_agreement} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_agreement: !!c } })} /></td>
                                             </tr>
 
                                             {/* Informational Section: Informasi Kontrak */}
@@ -1496,6 +1554,13 @@ export default function SortableStepItem({
                                                         title="Centang/Kosongkan Semua Tampilkan di Informasi Kontrak"
                                                     />
                                                 </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <Checkbox
+                                                        checked={isRequireSectionChecked(INFO_REQUIRE_KEYS)}
+                                                        onCheckedChange={() => toggleRequireSection(INFO_REQUIRE_KEYS)}
+                                                        title="Centang/Kosongkan Semua Wajib Diisi di Informasi Kontrak"
+                                                    />
+                                                </td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
@@ -1504,6 +1569,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_info_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_info_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_info !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_info: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
@@ -1512,14 +1578,16 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_title_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_title_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_title !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_title: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_title} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_title: !!c } })} /></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
                                                     <Users size={13} className="text-primary/70 dark:text-primary-400/70" />
-                                                    ↳ Field Pihak Kedua (Vendor)
+                                                    ↳ Field Pihak Kedua 
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_vendor_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_vendor_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_vendor !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_vendor: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_vendor} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_vendor: !!c } })} /></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
@@ -1528,6 +1596,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_category_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_category_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_category !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_category: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_category} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_category: !!c } })} /></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
@@ -1536,6 +1605,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_f2_contract_no_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_f2_contract_no_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_f2_contract_no !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_f2_contract_no: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_f2_contract_no} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_f2_contract_no: !!c } })} /></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
@@ -1544,6 +1614,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_tax_toggle_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_tax_toggle_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tax_toggle !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tax_toggle: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_tax_toggle} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_tax_toggle: !!c } })} /></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
@@ -1552,6 +1623,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_price_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_price_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_price !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_price: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_price} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_price: !!c } })} /></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-medium text-slate-600 dark:text-zinc-400 pl-10 flex items-center gap-2">
@@ -1560,6 +1632,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_period_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_period_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_period !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_period: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><Checkbox checked={!!step.meta?.require_period} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), require_period: !!c } })} /></td>
                                             </tr>
 
                                             {/* Tab 2: Riwayat & Alur */}
@@ -1581,6 +1654,7 @@ export default function SortableStepItem({
                                                         title="Centang/Kosongkan Semua Tampilkan di Riwayat & Alur"
                                                     />
                                                 </td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
@@ -1589,6 +1663,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_timeline_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_timeline_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_timeline !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_timeline: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
 
                                             {/* Tab 3: Diskusi & Member */}
@@ -1610,6 +1685,7 @@ export default function SortableStepItem({
                                                         title="Centang/Kosongkan Semua Tampilkan di Diskusi & Member"
                                                     />
                                                 </td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
@@ -1618,6 +1694,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_chat_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_chat_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_chat !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_chat: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 pl-6 flex items-center gap-2">
@@ -1626,6 +1703,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_members !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_members: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
 
                                             {/* Tab Lainnya & Panel Utama */}
@@ -1647,6 +1725,7 @@ export default function SortableStepItem({
                                                         title="Centang/Kosongkan Semua Tampilkan di Tab Lainnya & Panel"
                                                     />
                                                 </td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
@@ -1655,6 +1734,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_attachment_edit !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_attachment_edit: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_attachments !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_attachments: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
@@ -1663,6 +1743,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.allow_reference !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), allow_reference: !!c } })} /></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_tab_references !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_tab_references: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
@@ -1671,6 +1752,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_action_panel !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_action_panel: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                             <tr className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
                                                 <td className="px-4 py-2 font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-2">
@@ -1679,6 +1761,7 @@ export default function SortableStepItem({
                                                 </td>
                                                 <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                                 <td className="px-4 py-2 text-center"><Checkbox checked={step.meta?.show_document_detail !== false} onCheckedChange={(c) => updateLocalStep(idx, { meta: { ...(step.meta || {}), show_document_detail: !!c } })} /></td>
+                                                <td className="px-4 py-2 text-center"><span className="text-slate-300 dark:text-zinc-600">-</span></td>
                                             </tr>
                                         </tbody>
                                     </table>

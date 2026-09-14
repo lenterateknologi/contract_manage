@@ -232,8 +232,19 @@ class ContractFormController extends Controller
                 $updates['p2_address'] = $formData['meta_p2_alamat'];
             }
 
+            // --- Sync tax_required from form field to contract main attribute and metadata ---
+            foreach (['meta_tax_required', 'tax_required', 'pajak', 'meta_pajak'] as $taxKey) {
+                if (array_key_exists($taxKey, $formData)) {
+                    $val = $formData[$taxKey];
+                    $isTax = ($val === true || $val === '1' || $val === 1 || $val === 'Ya' || $val === 'ya' || $val === 'true');
+                    $updates['tax_required'] = $isTax;
+                    $currentContractMeta['tax_required'] = $isTax;
+                    $currentContractMeta['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
+                    break;
+                }
+            }
+
             // --- Sync all formData values into contract->metadata for dynamic workflow conditions ---
-            $currentContractMeta = $contract->metadata ?? [];
             foreach ($formData as $k => $v) {
                 if ($v !== null && $v !== '') {
                     // Clean up formatted currency inputs if string contains non-digits for numeric keys
@@ -245,10 +256,19 @@ class ContractFormController extends Controller
                     }
                 }
             }
+
+            // Ensure tax_required is always strictly boolean and meta_tax_required is 'Ya'/'Tidak'
+            if (isset($currentContractMeta['meta_tax_required']) || isset($currentContractMeta['tax_required'])) {
+                $taxVal = $currentContractMeta['meta_tax_required'] ?? ($currentContractMeta['tax_required'] ?? false);
+                $isTax = ($taxVal === true || $taxVal === '1' || $taxVal === 1 || $taxVal === 'Ya' || $taxVal === 'ya' || $taxVal === 'true');
+                $currentContractMeta['tax_required'] = $isTax;
+                $currentContractMeta['meta_tax_required'] = $isTax ? 'Ya' : 'Tidak';
+            }
+
             $contract->update(['metadata' => $currentContractMeta]);
 
-            $baseUpdates = collect($updates)->only(['transaction_type', 'title', 'contract_date'])->toArray();
-            $metaUpdates = collect($updates)->except(['transaction_type', 'title', 'contract_date'])->toArray();
+            $baseUpdates = collect($updates)->only(['transaction_type', 'title', 'contract_date', 'tax_required'])->toArray();
+            $metaUpdates = collect($updates)->except(['transaction_type', 'title', 'contract_date', 'tax_required'])->toArray();
 
             if (! empty($baseUpdates)) {
                 $contract->update($baseUpdates);

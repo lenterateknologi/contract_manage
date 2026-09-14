@@ -52,10 +52,11 @@ interface ContractInfoFormProps {
     canEditTaxToggle?: boolean;
 }
 
-const FieldLabel = ({ icon: Icon, children }: { icon?: any; children: React.ReactNode }) => (
+const FieldLabel = ({ icon: Icon, required = false, children }: { icon?: any; required?: boolean; children: React.ReactNode }) => (
     <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         {Icon && <Icon size={12} className="text-muted-foreground/80 shrink-0" />}
         <span>{children}</span>
+        {required && <span className="text-rose-500 font-black ml-0.5" title="Wajib Diisi">*</span>}
     </div>
 );
 
@@ -112,6 +113,36 @@ export function ContractInfoForm({
             : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
     }, [price, selected]);
 
+    const categoryDisplayName = React.useMemo(() => {
+        const targetId = typeId || selected.contract_type_id || activeType?.id;
+        let item = targetId ? types.find((t) => String(t.id) === String(targetId)) : null;
+
+        // If not found by ID, try finding by name
+        if (!item && selected.contract_type) {
+            item = types.find((t) => t.name === selected.contract_type) || null;
+        }
+
+        if (!item) {
+            return selected.contract_type || '—';
+        }
+
+        const pathNames = [item.name];
+        let current: any = item;
+
+        // Traverse up to include all ancestors
+        while (current && current.parent_id && String(current.parent_id) !== String(current.id)) {
+            const parent = types.find((t: any) => String(t.id) === String(current.parent_id));
+            if (parent && String(parent.id) !== String(current.id)) {
+                pathNames.unshift(parent.name);
+                current = parent;
+            } else {
+                break;
+            }
+        }
+
+        return pathNames.join(' - ');
+    }, [typeId, selected.contract_type_id, selected.contract_type, activeType, types]);
+
     // ── READ-ONLY PRESENTATION (WHEN is_readonly) ──
     if (is_readonly) {
         return (
@@ -119,9 +150,12 @@ export function ContractInfoForm({
                 {/* 1. Judul Kontrak */}
                 {selected.show_title !== false && (
                     <div className="pb-3 mb-1 border-b border-border/60 flex flex-col gap-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                            Judul Pengajuan
-                        </span>
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                            <span>Judul Pengajuan</span>
+                            {!!(selected.require_title || selected.workflow_step?.meta?.require_title) && (
+                                <span className="text-rose-500 font-black ml-0.5" title="Wajib Diisi">*</span>
+                            )}
+                        </div>
                         <p className="text-xs font-semibold text-foreground leading-relaxed">
                             {title || selected.title || '—'}
                         </p>
@@ -133,7 +167,7 @@ export function ContractInfoForm({
                     {/* No. Kontrak F2 */}
                     {selected.show_f2_contract_no !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Hash}>No. Kontrak</FieldLabel>
+                            <FieldLabel icon={Hash} required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}>No. Kontrak</FieldLabel>
                             {selected.contract_no ? (
                                 <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                                     {selected.contract_no}
@@ -147,9 +181,9 @@ export function ContractInfoForm({
                     {/* Kategori Dokumen */}
                     {selected.show_category !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Tag}>Kategori Dokumen</FieldLabel>
+                            <FieldLabel icon={Tag} required={!!(selected.require_category || selected.workflow_step?.meta?.require_category)}>Kategori Dokumen</FieldLabel>
                             <span className="font-semibold text-foreground text-right">
-                                {selected.contract_type || '—'}
+                                {categoryDisplayName}
                             </span>
                         </div>
                     )}
@@ -165,7 +199,7 @@ export function ContractInfoForm({
                     {/* Vendor */}
                     {selected.show_vendor !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Building2}>Pihak Kedua (Vendor)</FieldLabel>
+                            <FieldLabel icon={Building2} required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}>Pihak Kedua </FieldLabel>
                             <span className="font-semibold text-foreground text-right truncate max-w-[220px]">
                                 {selected.vendor?.name || 'Tanpa Vendor'}
                             </span>
@@ -175,7 +209,7 @@ export function ContractInfoForm({
                     {/* Masa Berlaku */}
                     {selected.show_period !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Calendar}>Masa Berlaku</FieldLabel>
+                            <FieldLabel icon={Calendar} required={!!(selected.require_period || selected.workflow_step?.meta?.require_period)}>Masa Berlaku</FieldLabel>
                             <span className="font-medium text-foreground text-right">
                                 {selected.contract_date || selected.end_date
                                     ? `${selected.contract_date ? formatDate(selected.contract_date) : '—'} s/d ${selected.end_date ? formatDate(selected.end_date) : '—'}`
@@ -187,7 +221,7 @@ export function ContractInfoForm({
                     {/* Nilai / Harga */}
                     {selected.show_price !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Coins}>Nilai Kontrak</FieldLabel>
+                            <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai Kontrak</FieldLabel>
                             <span className="font-mono font-bold text-foreground text-right">
                                 {formattedPrice || '—'}
                             </span>
@@ -197,7 +231,7 @@ export function ContractInfoForm({
                     {/* Ketentuan Pajak */}
                     {selected.show_tax_toggle !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Receipt}>Pajak</FieldLabel>
+                            <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Pajak</FieldLabel>
                             {taxRequired ? (
                                 <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                                     <CheckCircle2 size={13} className="shrink-0" />
@@ -222,7 +256,7 @@ export function ContractInfoForm({
             {/* Judul Kontrak */}
             {selected.show_title !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={FileText}>Judul Kontrak</FieldLabel>
+                    <FieldLabel icon={FileText} required={!!(selected.require_title || selected.workflow_step?.meta?.require_title)}>Judul Kontrak</FieldLabel>
                     <Input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
@@ -235,7 +269,7 @@ export function ContractInfoForm({
             {/* No. Kontrak F2 */}
             {selected.show_f2_contract_no !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Hash}>No. Kontrak (F2)</FieldLabel>
+                    <FieldLabel icon={Hash} required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}>No. Kontrak (F2)</FieldLabel>
                     {selected.allow_f2_contract_no_edit !== false ? (
                         <Input
                             value={contractNo}
@@ -244,17 +278,17 @@ export function ContractInfoForm({
                             size="sm"
                         />
                     ) : (
-                        <span className="font-mono text-xs font-bold text-primary bg-primary/10 border border-primary/20 px-2.5 py-1 rounded-lg w-fit">
+                        <span className="font-mono text-xs font-bold text-foreground">
                             {selected.contract_no || 'Belum diterbitkan'}
                         </span>
                     )}
                 </div>
             )}
 
-            {/* Pihak Kedua (Vendor) */}
+            {/* Pihak Kedua  */}
             {selected.show_vendor !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Building2}>Pihak Kedua (Vendor)</FieldLabel>
+                    <FieldLabel icon={Building2} required={!!(selected.require_vendor || selected.workflow_step?.meta?.require_vendor)}>Pihak Kedua </FieldLabel>
                     {canEditVendor ? (
                         <SearchableSelect
                             value={vendorId}
@@ -262,9 +296,10 @@ export function ContractInfoForm({
                             options={vendorOptions}
                             placeholder="Pilih Vendor"
                             searchPlaceholder="Cari vendor..."
+                            size="sm"
                         />
                     ) : (
-                        <span className="text-xs font-semibold text-foreground px-3 py-2 rounded-lg border border-border bg-muted/30 truncate">
+                        <span className="text-xs font-semibold text-foreground truncate">
                             {selected.vendor?.name || vendorOptions.find((o) => o.value === vendorId)?.label || 'Tanpa Vendor'}
                         </span>
                     )}
@@ -274,7 +309,7 @@ export function ContractInfoForm({
             {/* Kategori Kontrak */}
             {selected.show_category !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Tag}>Kategori Kontrak</FieldLabel>
+                    <FieldLabel icon={Tag} required={!!(selected.require_category || selected.workflow_step?.meta?.require_category)}>Kategori Kontrak</FieldLabel>
                     {canEditCategory ? (
                         <TreeSelect
                             value={typeId}
@@ -282,10 +317,11 @@ export function ContractInfoForm({
                             items={types}
                             placeholder="Pilih Kategori"
                             disableParentSelection={true}
+                            size="sm"
                         />
                     ) : (
-                        <span className="text-xs font-semibold text-foreground px-3 py-2 rounded-lg border border-border bg-muted/30">
-                            {selected.contract_type || '—'}
+                        <span className="text-xs font-semibold text-foreground">
+                            {categoryDisplayName}
                         </span>
                     )}
                 </div>
@@ -294,13 +330,13 @@ export function ContractInfoForm({
             {/* Alur Kerja (Workflow) Info */}
             <div className="flex flex-col gap-1.5">
                 <FieldLabel icon={GitBranch}>Alur Kerja</FieldLabel>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-muted/30 text-xs font-medium text-foreground">
-                    <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                    <span className="font-semibold text-foreground">
                         {selected.workflow?.name || selected.workflow_step?.workflow?.name || 'Alur Standar'}
                     </span>
                     {selected.workflow_step?.step && (
-                        <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded ml-auto">
-                            Tahap {selected.workflow_step.step}: {selected.workflow_step.name || selected.workflow_step.label || 'Berjalan'}
+                        <span className="text-[10px] text-muted-foreground">
+                            • Tahap {selected.workflow_step.step}: {selected.workflow_step.name || selected.workflow_step.label || 'Berjalan'}
                         </span>
                     )}
                 </div>
@@ -309,7 +345,7 @@ export function ContractInfoForm({
             {/* Masa Berlaku Kontrak */}
             {selected.show_period !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Calendar}>Masa Berlaku Kontrak</FieldLabel>
+                    <FieldLabel icon={Calendar} required={!!(selected.require_period || selected.workflow_step?.meta?.require_period)}>Masa Berlaku Kontrak</FieldLabel>
                     {canEditPeriod ? (
                         <div className="grid grid-cols-2 gap-2">
                             <div className="flex flex-col gap-1">
@@ -332,7 +368,7 @@ export function ContractInfoForm({
                             </div>
                         </div>
                     ) : (
-                        <span className="text-xs font-medium text-foreground px-3 py-2 rounded-lg border border-border bg-muted/30">
+                        <span className="text-xs font-medium text-foreground">
                             {contractDate || endDate
                                 ? `${contractDate || '—'} s/d ${endDate || '—'}`
                                 : '—'}
@@ -344,7 +380,7 @@ export function ContractInfoForm({
             {/* Nilai / Harga Kontrak */}
             {selected.show_price !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Coins}>Nilai / Harga Kontrak</FieldLabel>
+                    <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai / Harga Kontrak</FieldLabel>
                     {canEditPrice ? (
                         <Input
                             value={(() => {
@@ -361,7 +397,7 @@ export function ContractInfoForm({
                             size="sm"
                         />
                     ) : (
-                        <span className="font-mono font-bold text-xs text-foreground px-3 py-2 rounded-lg border border-border bg-muted/30">
+                        <span className="font-mono font-bold text-xs text-foreground">
                             {price
                                 ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(parseFloat(price))
                                 : '—'}
@@ -373,7 +409,7 @@ export function ContractInfoForm({
             {/* Pajak */}
             {selected.show_tax_toggle !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Receipt}>Penentuan Pajak</FieldLabel>
+                    <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Penentuan Pajak</FieldLabel>
                     {canEditTaxToggle ? (
                         <label
                             htmlFor="tax_required_checkbox"
@@ -389,12 +425,22 @@ export function ContractInfoForm({
                             </span>
                         </label>
                     ) : (
-                        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 opacity-60">
-                            <Checkbox id="tax_required_checkbox_ro" checked={taxRequired} disabled />
-                            <span className="text-xs font-medium text-foreground select-none">
-                                {taxRequired ? 'Dikenakan Pajak (PPN/PPh)' : 'Tanpa Pajak'}
-                            </span>
-                        </div>
+                        <span className={cn(
+                            "inline-flex items-center gap-1.5 text-xs font-medium",
+                            taxRequired ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-muted-foreground"
+                        )}>
+                            {taxRequired ? (
+                                <>
+                                    <CheckCircle2 size={13} className="shrink-0" />
+                                    Dikenakan Pajak (PPN/PPh)
+                                </>
+                            ) : (
+                                <>
+                                    <XCircle size={13} className="shrink-0" />
+                                    Tanpa Pajak
+                                </>
+                            )}
+                        </span>
                     )}
                 </div>
             )}

@@ -108,7 +108,7 @@ export function AttachmentCategoryBadge({
                     className,
                 )}
             >
-                VENDOR
+                CATALOG
             </Badge>
         );
     }

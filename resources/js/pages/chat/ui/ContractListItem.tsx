@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Building2 } from 'lucide-react';
+import { Building2, ExternalLink } from 'lucide-react';
 import { Contract } from '@/pages/contracts/types';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 
@@ -64,26 +64,56 @@ export function ContractListItem({ contract, isSelected, onClick }: ContractList
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] mt-0.5">
-                    <span
-                        className={cn(
-                            'inline-flex items-center gap-1 truncate max-w-[140px] font-medium text-[10.5px]',
-                            isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground',
-                        )}
-                    >
-                        <Building2 size={11} className="shrink-0 opacity-70" />
-                        <span className="truncate">{contract.vendor?.name || 'Internal'}</span>
-                    </span>
+                    {contract.vendor?.name ? (
+                        <span
+                            className={cn(
+                                'inline-flex items-center gap-1 truncate max-w-[120px] font-medium text-[10.5px]',
+                                isSelected ? 'text-primary-foreground/90' : 'text-muted-foreground',
+                            )}
+                        >
+                            <Building2 size={11} className="shrink-0 opacity-70" />
+                            <span className="truncate">{contract.vendor.name}</span>
+                        </span>
+                    ) : contract.contract_type && contract.contract_type !== '—' ? (
+                        <span
+                            className={cn(
+                                'truncate max-w-[130px] font-medium text-[10.5px]',
+                                isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground',
+                            )}
+                        >
+                            {contract.contract_type}
+                        </span>
+                    ) : null}
 
-                    <span
-                        className={cn(
-                            'text-[10px] px-1.5 py-0.2 rounded font-semibold uppercase tracking-wider',
-                            isSelected
-                                ? 'bg-primary-foreground/20 text-primary-foreground'
-                                : 'bg-muted text-muted-foreground',
-                        )}
-                    >
-                        {contract.status}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                        <span
+                            className={cn(
+                                'text-[10px] px-1.5 py-0.2 rounded font-semibold uppercase tracking-wider',
+                                isSelected
+                                    ? 'bg-primary-foreground/20 text-primary-foreground'
+                                    : 'bg-muted text-muted-foreground',
+                            )}
+                        >
+                            {contract.status}
+                        </span>
+
+                        <a
+                            href={`/contracts/${contract.id}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className={cn(
+                                'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer shadow-2xs',
+                                isSelected
+                                    ? 'bg-white/20 hover:bg-white/30 text-white'
+                                    : 'bg-primary/10 hover:bg-primary/20 text-primary',
+                            )}
+                            title="Buka Pengajuan Kontrak di Tab Baru"
+                        >
+                            <span className="hidden sm:inline">Buka</span>
+                            <ExternalLink size={9} />
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

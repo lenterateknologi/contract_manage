@@ -51,15 +51,22 @@ export default function AgreementView({
     const effectiveDocType = docType === 'contract' ? 'agreement' : docType;
     const isRevision = effectiveDocType === 'f1' || effectiveDocType === 'f2';
     const { showToast } = useToast();
-    const [versions, setVersions] = useState<AgreementVersion[]>([]);
+
+    const initialVersions = React.useMemo(() => {
+        return (contract.versions || []).filter(
+            (v) => v.document_type === effectiveDocType || (effectiveDocType === 'agreement' && v.document_type === 'contract'),
+        ) as AgreementVersion[];
+    }, [contract.versions, effectiveDocType]);
+
+    const [versions, setVersions] = useState<AgreementVersion[]>(initialVersions);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadPhase, setUploadPhase] = useState<'idle' | 'uploading' | 'processing' | 'rendering'>('idle');
     const [uploadFileName, setUploadFileName] = useState('');
     const [uploadFileSize, setUploadFileSize] = useState('');
-    const [isIframeLoading, setIsIframeLoading] = useState(false);
-    const [selectedVno, setSelectedVno] = useState<number | null>(null);
+    const [isIframeLoading, setIsIframeLoading] = useState(true);
+    const [selectedVno, setSelectedVno] = useState<number | null>(initialVersions[0]?.version_no || null);
     const [showVersions, setShowVersions] = useState(false);
     const [showMoreActions, setShowMoreActions] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -112,24 +119,35 @@ export default function AgreementView({
                     ? `/api/contracts/${contract.id}/revision/versions?type=${effectiveDocType}`
                     : `/api/contracts/${contract.id}/agreement/versions`;
                 const res = await axios.get(url);
-                setVersions(res.data);
+                const data = Array.isArray(res.data) ? res.data : [];
+                setVersions(data);
 
-                if (res.data.length > 0 && (forceLatest || !selectedVno)) {
-                    setSelectedVno(res.data[0].version_no);
+                if (data.length > 0 && (forceLatest || !selectedVno)) {
+                    setSelectedVno(data[0].version_no);
                 }
                 setLastUpdated(Date.now()); // Update timestamp on refresh
             } catch (err) {
                 console.error('Failed to load agreement versions', err);
             } finally {
-                if (!silent) setLoading(false);
+                if (!silent) {
+                    setLoading(false);
+                }
             }
         },
         [contract.id, selectedVno, isRevision, effectiveDocType],
     );
 
     useEffect(() => {
-        loadVersions();
-    }, [loadVersions]);
+        setLoading(true);
+        setSelectedVno(initialVersions[0]?.version_no || null);
+        loadVersions(true, false);
+    }, [effectiveDocType, contract.id]);
+
+    useEffect(() => {
+        if (selectedVno) {
+            setIsIframeLoading(true);
+        }
+    }, [selectedVno, lastUpdated]);
 
     // Refresh version list if the contract prop's versions have changed (e.g. upload from sidebar)
     const contractVersionsCount = contract.versions?.length || 0;
@@ -584,8 +602,8 @@ export default function AgreementView({
 
                 {loading ? (
                     /* High-polish Document Skeleton during initial loading */
-                    <div className="flex flex-1 flex-col items-center justify-center p-8 bg-slate-50/50 dark:bg-zinc-950/50 animate-pulse">
-                        <div className="w-full max-w-[210mm] h-[85vh] max-h-[700px] bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-slate-200 dark:border-zinc-800 p-8 flex flex-col justify-between">
+                    <div className="flex flex-1 flex-col items-center justify-center p-8 bg-transparent animate-pulse">
+                        <div className="w-full max-w-[210mm] h-[85vh] max-h-[700px] bg-transparent p-8 flex flex-col justify-between">
                             <div className="space-y-6">
                                 {/* Header skeleton */}
                                 <div className="flex justify-between items-center pb-6 border-b border-slate-100 dark:border-zinc-800">
@@ -622,19 +640,19 @@ export default function AgreementView({
                         </div>
                     </div>
                 ) : versions.length === 0 ? (
-                    <div className="flex flex-1 flex-col items-center justify-center p-12 text-center bg-slate-50/50 dark:bg-zinc-950/50">
-                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20">
-                            <FileText size={32} />
+                    <div className="flex flex-1 flex-col items-center justify-center p-12 text-center bg-transparent">
+                        <div className="mb-4 text-black dark:text-zinc-200">
+                            <FileText size={40} strokeWidth={1.5} />
                         </div>
-                        <h4 className="mb-1 text-sm font-bold text-slate-900 dark:text-white">Dokumen {titleLabel} Belum Tersedia</h4>
-                        <p className="max-w-md text-xs text-slate-500 dark:text-zinc-400 mb-5">
-                            Upload berkas {titleLabel.toLowerCase()} (.pdf, .docx, atau .doc) untuk mulai melihat pratinjau dan riwayat versi dokumen.
+                        <h4 className="mb-1 text-sm font-bold text-black dark:text-white">Dokumen {titleLabel} Belum Tersedia</h4>
+                        <p className="max-w-md text-xs text-black/80 dark:text-zinc-400 mb-5">
+                            Belum ada berkas yang diunggah untuk tahap ini. Unggah berkas (.pdf, .docx, atau .doc) untuk mulai melihat pratinjau dokumen.
                         </p>
                         {canEdit && (
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 shadow-md transition-all cursor-pointer"
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-all cursor-pointer"
                             >
                                 <Upload size={14} />
                                 <span>Pilih Berkas untuk Diunggah</span>

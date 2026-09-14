@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
-import { ArrowDown, MessageSquare, RefreshCw, Search, Users, X } from 'lucide-react';
+import { ArrowDown, ExternalLink, FileText, MessageSquare, RefreshCw, Search, Users, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Contract, ContractMessage } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
@@ -203,44 +203,120 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
     const involvedParticipants = useMemo(() => {
         const map = new Map<string, any>();
-        if (contract.creator) map.set(contract.creator.id, contract.creator);
-        if (contract.initiator) map.set(contract.initiator.id, contract.initiator);
-        if (contract.assigned_pic) map.set(contract.assigned_pic.id, contract.assigned_pic);
-        if (contract.assigned_by) map.set(contract.assigned_by.id, contract.assigned_by);
-        contract.approvals?.forEach((a) => {
-            if (a.approver) map.set(a.approver.id, a.approver);
-        });
-        messages.forEach((m) => {
-            if (m.user) map.set(m.user.id, m.user);
-        });
-        return Array.from(map.values());
-    }, [contract, messages]);
+        const myIdStr = String(meId || '');
+        const pool = users && users.length > 0 ? users : allUsers;
+
+        const addUser = (u: any) => {
+            if (!u) return;
+            const uid = String(u.id || u.user_id || '');
+            if (uid && uid !== myIdStr && !map.has(uid)) {
+                map.set(uid, u);
+            }
+        };
+
+        // 1. Contract Initiator, Creator, Assigned PIC
+        if (contract.creator) addUser(contract.creator);
+        if (contract.initiator) addUser(contract.initiator);
+        if (contract.assigned_pic) addUser(contract.assigned_pic);
+        if (contract.assigned_by) addUser(contract.assigned_by);
+
+        if ((contract as any).creator_id) {
+            const u = pool.find((p: any) => String(p.id) === String((contract as any).creator_id));
+            if (u) addUser(u);
+        }
+        if ((contract as any).initiator_id) {
+            const u = pool.find((p: any) => String(p.id) === String((contract as any).initiator_id));
+            if (u) addUser(u);
+        }
+
+        // 2. Approvals List
+        if (Array.isArray(contract.approvals)) {
+            contract.approvals.forEach((a: any) => {
+                if (a.approver) addUser(a.approver);
+                if (a.user) addUser(a.user);
+                const approverId = a.approver_id || a.user_id;
+                if (approverId) {
+                    const u = pool.find((p: any) => String(p.id) === String(approverId));
+                    if (u) {
+                        addUser(u);
+                    } else if (a.approver_name) {
+                        addUser({ id: String(approverId), name: a.approver_name, role: a.role });
+                    }
+                }
+            });
+        }
+
+        // 3. Message participants
+        if (Array.isArray(messages)) {
+            messages.forEach((m) => {
+                if (m.user) addUser(m.user);
+            });
+        }
+
+        const list = Array.from(map.values());
+        if (list.length > 0) {
+            return list;
+        }
+
+        // Fallback to all users excluding self if no specific approvals/involved found
+        return pool.filter((u: any) => String(u.id) !== myIdStr);
+    }, [contract, messages, meId, users, allUsers]);
+
+    const allKnownUsers = useMemo(() => {
+        const pool = users && users.length > 0 ? users : allUsers;
+        return pool;
+    }, [users, allUsers]);
 
     const filteredUsers = useMemo(() => {
+        const myIdStr = String(meId || '');
+        const pool = (allKnownUsers || []).filter((u: any) => String(u.id) !== myIdStr);
+
         if (!mentionSearch) {
-            return involvedParticipants.length > 0 ? involvedParticipants : allUsers;
+            return involvedParticipants.length > 0 ? involvedParticipants : pool;
         }
         const s = mentionSearch.toLowerCase();
-        return allUsers.filter((u) => u.name.toLowerCase().includes(s));
-    }, [allUsers, involvedParticipants, mentionSearch]);
+        return pool.filter((u: any) => u.name && u.name.toLowerCase().includes(s));
+    }, [involvedParticipants, mentionSearch, allKnownUsers, meId]);
+
+    const draftKey = `chat_draft_${meId || 'guest'}_${contract.id}`;
 
     const handleEditorInput = () => {
         if (!editorRef.current) return;
         const text = editorRef.current.innerText || '';
-        setInput(editorRef.current.innerHTML);
+        const html = editorRef.current.innerHTML;
+        setInput(html);
+
+        if (contract.id) {
+            if (text.trim() || html.trim()) {
+                localStorage.setItem(draftKey, html);
+            } else {
+                localStorage.removeItem(draftKey);
+            }
+        }
 
         const sel = window.getSelection();
         if (sel && sel.rangeCount > 0) {
             const range = sel.getRangeAt(0);
-            const textBefore = text.slice(0, range.startOffset || 0);
-            const match = textBefore.match(/@(\w*)$/);
+            const node = range.startContainer;
+            const offset = range.startOffset;
+
+            let textBefore = '';
+            if (node.nodeType === Node.TEXT_NODE) {
+                textBefore = (node.textContent || '').slice(0, offset);
+            } else {
+                textBefore = (editorRef.current.innerText || '').slice(0, offset);
+            }
+
+            const match = textBefore.match(/@([a-zA-Z0-9_.-]*)$/);
             if (match) {
-                setMentionSearch(match[1]);
+                setMentionSearch(match[1] || '');
                 setShowMentions(true);
                 setMentionIndex(0);
             } else {
                 setShowMentions(false);
             }
+        } else {
+            setShowMentions(false);
         }
     };
 
@@ -287,38 +363,90 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
 
     const insertMention = (user: any) => {
         if (!editorRef.current) return;
-        const mentionText = `@${user.name} `;
-        document.execCommand('insertHTML', false, `<strong>${mentionText}</strong>&nbsp;`);
-        setShowMentions(false);
-        setInput(editorRef.current.innerHTML);
-    };
+        editorRef.current.focus();
 
-    const [draftSavedTime, setDraftSavedTime] = useState<string | null>(null);
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            const range = sel.getRangeAt(0);
+            const node = range.startContainer;
+            const offset = range.startOffset;
+
+            if (node.nodeType === Node.TEXT_NODE) {
+                const text = node.textContent || '';
+                const textBefore = text.slice(0, offset);
+                const lastAtIdx = textBefore.lastIndexOf('@');
+
+                if (lastAtIdx !== -1) {
+                    range.setStart(node, lastAtIdx);
+                    range.setEnd(node, offset);
+                    range.deleteContents();
+                }
+            }
+
+            // Create atomic mention badge (cannot type inside contenteditable=false)
+            const mentionSpan = document.createElement('span');
+            mentionSpan.className = 'mention-tag font-semibold text-primary select-none';
+            mentionSpan.setAttribute('contenteditable', 'false');
+            mentionSpan.setAttribute('data-mention-id', String(user.id || ''));
+            mentionSpan.setAttribute('data-name', user.name);
+            mentionSpan.textContent = `@${user.name}`;
+
+            const spaceNode = document.createTextNode('\u00A0'); // trailing non-breaking space
+
+            range.insertNode(spaceNode);
+            range.insertNode(mentionSpan);
+
+            // Move caret strictly after the space node
+            const newRange = document.createRange();
+            newRange.setStartAfter(spaceNode);
+            newRange.setEndAfter(spaceNode);
+            sel.removeAllRanges();
+            sel.addRange(newRange);
+        }
+
+        setShowMentions(false);
+        setMentionSearch('');
+
+        const html = editorRef.current.innerHTML;
+        setInput(html);
+        if (contract.id) {
+            localStorage.setItem(draftKey, html);
+        }
+    };
 
     useEffect(() => {
         if (!contract.id) return;
-        const savedDraft = localStorage.getItem(`chat_draft_${contract.id}`);
+        const savedDraft = localStorage.getItem(draftKey);
         if (savedDraft && editorRef.current) {
             editorRef.current.innerHTML = savedDraft;
             setInput(savedDraft);
-            setDraftSavedTime('Draf dimuat');
-            setTimeout(() => setDraftSavedTime(null), 3000);
+        } else if (editorRef.current) {
+            editorRef.current.innerHTML = '';
+            setInput('');
         }
-    }, [contract.id]);
+    }, [contract.id, meId, draftKey]);
 
-    const saveDraft = () => {
-        if (!contract.id) return;
-        if (input.trim()) {
-            localStorage.setItem(`chat_draft_${contract.id}`, input);
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            setDraftSavedTime(`Tersimpan ${timeStr}`);
-            showToast('Draf pesan berhasil disimpan.', 'success');
-        } else {
-            localStorage.removeItem(`chat_draft_${contract.id}`);
-            setDraftSavedTime(null);
-        }
-    };
+    // Auto-save draft on beforeunload / unmount
+    const lastInputRef = useRef(input);
+    useEffect(() => {
+        lastInputRef.current = input;
+    }, [input]);
+
+    useEffect(() => {
+        const handleAutoSave = () => {
+            if (!contract.id) return;
+            const currentVal = lastInputRef.current;
+            if (currentVal && currentVal.trim()) {
+                localStorage.setItem(draftKey, currentVal);
+            }
+        };
+
+        window.addEventListener('beforeunload', handleAutoSave);
+        return () => {
+            window.removeEventListener('beforeunload', handleAutoSave);
+            handleAutoSave();
+        };
+    }, [contract.id, draftKey]);
 
     const send = async () => {
         const textContent = (editorRef.current?.innerText || '').trim();
@@ -347,8 +475,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
         setMessages((prev) => [...prev, optimisticMsg]);
         setInput('');
         if (editorRef.current) editorRef.current.innerHTML = '';
-        localStorage.removeItem(`chat_draft_${contract.id}`);
-        setDraftSavedTime(null);
+        localStorage.removeItem(draftKey);
 
         const filesToSend = [...selectedFiles];
         setSelectedFiles([]);
@@ -499,6 +626,18 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     >
                         <RefreshCw size={15} className={cn(refreshing && 'animate-spin text-primary')} />
                     </button>
+
+                    <a
+                        href={`/contracts/${contract.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-all shadow-2xs cursor-pointer ml-1"
+                        title="Buka Halaman Detail Pengajuan Kontrak di Tab Baru"
+                    >
+                        <FileText size={13} />
+                        <span className="hidden sm:inline">Buka Pengajuan</span>
+                        <ExternalLink size={11} className="opacity-70" />
+                    </a>
                 </div>
             </div>
 
@@ -506,7 +645,7 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
             <div
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto p-4 space-y-2 select-text"
+                className="flex-1 overflow-y-auto p-4 flex flex-col select-text"
             >
                 {msgs.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full py-16 text-center text-muted-foreground gap-3">
@@ -521,15 +660,27 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                         </div>
                     </div>
                 ) : (
-                    msgs.map((m) => {
+                    msgs.map((m, index) => {
                         const isMe = String(m.user_id) === String(meId);
+                        const prevMsg = index > 0 ? msgs[index - 1] : null;
+                        const nextMsg = index < msgs.length - 1 ? msgs[index + 1] : null;
+
+                        const isSameSenderAsPrev = prevMsg !== null && String(prevMsg.user_id) === String(m.user_id);
+                        const isSameSenderAsNext = nextMsg !== null && String(nextMsg.user_id) === String(m.user_id);
+
+                        const isFirstInGroup = !isSameSenderAsPrev;
+                        const isLastInGroup = !isSameSenderAsNext;
+
                         return (
                             <div id={`chat-msg-${m.id}`} key={m.id}>
                                 <MessageBubble
                                     msg={m}
                                     isMe={isMe}
                                     highlight={search}
+                                    knownUsers={allKnownUsers && allKnownUsers.length > 0 ? allKnownUsers : involvedParticipants}
                                     onPreview={(url, name) => setPreviewTarget({ url, name })}
+                                    isFirstInGroup={isFirstInGroup}
+                                    isLastInGroup={isLastInGroup}
                                 />
                             </div>
                         );
@@ -569,8 +720,6 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                 handleEditorInput={handleEditorInput}
                 handleEditorKeyDown={handleEditorKeyDown}
                 handlePaste={handlePaste}
-                draftSavedTime={draftSavedTime}
-                onSaveDraft={saveDraft}
             />
 
             {/* Document / Image Modal Preview */}

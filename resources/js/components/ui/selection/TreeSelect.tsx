@@ -22,6 +22,7 @@ interface TreeSelectProps {
     inline?: boolean;
     defaultExpandAll?: boolean;
     disableParentSelection?: boolean;
+    size?: 'default' | 'sm';
 }
 
 export function TreeSelect({
@@ -37,11 +38,13 @@ export function TreeSelect({
     inline = false,
     defaultExpandAll = false,
     disableParentSelection = false,
+    size = 'default',
 }: TreeSelectProps) {
     const [open, setOpen] = React.useState(inline);
     const [search, setSearch] = React.useState('');
     const [expandedParents, setExpandedParents] = React.useState<Record<string, boolean>>({});
     const [isMounted, setIsMounted] = React.useState(false);
+    const isSmall = size === 'sm';
 
     const containerRef = React.useRef<HTMLDivElement>(null);
     const buttonRef = React.useRef<HTMLButtonElement>(null);
@@ -416,14 +419,15 @@ export function TreeSelect({
                         }
                     }}
                     className={cn(
-                        'flex h-10 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3.5 py-2 text-sm font-normal ring-offset-background transition-all outline-hidden text-left',
+                        'flex w-full items-center justify-between rounded-lg border border-border bg-surface-base font-normal ring-offset-background transition-all outline-hidden text-left',
+                        isSmall ? 'h-9 px-3 text-xs' : 'h-10 px-3.5 py-2 text-sm',
                         !disabled && 'cursor-pointer hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary',
                         disabled && 'cursor-not-allowed opacity-50 bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500',
                         open && 'border-primary ring-1 ring-primary',
                         triggerClassName
                     )}
                 >
-                    <span className={cn('truncate text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
+                    <span className={cn('truncate', isSmall ? 'text-xs' : 'text-sm', selectedDisplay ? 'text-foreground font-normal' : 'text-muted-foreground font-normal')}>
                         {selectedDisplay || placeholder}
                     </span>
                     <ChevronDown size={15} className={cn('text-muted-foreground shrink-0 ml-2 transition-transform duration-200', open && 'rotate-180')} />

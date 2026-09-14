@@ -117,8 +117,24 @@ class ContractFileController extends Controller
             }
         }
 
+        $docNumber = $contract->contract_no ?: ($contract->form_no ?: (string) $contract->id);
+
         if (! $fileName) {
-            abort(404, 'Dokumen vendor tidak ditemukan.');
+            if ($request->expectsJson() && ! $request->acceptsHtml()) {
+                abort(404, 'Dokumen vendor tidak ditemukan.');
+            }
+
+            return response()->view('errors.pdf-preview-error', [
+                'statusCode' => 404,
+                'statusLabel' => 'Dokumen Vendor Tidak Ditemukan',
+                'title' => 'Dokumen Vendor Belum Tersedia',
+                'message' => 'Dokumen vendor yang diminta tidak ditemukan pada data profil vendor.',
+                'details' => [
+                    'Nomor Dokumen' => $docNumber,
+                    'ID Dokumen' => $docId,
+                    'Vendor' => $contract->vendor?->name ?: '-',
+                ],
+            ], 404);
         }
 
         $baseUrl = rtrim(config('services.coma.base_url'), '/');
@@ -131,7 +147,20 @@ class ContractFileController extends Controller
         });
 
         if (! $token) {
-            abort(502, 'Gagal terhubung ke layanan vendor COMA.');
+            if ($request->expectsJson() && ! $request->acceptsHtml()) {
+                abort(502, 'Gagal terhubung ke layanan vendor COMA.');
+            }
+
+            return response()->view('errors.pdf-preview-error', [
+                'statusCode' => 502,
+                'statusLabel' => 'Layanan Vendor Tidak Tersedia',
+                'title' => 'Gagal Terhubung ke Layanan COMA',
+                'message' => 'Sistem tidak dapat mengautentikasi koneksi ke server integrasi vendor COMA.',
+                'details' => [
+                    'Nomor Dokumen' => $docNumber,
+                    'Nama Berkas' => $fileName,
+                ],
+            ], 502);
         }
 
         $fileResp = Http::timeout(45)
@@ -139,7 +168,21 @@ class ContractFileController extends Controller
             ->get("{$baseUrl}/api/FileUpload/DownloadFile", ['fileName' => $fileName]);
 
         if (! $fileResp->successful()) {
-            abort(404, 'Dokumen tidak ditemukan di COMA.');
+            if ($request->expectsJson() && ! $request->acceptsHtml()) {
+                abort(404, 'Dokumen tidak ditemukan di COMA.');
+            }
+
+            return response()->view('errors.pdf-preview-error', [
+                'statusCode' => 404,
+                'statusLabel' => 'Berkas Tidak Ditemukan di COMA',
+                'title' => 'Berkas Vendor Tidak Ditemukan di COMA',
+                'message' => 'Berkas fisik dokumen vendor tidak ditemukan pada repositori berkas COMA.',
+                'details' => [
+                    'Nomor Dokumen' => $docNumber,
+                    'Nama Berkas' => $fileName,
+                    'Vendor' => $contract->vendor?->name ?: '-',
+                ],
+            ], 404);
         }
 
         $body = $fileResp->json();

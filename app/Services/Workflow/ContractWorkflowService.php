@@ -541,7 +541,12 @@ class ContractWorkflowService
                         $targetDeptIds = array_filter((array) $cfg['departments']);
                     }
 
-                    $hasExplicitLegacyFilter = ! empty($legacyRoles) || ! empty($targetDeptIds) || $step->filter_department || $step->filter_company_group || $step->filter_region || $step->filter_company;
+                    $filterDept = (bool) data_get($step->getAttributes(), 'filter_department', false);
+                    $filterCompanyGroup = (bool) data_get($step->getAttributes(), 'filter_company_group', false);
+                    $filterRegion = (bool) data_get($step->getAttributes(), 'filter_region', false);
+                    $filterCompany = (bool) data_get($step->getAttributes(), 'filter_company', false);
+
+                    $hasExplicitLegacyFilter = ! empty($legacyRoles) || ! empty($targetDeptIds) || $filterDept || $filterCompanyGroup || $filterRegion || $filterCompany;
 
                     if ($hasExplicitLegacyFilter) {
                         $query = User::query()->where('is_used', true);
@@ -556,7 +561,7 @@ class ContractWorkflowService
                         }
 
                         $initiatorCompany = $contract->initiator?->company;
-                        if ($step->filter_department) {
+                        if ($filterDept) {
                             $initDeptId = $contract->initiator?->division_id ?? '00000000-0000-0000-0000-000000000000';
                             $query->where('division_id', $initDeptId);
                             $hasFilters = true;
@@ -568,13 +573,13 @@ class ContractWorkflowService
                             $hasFilters = true;
                         }
 
-                        if ($step->filter_company_group || $step->filter_region) {
-                            $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
-                                if ($step->filter_company_group) {
+                        if ($filterCompanyGroup || $filterRegion) {
+                            $query->whereHas('company', function ($q) use ($filterCompanyGroup, $filterRegion, $initiatorCompany) {
+                                if ($filterCompanyGroup) {
                                     $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
                                     $q->where('company_group_id', $groupId);
                                 }
-                                if ($step->filter_region) {
+                                if ($filterRegion) {
                                     $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
                                     $q->where('region_id', $regionId);
                                 }
@@ -582,7 +587,7 @@ class ContractWorkflowService
                             $hasFilters = true;
                         }
 
-                        if ($step->filter_company) {
+                        if ($filterCompany) {
                             $query->where('company_id', $contract->initiator?->company_id ?? '00000000-0000-0000-0000-000000000000');
                             $hasFilters = true;
                         }
@@ -710,6 +715,42 @@ class ContractWorkflowService
                 if (! $hasAgreement) {
                     throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen Perjanjian / Draft wajib diisi/diunggah terlebih dahulu.');
                 }
+            }
+
+            // 5. Contract Info Validation
+            $requireTitle = ! empty($stepMeta['require_title']) || in_array('title', $actionReqFields);
+            if ($requireTitle && empty($contract->title)) {
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Judul Kontrak wajib diisi terlebih dahulu.');
+            }
+
+            $requireVendor = ! empty($stepMeta['require_vendor']) || in_array('vendor', $actionReqFields);
+            if ($requireVendor && empty($contract->vendor_id)) {
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Pihak Kedua  wajib dipilih terlebih dahulu.');
+            }
+
+            $requireCategory = ! empty($stepMeta['require_category']) || in_array('category', $actionReqFields);
+            if ($requireCategory && empty($contract->contract_type_id)) {
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Kategori Kontrak wajib dipilih terlebih dahulu.');
+            }
+
+            $requireF2ContractNo = ! empty($stepMeta['require_f2_contract_no']) || in_array('contract_no', $actionReqFields) || in_array('f2_contract_no', $actionReqFields);
+            if ($requireF2ContractNo && empty($contract->contract_no)) {
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Nomor Kontrak wajib diisi terlebih dahulu.');
+            }
+
+            $requireTaxToggle = ! empty($stepMeta['require_tax_toggle']) || in_array('tax_toggle', $actionReqFields) || in_array('tax', $actionReqFields);
+            if ($requireTaxToggle && is_null($contract->tax_required) && is_null(data_get($contract->metadata, 'tax_required'))) {
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Penentuan Pajak wajib ditentukan terlebih dahulu.');
+            }
+
+            $requirePrice = ! empty($stepMeta['require_price']) || in_array('price', $actionReqFields);
+            if ($requirePrice && (is_null($contract->price) || $contract->price === '')) {
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Nilai / Harga Kontrak wajib diisi terlebih dahulu.');
+            }
+
+            $requirePeriod = ! empty($stepMeta['require_period']) || in_array('period', $actionReqFields);
+            if ($requirePeriod && ((empty($contract->contract_date) && empty($contract->start_date)) || empty($contract->end_date))) {
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Masa Berlaku Kontrak wajib diisi lengkap terlebih dahulu.');
             }
         }
 
@@ -1115,7 +1156,11 @@ class ContractWorkflowService
             $contract->update(['metadata' => $metadata]);
         }
 
-        $hasExplicitTransition = $stepAction && ($stepAction->transition_config || $stepAction->next_workflow_id || $stepAction->next_step_id);
+        $hasExplicitTransition = $stepAction && (
+            (is_array($stepAction->transition_config) && ! empty($stepAction->transition_config['type']))
+            || $stepAction->next_workflow_id
+            || $stepAction->next_step_id
+        );
         $nextStep = $stepAction ? $this->evaluateTransition($contract, $approval->workflowStep, $stepAction) : null;
         while ($nextStep && ! $this->shouldExecuteStep($contract, $nextStep)) {
             $nextStep = $this->findNextValidStep($contract, $nextStep);
@@ -1426,26 +1471,31 @@ class ContractWorkflowService
 
     private function applyStepFilters(Builder $query, WorkflowStep $step, Contract $contract): Builder
     {
-        if ($step->filter_department) {
+        $filterDept = (bool) data_get($step->getAttributes(), 'filter_department', false);
+        $filterCompanyGroup = (bool) data_get($step->getAttributes(), 'filter_company_group', false);
+        $filterRegion = (bool) data_get($step->getAttributes(), 'filter_region', false);
+        $filterCompany = (bool) data_get($step->getAttributes(), 'filter_company', false);
+
+        if ($filterDept) {
             $initDeptId = $contract->initiator->division_id ?? '00000000-0000-0000-0000-000000000000';
             $query->where('division_id', $initDeptId);
         }
 
         $initiatorCompany = $contract->initiator?->company;
-        if ($step->filter_company_group || $step->filter_region) {
-            $query->whereHas('company', function ($q) use ($step, $initiatorCompany) {
-                if ($step->filter_company_group) {
+        if ($filterCompanyGroup || $filterRegion) {
+            $query->whereHas('company', function ($q) use ($filterCompanyGroup, $filterRegion, $initiatorCompany) {
+                if ($filterCompanyGroup) {
                     $groupId = $initiatorCompany?->company_group_id ?? '00000000-0000-0000-0000-000000000000';
                     $q->where('company_group_id', $groupId);
                 }
-                if ($step->filter_region) {
+                if ($filterRegion) {
                     $regionId = $initiatorCompany?->region_id ?? '00000000-0000-0000-0000-000000000000';
                     $q->where('region_id', $regionId);
                 }
             });
         }
 
-        if ($step->filter_company) {
+        if ($filterCompany) {
             $query->where('company_id', $contract->initiator->company_id ?? '00000000-0000-0000-0000-000000000000');
         }
 

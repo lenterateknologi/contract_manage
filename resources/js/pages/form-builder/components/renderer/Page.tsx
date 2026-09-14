@@ -24,7 +24,13 @@ export const Page: React.FC<PageProps> = ({
     isBuilder = false,
 }) => {
     return (
-        <div className="relative print:m-0 w-full mt-10 mb-20 last:mb-0">
+        <div
+            className={cn(
+                'relative print:m-0 w-full mt-10 mb-20 last:mb-0',
+                pageNumber > 1 && 'print:break-before-page',
+            )}
+            data-page-number={pageNumber}
+        >
             {/* Floating Page Info */}
             <div className="absolute -top-8 left-0 flex items-center gap-3 print:hidden">
                 <div className="bg-primary/10 text-primary ring-primary/20 flex h-6 items-center justify-center rounded-none px-3 text-[10px] font-semibold tracking-widest uppercase ring-1">

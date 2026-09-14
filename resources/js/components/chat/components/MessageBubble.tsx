@@ -25,6 +25,9 @@ interface MessageBubbleProps {
     isMe: boolean;
     highlight?: string;
     onPreview: (url: string, name: string) => void;
+    knownUsers?: Array<{ id?: string; name?: string }>;
+    isFirstInGroup?: boolean;
+    isLastInGroup?: boolean;
 }
 
 export function MessageBubble({
@@ -32,6 +35,9 @@ export function MessageBubble({
     isMe,
     highlight,
     onPreview,
+    knownUsers,
+    isFirstInGroup = true,
+    isLastInGroup = true,
 }: MessageBubbleProps) {
     const pageProps = usePage().props;
     const currentUserId = (pageProps.auth as any)?.user?.id;
@@ -158,9 +164,49 @@ export function MessageBubble({
             .replace(/~~(.*?)~~/g, '<del>$1</del>')
             .replace(/`(.*?)`/g, '<code class="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded text-xs">$1</code>');
 
+        const mentionBadgeClass = isMe
+            ? 'inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md text-[11px] font-bold tracking-tight bg-white/20 text-white border border-white/30 shadow-2xs backdrop-blur-xs select-none'
+            : 'inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md text-[11px] font-bold tracking-tight bg-primary/10 text-primary border border-primary/20 shadow-2xs hover:bg-primary/15 select-none';
+
+        // 1. Format atomic tags: <span class="mention-tag" ...>@Name</span> or <span data-name="Name">...</span>
         formatted = formatted.replace(
-            /(@[\w\s.-]+(?:\s|$))/g,
-            `<span class="${isMe ? 'text-primary-foreground font-semibold underline' : 'text-primary font-semibold underline'}">$1</span>`,
+            /<span[^>]*?(?:class="[^"]*mention-tag[^"]*"|data-name="([^"]*)")[^>]*?>.*?@([^<]+)<\/span>/gi,
+            (_match, dataName, innerName) => {
+                const nameToUse = (dataName || innerName || '').trim();
+                return `<span class="${mentionBadgeClass}">@${nameToUse}</span>`;
+            },
+        );
+
+        // 2. Format explicit <strong>@Name</strong> tags (exact boundary preserved)
+        formatted = formatted.replace(
+            /<strong>(@[^<]+)<\/strong>/gi,
+            `<span class="${mentionBadgeClass}">$1</span>`,
+        );
+
+        // 3. Format against known user names (sorted length desc so full names e.g. "RENDY CHRISTIAN CHANDRA" match before substrings)
+        if (Array.isArray(knownUsers) && knownUsers.length > 0) {
+            const sortedNames = Array.from(
+                new Set(
+                    knownUsers
+                        .map((u) => u?.name?.trim())
+                        .filter((n): n is string => Boolean(n && n.length > 1)),
+                ),
+            ).sort((a, b) => b.length - a.length);
+
+            for (const uname of sortedNames) {
+                const escaped = uname
+                    .split(/\s+/)
+                    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                    .join('[\\s\\u00A0]+');
+                const regex = new RegExp(`(?<![a-zA-Z0-9_>])@(${escaped})(?=[^a-zA-Z0-9_.-]|$)`, 'gi');
+                formatted = formatted.replace(regex, `<span class="${mentionBadgeClass}">@$1</span>`);
+            }
+        }
+
+        // 4. Format remaining raw single-token @mentions (e.g. @user, @john.doe) without eating subsequent words
+        formatted = formatted.replace(
+            /(?<![a-zA-Z0-9_>])(@[a-zA-Z0-9_.-]+)(?=[^a-zA-Z0-9_.-]|$)/g,
+            `<span class="${mentionBadgeClass}">$1</span>`,
         );
 
         if (term && term.trim()) {
@@ -182,28 +228,35 @@ export function MessageBubble({
     const activeReactions = Object.entries(computedReactions).filter(([_, count]) => count > 0);
 
     return (
-        <Message align={isMe ? 'end' : 'start'} className="mb-2.5 group/msg">
-            <MessageAvatar>
-                <UserAvatarIcon
-                    src={msg.user?.avatar || ''}
-                    name={name}
-                    className="h-7 w-7 text-[10px]"
-                />
+        <Message align={isMe ? 'end' : 'start'} className={cn("group/msg transition-all", isLastInGroup ? "mb-2.5" : "mb-1")}>
+            <MessageAvatar className="shrink-0 self-end">
+                {isLastInGroup ? (
+                    <UserAvatarIcon
+                        user={msg.user}
+                        src={msg.user?.avatar || ''}
+                        name={name}
+                        initials={msg.user?.initials}
+                        className="h-7 w-7 text-[10px]"
+                    />
+                ) : (
+                    <div className="h-7 w-7 shrink-0" />
+                )}
             </MessageAvatar>
             <MessageContent className={cn("max-w-[85%] relative flex flex-col", isMe ? "items-end" : "items-start")}>
-                <MessageHeader className={isMe ? 'justify-end' : 'justify-start'}>
-                    <span className="font-semibold text-foreground text-xs">{isMe ? 'Anda' : name}</span>
-                    {role && (
-                        <span className="bg-primary/10 border border-primary/20 text-primary rounded-full px-1.5 py-0.2 text-[8.5px] font-bold tracking-tight uppercase">
-                            {role}
-                        </span>
-                    )}
-                    <span className="text-[10px] text-muted-foreground">{time}</span>
-                </MessageHeader>
+                {isFirstInGroup && (
+                    <MessageHeader className={isMe ? 'justify-end' : 'justify-start'}>
+                        <span className="font-semibold text-foreground text-xs">{isMe ? 'Anda' : name}</span>
+                        {role && (
+                            <span className="bg-primary/10 border border-primary/20 text-primary rounded-full px-1.5 py-0.2 text-[8.5px] font-bold tracking-tight uppercase">
+                                {role}
+                            </span>
+                        )}
+                    </MessageHeader>
+                )}
 
                 <div className={cn("relative group/bubble flex items-center max-w-full", isMe ? "justify-end" : "justify-start")} onContextMenu={handleContextMenu}>
                     <BubbleGroup className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
-                        <Bubble variant={isMe ? 'sent' : 'received'} className="relative shadow-2xs transition-shadow hover:shadow-xs px-3.5 py-2 rounded-2xl w-fit">
+                        <Bubble variant={isMe ? 'sent' : 'received'} className="relative shadow-2xs transition-shadow hover:shadow-xs px-3.5 py-2 rounded-2xl w-fit min-w-[70px]">
                             <BubbleContent className="p-0">
                                 {msg.message && renderMessage(msg.message, highlight)}
 
@@ -273,6 +326,21 @@ export function MessageBubble({
                                         )}
                                     </div>
                                 )}
+
+                                {/* In-Bubble Timestamp & Delivery/Read Status */}
+                                <div className={cn(
+                                    "flex items-center gap-1 mt-1 select-none",
+                                    isMe ? "justify-end text-primary-foreground/80" : "justify-end text-muted-foreground/75"
+                                )}>
+                                    <span className="text-[9.5px] leading-none font-medium">{time}</span>
+                                    {isMe && (
+                                        msg.read_by && msg.read_by.length > 0 ? (
+                                            <span title="Dibaca" className="text-white text-[10px] font-bold tracking-tighter leading-none">✓✓</span>
+                                        ) : (
+                                            <span title="Terkirim" className="text-white/70 text-[10px] leading-none">✓</span>
+                                        )
+                                    )}
+                                </div>
                             </BubbleContent>
                         </Bubble>
 
@@ -310,38 +378,40 @@ export function MessageBubble({
                         )}
                     </BubbleGroup>
 
-                    {/* Floating Action Buttons */}
-                    <BubbleActions
+                    {/* Floating Action Buttons (Positioned high above bubble, no overlap) */}
+                    <div
                         className={cn(
-                            "absolute top-0 opacity-0 group-hover/bubble:opacity-100 transition-opacity flex items-center gap-1 z-30",
-                            isMe ? "-left-16" : "-right-16"
+                            "absolute -top-7 opacity-0 group-hover/bubble:opacity-100 pointer-events-none group-hover/bubble:pointer-events-auto transition-all duration-150 flex items-center gap-1 z-30",
+                            isMe ? "left-0" : "right-0"
                         )}
                     >
-                        <BubbleAction
-                            type="button"
-                            onClick={() => {
-                                navigator.clipboard.writeText(msg.message || '');
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 1500);
-                            }}
-                            title="Salin Pesan"
-                            className="p-1 rounded-full bg-background border border-border shadow-xs hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                        >
-                            {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                        </BubbleAction>
-                        <BubbleAction
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setShowReactionPicker((prev) => !prev);
-                            }}
-                            title="Tambah Reaksi"
-                            className="p-1 rounded-full bg-background border border-border shadow-xs hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                        >
-                            <Smile size={12} />
-                        </BubbleAction>
-                    </BubbleActions>
+                        <div className="flex items-center gap-0.5 rounded-full border border-border/80 bg-background/95 p-0.5 shadow-xs backdrop-blur-xs">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(msg.message || '');
+                                    setCopied(true);
+                                    setTimeout(() => setCopied(false), 1500);
+                                }}
+                                title="Salin Pesan"
+                                className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                            >
+                                {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setShowReactionPicker((prev) => !prev);
+                                }}
+                                title="Tambah Reaksi"
+                                className="flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+                            >
+                                <Smile size={12} />
+                            </button>
+                        </div>
+                    </div>
 
                     <ReactionContextBar
                         show={showReactionPicker}
@@ -353,16 +423,6 @@ export function MessageBubble({
                         onClose={() => setShowReactionPicker(false)}
                     />
                 </div>
-
-                {isMe && (
-                    <MessageFooter className="justify-end mt-0.5">
-                        {msg.read_by && msg.read_by.length > 0 ? (
-                            <span title="Dibaca" className="text-sky-500 text-[10px] font-bold tracking-tighter leading-none">✓✓</span>
-                        ) : (
-                            <span title="Terkirim" className="text-slate-400 text-[10px] leading-none">✓</span>
-                        )}
-                    </MessageFooter>
-                )}
             </MessageContent>
         </Message>
     );

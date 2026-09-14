@@ -208,6 +208,16 @@ export interface Contract {
     show_tax_toggle?: boolean;
     show_price?: boolean;
     show_period?: boolean;
+    require_f1?: boolean;
+    require_f2?: boolean;
+    require_agreement?: boolean;
+    require_title?: boolean;
+    require_vendor?: boolean;
+    require_category?: boolean;
+    require_f2_contract_no?: boolean;
+    require_tax_toggle?: boolean;
+    require_price?: boolean;
+    require_period?: boolean;
     current_version: number;
     requires_pic_assignment?: boolean;
     created_at: string;

@@ -4,11 +4,12 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
 import { Badge } from '@/components/ui/feedback/Badge';
-import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight } from 'lucide-react';
+import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight, Clock, UserCheck, CheckCircle2, AlertCircle, Hourglass, User as UserIcon } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
 import { ProjectedStepCard } from './ProjectedStepCard';
+import { UserAvatarIcon } from '@/components/profile/UserAvatar';
 
 import { Timeline, TimelineItem, TimelineIcon, TimelineContent } from '../ui/timeline';
 
@@ -29,17 +30,64 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
     const debouncedSearch = useDebounce(search, 500);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
+    // ── Dynamic Resolution: Active / Next Pending Approver Step ──
+    const isContractApproved = contract.status === 'approved';
+    const isContractRejected = contract.status === 'rejected';
+    const isContractCompleted = isContractApproved || isContractRejected || contract.status === 'archived' || contract.status === 'closed';
+
+    const activePendingApproval = useMemo(() => {
+        if (isContractCompleted) {
+            return null;
+        }
+
+        // 1. If contract has workflow_step_id, find approval matching current active step
+        if (contract.workflow_step_id) {
+            const match = approvals.find(
+                (a) => a.workflow_step_id === contract.workflow_step_id && a.status !== 'approved' && a.status !== 'rejected',
+            );
+            if (match) return match;
+        }
+
+        // 2. Otherwise find the first unapproved/unrejected step in workflow order
+        return (
+            approvals.find(
+                (a) => a.status !== 'approved' && a.status !== 'rejected' && (a.status as string) !== 'SKIPPED',
+            ) || null
+        );
+    }, [approvals, contract.workflow_step_id, isContractCompleted]);
+
+    const pendingApproverList = useMemo(() => {
+        if (!activePendingApproval) return [];
+        if (activePendingApproval.approver?.name) {
+            return [{ name: activePendingApproval.approver.name, email: activePendingApproval.approver.email, user: activePendingApproval.approver }];
+        }
+        if (activePendingApproval.target_approvers) {
+            const names = activePendingApproval.target_approvers.split(',').map((s) => s.trim()).filter(Boolean);
+            return names.map((name) => ({ name, email: undefined, user: undefined }));
+        }
+        if (activePendingApproval.approver_name && activePendingApproval.approver_name !== activePendingApproval.role) {
+            return [{ name: activePendingApproval.approver_name, email: undefined, user: undefined }];
+        }
+        return [];
+    }, [activePendingApproval]);
+
     const filteredSteps = useMemo(() => {
         let result = [...approvals];
 
         // Tab: Lite (Sederhana - Hanya yang sudah dieksekusi atau step aktif sekarang)
         if (viewTab === 'lite') {
             const currentStepId = contract.workflow_step_id;
+            const pendingSeq = activePendingApproval?.sequence;
+            const pendingStepId = activePendingApproval?.workflow_step_id;
+
             result = result.filter(
                 (a) =>
                     a.status === 'approved' ||
                     a.status === 'rejected' ||
-                    a.workflow_step_id === currentStepId,
+                    (currentStepId && a.workflow_step_id === currentStepId) ||
+                    (pendingStepId && a.workflow_step_id === pendingStepId) ||
+                    (pendingSeq != null && a.sequence === pendingSeq) ||
+                    a.id === activePendingApproval?.id,
             );
         }
 
@@ -51,7 +99,9 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 (a) =>
                     a.role?.toLowerCase().includes(s) ||
                     a.department_name?.toLowerCase().includes(s) ||
-                    a.approver?.name?.toLowerCase().includes(s),
+                    a.approver?.name?.toLowerCase().includes(s) ||
+                    a.target_approvers?.toLowerCase().includes(s) ||
+                    a.step_name?.toLowerCase().includes(s),
             );
         }
 
@@ -64,7 +114,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             }
             return a.id.localeCompare(b.id);
         });
-    }, [approvals, viewTab, meId, debouncedSearch, contract.workflow_step_id]);
+    }, [approvals, viewTab, debouncedSearch, contract.workflow_step_id, activePendingApproval]);
 
     // Build a hierarchical tree of steps
     const stepTree = useMemo(() => {
@@ -136,51 +186,106 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         { key: 'pro', label: 'Pro' },
     ];
 
+    // ── Current Step Information Details ──
+    const totalStepsCount = useMemo(() => {
+        const uniqueSeqs = new Set(approvals.map((a) => a.sequence));
+        return Math.max(uniqueSeqs.size, contract.workflow?.steps?.length || 0);
+    }, [approvals, contract.workflow]);
+
+    const currentStepInfo = useMemo(() => {
+        if (isContractApproved) {
+            return {
+                isCompleted: true,
+                title: 'Alur Persetujuan Selesai',
+                description: 'Kontrak telah disetujui sepenuhnya oleh seluruh peninjau dan pihak terkait.',
+                statusLabel: 'Selesai & Disetujui',
+                stepNumber: totalStepsCount,
+                totalSteps: totalStepsCount,
+                approvers: [],
+                category: null,
+                role: null,
+                department: null,
+            };
+        }
+
+        if (isContractRejected) {
+            return {
+                isRejected: true,
+                title: 'Kontrak Ditolak / Perlu Revisi',
+                description: 'Terdapat penolakan pada salah satu tahap alur kerja. Silakan periksa catatan revisi.',
+                statusLabel: 'Ditolak / Perlu Revisi',
+                stepNumber: activePendingApproval?.sequence || 1,
+                totalSteps: totalStepsCount,
+                approvers: pendingApproverList,
+                category: null,
+                role: activePendingApproval?.role || null,
+                department: activePendingApproval?.department_name || null,
+            };
+        }
+
+        // Active pending step
+        if (activePendingApproval) {
+            const stepObj = contract.workflow?.steps?.find((s: any) => s.step === activePendingApproval.sequence || s.id === activePendingApproval.workflow_step_id) || activePendingApproval.workflow_step;
+            const category = (stepObj as any)?.step_category || activePendingApproval.step_category || (activePendingApproval.step_name?.includes('[F1]') ? 'F1' : activePendingApproval.step_name?.includes('[F2]') ? 'F2' : activePendingApproval.step_name?.includes('[Aggrement]') ? 'Agreement' : activePendingApproval.step_name?.includes('[Finalisasi]') ? 'Finalisasi' : null);
+
+            return {
+                isCompleted: false,
+                isRejected: false,
+                stepNumber: activePendingApproval.sequence,
+                totalSteps: totalStepsCount,
+                name: activePendingApproval.step_name || (stepObj as any)?.name || (stepObj as any)?.label || `Step ${activePendingApproval.sequence}`,
+                description: activePendingApproval.step_description || (stepObj as any)?.description || `Menunggu tindakan persetujuan untuk melangkah ke tahap selanjutnya.`,
+                role: activePendingApproval.role,
+                department: activePendingApproval.department_name,
+                category: category,
+                approvers: pendingApproverList,
+                statusLabel: 'Pending (Sedang Berjalan)',
+            };
+        }
+
+        return null;
+    }, [isContractApproved, isContractRejected, activePendingApproval, totalStepsCount, contract.workflow, pendingApproverList]);
+
     return (
-        <div className="animate-in fade-in flex flex-col flex-1 min-h-0 h-full overflow-hidden duration-300 p-3 lg:p-4 gap-3">
-            {/* Compact Primary Header */}
-            <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                        <GitCommit size={15} className="text-primary-foreground/90" />
-                        <h4 className="text-xs font-semibold tracking-tight text-primary-foreground uppercase">
-                            Alur Persetujuan
-                        </h4>
+        <div className="animate-in fade-in flex flex-col flex-1 min-h-0 h-full overflow-hidden duration-300 p-2.5 lg:p-3 gap-2">
+            {/* Unified Clean Header Bar - Compact & Solid */}
+            <div className="shrink-0 flex items-center justify-between gap-2 bg-surface-muted border border-surface-border p-1 px-2 rounded-lg">
+                {/* Left: View Mode Tabs (Lite / Pro) */}
+                <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-0.5 rounded border border-surface-border bg-surface-base p-0.5">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.key}
+                                type="button"
+                                onClick={() => setViewTab(tab.key)}
+                                className={cn(
+                                    'rounded px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer',
+                                    viewTab === tab.key
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-text-soft hover:text-text-main',
+                                )}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
                     </div>
-                </div>
-            </div>
 
-            {/* Scrollable Timeline Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 custom-scrollbar pr-1 pb-6">
-
-            {/* Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 w-full">
-                {/* Tab buttons */}
-                <div className="flex items-center gap-0 rounded-lg border border-surface-border bg-surface-muted p-0.5">
-                    {tabs.map((tab) => (
-                        <button
-                            key={tab.key}
-                            type="button"
-                            onClick={() => setViewTab(tab.key)}
-                            className={cn(
-                                'rounded-md px-3 py-1 text-[10px] font-semibold uppercase tracking-wide transition-all duration-150 cursor-pointer',
-                                viewTab === tab.key
-                                    ? 'bg-primary text-white shadow-xs'
-                                    : 'text-text-soft hover:text-text-main',
-                            )}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                    {currentStepInfo && !currentStepInfo.isCompleted && !currentStepInfo.isRejected && (
+                        <span className="hidden sm:inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider text-amber-900 dark:text-amber-100 bg-amber-200 dark:bg-amber-950 border border-amber-400 dark:border-amber-700 px-1.5 py-0.5 rounded">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+                            Tahap {currentStepInfo.stepNumber}/{currentStepInfo.totalSteps}
+                        </span>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="w-44 sm:w-56">
+                {/* Right: Search & Export */}
+                <div className="flex items-center gap-1.5">
+                    <div className="w-32 sm:w-44">
                         <SearchInput
-                            placeholder="CARI NAMA / ROLE..."
+                            placeholder="CARI..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="h-8 text-[10px] uppercase"
+                            className="h-7 text-[10px] uppercase bg-surface-base"
                         />
                     </div>
 
@@ -188,14 +293,98 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                         variant="outline"
                         size="sm"
                         onClick={handleExportPdf}
-                        className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted h-8 gap-1.5 px-2.5 rounded-lg transition-all text-[10px] font-semibold uppercase"
+                        className="border-surface-border bg-surface-base text-text-main hover:bg-surface-muted h-7 gap-1 px-2 rounded transition-colors text-[10px] font-semibold uppercase shadow-none"
                         title="Unduh PDF Alur Persetujuan"
                     >
-                        <Download size={13} strokeWidth={2.5} />
-                        <span>Export</span>
+                        <Download size={12} strokeWidth={2.5} />
+                        <span className="hidden sm:inline">Export</span>
                     </Button>
                 </div>
             </div>
+
+            {/* ── INFORMASI CURRENT STEP (TAHAP SAAT INI) - SOLID & COMPACT ── */}
+            {currentStepInfo && (
+                <div className="shrink-0 rounded-lg border border-surface-border bg-surface-base p-2 space-y-1.5 transition-colors">
+                    {/* Header Row: Step info & Approvers on single/compact line */}
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface-muted text-foreground border border-surface-border">
+                                Tahap {currentStepInfo.stepNumber}/{currentStepInfo.totalSteps}
+                            </span>
+                            {currentStepInfo.category && (
+                                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface-muted text-foreground border border-surface-border">
+                                    {currentStepInfo.category}
+                                </span>
+                            )}
+                            <h4 className="text-xs font-bold text-foreground truncate">
+                                {currentStepInfo.name || currentStepInfo.title}
+                            </h4>
+                        </div>
+
+                        {/* Status badge */}
+                        <div className="flex items-center gap-1 shrink-0">
+                            {currentStepInfo.isCompleted ? (
+                                <span className="bg-surface-muted text-foreground border border-surface-border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded">
+                                    Disetujui ✓
+                                </span>
+                            ) : currentStepInfo.isRejected ? (
+                                <span className="bg-surface-muted text-foreground border border-surface-border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded">
+                                    Ditolak ✗
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 rounded bg-surface-muted text-foreground border border-surface-border px-2 py-0.5 text-[9px] font-bold tracking-wider uppercase">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                    <span>Pending</span>
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Approvers Row: Single compact bar */}
+                    {!currentStepInfo.isCompleted && !currentStepInfo.isRejected && (
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-surface-border flex-wrap text-[10px]">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-semibold text-muted-foreground shrink-0 flex items-center gap-1">
+                                    <UserCheck size={11} />
+                                    Approver:
+                                </span>
+                                {currentStepInfo.approvers && currentStepInfo.approvers.length > 0 ? (
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        {currentStepInfo.approvers.map((appr: any, idx: number) => (
+                                            <div
+                                                key={idx}
+                                                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-surface-muted border border-surface-border text-foreground font-semibold text-[11px]"
+                                            >
+                                                <UserAvatarIcon
+                                                    user={appr.user}
+                                                    name={appr.name}
+                                                    size="sm"
+                                                    className="h-6 w-6 text-[10px] ring-1 ring-surface-base shrink-0"
+                                                />
+                                                <span className="truncate max-w-[160px]">{appr.name}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className="text-muted-foreground italic font-medium">
+                                        {currentStepInfo.role ? `Role: ${currentStepInfo.role}` : 'Sesuai alur'}
+                                    </span>
+                                )}
+                            </div>
+
+                            {currentStepInfo.role && (
+                                <div className="flex items-center gap-1 text-[9px] font-medium text-muted-foreground">
+                                    <span className="font-bold text-foreground">{currentStepInfo.role}</span>
+                                    {currentStepInfo.department && <span>• {currentStepInfo.department}</span>}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Scrollable Timeline Area */}
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 custom-scrollbar pr-1 pb-4">
 
             <div className="relative">
                 <Timeline>
@@ -233,7 +422,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                         const allApprovedItems = group.items.length > 0 && group.items.every((a) => a.status === 'approved');
                                         const isGroupCurrentStep = group.items.some((a) => a.workflow_step_id === currentStepId);
                                         const isCompleted = contract.status === 'approved' || allApprovedItems;
-                                        const isActive = contract.status !== 'approved' && !isCompleted && isGroupCurrentStep;
+                                        const isPendingStep = activePendingApproval && (group.sequence === activePendingApproval.sequence || group.items.some((a) => a.id === activePendingApproval.id || a.workflow_step_id === activePendingApproval.workflow_step_id));
+                                        const isActive = contract.status !== 'approved' && !isCompleted && (isGroupCurrentStep || Boolean(isPendingStep));
                                         const isRejectedState = group.items.some((a) => a.status === 'rejected');
 
                                         const itemStatus = isCompleted
@@ -326,6 +516,13 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                              const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
                                                              const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
                                                              const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+                                                             const requireTitle = !!stepMeta.require_title || actionReqFields.includes('title');
+                                                             const requireVendor = !!stepMeta.require_vendor || actionReqFields.includes('vendor');
+                                                             const requireCategory = !!stepMeta.require_category || actionReqFields.includes('category');
+                                                             const requireContractNo = !!stepMeta.require_f2_contract_no || actionReqFields.includes('contract_no') || actionReqFields.includes('f2_contract_no');
+                                                             const requireTax = !!stepMeta.require_tax_toggle || actionReqFields.includes('tax_toggle') || actionReqFields.includes('tax');
+                                                             const requirePrice = !!stepMeta.require_price || actionReqFields.includes('price');
+                                                             const requirePeriod = !!stepMeta.require_period || actionReqFields.includes('period');
 
                                                              const reqList = [];
 
@@ -337,6 +534,34 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                      (contract as any)?.assignedPic
                                                                  );
                                                                  reqList.push({ label: 'PIC', isFilled });
+                                                             }
+                                                             if (requireTitle) {
+                                                                 const isFilled = !!contract.title;
+                                                                 reqList.push({ label: 'Judul', isFilled });
+                                                             }
+                                                             if (requireVendor) {
+                                                                 const isFilled = !!(contract.vendor_id || (contract as any)?.vendor);
+                                                                 reqList.push({ label: 'Vendor', isFilled });
+                                                             }
+                                                             if (requireCategory) {
+                                                                 const isFilled = !!(contract.contract_type_id || (contract as any)?.contract_type);
+                                                                 reqList.push({ label: 'Kategori', isFilled });
+                                                             }
+                                                             if (requireContractNo) {
+                                                                 const isFilled = !!contract.contract_no;
+                                                                 reqList.push({ label: 'No. Kontrak', isFilled });
+                                                             }
+                                                             if (requireTax) {
+                                                                 const isFilled = (contract.tax_required !== null && contract.tax_required !== undefined) || contract.metadata?.tax_required !== undefined;
+                                                                 reqList.push({ label: 'Pajak', isFilled });
+                                                             }
+                                                             if (requirePrice) {
+                                                                 const isFilled = contract.price !== null && contract.price !== undefined && contract.price !== '';
+                                                                 reqList.push({ label: 'Nilai', isFilled });
+                                                             }
+                                                             if (requirePeriod) {
+                                                                 const isFilled = (!!contract.contract_date || !!contract.start_date) && !!contract.end_date;
+                                                                 reqList.push({ label: 'Masa Berlaku', isFilled });
                                                              }
                                                              if (requireF1) {
                                                                  const isFilled = !!(
@@ -414,6 +639,12 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                     {/* Render all approver items for this step directly */}
                                                                     {visibleItems.map((a: ContractApproval) => {
                                                                         const hasSub = a.sub_step !== null && a.sub_step !== undefined && String(a.sub_step).trim() !== '' && String(a.sub_step) !== 'null' && String(a.sub_step) !== 'undefined';
+                                                                        const isItemPending = Boolean(
+                                                                            activePendingApproval && 
+                                                                            !isCompleted && 
+                                                                            (a.id === activePendingApproval.id || (a.workflow_step_id === activePendingApproval.workflow_step_id && a.sequence === activePendingApproval.sequence))
+                                                                        );
+
                                                                         return (
                                                                             <ApprovalCard 
                                                                                 key={a.id} 
@@ -424,6 +655,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                                 showDetails={viewTab === 'pro'}
                                                                                 isLite={viewTab === 'lite'}
                                                                                 isSubStep={hasSub}
+                                                                                isPending={isItemPending}
                                                                             />
                                                                         );
                                                                     })}

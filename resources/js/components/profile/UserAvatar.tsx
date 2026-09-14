@@ -1,4 +1,4 @@
-import { AVATAR_SIZE_MAP, type AvatarSize, cn, getUserAvatarData } from '@/lib/utils';
+import { AVATAR_SIZE_MAP, type AvatarSize, cn, getInitials, getUserAvatarData } from '@/lib/utils';
 import { UserProfile } from '@/pages/contracts/types';
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import * as React from 'react';
@@ -26,6 +26,7 @@ export function UserAvatarIcon({
     name: nameProp,
     avatarUrl: avatarUrlProp,
     src,
+    initials: initialsProp,
     size = 'md',
     className,
 }: {
@@ -33,13 +34,14 @@ export function UserAvatarIcon({
     name?: string | null;
     avatarUrl?: string | null;
     src?: string | null;
+    initials?: string | null;
     size?: AvatarSize;
     className?: string;
 }) {
-    const data = getUserAvatarData(user);
+    const data = getUserAvatarData(user || (nameProp ? { name: nameProp, avatar: src || avatarUrlProp, initials: initialsProp } : undefined));
     const name = nameProp || data.name;
     const avatarUrl = src || avatarUrlProp || data.avatarUrl;
-    const initials = data.initials;
+    const initials = initialsProp || user?.initials || (nameProp ? getInitials(nameProp) : data.initials);
     const colorClass = data.colorClass;
     const sizeClasses = AVATAR_SIZE_MAP[size] || AVATAR_SIZE_MAP.md;
 

@@ -8,6 +8,7 @@ interface MsgBubbleProps {
     isMe: boolean;
     highlight?: string;
     onPreview: (url: string, name: string) => void;
+    knownUsers?: Array<{ id?: string; name?: string }>;
 }
 
 export function MsgBubble({
@@ -15,6 +16,7 @@ export function MsgBubble({
     isMe,
     highlight,
     onPreview,
+    knownUsers,
 }: MsgBubbleProps) {
     const time = msg.created_at.split(' ')[1]?.substring(0, 5) ?? '';
     const name = msg.user?.name ?? 'Unknown';
@@ -59,44 +61,62 @@ export function MsgBubble({
             );
         }
 
+        const mentionBadgeClass = isMe
+            ? 'inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md text-[11px] font-bold tracking-tight bg-white/20 text-white border border-white/30 shadow-2xs backdrop-blur-xs select-none'
+            : 'inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-md text-[11px] font-bold tracking-tight bg-primary/10 text-primary border border-primary/20 shadow-2xs hover:bg-primary/15 select-none';
+
+        const formatMentions = (str: string) => {
+            // 1. Format atomic tags
+            let res = str.replace(
+                /<span[^>]*?(?:class="[^"]*mention-tag[^"]*"|data-name="([^"]*)")[^>]*?>.*?@([^<]+)<\/span>/gi,
+                (_match, dataName, innerName) => {
+                    const nameToUse = (dataName || innerName || '').trim();
+                    return `<span class="${mentionBadgeClass}">@${nameToUse}</span>`;
+                },
+            );
+
+            // 2. Format <strong>@Name</strong> tags
+            res = res.replace(
+                /<strong>(@[^<]+)<\/strong>/gi,
+                `<span class="${mentionBadgeClass}">$1</span>`,
+            );
+
+            // 3. Format against known user names
+            if (Array.isArray(knownUsers) && knownUsers.length > 0) {
+                const sortedNames = Array.from(
+                    new Set(
+                        knownUsers
+                            .map((u) => u?.name?.trim())
+                            .filter((n): n is string => Boolean(n && n.length > 1)),
+                    ),
+                ).sort((a, b) => b.length - a.length);
+
+                for (const uname of sortedNames) {
+                    const escaped = uname
+                        .split(/\s+/)
+                        .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                        .join('[\\s\\u00A0]+');
+                    const regex = new RegExp(`(?<![a-zA-Z0-9_>])@(${escaped})(?=[^a-zA-Z0-9_.-]|$)`, 'gi');
+                    res = res.replace(regex, `<span class="${mentionBadgeClass}">@$1</span>`);
+                }
+            }
+
+            // 4. Format single token @mentions
+            res = res.replace(
+                /(?<![a-zA-Z0-9_>])(@[a-zA-Z0-9_.-]+)(?=[^a-zA-Z0-9_.-]|$)/g,
+                `<span class="${mentionBadgeClass}">$1</span>`,
+            );
+            return res;
+        };
+
         if (typeof content === 'string') {
-            const mentionParts = content.split(/(@[\w\s.-]+(?:\s|$))/g);
-            return mentionParts.map((part, i) => {
-                if (part.startsWith('@')) {
-                    return (
-                        <span
-                            key={i}
-                            className={cn('font-bold tracking-tight underline underline-offset-2', isMe ? 'text-primary-foreground' : 'text-primary')}
-                        >
-                            {part}
-                        </span>
-                    );
-                }
-                return part;
-            });
-        } else if (Array.isArray(content)) {
-            return content.map((item, idx) => {
-                if (typeof item === 'string') {
-                    const subParts = item.split(/(@[\w\s.-]+(?:\s|$))/g);
-                    return subParts.map((sp, i) => {
-                        if (sp.startsWith('@')) {
-                            return (
-                                <span
-                                    key={`${idx}-${i}`}
-                                    className={cn(
-                                        'font-bold tracking-tight underline underline-offset-2',
-                                        isMe ? 'text-primary-foreground' : 'text-primary',
-                                    )}
-                                >
-                                    {sp}
-                                </span>
-                            );
-                        }
-                        return sp;
-                    });
-                }
-                return item;
-            });
+            return (
+                <span
+                    dangerouslySetInnerHTML={{
+                        __html: formatMentions(content),
+                    }}
+                />
+            );
         }
 
         return content;

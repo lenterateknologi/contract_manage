@@ -149,9 +149,88 @@ class ChatService
         ]);
 
         $contract->touch();
-        $msg->load('user');
+        $msg->load(['user', 'contract']);
+
+        $this->notifyMentionedUsers($contract, $user, $msg);
 
         return $msg;
+    }
+
+    /**
+     * Dispatch notifications and clear caches for mentioned users.
+     */
+    protected function notifyMentionedUsers(Contract $contract, User $sender, ContractMessage $msg): void
+    {
+        $messageText = $msg->message ?? '';
+        if (empty($messageText)) {
+            return;
+        }
+
+        $userIds = [];
+        $rawNames = [];
+
+        // 1. Extract data-mention-id="UUID"
+        if (preg_match_all('/data-mention-id="([^"]+)"/u', $messageText, $idMatches)) {
+            $userIds = array_merge($userIds, $idMatches[1] ?? []);
+        }
+
+        // 2. Extract data-name="Name"
+        if (preg_match_all('/data-name="([^"]+)"/u', $messageText, $dataNameMatches)) {
+            $rawNames = array_merge($rawNames, $dataNameMatches[1] ?? []);
+        }
+
+        // 3. Extract span with mention-tag
+        if (preg_match_all('/<span[^>]*class="[^"]*mention-tag[^"]*"[^>]*>.*?@([^<]+)<\/span>/u', $messageText, $spanMatches)) {
+            $rawNames = array_merge($rawNames, $spanMatches[1] ?? []);
+        }
+
+        // 4. Extract HTML strong mentions: <strong>@Name</strong>
+        if (preg_match_all('/<strong>@([^<]+)<\/strong>/u', $messageText, $htmlMatches)) {
+            $rawNames = array_merge($rawNames, $htmlMatches[1] ?? []);
+        }
+
+        // 5. Extract plain text mentions: @Name
+        $plainText = strip_tags($messageText);
+        if (preg_match_all('/@([a-zA-Z0-9_.\s-]+?)(?=\s@|\s*$|[.,!?\n\r])/u', $plainText, $plainMatches)) {
+            $rawNames = array_merge($rawNames, $plainMatches[1] ?? []);
+        }
+
+        $rawNames = array_unique(array_filter(array_map('trim', $rawNames)));
+        $userIds = array_unique(array_filter(array_map('trim', $userIds)));
+
+        if (empty($rawNames) && empty($userIds)) {
+            return;
+        }
+
+        // Find users matching either exact user ID or name/username (case-insensitive)
+        $mentionedUsers = User::query()
+            ->where('id', '!=', $sender->id)
+            ->where(function ($query) use ($userIds, $rawNames) {
+                if (! empty($userIds)) {
+                    $query->whereIn('id', $userIds);
+                }
+                foreach ($rawNames as $name) {
+                    $lower = strtolower($name);
+                    $query->orWhereRaw('LOWER(name) LIKE ?', ['%'.$lower.'%'])
+                          ->orWhereRaw('LOWER(username) LIKE ?', ['%'.$lower.'%']);
+                }
+            })
+            ->get();
+
+        foreach ($mentionedUsers as $targetUser) {
+            // Invalidate notification cache so notification center immediately shows new message
+            \Illuminate\Support\Facades\Cache::forget("notifications_payload_user_{$targetUser->id}");
+            \Illuminate\Support\Facades\Cache::forget("user_involved_contracts_{$targetUser->id}");
+
+            // Send email notification if user has email configured
+            if (! empty($targetUser->email)) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($targetUser->email)->queue(new \App\Mail\NewMessageNotificationMail($msg, $targetUser));
+                } catch (\Throwable $e) {
+                    report($e);
+                }
+            }
+        }
     }
 
     /**
@@ -203,18 +282,39 @@ class ChatService
     {
         $userId = $user->id;
         $messages = ContractMessage::where('contract_id', $contract->id)
-            ->whereJsonDoesntContain('read_by', $userId)
-            ->get();
+            ->where('user_id', '!=', $userId)
+            ->get()
+            ->filter(function ($msg) use ($userId) {
+                $readBy = $msg->read_by;
+                if (is_string($readBy)) {
+                    $readBy = json_decode($readBy, true) ?: [];
+                }
+                if (! is_array($readBy)) {
+                    $readBy = [];
+                }
+                return ! in_array($userId, $readBy, true) && ! in_array((string) $userId, $readBy, true);
+            });
 
+        $count = 0;
         foreach ($messages as $msg) {
             $readBy = $msg->read_by ?? [];
-            if (! in_array($userId, $readBy)) {
+            if (is_string($readBy)) {
+                $readBy = json_decode($readBy, true) ?: [];
+            }
+            if (! is_array($readBy)) {
+                $readBy = [];
+            }
+            if (! in_array($userId, $readBy, true)) {
                 $readBy[] = $userId;
                 $msg->update(['read_by' => $readBy]);
+                $count++;
             }
         }
 
-        return $messages->count();
+        \Illuminate\Support\Facades\Cache::forget("notifications_payload_user_{$userId}");
+        \Illuminate\Support\Facades\Cache::forget("user_involved_contracts_{$userId}");
+
+        return $count;
     }
 
     /**

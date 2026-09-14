@@ -23,10 +23,10 @@ class ContractListQuery
         'submissionType:id,name',
         'statusDetail:code,label,color,bg_color,icon',
         'approvals.approver:id,name,role_id,department_id,division_id,company_id,email',
-        'approvals.workflowStep:id,step,description,step_category,workflow_id,meta,is_visible,is_active',
+        'approvals.workflowStep:id,step,description,step_category,workflow_id,meta,is_visible,is_active,approver_type,filter_department,filter_company_group,filter_region,filter_company',
         'approvals.workflowStep.workflow:id,name,contract_type_id,meta',
         'workflow:id,name,contract_type_id,meta',
-        'workflowStep:id,step,description,step_category,workflow_id,meta,is_visible,is_active',
+        'workflowStep:id,step,description,step_category,workflow_id,meta,is_visible,is_active,approver_type,filter_department,filter_company_group,filter_region,filter_company',
         'workflowStep.workflow:id,name,contract_type_id,meta',
         'vendor:id,vendor_code,vendor_name,vendor_detail',
         'initiator:id,name,role_id,department_id,division_id,company_id,email',
@@ -66,8 +66,7 @@ class ContractListQuery
 
         $query = Contract::query()
             ->select(self::SELECT)
-            ->with(self::WITH)
-            ->latest();
+            ->with(self::WITH);
 
         $this->applyViewFilter($query, $view, $request);
         $this->applySearchFilter($query, $request);
@@ -84,6 +83,7 @@ class ContractListQuery
         $this->applyDateRangeFilter($query, $request);
         $this->applyPicFilter($query, $request);
         $this->applySubmissionTypeFilter($query, $request);
+        $this->applySorting($query, $request);
 
         return $query;
     }
@@ -589,6 +589,79 @@ class ContractListQuery
                         ->orWhere(fn ($sq) => $sq->whereNull('initiated_by_id')->whereHas('creator', fn ($ssq) => $ssq->whereIn('division_id', $cleanDivisionIds)));
                 });
             }
+        }
+    }
+
+    /**
+     * Apply ordering / sorting to query based on request parameters.
+     */
+    private function applySorting(Builder $query, Request $request): void
+    {
+        $sortBy = $request->input('sort_by') ?? $request->input('sortBy');
+        $sortDir = strtolower($request->input('sort_dir') ?? $request->input('sortDir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        if (empty($sortBy)) {
+            $query->latest('created_at');
+            return;
+        }
+
+        switch ($sortBy) {
+            case 'contract_no_title':
+            case 'title':
+                $query->orderByRaw("COALESCE(t_contracts.title, t_contracts.form_no, t_contracts.contract_no) {$sortDir}");
+                break;
+            case 'contract_no':
+            case 'form_no':
+                $query->orderByRaw("COALESCE(t_contracts.form_no, t_contracts.contract_no) {$sortDir}");
+                break;
+            case 'vendor':
+                $query->orderBy(
+                    \App\Models\Vendor::select('vendor_name')
+                        ->whereColumn('m_vendors.id', 't_contracts.vendor_id')
+                        ->limit(1),
+                    $sortDir
+                );
+                break;
+            case 'period':
+            case 'contract_date':
+                $query->orderBy('contract_date', $sortDir);
+                break;
+            case 'end_date':
+                $query->orderBy('end_date', $sortDir);
+                break;
+            case 'initiator':
+            case 'creator':
+                $query->orderBy(
+                    \App\Models\User::select('name')
+                        ->whereColumn('m_users.id', DB::raw('COALESCE(t_contracts.initiated_by_id, t_contracts.created_by)'))
+                        ->limit(1),
+                    $sortDir
+                );
+                break;
+            case 'status':
+                $query->orderBy('status', $sortDir);
+                break;
+            case 'assigned_pic':
+                $query->orderBy(
+                    \App\Models\User::select('name')
+                        ->whereColumn('m_users.id', 't_contracts.assigned_pic_id')
+                        ->limit(1),
+                    $sortDir
+                );
+                break;
+            case 'created_at':
+                $query->orderBy('created_at', $sortDir);
+                break;
+            case 'updated_at':
+                $query->orderBy('updated_at', $sortDir);
+                break;
+            default:
+                if (in_array($sortBy, self::SELECT, true)) {
+                    $query->orderBy($sortBy, $sortDir);
+                } else {
+                    $query->latest('created_at');
+                }
+                break;
         }
     }
 }

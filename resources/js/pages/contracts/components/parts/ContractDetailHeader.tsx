@@ -44,6 +44,9 @@ export function ContractDetailHeader({
         }
     };
 
+    const effectiveStatus = (contract.workflow_step?.meta as any)?.target_status || contract.status_info?.code || contract.status;
+    const currentStepName = (contract.workflow_step as any)?.name || (contract.workflow_step as any)?.label || contract.workflow_step?.description;
+
     return (
         <div className="sticky top-0 z-50 flex h-16 min-h-[64px] max-h-[64px] shrink-0 items-center justify-between px-5 bg-background border-b border-border transition-all duration-200 box-border gap-3">
             {/* Left Side: Document Title (Editable) + Section Breadcrumb */}
@@ -81,6 +84,21 @@ export function ContractDetailHeader({
                         </div>
                     )}
                     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 leading-tight truncate">
+                        {contract.workflow_step && (
+                            <>
+                                <span className="font-semibold text-foreground/80 flex items-center gap-1">
+                                    <span className="px-1.5 py-0.2 rounded bg-primary/10 text-primary text-[10px] font-bold">
+                                        Tahap {contract.workflow_step.step}
+                                    </span>
+                                    {currentStepName && (
+                                        <span className="truncate max-w-[200px] sm:max-w-[320px]">
+                                            {currentStepName}
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="opacity-40">•</span>
+                            </>
+                        )}
                         <span>{currentActiveTabLabel}</span>
                         {currentActiveSubLabel && (
                             <>
@@ -94,7 +112,7 @@ export function ContractDetailHeader({
 
             {/* Right Column: Status & Save Buttons */}
             <div className="flex items-center gap-3 shrink-0">
-                <StatusBadge status={contract.status} statusInfo={contract.status_info} />
+                <StatusBadge status={effectiveStatus} statusInfo={contract.status_info} />
 
                 {/* Save button in navbar when contract info or forms have changes */}
                 {isAnyDirty && (

@@ -36,8 +36,24 @@ class AttachmentPdfPreviewAction
             }
         }
 
+        $docNumber = $contract->contract_no ?: ($contract->form_no ?: (string) $contract->id);
+
         if (! $filePath || ! Storage::disk($disk)->exists($filePath)) {
-            return response()->json(['message' => 'File not found.'], 404);
+            if (request()->expectsJson() && ! request()->acceptsHtml()) {
+                return response()->json(['message' => 'File not found.'], 404);
+            }
+
+            return response()->view('errors.pdf-preview-error', [
+                'statusCode' => 404,
+                'statusLabel' => 'Lampiran Tidak Ditemukan',
+                'title' => 'Berkas Lampiran Tidak Ditemukan',
+                'message' => 'Berkas fisik lampiran tidak ditemukan pada penyimpanan server atau telah dipindahkan.',
+                'details' => [
+                    'Nomor Dokumen' => $docNumber,
+                    'ID Lampiran' => $atId,
+                    'Judul Kontrak' => $contract->title ?: '-',
+                ],
+            ], 404);
         }
 
         $sourcePath = Storage::disk($disk)->path($filePath);
@@ -57,7 +73,6 @@ class AttachmentPdfPreviewAction
 
         if (file_exists($pdfPath)) {
             $user = auth()->user();
-            $docNumber = $contract->contract_no ?: ($contract->form_no ?: $contract->id);
             $rawContent = file_get_contents($pdfPath);
             $processedContent = PdfMetadataService::injectMetadata($rawContent, $user?->name, $user?->id, $docNumber);
 
@@ -66,6 +81,20 @@ class AttachmentPdfPreviewAction
                 ->header('Content-Disposition', 'inline; filename="'.basename($pdfPath).'"');
         }
 
-        return response()->json(['message' => 'Failed to generate PDF.'], 500);
+        if (request()->expectsJson() && ! request()->acceptsHtml()) {
+            return response()->json(['message' => 'Failed to generate PDF.'], 500);
+        }
+
+        return response()->view('errors.pdf-preview-error', [
+            'statusCode' => 500,
+            'statusLabel' => 'Gagal Memproses Lampiran',
+            'title' => 'Gagal Menghasilkan Pratinjau Lampiran',
+            'message' => 'Sistem tidak dapat mengonversi berkas lampiran ke format PDF untuk pratinjau.',
+            'details' => [
+                'Nomor Dokumen' => $docNumber,
+                'ID Lampiran' => $atId,
+                'Nama Berkas' => basename($filePath),
+            ],
+        ], 500);
     }
 }

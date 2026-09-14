@@ -22,6 +22,8 @@ export function MentionDropdown({ isOpen, users, mentionIndex, setMentionIndex, 
                 {users.map((u: any, i: number) => (
                     <button
                         key={u.id || i}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
                         onClick={() => insertMention(u)}
                         onMouseEnter={() => setMentionIndex(i)}
                         className={cn(

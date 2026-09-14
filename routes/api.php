@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('auth')->group(function () {
     require __DIR__.'/api/transactions.php';
     require __DIR__.'/api/master.php';
     require __DIR__.'/api/services.php';

@@ -421,11 +421,12 @@ export const AppSidebar = memo(function AppSidebar() {
     // subMode: 'detail' (shows contract tabs) or 'main' (shows main system modules)
     const [subMode, setSubMode] = useState<'detail' | 'main'>('detail');
 
-    // Automatically switch to 'detail' mode when a contract is selected / activated
+    // Automatically switch to 'detail' mode when a contract is selected / activated and expand sub sidebar
     const prevDetailActiveRef = useRef(detailSidebar?.isActive);
     useEffect(() => {
         if (detailSidebar?.isActive && !prevDetailActiveRef.current) {
             setSubMode('detail');
+            setIsSubOpen(true);
         }
         prevDetailActiveRef.current = detailSidebar?.isActive;
     }, [detailSidebar?.isActive]);

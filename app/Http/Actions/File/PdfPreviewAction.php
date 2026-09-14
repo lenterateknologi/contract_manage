@@ -31,8 +31,30 @@ class PdfPreviewAction
             return $this->exportAction->execute($contract, $type, 'inline', $versionNo);
         }
 
+        $docNumber = $contract->contract_no ?: ($contract->form_no ?: (string) $contract->id);
+        $typeLabel = match (strtolower($type)) {
+            'f1' => 'Formulir F1 Permohonan',
+            'f2' => 'Formulir F2 Summary',
+            'agreement', 'contract' => 'Dokumen Perjanjian / Kontrak',
+            default => strtoupper($type),
+        };
+
         if (! $version || ! $version->file_path || ! Storage::disk('local')->exists($version->file_path)) {
-            return response()->json(['message' => 'Source file not found.'], 404);
+            if ($request->expectsJson() && ! $request->acceptsHtml()) {
+                return response()->json(['message' => 'Source file not found.'], 404);
+            }
+
+            return response()->view('errors.pdf-preview-error', [
+                'statusCode' => 404,
+                'statusLabel' => 'Berkas Tidak Ditemukan',
+                'title' => 'Dokumen Belum Tersedia',
+                'message' => "Berkas fisik untuk versi {$versionNo} ({$typeLabel}) belum diunggah atau tidak ditemukan di penyimpanan server.",
+                'details' => [
+                    'Nomor Dokumen' => $docNumber,
+                    'Tipe Dokumen' => $typeLabel,
+                    'Versi Dokumen' => 'Versi '.$versionNo,
+                ],
+            ], 404);
         }
 
         $sourcePath = Storage::disk('local')->path($version->file_path);
@@ -41,7 +63,6 @@ class PdfPreviewAction
 
         if ($this->pdfService->convertToPdf($sourcePath, $pdfDir, $pdfPath, (string) $contract->id)) {
             $user = auth()->user();
-            $docNumber = $contract->contract_no ?: ($contract->form_no ?: $contract->id);
             $rawContent = file_get_contents($pdfPath);
             $processedContent = PdfMetadataService::injectMetadata($rawContent, $user?->name, $user?->id, $docNumber);
 
@@ -50,6 +71,22 @@ class PdfPreviewAction
                 ->header('Content-Disposition', 'inline; filename="'.basename($pdfPath).'"');
         }
 
-        return response()->json(['message' => 'Failed to generate PDF.'], 500);
+        if ($request->expectsJson() && ! $request->acceptsHtml()) {
+            return response()->json(['message' => 'Failed to generate PDF.'], 500);
+        }
+
+        return response()->view('errors.pdf-preview-error', [
+            'statusCode' => 500,
+            'statusLabel' => 'Gagal Memproses PDF',
+            'title' => 'Gagal Menghasilkan Pratinjau Dokumen',
+            'message' => 'Sistem tidak dapat mengonversi berkas dokumen ke format pratinjau PDF. Silakan coba muat ulang atau periksa format berkas yang diunggah.',
+            'details' => [
+                'Nomor Dokumen' => $docNumber,
+                'Tipe Dokumen' => $typeLabel,
+                'Versi Dokumen' => 'Versi '.$versionNo,
+                'Nama Berkas' => $version->file_name ?: basename($version->file_path),
+            ],
+        ], 500);
     }
 }
+

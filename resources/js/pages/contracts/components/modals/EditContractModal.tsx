@@ -114,11 +114,15 @@ export function EditContractModal({
                         type="date"
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
+                        required={!!contract?.require_period}
                     />
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">Klasifikasi & Jenis Dokumen</label>
+                    <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase flex items-center gap-1">
+                        Klasifikasi & Jenis Dokumen
+                        {!!contract?.require_category && <span className="text-rose-500 font-black">*</span>}
+                    </label>
                     <TreeSelect value={typeId} onValueChange={(val) => setTypeId(val)} items={types} placeholder="Pilih Tipe Kontrak" />
                 </div>
 
@@ -134,7 +138,10 @@ export function EditContractModal({
                     </div>
 
                     <div className="space-y-1">
-                        <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase">Pihak Kedua (Vendor)</label>
+                        <label className="text-slate-700 dark:text-zinc-200 text-[10.5px] font-extrabold uppercase flex items-center gap-1">
+                            Pihak Kedua 
+                            {!!contract?.require_vendor && <span className="text-rose-500 font-black">*</span>}
+                        </label>
                         <PortalSelect
                             value={vendorId}
                             onValueChange={(val) => setVendorId(val)}

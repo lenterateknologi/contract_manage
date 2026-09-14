@@ -21,8 +21,28 @@ class ExportFormSubmissionPdfAction
 
         $template = FormTemplate::where('document_type', $type)->with('fields')->first();
 
+        $docNumber = $contract->contract_no ?: ($contract->form_no ?: (string) $contract->id);
+        $typeLabel = match (strtolower($type)) {
+            'f1' => 'Formulir F1 Permohonan',
+            'f2' => 'Formulir F2 Summary',
+            default => strtoupper($type),
+        };
+
         if (! $template) {
-            return response()->json(['message' => "Form template $type not found."], 404);
+            if (request()->expectsJson() && ! request()->acceptsHtml()) {
+                return response()->json(['message' => "Form template $type not found."], 404);
+            }
+
+            return response()->view('errors.pdf-preview-error', [
+                'statusCode' => 404,
+                'statusLabel' => 'Template Tidak Ditemukan',
+                'title' => 'Template Dokumen Belum Dibuat',
+                'message' => "Template formulir untuk tipe {$typeLabel} belum dikonfigurasi di sistem.",
+                'details' => [
+                    'Nomor Dokumen' => $docNumber,
+                    'Tipe Dokumen' => $typeLabel,
+                ],
+            ], 404);
         }
 
         $submission = FormSubmission::where('contract_id', $contract->id)
@@ -37,7 +57,20 @@ class ExportFormSubmissionPdfAction
         }
 
         if (! $targetVersion && $type === 'f1') {
-            return response()->json(['message' => 'Data form belum diisi.'], 404);
+            if (request()->expectsJson() && ! request()->acceptsHtml()) {
+                return response()->json(['message' => 'Data form belum diisi.'], 404);
+            }
+
+            return response()->view('errors.pdf-preview-error', [
+                'statusCode' => 404,
+                'statusLabel' => 'Data Belum Tersedia',
+                'title' => 'Data Formulir Belum Diisi',
+                'message' => "Data formulir {$typeLabel} belum disimpan atau belum memiliki riwayat pengisian.",
+                'details' => [
+                    'Nomor Dokumen' => $docNumber,
+                    'Tipe Dokumen' => $typeLabel,
+                ],
+            ], 404);
         }
 
         $vno = $targetVersion ? $targetVersion->version_no : 0;

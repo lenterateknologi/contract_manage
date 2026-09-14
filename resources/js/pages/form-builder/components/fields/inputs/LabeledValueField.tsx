@@ -160,30 +160,32 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                         onChange={(e) => onChange?.(e.target.value)}
                         placeholder={customPlaceholder || (allowDirectEdit ? "Ketik atau pilih tanggal..." : "Pilih tanggal dari kalender...")}
                         readOnly={!allowDirectEdit}
-                        className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent')}
+                        className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent opacity-80 select-text')}
                         style={lineStyle}
                     />
-                    <div className="relative shrink-0 flex items-center justify-center">
-                        <button
-                            type="button"
-                            className={cn(baseClass, 'w-7 h-7 p-0 flex items-center justify-center cursor-pointer shrink-0 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 shadow-2xs rounded-lg')}
-                            style={{
-                                ...lineStyle,
-                                width: '28px',
-                                height: '28px',
-                                padding: 0,
-                            }}
-                            title="Pilih Kalender"
-                        >
-                            <Calendar className="h-3.5 w-3.5 text-slate-600" />
-                        </button>
-                        <input
-                            type="date"
-                            value={typeof value === 'string' && value.includes('-') ? value : ''}
-                            onChange={(e) => onChange?.(e.target.value)}
-                            className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                        />
-                    </div>
+                    {allowDirectEdit && (
+                        <div className="relative shrink-0 flex items-center justify-center">
+                            <button
+                                type="button"
+                                className={cn(baseClass, 'w-7 h-7 p-0 flex items-center justify-center cursor-pointer shrink-0 bg-white text-slate-700 border-slate-300 hover:bg-slate-50 shadow-2xs rounded-lg')}
+                                style={{
+                                    ...lineStyle,
+                                    width: '28px',
+                                    height: '28px',
+                                    padding: 0,
+                                }}
+                                title="Pilih Kalender"
+                            >
+                                <Calendar className="h-3.5 w-3.5 text-slate-600" />
+                            </button>
+                            <input
+                                type="date"
+                                value={typeof value === 'string' && value.includes('-') ? value : ''}
+                                onChange={(e) => onChange?.(e.target.value)}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                            />
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -196,6 +198,7 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             };
 
             const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                if (!allowDirectEdit) return;
                 const rawValue = e.target.value.replace(/\D/g, '');
                 onChange?.(rawValue !== '' ? Number(rawValue) : '');
             };
@@ -208,7 +211,8 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                     value={formattedVal}
                     onChange={handleNumberChange}
                     placeholder={customPlaceholder || '0'}
-                    className={baseClass}
+                    readOnly={!allowDirectEdit}
+                    className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent opacity-80 select-text')}
                     style={lineStyle}
                 />
             );
@@ -224,12 +228,17 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
                     <textarea
                         rows={maxLines > 1 ? maxLines : 3}
                         value={value || ''}
-                        onChange={(e) => onChange?.(e.target.value)}
+                        onChange={(e) => {
+                            if (!allowDirectEdit) return;
+                            onChange?.(e.target.value);
+                        }}
                         placeholder={customPlaceholder || ''}
+                        readOnly={!allowDirectEdit}
                         className={cn(
                             baseClass,
                             'resize-none leading-6 py-0 bg-transparent block w-full outline-none ring-0 focus:ring-0',
                             !isBox ? 'border-none' : '',
+                            !allowDirectEdit && 'cursor-default opacity-80 select-text'
                         )}
                         style={{
                             ...lineStyle,
@@ -241,13 +250,114 @@ export const LabeledValueField: React.FC<FieldProps & { previewData?: any }> = (
             );
         }
 
+        if (valueType === 'select' || valueType === 'searchable_select') {
+            const items = field.options?.items || [];
+            const isMulti = field.options?.is_multiselect === true;
+
+            if (isMulti) {
+                const currentVals: string[] = Array.isArray(value) ? value.map(String) : (value ? [String(value)] : []);
+                return (
+                    <div className="flex flex-wrap gap-1.5 items-center w-full min-w-0">
+                        {items.map((opt: any, idx: number) => {
+                            const optVal = String(opt.value);
+                            const isChecked = currentVals.includes(optVal);
+                            return (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    disabled={!allowDirectEdit}
+                                    onClick={() => {
+                                        if (!allowDirectEdit) return;
+                                        const next = isChecked
+                                            ? currentVals.filter((v) => v !== optVal)
+                                            : [...currentVals, optVal];
+                                        onChange?.(next);
+                                    }}
+                                    className={cn(
+                                        'px-2 py-0.5 rounded text-[11px] font-medium border transition-colors',
+                                        allowDirectEdit ? 'cursor-pointer' : 'cursor-default opacity-80',
+                                        isChecked
+                                            ? 'bg-primary text-primary-foreground border-primary'
+                                            : 'bg-background text-foreground border-border hover:bg-muted'
+                                    )}
+                                    style={typographyStyle}
+                                >
+                                    {opt.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                );
+            }
+
+            return (
+                <div className="relative w-full min-w-0 flex items-center">
+                    <select
+                        value={value !== undefined && value !== null ? String(value) : ''}
+                        disabled={!allowDirectEdit}
+                        onChange={(e) => {
+                            if (!allowDirectEdit) return;
+                            onChange?.(e.target.value);
+                        }}
+                        className={cn(
+                            baseClass,
+                            allowDirectEdit ? 'cursor-pointer' : 'cursor-default pointer-events-none opacity-80',
+                            'appearance-none pr-6 bg-transparent text-slate-900',
+                            isBox ? 'bg-white text-slate-900' : ''
+                        )}
+                        style={{
+                            ...lineStyle,
+                            color: typographyStyle.color || '#0f172a',
+                        }}
+                    >
+                        <option value="" disabled className="text-slate-500 bg-white">
+                            {customPlaceholder || 'Pilih...'}
+                        </option>
+                        {items.map((opt: any, idx: number) => (
+                            <option key={idx} value={String(opt.value)} className="text-slate-900 bg-white">
+                                {opt.label}
+                            </option>
+                        ))}
+                    </select>
+                    {allowDirectEdit && (
+                        <ChevronDown className="absolute right-1 pointer-events-none h-3.5 w-3.5 text-slate-400 shrink-0" />
+                    )}
+                </div>
+            );
+        }
+
+        if (valueType === 'checkbox') {
+            const isChecked = !!value;
+            return (
+                <div className="flex items-center gap-2">
+                    <input
+                        type="checkbox"
+                        checked={isChecked}
+                        disabled={!allowDirectEdit}
+                        onChange={(e) => {
+                            if (!allowDirectEdit) return;
+                            onChange?.(e.target.checked);
+                        }}
+                        className={cn("h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary", allowDirectEdit ? "cursor-pointer" : "cursor-default opacity-80")}
+                    />
+                    <span className={cn("text-xs text-foreground select-none", allowDirectEdit ? "cursor-pointer" : "cursor-default opacity-80")} onClick={() => { if (allowDirectEdit) onChange?.(!isChecked); }}>
+                        {isChecked ? 'Ya' : 'Tidak'}
+                    </span>
+                </div>
+            );
+        }
+
         return (
             <input
                 type="text"
                 value={value || ''}
-                onChange={(e) => onChange?.(e.target.value)}
+                readOnly={!allowDirectEdit}
+                onChange={(e) => {
+                    if (!allowDirectEdit) return;
+                    onChange?.(e.target.value);
+                }}
                 placeholder={customPlaceholder || ''}
-                className={baseClass}
+                className={cn(baseClass, !allowDirectEdit && 'cursor-default bg-transparent opacity-80 select-text')}
                 style={lineStyle}
             />
         );

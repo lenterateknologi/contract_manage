@@ -81,11 +81,17 @@ export function DraftEditableInfoCard({
         return p !== undefined && p !== null ? String(p) : '';
     });
     const [minimized, setMinimized] = useState(false);
-    const [taxRequired, setTaxRequired] = useState<boolean>(() => !!selected.metadata?.tax_required);
+    const resolveTaxBool = (s: any) => {
+        if (s.tax_required !== undefined && s.tax_required !== null) return !!s.tax_required;
+        const metaTax = s.metadata?.tax_required ?? s.metadata?.meta_tax_required;
+        return metaTax === true || metaTax === '1' || metaTax === 1 || metaTax === 'Ya' || metaTax === 'ya';
+    };
+
+    const [taxRequired, setTaxRequired] = useState<boolean>(() => resolveTaxBool(selected));
 
     useEffect(() => {
-        setTaxRequired(!!selected.metadata?.tax_required);
-    }, [selected.metadata?.tax_required]);
+        setTaxRequired(resolveTaxBool(selected));
+    }, [selected.tax_required, selected.metadata?.tax_required, selected.metadata?.meta_tax_required]);
 
     useEffect(() => {
         setTitle(selected.title);
@@ -125,7 +131,7 @@ export function DraftEditableInfoCard({
             contractDate: selected.contract_date ? String(selected.contract_date).split('T')[0].split(' ')[0] : '',
             endDate: selected.end_date ? String(selected.end_date).split('T')[0].split(' ')[0] : '',
             price: p !== undefined && p !== null ? String(p) : '',
-            taxRequired: !!selected.metadata?.tax_required,
+            taxRequired: resolveTaxBool(selected),
         };
     }, [selected, types]);
 

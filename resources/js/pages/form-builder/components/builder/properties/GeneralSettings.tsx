@@ -233,32 +233,34 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ selectedField,
                         </div>
                     )}
 
-                    {/* Options list for select type */}
-                    {(selectedField.options?.value_type === 'select' || selectedField.options?.value_type === 'date') && (
-                        <div className="space-y-3 border-t border-border/50 pt-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex flex-col">
-                                    <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Bisa Diketik (Direct Edit)</Label>
-                                    <span className="text-[7px] text-muted-foreground">Izinkan ketik manual selain dari picker/dropdown</span>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        bulkUpdateOptions(selectedIds, {
-                                            allow_direct_edit: selectedField.options?.allow_direct_edit === false ? true : false,
-                                        })
-                                    }
-                                    className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${selectedField.options?.allow_direct_edit !== false ? 'bg-primary' : 'bg-muted-foreground/30'
-                                        }`}
-                                >
-                                    <span
-                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${selectedField.options?.allow_direct_edit !== false ? 'translate-x-4' : 'translate-x-0'
-                                            }`}
-                                    />
-                                </button>
+                    {/* Editable / Direct Edit toggle for labeled_value */}
+                    <div className="space-y-3 border-t border-border/50 pt-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                                <Label className="text-muted-foreground font-sans text-[8px] font-medium uppercase">Dapat Diedit (Editable)</Label>
+                                <span className="text-[7px] text-muted-foreground">
+                                    {selectedField.options?.value_type === 'select' || selectedField.options?.value_type === 'date'
+                                        ? 'Izinkan ketik manual / pengisian selain dari picker'
+                                        : 'Izinkan pengisian / pengeditan nilai field ini'}
+                                </span>
                             </div>
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    bulkUpdateOptions(selectedIds, {
+                                        allow_direct_edit: selectedField.options?.allow_direct_edit === false ? true : false,
+                                    })
+                                }
+                                className={`relative inline-flex h-5 w-9 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${selectedField.options?.allow_direct_edit !== false ? 'bg-primary' : 'bg-muted-foreground/30'
+                                    }`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${selectedField.options?.allow_direct_edit !== false ? 'translate-x-4' : 'translate-x-0'
+                                        }`}
+                                />
+                            </button>
                         </div>
-                    )}
+                    </div>
 
                     {selectedField.options?.value_type === 'select' && (
                         <div className="space-y-3 border-t border-border/50 pt-3">
