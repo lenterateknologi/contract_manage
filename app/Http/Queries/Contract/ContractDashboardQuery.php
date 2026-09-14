@@ -72,17 +72,18 @@ class ContractDashboardQuery
         );
 
         // KPI Cards
-        $totalContracts = (clone $baseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->count();
+        $totalContracts = (clone $baseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->count();
         $myTotalContracts = DB::table('t_contracts')
             ->where('created_by', Auth::id())
             ->whereNull('deleted_at')
             ->where('status', '!=', 'draft')
             ->count();
         $archivedTotalContracts = (clone $baseQuery)
-            ->where('status', 'archived')
+            ->where(fn (QueryBuilder $q) => $q->where('status', 'archived')->orWhereNotNull('closed_at'))
             ->count();
         $inProcessContracts = (clone $baseQuery)
             ->whereIn('status', array_map(fn ($s) => $s->value, ContractStatusEnum::inProcess()))
+            ->whereNull('closed_at')
             ->count();
         $pendingApprovalsForMe = Approval::where('user_id', Auth::id())
             ->where('status', 'pending')
@@ -98,16 +99,19 @@ class ContractDashboardQuery
             })->count();
         $activeContracts = (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
+            ->whereNull('closed_at')
             ->where(fn (QueryBuilder $q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))
             ->count();
         $expiringSoonContracts = (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
+            ->whereNull('closed_at')
             ->whereNotNull('end_date')
             ->whereDate('end_date', '>=', now()->toDateString())
             ->whereDate('end_date', '<=', now()->addDays(30)->toDateString())
             ->count();
         $expiredContracts = (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
+            ->whereNull('closed_at')
             ->whereNotNull('end_date')
             ->whereDate('end_date', '<', now()->toDateString())
             ->count();
@@ -239,7 +243,7 @@ class ContractDashboardQuery
             ->pluck('count', 'user_id');
 
         $completedContractsThisMonth = DB::table('mv_dashboard_contracts')
-            ->whereIn('status', ['approved', 'active', 'archived'])
+            ->where(fn ($q) => $q->whereIn('status', ['approved', 'active', 'archived'])->orWhereNotNull('closed_at'))
             ->whereBetween('updated_at', [$startOfMonth, $endOfMonth])
             ->select('assigned_pic_id', DB::raw('count(*) as count'))
             ->groupBy('assigned_pic_id')
@@ -891,6 +895,7 @@ class ContractDashboardQuery
         // 1. Semua Dokumen (non-draft, non-archived) — grouped by created_at date
         $allDocsByDay = (clone $baseQuery)
             ->whereRaw("UPPER(status) != 'ARCHIVED'")
+            ->whereNull('closed_at')
             ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
             ->groupBy('day')
             ->pluck('total', 'day')
@@ -902,6 +907,7 @@ class ContractDashboardQuery
             ->where('t_approvals.user_id', $userId)
             ->where('t_approvals.status', 'pending')
             ->whereIn('t_contracts.status', ['in_review', 'revision', 'pending'])
+            ->whereNull('t_contracts.closed_at')
             ->whereNull('t_contracts.deleted_at')
             ->whereBetween('t_approvals.created_at', [$startDate, $endDate])
             ->select(DB::raw('DATE(t_approvals.created_at) as day'), DB::raw('count(DISTINCT t_approvals.contract_id) as total'))
@@ -920,11 +926,14 @@ class ContractDashboardQuery
             ->pluck('total', 'day')
             ->all();
 
-        // 4. Dokumen Arsip — contracts with status = archived, grouped by updated_at date
+        // 4. Dokumen Arsip — contracts with status = archived or closed_at is set, grouped by closed_at or updated_at date
         $archivedByDay = (clone $baseQuery)
-            ->where('status', 'archived')
-            ->whereBetween('updated_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(updated_at) as day'), DB::raw('count(*) as total'))
+            ->where(fn (QueryBuilder $q) => $q->where('status', 'archived')->orWhereNotNull('closed_at'))
+            ->where(function (QueryBuilder $q) use ($startDate, $endDate) {
+                $q->whereBetween('closed_at', [$startDate, $endDate])
+                    ->orWhere(fn (QueryBuilder $sub) => $sub->whereNull('closed_at')->whereBetween('updated_at', [$startDate, $endDate]));
+            })
+            ->select(DB::raw('DATE(COALESCE(closed_at, updated_at)) as day'), DB::raw('count(*) as total'))
             ->groupBy('day')
             ->pluck('total', 'day')
             ->all();
@@ -932,6 +941,7 @@ class ContractDashboardQuery
         // 5. On Progress — contracts in process statuses, grouped by created_at date
         $inProgressByDay = (clone $baseQuery)
             ->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])
+            ->whereNull('closed_at')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
             ->groupBy('day')
@@ -1463,7 +1473,7 @@ class ContractDashboardQuery
             ->pluck('count', 'contract_type_id');
 
         $outgoingCounts = (clone $baseQuery)
-            ->whereIn('status', [ContractStatusEnum::Approved->value, ContractStatusEnum::Locked->value, 'archived'])
+            ->where(fn ($q) => $q->whereIn('status', [ContractStatusEnum::Approved->value, ContractStatusEnum::Locked->value, 'archived'])->orWhereNotNull('closed_at'))
             ->select('contract_type_id', DB::raw('count(*) as count'))
             ->groupBy('contract_type_id')
             ->pluck('count', 'contract_type_id');
@@ -1487,12 +1497,13 @@ class ContractDashboardQuery
         // ponytail: Pre-aggregate counts in single database query using COALESCE to prevent N+1 in loop
         $incomingCounts = (clone $baseQuery)
             ->whereIn('status', [ContractStatusEnum::InReview->value, ContractStatusEnum::Revision->value])
+            ->whereNull('closed_at')
             ->select(DB::raw('COALESCE(initiator_department_id, creator_department_id) as dept_id'), DB::raw('count(*) as count'))
             ->groupBy('dept_id')
             ->pluck('count', 'dept_id');
 
         $outgoingCounts = (clone $baseQuery)
-            ->whereIn('status', [ContractStatusEnum::Approved->value, ContractStatusEnum::Locked->value, 'archived'])
+            ->where(fn ($q) => $q->whereIn('status', [ContractStatusEnum::Approved->value, ContractStatusEnum::Locked->value, 'archived'])->orWhereNotNull('closed_at'))
             ->select(DB::raw('COALESCE(initiator_department_id, creator_department_id) as dept_id'), DB::raw('count(*) as count'))
             ->groupBy('dept_id')
             ->pluck('count', 'dept_id');

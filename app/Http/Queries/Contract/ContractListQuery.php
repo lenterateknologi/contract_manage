@@ -98,8 +98,8 @@ class ContractListQuery
             'mine' => $this->applyMineView($query, $request),
             'pending' => $this->applyPendingView($query, $request),
             'expiry' => $this->applyExpiryView($query, $request),
-            'archived' => $query->whereRaw('UPPER(status) = ?', ['ARCHIVED']),
-            'in_progress' => $query->whereIn('status', ['in_review', 'revision', 'pending', 'locked']),
+            'archived' => $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at')),
+            'in_progress' => $query->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])->whereNull('closed_at'),
             'f1' => $query->whereRaw('UPPER(status) != ?', ['DRAFT'])->whereHas('versions', fn (Builder $q) => $q->where('document_type', 'f1')),
             'f2' => $query->whereRaw('UPPER(status) != ?', ['DRAFT'])->whereHas('versions', fn (Builder $q) => $q->where('document_type', 'f2')),
             'all' => $query->whereRaw('UPPER(status) != ?', ['DRAFT']),
@@ -117,11 +117,11 @@ class ContractListQuery
         $mineTab = $request->input('mine_tab', 'all');
 
         if ($mineTab === 'archived') {
-            $query->whereRaw('UPPER(status) = ?', ['ARCHIVED']);
+            $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'));
         } elseif ($mineTab === 'in_progress') {
-            $query->whereIn('status', ['in_review', 'pending', 'locked']);
+            $query->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at');
         } else {
-            $query->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+            $query->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
             $this->applyParentTabFilter($query, $mineTab);
         }
     }
@@ -159,14 +159,14 @@ class ContractListQuery
         $parentTab = $request->input('parent_tab', 'all');
 
         if ($parentTab === 'archived') {
-            $query->whereRaw('UPPER(status) = ?', ['ARCHIVED']);
+            $query->where(fn (Builder $q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'));
         } elseif ($parentTab === 'in_progress') {
-            $query->whereIn('status', ['in_review', 'pending', 'locked']);
+            $query->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at');
         } else {
             $hasStatusFilter = $request->filled('status') || $request->filled('statuses');
             $hasSearch = $request->filled('search');
             if (! $hasStatusFilter && ! $hasSearch) {
-                $query->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+                $query->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
             }
             $this->applyParentTabFilter($query, $parentTab);
         }

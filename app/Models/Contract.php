@@ -271,6 +271,22 @@ class Contract extends Model
         $this->metadata = $metadata;
     }
 
+    public function scopeArchived($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])
+                ->orWhereNotNull('closed_at');
+        });
+    }
+
+    public function scopeNotArchived($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereRaw('UPPER(status) != ?', ['ARCHIVED'])
+                ->whereNull('closed_at');
+        });
+    }
+
     public function meta(): HasOne
     {
         return $this->hasOne(ContractMeta::class, 'contract_id', 'id');

@@ -337,7 +337,7 @@ class HandleInertiaRequests extends Middleware
 
                 // Scoped base query for all contracts and expiry respecting user organization permissions
                 $scopedAllQuery = app(\App\Http\Queries\Contract\ContractListQuery::class)->build(new Request(), 'all');
-                $scopedActiveQuery = (clone $scopedAllQuery)->whereRaw("UPPER(status) != 'ARCHIVED'");
+                $scopedActiveQuery = (clone $scopedAllQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at');
 
                 $allTotal = (clone $scopedActiveQuery)->count();
                 $allKontrak = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
@@ -345,10 +345,10 @@ class HandleInertiaRequests extends Middleware
                 $allNda = (clone $scopedActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
                 $myBaseQuery = DB::table('t_contracts')->whereNull('deleted_at')->where('created_by', $userId);
-                $myTotal = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->count();
-                $myKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
-                $myNonKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
-                $myNda = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
+                $myTotal = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->count();
+                $myKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
+                $myNonKontrak = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();
+                $myNda = (clone $myBaseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count();
 
                 $pendingApprovalCount = 0;
                 $historyApprovalCount = 0;

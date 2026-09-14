@@ -42,10 +42,12 @@ export const contractApi = {
     send: (id: string, data?: { workflow_id?: string; custom_steps?: any[] }): Promise<Contract> =>
         unwrap(api.post(`/api/contracts/${id}/send`, data)),
 
-    assignPic: (id: string, assignedPicId: string, note?: string, attachments?: File | File[]): Promise<Contract> => {
+    assignPic: (id: string, assignedPicId: string, note?: string, attachments?: File | File[], actionCode?: string, actionId?: string): Promise<Contract> => {
         const fd = new FormData();
         fd.append('assigned_pic_id', assignedPicId);
         if (note) fd.append('note', note);
+        if (actionCode) fd.append('action_code', actionCode);
+        if (actionId) fd.append('action_id', actionId);
         if (attachments) {
             if (Array.isArray(attachments)) {
                 attachments.forEach((f) => fd.append('attachments[]', f));

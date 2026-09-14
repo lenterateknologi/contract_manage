@@ -511,7 +511,9 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                 if (!actions.length) actions = matchedStep.action_configs || [];
                                                             }
 
-                                                             const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
+                                                             const actionReqFields: string[] = actions
+                                                                .filter((act: any) => !['reject', 'revisi', 'return'].includes((act.action_code || act.master_action_code || '').toLowerCase()))
+                                                                .flatMap((act: any) => act.required_fields || []);
                                                              const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');
                                                              const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
                                                              const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');

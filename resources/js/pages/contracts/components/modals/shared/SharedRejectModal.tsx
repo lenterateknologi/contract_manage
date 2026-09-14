@@ -215,26 +215,6 @@ export function SharedRejectModal({ open, onClose, onSubmit, actionAlias, action
                         )}
                     </div>
 
-                    {/* Existing Contract Attachments notice if any */}
-                    {contract?.attachments && contract.attachments.length > 0 && (
-                        <div className="rounded-lg border border-slate-200/80 bg-slate-50/50 dark:border-zinc-800 dark:bg-zinc-900/40 p-2 text-xs">
-                            <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Berkas Kontrak Saat Ini ({contract.attachments.length})
-                                </span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                                {contract.attachments.map((at: any, i: number) => (
-                                    <div key={at.id || i} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[11px] text-slate-700 dark:text-slate-300 shadow-2xs">
-                                        {getFileIcon(at.file_name || at.label || '')}
-                                        <span className="truncate max-w-[150px] font-medium">{at.file_name || at.label}</span>
-                                        <AttachmentCategoryBadge item={at} />
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
                     <div className="mt-1 space-y-2">
                         {attachments.length === 0 ? (
                             <div

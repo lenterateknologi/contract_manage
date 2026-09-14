@@ -202,15 +202,15 @@ class ContractController extends Controller
 
             // Scoped base query respecting user organization permissions
             $scopedAllQuery = $this->contractListQuery->build(new Request(), 'all');
-            $activeContractsQuery = (clone $scopedAllQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+            $activeContractsQuery = (clone $scopedAllQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
 
             $parentCategoryCounts = [
                 'all' => (clone $activeContractsQuery)->count(),
                 'kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
                 'non_kontrak' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
                 'nda' => (clone $activeContractsQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
-                'in_progress' => (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
-                'archived' => (clone $scopedAllQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
+                'in_progress' => (clone $scopedAllQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
+                'archived' => (clone $scopedAllQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
             ];
 
             $myBaseQuery = DB::table('t_contracts')
@@ -219,15 +219,15 @@ class ContractController extends Controller
                     $q->where('created_by', $userId)
                         ->orWhere('initiated_by_id', $userId);
                 });
-            $myActiveQuery = (clone $myBaseQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED']);
+            $myActiveQuery = (clone $myBaseQuery)->whereRaw('UPPER(status) != ?', ['ARCHIVED'])->whereNull('closed_at');
 
             $mineCounts = [
                 'all' => (clone $myActiveQuery)->count(),
                 'kontrak' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),
                 'non_kontrak' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count(),
                 'nda' => (clone $myActiveQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $ndaIds)->orWhereIn('contract_type_parent_id', $ndaIds))->count(),
-                'in_progress' => (clone $myBaseQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->count(),
-                'archived' => (clone $myBaseQuery)->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->count(),
+                'in_progress' => (clone $myBaseQuery)->whereIn('status', ['in_review', 'pending', 'locked'])->whereNull('closed_at')->count(),
+                'archived' => (clone $myBaseQuery)->where(fn ($q) => $q->whereRaw('UPPER(status) = ?', ['ARCHIVED'])->orWhereNotNull('closed_at'))->count(),
             ];
 
             $pendingCounts = [

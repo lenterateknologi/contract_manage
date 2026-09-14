@@ -63,6 +63,32 @@ class ContractApprovalController extends Controller
 
         $picId = $request->input('assigned_pic_id');
         $note = $request->input('note');
+        $actionCode = $request->input('action_code') ?: 'assign_pic';
+        $requestActionId = $request->input('action_id') ?: $request->input('step_action_id');
+
+        $currentStep = $contract->workflowStep;
+        $stepAction = null;
+        if ($currentStep) {
+            if ($requestActionId) {
+                $stepAction = $currentStep->actions()->where('id', $requestActionId)->first();
+            }
+            if (! $stepAction) {
+                $stepAction = $currentStep->actions()->where(function ($q) use ($actionCode) {
+                    $q->where('action_code', $actionCode)
+                      ->orWhereIn('action_code', ['assign', 'assign_pic', 'approve']);
+                })->first();
+            }
+
+            if ($stepAction) {
+                // Validate required fields on assign action
+                $this->workflowService->validateRequiredFields($contract, $currentStep, $stepAction, $picId);
+
+                // Apply autofilled fields if configured on the assign action
+                if (! empty($stepAction->autofilled_fields)) {
+                    $this->workflowService->applyAutofilledFields($contract, $stepAction->autofilled_fields);
+                }
+            }
+        }
 
         $actorId = Auth::id() ?: $contract->created_by;
         $now = now();
