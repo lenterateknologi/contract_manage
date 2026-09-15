@@ -1597,8 +1597,12 @@ class ContractWorkflowService
      */
     public function validateRequiredFields(Contract $contract, WorkflowStep $step, ?WorkflowStepAction $action = null, ?string $assignedPicId = null): void
     {
+        $actionCode = $action?->action_code instanceof WorkflowAction
+            ? $action->action_code->value
+            : (is_object($action?->action_code) ? ($action->action_code->value ?? (string) $action->action_code) : ($action?->action_code ?? null));
+
         // If action is explicit reject/revisi, bypass main approve requirements
-        if ($action && in_array(strtolower($action->action_code), ['reject', 'revisi', 'return'])) {
+        if ($actionCode && in_array(strtolower($actionCode), ['reject', 'revisi', 'return'])) {
             return;
         }
 
@@ -1606,7 +1610,7 @@ class ContractWorkflowService
         $actionReqFields = ($action && is_array($action->required_fields)) ? $action->required_fields : [];
 
         // 1. PIC Validation
-        $requirePic = (! empty($stepMeta['require_pic']) && (! $action || in_array($action->action_code, ['approve', 'assign', 'assign_pic'])))
+        $requirePic = (! empty($stepMeta['require_pic']) && (! $actionCode || in_array($actionCode, ['approve', 'assign', 'assign_pic'])))
             || in_array('pic', $actionReqFields)
             || in_array('assigned_pic', $actionReqFields);
         if ($requirePic) {
@@ -1617,7 +1621,7 @@ class ContractWorkflowService
         }
 
         // 2. F1 Validation
-        $requireF1 = (! empty($stepMeta['require_f1']) && (! $action || $action->action_code === 'approve'))
+        $requireF1 = (! empty($stepMeta['require_f1']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('f1', $actionReqFields);
         if ($requireF1) {
             $hasF1 = ! empty($contract->metadata['f1_file'])
@@ -1631,7 +1635,7 @@ class ContractWorkflowService
         }
 
         // 3. F2 Validation
-        $requireF2 = (! empty($stepMeta['require_f2']) && (! $action || $action->action_code === 'approve'))
+        $requireF2 = (! empty($stepMeta['require_f2']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('f2', $actionReqFields);
         if ($requireF2) {
             $hasF2 = ! empty($contract->metadata['f2_file'])
@@ -1646,7 +1650,7 @@ class ContractWorkflowService
         }
 
         // 4. Agreement Validation
-        $requireAgreement = (! empty($stepMeta['require_agreement']) && (! $action || $action->action_code === 'approve'))
+        $requireAgreement = (! empty($stepMeta['require_agreement']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('agreement', $actionReqFields);
         if ($requireAgreement) {
             $hasAgreement = ! empty($contract->metadata['agreement_file'])
@@ -1659,43 +1663,43 @@ class ContractWorkflowService
         }
 
         // 5. Contract Info Validation
-        $requireTitle = (! empty($stepMeta['require_title']) && (! $action || $action->action_code === 'approve'))
+        $requireTitle = (! empty($stepMeta['require_title']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('title', $actionReqFields);
         if ($requireTitle && empty($contract->title)) {
             throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Judul Kontrak wajib diisi terlebih dahulu.');
         }
 
-        $requireVendor = (! empty($stepMeta['require_vendor']) && (! $action || $action->action_code === 'approve'))
+        $requireVendor = (! empty($stepMeta['require_vendor']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('vendor', $actionReqFields);
         if ($requireVendor && empty($contract->vendor_id)) {
             throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Pihak Kedua  wajib dipilih terlebih dahulu.');
         }
 
-        $requireCategory = (! empty($stepMeta['require_category']) && (! $action || $action->action_code === 'approve'))
+        $requireCategory = (! empty($stepMeta['require_category']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('category', $actionReqFields);
         if ($requireCategory && empty($contract->contract_type_id)) {
             throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Kategori Kontrak wajib dipilih terlebih dahulu.');
         }
 
-        $requireF2ContractNo = (! empty($stepMeta['require_f2_contract_no']) && (! $action || $action->action_code === 'approve'))
+        $requireF2ContractNo = (! empty($stepMeta['require_f2_contract_no']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('contract_no', $actionReqFields) || in_array('f2_contract_no', $actionReqFields);
         if ($requireF2ContractNo && empty($contract->contract_no)) {
             throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Nomor Kontrak wajib diisi terlebih dahulu.');
         }
 
-        $requireTaxToggle = (! empty($stepMeta['require_tax_toggle']) && (! $action || $action->action_code === 'approve'))
+        $requireTaxToggle = (! empty($stepMeta['require_tax_toggle']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('tax_toggle', $actionReqFields) || in_array('tax', $actionReqFields);
         if ($requireTaxToggle && is_null($contract->tax_required) && is_null(data_get($contract->metadata, 'tax_required'))) {
             throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Penentuan Pajak wajib ditentukan terlebih dahulu.');
         }
 
-        $requirePrice = (! empty($stepMeta['require_price']) && (! $action || $action->action_code === 'approve'))
+        $requirePrice = (! empty($stepMeta['require_price']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('price', $actionReqFields);
         if ($requirePrice && (is_null($contract->price) || $contract->price === '')) {
             throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Nilai / Harga Kontrak wajib diisi terlebih dahulu.');
         }
 
-        $requirePeriod = (! empty($stepMeta['require_period']) && (! $action || $action->action_code === 'approve'))
+        $requirePeriod = (! empty($stepMeta['require_period']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('period', $actionReqFields);
         if ($requirePeriod && ((empty($contract->contract_date) && empty($contract->start_date)) || empty($contract->end_date))) {
             throw new \Exception('Tidak dapat melanjutkan persetujuan. Field Masa Berlaku Kontrak wajib diisi lengkap terlebih dahulu.');

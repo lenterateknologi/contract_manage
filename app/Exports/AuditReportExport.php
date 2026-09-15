@@ -53,7 +53,8 @@ class AuditReportExport implements FromCollection, ShouldAutoSize, WithEvents, W
                 $customLabel = $candidate;
             }
         }
-        $label = $customLabel ?: ucwords(str_replace('_', ' ', strtolower($history->action)));
+        $actionStr = is_object($history->action) ? ($history->action->value ?? (string) $history->action) : (string) ($history->action ?? '');
+        $label = $customLabel ?: ucwords(str_replace('_', ' ', strtolower($actionStr)));
 
         return [
             $history->created_at ? $history->created_at->format('d/m/Y H:i') : '—',
