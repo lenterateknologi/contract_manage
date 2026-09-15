@@ -19,17 +19,62 @@ const ID_MONTHS_LONG = [
 ];
 const ID_DAYS = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
+const ID_MONTH_MAP: Record<string, number> = {
+    jan: 0, januari: 0, january: 0,
+    feb: 1, februari: 1, february: 1,
+    mar: 2, maret: 2, march: 2,
+    apr: 3, april: 3,
+    mei: 4, may: 4,
+    jun: 5, juni: 5, june: 5,
+    jul: 6, juli: 6, july: 6,
+    agt: 7, agu: 7, agustus: 7, aug: 7, august: 7,
+    sep: 8, september: 8,
+    okt: 9, oktober: 9, oct: 9, october: 9,
+    nov: 10, november: 10,
+    des: 11, desember: 11, dec: 11, december: 11,
+};
+
 /**
- * Parses various date inputs (string, Date, ISO timestamp, Carbon string) into a valid Date object.
+ * Parses various date inputs (string, Date, ISO timestamp, Carbon string, DD/MM/YYYY, Indonesian textual dates) into a valid Date object.
  */
 export function parseDateInput(date: string | Date | null | undefined): Date | null {
     if (!date) return null;
     if (date instanceof Date) return isNaN(date.getTime()) ? null : date;
 
     let str = String(date).trim();
-    if (!str || str === '-' || str === 'null' || str === 'undefined') return null;
+    if (!str || str === '-' || str === 'null' || str === 'undefined' || str === '—') return null;
 
-    // Fix format "YYYY-MM-DD HH:mm:ss" for cross-browser Safari/WebKit compatibility
+    // 1. Check DD/MM/YYYY or DD-MM-YYYY format: e.g. "15/09/2026 12:19", "15/09/2026", "15-09-2026 12:19:00"
+    const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:[ T](\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/);
+    if (dmyMatch) {
+        const day = parseInt(dmyMatch[1], 10);
+        const month = parseInt(dmyMatch[2], 10) - 1;
+        const year = parseInt(dmyMatch[3], 10);
+        const hour = dmyMatch[4] ? parseInt(dmyMatch[4], 10) : 0;
+        const min = dmyMatch[5] ? parseInt(dmyMatch[5], 10) : 0;
+        const sec = dmyMatch[6] ? parseInt(dmyMatch[6], 10) : 0;
+        const d = new Date(year, month, day, hour, min, sec);
+        if (!isNaN(d.getTime())) return d;
+    }
+
+    // 2. Check Textual Date format: e.g. "15 Sep 2026, 12:19", "15 September 2026 12:19", "15 Mei 2026"
+    const textMatch = str.match(/^(\d{1,2})\s+([a-zA-Z]+)\s+(\d{4})(?:,?\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?/);
+    if (textMatch) {
+        const day = parseInt(textMatch[1], 10);
+        const monthKey = textMatch[2].toLowerCase();
+        const year = parseInt(textMatch[3], 10);
+        const hour = textMatch[4] ? parseInt(textMatch[4], 10) : 0;
+        const min = textMatch[5] ? parseInt(textMatch[5], 10) : 0;
+        const sec = textMatch[6] ? parseInt(textMatch[6], 10) : 0;
+
+        if (monthKey in ID_MONTH_MAP) {
+            const month = ID_MONTH_MAP[monthKey];
+            const d = new Date(year, month, day, hour, min, sec);
+            if (!isNaN(d.getTime())) return d;
+        }
+    }
+
+    // 3. Fix format "YYYY-MM-DD HH:mm:ss" for cross-browser Safari/WebKit compatibility
     if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) {
         str = str.replace(' ', 'T');
     }

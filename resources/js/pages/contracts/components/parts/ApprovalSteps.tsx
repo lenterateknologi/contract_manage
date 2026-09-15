@@ -194,18 +194,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
     const currentStepInfo = useMemo(() => {
         if (isContractApproved) {
-            return {
-                isCompleted: true,
-                title: 'Alur Persetujuan Selesai',
-                description: 'Kontrak telah disetujui sepenuhnya oleh seluruh peninjau dan pihak terkait.',
-                statusLabel: 'Selesai & Disetujui',
-                stepNumber: totalStepsCount,
-                totalSteps: totalStepsCount,
-                approvers: [],
-                category: null,
-                role: null,
-                department: null,
-            };
+            return null;
         }
 
         if (isContractRejected) {
@@ -384,7 +373,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             )}
 
             {/* Scrollable Timeline Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 custom-scrollbar pr-1 pb-4 max-h-[50vh]">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 custom-scrollbar pr-1 pb-4">
 
             <div className="relative">
                 <Timeline>
@@ -394,7 +383,12 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                 ✓
                             </TimelineIcon>
                             <TimelineContent>
-                                <InitiatorStepCard isOnly={stepTree.length === 0 && !showProjectedManager} creator={creator} submittedAt={submittedAt} isLite={viewTab === 'lite'} />
+                                <InitiatorStepCard
+                                    isOnly={stepTree.length === 0 && !showProjectedManager}
+                                    creator={creator}
+                                    submittedAt={submittedAt || contract.submitted_at || contract.created_at || (creator as any)?.created_at}
+                                    isLite={viewTab === 'lite'}
+                                />
                                 <div className="mt-2.5 w-full border-b border-border/40" />
                             </TimelineContent>
                         </TimelineItem>

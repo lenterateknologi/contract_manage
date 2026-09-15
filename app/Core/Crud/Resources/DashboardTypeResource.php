@@ -35,7 +35,10 @@ class DashboardTypeResource extends Resource
             TextColumn::make('division_names', 'Divisi')->sortable(),
             TextColumn::make('department_names', 'Departemen')->sortable(),
             TextColumn::make('users_count', 'Total User')->alignRight(),
-            BooleanColumn::make('show_overview', 'Ringkasan'),
+            BooleanColumn::make('show_overview', 'Ringkasan (Semua)'),
+            BooleanColumn::make('show_overview_contract', 'Ringkasan Kontrak'),
+            BooleanColumn::make('show_overview_non_contract', 'Ringkasan Non Kontrak'),
+            BooleanColumn::make('show_overview_nda', 'Ringkasan NDA'),
             BooleanColumn::make('show_workload', 'Beban Kerja'),
             BooleanColumn::make('show_master_data', 'Master Data'),
         ];
@@ -71,7 +74,13 @@ class DashboardTypeResource extends Resource
             ])->icon('LayoutDashboard'),
 
             Section::make('Konfigurasi Visibility Tab', [
-                ToggleInput::make('show_overview', 'Tampilkan Tab Ringkasan (Overview)')
+                ToggleInput::make('show_overview', 'Tampilkan Tab Ringkasan (Semua / Gabungan)')
+                    ->default(false),
+                ToggleInput::make('show_overview_contract', 'Tampilkan Tab Ringkasan Kontrak')
+                    ->default(false),
+                ToggleInput::make('show_overview_non_contract', 'Tampilkan Tab Ringkasan Non Kontrak')
+                    ->default(false),
+                ToggleInput::make('show_overview_nda', 'Tampilkan Tab Ringkasan NDA')
                     ->default(false),
                 ToggleInput::make('show_workload', 'Tampilkan Tab Beban Kerja (Workload)')
                     ->default(false),

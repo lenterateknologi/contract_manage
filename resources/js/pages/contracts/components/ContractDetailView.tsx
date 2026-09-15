@@ -787,7 +787,7 @@ const ContractDetailView = ({
                                     const activeSub = ['timeline', 'audit'].includes(historySubTab) ? historySubTab : 'timeline';
 
                                     return (
-                                        <div className="flex-1 min-h-0 flex flex-col">
+                                        <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
                                             {activeSub === 'timeline' && (
                                                 <TimelineTab
                                                     contract={contract}

@@ -445,22 +445,23 @@ function ContractPage({
     const { canUpdate } = usePermissions('CONTRACTS');
     const pov = usePov();
     const [view, setView] = useState<View>(currentView);
-    const [dashboardTab, setDashboardTab] = useState<'overview' | 'workload' | 'master_data'>(() => {
+    const [dashboardTab, setDashboardTab] = useState<'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data'>(() => {
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
             const tabParam = urlParams.get('dashboard_tab') || urlParams.get('tab');
-            if (tabParam === 'overview' || tabParam === 'workload' || tabParam === 'master_data') {
-                return tabParam;
+            const validTabs = ['overview', 'overview_contract', 'overview_non_contract', 'overview_nda', 'workload', 'master_data'];
+            if (tabParam && validTabs.includes(tabParam)) {
+                return tabParam as any;
             }
             const saved = sessionStorage.getItem('dashboard_active_tab') || localStorage.getItem('dashboard_active_tab');
-            if (saved === 'overview' || saved === 'workload' || saved === 'master_data') {
-                return saved;
+            if (saved && validTabs.includes(saved)) {
+                return saved as any;
             }
         }
-        return 'overview';
+        return 'overview_contract';
     });
 
-    const handleDashboardTabChange = (newTab: 'overview' | 'workload' | 'master_data') => {
+    const handleDashboardTabChange = (newTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data') => {
         setDashboardTab(newTab);
         if (typeof window !== 'undefined') {
             sessionStorage.setItem('dashboard_active_tab', newTab);
@@ -470,7 +471,10 @@ function ContractPage({
 
     const effectiveDashboardConfig = useMemo(() => {
         const baseConfig = metrics?.dashboardConfig || {
-            show_overview: true,
+            show_overview: false,
+            show_overview_contract: true,
+            show_overview_non_contract: true,
+            show_overview_nda: true,
             show_workload: true,
             show_master_data: true,
             has_setting: true,
@@ -488,15 +492,21 @@ function ContractPage({
     useEffect(() => {
         const config = effectiveDashboardConfig;
         if (config) {
-            if (dashboardTab === 'overview' && !config.show_overview) {
-                if (config.show_workload) handleDashboardTabChange('workload');
-                else if (config.show_master_data) handleDashboardTabChange('master_data');
-            } else if (dashboardTab === 'workload' && !config.show_workload) {
-                if (config.show_overview) handleDashboardTabChange('overview');
-                else if (config.show_master_data) handleDashboardTabChange('master_data');
-            } else if (dashboardTab === 'master_data' && !config.show_master_data) {
-                if (config.show_overview) handleDashboardTabChange('overview');
+            const isCurrentTabEnabled =
+                (dashboardTab === 'overview' && config.show_overview) ||
+                (dashboardTab === 'overview_contract' && config.show_overview_contract) ||
+                (dashboardTab === 'overview_non_contract' && config.show_overview_non_contract) ||
+                (dashboardTab === 'overview_nda' && config.show_overview_nda) ||
+                (dashboardTab === 'workload' && config.show_workload) ||
+                (dashboardTab === 'master_data' && config.show_master_data);
+
+            if (!isCurrentTabEnabled) {
+                if (config.show_overview_contract) handleDashboardTabChange('overview_contract');
+                else if (config.show_overview_non_contract) handleDashboardTabChange('overview_non_contract');
+                else if (config.show_overview_nda) handleDashboardTabChange('overview_nda');
+                else if (config.show_overview) handleDashboardTabChange('overview');
                 else if (config.show_workload) handleDashboardTabChange('workload');
+                else if (config.show_master_data) handleDashboardTabChange('master_data');
             }
         }
     }, [effectiveDashboardConfig, dashboardTab]);
@@ -1295,19 +1305,46 @@ function ContractPage({
                                     actions: (() => {
                                         const config = effectiveDashboardConfig;
                                         const showOverview = config ? !!config.show_overview : false;
+                                        const showOverviewContract = config ? !!config.show_overview_contract : false;
+                                        const showOverviewNonContract = config ? !!config.show_overview_non_contract : false;
+                                        const showOverviewNda = config ? !!config.show_overview_nda : false;
                                         const showWorkload = config ? !!config.show_workload : false;
                                         const showMasterData = config ? !!config.show_master_data : false;
 
-                                        if (!showOverview && !showWorkload && !showMasterData) return null;
+                                        if (!showOverview && !showOverviewContract && !showOverviewNonContract && !showOverviewNda && !showWorkload && !showMasterData) return null;
 
                                         return (
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-0.5">
                                                 {showOverview && (
                                                     <DashboardTab
                                                         active={dashboardTab === 'overview'}
                                                         onClick={() => handleDashboardTabChange('overview')}
                                                         label="Ringkasan"
                                                         icon={LayoutDashboard}
+                                                    />
+                                                )}
+                                                {showOverviewContract && (
+                                                    <DashboardTab
+                                                        active={dashboardTab === 'overview_contract'}
+                                                        onClick={() => handleDashboardTabChange('overview_contract')}
+                                                        label="Ringkasan Kontrak"
+                                                        icon={FileText}
+                                                    />
+                                                )}
+                                                {showOverviewNonContract && (
+                                                    <DashboardTab
+                                                        active={dashboardTab === 'overview_non_contract'}
+                                                        onClick={() => handleDashboardTabChange('overview_non_contract')}
+                                                        label="Ringkasan Non Kontrak"
+                                                        icon={FileType}
+                                                    />
+                                                )}
+                                                {showOverviewNda && (
+                                                    <DashboardTab
+                                                        active={dashboardTab === 'overview_nda'}
+                                                        onClick={() => handleDashboardTabChange('overview_nda')}
+                                                        label="Ringkasan NDA"
+                                                        icon={FileCheck}
                                                     />
                                                 )}
                                                 {showWorkload && (

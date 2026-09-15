@@ -348,6 +348,9 @@ class ContractDashboardQuery
                 'has_setting' => (bool) $dashboardConfig,
                 'name' => $dashboardConfig ? $dashboardConfig->name : null,
                 'show_overview' => $dashboardConfig ? (bool) $dashboardConfig->show_overview : false,
+                'show_overview_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_contract : false,
+                'show_overview_non_contract' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_non_contract : false,
+                'show_overview_nda' => $dashboardConfig ? (bool) $dashboardConfig->show_overview_nda : false,
                 'show_workload' => $dashboardConfig ? (bool) $dashboardConfig->show_workload : false,
                 'show_master_data' => $dashboardConfig ? (bool) $dashboardConfig->show_master_data : false,
             ],
@@ -400,6 +403,10 @@ class ContractDashboardQuery
             'departmentTraffic' => $departmentTraffic,
             'dailyTrend' => $this->getDailyTrend($baseQuery),
             'overviewDailyTrend' => $this->getOverviewDailyTrend($baseQuery),
+            'overviewCategoryDistribution' => $this->getOverviewCategoryDistribution($baseQuery),
+            'contractData' => $this->getCategoryScopedOverview($baseQuery, 'contract'),
+            'nonContractData' => $this->getCategoryScopedOverview($baseQuery, 'non_contract'),
+            'ndaData' => $this->getCategoryScopedOverview($baseQuery, 'nda'),
             'masterDataCounts' => $this->getScopedMasterDataCounts($user, $hasFullAccess),
         ];
     }
@@ -891,67 +898,355 @@ class ContractDashboardQuery
             ->all();
     }
 
+    private function getOverviewCategoryDistribution(QueryBuilder $baseQuery): array
+    {
+        $allTypes = ContractType::all();
+        $rootTypeMap = [];
+        $rootTypeIds = ['Kontrak' => null, 'Non Kontrak' => null, 'NDA' => null];
+
+        foreach ($allTypes as $t) {
+            $curr = $t;
+            while ($curr && $curr->parent_id) {
+                $curr = $allTypes->firstWhere('id', $curr->parent_id);
+            }
+            $rootName = $curr ? $curr->name : 'Lainnya';
+            if (str_contains(strtolower($rootName), 'nda') || strtolower($rootName) === 'perjanjian kerahasiaan (nda)') {
+                $rootCat = 'NDA';
+            } elseif (strtolower($rootName) === 'non kontrak') {
+                $rootCat = 'Non Kontrak';
+            } elseif (strtolower($rootName) === 'kontrak') {
+                $rootCat = 'Kontrak';
+            } else {
+                $rootCat = 'Kontrak';
+            }
+            $rootTypeMap[$t->id] = $rootCat;
+        }
+
+        foreach ($allTypes->whereNull('parent_id') as $rt) {
+            $name = strtolower($rt->name);
+            if (str_contains($name, 'nda') || $name === 'perjanjian kerahasiaan (nda)') {
+                $rootTypeIds['NDA'] = $rt->id;
+            } elseif ($name === 'non kontrak') {
+                $rootTypeIds['Non Kontrak'] = $rt->id;
+            } elseif ($name === 'kontrak') {
+                $rootTypeIds['Kontrak'] = $rt->id;
+            }
+        }
+
+        $contracts = (clone $baseQuery)
+            ->whereRaw("UPPER(status) != 'ARCHIVED'")
+            ->whereNull('closed_at')
+            ->get(['contract_type_id']);
+
+        $counts = ['Kontrak' => 0, 'Non Kontrak' => 0, 'NDA' => 0];
+
+        foreach ($contracts as $c) {
+            $cat = $rootTypeMap[$c->contract_type_id] ?? 'Kontrak';
+            if (isset($counts[$cat])) {
+                $counts[$cat]++;
+            } else {
+                $counts['Kontrak']++;
+            }
+        }
+
+        return [
+            'Kontrak' => [
+                'count' => $counts['Kontrak'],
+                'type_id' => $rootTypeIds['Kontrak'] ?? null,
+            ],
+            'Non Kontrak' => [
+                'count' => $counts['Non Kontrak'],
+                'type_id' => $rootTypeIds['Non Kontrak'] ?? null,
+            ],
+            'NDA' => [
+                'count' => $counts['NDA'],
+                'type_id' => $rootTypeIds['NDA'] ?? null,
+            ],
+        ];
+    }
+
+    private function getCategoryScopedOverview(QueryBuilder $baseQuery, string $rootCodeOrName): array
+    {
+        $allTypes = ContractType::all();
+        $getDescendants = function ($parentId) use (&$getDescendants, $allTypes) {
+            $ids = [$parentId];
+            foreach ($allTypes->where('parent_id', $parentId) as $child) {
+                $ids = array_merge($ids, $getDescendants($child->id));
+            }
+
+            return array_unique(array_filter($ids));
+        };
+
+        $root = null;
+        if ($rootCodeOrName === 'contract') {
+            $root = $allTypes->first(fn ($t) => $t->code === 'A-1' || strtolower($t->name) === 'kontrak');
+        } elseif ($rootCodeOrName === 'non_contract') {
+            $root = $allTypes->first(fn ($t) => $t->code === 'A-2' || strtolower($t->name) === 'non kontrak');
+        } elseif ($rootCodeOrName === 'nda') {
+            $root = $allTypes->first(fn ($t) => $t->code === 'NDA' || str_contains(strtolower($t->name), 'nda'));
+        }
+
+        if (! $root) {
+            return [
+                'typeId' => null,
+                'typeName' => $rootCodeOrName,
+                'metrics' => ['totalContracts' => 0],
+                'summary' => ['total' => 0, 'my_total' => 0, 'archived_total' => 0, 'in_process' => 0, 'pending_for_me' => 0],
+                'categoriesList' => [$rootCodeOrName],
+                'distribution' => [],
+                'dailyTrend' => [],
+                'pendingApprovalsList' => [],
+                'upcomingRenewals' => [],
+            ];
+        }
+
+        $typeIds = $getDescendants($root->id);
+        $directChildren = $allTypes->where('parent_id', $root->id)->values();
+        $subTypeCandidates = $directChildren;
+        if ($directChildren->count() === 1) {
+            $subChildren = $allTypes->where('parent_id', $directChildren->first()->id)->values();
+            if ($subChildren->isNotEmpty()) {
+                $subTypeCandidates = $subChildren;
+            }
+        }
+
+        $scopedQuery = (clone $baseQuery)->whereIn('contract_type_id', $typeIds);
+
+        // Metrics for this category
+        $totalContracts = (clone $scopedQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->count();
+        $myTotal = DB::table('t_contracts')
+            ->where('created_by', Auth::id())
+            ->whereIn('contract_type_id', $typeIds)
+            ->whereNull('deleted_at')
+            ->where('status', '!=', 'draft')
+            ->count();
+        $archivedTotal = (clone $scopedQuery)
+            ->where(fn (QueryBuilder $q) => $q->where('status', 'archived')->orWhereNotNull('closed_at'))
+            ->count();
+        $inProcess = (clone $scopedQuery)
+            ->whereIn('status', array_map(fn ($s) => $s->value, ContractStatusEnum::inProcess()))
+            ->whereNull('closed_at')
+            ->count();
+        $pendingForMe = DB::table('t_approvals')
+            ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
+            ->where('t_approvals.user_id', Auth::id())
+            ->where('t_approvals.status', 'pending')
+            ->whereIn('t_contracts.contract_type_id', $typeIds)
+            ->whereNull('t_contracts.deleted_at')
+            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+            ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
+            ->distinct('t_contracts.id')
+            ->count('t_contracts.id');
+
+        // Subtype mapping: map descendant type to its direct child of root (or root itself)
+        $subTypeCounts = [];
+        $childMap = [];
+        $childTypeIds = [];
+
+        if ($subTypeCandidates->isNotEmpty()) {
+            foreach ($subTypeCandidates as $sub) {
+                $subTypeCounts[$sub->name] = 0;
+                $childTypeIds[$sub->name] = $sub->id;
+                $desc = $getDescendants($sub->id);
+                foreach ($desc as $did) {
+                    $childMap[$did] = $sub->name;
+                }
+            }
+        } else {
+            $subTypeCounts[$root->name] = 0;
+            $childTypeIds[$root->name] = $root->id;
+            $childMap[$root->id] = $root->name;
+        }
+
+        // Sub-type distribution (Donut chart & breakdown for this category)
+        $counts = (clone $scopedQuery)
+            ->whereRaw("UPPER(status) != 'ARCHIVED'")
+            ->whereNull('closed_at')
+            ->select('contract_type_id', DB::raw('count(*) as count'))
+            ->groupBy('contract_type_id')
+            ->get();
+
+        foreach ($counts as $row) {
+            $subName = $childMap[$row->contract_type_id] ?? null;
+            if ($subName && isset($subTypeCounts[$subName])) {
+                $subTypeCounts[$subName] += (int) $row->count;
+            } elseif ($subTypeCandidates->isNotEmpty()) {
+                $subTypeCounts['Lainnya'] = ($subTypeCounts['Lainnya'] ?? 0) + (int) $row->count;
+            } else {
+                $subTypeCounts[$root->name] = ($subTypeCounts[$root->name] ?? 0) + (int) $row->count;
+            }
+        }
+
+        $distribution = [];
+        foreach ($subTypeCounts as $name => $count) {
+            $distribution[] = [
+                'name' => $name,
+                'count' => $count,
+                'type_id' => $childTypeIds[$name] ?? $root->id,
+            ];
+        }
+        usort($distribution, function ($a, $b) {
+            if ($b['count'] === $a['count']) {
+                return strcmp($a['name'], $b['name']);
+            }
+
+            return $b['count'] <=> $a['count'];
+        });
+
+        // Daily trend for this category: include all sub-types even if 0
+        $allSubTypes = array_keys($subTypeCounts);
+
+        $startDate = now()->subMonth()->startOfMonth();
+        $endDate = now();
+
+        $contractsInRange = (clone $scopedQuery)
+            ->whereRaw("UPPER(status) != 'ARCHIVED'")
+            ->whereNull('closed_at')
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get(['created_at', 'contract_type_id']);
+
+        $byDayAndSub = [];
+        foreach ($contractsInRange as $c) {
+            $day = Carbon::parse($c->created_at)->toDateString();
+            $subName = $childMap[$c->contract_type_id] ?? (in_array('Lainnya', $allSubTypes) ? 'Lainnya' : $root->name);
+            if (! isset($byDayAndSub[$day][$subName])) {
+                $byDayAndSub[$day][$subName] = 0;
+            }
+            $byDayAndSub[$day][$subName]++;
+        }
+
+        $trend = [];
+        $current = $startDate->copy();
+        while ($current->lte($endDate)) {
+            $dateKey = $current->toDateString();
+            $row = [
+                'date' => $current->format('d M'),
+                'raw_date' => $dateKey,
+                'full_date' => $current->translatedFormat('d M Y'),
+                'month_key' => $current->format('Y-m'),
+            ];
+            foreach ($allSubTypes as $st) {
+                $row[$st] = (int) ($byDayAndSub[$dateKey][$st] ?? 0);
+            }
+            $trend[] = $row;
+            $current->addDay();
+        }
+
+        // Pending Approvals List for this category
+        $pendingApprovalsList = $this->getPendingApprovalsListForCategory($typeIds);
+
+        // Upcoming Renewals for this category
+        $upcomingRenewals = $this->getUpcomingRenewalsForCategory($scopedQuery);
+
+        return [
+            'typeId' => $root->id,
+            'typeName' => $root->name,
+            'metrics' => [
+                'totalContracts' => $totalContracts,
+            ],
+            'summary' => [
+                'total' => $totalContracts,
+                'my_total' => $myTotal,
+                'archived_total' => $archivedTotal,
+                'in_process' => $inProcess,
+                'pending_for_me' => $pendingForMe,
+            ],
+            'categoriesList' => $allSubTypes,
+            'distribution' => $distribution,
+            'dailyTrend' => $trend,
+            'pendingApprovalsList' => $pendingApprovalsList,
+            'upcomingRenewals' => $upcomingRenewals,
+        ];
+    }
+
+    private function getPendingApprovalsListForCategory(array $typeIds): array
+    {
+        return Approval::where('user_id', Auth::id())
+            ->where('status', 'pending')
+            ->whereHas('contract', function ($q) use ($typeIds) {
+                $q->whereNull('deleted_at')
+                    ->whereRaw("UPPER(status) != 'DRAFT'")
+                    ->whereIn('contract_type_id', $typeIds)
+                    ->whereColumn('workflow_step_id', 't_approvals.workflow_step_id');
+            })
+            ->with(['contract.creator', 'contract.contractType'])
+            ->orderByDesc('created_at')
+            ->limit(5)
+            ->get()
+            ->map(fn ($app) => [
+                'id' => $app->id,
+                'contract_id' => $app->contract_id,
+                'form_no' => $app->contract->form_no,
+                'contract_no' => $app->contract->contract_no,
+                'title' => $app->contract->title,
+                'creator' => $app->contract->creator?->name,
+                'type' => $app->contract->contractType?->name,
+                'requested_at' => $app->created_at,
+            ])
+            ->values()
+            ->all();
+    }
+
+    private function getUpcomingRenewalsForCategory(QueryBuilder $scopedQuery): array
+    {
+        return (clone $scopedQuery)
+            ->where('status', ContractStatusEnum::Approved->value)
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '>=', now()->toDateString())
+            ->whereDate('end_date', '<=', now()->addDays(30)->toDateString())
+            ->orderBy('end_date', 'asc')
+            ->limit(5)
+            ->get(['id', 'form_no', 'contract_no', 'title', 'end_date', 'vendor_name', 'creator_name'])
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'form_no' => $item->form_no,
+                'contract_no' => $item->contract_no,
+                'title' => $item->title,
+                'end_date' => $item->end_date,
+                'vendor_name' => $item->vendor_name,
+                'creator' => $item->creator_name,
+            ])
+            ->values()
+            ->all();
+    }
+
     private function getOverviewDailyTrend(QueryBuilder $baseQuery): array
     {
         $startDate = now()->subMonth()->startOfMonth();
         $endDate = now();
-        $userId = Auth::id();
 
-        // 1. Semua Dokumen (non-draft, non-archived) — grouped by created_at date
-        $allDocsByDay = (clone $baseQuery)
+        $allTypes = ContractType::all();
+        $rootTypeMap = [];
+        foreach ($allTypes as $t) {
+            $curr = $t;
+            while ($curr && $curr->parent_id) {
+                $curr = $allTypes->firstWhere('id', $curr->parent_id);
+            }
+            $rootName = $curr ? $curr->name : 'Lainnya';
+            if (str_contains(strtolower($rootName), 'nda') || strtolower($rootName) === 'perjanjian kerahasiaan (nda)') {
+                $rootCat = 'NDA';
+            } elseif (strtolower($rootName) === 'non kontrak') {
+                $rootCat = 'Non Kontrak';
+            } elseif (strtolower($rootName) === 'kontrak') {
+                $rootCat = 'Kontrak';
+            } else {
+                $rootCat = 'Kontrak';
+            }
+            $rootTypeMap[$t->id] = $rootCat;
+        }
+
+        $contracts = (clone $baseQuery)
             ->whereRaw("UPPER(status) != 'ARCHIVED'")
             ->whereNull('closed_at')
-            ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
-            ->groupBy('day')
-            ->pluck('total', 'day')
-            ->all();
-
-        // 2. Menunggu Persetujuan Saya — approvals pending for me, grouped by created_at date
-        $pendingByDay = DB::table('t_approvals')
-            ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
-            ->where('t_approvals.user_id', $userId)
-            ->where('t_approvals.status', 'pending')
-            ->whereNull('t_contracts.deleted_at')
-            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
-            ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
-            ->whereBetween('t_approvals.created_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(t_approvals.created_at) as day'), DB::raw('count(DISTINCT t_approvals.contract_id) as total'))
-            ->groupBy('day')
-            ->pluck('total', 'day')
-            ->all();
-
-        // 3. Dokumen Saya (excluding draft) — grouped by created_at date
-        $myDocsByDay = DB::table('t_contracts')
-            ->where('created_by', $userId)
-            ->whereNull('deleted_at')
-            ->where('status', '!=', 'draft')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
-            ->groupBy('day')
-            ->pluck('total', 'day')
-            ->all();
+            ->get(['created_at', 'contract_type_id']);
 
-        // 4. Dokumen Arsip — contracts with status = archived or closed_at is set, grouped by closed_at or updated_at date
-        $archivedByDay = (clone $baseQuery)
-            ->where(fn (QueryBuilder $q) => $q->where('status', 'archived')->orWhereNotNull('closed_at'))
-            ->where(function (QueryBuilder $q) use ($startDate, $endDate) {
-                $q->whereBetween('closed_at', [$startDate, $endDate])
-                    ->orWhere(fn (QueryBuilder $sub) => $sub->whereNull('closed_at')->whereBetween('updated_at', [$startDate, $endDate]));
-            })
-            ->select(DB::raw('DATE(COALESCE(closed_at, updated_at)) as day'), DB::raw('count(*) as total'))
-            ->groupBy('day')
-            ->pluck('total', 'day')
-            ->all();
-
-        // 5. On Progress — contracts in process statuses, grouped by created_at date
-        $inProgressByDay = (clone $baseQuery)
-            ->whereIn('status', ['in_review', 'revision', 'pending', 'locked'])
-            ->whereNull('closed_at')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->select(DB::raw('DATE(created_at) as day'), DB::raw('count(*) as total'))
-            ->groupBy('day')
-            ->pluck('total', 'day')
-            ->all();
+        $byDayAndCategory = [];
+        foreach ($contracts as $c) {
+            $day = Carbon::parse($c->created_at)->toDateString();
+            $cat = $rootTypeMap[$c->contract_type_id] ?? 'Kontrak';
+            $byDayAndCategory[$day][$cat] = ($byDayAndCategory[$day][$cat] ?? 0) + 1;
+        }
 
         $trend = [];
         $current = $startDate->copy();
@@ -963,11 +1258,9 @@ class ContractDashboardQuery
                 'raw_date' => $dateKey,
                 'full_date' => $current->translatedFormat('d M Y'),
                 'month_key' => $current->format('Y-m'),
-                'Semua Dokumen' => (int) ($allDocsByDay[$dateKey] ?? 0),
-                'Menunggu Persetujuan Saya' => (int) ($pendingByDay[$dateKey] ?? 0),
-                'Dokumen Saya' => (int) ($myDocsByDay[$dateKey] ?? 0),
-                'Dokumen Arsip' => (int) ($archivedByDay[$dateKey] ?? 0),
-                'On Progress' => (int) ($inProgressByDay[$dateKey] ?? 0),
+                'Kontrak' => (int) ($byDayAndCategory[$dateKey]['Kontrak'] ?? 0),
+                'Non Kontrak' => (int) ($byDayAndCategory[$dateKey]['Non Kontrak'] ?? 0),
+                'NDA' => (int) ($byDayAndCategory[$dateKey]['NDA'] ?? 0),
             ];
 
             $current->addDay();

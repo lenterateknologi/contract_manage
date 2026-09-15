@@ -302,7 +302,7 @@ class ApprovalTimelineFormatter
                             ? Storage::disk('local')->size($a->attachment_path)
                             : null,
                         'has_attachment' => (bool) $a->attachment_path,
-                        'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
+                        'decided_at' => $a->decided_at?->toIso8601String(),
                         'created_at' => $a->created_at?->toIso8601String(),
                         'is_active' => $a->is_active,
                         'step_type' => 'APPROVAL',
@@ -388,9 +388,9 @@ class ApprovalTimelineFormatter
                                         ? Storage::disk('local')->size($a->attachment_path)
                                         : null,
                                     'has_attachment' => (bool) $a->attachment_path,
-                                    'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
-                                    'created_at' => $a->created_at?->format('d/m/Y H:i'),
-                                    'step_entry_at' => $a->created_at?->format('d/m/Y H:i'),
+                                    'decided_at' => $a->decided_at?->toIso8601String(),
+                                    'created_at' => $a->created_at?->toIso8601String(),
+                                    'step_entry_at' => $a->created_at?->toIso8601String(),
                                     'is_active' => $a->is_active,
                                     'step_type' => 'APPROVAL',
                                     'step_name' => $stepLabel,
@@ -547,9 +547,9 @@ class ApprovalTimelineFormatter
                                         ? Storage::disk('local')->size($a->attachment_path)
                                         : null,
                                     'has_attachment' => (bool) $a->attachment_path,
-                                    'decided_at' => $a->decided_at?->format('d/m/Y H:i'),
-                                    'created_at' => $a->created_at?->format('d/m/Y H:i'),
-                                    'step_entry_at' => $a->created_at?->format('d/m/Y H:i'),
+                                    'decided_at' => $a->decided_at?->toIso8601String(),
+                                    'created_at' => $a->created_at?->toIso8601String(),
+                                    'step_entry_at' => $a->created_at?->toIso8601String(),
                                     'is_active' => $a->is_active,
                                     'step_type' => 'APPROVAL',
                                     'step_name' => $stepLabel,
@@ -557,105 +557,105 @@ class ApprovalTimelineFormatter
                                     'step_category' => $step->step_category,
                                     'sort_order' => $globalOrder++,
                                     'workflow_step' => [
-                                        'id' => $step->id,
-                                        'step' => $step->step,
-                                        'label' => $stepLabel,
-                                        'description' => $step->description,
-                                        'workflow_id' => $step->workflow_id,
-                                        'workflow' => [
-                                            'id' => $workflow->id,
-                                            'name' => $workflow->name,
-                                        ],
-                                        'meta' => $step->meta ?? [],
-                                        'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
-                                            'id' => $act->id,
-                                            'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
-                                            'alias' => $act->alias,
-                                            'target_status' => $act->target_status,
-                                            'required_fields' => $act->required_fields ?? [],
-                                            'autofilled_fields' => $act->autofilled_fields ?? [],
-                                            'is_visible' => (bool) ($act->is_visible ?? true),
-                                        ])->toArray() : [],
-                                    ],
-                                    'approver' => UserFormatter::format($a->approver),
-                                ];
-                            }
-                        }
-                    } else {
-                        $authoritiesPayload = [];
-                        $authorities = collect();
-                        if ($step->relationLoaded('approverAuthorities') || $step->approverAuthorities()->exists()) {
-                            $authorities = $step->relationLoaded('approverAuthorities')
-                                ? $step->approverAuthorities
-                                : $step->approverAuthorities()->with(['role', 'department', 'division', 'companyGroup', 'company', 'region'])->get();
+                                         'id' => $step->id,
+                                         'step' => $step->step,
+                                         'label' => $stepLabel,
+                                         'description' => $step->description,
+                                         'workflow_id' => $step->workflow_id,
+                                         'workflow' => [
+                                             'id' => $workflow->id,
+                                             'name' => $workflow->name,
+                                         ],
+                                         'meta' => $step->meta ?? [],
+                                         'action_configs' => $step->relationLoaded('actions') ? $step->actions->map(fn ($act) => [
+                                             'id' => $act->id,
+                                             'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,
+                                             'alias' => $act->alias,
+                                             'target_status' => $act->target_status,
+                                             'required_fields' => $act->required_fields ?? [],
+                                             'autofilled_fields' => $act->autofilled_fields ?? [],
+                                             'is_visible' => (bool) ($act->is_visible ?? true),
+                                         ])->toArray() : [],
+                                     ],
+                                     'approver' => UserFormatter::format($a->approver),
+                                 ];
+                             }
+                         }
+                     } else {
+                         $authoritiesPayload = [];
+                         $authorities = collect();
+                         if ($step->relationLoaded('approverAuthorities') || $step->approverAuthorities()->exists()) {
+                             $authorities = $step->relationLoaded('approverAuthorities')
+                                 ? $step->approverAuthorities
+                                 : $step->approverAuthorities()->with(['role', 'department', 'division', 'companyGroup', 'company', 'region'])->get();
 
-                            $authoritiesPayload = $authorities->map(fn ($a) => [
-                                'id' => $a->id,
-                                'authority_type' => $a->authority_type,
-                                'role_name' => $a->relationLoaded('role') ? $a->role?->name : null,
-                                'department_name' => $a->relationLoaded('department') ? $a->department?->name : null,
-                                'division_name' => $a->relationLoaded('division') ? $a->division?->name : null,
-                                'company_group_name' => $a->relationLoaded('companyGroup') ? $a->companyGroup?->name : null,
-                                'company_name' => $a->relationLoaded('company') ? $a->company?->name : null,
-                                'region_name' => $a->relationLoaded('region') ? $a->region?->name : null,
-                                'role_use_initiator' => (bool) $a->role_use_initiator,
-                                'department_use_initiator' => (bool) $a->department_use_initiator,
-                                'division_use_initiator' => (bool) $a->division_use_initiator,
-                                'company_group_use_initiator' => (bool) $a->company_group_use_initiator,
-                                'company_use_initiator' => (bool) $a->company_use_initiator,
-                                'region_use_initiator' => (bool) $a->region_use_initiator,
-                            ])->values()->toArray();
-                        }
+                             $authoritiesPayload = $authorities->map(fn ($a) => [
+                                 'id' => $a->id,
+                                 'authority_type' => $a->authority_type,
+                                 'role_name' => $a->relationLoaded('role') ? $a->role?->name : null,
+                                 'department_name' => $a->relationLoaded('department') ? $a->department?->name : null,
+                                 'division_name' => $a->relationLoaded('division') ? $a->division?->name : null,
+                                 'company_group_name' => $a->relationLoaded('companyGroup') ? $a->companyGroup?->name : null,
+                                 'company_name' => $a->relationLoaded('company') ? $a->company?->name : null,
+                                 'region_name' => $a->relationLoaded('region') ? $a->region?->name : null,
+                                 'role_use_initiator' => (bool) $a->role_use_initiator,
+                                 'department_use_initiator' => (bool) $a->department_use_initiator,
+                                 'division_use_initiator' => (bool) $a->division_use_initiator,
+                                 'company_group_use_initiator' => (bool) $a->company_group_use_initiator,
+                                 'company_use_initiator' => (bool) $a->company_use_initiator,
+                                 'region_use_initiator' => (bool) $a->region_use_initiator,
+                             ])->values()->toArray();
+                         }
 
-                        $isAdhocStep = $authorities->contains(fn ($a) => in_array($a->authority_type, ['adhoc_approvers', 'adhoc'])) ||
-                            (! empty($step->approver_config['custom']) && (in_array('adhoc_approvers', (array) $step->approver_config['custom']) || in_array('adhoc', (array) $step->approver_config['custom'])));
+                         $isAdhocStep = $authorities->contains(fn ($a) => in_array($a->authority_type, ['adhoc_approvers', 'adhoc'])) ||
+                             (! empty($step->approver_config['custom']) && (in_array('adhoc_approvers', (array) $step->approver_config['custom']) || in_array('adhoc', (array) $step->approver_config['custom'])));
 
-                        if ($adhocApprovals->isNotEmpty() && ($isAdhocStep || empty($targetApprovers))) {
-                            continue;
-                        }
+                         if ($adhocApprovals->isNotEmpty() && ($isAdhocStep || empty($targetApprovers))) {
+                             continue;
+                         }
 
-                        if (! $isCurrentChunk && ! ($chunk['is_future_origin'] ?? false)) {
-                            continue;
-                        }
+                         if (! $isCurrentChunk && ! ($chunk['is_future_origin'] ?? false)) {
+                             continue;
+                         }
 
-                        $roleLabel = is_array($step->role) ? implode(', ', array_filter($step->role)) : $step->role;
-                        $stepTargetApprovers = $targetApprovers;
-                        $approverName = $roleLabel;
+                         $roleLabel = is_array($step->role) ? implode(', ', array_filter($step->role)) : $step->role;
+                         $stepTargetApprovers = $targetApprovers;
+                         $approverName = $roleLabel;
 
-                        if ($step->approver_type === 'assigned_pic') {
-                            $picName = $c->assignedPic?->name ?? ($c->assigned_pic_id ? \App\Models\User::find($c->assigned_pic_id)?->name : null);
-                            $stepTargetApprovers = $picName ?: 'PIC (Belum Ditugaskan)';
-                            $approverName = $picName ?: 'PIC (Belum Ditugaskan)';
-                        } elseif ($isAdhocStep) {
-                            $stepTargetApprovers = 'Persetujuan Tambahan (Ditentukan saat pengajuan)';
-                            $approverName = 'Persetujuan Tambahan';
-                            $roleLabel = 'Persetujuan Tambahan';
-                        }
+                         if ($step->approver_type === 'assigned_pic') {
+                             $picName = $c->assignedPic?->name ?? ($c->assigned_pic_id ? \App\Models\User::find($c->assigned_pic_id)?->name : null);
+                             $stepTargetApprovers = $picName ?: 'PIC (Belum Ditugaskan)';
+                             $approverName = $picName ?: 'PIC (Belum Ditugaskan)';
+                         } elseif ($isAdhocStep) {
+                             $stepTargetApprovers = 'Persetujuan Tambahan (Ditentukan saat pengajuan)';
+                             $approverName = 'Persetujuan Tambahan';
+                             $roleLabel = 'Persetujuan Tambahan';
+                         }
 
-                        $mainStatus = 'SELANJUTNYA';
-                        if ($isCurrentStep) {
-                            $hasActiveAdhoc = $adhocApprovals->whereIn('status', ['pending', 'waiting'])->isNotEmpty();
-                            $mainStatus = $hasActiveAdhoc ? 'waiting' : 'pending';
-                        } elseif ($step->step < $currentStepNumber) {
-                            $mainStatus = 'SKIPPED';
-                        }
+                         $mainStatus = 'SELANJUTNYA';
+                         if ($isCurrentStep) {
+                             $hasActiveAdhoc = $adhocApprovals->whereIn('status', ['pending', 'waiting'])->isNotEmpty();
+                             $mainStatus = $hasActiveAdhoc ? 'waiting' : 'pending';
+                         } elseif ($step->step < $currentStepNumber) {
+                             $mainStatus = 'SKIPPED';
+                         }
 
-                        $timeline[] = [
-                            'id' => 'step-'.$step->id,
-                            'workflow_step_id' => $step->id,
-                            'user_id' => null,
-                            'approver_name' => $approverName,
-                            'role' => $roleLabel,
-                            'department_name' => $deptName,
-                            'target_approvers' => $stepTargetApprovers,
-                            'target_emails' => $targetEmails,
-                            'sequence' => $step->step,
-                            'status' => $mainStatus,
-                            'note' => null,
-                            'approved_at' => null,
-                            'decided_at' => null,
-                            'created_at' => $isCurrentStep ? $c->updated_at?->format('d/m/Y H:i') : null,
-                            'step_entry_at' => $isCurrentStep ? $c->updated_at?->format('d/m/Y H:i') : null,
+                         $timeline[] = [
+                             'id' => 'step-'.$step->id,
+                             'workflow_step_id' => $step->id,
+                             'user_id' => null,
+                             'approver_name' => $approverName,
+                             'role' => $roleLabel,
+                             'department_name' => $deptName,
+                             'target_approvers' => $stepTargetApprovers,
+                             'target_emails' => $targetEmails,
+                             'sequence' => $step->step,
+                             'status' => $mainStatus,
+                             'note' => null,
+                             'approved_at' => null,
+                             'decided_at' => null,
+                             'created_at' => $isCurrentStep ? $c->updated_at?->toIso8601String() : null,
+                             'step_entry_at' => $isCurrentStep ? $c->updated_at?->toIso8601String() : null,
                             'approver' => null,
                             'is_active' => $isCurrentStep,
                             'step_type' => 'APPROVAL',

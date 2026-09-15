@@ -1,4 +1,4 @@
-import { Archive, ArrowUpRight, Calendar, CheckCircle2, ChevronRight, Clock, FilePlus, FileText, Layers, RotateCcw, Sparkles, Timer, User } from 'lucide-react';
+import { Archive, ArrowUpRight, Calendar, CheckCircle2, ChevronRight, Clock, FilePlus, FileText, Layers, RotateCcw, Shield, Sparkles, Timer, User } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/cards/Card';
@@ -11,9 +11,10 @@ interface OverviewTabProps {
     onNavigate: (view: string, params?: any) => void;
     meUser?: any;
     onCreateContract?: () => void;
+    scope?: 'all' | 'contract' | 'non_contract' | 'nda';
 }
 
-export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: OverviewTabProps) {
+export function OverviewTab({ data, onNavigate, meUser, onCreateContract, scope = 'all' }: OverviewTabProps) {
     const [isMounted, setIsMounted] = useState(false);
     const [datePreset, setDatePreset] = useState<'7d' | '14d' | 'this_month' | 'last_month' | 'custom'>('7d');
     const [startDate, setStartDate] = useState<string>('');
@@ -23,20 +24,56 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
         setIsMounted(true);
     }, []);
 
-    const m = data?.summary || {
-        total: 0,
-        in_process: 0,
-        completed: 0,
-        rejected: 0,
-        approved: 0,
-        my_total: 0,
-        archived_total: 0,
-        pending_for_me: 0,
-    };
+    const parentTab = scope === 'contract' ? 'kontrak' : scope === 'non_contract' ? 'non_kontrak' : scope === 'nda' ? 'nda' : undefined;
+    const scopeLabel = scope === 'contract' ? 'Kontrak' : scope === 'non_contract' ? 'Non Kontrak' : scope === 'nda' ? 'NDA' : 'Dokumen';
+    const scopeSubtitle = scope === 'contract'
+        ? 'Ringkasan operasional dan prioritas tugas dokumen Kontrak'
+        : scope === 'non_contract'
+            ? 'Ringkasan operasional dan prioritas tugas dokumen Non Kontrak'
+            : scope === 'nda'
+                ? 'Ringkasan operasional dan prioritas tugas dokumen NDA'
+                : 'Ringkasan operasional dan prioritas tugas dokumen Anda';
 
-    const overviewDailyTrend = data?.overviewDailyTrend || [];
-    const pendingApprovalsList = data?.pendingApprovalsList || [];
-    const upcomingRenewals = data?.upcomingRenewals || [];
+    const m = useMemo(() => {
+        const raw = scope === 'contract'
+            ? data?.contractData?.summary
+            : scope === 'non_contract'
+                ? data?.nonContractData?.summary
+                : scope === 'nda'
+                    ? data?.ndaData?.summary
+                    : data?.summary;
+        return raw || {
+            total: 0,
+            in_process: 0,
+            completed: 0,
+            rejected: 0,
+            approved: 0,
+            my_total: 0,
+            archived_total: 0,
+            pending_for_me: 0,
+        };
+    }, [data, scope]);
+
+    const overviewDailyTrend = useMemo(() => {
+        if (scope === 'contract' && data?.contractData?.dailyTrend) return data.contractData.dailyTrend;
+        if (scope === 'non_contract' && data?.nonContractData?.dailyTrend) return data.nonContractData.dailyTrend;
+        if (scope === 'nda' && data?.ndaData?.dailyTrend) return data.ndaData.dailyTrend;
+        return data?.overviewDailyTrend || [];
+    }, [data, scope]);
+
+    const pendingApprovalsList = useMemo(() => {
+        if (scope === 'contract' && data?.contractData?.pendingApprovalsList) return data.contractData.pendingApprovalsList;
+        if (scope === 'non_contract' && data?.nonContractData?.pendingApprovalsList) return data.nonContractData.pendingApprovalsList;
+        if (scope === 'nda' && data?.ndaData?.pendingApprovalsList) return data.ndaData.pendingApprovalsList;
+        return data?.pendingApprovalsList || [];
+    }, [data, scope]);
+
+    const upcomingRenewals = useMemo(() => {
+        if (scope === 'contract' && data?.contractData?.upcomingRenewals) return data.contractData.upcomingRenewals;
+        if (scope === 'non_contract' && data?.nonContractData?.upcomingRenewals) return data.nonContractData.upcomingRenewals;
+        if (scope === 'nda' && data?.ndaData?.upcomingRenewals) return data.ndaData.upcomingRenewals;
+        return data?.upcomingRenewals || [];
+    }, [data, scope]);
 
     const filteredDailyTrend = useMemo(() => {
         if (!overviewDailyTrend || overviewDailyTrend.length === 0) return [];
@@ -82,16 +119,49 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
         return overviewDailyTrend;
     }, [overviewDailyTrend, datePreset, startDate, endDate]);
 
-    const categoriesList = ['Semua Dokumen', 'Menunggu Persetujuan Saya', 'Dokumen Saya', 'Dokumen Arsip', 'On Progress'];
-    const CHART_COLORS = ['#06b6d4', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'];
+    const CHART_COLORS = [
+        '#0284c7', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4',
+        '#6366f1', '#14b8a6', '#f97316', '#84cc16', '#a855f7', '#3b82f6',
+        '#ef4444', '#0d9488', '#eab308', '#64748b'
+    ];
 
-    const categoryValues: Record<string, number> = {
-        'Semua Dokumen':             data?.metrics?.totalContracts ?? 0,
-        'Menunggu Persetujuan Saya': m.pending_for_me             ?? 0,
-        'Dokumen Saya':              m.my_total                   ?? 0,
-        'Dokumen Arsip':             m.archived_total             ?? 0,
-        'On Progress':               m.in_process                 ?? 0,
-    };
+    const categoriesList = useMemo(() => {
+        if (scope === 'contract' && data?.contractData?.categoriesList) return data.contractData.categoriesList;
+        if (scope === 'non_contract' && data?.nonContractData?.categoriesList) return data.nonContractData.categoriesList;
+        if (scope === 'nda' && data?.ndaData?.categoriesList) return data.ndaData.categoriesList;
+        return ['Kontrak', 'Non Kontrak', 'NDA'];
+    }, [data, scope]);
+
+    const distributionItems = useMemo(() => {
+        if (scope === 'contract' && data?.contractData?.distribution) {
+            return data.contractData.distribution;
+        }
+        if (scope === 'non_contract' && data?.nonContractData?.distribution) {
+            return data.nonContractData.distribution;
+        }
+        if (scope === 'nda' && data?.ndaData?.distribution) {
+            return data.ndaData.distribution;
+        }
+
+        const dist = data?.overviewCategoryDistribution || {};
+        return [
+            { name: 'Kontrak', count: dist['Kontrak']?.count ?? 0, type_id: dist['Kontrak']?.type_id ?? null },
+            { name: 'Non Kontrak', count: dist['Non Kontrak']?.count ?? 0, type_id: dist['Non Kontrak']?.type_id ?? null },
+            { name: 'NDA', count: dist['NDA']?.count ?? 0, type_id: dist['NDA']?.type_id ?? null },
+        ];
+    }, [data, scope]);
+
+    const categoryValues = useMemo(() => {
+        const map: Record<string, number> = {};
+        distributionItems.forEach((item: any) => {
+            map[item.name] = item.count;
+        });
+        return map;
+    }, [distributionItems]);
+
+    const totalCategoryCount = useMemo(() => {
+        return distributionItems.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
+    }, [distributionItems]);
 
     const handleResetDateFilter = () => {
         setDatePreset('7d');
@@ -149,7 +219,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                             </span>
                         </div>
                         <p className="text-[11px] text-text-soft">
-                            {todayFormatted} • Ringkasan operasional dan prioritas tugas dokumen Anda
+                            {todayFormatted} • {scopeSubtitle}
                         </p>
                         <div className="pt-0.5">
                             {pendingCount > 0 ? (
@@ -192,7 +262,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                         )}
                         <button
                             type="button"
-                            onClick={() => onNavigate('pending')}
+                            onClick={() => onNavigate('pending', parentTab ? { parent_tab: parentTab } : {})}
                             className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-surface-border bg-surface-base px-3.5 py-2 text-xs font-bold text-text-main shadow-none transition-all hover:bg-surface-muted active:scale-95"
                         >
                             <span>Daftar Persetujuan</span>
@@ -205,14 +275,14 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {[
                     {
-                        label: 'Semua Dokumen',
-                        value: data?.metrics?.totalContracts ?? 0,
+                        label: `Semua ${scopeLabel}`,
+                        value: m.total ?? data?.metrics?.totalContracts ?? 0,
                         icon: Layers,
                         color: 'bg-cyan-600 text-white border-transparent',
                         badge: 'Aktif',
                         badgeColor: 'bg-cyan-600 text-white border-transparent',
-                        description: 'Total seluruh dokumen aktif',
-                        nav: () => onNavigate('contracts'),
+                        description: `Total seluruh ${scopeLabel.toLowerCase()} aktif`,
+                        nav: () => onNavigate('contracts', parentTab ? { parent_tab: parentTab } : {}),
                     },
                     {
                         label: 'Menunggu Persetujuan',
@@ -223,28 +293,28 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                         badgeColor: pendingCount > 0
                             ? 'bg-amber-600 text-white border-transparent'
                             : 'bg-slate-700 text-white border-transparent',
-                        description: 'Kontrak butuh review Anda',
-                        nav: () => onNavigate('pending'),
+                        description: `${scopeLabel} butuh review Anda`,
+                        nav: () => onNavigate('pending', parentTab ? { parent_tab: parentTab } : {}),
                     },
                     {
-                        label: 'Dokumen Saya',
+                        label: `${scopeLabel} Saya`,
                         value: m.my_total ?? 0,
                         icon: FileText,
                         color: 'bg-blue-600 text-white border-transparent',
                         badge: 'Dibuat Anda',
                         badgeColor: 'bg-blue-600 text-white border-transparent',
-                        description: 'Kontrak yang Anda ajukan',
-                        nav: () => onNavigate('mine'),
+                        description: `${scopeLabel} yang Anda ajukan`,
+                        nav: () => onNavigate('mine', parentTab ? { parent_tab: parentTab } : {}),
                     },
                     {
-                        label: 'Dokumen Arsip',
+                        label: `${scopeLabel} Arsip`,
                         value: m.archived_total ?? 0,
                         icon: Archive,
                         color: 'bg-emerald-600 text-white border-transparent',
                         badge: 'Tersimpan',
                         badgeColor: 'bg-emerald-600 text-white border-transparent',
-                        description: 'Kontrak selesai & diarsipkan',
-                        nav: () => onNavigate('archived'),
+                        description: `${scopeLabel} selesai & diarsipkan`,
+                        nav: () => onNavigate('archived', parentTab ? { parent_tab: parentTab } : {}),
                     },
                     {
                         label: 'On Progress',
@@ -254,7 +324,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                         badge: 'Dalam Proses',
                         badgeColor: 'bg-purple-600 text-white border-transparent',
                         description: 'Sedang tahap review / revisi',
-                        nav: () => onNavigate('in_progress'),
+                        nav: () => onNavigate('in_progress', parentTab ? { parent_tab: parentTab } : {}),
                     },
                 ].map((kpi, idx) => {
                     const Icon = kpi.icon;
@@ -263,7 +333,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                             key={idx}
                             onClick={kpi.nav}
                             className="group relative flex cursor-pointer flex-col justify-between overflow-hidden rounded-lg border border-surface-border bg-surface-base p-3.5 shadow-none transition-all duration-150 hover:border-primary active:scale-[0.99]"
-                            title="Klik untuk membuka daftar kontrak"
+                            title="Klik untuk membuka daftar dokumen"
                         >
                             <div className="flex items-start justify-between gap-2">
                                 <span className="text-[10.5px] font-bold tracking-wider text-text-soft uppercase">
@@ -296,56 +366,54 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                 <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none lg:col-span-7">
                     <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 border-b border-surface-border p-4 pb-3 space-y-0">
                         <div className="flex-1 min-w-[200px]">
-                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-text-main">Tren Pembuatan Kontrak</CardTitle>
-                            <p className="text-[10px] text-text-soft">Volume pembuatan kontrak per status dalam rentang waktu terpilih</p>
+                            <CardTitle className="text-xs font-bold uppercase tracking-wider text-text-main">
+                                Tren Pembuatan {scope === 'all' ? 'Dokumen' : scopeLabel}
+                            </CardTitle>
+                            <p className="text-[10px] text-text-soft">
+                                Volume pembuatan {scopeLabel.toLowerCase()} per kategori dalam rentang waktu terpilih
+                            </p>
                         </div>
 
                         {/* Filter Presets & Custom Date Selector */}
                         <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center rounded-md border border-surface-border bg-surface-base p-0.5">
+                            <div className="flex items-center gap-1 rounded-md border border-surface-border bg-surface-muted/50 p-0.5">
                                 {[
-                                    { key: '7d', label: '7 Hari' },
-                                    { key: '14d', label: '14 Hari' },
-                                    { key: 'this_month', label: 'Bulan Ini' },
-                                    { key: 'last_month', label: 'Bulan Lalu' },
-                                    { key: 'custom', label: 'Kustom' },
-                                ].map((p) => (
+                                    { id: '7d', label: '7 HARI' },
+                                    { id: '14d', label: '14 HARI' },
+                                    { id: 'this_month', label: 'BULAN INI' },
+                                    { id: 'last_month', label: 'BULAN LALU' },
+                                    { id: 'custom', label: 'CUSTOM' },
+                                ].map((tab) => (
                                     <button
-                                        key={p.key}
+                                        key={tab.id}
                                         type="button"
-                                        onClick={() => setDatePreset(p.key as any)}
+                                        onClick={() => setDatePreset(tab.id as any)}
                                         className={cn(
-                                            'cursor-pointer rounded px-2 py-0.5 text-[10px] font-bold uppercase transition-all',
-                                            datePreset === p.key
-                                                ? 'bg-primary text-primary-foreground shadow-none'
-                                                : 'text-text-soft hover:text-text-main'
+                                            'rounded px-2 py-1 text-[9.5px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-none',
+                                            datePreset === tab.id
+                                                ? 'bg-surface-base text-text-main font-extrabold shadow-none border border-surface-border'
+                                                : 'text-text-soft hover:text-text-main',
                                         )}
                                     >
-                                        {p.key === 'custom' ? (
-                                            <span className="flex items-center gap-1">
-                                                <Calendar size={10} /> Kustom
-                                            </span>
-                                        ) : (
-                                            p.label
-                                        )}
+                                        {tab.label}
                                     </button>
                                 ))}
                             </div>
 
                             {datePreset === 'custom' && (
-                                <div className="animate-in fade-in slide-in-from-right-2 flex items-center gap-1.5 duration-200">
+                                <div className="flex items-center gap-1.5 animate-in fade-in duration-200">
                                     <input
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="h-7 rounded-md border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                        className="h-7 rounded-md border border-surface-border bg-surface-base px-2 text-[10px] text-text-main font-medium shadow-none focus:outline-none focus:border-primary"
                                     />
-                                    <span className="text-[10px] font-bold text-text-soft">s/d</span>
+                                    <span className="text-[10px] text-text-soft">-</span>
                                     <input
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="h-7 rounded-md border border-surface-border bg-surface-base px-2 text-[10px] font-bold text-text-main outline-none focus:border-primary focus:ring-1 focus:ring-primary/20"
+                                        className="h-7 rounded-md border border-surface-border bg-surface-base px-2 text-[10px] text-text-main font-medium shadow-none focus:outline-none focus:border-primary"
                                     />
                                     {(startDate || endDate) && (
                                         <button
@@ -399,7 +467,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                                                                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
                                                                             {p.name}
                                                                         </span>
-                                                                        <span className="font-bold text-text-main text-[10.5px]">{p.value} Kontrak</span>
+                                                                        <span className="font-bold text-text-main text-[10.5px]">{p.value} Dokumen</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -435,8 +503,12 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                 <Card className="flex flex-col justify-between rounded-lg border-surface-border bg-surface-base shadow-none lg:col-span-3">
                     <div>
                         <CardHeader className="border-b border-surface-border p-4 pb-3 space-y-0">
-                            <CardTitle className="text-xs font-bold tracking-wider uppercase text-text-main">Ringkasan Distribusi</CardTitle>
-                            <p className="text-[10px] text-text-soft">Proporsi seluruh kontrak berdasarkan kategori</p>
+                            <CardTitle className="text-xs font-bold tracking-wider uppercase text-text-main">
+                                {scope === 'all' ? 'Ringkasan Distribusi' : `Distribusi Tipe ${scopeLabel}`}
+                            </CardTitle>
+                            <p className="text-[10px] text-text-soft">
+                                Proporsi seluruh {scopeLabel.toLowerCase()} berdasarkan kategori
+                            </p>
                         </CardHeader>
                         <CardContent className="p-4 space-y-3">
                             {/* Centered Donut Chart */}
@@ -444,45 +516,69 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                                 {isMounted && (
                                     <>
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie
-                                                    data={categoriesList.map((category: string, idx: number) => ({
-                                                        name: category,
-                                                        value: categoryValues[category] ?? 0,
+                                            {(() => {
+                                                const pieData = distributionItems
+                                                    .map((item: any, idx: number) => ({
+                                                        name: item.name,
+                                                        value: item.count || 0,
                                                         color: CHART_COLORS[idx % CHART_COLORS.length],
-                                                    })).filter((item: any) => item.value > 0)}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    innerRadius={38}
-                                                    outerRadius={58}
-                                                    paddingAngle={3}
-                                                    dataKey="value"
-                                                >
-                                                    {categoriesList.map((category: string, idx: number) => (
-                                                        <Cell key={`cell-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
-                                                    ))}
-                                                </Pie>
-                                                <RechartsTooltip
-                                                    content={({ active, payload }: any) => {
-                                                        if (active && payload && payload.length) {
-                                                            const item = payload[0];
-                                                            return (
-                                                                <div className="rounded-md border border-surface-border bg-surface-base p-2 shadow-none text-xs">
-                                                                    <p className="font-bold text-text-main text-[10px]">{item.name}</p>
-                                                                    <p className="font-extrabold text-primary text-[11px] mt-0.5">{item.value} Kontrak</p>
-                                                                </div>
-                                                            );
-                                                        }
-                                                        return null;
-                                                    }}
-                                                />
-                                            </PieChart>
+                                                    }))
+                                                    .filter((item: any) => item.value > 0);
+
+                                                return (
+                                                    <PieChart>
+                                                        {pieData.length === 0 ? (
+                                                            <Pie
+                                                                data={[{ name: 'Belum ada dokumen', value: 1 }]}
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                innerRadius={38}
+                                                                outerRadius={58}
+                                                                dataKey="value"
+                                                                stroke="none"
+                                                            >
+                                                                <Cell fill="rgba(150, 150, 150, 0.15)" />
+                                                            </Pie>
+                                                        ) : (
+                                                            <Pie
+                                                                data={pieData}
+                                                                cx="50%"
+                                                                cy="50%"
+                                                                innerRadius={38}
+                                                                outerRadius={58}
+                                                                paddingAngle={3}
+                                                                dataKey="value"
+                                                            >
+                                                                {pieData.map((entry: any, idx: number) => (
+                                                                    <Cell key={`cell-${idx}`} fill={entry.color} />
+                                                                ))}
+                                                            </Pie>
+                                                        )}
+                                                        {pieData.length > 0 && (
+                                                            <RechartsTooltip
+                                                                content={({ active, payload }: any) => {
+                                                                    if (active && payload && payload.length) {
+                                                                        const item = payload[0];
+                                                                        return (
+                                                                            <div className="rounded-md border border-surface-border bg-surface-base p-2 shadow-none text-xs">
+                                                                                <p className="font-bold text-text-main text-[10px]">{item.name}</p>
+                                                                                <p className="font-extrabold text-primary text-[11px] mt-0.5">{item.value} Dokumen</p>
+                                                                            </div>
+                                                                        );
+                                                                    }
+                                                                    return null;
+                                                                }}
+                                                            />
+                                                        )}
+                                                    </PieChart>
+                                                );
+                                            })()}
                                         </ResponsiveContainer>
 
                                         {/* Center count overlay */}
                                         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                                             <span className="text-sm font-black leading-none text-text-main">
-                                                {data?.metrics?.totalContracts ?? 0}
+                                                {totalCategoryCount}
                                             </span>
                                             <span className="mt-0.5 text-[8px] font-extrabold uppercase tracking-widest text-text-soft">
                                                 Total
@@ -493,34 +589,37 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                             </div>
 
                             {/* Category Items List */}
-                            <div className="space-y-1.5 border-t border-surface-border pt-2">
-                                {categoriesList.map((category: string, idx: number) => {
+                            <div className="space-y-1.5 border-t border-surface-border pt-2 max-h-[190px] overflow-y-auto custom-scrollbar">
+                                {distributionItems.map((item: any, idx: number) => {
                                     const categoryIcons: Record<string, any> = {
-                                        'Semua Dokumen': Layers,
-                                        'Menunggu Persetujuan Saya': Clock,
-                                        'Dokumen Saya': FileText,
-                                        'Dokumen Arsip': Archive,
-                                        'On Progress': Timer,
+                                        'Kontrak': FileText,
+                                        'Non Kontrak': Layers,
+                                        'NDA': Shield,
                                     };
-                                    const CategoryIcon = categoryIcons[category] || FileText;
-                                    const val = categoryValues[category] ?? 0;
-                                    const total = data?.metrics?.totalContracts || 1;
+                                    const CategoryIcon = categoryIcons[item.name] || FileText;
+                                    const val = item.count || 0;
+                                    const total = totalCategoryCount > 0 ? totalCategoryCount : 1;
                                     const pct = Math.round((val / total) * 100);
 
-                                    const categoryNavMap: Record<string, string> = {
-                                        'Semua Dokumen': 'contracts',
-                                        'Menunggu Persetujuan Saya': 'pending',
-                                        'Dokumen Saya': 'mine',
-                                        'Dokumen Arsip': 'archived',
-                                        'On Progress': 'in_progress',
+                                    const handleCategoryClick = () => {
+                                        if (item.type_id) {
+                                            onNavigate('contracts', {
+                                                contract_type_id: item.type_id,
+                                                ...(parentTab ? { parent_tab: parentTab } : {}),
+                                            });
+                                        } else if (parentTab) {
+                                            onNavigate('contracts', { parent_tab: parentTab });
+                                        } else {
+                                            onNavigate('contracts');
+                                        }
                                     };
 
                                     return (
                                         <div
-                                            key={category}
-                                            onClick={() => onNavigate(categoryNavMap[category] || 'contracts')}
+                                            key={item.name + idx}
+                                            onClick={handleCategoryClick}
                                             className="flex cursor-pointer items-center justify-between gap-2 rounded-md border border-surface-border bg-surface-base p-1.5 px-2 transition-all hover:bg-surface-muted hover:border-primary active:scale-[0.99]"
-                                            title={`Klik untuk membuka ${category}`}
+                                            title={`Klik untuk membuka daftar ${item.name}`}
                                         >
                                             <div className="flex items-center gap-2 min-w-0">
                                                 <ChipIcon
@@ -531,7 +630,7 @@ export function OverviewTab({ data, onNavigate, meUser, onCreateContract }: Over
                                                     className="border-transparent"
                                                 />
                                                 <span className="truncate text-[10px] font-semibold text-text-main">
-                                                    {category}
+                                                    {item.name}
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-1.5 shrink-0">

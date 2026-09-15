@@ -137,7 +137,7 @@ export function DashboardMetrics({
     onCreateContract,
 }: {
     metrics: any;
-    activeTab: 'overview' | 'workload' | 'master_data';
+    activeTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data';
     meUser?: any;
     onCreateContract?: () => void;
 }) {
@@ -147,7 +147,14 @@ export function DashboardMetrics({
     console.log('[DASHBOARD LOG] Dashboard Metrics received:', metrics);
     console.log('[DASHBOARD LOG] Resolved Dashboard Config:', config);
 
-    const hasAnyTab = config ? (config.show_overview || config.show_workload || config.show_master_data) : false;
+    const hasAnyTab = config
+        ? (config.show_overview ||
+           config.show_overview_contract ||
+           config.show_overview_non_contract ||
+           config.show_overview_nda ||
+           config.show_workload ||
+           config.show_master_data)
+        : false;
 
     if (!hasAnyTab) {
         return (
@@ -188,6 +195,43 @@ export function DashboardMetrics({
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                             <OverviewTab
                                 data={metrics}
+                                scope="all"
+                                onNavigate={handleNavigate}
+                                meUser={meUser}
+                                onCreateContract={onCreateContract}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'overview_contract' && config?.show_overview_contract && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <OverviewTab
+                                data={metrics}
+                                scope="contract"
+                                onNavigate={handleNavigate}
+                                meUser={meUser}
+                                onCreateContract={onCreateContract}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'overview_non_contract' && config?.show_overview_non_contract && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <OverviewTab
+                                data={metrics}
+                                scope="non_contract"
+                                onNavigate={handleNavigate}
+                                meUser={meUser}
+                                onCreateContract={onCreateContract}
+                            />
+                        </div>
+                    )}
+
+                    {activeTab === 'overview_nda' && config?.show_overview_nda && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <OverviewTab
+                                data={metrics}
+                                scope="nda"
                                 onNavigate={handleNavigate}
                                 meUser={meUser}
                                 onCreateContract={onCreateContract}
