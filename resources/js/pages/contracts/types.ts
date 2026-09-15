@@ -225,7 +225,13 @@ export interface Contract {
     updated_at_formatted?: string;
     submitted_at: string | null;
     submitted_at_formatted?: string | null;
+    assigned_at?: string | null;
+    assigned_at_formatted?: string | null;
     pic_assigned_at?: string | null;
+    finished_at?: string | null;
+    finished_at_formatted?: string | null;
+    closed_at?: string | null;
+    closed_at_formatted?: string | null;
     creator: UserProfile;
     metadata?: {
         tax_required?: boolean;

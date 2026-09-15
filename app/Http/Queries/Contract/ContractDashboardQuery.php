@@ -85,18 +85,17 @@ class ContractDashboardQuery
             ->whereIn('status', array_map(fn ($s) => $s->value, ContractStatusEnum::inProcess()))
             ->whereNull('closed_at')
             ->count();
-        $pendingApprovalsForMe = Approval::where('user_id', Auth::id())
-            ->where('status', 'pending')
-            ->whereHas('contract', function ($q) use ($statuses, $contractTypeIds) {
-                if (! empty($statuses)) {
-                    $q->whereIn('status', $statuses);
-                } else {
-                    $q->where('status', '!=', ContractStatusEnum::Draft->value);
-                }
-                if (! empty($contractTypeIds)) {
-                    $q->whereIn('contract_type_id', $contractTypeIds);
-                }
-            })->count();
+        $pendingApprovalsForMe = DB::table('t_approvals')
+            ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
+            ->where('t_approvals.user_id', Auth::id())
+            ->where('t_approvals.status', 'pending')
+            ->whereNull('t_contracts.deleted_at')
+            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+            ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
+            ->when(! empty($statuses), fn ($q) => $q->whereIn('t_contracts.status', $statuses))
+            ->when(! empty($contractTypeIds), fn ($q) => $q->whereIn('t_contracts.contract_type_id', $contractTypeIds))
+            ->distinct('t_contracts.id')
+            ->count('t_contracts.id');
         $activeContracts = (clone $baseQuery)
             ->where('status', ContractStatusEnum::Approved->value)
             ->whereNull('closed_at')
@@ -811,6 +810,7 @@ class ContractDashboardQuery
             ->where('status', ContractStatusEnum::Approved->value)
             ->whereNotNull('end_date')
             ->whereDate('end_date', '>=', now()->toDateString())
+            ->whereDate('end_date', '<=', now()->addDays(30)->toDateString())
             ->orderBy('end_date', 'asc')
             ->limit(5)
             ->get(['id', 'form_no', 'contract_no', 'title', 'end_date', 'vendor_name', 'creator_name'])
@@ -832,6 +832,11 @@ class ContractDashboardQuery
     {
         return Approval::where('user_id', Auth::id())
             ->where('status', 'pending')
+            ->whereHas('contract', function ($q) {
+                $q->whereNull('deleted_at')
+                    ->whereRaw("UPPER(status) != 'DRAFT'")
+                    ->whereColumn('workflow_step_id', 't_approvals.workflow_step_id');
+            })
             ->with(['contract.creator', 'contract.contractType'])
             ->orderByDesc('created_at')
             ->limit(5)
@@ -906,9 +911,9 @@ class ContractDashboardQuery
             ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
             ->where('t_approvals.user_id', $userId)
             ->where('t_approvals.status', 'pending')
-            ->whereIn('t_contracts.status', ['in_review', 'revision', 'pending'])
-            ->whereNull('t_contracts.closed_at')
             ->whereNull('t_contracts.deleted_at')
+            ->whereRaw("UPPER(t_contracts.status) != 'DRAFT'")
+            ->whereColumn('t_approvals.workflow_step_id', 't_contracts.workflow_step_id')
             ->whereBetween('t_approvals.created_at', [$startDate, $endDate])
             ->select(DB::raw('DATE(t_approvals.created_at) as day'), DB::raw('count(DISTINCT t_approvals.contract_id) as total'))
             ->groupBy('day')

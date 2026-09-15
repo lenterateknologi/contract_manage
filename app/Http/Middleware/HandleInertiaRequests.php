@@ -373,7 +373,9 @@ class HandleInertiaRequests extends Middleware
                         ->count('t_contracts.id');
                 }
 
-                $scopedExpiryQuery = (clone $scopedAllQuery)->whereNotNull('end_date');
+                $scopedExpiryQuery = (clone $scopedAllQuery)
+                    ->whereNotNull('end_date')
+                    ->whereDate('end_date', '<=', now()->addDays(30)->toDateString());
                 $expiryTotal = (clone $scopedExpiryQuery)->count();
                 $expiryKontrak = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count();
                 $expiryNonKontrak = (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $nonKontrakIds)->orWhereIn('contract_type_parent_id', $nonKontrakIds))->count();

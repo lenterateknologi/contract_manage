@@ -250,7 +250,9 @@ class ContractController extends Controller
                     ->count('t_contracts.id'),
             ];
 
-            $scopedExpiryQuery = (clone $scopedAllQuery)->whereNotNull('end_date');
+            $scopedExpiryQuery = (clone $scopedAllQuery)
+                ->whereNotNull('end_date')
+                ->whereDate('end_date', '<=', now()->addDays(30)->toDateString());
             $expiryCategoryCounts = [
                 'all' => (clone $scopedExpiryQuery)->count(),
                 'kontrak' => (clone $scopedExpiryQuery)->where(fn ($q) => $q->whereIn('contract_type_id', $kontrakIds)->orWhereIn('contract_type_parent_id', $kontrakIds))->count(),

@@ -84,7 +84,7 @@ class ContractListQuery
         $this->applyDateRangeFilter($query, $request);
         $this->applyPicFilter($query, $request);
         $this->applySubmissionTypeFilter($query, $request);
-        $this->applySorting($query, $request);
+        $this->applySorting($query, $request, $view);
 
         return $query;
     }
@@ -148,7 +148,8 @@ class ContractListQuery
     private function applyExpiryView(Builder $query, Request $request): void
     {
         $query->whereRaw('UPPER(status) != ?', ['DRAFT'])
-            ->whereNotNull('end_date');
+            ->whereNotNull('end_date')
+            ->whereDate('end_date', '<=', now()->addDays(30)->toDateString());
 
         $this->applyParentTabFilter($query, $request->input('expiry_tab', 'all'));
     }
@@ -534,13 +535,17 @@ class ContractListQuery
     /**
      * Apply ordering / sorting to query based on request parameters.
      */
-    private function applySorting(Builder $query, Request $request): void
+    private function applySorting(Builder $query, Request $request, string $view = 'contracts'): void
     {
         $sortBy = $request->input('sort_by') ?? $request->input('sortBy');
         $sortDir = strtolower($request->input('sort_dir') ?? $request->input('sortDir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
         if (empty($sortBy)) {
-            $query->latest('created_at');
+            if ($view === 'expiry') {
+                $query->orderBy('end_date', 'asc');
+            } else {
+                $query->latest('created_at');
+            }
 
             return;
         }

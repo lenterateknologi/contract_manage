@@ -187,6 +187,10 @@ class ContractFormatter
 
                 return null;
             })(),
+            'finished_at' => $c->finished_at ? $c->finished_at->toIso8601String() : ($c->metadata['finished_at'] ?? ($c->metadata['finish_at'] ?? null)),
+            'finished_at_formatted' => $c->finished_at ? $c->finished_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['finished_at']) ? Carbon::parse($c->metadata['finished_at'])->translatedFormat('j M Y, H:i') : (! empty($c->metadata['finish_at']) ? Carbon::parse($c->metadata['finish_at'])->translatedFormat('j M Y, H:i') : null)),
+            'closed_at' => $c->closed_at ? $c->closed_at->toIso8601String() : ($c->metadata['closed_at'] ?? null),
+            'closed_at_formatted' => $c->closed_at ? $c->closed_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['closed_at']) ? Carbon::parse($c->metadata['closed_at'])->translatedFormat('j M Y, H:i') : null),
             'assigned_by' => self::formatUser($c->assignedBy)
                 ?: ($c->approvals->where('sequence', 3)->where('status', 'approved')->first()
                     ? self::formatUser($c->approvals->where('sequence', 3)->where('status', 'approved')->first()->approver)
