@@ -304,7 +304,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
             {/* ── INFORMASI CURRENT STEP (TAHAP SAAT INI) - SOLID & COMPACT ── */}
             {currentStepInfo && (
-                <div className="shrink-0 rounded-lg border border-surface-border bg-surface-base p-2 space-y-1.5 transition-colors">
+                <div className="shrink-0 rounded-lg border border-surface-border bg-surface-base p-2 space-y-1.5 transition-colors max-h-[35vh] sm:max-h-[40vh] overflow-y-auto custom-scrollbar">
                     {/* Header Row: Step info & Approvers on single/compact line */}
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
@@ -343,13 +343,13 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                     {/* Approvers Row: Single compact bar */}
                     {!currentStepInfo.isCompleted && !currentStepInfo.isRejected && (
                         <div className="flex items-center justify-between gap-2 pt-1 border-t border-surface-border flex-wrap text-[10px]">
-                            <div className="flex items-center gap-1.5 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap max-h-[25vh] overflow-y-auto custom-scrollbar">
                                 <span className="font-semibold text-muted-foreground shrink-0 flex items-center gap-1">
                                     <UserCheck size={11} />
                                     Approver:
                                 </span>
                                 {currentStepInfo.approvers && currentStepInfo.approvers.length > 0 ? (
-                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                    <div className="flex items-center gap-1.5 flex-wrap max-h-[20vh] overflow-y-auto custom-scrollbar">
                                         {currentStepInfo.approvers.map((appr: any, idx: number) => (
                                             <div
                                                 key={idx}
@@ -384,7 +384,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             )}
 
             {/* Scrollable Timeline Area */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 custom-scrollbar pr-1 pb-4">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 custom-scrollbar pr-1 pb-4 max-h-[50vh]">
 
             <div className="relative">
                 <Timeline>

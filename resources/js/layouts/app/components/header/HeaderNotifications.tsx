@@ -203,7 +203,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
 
     const getLink = (item: NotificationItem) => {
         if (item.type === 'new_message') {
-            return `/admin/chat?contract_id=${item.contract_id}`;
+            return `/admin/chat/${item.contract_id}`;
         }
         return `/contracts/${item.contract_id}`;
     };

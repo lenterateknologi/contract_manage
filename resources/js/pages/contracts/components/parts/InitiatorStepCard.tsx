@@ -16,14 +16,18 @@ export function InitiatorStepCard({ creator, submittedAt }: InitiatorStepCardPro
         <div className="flex items-center justify-between gap-2 w-full py-0.5">
             <div className="flex items-center gap-2 min-w-0">
                 <UserAvatarIcon user={creator} size="sm" className="h-6 w-6 ring-1 ring-surface-base shrink-0 text-[10px]" />
-                <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-text-main truncate text-[11px] font-bold leading-tight">
-                        {creator?.name || 'Inisiator'}
-                    </span>
-                    <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />
-                    <Badge variant="outline" className="px-1.5 py-0 font-bold uppercase text-emerald-700 dark:text-emerald-300 border-emerald-500/25 bg-emerald-500/10 text-[8px] tracking-wider rounded-xs">
-                        Diajukan (Pengajuan Awal)
-                    </Badge>
+                <div className="flex flex-col min-w-0">
+                    <div className="flex items-center gap-1 min-w-0">
+                        <span className="text-text-main truncate text-[11px] font-bold leading-tight">
+                            {creator?.name || 'Inisiator'}
+                        </span>
+                        <Check size={11} className="shrink-0 text-emerald-500" strokeWidth={2.5} />
+                    </div>
+                    <div className="mt-0.5 flex items-center">
+                        <Badge variant="outline" className="px-1.5 py-0 font-bold uppercase text-emerald-700 dark:text-emerald-300 border-emerald-500/25 bg-emerald-500/10 text-[8px] tracking-wider rounded-xs">
+                            Diajukan (Pengajuan Awal)
+                        </Badge>
+                    </div>
                 </div>
             </div>
             {submittedAt && (

@@ -116,39 +116,33 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
                     </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 divide-y divide-border/50">
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2.5 sm:p-3 space-y-2">
                     {filteredMembers.map(({ user, roles }) => (
                         <div
                             key={user.id}
-                            className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-3.5 first:pt-1 last:pb-1 gap-3.5 group hover:bg-muted/30 -mx-4 px-4 transition-colors rounded-lg"
+                            className="flex flex-col p-2.5 gap-2 group hover:bg-muted/40 transition-all rounded-lg border border-border/40 hover:border-border bg-card/40"
                         >
-                            <div className="flex items-center gap-3.5 min-w-0">
+                            {/* Top: Avatar, Name, Email, Department */}
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <UserAvatarIcon
                                     user={user}
-                                    size="md"
-                                    className="h-10 w-10 ring-1 ring-border/80 shrink-0 text-xs shadow-2xs"
+                                    size="sm"
+                                    className="h-8 w-8 ring-1 ring-border/80 shrink-0 text-[11px] shadow-2xs"
                                 />
-                                <div className="flex flex-col min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-sm font-bold text-foreground leading-tight truncate">
-                                            {user.name}
-                                        </span>
-                                        {user.role && (
-                                            <Badge variant="outline" className="px-1.5 py-0 text-[8.5px] font-semibold uppercase tracking-wider text-muted-foreground border-border bg-muted/50 rounded-xs">
-                                                {user.role}
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                    <span className="text-xs font-bold text-foreground leading-tight truncate">
+                                        {user.name}
+                                    </span>
+                                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[10.5px] text-muted-foreground min-w-0">
                                         {user.email && (
-                                            <div className="flex items-center gap-1">
-                                                <Mail size={12} className="text-primary/60 shrink-0" />
+                                            <div className="flex items-center gap-1 min-w-0 truncate max-w-[200px] sm:max-w-[260px]" title={user.email}>
+                                                <Mail size={11} className="text-primary/60 shrink-0" />
                                                 <span className="truncate">{user.email}</span>
                                             </div>
                                         )}
                                         {user.department_name && (
-                                            <div className="flex items-center gap-1">
-                                                <Building2 size={12} className="text-primary/60 shrink-0" />
+                                            <div className="flex items-center gap-1 min-w-0 truncate max-w-[180px] sm:max-w-[240px]" title={user.department_name}>
+                                                <Building2 size={11} className="text-primary/60 shrink-0" />
                                                 <span className="truncate">{user.department_name}</span>
                                             </div>
                                         )}
@@ -156,14 +150,20 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
                                 </div>
                             </div>
 
-                            <div className="flex flex-wrap gap-1.5 sm:justify-end shrink-0 pl-13 sm:pl-0">
+                            {/* Bottom: Role Badges / Chips (Below Name) */}
+                            <div className="flex flex-wrap items-center gap-1.5 pl-10.5 pt-0.5">
+                                {user.role && (
+                                    <Badge variant="outline" className="px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-muted-foreground border-border bg-muted/60 rounded shrink-0">
+                                        {user.role}
+                                    </Badge>
+                                )}
                                 {roles.map((role) => (
                                     <Badge
                                         key={role}
                                         variant="outline"
-                                        className="border-primary/25 bg-primary/5 text-primary text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md flex items-center gap-1"
+                                        className="border-primary/20 bg-primary/5 text-primary text-[8.5px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0"
                                     >
-                                        <ShieldCheck size={11} className="shrink-0 text-primary" />
+                                        <ShieldCheck size={10} className="shrink-0 text-primary" />
                                         <span>{role}</span>
                                     </Badge>
                                 ))}
@@ -172,12 +172,12 @@ export const ContractMembersTab: React.FC<ContractMembersTabProps> = ({ contract
                     ))}
 
                     {filteredMembers.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-16 text-center">
-                            <Search className="h-8 w-8 text-muted-foreground/40 mb-3" />
+                        <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <Search className="h-7 w-7 text-muted-foreground/40 mb-2" />
                             <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
                                 Tidak ada personil ditemukan
                             </h4>
-                            <p className="text-[11px] text-muted-foreground mt-1">
+                            <p className="text-[10.5px] text-muted-foreground mt-0.5">
                                 Coba kata kunci pencarian yang lain.
                             </p>
                         </div>

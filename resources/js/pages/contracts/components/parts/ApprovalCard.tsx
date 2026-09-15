@@ -121,7 +121,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                         const remaining = names.length - maxVisible;
 
                                         return (
-                                            <div className="flex flex-wrap items-center gap-1">
+                                            <div className="flex flex-wrap items-center gap-1 max-h-[100px] overflow-y-auto custom-scrollbar">
                                                 {visible.map((name, i) => (
                                                     <span
                                                         key={i}

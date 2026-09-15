@@ -626,18 +626,6 @@ export default function ContractChat({ contract, meId, users = [], onNewMessage 
                     >
                         <RefreshCw size={15} className={cn(refreshing && 'animate-spin text-primary')} />
                     </button>
-
-                    <a
-                        href={`/contracts/${contract.id}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-primary/20 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-semibold transition-all shadow-2xs cursor-pointer ml-1"
-                        title="Buka Halaman Detail Pengajuan Kontrak di Tab Baru"
-                    >
-                        <FileText size={13} />
-                        <span className="hidden sm:inline">Buka Pengajuan</span>
-                        <ExternalLink size={11} className="opacity-70" />
-                    </a>
                 </div>
             </div>
 

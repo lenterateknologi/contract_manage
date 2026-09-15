@@ -21,17 +21,13 @@ export default function ChatPage({ contracts: initialContracts = [], initialCont
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [selectedContractId, setSelectedContractId] = useState<string | null>(initialContractId || null);
-    const [processing, setProcessing] = useState(false);
 
+    // Sync selectedContractId when initialContractId changes via navigation
     useEffect(() => {
-        const removeStartListener = router.on('start', () => setProcessing(true));
-        const removeFinishListener = router.on('finish', () => setProcessing(false));
-
-        return () => {
-            removeStartListener();
-            removeFinishListener();
-        };
-    }, []);
+        if (initialContractId && initialContractId !== selectedContractId) {
+            setSelectedContractId(initialContractId);
+        }
+    }, [initialContractId]);
 
     // Manage local contracts state to reflect new messages immediately
     const [contracts, setContracts] = useState(initialContracts);
@@ -114,15 +110,6 @@ export default function ChatPage({ contracts: initialContracts = [], initialCont
 
         return groups;
     }, [filteredContracts]);
-
-    if (processing) {
-        return (
-            <div className="flex-1 flex h-[calc(100vh-64px)] w-full overflow-hidden">
-                <Head title="Chat Center - Diskusi Kontrak" />
-                <ChatPageSkeleton />
-            </div>
-        );
-    }
 
     return (
         <div className="flex-1 flex h-[calc(100vh-64px)] w-full overflow-hidden">
