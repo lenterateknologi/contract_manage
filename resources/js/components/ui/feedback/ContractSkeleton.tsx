@@ -1,27 +1,44 @@
 import { Skeleton } from "@/components/ui/feedback/Skeleton";
 
-export function ContractTableSkeleton() {
+export function ContractTableSkeleton({ rows = 8 }: { rows?: number }) {
     return (
-        <div className="w-full space-y-4">
-            <div className="flex items-center space-x-4 px-4 py-3 border-b border-surface-border/60 bg-surface-muted/20">
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-4 w-40" />
-                <Skeleton className="h-4 w-20" />
-            </div>
-            {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center space-x-4 px-4 py-4 border-b border-surface-border/30">
-                    <Skeleton className="h-4 w-4" />
-                    <div className="space-y-2 flex-1">
-                        <Skeleton className="h-4 w-[40%]" />
-                        <Skeleton className="h-3 w-[20%]" />
-                    </div>
-                    <Skeleton className="h-6 w-24 rounded-full" />
-                    <Skeleton className="h-6 w-20 rounded-lg" />
-                    <Skeleton className="h-8 w-8 rounded-xl" />
+        <div className="w-full h-full flex flex-col overflow-hidden animate-in fade-in duration-300">
+            {/* Skeleton Table Header */}
+            <div className="bg-primary/90 dark:bg-zinc-800 h-9 px-4 flex items-center justify-between gap-4 shrink-0">
+                <div className="flex items-center gap-4 flex-1">
+                    <Skeleton className="h-4 w-4 rounded bg-white/30" />
+                    <Skeleton className="h-3 w-32 rounded bg-white/30" />
+                    <Skeleton className="h-3 w-48 rounded bg-white/30" />
+                    <Skeleton className="h-3 w-28 rounded bg-white/30 hidden md:block" />
+                    <Skeleton className="h-3 w-36 rounded bg-white/30 hidden lg:block" />
                 </div>
-            ))}
+                <Skeleton className="h-3 w-20 rounded bg-white/30" />
+            </div>
+
+            {/* Skeleton Table Rows */}
+            <div className="flex-1 divide-y divide-surface-border/40 overflow-hidden">
+                {[...Array(rows)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="flex items-center justify-between gap-4 px-4 py-3 bg-white dark:bg-zinc-900"
+                    >
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <Skeleton className="h-4 w-4 rounded shrink-0" />
+                            <div className="space-y-1.5 flex-1 max-w-[320px]">
+                                <Skeleton className="h-3.5 w-[85%] rounded" />
+                                <Skeleton className="h-2.5 w-[50%] rounded" />
+                            </div>
+                            <Skeleton className="h-4.5 w-24 rounded-full hidden sm:block shrink-0" />
+                            <Skeleton className="h-3 w-28 rounded hidden md:block" />
+                            <Skeleton className="h-3 w-36 rounded hidden lg:block" />
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                            <Skeleton className="h-6 w-16 rounded-md" />
+                            <Skeleton className="h-6 w-6 rounded-md" />
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

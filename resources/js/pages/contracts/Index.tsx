@@ -9,6 +9,7 @@ import { Column, DataTable as TableContract } from '@/components/ui/tables/DataT
 import { FilterPopover } from '@/components/ui/selection/FilterPopover';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { ContractCardSkeleton, ContractTableSkeleton } from '@/components/ui/feedback/ContractSkeleton';
+import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { ToastProvider, useToast } from '@/components/ui/feedback/Toast';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
@@ -714,6 +715,16 @@ function ContractPage({
     }, [types, handleFilterChange]);
 
     useEffect(() => {
+        const removeStartListener = router.on('start', () => setProcessing(true));
+        const removeFinishListener = router.on('finish', () => setProcessing(false));
+
+        return () => {
+            removeStartListener();
+            removeFinishListener();
+        };
+    }, []);
+
+    useEffect(() => {
         if (currentView && currentView !== view) setView(currentView);
     }, [currentView, view]);
 
@@ -1387,12 +1398,16 @@ function ContractPage({
                                 <div className="flex-1 min-h-0 h-full overflow-hidden flex flex-col">
                                     {view === 'dashboard' && (
                                         <div className="flex-1 min-h-0 h-full overflow-y-auto custom-scrollbar p-5">
-                                            <DashboardMetrics
-                                                metrics={metrics ? { ...metrics, dashboardConfig: effectiveDashboardConfig } : null}
-                                                activeTab={dashboardTab}
-                                                meUser={meUser}
-                                                onCreateContract={() => setCreateOpen(true)}
-                                            />
+                                            {metrics ? (
+                                                <DashboardMetrics
+                                                    metrics={{ ...metrics, dashboardConfig: effectiveDashboardConfig }}
+                                                    activeTab={dashboardTab}
+                                                    meUser={meUser}
+                                                    onCreateContract={() => setCreateOpen(true)}
+                                                />
+                                            ) : (
+                                                <DashboardSkeleton />
+                                            )}
                                         </div>
                                     )}
                                     {view === 'profile' && <ProfileView meUser={meUser} showToast={showToast} />}

@@ -1,4 +1,4 @@
-import { Head, usePage, usePoll } from '@inertiajs/react';
+import { Head, router, usePage, usePoll } from '@inertiajs/react';
 import React, { useState, useMemo, useEffect } from 'react';
 import { MessageSquare } from 'lucide-react';
 import ContractChat from '@/components/chat/ContractChat';
@@ -6,6 +6,7 @@ import { Contract } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
 import { formatDate } from '@/lib/utils';
 import { ContractListSidebar } from './components/ContractListSidebar';
+import { ChatPageSkeleton } from '@/components/ui/feedback/ChatSkeleton';
 
 interface Props {
     contracts: Contract[];
@@ -13,13 +14,24 @@ interface Props {
     breadcrumbs: any[];
 }
 
-export default function ChatPage({ contracts: initialContracts, initialContractId }: Props) {
+export default function ChatPage({ contracts: initialContracts = [], initialContractId }: Props) {
     const { auth } = usePage<any>().props;
     const [search, setSearch] = useState('');
     const [showChatSearch, setShowChatSearch] = useState(false);
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [selectedContractId, setSelectedContractId] = useState<string | null>(initialContractId || null);
+    const [processing, setProcessing] = useState(false);
+
+    useEffect(() => {
+        const removeStartListener = router.on('start', () => setProcessing(true));
+        const removeFinishListener = router.on('finish', () => setProcessing(false));
+
+        return () => {
+            removeStartListener();
+            removeFinishListener();
+        };
+    }, []);
 
     // Manage local contracts state to reflect new messages immediately
     const [contracts, setContracts] = useState(initialContracts);
@@ -102,6 +114,15 @@ export default function ChatPage({ contracts: initialContracts, initialContractI
 
         return groups;
     }, [filteredContracts]);
+
+    if (processing) {
+        return (
+            <div className="flex-1 flex h-[calc(100vh-64px)] w-full overflow-hidden">
+                <Head title="Chat Center - Diskusi Kontrak" />
+                <ChatPageSkeleton />
+            </div>
+        );
+    }
 
     return (
         <div className="flex-1 flex h-[calc(100vh-64px)] w-full overflow-hidden">

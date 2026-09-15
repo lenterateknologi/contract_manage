@@ -13,7 +13,7 @@ import { closestCenter, DndContext, DragEndEvent, DragOverlay, KeyboardSensor, P
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Head, Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
-import { ArrowLeft, Clock, Download, Edit3, Eye, GitBranch, GitCommit, Grid, HelpCircle, Layout, List, Loader2, Play, Plus, Redo, RotateCcw, Save, Trash2, Undo, User } from 'lucide-react';
+import { ArrowLeft, Clock, Download, Edit3, Eye, FileText, GitBranch, GitCommit, Grid, HelpCircle, Layout, List, Loader2, Play, Plus, Redo, RotateCcw, Rows, Save, Trash2, Undo, User } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TrashZone } from './components/TrashZone';
 
@@ -1238,6 +1238,7 @@ function FormBuilder({ template }: Props) {
         }
     ]);
     const [viewMode, setViewMode] = useState<'visual-editor' | 'interactive-form' | 'pdf-preview'>('visual-editor');
+    const [pageLayout, setPageLayout] = useState<'paged' | 'continuous'>('paged');
     const [previewData, setPreviewData] = useState<Record<string, any>>({});
 
     // Helper to update preview data
@@ -2236,7 +2237,7 @@ function FormBuilder({ template }: Props) {
                                     type="button"
                                     onClick={() => setViewMode(mode.id as any)}
                                     className={cn(
-                                        'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all uppercase',
+                                        'flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all uppercase cursor-pointer',
                                         viewMode === mode.id
                                             ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
                                             : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
@@ -2250,12 +2251,44 @@ function FormBuilder({ template }: Props) {
                             ))}
                         </div>
 
+                        {/* Page Layout Toggle: Per Page vs Memanjang Kebawah */}
+                        <div className="flex bg-slate-200/60 dark:bg-zinc-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-zinc-700/60 shadow-inner">
+                            <button
+                                type="button"
+                                onClick={() => setPageLayout('paged')}
+                                className={cn(
+                                    'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all uppercase cursor-pointer',
+                                    pageLayout === 'paged'
+                                        ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
+                                )}
+                                title="Tampilan Per Halaman A4"
+                            >
+                                <FileText size={13} strokeWidth={2.2} />
+                                <span className="hidden xl:inline-block font-sans tracking-tight">Per Halaman</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPageLayout('continuous')}
+                                className={cn(
+                                    'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all uppercase cursor-pointer',
+                                    pageLayout === 'continuous'
+                                        ? 'bg-white dark:bg-zinc-900 text-slate-900 dark:text-white shadow-xs'
+                                        : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200',
+                                )}
+                                title="Tampilan Memanjang Kebawah (Continuous Scroll)"
+                            >
+                                <Rows size={13} strokeWidth={2.2} />
+                                <span className="hidden xl:inline-block font-sans tracking-tight">Memanjang</span>
+                            </button>
+                        </div>
+
                         {/* Zoom Controls */}
                         <div className="hidden lg:flex items-center gap-1 bg-slate-100/80 dark:bg-zinc-800/60 p-1 rounded-xl border border-slate-200/50 dark:border-zinc-700/50 text-xs font-semibold">
                             <button
                                 type="button"
                                 onClick={() => setZoom((z) => Math.max(50, z - 10))}
-                                className="h-7 w-6 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all"
+                                className="h-7 w-6 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer"
                                 title="Zoom Out"
                             >
                                 -
@@ -2263,7 +2296,7 @@ function FormBuilder({ template }: Props) {
                             <button
                                 type="button"
                                 onClick={() => setZoom(100)}
-                                className="h-7 px-1.5 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all font-mono text-[11px]"
+                                className="h-7 px-1.5 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all font-mono text-[11px] cursor-pointer"
                                 title="Reset Zoom"
                             >
                                 {zoom}%
@@ -2271,7 +2304,7 @@ function FormBuilder({ template }: Props) {
                             <button
                                 type="button"
                                 onClick={() => setZoom((z) => Math.min(150, z + 10))}
-                                className="h-7 w-6 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all"
+                                className="h-7 w-6 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-zinc-700 transition-all cursor-pointer"
                                 title="Zoom In"
                             >
                                 +
@@ -2344,6 +2377,7 @@ function FormBuilder({ template }: Props) {
                             removeField={removeField}
                             duplicateField={duplicateField}
                             zoom={zoom}
+                            pageLayout={pageLayout}
                         />
 
                         {/* LEFT: FLOATING WORKSPACE SIDEBAR */}

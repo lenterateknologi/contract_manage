@@ -20,6 +20,7 @@ interface UnifiedFormViewerProps {
     onMove?: (id: string, dir: 'up' | 'down') => void;
     onRemove?: (id: string) => void;
     onDuplicate?: (id: string) => void;
+    pageLayout?: 'paged' | 'continuous';
 }
 
 /**
@@ -41,6 +42,7 @@ export const UnifiedFormViewer: React.FC<UnifiedFormViewerProps> = ({
     onMove,
     onRemove,
     onDuplicate,
+    pageLayout = 'paged',
 }) => {
     // 1. Server-side PDF Mode (Iframe)
     if (mode === 'server-pdf' && serverPdfUrl) {
@@ -81,6 +83,7 @@ export const UnifiedFormViewer: React.FC<UnifiedFormViewerProps> = ({
                 isBuilder={isBuilder}
                 readOnly={isReadOnly}
                 mode={mode}
+                pageLayout={pageLayout}
             />
         </div>
     );

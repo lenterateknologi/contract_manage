@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { usePermissions } from '@/hooks/use-permissions';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { DataTable, Column } from '@/components/ui/tables/DataTable';
+import { TemplateTableSkeleton, TemplateTreeSkeleton, ContractTemplateSkeleton } from '@/components/ui/feedback/TemplateSkeleton';
 import { Button } from '@/components/ui/buttons/Button';
 import { Input } from '@/components/ui/inputs/Input';
 import { Label } from '@/components/ui/forms/Label';
@@ -126,8 +127,18 @@ export default function Templates({ folders = [], templates = [] }: Props) {
     const [isDragging, setIsDragging] = useState(false);
     const [dragCounter, setDragCounter] = useState(0);
 
-    // Form Loading States
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [processing, setProcessing] = useState(false);
+
+    useEffect(() => {
+        const removeStartListener = router.on('start', () => setProcessing(true));
+        const removeFinishListener = router.on('finish', () => setProcessing(false));
+
+        return () => {
+            removeStartListener();
+            removeFinishListener();
+        };
+    }, []);
 
     // Selection/Item States
     const [selectedRows, setSelectedRows] = useState<TableRowItem[]>([]);
@@ -1204,6 +1215,8 @@ export default function Templates({ folders = [], templates = [] }: Props) {
                             <DataTable
                                 columns={columns}
                                 data={processedRows}
+                                loading={processing}
+                                skeleton={<TemplateTableSkeleton />}
                                 borderless={true}
                                 selectedRows={selectedRows}
                                 onSelectionChange={setSelectedRows}

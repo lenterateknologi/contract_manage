@@ -32,6 +32,7 @@ interface InteractiveFormProps {
     selectedFieldIds?: string[];
     diffData?: Record<string, 'added' | 'removed' | 'modified'>;
     comparisonData?: Record<string, any>;
+    pageLayout?: 'paged' | 'continuous';
 }
 
 export const InteractiveForm: React.FC<InteractiveFormProps> = ({
@@ -49,6 +50,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
     selectedFieldIds = [],
     diffData = {},
     comparisonData = {},
+    pageLayout = 'paged',
 }) => {
     const { setNodeRef, isOver } = useDroppable({
         id: 'canvas-area',
@@ -139,6 +141,7 @@ export const InteractiveForm: React.FC<InteractiveFormProps> = ({
                             margins={margins}
                             showMargins={isBuilder}
                             isBuilder={isBuilder}
+                            pageLayout={pageLayout}
                             className={cn(isBuilder ? 'hover:ring-primary/20 hover:ring-2' : '', 'relative overflow-hidden mb-6')}
                         >
                             {/* Page Content */}

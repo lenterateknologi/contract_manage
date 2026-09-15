@@ -5,20 +5,14 @@ import { cn } from '@/lib/utils';
 import { router, usePage } from '@inertiajs/react';
 import { Briefcase, Check, ChevronDown, LayoutDashboard, Search, X, Loader2 } from 'lucide-react';
 import React, { useMemo, useState, lazy, Suspense } from 'react';
+import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
 
 // Lazy load heavy dashboard tabs
 const OverviewTab = lazy(() => import('@/pages/dashboard/components/OverviewTab').then(m => ({ default: m.OverviewTab })));
 const WorkloadTab = lazy(() => import('@/pages/dashboard/components/WorkloadTab').then(m => ({ default: m.WorkloadTab })));
 const MasterDataTab = lazy(() => import('@/pages/dashboard/components/MasterDataTab').then(m => ({ default: m.MasterDataTab })));
 
-const TabLoading = () => (
-    <div className="flex h-[400px] w-full items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-            <Loader2 className="text-primary h-8 w-8 animate-spin opacity-20" />
-            <p className="text-text-soft text-[10px] font-bold tracking-widest uppercase">Memuat Analisis...</p>
-        </div>
-    </div>
-);
+const TabLoading = () => <DashboardSkeleton />;
 
 const ensureArrayFilter = (val: any): string[] => {
     if (!val) return [];

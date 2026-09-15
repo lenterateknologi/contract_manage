@@ -13,6 +13,7 @@ interface PageProps {
     className?: string;
     showMargins?: boolean;
     isBuilder?: boolean;
+    pageLayout?: 'paged' | 'continuous';
 }
 
 export const Page: React.FC<PageProps> = ({
@@ -22,11 +23,15 @@ export const Page: React.FC<PageProps> = ({
     className,
     showMargins = false,
     isBuilder = false,
+    pageLayout = 'paged',
 }) => {
+    const isContinuous = pageLayout === 'continuous';
+
     return (
         <div
             className={cn(
-                'relative print:m-0 w-full mt-10 mb-20 last:mb-0',
+                'relative print:m-0 w-full last:mb-0',
+                isContinuous ? 'mt-4 mb-6' : 'mt-10 mb-20',
                 pageNumber > 1 && 'print:break-before-page',
             )}
             data-page-number={pageNumber}
@@ -37,7 +42,7 @@ export const Page: React.FC<PageProps> = ({
                     Halaman {pageNumber}
                 </div>
                 <div className="text-muted-foreground/40 text-[9px] font-semibold tracking-tight uppercase">
-                    A4 (210mm x 297mm) • Margins: {margins.top}mm {margins.right}mm {margins.bottom}mm {margins.left}mm
+                    A4 (210mm x 297mm) • Margins: {margins.top}mm {margins.right}mm {margins.bottom}mm {margins.left}mm {isContinuous && '• View: Memanjang Kebawah'}
                 </div>
             </div>
 
@@ -46,7 +51,7 @@ export const Page: React.FC<PageProps> = ({
                 className={cn(
                     'bg-white text-slate-900 force-light relative mx-auto flex flex-col transition-all print:m-0 print:shadow-none print:ring-0 print:border-none w-[210mm]',
                     'border-slate-300 border shadow-md my-4 rounded-none shrink-0',
-                    isBuilder ? 'h-[297mm] max-h-[297mm] overflow-hidden' : 'min-h-[297mm]',
+                    isBuilder && !isContinuous ? 'h-[297mm] max-h-[297mm] overflow-hidden' : 'min-h-[297mm]',
                     className,
                 )}
                 style={{

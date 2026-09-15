@@ -154,6 +154,10 @@ export function DataTable<T extends Record<string, any>>({
     // Ensure safe array rendering
     const displayData = Array.isArray(data) ? data : [];
 
+    if (loading && skeleton) {
+        return <>{skeleton}</>;
+    }
+
     return (
         <div className={cn(
             "flex flex-col flex-1 min-h-0 w-full bg-surface-base border-surface-border",

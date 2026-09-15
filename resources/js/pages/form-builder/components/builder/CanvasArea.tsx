@@ -16,6 +16,7 @@ interface CanvasAreaProps {
     removeField: (id: string) => void;
     duplicateField: (id: string) => void;
     zoom?: number;
+    pageLayout?: 'paged' | 'continuous';
 }
 
 export const CanvasArea: React.FC<CanvasAreaProps> = ({
@@ -30,6 +31,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
     removeField,
     duplicateField,
     zoom = 100,
+    pageLayout = 'paged',
 }) => {
     return (
         <section className="bg-muted/10 relative flex flex-1 flex-col overflow-hidden">
@@ -57,6 +59,7 @@ export const CanvasArea: React.FC<CanvasAreaProps> = ({
                         onMove={(id, dir) => moveField(id, dir)}
                         onRemove={(id) => removeField(id)}
                         onDuplicate={(id) => duplicateField(id)}
+                        pageLayout={pageLayout}
                     />
                 </div>
             </ScrollArea>
