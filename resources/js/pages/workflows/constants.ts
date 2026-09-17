@@ -70,13 +70,13 @@ export const APPROVER_TYPE_STYLES: Record<string, string> = {
 };
 
 export const TRANSITION_OPTIONS = [
-    { value: 'sequential', label: 'Langkah + 1 (Default)' },
-    { value: 'origin_return', label: 'Kembali ke Workflow Asal (Origin & Step Origin Dinamis)' },
-    { value: 'cross_workflow', label: 'Langkah ke Workflow N & Step N' },
-    { value: 'stay', label: 'Tetap di Langkah Saat Ini (Stay)' },
-    { value: 'back', label: 'Langkah - 1 (Back)' },
-    { value: 'initial_step', label: 'Langkah awal' },
-    { value: 'absolute', label: 'Langkah Spesifik Alur Kerja Ini' },
+    { value: 'sequential', label: 'Maju ke Tahap Selanjutnya (+1 / Dinamis)' },
+    { value: 'back', label: 'Mundur ke Tahap Sebelumnya (-1 / Dinamis)' },
+    { value: 'stay', label: 'Tetap di Tahap Saat Ini (Stay / 0)' },
+    { value: 'initial_step', label: 'Kembali ke Tahap Awal (Tahap 1)' },
+    { value: 'absolute', label: 'Lompat ke Tahap Spesifik (Target Tetap)' },
+    { value: 'cross_workflow', label: 'Beralih ke Alur Kerja Lain (Cross Workflow)' },
+    { value: 'origin_return', label: 'Kembali ke Alur Kerja Asal (Origin Workflow)' },
 ];
 
 export const ACTION_THEMES: Record<string, { color: string; icon: any; actionType: string }> = {

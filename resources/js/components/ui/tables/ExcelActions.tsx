@@ -43,7 +43,17 @@ export function ExcelActions({ exportRoute, importRoute, onSyncPortal, isSyncing
 
     const handleExport = () => {
         if (!exportRoute) return;
-        const url = exportRoute.includes('/') ? exportRoute : route(exportRoute);
+        let url = exportRoute.includes('/') ? exportRoute : route(exportRoute);
+        if (typeof window !== 'undefined' && window.location.search) {
+            const currentParams = new URLSearchParams(window.location.search);
+            const urlObj = new URL(url, window.location.origin);
+            currentParams.forEach((value, key) => {
+                if (!urlObj.searchParams.has(key)) {
+                    urlObj.searchParams.append(key, value);
+                }
+            });
+            url = urlObj.pathname + urlObj.search;
+        }
         window.location.href = url;
         showToast(`Mengunduh file Excel${label ? ` ${label}` : ''}...`, 'success');
     };
@@ -194,7 +204,7 @@ export function ExcelActions({ exportRoute, importRoute, onSyncPortal, isSyncing
                             <span>Export Excel</span>
                         </DropdownMenuItem>
                     )}
-                    
+
                     {importRoute && (
                         <DropdownMenuItem
                             onClick={() => fileInputRef.current?.click()}

@@ -37,6 +37,18 @@ class StoreContractAction
                 'kode_perjanjian' => $contractType?->code ?? 'KTR',
             ]);
 
+            // Auto-determine tax_required from vendor PKP status if vendor is provided
+            $taxRequired = $validated['tax_required'] ?? null;
+            if ($taxRequired === null && ! empty($validated['vendor_id'])) {
+                $vendor = Vendor::find($validated['vendor_id']);
+                if ($vendor) {
+                    $taxRequired = $vendor->is_pkp;
+                }
+            }
+            if ($taxRequired === null) {
+                $taxRequired = true;
+            }
+
             $contract = Contract::create([
                 'form_no' => $form_no,
                 'title' => $validated['title'],
@@ -51,8 +63,10 @@ class StoreContractAction
                 'initiated_by_id' => $initiatorId,
                 'vendor_id' => $validated['vendor_id'] ?? null,
                 'parent_id' => $validated['parent_id'] ?? null,
+                'tax_required' => (bool) $taxRequired,
                 'metadata' => [
-                    'tax_required' => $validated['tax_required'] ?? true,
+                    'tax_required' => (bool) $taxRequired,
+                    'meta_tax_required' => $taxRequired ? 'Ya' : 'Tidak',
                     'category' => $validated['category'] ?? 'contract',
                     'topic' => $validated['topic'] ?? 'perjanjian',
                     'project_name' => $validated['project_name'] ?? null,

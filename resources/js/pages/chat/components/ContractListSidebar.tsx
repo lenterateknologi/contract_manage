@@ -1,12 +1,28 @@
 import React from 'react';
-import { Building2, Calendar, MessageSquare, Search, X } from 'lucide-react';
+import { Building2, Calendar, FileCheck, FileText, Filter, Layers, LayoutGrid, MessageSquare, Search, X } from 'lucide-react';
 import { SearchInput } from '@/components/ui/inputs/SearchInput';
 import { Contract } from '@/pages/contracts/types';
 import { ContractListItem } from '../ui/ContractListItem';
+import { cn } from '@/lib/utils';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/selection/Select';
 
 interface ContractListSidebarProps {
     search: string;
     setSearch: (val: string) => void;
+    activeCategory: 'all' | 'kontrak' | 'non_kontrak' | 'nda';
+    setActiveCategory: (cat: 'all' | 'kontrak' | 'non_kontrak' | 'nda') => void;
+    categoryCounts: {
+        all: { total: number; unread: number };
+        kontrak: { total: number; unread: number };
+        non_kontrak: { total: number; unread: number };
+        nda: { total: number; unread: number };
+    };
     showChatSearch: boolean;
     setShowChatSearch: (val: boolean) => void;
     dateFrom: string;
@@ -21,6 +37,9 @@ interface ContractListSidebarProps {
 export function ContractListSidebar({
     search,
     setSearch,
+    activeCategory,
+    setActiveCategory,
+    categoryCounts,
     showChatSearch,
     setShowChatSearch,
     dateFrom,
@@ -35,7 +54,7 @@ export function ContractListSidebar({
 
     return (
         <div className="w-full md:w-80 lg:w-96 flex flex-col border-r border-border bg-background shrink-0 h-full overflow-hidden">
-            {/* Sidebar Header & Search */}
+            {/* Sidebar Header, Dropdown & Search */}
             <div className="p-3 border-b border-border flex flex-col gap-2.5 bg-muted/20">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -57,6 +76,81 @@ export function ContractListSidebar({
                     >
                         <Calendar size={13} />
                     </button>
+                </div>
+
+                {/* Category Dropdown (Semua / Kontrak / Non Kontrak / NDA) */}
+                <div className="w-full">
+                    <Select value={activeCategory} onValueChange={(val: any) => setActiveCategory(val)}>
+                        <SelectTrigger className="h-8.5 text-xs bg-background rounded-xl border-border font-medium px-3 focus:ring-1 focus:ring-primary">
+                            <SelectValue placeholder="Pilih Kategori Dokumen" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-border bg-popover text-xs shadow-lg">
+                            <SelectItem value="all">
+                                <div className="flex items-center justify-between gap-4 w-full py-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <LayoutGrid size={13} className="text-muted-foreground" />
+                                        <span className="font-semibold text-xs">Semua Pengajuan</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold tabular-nums">
+                                            {categoryCounts.all.total}
+                                        </span>
+                                        {categoryCounts.all.unread > 0 && (
+                                            <span className="w-2 h-2 rounded-full bg-rose-500" title={`${categoryCounts.all.unread} pesan belum dibaca`} />
+                                        )}
+                                    </div>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="kontrak">
+                                <div className="flex items-center justify-between gap-4 w-full py-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <FileText size={13} className="text-primary" />
+                                        <span className="font-semibold text-xs">Kontrak</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold tabular-nums">
+                                            {categoryCounts.kontrak.total}
+                                        </span>
+                                        {categoryCounts.kontrak.unread > 0 && (
+                                            <span className="w-2 h-2 rounded-full bg-rose-500" title={`${categoryCounts.kontrak.unread} pesan belum dibaca`} />
+                                        )}
+                                    </div>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="non_kontrak">
+                                <div className="flex items-center justify-between gap-4 w-full py-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <Layers size={13} className="text-primary" />
+                                        <span className="font-semibold text-xs">Non Kontrak</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold tabular-nums">
+                                            {categoryCounts.non_kontrak.total}
+                                        </span>
+                                        {categoryCounts.non_kontrak.unread > 0 && (
+                                            <span className="w-2 h-2 rounded-full bg-rose-500" title={`${categoryCounts.non_kontrak.unread} pesan belum dibaca`} />
+                                        )}
+                                    </div>
+                                </div>
+                            </SelectItem>
+                            <SelectItem value="nda">
+                                <div className="flex items-center justify-between gap-4 w-full py-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <FileCheck size={13} className="text-primary" />
+                                        <span className="font-semibold text-xs">NDA</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold tabular-nums">
+                                            {categoryCounts.nda.total}
+                                        </span>
+                                        {categoryCounts.nda.unread > 0 && (
+                                            <span className="w-2 h-2 rounded-full bg-rose-500" title={`${categoryCounts.nda.unread} pesan belum dibaca`} />
+                                        )}
+                                    </div>
+                                </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
 
                 <SearchInput

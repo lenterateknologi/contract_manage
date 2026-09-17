@@ -17,7 +17,9 @@ import {
     Tag,
     CheckCircle2,
     XCircle,
+    Sparkles,
 } from 'lucide-react';
+import { resolveVendorTaxPkp } from '@/pages/contracts/utils';
 
 interface ContractInfoFormProps {
     is_readonly?: boolean;
@@ -98,7 +100,8 @@ export function ContractInfoForm({
         () => submissionTypes.find((st) => String(st.id) === String(submissionTypeId)),
         [submissionTypes, submissionTypeId]
     );
-    const activeVendor = React.useMemo(() => vendors.find((v) => String(v.id) === String(vendorId)), [vendors, vendorId]);
+    const activeVendor = React.useMemo(() => vendors.find((v) => String(v.id) === String(vendorId)) || selected.vendor, [vendors, vendorId, selected.vendor]);
+    const vendorTaxInfo = React.useMemo(() => resolveVendorTaxPkp(activeVendor), [activeVendor]);
 
     const vendorOptions = Array.isArray(vendors)
         ? vendors.map((v) => ({ value: String(v.id), label: v.name }))
@@ -164,10 +167,10 @@ export function ContractInfoForm({
 
                 {/* 2. Key-Value List */}
                 <div className="divide-y divide-border/40 text-xs">
-                    {/* No. Kontrak F2 */}
+                    {/* No. Dokumen F2 */}
                     {selected.show_f2_contract_no !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Hash} required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}>No. Kontrak</FieldLabel>
+                            <FieldLabel icon={Hash} required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}>No. Dokumen</FieldLabel>
                             {selected.contract_no ? (
                                 <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
                                     {selected.contract_no}
@@ -221,7 +224,7 @@ export function ContractInfoForm({
                     {/* Nilai / Harga */}
                     {selected.show_price !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai Kontrak</FieldLabel>
+                            <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai / Estimasi Biaya</FieldLabel>
                             <span className="font-mono font-bold text-foreground text-right">
                                 {formattedPrice || '—'}
                             </span>
@@ -231,7 +234,19 @@ export function ContractInfoForm({
                     {/* Ketentuan Pajak */}
                     {selected.show_tax_toggle !== false && (
                         <div className="py-2.5 flex items-center justify-between gap-3">
-                            <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Pajak</FieldLabel>
+                            <div className="flex items-center gap-2">
+                                <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Pajak</FieldLabel>
+                                {vendorTaxInfo.pkpStatus && vendorTaxInfo.pkpStatus !== '-' && (
+                                    <span className={cn(
+                                        "text-[10px] font-bold px-1.5 py-0.2 rounded border",
+                                        taxRequired
+                                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                            : "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
+                                    )}>
+                                        PKP: {vendorTaxInfo.pkpStatus}
+                                    </span>
+                                )}
+                            </div>
                             {taxRequired ? (
                                 <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
                                     <CheckCircle2 size={13} className="shrink-0" />
@@ -253,28 +268,28 @@ export function ContractInfoForm({
     // ── EDITABLE FORM PRESENTATION ──
     return (
         <div className="flex flex-col gap-3.5">
-            {/* Judul Kontrak */}
+            {/* Judul Pengajuan */}
             {selected.show_title !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={FileText} required={!!(selected.require_title || selected.workflow_step?.meta?.require_title)}>Judul Kontrak</FieldLabel>
+                    <FieldLabel icon={FileText} required={!!(selected.require_title || selected.workflow_step?.meta?.require_title)}>Judul Pengajuan</FieldLabel>
                     <Input
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="Masukkan judul kontrak..."
+                        placeholder="Masukkan judul pengajuan..."
                         size="sm"
                     />
                 </div>
             )}
 
-            {/* No. Kontrak F2 */}
+            {/* No. Dokumen F2 */}
             {selected.show_f2_contract_no !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Hash} required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}>No. Kontrak (F2)</FieldLabel>
+                    <FieldLabel icon={Hash} required={!!(selected.require_f2_contract_no || selected.workflow_step?.meta?.require_f2_contract_no)}>No. Dokumen (F2)</FieldLabel>
                     {selected.allow_f2_contract_no_edit !== false ? (
                         <Input
                             value={contractNo}
                             onChange={(e) => setContractNo(e.target.value)}
-                            placeholder="Nomor kontrak F2..."
+                            placeholder="Nomor dokumen / F2..."
                             size="sm"
                         />
                     ) : (
@@ -306,10 +321,10 @@ export function ContractInfoForm({
                 </div>
             )}
 
-            {/* Kategori Kontrak */}
+            {/* Kategori Dokumen */}
             {selected.show_category !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Tag} required={!!(selected.require_category || selected.workflow_step?.meta?.require_category)}>Kategori Kontrak</FieldLabel>
+                    <FieldLabel icon={Tag} required={!!(selected.require_category || selected.workflow_step?.meta?.require_category)}>Kategori Dokumen</FieldLabel>
                     {canEditCategory ? (
                         <TreeSelect
                             value={typeId}
@@ -342,10 +357,10 @@ export function ContractInfoForm({
                 </div>
             </div>
 
-            {/* Masa Berlaku Kontrak */}
+            {/* Masa Berlaku */}
             {selected.show_period !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Calendar} required={!!(selected.require_period || selected.workflow_step?.meta?.require_period)}>Masa Berlaku Kontrak</FieldLabel>
+                    <FieldLabel icon={Calendar} required={!!(selected.require_period || selected.workflow_step?.meta?.require_period)}>Masa Berlaku</FieldLabel>
                     {canEditPeriod ? (
                         <div className="grid grid-cols-2 gap-2">
                             <div className="flex flex-col gap-1">
@@ -377,10 +392,10 @@ export function ContractInfoForm({
                 </div>
             )}
 
-            {/* Nilai / Harga Kontrak */}
+            {/* Nilai / Estimasi Biaya */}
             {selected.show_price !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai / Harga Kontrak</FieldLabel>
+                    <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai / Estimasi Biaya</FieldLabel>
                     {canEditPrice ? (
                         <Input
                             value={(() => {
@@ -409,19 +424,37 @@ export function ContractInfoForm({
             {/* Pajak */}
             {selected.show_tax_toggle !== false && (
                 <div className="flex flex-col gap-1.5">
-                    <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Penentuan Pajak</FieldLabel>
+                    <div className="flex items-center justify-between">
+                        <FieldLabel icon={Receipt} required={!!(selected.require_tax_toggle || selected.workflow_step?.meta?.require_tax_toggle)}>Penentuan Pajak</FieldLabel>
+                        {vendorTaxInfo.pkpStatus && vendorTaxInfo.pkpStatus !== '-' && (
+                            <span className={cn(
+                                "text-[10px] font-bold px-1.5 py-0.5 rounded border",
+                                taxRequired
+                                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                                    : "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
+                            )}>
+                                Status PKP: {vendorTaxInfo.pkpStatus}
+                            </span>
+                        )}
+                    </div>
                     {canEditTaxToggle ? (
                         <label
                             htmlFor="tax_required_checkbox"
-                            className="flex items-center gap-2.5 cursor-pointer rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 hover:bg-muted/60 transition-colors"
+                            className="flex items-center justify-between cursor-pointer rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 hover:bg-muted/60 transition-colors"
                         >
-                            <Checkbox
-                                id="tax_required_checkbox"
-                                checked={taxRequired}
-                                onCheckedChange={(c) => onTaxRequiredChange(!!c)}
-                            />
-                            <span className="text-xs font-medium text-foreground select-none">
-                                Dikenakan Pajak (PPN/PPh)
+                            <div className="flex items-center gap-2.5">
+                                <Checkbox
+                                    id="tax_required_checkbox"
+                                    checked={taxRequired}
+                                    onCheckedChange={(c) => onTaxRequiredChange(!!c)}
+                                />
+                                <span className="text-xs font-medium text-foreground select-none">
+                                    Dikenakan Pajak (PPN/PPh)
+                                </span>
+                            </div>
+
+                            <span className="text-[10px] font-bold text-muted-foreground">
+                                {taxRequired ? 'Kena Pajak' : 'Bebas Pajak'}
                             </span>
                         </label>
                     ) : (
@@ -441,6 +474,11 @@ export function ContractInfoForm({
                                 </>
                             )}
                         </span>
+                    )}
+                    {vendorTaxInfo.pkpStatus && vendorTaxInfo.pkpStatus !== '-' && (
+                        <p className="text-[10px] text-muted-foreground italic">
+                            * Pajak disinkronkan otomatis dari status PKP pihak kedua ({vendorTaxInfo.pkpStatus}).
+                        </p>
                     )}
                 </div>
             )}

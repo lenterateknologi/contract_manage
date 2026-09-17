@@ -15,10 +15,12 @@ trait HasContractMeta
      * Columns that are considered metadata.
      */
     protected array $metaColumns = [
-        'kop_topik', 'kop_sub_topik', 'p1_entity', 'p1_address', 'p1_contact_person',
-        'p1_email', 'p1_phone', 'p2_entity', 'p2_address', 'p2_contact_person',
+        'kop_topik', 'kop_sub_topik', 'kop_lampiran', 'f1_tujuan', 'f1_sifat',
+        'p1_entity', 'p1_signer', 'p1_signer_position', 'p1_address', 'p1_contact_person',
+        'p1_email', 'p1_phone', 'p2_entity', 'p2_signer', 'p2_signer_position', 'p2_address', 'p2_contact_person',
         'p2_email', 'p2_phone', 'f1_name', 'f1_start_date', 'f1_end_date',
-        'f2_price', 'f2_payment_terms', 'f3_penalties', 'f3_insurance',
+        'f2_scope', 'f2_price', 'f2_payment', 'f2_tenure', 'f2_location',
+        'f2_payment_terms', 'f3_penalties', 'f3_insurance',
         'f4_special_conditions', 'f4_guarantees',
     ];
 

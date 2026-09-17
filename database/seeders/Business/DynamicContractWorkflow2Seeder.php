@@ -18,9 +18,8 @@ class DynamicContractWorkflow2Seeder extends Seeder
         $roleMap = Role::pluck('id', 'name')->toArray();
         $managerRoleId = $roleMap['Manager'] ?? null;
         $vpRoleId = $roleMap['VP'] ?? null;
-        $astManagerRoleId = $roleMap['Ast Manager'] ?? null;
-        $managerLegalRoleId = $roleMap['Manager Legal'] ?? null;
-        $staffLegalRoleId = $roleMap['Staff Legal'] ?? null;
+        $managerLegalRoleId = $roleMap['Manager Legal'] ?? ($roleMap['Manager'] ?? null);
+        $staffLegalRoleId = $roleMap['Staff Legal'] ?? ($roleMap['Staff'] ?? null);
 
         $targetWf1Id = 'dcc0af6c-20a9-4bb8-8c3e-962f72d00be6';
         $wf1 = Workflow::find($targetWf1Id);

@@ -63,11 +63,13 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             let matchesDiv = true;
             let matchesGroup = true;
             let matchesRegion = true;
+            let matchesLocation = true;
             let hasFilters = false;
 
             let userRoleId = String(user.role_id || user.role || '');
             let userDeptId = String(user.department_id || user.department?.id || '');
             let userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+            let userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
             let userCompId = String(user.company_id || user.company?.id || '');
             let userCgId = String(user.company_group_id || user.company?.company_group_id || '');
             let userRegionId = String(user.region_id || user.company?.region_id || '');
@@ -103,6 +105,22 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                 hasFilters = true;
             }
 
+            if (auth.location_id) {
+                const targetLocStr = String(auth.location_id);
+                const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                matchesLocation = targetLocStr === userLocId ||
+                                  auth.location?.name?.toLowerCase() === userLocName ||
+                                  targetLocStr.toLowerCase() === userLocName;
+                hasFilters = true;
+            } else if (auth.location_use_initiator) {
+                const initLocId = String(contract?.initiator?.location_id || contract?.initiator?.idlocation || contract?.initiator?.location?.id || '');
+                const initLocName = (contract?.initiator?.location_name || contract?.initiator?.location?.name || '').toLowerCase().trim();
+                const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                matchesLocation = (initLocId && userLocId && initLocId === userLocId) ||
+                                  (initLocName && userLocName && initLocName === userLocName);
+                hasFilters = true;
+            }
+
             if (auth.company_group_id) {
                 matchesGroup = String(auth.company_group_id) === userCgId;
                 hasFilters = true;
@@ -131,7 +149,7 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             }
 
             if (hasFilters) {
-                return matchesRole && matchesDept && matchesDiv && matchesGroup && matchesRegion;
+                return matchesRole && matchesDept && matchesDiv && matchesLocation && matchesGroup && matchesRegion;
             }
 
             return false;

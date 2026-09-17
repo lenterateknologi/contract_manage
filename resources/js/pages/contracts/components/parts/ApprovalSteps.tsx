@@ -157,11 +157,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                 group.stepDescription = mainStep.step_description || mainStep.workflow_step?.description;
 
                 group.items.sort((a: any, b: any) => {
+                    if (a.sub_step != null && b.sub_step != null && Number(a.sub_step) !== Number(b.sub_step)) {
+                        return Number(a.sub_step) - Number(b.sub_step);
+                    }
                     if (a.sort_order !== undefined && b.sort_order !== undefined && a.sort_order !== b.sort_order) {
                         return (a.sort_order || 0) - (b.sort_order || 0);
-                    }
-                    if (a.sub_step != null && b.sub_step != null) {
-                        return Number(a.sub_step) - Number(b.sub_step);
                     }
                     if (a.created_at && b.created_at) {
                         return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
@@ -638,7 +638,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                         const isItemPending = Boolean(
                                                                             activePendingApproval && 
                                                                             !isCompleted && 
-                                                                            (a.id === activePendingApproval.id || (a.workflow_step_id === activePendingApproval.workflow_step_id && a.sequence === activePendingApproval.sequence))
+                                                                            a.status !== 'waiting' &&
+                                                                            (a.id === activePendingApproval.id || a.status === 'pending')
                                                                         );
 
                                                                         return (
@@ -680,26 +681,26 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
 
                         if (isSubWf) {
                             return (
-                                <TimelineItem key={block.workflowId + bIdx} status="active" className={cn(viewTab === 'lite' ? 'pb-2' : 'pb-4')}>
+                                <TimelineItem key={block.workflowId + bIdx} status="active" className={cn(viewTab === 'lite' ? 'pb-2' : 'pb-4', 'w-full min-w-0')}>
                                     <TimelineIcon 
                                         status="active" 
-                                        className="bg-primary text-primary-foreground"
+                                        className="bg-indigo-600 text-white dark:bg-indigo-500 shadow-xs"
                                     >
                                         <Layers size={13} strokeWidth={2} />
                                     </TimelineIcon>
-                                    <TimelineContent>
-                                        <div className="rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-xs space-y-2.5">
+                                    <TimelineContent className="w-full min-w-0 flex-1">
+                                        <div className="rounded-xl border border-indigo-200/60 dark:border-indigo-800/60 bg-card p-3 sm:p-3.5 shadow-xs space-y-2.5 w-full min-w-0">
                                             {/* Simple Sub-Workflow Card Header */}
                                             <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex h-5.5 w-5.5 items-center justify-center rounded-md bg-muted text-muted-foreground shrink-0">
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <div className="flex h-5.5 w-5.5 items-center justify-center rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shrink-0">
                                                         <Workflow size={12} strokeWidth={2} />
                                                     </div>
-                                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                                        <span className="text-[9px] font-bold tracking-wider uppercase bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
+                                                    <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+                                                        <span className="text-[9px] font-bold tracking-wider uppercase bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded font-mono">
                                                             Sub-Workflow
                                                         </span>
-                                                        <h4 className="text-xs font-semibold text-foreground">
+                                                        <h4 className="text-xs font-bold text-foreground truncate">
                                                             {block.workflowName}
                                                         </h4>
                                                     </div>
@@ -710,8 +711,8 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                             </div>
 
                                             {/* Simple Nested Timeline */}
-                                            <div className="relative pt-0.5">
-                                                <Timeline className="border-border/60 ml-1 pl-2.5 gap-2">
+                                            <div className="relative pt-0.5 w-full min-w-0">
+                                                <Timeline className="border-border/60 ml-1 pl-2.5 gap-2 w-full">
                                                     {content}
                                                 </Timeline>
                                             </div>

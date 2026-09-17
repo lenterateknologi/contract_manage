@@ -70,8 +70,8 @@ export function EditContractModal({
             onClose={onClose}
             headerVariant="primary"
             headerIcon={<FileEdit size={18} />}
-            title="Edit Informasi Kontrak"
-            description="Perbarui data dan informasi kontrak"
+            title="Edit Informasi Pengajuan"
+            description="Perbarui data dan informasi pengajuan"
             maxWidth="2xl"
             footer={
                 <div className="flex w-full justify-end gap-2.5">
@@ -92,11 +92,11 @@ export function EditContractModal({
         >
             <div className="space-y-3.5 pt-1">
                 <FormInput
-                    label="Judul Kontrak"
+                    label="Judul Pengajuan"
                     labelClassName="font-extrabold text-[10.5px] uppercase"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Masukkan judul kontrak"
+                    placeholder="Masukkan judul pengajuan"
                     required
                 />
 
@@ -123,7 +123,7 @@ export function EditContractModal({
                         Klasifikasi & Jenis Dokumen
                         {!!contract?.require_category && <span className="text-rose-500 font-black">*</span>}
                     </label>
-                    <TreeSelect value={typeId} onValueChange={(val) => setTypeId(val)} items={types} placeholder="Pilih Tipe Kontrak" />
+                    <TreeSelect value={typeId} onValueChange={(val) => setTypeId(val)} items={types} placeholder="Pilih Kategori Dokumen" />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2">

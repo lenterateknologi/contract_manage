@@ -82,7 +82,7 @@ class WorkflowStep extends Model
         ];
     }
 
-    protected $with = ['approverAuthorities.role', 'approverAuthorities.division', 'approverAuthorities.user', 'users'];
+    protected $with = ['approverAuthorities.role', 'approverAuthorities.division', 'approverAuthorities.user', 'users', 'workflow'];
 
     protected $appends = ['role', 'department_ids', 'department_names', 'division_ids', 'division_names', 'user_ids', 'name'];
 

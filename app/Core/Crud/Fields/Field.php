@@ -140,7 +140,7 @@ class Field implements JsonSerializable
             'label' => $this->label,
             'type' => $this->type,
             'required' => $this->isRequired,
-            'defaultValue' => $this->defaultValue,
+            'defaultValue' => value($this->defaultValue),
             'columnSpan' => $this->columnSpan,
             'placeholder' => $this->getPlaceholder(),
             'icon' => $this->icon,

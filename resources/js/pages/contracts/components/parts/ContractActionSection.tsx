@@ -10,6 +10,7 @@ import {
     ChevronDown,
     ChevronUp,
     Download,
+    GitBranch,
     Loader2,
     Lock,
     PenTool,
@@ -72,10 +73,12 @@ export function ContractActionSection({
     const canAssignPic = availableCustomActions.some((a) => a.action_code === 'assign' || a.id === 'action_assign_pic');
     const canSignature = availableCustomActions.some((a) => a.action_code === 'signature' || a.id === 'action_signature');
     const canAdhoc = availableCustomActions.some((a) => a.action_code === 'forward' || a.id === 'action_adhoc');
+    const canBranch = availableCustomActions.some((a) => (a.action_code === 'branch' || a.id === 'action_branch') && a.id !== 'action_adhoc');
 
     const picAction = availableCustomActions.find((a) => a.action_code === 'assign' || a.id === 'action_assign_pic');
     const sigAction = availableCustomActions.find((a) => a.action_code === 'signature' || a.id === 'action_signature');
     const adhocAction = availableCustomActions.find((a) => a.action_code === 'forward' || a.id === 'action_adhoc');
+    const branchAction = availableCustomActions.find((a) => (a.action_code === 'branch' || a.id === 'action_branch') && a.id !== 'action_adhoc');
     const toggleAction = availableCustomActions.find((a) => a.action_code === 'toggle_access' || a.id === 'action_toggle_access');
 
     return (
@@ -176,6 +179,21 @@ export function ContractActionSection({
                             >
                                 <UserPlus size={16} />
                                 <span className="text-xs">{adhocAction?.alias || 'Tambah Persetujuan Ad-Hoc'}</span>
+                            </Button>
+                        </ActionPreviewTooltip>
+                    )}
+
+                    {/* BUTTON PINDAH WORKFLOW (SUB-WORKFLOW BRANCHING) */}
+                    {canBranch && (
+                        <ActionPreviewTooltip preview={getActionTransitionPreview(branchAction || { action_code: 'branch' }, contract)}>
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => onActionClick(branchAction || { action_code: 'branch' }, 'branch')}
+                                className="w-full justify-center bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
+                            >
+                                <GitBranch size={16} />
+                                <span className="text-xs">{branchAction?.alias || 'Pindah Workflow'}</span>
                             </Button>
                         </ActionPreviewTooltip>
                     )}

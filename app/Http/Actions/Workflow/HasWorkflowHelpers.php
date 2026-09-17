@@ -71,6 +71,35 @@ trait HasWorkflowHelpers
             }
             $transitionConfig['order'] = $actIdx + 1;
 
+            $transType = $transitionConfig['type'] ?? null;
+            if ($transType === 'absolute') {
+                $targetStepId = $transitionConfig['step_id'] ?? $actData['next_step_id'] ?? null;
+                if ($targetStepId && isset($stepIdMap[$targetStepId])) {
+                    $targetStepId = $stepIdMap[$targetStepId];
+                }
+
+                if ($targetStepId && in_array($targetStepId, array_values($stepIdMap))) {
+                    $targetStepModel = WorkflowStep::find($targetStepId);
+                    if ($targetStepModel) {
+                        $transitionConfig['step_id'] = $targetStepId;
+                        $transitionConfig['sequence'] = $targetStepModel->step;
+                        $nextStepId = $targetStepId;
+                    } else {
+                        $transitionConfig['step_id'] = null;
+                        $nextStepId = null;
+                    }
+                } else {
+                    $transitionConfig['step_id'] = null;
+                    $nextStepId = null;
+                }
+            } elseif ($transType === 'relative') {
+                $nextStepId = null;
+                unset($transitionConfig['step_id']);
+            } elseif ($transType === 'initial_step') {
+                $nextStepId = null;
+                unset($transitionConfig['step_id']);
+            }
+
             $actionFields = [
                 'action_code' => $enumCode,
                 'next_step_id' => $nextStepId,
@@ -170,25 +199,42 @@ trait HasWorkflowHelpers
                 if (empty($auth['authority_type'])) {
                     continue;
                 }
+
+                $resolvedRoleId = ! empty($auth['role_id']) ? $this->resolveRoleId($auth['role_id']) : null;
+                $resolvedDeptId = ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null;
+                $resolvedDivId = ! empty($auth['division_id']) ? $this->resolveDivisionId($auth['division_id']) : null;
+                $resolvedLocId = ! empty($auth['location_id']) ? $this->resolveLocationId($auth['location_id']) : null;
+                $resolvedUserId = ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null;
+                $resolvedCgId = ! empty($auth['company_group_id']) ? $this->resolveCompanyGroupId($auth['company_group_id']) : null;
+                $resolvedCompId = ! empty($auth['company_id']) ? $this->resolveCompanyId($auth['company_id']) : null;
+                $resolvedRegId = ! empty($auth['region_id']) ? $this->resolveRegionId($auth['region_id']) : null;
+
+                // If group authority specified a role that no longer exists and no initiator flag, skip invalid record
+                if (($auth['authority_type'] ?? '') === 'group' && !empty($auth['role_id']) && empty($resolvedRoleId) && empty($auth['role_use_initiator'])) {
+                    continue;
+                }
+
                 $action->additionalAuthorities()->create([
                     'workflow_step_id' => $stepId,
                     'is_additional' => true,
                     'additional_type' => $type,
                     'target_step_id' => $targetStepId,
                     'authority_type' => $auth['authority_type'] ?? null,
-                    'role_id' => ! empty($auth['role_id']) ? $this->resolveRoleId($auth['role_id']) : null,
-                    'department_id' => ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null,
-                    'division_id' => ! empty($auth['division_id']) ? $this->resolveDivisionId($auth['division_id']) : null,
-                    'user_id' => ! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null,
-                    'company_group_id' => $auth['company_group_id'] ?? null,
-                    'company_id' => $auth['company_id'] ?? null,
-                    'region_id' => $auth['region_id'] ?? null,
-                    'role_use_initiator' => $auth['role_use_initiator'] ?? false,
-                    'department_use_initiator' => $auth['department_use_initiator'] ?? false,
-                    'division_use_initiator' => $auth['division_use_initiator'] ?? false,
-                    'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
-                    'company_use_initiator' => $auth['company_use_initiator'] ?? false,
-                    'region_use_initiator' => $auth['region_use_initiator'] ?? false,
+                    'role_id' => $resolvedRoleId,
+                    'department_id' => $resolvedDeptId,
+                    'division_id' => $resolvedDivId,
+                    'location_id' => $resolvedLocId,
+                    'user_id' => $resolvedUserId,
+                    'company_group_id' => $resolvedCgId,
+                    'company_id' => $resolvedCompId,
+                    'region_id' => $resolvedRegId,
+                    'role_use_initiator' => (bool) ($auth['role_use_initiator'] ?? false),
+                    'department_use_initiator' => (bool) ($auth['department_use_initiator'] ?? false),
+                    'division_use_initiator' => (bool) ($auth['division_use_initiator'] ?? false),
+                    'location_use_initiator' => (bool) ($auth['location_use_initiator'] ?? false),
+                    'company_group_use_initiator' => (bool) ($auth['company_group_use_initiator'] ?? false),
+                    'company_use_initiator' => (bool) ($auth['company_use_initiator'] ?? false),
+                    'region_use_initiator' => (bool) ($auth['region_use_initiator'] ?? false),
                 ]);
             }
 
@@ -311,10 +357,18 @@ trait HasWorkflowHelpers
         }
     }
 
-    protected function resolveDepartmentId(string $identifier): ?string
+    protected function resolveDepartmentId(?string $identifier): ?string
     {
+        if (empty($identifier)) {
+            return null;
+        }
+
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return $identifier;
+            $exists = Department::where('id', $identifier)->value('id');
+            if ($exists) {
+                return $exists;
+            }
+            return Division::where('id', $identifier)->value('id');
         }
 
         $divisionId = Division::where('code', $identifier)->value('id');
@@ -325,31 +379,95 @@ trait HasWorkflowHelpers
         return Department::where('code', $identifier)->value('id');
     }
 
-    protected function resolveUserId(string $identifier): ?string
+    protected function resolveUserId(?string $identifier): ?string
     {
+        if (empty($identifier)) {
+            return null;
+        }
+
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return $identifier;
+            return User::where('id', $identifier)->value('id');
         }
 
         return User::where('email', $identifier)->value('id');
     }
 
-    protected function resolveRoleId(string $identifier): ?string
+    protected function resolveRoleId(?string $identifier): ?string
     {
+        if (empty($identifier)) {
+            return null;
+        }
+
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return $identifier;
+            return Role::where('id', $identifier)->value('id');
         }
 
         // ponytail: role_name is the canonical lookup key
         return Role::where('name', $identifier)->value('id');
     }
 
-    protected function resolveDivisionId(string $identifier): ?string
+    protected function resolveDivisionId(?string $identifier): ?string
     {
+        if (empty($identifier)) {
+            return null;
+        }
+
         if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
-            return $identifier;
+            return Division::where('id', $identifier)->value('id');
         }
 
         return Division::where('code', $identifier)->value('id');
+    }
+
+    protected function resolveLocationId(?string $identifier): ?string
+    {
+        if (empty($identifier)) {
+            return null;
+        }
+
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return \App\Models\Location::where('id', $identifier)->value('id');
+        }
+
+        return \App\Models\Location::where('code', $identifier)->value('id');
+    }
+
+    protected function resolveCompanyGroupId(?string $identifier): ?string
+    {
+        if (empty($identifier)) {
+            return null;
+        }
+
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return \App\Models\CompanyGroup::where('id', $identifier)->value('id');
+        }
+
+        return \App\Models\CompanyGroup::where('name', $identifier)->value('id');
+    }
+
+    protected function resolveCompanyId(?string $identifier): ?string
+    {
+        if (empty($identifier)) {
+            return null;
+        }
+
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return \App\Models\Company::where('id', $identifier)->value('id');
+        }
+
+        return \App\Models\Company::where('name', $identifier)->value('id');
+    }
+
+    protected function resolveRegionId(?string $identifier): ?string
+    {
+        if (empty($identifier)) {
+            return null;
+        }
+
+        if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $identifier)) {
+            return \App\Models\Region::where('id', $identifier)->value('id');
+        }
+
+        return \App\Models\Region::where('name', $identifier)->value('id');
     }
 }

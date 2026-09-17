@@ -24,13 +24,14 @@ class ContractFormatter
     {
         if ($isDetail) {
             $c->loadMissing([
-                'initiator.department', 'initiator.company',
-                'creator.department', 'creator.company',
-                'approvals.approver.department', 'approvals.workflowStep',
-                'workflowStep.actions', 'histories.actor.department',
+                'initiator.department', 'initiator.company', 'initiator.division', 'initiator.location', 'initiator.supervisor.department', 'initiator.reportingTo.department',
+                'creator.department', 'creator.company', 'creator.division', 'creator.location', 'creator.supervisor.department', 'creator.reportingTo.department',
+                'approvals.approver.department', 'approvals.workflowStep.workflow.steps',
+                'workflowStep.actions', 'workflowStep.workflow.steps', 'histories.actor.department',
                 'contractType', 'submissionType', 'vendor', 'parent', 'workflow.steps', 'workflow.contractType',
                 'versions.uploader', 'messages.user', 'attachments.uploader', 'formSubmissions.submittedBy',
-                'assignedPic.department', 'assignedBy.department', 'statusDetail',
+                'assignedPic.department', 'assignedPic.company', 'assignedPic.division', 'assignedPic.location', 'assignedPic.supervisor.department', 'assignedPic.reportingTo.department',
+                'assignedBy.department', 'assignedBy.company', 'assignedBy.location', 'statusDetail', 'purchaseOrders.creator',
             ]);
         }
         $nextStep = $isDetail ? self::getNextStep($c) : null;
@@ -204,9 +205,26 @@ class ContractFormatter
                 'contract_no' => $c->parent->contract_no,
                 'title' => $c->parent->title,
             ] : null,
+            'purchase_orders' => ($isDetail && $c->relationLoaded('purchaseOrders')) ? $c->purchaseOrders->map(fn ($po) => [
+                'id' => $po->id,
+                'po_number' => $po->po_number,
+                'title' => $po->title,
+                'po_date' => $po->po_date?->format('Y-m-d'),
+                'amount' => (float) $po->amount,
+                'currency' => $po->currency ?? 'IDR',
+                'vendor_name' => $po->vendor_name,
+                'status' => $po->status ?? 'active',
+                'description' => $po->description,
+                'file_path' => $po->file_path,
+                'created_at' => $po->created_at?->toIso8601String(),
+                'creator' => self::formatUser($po->creator),
+            ])->toArray() : [],
             'progress' => $progress,
             'workflow_id' => $c->workflow_id,
             'origin_workflow_id' => $c->origin_workflow_id,
+            'is_in_sub_workflow' => (bool) ($c->is_in_sub_workflow ?? false),
+            'current_sub_workflow_id' => $c->current_sub_workflow_id,
+            'branch_step_number' => $c->branch_step_number,
             'origin_workflow' => ($isDetail && $c->origin_workflow_id) ? [
                 'id' => $c->origin_workflow_id,
                 'name' => Workflow::where('id', $c->origin_workflow_id)->value('name') ?? $c->workflow?->name,
@@ -252,6 +270,9 @@ class ContractFormatter
                 'id' => $v->id,
                 'document_type' => $v->document_type,
                 'version_no' => $v->version_no,
+                'workflow_step_id' => $v->workflow_step_id,
+                'step_number' => $v->step_number,
+                'workflow_iteration' => $v->workflow_iteration,
                 'file_name' => $v->file_name,
                 'change_log' => $v->change_log,
                 'uploaded_by' => $v->uploaded_by,
@@ -291,6 +312,9 @@ class ContractFormatter
                 'document_type' => $fs->document_type,
                 'form_template_id' => $fs->form_template_id,
                 'current_version' => $fs->current_version,
+                'workflow_step_id' => $fs->workflow_step_id,
+                'step_number' => $fs->step_number,
+                'workflow_iteration' => $fs->workflow_iteration,
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]) : [],
@@ -308,7 +332,7 @@ class ContractFormatter
                     }
                 }
 
-                return $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+                return $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
                     if ($a->sub_step !== null) {
                         return true;
                     }
@@ -320,7 +344,7 @@ class ContractFormatter
                     return ! $hasUnapprovedSubSteps;
                 })->isNotEmpty();
             })(),
-            'pending_approval_id' => $c->approvals->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+            'pending_approval_id' => $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
                 if ($a->sub_step !== null) {
                     return true;
                 }

@@ -80,6 +80,11 @@ class Contract extends Model
         'current_version',
         'workflow_id',
         'origin_workflow_id',
+        'is_in_sub_workflow',
+        'branch_step_number',
+        'current_step_number',
+        'current_sub_workflow_id',
+        'workflow_iteration',
         'workflow_step_id',
         'metadata',
         'submitted_at',
@@ -97,15 +102,21 @@ class Contract extends Model
         'tax_required',
 
         // Meta columns transparently handled by HasContractMeta
-        'kop_topik', 'kop_sub_topik', 'p1_entity', 'p1_address', 'p1_contact_person',
-        'p1_email', 'p1_phone', 'p2_entity', 'p2_address', 'p2_contact_person',
+        'kop_topik', 'kop_sub_topik', 'kop_lampiran', 'f1_tujuan', 'f1_sifat',
+        'p1_entity', 'p1_signer', 'p1_signer_position', 'p1_address', 'p1_contact_person',
+        'p1_email', 'p1_phone', 'p2_entity', 'p2_signer', 'p2_signer_position', 'p2_address', 'p2_contact_person',
         'p2_email', 'p2_phone', 'f1_name', 'f1_start_date', 'f1_end_date',
-        'f2_price', 'f2_payment_terms', 'f3_penalties', 'f3_insurance',
+        'f2_scope', 'f2_price', 'f2_payment', 'f2_tenure', 'f2_location',
+        'f2_payment_terms', 'f3_penalties', 'f3_insurance',
         'f4_special_conditions', 'f4_guarantees',
     ];
 
     protected $casts = [
         'metadata' => 'array',
+        'is_in_sub_workflow' => 'boolean',
+        'branch_step_number' => 'integer',
+        'current_step_number' => 'integer',
+        'workflow_iteration' => 'integer',
         'submitted_at' => 'datetime',
         'received_at' => 'datetime',
         'assigned_at' => 'datetime',
@@ -186,6 +197,11 @@ class Contract extends Model
         return $this->belongsTo(Workflow::class);
     }
 
+    public function originWorkflow(): BelongsTo
+    {
+        return $this->belongsTo(Workflow::class, 'origin_workflow_id');
+    }
+
     public function workflowStep(): BelongsTo
     {
         return $this->belongsTo(WorkflowStep::class);
@@ -199,6 +215,11 @@ class Contract extends Model
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Contract::class, 'parent_id');
+    }
+
+    public function purchaseOrders(): HasMany
+    {
+        return $this->hasMany(ContractPurchaseOrder::class, 'contract_id')->latest();
     }
 
     public function assignedPic(): BelongsTo

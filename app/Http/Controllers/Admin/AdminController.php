@@ -85,6 +85,20 @@ class AdminController extends Controller
 
     public function members(Request $request)
     {
+        if ($request->boolean('refresh') || $request->boolean('sync')) {
+            Cache::forget('admin_members_tree_users_v2');
+            Cache::forget('admin_members_divisions');
+            Cache::forget('admin_members_departments');
+            Cache::forget('admin_members_dept_traffic');
+            Cache::forget('admin_members_company_groups');
+            Cache::forget('admin_members_regions');
+            Cache::forget('admin_members_locations');
+            Cache::forget('admin_members_companies');
+            Cache::forget('admin_members_job_titles');
+            Cache::forget('admin_members_job_levels');
+            Cache::forget('admin_members_roles');
+        }
+
         // Cache master data and users payload for high performance (5 min TTL)
         $users = Cache::remember('admin_members_tree_users_v2', 300, function () {
             return User::query()

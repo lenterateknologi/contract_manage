@@ -61,9 +61,17 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         }
     }, [open]);
 
+    const customActionsList = [
+        ...(contract?.workflow?.meta?.custom_actions || []),
+        ...(contract?.origin_workflow?.meta?.custom_actions || []),
+        ...(((contract?.workflow_step as any)?.workflow as any)?.meta?.custom_actions || []),
+    ];
+
     const activeAction = actionId
-        ? contract?.workflow_step?.actions?.find((a: any) => a.id === actionId)
-        : contract?.workflow_step?.actions?.find((a: any) => a.action_code === actionCode);
+        ? (contract?.workflow_step?.actions?.find((a: any) => a.id === actionId) ||
+           customActionsList.find((a: any) => a.id === actionId || a.action_code === actionCode))
+        : (contract?.workflow_step?.actions?.find((a: any) => a.action_code === actionCode) ||
+           customActionsList.find((a: any) => a.action_code === actionCode));
 
     const getTransitionPreview = () => {
         if (!contract) return null;
@@ -198,28 +206,49 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         }
     };
 
+    const getActionRequiredFields = () => {
+        if (isSubStep) return [];
+        const code = (actionCode || activeAction?.action_code || '').toLowerCase();
+        const isNonStandardAction = ['reject', 'branch', 'forward', 'cross_workflow'].includes(code);
+
+        if (activeAction?.required_fields && Array.isArray(activeAction.required_fields)) {
+            return activeAction.required_fields;
+        }
+
+        if (isNonStandardAction) {
+            return [];
+        }
+
+        let stepMeta = contract?.workflow_step?.meta;
+        if (!stepMeta && contract?.workflow?.steps) {
+            const currentStepSeq = contract?.current_step || contract?.workflow_step?.step || 1;
+            const matchedStep = contract.workflow.steps.find((s: any) => s.step === currentStepSeq || s.id === contract?.workflow_step_id);
+            if (matchedStep) stepMeta = matchedStep.meta;
+        }
+        stepMeta = stepMeta || {};
+
+        const list: string[] = [];
+        if (stepMeta.require_pic) list.push('pic');
+        if (stepMeta.require_f1) list.push('f1');
+        if (stepMeta.require_f2) list.push('f2');
+        if (stepMeta.require_agreement) list.push('agreement');
+        if (stepMeta.require_title) list.push('title');
+        if (stepMeta.require_vendor) list.push('vendor');
+        if (stepMeta.require_category) list.push('category');
+        if (stepMeta.require_f2_contract_no) list.push('contract_no');
+        if (stepMeta.require_tax_toggle) list.push('tax_toggle');
+        if (stepMeta.require_price) list.push('price');
+        if (stepMeta.require_period) list.push('period');
+        return list;
+    };
+
     const handleSubmit = async () => {
         if (!isSubStep) {
-            // Validation check for required step documents (require_f1, require_f2, require_agreement or action_configs.required_fields)
-            let stepMeta = contract?.workflow_step?.meta;
-            let actions = contract?.workflow_step?.action_configs || contract?.workflow_step?.actions || [];
-
-            if (!stepMeta && contract?.workflow?.steps) {
-                const currentStepSeq = contract?.current_step || contract?.workflow_step?.step || 1;
-                const matchedStep = contract.workflow.steps.find((s: any) => s.step === currentStepSeq || s.id === contract?.workflow_step_id);
-                if (matchedStep) {
-                    stepMeta = matchedStep.meta;
-                    if (!actions.length) actions = matchedStep.action_configs || matchedStep.actions || [];
-                }
-            }
-            stepMeta = stepMeta || {};
-
-            const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
-
-            const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');
-            const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
-            const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
-            const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+            const requiredFields = getActionRequiredFields();
+            const requirePic = requiredFields.includes('pic') || requiredFields.includes('assigned_pic');
+            const requireF1 = requiredFields.includes('f1');
+            const requireF2 = requiredFields.includes('f2');
+            const requireAgreement = requiredFields.includes('agreement');
 
             const missingDocs: string[] = [];
 
@@ -228,67 +257,92 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                 if (!hasPic) missingDocs.push('Data PIC (Penanggung Jawab)');
             }
 
+            const currentApproval = (contract?.approvals || []).find((a: any) => a.status === 'pending');
+            const currentStepId = contract?.workflow_step_id || contract?.workflow_step?.id;
+            const currentStepNo = contract?.workflow_step?.step || contract?.current_step_number || (currentApproval?.sequence ?? currentApproval?.step_number);
+            const iteration = contract?.workflow_iteration || 1;
+            const stepStartTime = currentApproval?.created_at || contract?.workflow_step?.created_at;
+
+            const checkDocFulfillment = (type: string) => {
+                const types = type === 'agreement' ? ['agreement', 'contract'] : [type];
+
+                const hasVersionMatch = contract?.versions && contract.versions.some((v: any) => {
+                    if (!types.includes(v.document_type)) return false;
+                    if (currentStepId && v.workflow_step_id === currentStepId) return true;
+                    if (currentStepNo !== undefined && v.step_number === currentStepNo) return true;
+                    if (v.workflow_iteration === iteration && !v.workflow_step_id && !v.step_number) return true;
+                    if (stepStartTime && v.created_at_raw) {
+                        return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
+                    }
+                    return false;
+                });
+                if (hasVersionMatch) return true;
+
+                const hasFormMatch = (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => {
+                    if (!types.includes(fs.document_type)) return false;
+                    if (currentStepId && fs.workflow_step_id === currentStepId) return true;
+                    if (currentStepNo !== undefined && fs.step_number === currentStepNo) return true;
+                    if (fs.workflow_iteration === iteration && !fs.workflow_step_id && !fs.step_number) return true;
+                    return (fs.current_version ?? 0) > 0 || !!fs.id;
+                });
+                if (hasFormMatch) return true;
+
+                if (!currentStepNo || currentStepNo <= 1) {
+                    if (contract?.versions && contract.versions.some((v: any) => types.includes(v.document_type))) return true;
+                    if ((contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => types.includes(fs.document_type))) return true;
+                }
+
+                return false;
+            };
+
             if (requireF1) {
-                const hasF1 = !!(
+                const hasF1 = checkDocFulfillment('f1') || !!(
                     contract.f1_file ||
                     contract.metadata?.f1_file ||
-                    (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'f1') ||
-                    (contract as any).f1_submission ||
-                    (contract as any).f1_form_data ||
                     contract.metadata?.f1_form_data ||
-                    (contract?.versions && contract.versions.some((v: any) => v.document_type === 'f1')) ||
                     (contract.f1_items && contract.f1_items.length > 0)
                 );
                 if (!hasF1) missingDocs.push('Sub-dokumen F1 (Permohonan)');
             }
 
             if (requireF2) {
-                const hasF2 = !!(
+                const hasF2 = checkDocFulfillment('f2') || !!(
                     contract.f2_file ||
                     contract.metadata?.f2_file ||
-                    (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'f2') ||
-                    (contract as any).f2_submission ||
-                    (contract as any).f2_form_data ||
-                    contract.metadata?.f2_form_data ||
-                    (contract?.versions && contract.versions.some((v: any) => v.document_type === 'f2')) ||
-                    contract.contract_no ||
-                    contract.price
+                    contract.metadata?.f2_form_data
                 );
                 if (!hasF2) missingDocs.push('Sub-dokumen F2 (Ringkasan)');
             }
 
             if (requireAgreement) {
-                const hasAgreement = !!(
+                const hasAgreement = checkDocFulfillment('agreement') || !!(
                     contract.agreement_file ||
                     contract.metadata?.agreement_file ||
-                    (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'agreement' || fs.document_type === 'contract') ||
-                    (contract as any).agreement_submission ||
-                    contract.agreement_content ||
                     contract.metadata?.agreement_content ||
-                    (contract.versions && (contract.versions as any[]).some((v: any) => v.document_type === 'agreement' || v.document_type === 'contract'))
+                    (contract as any).agreement_content
                 );
                 if (!hasAgreement) missingDocs.push('Sub-dokumen Perjanjian / Draft');
             }
 
-            if (stepMeta.require_title && !contract.title) {
+            if (requiredFields.includes('title') && !contract.title) {
                 missingDocs.push('Field Judul Kontrak');
             }
-            if (stepMeta.require_vendor && !contract.vendor_id && !contract.vendor?.id) {
+            if (requiredFields.includes('vendor') && !contract.vendor_id && !contract.vendor?.id) {
                 missingDocs.push('Field Pihak Kedua ');
             }
-            if (stepMeta.require_category && !contract.contract_type_id && !contract.contract_type) {
+            if (requiredFields.includes('category') && !contract.contract_type_id && !contract.contract_type) {
                 missingDocs.push('Field Kategori Kontrak');
             }
-            if (stepMeta.require_f2_contract_no && !contract.contract_no) {
+            if ((requiredFields.includes('contract_no') || requiredFields.includes('f2_contract_no')) && !contract.contract_no) {
                 missingDocs.push('Field Nomor Kontrak');
             }
-            if (stepMeta.require_tax_toggle && contract.tax_required === undefined && contract.metadata?.tax_required === undefined) {
+            if ((requiredFields.includes('tax_toggle') || requiredFields.includes('tax')) && contract.tax_required === undefined && contract.metadata?.tax_required === undefined) {
                 missingDocs.push('Field Penentuan Pajak');
             }
-            if (stepMeta.require_price && (contract.price === undefined || contract.price === null || contract.price === '')) {
+            if (requiredFields.includes('price') && (contract.price === undefined || contract.price === null || contract.price === '')) {
                 missingDocs.push('Field Nilai / Harga Kontrak');
             }
-            if (stepMeta.require_period && ((!contract.contract_date && !contract.start_date) || !contract.end_date)) {
+            if (requiredFields.includes('period') && ((!contract.contract_date && !contract.start_date) || !contract.end_date)) {
                 missingDocs.push('Field Masa Berlaku Kontrak');
             }
 
@@ -338,24 +392,13 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
 
     const checkIsSubmitDisabled = () => {
         if (isSubStep) return false;
-        let stepMeta = contract?.workflow_step?.meta;
-        let actions = contract?.workflow_step?.action_configs || contract?.workflow_step?.actions || [];
+        const requiredFields = getActionRequiredFields();
+        if (requiredFields.length === 0) return false;
 
-        if (!stepMeta && contract?.workflow?.steps) {
-            const currentStepSeq = contract?.current_step || contract?.workflow_step?.step || 1;
-            const matchedStep = contract.workflow.steps.find((s: any) => s.step === currentStepSeq || s.id === contract?.workflow_step_id);
-            if (matchedStep) {
-                stepMeta = matchedStep.meta;
-                if (!actions.length) actions = matchedStep.action_configs || matchedStep.actions || [];
-            }
-        }
-        stepMeta = stepMeta || {};
-
-        const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
-        const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');
-        const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
-        const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
-        const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+        const requirePic = requiredFields.includes('pic') || requiredFields.includes('assigned_pic');
+        const requireF1 = requiredFields.includes('f1');
+        const requireF2 = requiredFields.includes('f2');
+        const requireAgreement = requiredFields.includes('agreement');
 
         if (requirePic) {
             const hasPic = !!(
@@ -367,34 +410,52 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
             if (!hasPic) return true;
         }
 
-        // Waktu saat step persetujuan saat ini dimulai
         const currentApproval = (contract?.approvals || []).find((a: any) => a.status === 'pending');
+        const currentStepId = contract?.workflow_step_id || contract?.workflow_step?.id;
+        const currentStepNo = contract?.workflow_step?.step || contract?.current_step_number || (currentApproval?.sequence ?? currentApproval?.step_number);
+        const iteration = contract?.workflow_iteration || 1;
         const stepStartTime = currentApproval?.created_at || contract?.workflow_step?.created_at;
 
-        const hasDocUploadedInCurrentStep = (type: string) => {
-            const hasVersion = contract?.versions && contract.versions.some((v: any) => {
-                if (v.document_type !== type && !(type === 'agreement' && v.document_type === 'contract')) return false;
-                if (!stepStartTime || !v.created_at_raw) return true;
-                return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
-            });
-            if (hasVersion) return true;
+        const checkDocFulfillment = (type: string) => {
+            const types = type === 'agreement' ? ['agreement', 'contract'] : [type];
 
-            const hasForm = (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => {
-                if (fs.document_type !== type && !(type === 'agreement' && fs.document_type === 'contract')) return false;
+            // 1. Check version tagged with step_id or step_number
+            const hasVersionMatch = contract?.versions && contract.versions.some((v: any) => {
+                if (!types.includes(v.document_type)) return false;
+                if (currentStepId && v.workflow_step_id === currentStepId) return true;
+                if (currentStepNo !== undefined && v.step_number === currentStepNo) return true;
+                if (v.workflow_iteration === iteration && !v.workflow_step_id && !v.step_number) return true;
+                // Fallback time-based check
+                if (stepStartTime && v.created_at_raw) {
+                    return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
+                }
+                return false;
+            });
+            if (hasVersionMatch) return true;
+
+            // 2. Check form submission tagged with step_id or step_number
+            const hasFormMatch = (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => {
+                if (!types.includes(fs.document_type)) return false;
+                if (currentStepId && fs.workflow_step_id === currentStepId) return true;
+                if (currentStepNo !== undefined && fs.step_number === currentStepNo) return true;
+                if (fs.workflow_iteration === iteration && !fs.workflow_step_id && !fs.step_number) return true;
                 return (fs.current_version ?? 0) > 0 || !!fs.id;
             });
-            if (hasForm) return true;
+            if (hasFormMatch) return true;
+
+            // 3. Step 1 / Initial draft fallback
+            if (!currentStepNo || currentStepNo <= 1) {
+                if (contract?.versions && contract.versions.some((v: any) => types.includes(v.document_type))) return true;
+                if ((contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => types.includes(fs.document_type))) return true;
+            }
 
             return false;
         };
 
         if (requireF1) {
-            const hasF1 = hasDocUploadedInCurrentStep('f1') || !!(
+            const hasF1 = checkDocFulfillment('f1') || !!(
                 contract?.f1_file ||
                 contract?.metadata?.f1_file ||
-                (contract?.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'f1') ||
-                (contract as any)?.f1_submission ||
-                (contract as any)?.f1_form_data ||
                 contract?.metadata?.f1_form_data ||
                 (contract?.f1_items && contract.f1_items.length > 0)
             );
@@ -402,39 +463,31 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         }
 
         if (requireF2) {
-            const hasF2 = hasDocUploadedInCurrentStep('f2') || !!(
+            const hasF2 = checkDocFulfillment('f2') || !!(
                 contract?.f2_file ||
                 contract?.metadata?.f2_file ||
-                (contract?.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'f2') ||
-                (contract as any)?.f2_submission ||
-                (contract as any)?.f2_form_data ||
-                contract?.metadata?.f2_form_data ||
-                contract?.contract_no ||
-                contract?.price
+                contract?.metadata?.f2_form_data
             );
             if (!hasF2) return true;
         }
 
         if (requireAgreement) {
-            const hasAgreement = hasDocUploadedInCurrentStep('agreement') || !!(
+            const hasAgreement = checkDocFulfillment('agreement') || !!(
                 contract?.agreement_file ||
                 contract?.metadata?.agreement_file ||
-                (contract?.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'agreement' || fs.document_type === 'contract') ||
-                (contract as any)?.agreement_submission ||
-                (contract as any)?.agreement_content ||
                 contract?.metadata?.agreement_content ||
-                (contract?.versions && (contract.versions as any[]).some((v: any) => v.document_type === 'agreement' || v.document_type === 'contract'))
+                (contract as any)?.agreement_content
             );
             if (!hasAgreement) return true;
         }
 
-        if (stepMeta.require_title && !contract?.title) return true;
-        if (stepMeta.require_vendor && !contract?.vendor_id && !contract?.vendor?.id) return true;
-        if (stepMeta.require_category && !contract?.contract_type_id && !contract?.contract_type) return true;
-        if (stepMeta.require_f2_contract_no && !contract?.contract_no) return true;
-        if (stepMeta.require_tax_toggle && contract?.tax_required === undefined && contract?.metadata?.tax_required === undefined) return true;
-        if (stepMeta.require_price && (contract?.price === undefined || contract?.price === null || contract?.price === '')) return true;
-        if (stepMeta.require_period && ((!contract?.contract_date && !contract?.start_date) || !contract?.end_date)) return true;
+        if (requiredFields.includes('title') && !contract?.title) return true;
+        if (requiredFields.includes('vendor') && !contract?.vendor_id && !contract?.vendor?.id) return true;
+        if (requiredFields.includes('category') && !contract?.contract_type_id && !contract?.contract_type) return true;
+        if ((requiredFields.includes('contract_no') || requiredFields.includes('f2_contract_no')) && !contract?.contract_no) return true;
+        if ((requiredFields.includes('tax_toggle') || requiredFields.includes('tax')) && contract?.tax_required === undefined && contract?.metadata?.tax_required === undefined) return true;
+        if (requiredFields.includes('price') && (contract?.price === undefined || contract?.price === null || contract?.price === '')) return true;
+        if (requiredFields.includes('period') && ((!contract?.contract_date && !contract?.start_date) || !contract?.end_date)) return true;
 
         return false;
     };
@@ -506,45 +559,50 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                                 : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
                     </p>
 
-                    {/* Check-list Syarat Dokumen / Data Wajib Tahap Ini */}
+                    {/* Check-list Syarat Dokumen / Data Wajib Aksi Ini */}
                     {(() => {
-                        let stepMeta = contract?.workflow_step?.meta;
-                        let actions = contract?.workflow_step?.action_configs || contract?.workflow_step?.actions || [];
+                        const requiredFields = getActionRequiredFields();
+                        if (requiredFields.length === 0) return null;
 
-                        // Fallback ke contract.workflow.steps apabila contract.workflow_step belum memuat meta
-                        if (!stepMeta && contract?.workflow?.steps) {
-                            const currentStepSeq = contract?.current_step || contract?.workflow_step?.step || 1;
-                            const matchedStep = contract.workflow.steps.find((s: any) => s.step === currentStepSeq || s.id === contract?.workflow_step_id);
-                            if (matchedStep) {
-                                stepMeta = matchedStep.meta;
-                                if (!actions.length) actions = matchedStep.action_configs || matchedStep.actions || [];
-                            }
-                        }
-                        stepMeta = stepMeta || {};
-
-                        const actionReqFields: string[] = actions.flatMap((act: any) => act.required_fields || []);
-
-                        const requirePic = !!stepMeta.require_pic || actionReqFields.includes('pic') || actionReqFields.includes('assigned_pic');
-                        const requireF1 = !!stepMeta.require_f1 || actionReqFields.includes('f1');
-                        const requireF2 = !!stepMeta.require_f2 || actionReqFields.includes('f2');
-                        const requireAgreement = !!stepMeta.require_agreement || actionReqFields.includes('agreement');
+                        const requirePic = requiredFields.includes('pic') || requiredFields.includes('assigned_pic');
+                        const requireF1 = requiredFields.includes('f1');
+                        const requireF2 = requiredFields.includes('f2');
+                        const requireAgreement = requiredFields.includes('agreement');
 
                         const currentApproval = (contract?.approvals || []).find((a: any) => a.status === 'pending');
+                        const currentStepId = contract?.workflow_step_id || contract?.workflow_step?.id;
+                        const currentStepNo = contract?.workflow_step?.step || contract?.current_step_number || (currentApproval?.sequence ?? currentApproval?.step_number);
+                        const iteration = contract?.workflow_iteration || 1;
                         const stepStartTime = currentApproval?.created_at || contract?.workflow_step?.created_at;
 
-                        const hasDocUploadedInCurrentStep = (type: string) => {
-                            const hasVersion = contract?.versions && contract.versions.some((v: any) => {
-                                if (v.document_type !== type && !(type === 'agreement' && v.document_type === 'contract')) return false;
-                                if (!stepStartTime || !v.created_at_raw) return true;
-                                return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
-                            });
-                            if (hasVersion) return true;
+                        const checkDocFulfillment = (type: string) => {
+                            const types = type === 'agreement' ? ['agreement', 'contract'] : [type];
 
-                            const hasForm = (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => {
-                                if (fs.document_type !== type && !(type === 'agreement' && fs.document_type === 'contract')) return false;
+                            const hasVersionMatch = contract?.versions && contract.versions.some((v: any) => {
+                                if (!types.includes(v.document_type)) return false;
+                                if (currentStepId && v.workflow_step_id === currentStepId) return true;
+                                if (currentStepNo !== undefined && v.step_number === currentStepNo) return true;
+                                if (v.workflow_iteration === iteration && !v.workflow_step_id && !v.step_number) return true;
+                                if (stepStartTime && v.created_at_raw) {
+                                    return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
+                                }
+                                return false;
+                            });
+                            if (hasVersionMatch) return true;
+
+                            const hasFormMatch = (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => {
+                                if (!types.includes(fs.document_type)) return false;
+                                if (currentStepId && fs.workflow_step_id === currentStepId) return true;
+                                if (currentStepNo !== undefined && fs.step_number === currentStepNo) return true;
+                                if (fs.workflow_iteration === iteration && !fs.workflow_step_id && !fs.step_number) return true;
                                 return (fs.current_version ?? 0) > 0 || !!fs.id;
                             });
-                            if (hasForm) return true;
+                            if (hasFormMatch) return true;
+
+                            if (!currentStepNo || currentStepNo <= 1) {
+                                if (contract?.versions && contract.versions.some((v: any) => types.includes(v.document_type))) return true;
+                                if ((contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => types.includes(fs.document_type))) return true;
+                            }
 
                             return false;
                         };
@@ -561,62 +619,51 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                             reqList.push({ label: 'Data PIC (Penanggung Jawab)', isFilled });
                         }
                         if (requireF1) {
-                            const isFilled = hasDocUploadedInCurrentStep('f1') || !!(
+                            const isFilled = checkDocFulfillment('f1') || !!(
                                 contract.f1_file ||
                                 contract.metadata?.f1_file ||
-                                (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'f1') ||
-                                (contract as any).f1_submission ||
-                                (contract as any).f1_form_data ||
                                 contract.metadata?.f1_form_data ||
                                 (contract.f1_items && contract.f1_items.length > 0)
                             );
                             reqList.push({ label: 'Sub-dokumen F1 (Permohonan)', isFilled });
                         }
                         if (requireF2) {
-                            const isFilled = hasDocUploadedInCurrentStep('f2') || !!(
+                            const isFilled = checkDocFulfillment('f2') || !!(
                                 contract.f2_file ||
                                 contract.metadata?.f2_file ||
-                                (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'f2') ||
-                                (contract as any).f2_submission ||
-                                (contract as any).f2_form_data ||
-                                contract.metadata?.f2_form_data ||
-                                contract.contract_no ||
-                                contract.price
+                                contract.metadata?.f2_form_data
                             );
                             reqList.push({ label: 'Sub-dokumen F2 (Ringkasan)', isFilled });
                         }
                         if (requireAgreement) {
-                            const isFilled = hasDocUploadedInCurrentStep('agreement') || !!(
+                            const isFilled = checkDocFulfillment('agreement') || !!(
                                 contract.agreement_file ||
                                 contract.metadata?.agreement_file ||
-                                (contract.form_submissions || (contract as any).formSubmissions || []).some((fs: any) => fs.document_type === 'agreement' || fs.document_type === 'contract') ||
-                                (contract as any).agreement_submission ||
-                                (contract as any).agreement_content ||
                                 contract.metadata?.agreement_content ||
-                                (contract.versions && (contract.versions as any[]).some((v: any) => v.document_type === 'agreement' || v.document_type === 'contract'))
+                                (contract as any)?.agreement_content
                             );
                             reqList.push({ label: 'Sub-dokumen Perjanjian / Draft', isFilled });
                         }
 
-                        if (stepMeta.require_title) {
+                        if (requiredFields.includes('title')) {
                             reqList.push({ label: 'Judul Kontrak', isFilled: !!contract.title });
                         }
-                        if (stepMeta.require_vendor) {
+                        if (requiredFields.includes('vendor')) {
                             reqList.push({ label: 'Pihak Kedua ', isFilled: !!(contract.vendor_id || contract.vendor?.id) });
                         }
-                        if (stepMeta.require_category) {
+                        if (requiredFields.includes('category')) {
                             reqList.push({ label: 'Kategori Kontrak', isFilled: !!(contract.contract_type_id || contract.contract_type) });
                         }
-                        if (stepMeta.require_f2_contract_no) {
+                        if (requiredFields.includes('contract_no') || requiredFields.includes('f2_contract_no')) {
                             reqList.push({ label: 'No. Kontrak (F2)', isFilled: !!contract.contract_no });
                         }
-                        if (stepMeta.require_tax_toggle) {
+                        if (requiredFields.includes('tax_toggle') || requiredFields.includes('tax')) {
                             reqList.push({ label: 'Penentuan Pajak', isFilled: contract.tax_required !== undefined || contract.metadata?.tax_required !== undefined });
                         }
-                        if (stepMeta.require_price) {
+                        if (requiredFields.includes('price')) {
                             reqList.push({ label: 'Nilai / Harga', isFilled: contract.price !== undefined && contract.price !== null && contract.price !== '' });
                         }
-                        if (stepMeta.require_period) {
+                        if (requiredFields.includes('period')) {
                             reqList.push({ label: 'Masa Berlaku', isFilled: !!((contract.contract_date || contract.start_date) && contract.end_date) });
                         }
 

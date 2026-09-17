@@ -7,8 +7,13 @@
 
         <title inertia>{{ config('app.meta_title') ?: (config('app.name', 'corixa') . ' - ' . config('app.tagline', 'Legal Management System')) }}</title>
         <meta name="title" content="{{ config('app.meta_title') ?: (config('app.name', 'corixa') . ' - ' . config('app.tagline', 'Legal Management System')) }}">
-        <meta name="description" content="{{ config('app.tagline', 'Legal Management System') }}">
+        <meta name="theme-color" content="#4f46e5">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="default">
+        <meta name="apple-mobile-web-app-title" content="Corixa">
 
+        <link rel="manifest" href="/manifest.webmanifest">
         <link rel="icon" href="{{ config('app.favicon', '/images/logo.png') }}">
         <link rel="shortcut icon" href="{{ config('app.favicon', '/images/logo.png') }}">
         <link rel="apple-touch-icon" href="{{ config('app.logo', '/images/logo.png') }}">

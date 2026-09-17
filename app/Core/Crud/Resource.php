@@ -34,6 +34,16 @@ abstract class Resource
     public static ?string $slug = null;
 
     /**
+     * Default sort column.
+     */
+    public static ?string $defaultSortBy = null;
+
+    /**
+     * Default sort direction ('asc' | 'desc').
+     */
+    public static string $defaultSortDir = 'asc';
+
+    /**
      * The Excel Export class name.
      */
     public static ?string $exportClass = null;

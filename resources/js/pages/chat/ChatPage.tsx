@@ -1,12 +1,11 @@
-import { Head, router, usePage, usePoll } from '@inertiajs/react';
-import React, { useState, useMemo, useEffect } from 'react';
-import { MessageSquare } from 'lucide-react';
 import ContractChat from '@/components/chat/ContractChat';
+import { formatDate } from '@/lib/utils';
 import { Contract } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
-import { formatDate } from '@/lib/utils';
+import { Head, usePage, usePoll } from '@inertiajs/react';
+import { MessageSquare } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { ContractListSidebar } from './components/ContractListSidebar';
-import { ChatPageSkeleton } from '@/components/ui/feedback/ChatSkeleton';
 
 interface Props {
     contracts: Contract[];
@@ -20,6 +19,7 @@ export default function ChatPage({ contracts: initialContracts = [], initialCont
     const [showChatSearch, setShowChatSearch] = useState(false);
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
+    const [activeCategory, setActiveCategory] = useState<'all' | 'kontrak' | 'non_kontrak' | 'nda'>('all');
     const [selectedContractId, setSelectedContractId] = useState<string | null>(initialContractId || null);
 
     // Sync selectedContractId when initialContractId changes via navigation
@@ -40,6 +40,16 @@ export default function ChatPage({ contracts: initialContracts = [], initialCont
         setContracts(initialContracts);
     }, [initialContracts]);
 
+    // Auto-switch category if selected contract is not in the currently selected specific category
+    useEffect(() => {
+        if (selectedContractId && activeCategory !== 'all') {
+            const found = contracts.find((c: any) => c.id === selectedContractId);
+            if (found && (found as any).parent_category && (found as any).parent_category !== activeCategory) {
+                setActiveCategory('all');
+            }
+        }
+    }, [selectedContractId, contracts]);
+
     // Mark contract chat as read on select, update URL state without full page reload
     useEffect(() => {
         if (selectedContractId) {
@@ -59,10 +69,32 @@ export default function ChatPage({ contracts: initialContracts = [], initialCont
         }
     }, [selectedContractId]);
 
-    // Memoize filtered contracts (Search text & Date range) sorted by latest updated_at first
+    // Calculate category counts and unread badges
+    const categoryCounts = useMemo(() => {
+        const counts = {
+            all: { total: contracts.length, unread: 0 },
+            kontrak: { total: 0, unread: 0 },
+            non_kontrak: { total: 0, unread: 0 },
+            nda: { total: 0, unread: 0 },
+        };
+        contracts.forEach((c: any) => {
+            const cat = (c.parent_category || 'kontrak') as 'kontrak' | 'non_kontrak' | 'nda';
+            const unread = c.unread_count || 0;
+            counts.all.unread += unread;
+            if (counts[cat]) {
+                counts[cat].total++;
+                counts[cat].unread += unread;
+            }
+        });
+        return counts;
+    }, [contracts]);
+
+    // Memoize filtered contracts (Search text, Date range, and Category) sorted by latest updated_at first
     const filteredContracts = useMemo(() => {
         return contracts
-            .filter((c) => {
+            .filter((c: any) => {
+                const cat = c.parent_category || 'kontrak';
+                if (activeCategory !== 'all' && cat !== activeCategory) return false;
                 if (search) {
                     const s = search.toLowerCase();
                     const matchesSearch =
@@ -86,7 +118,7 @@ export default function ChatPage({ contracts: initialContracts = [], initialCont
                 const dateB = new Date(b.updated_at || b.created_at || 0).getTime();
                 return dateB - dateA;
             });
-    }, [contracts, search, dateFrom, dateTo]);
+    }, [contracts, activeCategory, search, dateFrom, dateTo]);
 
     const selectedContract = useMemo(() => {
         return contracts.find((c) => c.id === selectedContractId) || null;
@@ -119,6 +151,9 @@ export default function ChatPage({ contracts: initialContracts = [], initialCont
             <ContractListSidebar
                 search={search}
                 setSearch={setSearch}
+                activeCategory={activeCategory}
+                setActiveCategory={setActiveCategory}
+                categoryCounts={categoryCounts}
                 showChatSearch={showChatSearch}
                 setShowChatSearch={setShowChatSearch}
                 dateFrom={dateFrom}

@@ -47,7 +47,7 @@ class UpdateContractAction
                         $q->whereHas('workflowStep', function ($sq) {
                             $sq->where('approver_type', 'assigned_pic')
                                 ->orWhereHas('approverAuthorities', fn ($aq) => $aq->where('authority_type', 'assigned_pic'));
-                        })->orWhere('role', 'Staff Legal');
+                        })->orWhereIn('role', ['PIC Legal', 'Staff Legal']);
                     })
                     ->get();
 

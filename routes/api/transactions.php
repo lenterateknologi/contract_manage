@@ -6,6 +6,7 @@ use App\Http\Controllers\Contract\ContractExportController;
 use App\Http\Controllers\Contract\ContractFileController;
 use App\Http\Controllers\Contract\ContractFormController;
 use App\Http\Controllers\Contract\ContractMemberController;
+use App\Http\Controllers\Contract\PurchaseOrder\ContractPurchaseOrderController;
 use App\Http\Controllers\Contract\Reference\ContractReferenceController;
 use App\Models\FormTemplate;
 use Illuminate\Support\Facades\Route;
@@ -73,6 +74,13 @@ Route::prefix('contracts')->group(function () {
         Route::get('/', 'show');
         Route::get('/search', 'search');
         Route::patch('/', 'update');
+    });
+
+    Route::controller(ContractPurchaseOrderController::class)->prefix('{id}/purchase-orders')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::patch('/{poId}', 'update');
+        Route::delete('/{poId}', 'destroy');
     });
 
     Route::controller(ContractFormController::class)->prefix('{id}/form-submissions')->group(function () {

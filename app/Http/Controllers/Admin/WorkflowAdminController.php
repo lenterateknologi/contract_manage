@@ -19,6 +19,7 @@ use App\Models\ContractType;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\FormTemplate;
+use App\Models\Location;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
@@ -67,8 +68,9 @@ class WorkflowAdminController extends Controller
             'contractTypes' => ContractType::select('id', 'name', 'code', 'parent_id')->orderBy('name')->get(),
             'departments' => Department::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
             'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+            'locations' => Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
             'roles' => Role::select('id', 'name')->orderBy('name')->get(),
-            'users' => Inertia::defer(fn () => User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'is_used')->with(['department:id,name', 'company:id,name,company_group_name,region_name'])->where('is_used', true)->orderBy('name')->get()),
+            'users' => Inertia::defer(fn () => User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')->with(['department:id,name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])->where('is_used', true)->orderBy('name')->get()),
             'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
@@ -174,8 +176,9 @@ class WorkflowAdminController extends Controller
             'contractTypes' => ContractType::select('id', 'name', 'code', 'parent_id')->orderBy('name')->get(),
             'departments' => Department::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
             'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+            'locations' => Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
             'roles' => Role::select('id', 'name')->orderBy('name')->get(),
-            'users' => Inertia::defer(fn () => User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'is_used')->with(['department:id,name', 'company:id,name,company_group_name,region_name'])->where('is_used', true)->orderBy('name')->get()),
+            'users' => Inertia::defer(fn () => User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')->with(['department:id,name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])->where('is_used', true)->orderBy('name')->get()),
             'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
@@ -219,7 +222,9 @@ class WorkflowAdminController extends Controller
 
             return back()->with('success', 'Workflow berhasil diperbarui.');
         } catch (\Exception $e) {
-            Log::error('Workflow Update Error: '.$e->getMessage());
+            Log::error('Workflow Update Error: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
 
             return back()->withErrors(['error' => 'Gagal memperbarui alur kerja: '.$e->getMessage()]);
         }

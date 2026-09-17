@@ -31,4 +31,13 @@ class ContractStatus extends Model
     protected $casts = [
         'is_active' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function ($status) {
+            if (empty($status->code)) {
+                $status->code = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
 }

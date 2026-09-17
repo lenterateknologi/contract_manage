@@ -22,6 +22,7 @@ class Approval extends Model
 
     protected $fillable = [
         'contract_id',
+        'workflow_id',
         'workflow_step_id',
         'action_id',
         'action_code',
@@ -30,6 +31,7 @@ class Approval extends Model
         'approver_name',
         'role',
         'job_title',
+        'approver_type',
         'status',
         'comment',
         'attachment_path',
@@ -37,14 +39,26 @@ class Approval extends Model
         'created_by',
         'updated_by',
         'sequence',
+        'step_number',
         'sub_step',
         'sort_order',
         'is_active',
+        'is_current_step',
+        'batch_no',
+        'parent_approval_id',
+        'is_adhoc',
     ];
 
     protected $casts = [
         'decided_at' => 'datetime',
         'is_active' => 'boolean',
+        'is_current_step' => 'boolean',
+        'is_adhoc' => 'boolean',
+        'batch_no' => 'integer',
+        'step_number' => 'integer',
+        'sequence' => 'integer',
+        'sub_step' => 'integer',
+        'sort_order' => 'integer',
     ];
 
     public function getTargetApproversAttribute(): ?string
@@ -88,7 +102,7 @@ class Approval extends Model
         ];
 
         if ($actionId !== null) {
-            $data['action_id'] = $actionId;
+            $data['action_id'] = \Illuminate\Support\Str::isUuid($actionId) ? $actionId : null;
         }
         if ($actionCode !== null) {
             $data['action_code'] = $actionCode;
@@ -111,7 +125,7 @@ class Approval extends Model
         ];
 
         if ($actionId !== null) {
-            $data['action_id'] = $actionId;
+            $data['action_id'] = \Illuminate\Support\Str::isUuid($actionId) ? $actionId : null;
         }
         if ($actionCode !== null) {
             $data['action_code'] = $actionCode;

@@ -22,11 +22,8 @@ class ContractStatusResource extends Resource
     public static function table(): array
     {
         return [
-            TextColumn::make('code', 'Kode')->sortable()->searchable(),
             TextColumn::make('label', 'Label')->sortable()->searchable(),
-            TextColumn::make('icon', 'Ikon')->searchable(),
-            TextColumn::make('color', 'Warna Teks')->searchable(),
-            TextColumn::make('bg_color', 'Warna Background')->searchable(),
+            TextColumn::make('description', 'Deskripsi')->searchable(),
             BooleanColumn::make('is_active', 'Status Aktif'),
         ];
     }
@@ -36,9 +33,6 @@ class ContractStatusResource extends Resource
     public static function form(): array
     {
         return [
-            TextInput::make('code', 'Kode')
-                ->required()
-                ->rules(['string', 'max:50']),
             TextInput::make('label', 'Label')
                 ->required()
                 ->rules(['string', 'max:255']),

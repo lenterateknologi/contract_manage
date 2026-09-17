@@ -10,6 +10,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class WorkflowQueryService
@@ -310,10 +311,12 @@ class WorkflowQueryService
      */
     public function logHistory(Contract $contract, string $action, string $description, ?string $actorId = null): void
     {
+        $resolvedActorId = $actorId ?: Auth::id() ?: $contract->assigned_pic_id ?: $contract->created_by ?: $contract->initiated_by_id ?: User::value('id');
+
         $contract->histories()->create([
             'action' => $action,
             'description' => $description,
-            'actor_id' => $actorId,
+            'actor_id' => $resolvedActorId,
         ]);
     }
 

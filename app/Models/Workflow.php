@@ -86,6 +86,7 @@ class Workflow extends Model
         'initiator_departments',
         'initiator_divisions',
         'contract_type_name',
+        'parent_contract_type_name',
         'contract_type_ids',
         'users_count',
     ];
@@ -245,6 +246,58 @@ class Workflow extends Model
         $ids = $this->contract_type_ids;
         if (! empty($ids)) {
             return ContractType::whereIn('id', $ids)->pluck('name')->implode(', ');
+        }
+
+        return 'Global / Semua Tipe';
+    }
+
+    public function getParentContractTypeNameAttribute(): string
+    {
+        static $rootCache = null;
+        if ($rootCache === null) {
+            $allTypes = ContractType::all()->keyBy('id');
+            $getRoot = function ($id) use ($allTypes, &$getRoot) {
+                if (! isset($allTypes[$id])) {
+                    return null;
+                }
+                $item = $allTypes[$id];
+                if (empty($item->parent_id)) {
+                    return $item->name;
+                }
+                return $getRoot($item->parent_id);
+            };
+
+            $rootCache = [];
+            foreach ($allTypes as $id => $item) {
+                $rootCache[$id] = $getRoot($id);
+            }
+        }
+
+        $rootNames = [];
+        if (! empty($this->attributes['contract_type_id'])) {
+            $r = $rootCache[$this->attributes['contract_type_id']] ?? null;
+            if ($r) {
+                $rootNames[] = $r;
+            }
+        }
+
+        $ids = $this->contract_type_ids;
+        if (! empty($ids)) {
+            foreach ($ids as $id) {
+                $r = $rootCache[$id] ?? null;
+                if ($r) {
+                    $rootNames[] = $r;
+                }
+            }
+        }
+
+        $rootNames = array_values(array_unique(array_filter($rootNames)));
+        if (! empty($rootNames)) {
+            return implode(', ', $rootNames);
+        }
+
+        if (($this->workflow_type ?? '') === 'sub_workflow') {
+            return 'Sub-Workflow';
         }
 
         return 'Global / Semua Tipe';

@@ -12,6 +12,7 @@ use App\Core\Crud\Filters\Filter;
 use App\Core\Crud\Resource;
 use App\Exports\UsersExport;
 use App\Imports\UsersImport;
+use App\Models\BusinessUnit;
 use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\ContractFilterTemplate;
@@ -64,97 +65,142 @@ class UserResource extends Resource
     public static function form(): array
     {
         return [
-            Section::make('Data Karyawan & Organisasi (Dari Portal)', [
+            Section::make('1. Data Karyawan & Organisasi (Sinkronisasi Master Portal)', [
                 TextInput::make('nik', 'NIK')
                     ->rules(['nullable', 'string', 'max:50'])
-                    ->helperText('Nomor Induk Karyawan.'),
-                TextInput::make('name', 'Nama Karyawan')
+                    ->helperText('Nomor Induk Karyawan dari master portal/HRIS.'),
+                TextInput::make('name', 'Nama Karyawan (employeeName)')
                     ->required()
                     ->rules(['string', 'max:255'])
                     ->helperText('Nama lengkap karyawan.'),
-                TextInput::make('email', 'Email Kantor')
+                TextInput::make('email', 'Email Kantor (officeMail)')
                     ->required()
                     ->rules(['email'])
-                    ->helperText('Alamat email kantor (officeMail).'),
-                TextInput::make('mobile_no', 'No. Handphone')
+                    ->helperText('Alamat email kantor resmi.'),
+                TextInput::make('mobile_no', 'No. Handphone (mobileNo)')
                     ->rules(['nullable', 'string', 'max:50'])
-                    ->helperText('Nomor ponsel / WhatsApp.'),
-                SelectInput::make('gender', 'Jenis Kelamin')
+                    ->helperText('Nomor kontak / WhatsApp.'),
+                SelectInput::make('gender', 'Jenis Kelamin (gender)')
                     ->options([
                         'M' => 'M - Laki-Laki (Male)',
                         'F' => 'F - Perempuan (Female)',
                     ])
                     ->placeholder('Pilih Jenis Kelamin (M / F)...')
                     ->rules(['nullable', 'string', 'max:10']),
-                SelectInput::make('job_position_id', 'Jabatan (Job Title)')
-                    ->options(fn () => JobTitle::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->placeholder('Pilih Jabatan...')
-                    ->helperText('Posisi jabatan terhubung ke Master Job Title.'),
-                SelectInput::make('job_level_id', 'Level Jabatan (Job Level)')
-                    ->options(fn () => JobLevel::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->placeholder('Pilih Level Jabatan...')
-                    ->helperText('Tingkat jabatan terhubung ke Master Job Level.'),
-                SelectInput::make('division_id', 'Divisi')
-                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->placeholder('Pilih Divisi...')
-                    ->helperText('Unit divisi organisasi.'),
-                SelectInput::make('department_id', 'Departemen / Unit Organisasi')
+                SelectInput::make('department_id', 'Departemen / Organisasi (orgName)')
                     ->options(fn () => Department::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
                     ->searchable()
                     ->placeholder('Pilih Departemen...')
-                    ->helperText('Unit organisasi terhubung ke Master Departemen.'),
-                SelectInput::make('company_name', 'Perusahaan (Company)')
-                    ->options(fn () => Company::where('is_used', true)->orderBy('name')->whereNotNull('name')->pluck('name', 'name')->toArray())
+                    ->helperText('Unit organisasi dari master portal.'),
+                SelectInput::make('job_position_id', 'Jabatan (jobtitleName)')
+                    ->options(function () {
+                        return JobTitle::where('is_used', true)
+                            ->with('jobLevel')
+                            ->orderBy('name')
+                            ->get()
+                            ->mapWithKeys(function ($jt) {
+                                $level = $jt->jobLevel?->name ?? $jt->getRawOriginal('job_level_name');
+                                $label = $level ? "{$jt->name} ({$level})" : $jt->name;
+
+                                return [$jt->id => $label];
+                            })
+                            ->toArray();
+                    })
                     ->meta([
-                        'company_map' => Company::where('is_used', true)->whereNotNull('name')->get()->keyBy('name')->map(fn ($c) => [
-                            'group_name' => $c->company_group_name,
-                            'region_name' => $c->region_name,
+                        'job_title_map' => JobTitle::where('is_used', true)->with('jobLevel')->get()->keyBy('id')->map(fn ($jt) => [
+                            'job_level_id' => $jt->job_level_id,
+                            'job_level_name' => $jt->jobLevel?->name ?? $jt->getRawOriginal('job_level_name') ?? '',
                         ])->toArray(),
                     ])
                     ->searchable()
+                    ->placeholder('Pilih Jabatan...')
+                    ->helperText('Posisi jabatan terhubung ke Master Job Title portal.'),
+                TextInput::make('joblevel_name', 'Level Jabatan (joblevelName)')
+                    ->type('readonly')
+                    ->helperText('Otomatis terisi dari jabatan yang dipilih.')
+                    ->columnSpan(1),
+                SelectInput::make('location_id', 'Lokasi Kerja (locationName)')
+                    ->options(fn () => Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
+                    ->meta([
+                        'location_map' => Location::where('is_used', true)->get()->keyBy('id')->map(function ($loc) {
+                            $bu = BusinessUnit::where('location_id', $loc->id)
+                                ->orWhere('idlocation', $loc->idlocation)
+                                ->whereNotNull('company_name')
+                                ->first();
+
+                            return [
+                                'location_name' => $loc->name,
+                                'idlocation' => $loc->idlocation,
+                                'business_unit_id' => $bu?->id,
+                                'company_name' => $bu?->company_name ?? '',
+                                'company_id' => $bu?->company_id ?? '',
+                                'idcompany' => $bu?->idcompany ?? null,
+                                'company_group_name' => $bu?->company_group_name ?? ($loc->company_group_name ?? ''),
+                                'company_group_id' => $bu?->company_group_id ?? ($loc->company_group_id ?? ''),
+                                'region_name' => $bu?->region_name ?? '',
+                                'region_id' => $bu?->region_id ?? '',
+                            ];
+                        })->toArray(),
+                    ])
+                    ->searchable()
+                    ->placeholder('Pilih Lokasi Kerja...')
+                    ->helperText('Lokasi penempatan kerja dari master portal.'),
+                SelectInput::make('company_id', 'Perusahaan (companyName)')
+                    ->options(fn () => Company::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
+                    ->meta([
+                        'company_map' => Company::where('is_used', true)->with(['companyGroup', 'region'])->get()->keyBy('id')->map(function ($comp) {
+                            return [
+                                'name' => $comp->name,
+                                'idcompany' => $comp->idcompany,
+                                'company_group_name' => $comp->company_group_name ?? ($comp->companyGroup?->name ?? ''),
+                                'company_group_id' => $comp->company_group_id,
+                                'region_name' => $comp->region_name ?? ($comp->region?->name ?? ''),
+                                'region_id' => $comp->region_id,
+                            ];
+                        })->toArray(),
+                    ])
+                    ->searchable()
                     ->placeholder('Pilih Perusahaan...')
-                    ->rules(['nullable', 'string', 'max:255'])
-                    ->helperText('Grup perusahaan & region terisi otomatis dari master unit bisnis.'),
+                    ->helperText('Perusahaan tempat karyawan ditempatkan.')
+                    ->columnSpan(1),
                 TextInput::make('company_group_name', 'Grup Perusahaan (Group)')
                     ->type('readonly')
-                    ->helperText('Otomatis terisi dari master bisnis unit/perusahaan.')
+                    ->helperText('Otomatis terisi dari unit bisnis.')
                     ->columnSpan(1),
                 TextInput::make('region_name', 'Wilayah (Region)')
                     ->type('readonly')
-                    ->helperText('Otomatis terisi dari master bisnis unit/perusahaan.')
+                    ->helperText('Otomatis terisi dari unit bisnis.')
                     ->columnSpan(1),
-                SelectInput::make('location_id', 'Lokasi Kerja')
-                    ->options(fn () => Location::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray())
-                    ->searchable()
-                    ->placeholder('Pilih Lokasi Kerja...')
-                    ->helperText('Lokasi penempatan kerja terhubung ke Master Lokasi.'),
-                TextInput::make('reporting_to', 'Atasan Langsung (Reporting To)')
-                    ->rules(['nullable', 'string', 'max:255']),
-                ToggleInput::make('is_active', 'Status Aktif Portal')
+                TextInput::make('reporting_to', 'Atasan Langsung (reportingTo)')
+                    ->rules(['nullable', 'string', 'max:255'])
+                    ->helperText('Atasan langsung dari master portal.'),
+                ToggleInput::make('is_active', 'Status Keaktifan di Portal')
                     ->default(true)
-                    ->helperText('Status keaktifan data karyawan dari sinkronisasi master portal.'),
+                    ->helperText('Status aktif karyawan dari database master portal.'),
             ])->icon('UserCheck'),
 
-            Section::make('Konfigurasi Akses & Akun Sistem', [
-                TextInput::make('username', 'Username')
-                    ->required()
-                    ->rules(['string', 'max:50'])
-                    ->helperText('Username login ke dalam aplikasi.'),
-                TextInput::make('password', 'Password')
-                    ->rules(['nullable', 'string', 'min:8'])
-                    ->placeholder('Kosongkan jika tidak ingin mengubah password')
-                    ->helperText('Minimal 8 karakter.'),
-                SelectInput::make('role_id', 'Role Akses Sistem')
+            Section::make('2. Konfigurasi Otoritas & Akses Sistem (Internal Aplikasi)', [
+                SelectInput::make('division_id', 'Divisi Internal Sistem')
+                    ->options(fn () => Division::orderBy('name')->pluck('name', 'id')->toArray())
+                    ->searchable()
+                    ->placeholder('Pilih Divisi...')
+                    ->helperText('Unit divisi untuk scoping data dashboard dan alur workflow legal/kontrak.'),
+                SelectInput::make('role_id', 'Role Hak Akses Sistem')
                     ->required()
                     ->options(fn () => Role::orderBy('name')->pluck('name', 'id')->toArray())
                     ->placeholder('Pilih Role Kewenangan...')
-                    ->helperText('Menentukan hak akses menu, tipe dashboard, dan pembatasan filter kontrak.'),
-                ToggleInput::make('is_used', 'Aktifkan Pengguna di Sistem')
+                    ->helperText('Menentukan hak akses modul dan matriks kebijakan sistem.'),
+                TextInput::make('username', 'Username Login')
+                    ->required()
+                    ->rules(['string', 'max:50'])
+                    ->helperText('Username untuk login ke aplikasi sistem kontrak.'),
+                TextInput::make('password', 'Kata Sandi (Password)')
+                    ->rules(['nullable', 'string', 'min:8'])
+                    ->placeholder('Kosongkan jika tidak ingin mengubah password')
+                    ->helperText('Minimal 8 karakter.'),
+                ToggleInput::make('is_used', 'Aktifkan Pengguna di Sistem Ini')
                     ->default(false)
-                    ->helperText('Jika aktif (Ya), user dapat login dan bertransaksi di aplikasi ini.'),
+                    ->helperText('Jika Ya, user diizinkan login dan bertransaksi di aplikasi ini.'),
             ])->icon('ShieldCheck'),
         ];
     }
@@ -181,7 +227,19 @@ class UserResource extends Resource
                 ->options(function () {
                     $options = ['__empty__' => '- (Tanpa Jabatan / Kosong)'];
 
-                    return $options + JobTitle::where('is_used', true)->orderBy('name')->pluck('name', 'id')->toArray();
+                    $jobTitles = JobTitle::where('is_used', true)
+                        ->with('jobLevel')
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(function ($jt) {
+                            $level = $jt->jobLevel?->name ?? $jt->getRawOriginal('job_level_name');
+                            $label = $level ? "{$jt->name} ({$level})" : $jt->name;
+
+                            return [$jt->id => $label];
+                        })
+                        ->toArray();
+
+                    return $options + $jobTitles;
                 }),
             Filter::make('job_level_id', 'Level Jabatan (Job Level)')
                 ->type('searchable')

@@ -1,17 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
-import { FormInput } from '@/components/ui/inputs/FormInput';
-import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Button } from '@/components/ui/buttons/Button';
 import { Label } from '@/components/ui/forms/Label';
-import { ArrowLeft, ExternalLink, Pencil, Plus, Printer, Shield, Trash2 } from 'lucide-react';
-import LucideIcons from '@/lib/lucide-dynamic';
-import { TreeSelect } from '@/components/ui/selection/TreeSelect';
-import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialogs/Dialog';
-import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
-import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
+import { FormInput } from '@/components/ui/inputs/FormInput';
+import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { TreeSelect } from '@/components/ui/selection/TreeSelect';
+import LucideIcons from '@/lib/lucide-dynamic';
+import { cn } from '@/lib/utils';
+import { SlaSimulationModal } from '@/pages/contracts/components/parts/SlaSimulationModal';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Calculator, ExternalLink, Plus, Trash2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
 const COMMON_ICONS = [
     'Clock', 'CheckCircle', 'CheckCircle2', 'CheckCheck', 'XCircle', 'AlertCircle', 'AlertTriangle',
@@ -38,12 +36,12 @@ function IconPicker({ value, onChange }: { value: string; onChange: (val: string
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filteredIcons = COMMON_ICONS.filter(icon => 
+    const filteredIcons = COMMON_ICONS.filter(icon =>
         icon.toLowerCase().includes(search.toLowerCase())
     );
 
-    const SelectedIcon = value && (LucideIcons as any)[value] 
-        ? (LucideIcons as any)[value] 
+    const SelectedIcon = value && (LucideIcons as any)[value]
+        ? (LucideIcons as any)[value]
         : null;
 
     return (
@@ -102,9 +100,8 @@ function IconPicker({ value, onChange }: { value: string; onChange: (val: string
                                         setIsOpen(false);
                                         setSearch('');
                                     }}
-                                    className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all gap-1 text-[10px] font-normal text-center border border-transparent ${
-                                        value === iconName ? 'bg-primary/10 text-primary border-primary/20' : 'text-text-main'
-                                    }`}
+                                    className={`flex flex-col items-center justify-center p-2 rounded-md hover:bg-primary/10 hover:text-primary transition-all gap-1 text-[10px] font-normal text-center border border-transparent ${value === iconName ? 'bg-primary/10 text-primary border-primary/20' : 'text-text-main'
+                                        }`}
                                 >
                                     {Icon && <Icon className="h-4 w-4" />}
                                     <span className="truncate w-full text-[9px]">{iconName}</span>
@@ -128,19 +125,23 @@ function MultiSelectField({
     value = [],
     onChange,
     error,
+    toggleLabel,
     toggleName,
     toggleValue,
     onToggleChange,
-    disabled = false
+    disabled = false,
+    isInputDisabled = false
 }: {
     field: any;
     value: any[];
     onChange: (val: any[]) => void;
     error?: string;
+    toggleLabel?: string;
     toggleName?: string | null;
     toggleValue?: boolean;
     onToggleChange?: (val: boolean) => void;
     disabled?: boolean;
+    isInputDisabled?: boolean;
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -177,7 +178,7 @@ function MultiSelectField({
     }, [isOpen]);
 
     const optionsList = React.useMemo(() => {
-        const list = Array.isArray(field.options) 
+        const list = Array.isArray(field.options)
             ? [...field.options].map(item => Array.isArray(item) ? item : [String(item), String(item)])
             : Object.entries(field.options || {}).map(([k, v]) => [k, v]);
         return list;
@@ -198,15 +199,18 @@ function MultiSelectField({
         return found ? (Array.isArray(found) ? found[1] : found) : val;
     });
 
-    const isDisabled = disabled || (toggleName ? !toggleValue : false);
- 
-    // Reset list selection when toggle is disabled
+    // For contract filter template: if toggle is OFF (can_change_* = false), dropdown is disabled
+    // For dashboard types scoping: if isInputDisabled is true (scope_to_user_* = true), dropdown is disabled
+    const isTemplateLocked = toggleName && !toggleName.startsWith('scope_to_user_') ? !toggleValue : false;
+    const isButtonDisabled = disabled || isInputDisabled || isTemplateLocked;
+
+    // Reset list selection when toggle is disabled (only for contract-filter-templates)
     useEffect(() => {
-        if (isDisabled && value.length > 0 && !disabled) {
+        if (isTemplateLocked && value.length > 0 && !disabled) {
             onChange([]);
         }
-    }, [isDisabled]);
- 
+    }, [isTemplateLocked]);
+
     return (
         <div ref={containerRef} className={cn("space-y-1.5 w-full relative", disabled && "opacity-60")}>
             <div className="flex items-center justify-between w-full">
@@ -215,13 +219,22 @@ function MultiSelectField({
                 </Label>
                 {toggleName && onToggleChange && (
                     <div className={cn("flex items-center gap-2", disabled && "pointer-events-none")}>
-                        <span className="text-[9px] text-muted-foreground font-semibold uppercase">Dapat Mengubah</span>
+                        <span className={cn(
+                            "text-[9.5px] font-bold uppercase tracking-tight transition-colors",
+                            toggleValue ? "text-primary dark:text-primary-foreground font-semibold" : "text-muted-foreground"
+                        )}>
+                            {toggleLabel || 'Dapat Mengubah'}
+                        </span>
                         <button
                             type="button"
                             role="switch"
                             disabled={disabled}
                             aria-checked={!!toggleValue}
-                            onClick={() => onToggleChange(!toggleValue)}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onToggleChange(!toggleValue);
+                            }}
                             className={cn(
                                 "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden active:scale-95",
                                 toggleValue ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-slate-800',
@@ -229,24 +242,23 @@ function MultiSelectField({
                             )}
                         >
                             <span
-                                className={`pointer-events-none block h-3 w-3 rounded-full shadow-lg transition-transform duration-300 ring-0 ${
-                                    toggleValue ? 'translate-x-5 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
-                                }`}
+                                className={`pointer-events-none block h-3 w-3 rounded-full shadow-lg transition-transform duration-300 ring-0 ${toggleValue ? 'translate-x-5 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
+                                    }`}
                             />
                         </button>
                     </div>
                 )}
             </div>
-            
+
             <button
                 ref={buttonRef}
                 type="button"
-                disabled={isDisabled}
+                disabled={isButtonDisabled}
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     "flex h-10 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3.5 py-2 text-sm font-normal transition-all text-left outline-hidden",
-                    isDisabled 
-                        ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500' 
+                    isButtonDisabled
+                        ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500'
                         : 'hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary cursor-pointer'
                 )}
             >
@@ -256,11 +268,13 @@ function MultiSelectField({
                 )}>
                     {disabled
                         ? 'Filter Terkunci (Mengikuti Filter Bawaan Role)'
-                        : isDisabled
-                        ? 'Filter Terkunci (Mengikuti Profil User)'
-                        : selectedLabels.length > 0
-                        ? `${selectedLabels.length} terpilih (${selectedLabels.slice(0, 2).join(', ')}${selectedLabels.length > 2 ? '...' : ''})`
-                        : (field.placeholder || `Pilih ${field.label}...`)}
+                        : isInputDisabled
+                            ? 'Otomatis Mengikuti Profil User Login'
+                            : isTemplateLocked
+                                ? 'Filter Terkunci (Mengikuti Profil User)'
+                                : selectedLabels.length > 0
+                                    ? `${selectedLabels.length} terpilih (${selectedLabels.slice(0, 2).join(', ')}${selectedLabels.length > 2 ? '...' : ''})`
+                                    : (field.placeholder || `Pilih ${field.label}...`)}
                 </span>
                 <LucideIcons.ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </button>
@@ -388,15 +402,15 @@ function SingleSelectField({
             <Label htmlFor={field.name} className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-200">
                 {field.label} {field.required && <span className="text-rose-500">*</span>}
             </Label>
-            
+
             <button
                 type="button"
                 disabled={disabled}
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     "flex h-10 w-full items-center justify-between rounded-lg border border-border bg-surface-base px-3.5 py-2 text-sm font-normal transition-all text-left outline-hidden",
-                    disabled 
-                        ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500' 
+                    disabled
+                        ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-900 border-slate-200 text-slate-500'
                         : 'hover:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary focus-visible:border-primary cursor-pointer',
                     isOpen && 'border-primary ring-1 ring-primary'
                 )}
@@ -473,394 +487,6 @@ function SingleSelectField({
 }
 
 // ─── Konfigurasi Filter Kontrak Tree Select ──────────────────────────────────
-function OrgTreeFilterConfig({
-    organizationTree, data, setData, disabled
-}: {
-    organizationTree: any[];
-    data: any;
-    setData: (name: string, val: any) => void;
-    disabled?: boolean;
-}) {
-    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-    const toggle = (key: string) => setExpanded(p => ({ ...p, [key]: !p[key] }));
-
-    const allowedGroups = Array.isArray(data.allowed_company_groups) ? data.allowed_company_groups.map(String) : [];
-    const allowedRegions = Array.isArray(data.allowed_regions) ? data.allowed_regions.map(String) : [];
-    const allowedCompanies = Array.isArray(data.allowed_companies) ? data.allowed_companies.map(String) : [];
-
-    const handleGroupToggle = (gId: string) => {
-        const group = organizationTree.find(g => String(g.id) === gId);
-        if (!group) return;
-
-        const isChecking = !allowedGroups.includes(gId);
-        const childRegionIds: string[] = [];
-        const childCompanyIds: string[] = [];
-
-        if (group.children) {
-            group.children.forEach((region: any) => {
-                const match = String(region.id).match(/^r_(.*?)_g_(.*)$/);
-                const rId = match ? match[1] : String(region.id).replace(/^r_/, '');
-                if (rId !== 'null') {
-                    childRegionIds.push(`${gId}|${rId}`);
-                }
-                if (region.children) {
-                    region.children.forEach((company: any) => {
-                        const cleanCId = String(company.id).replace(/^c_/, '');
-                        childCompanyIds.push(`${gId}|${rId}|${cleanCId}`);
-                    });
-                }
-            });
-        }
-
-        let nextGroups = [...allowedGroups];
-        let nextRegions = [...allowedRegions];
-        let nextCompanies = [...allowedCompanies];
-
-        if (isChecking) {
-            if (!nextGroups.includes(gId)) nextGroups.push(gId);
-            childRegionIds.forEach(id => { if (!nextRegions.includes(id)) nextRegions.push(id); });
-            childCompanyIds.forEach(id => { if (!nextCompanies.includes(id)) nextCompanies.push(id); });
-            
-            // Auto enable toggle can_change_company_group
-            setData('can_change_company_group', true);
-        } else {
-            nextGroups = nextGroups.filter(v => v !== gId);
-            nextRegions = nextRegions.filter(v => !childRegionIds.includes(v));
-            nextCompanies = nextCompanies.filter(v => !childCompanyIds.includes(v));
-        }
-
-        setData('allowed_company_groups', nextGroups);
-        setData('allowed_regions', nextRegions);
-        setData('allowed_companies', nextCompanies);
-    };
-
-    const handleRegionToggle = (gId: string, rId: string) => {
-        const group = organizationTree.find(g => String(g.id) === gId);
-        const regionNode = group?.children?.find((r: any) => {
-            const match = String(r.id).match(/^r_(.*?)_g_(.*)$/);
-            const cleanRId = match ? match[1] : String(r.id).replace(/^r_/, '');
-            return cleanRId === rId;
-        });
-
-        const compositeRegion = `${gId}|${rId}`;
-        const isChecking = !allowedRegions.includes(compositeRegion);
-        const childCompanyIds: string[] = [];
-
-        if (regionNode && regionNode.children) {
-            regionNode.children.forEach((company: any) => {
-                const cleanCId = String(company.id).replace(/^c_/, '');
-                childCompanyIds.push(`${gId}|${rId}|${cleanCId}`);
-            });
-        }
-
-        let nextGroups = [...allowedGroups];
-        let nextRegions = [...allowedRegions];
-        let nextCompanies = [...allowedCompanies];
-
-        if (isChecking) {
-            if (!nextRegions.includes(compositeRegion)) nextRegions.push(compositeRegion);
-            if (!nextGroups.includes(gId)) nextGroups.push(gId);
-            childCompanyIds.forEach(id => { if (!nextCompanies.includes(id)) nextCompanies.push(id); });
-            
-            // Auto enable toggles
-            setData('can_change_region', true);
-            setData('can_change_company_group', true);
-        } else {
-            nextRegions = nextRegions.filter(v => v !== compositeRegion);
-            nextCompanies = nextCompanies.filter(v => !childCompanyIds.includes(v));
-        }
-
-        setData('allowed_company_groups', nextGroups);
-        setData('allowed_regions', nextRegions);
-        setData('allowed_companies', nextCompanies);
-    };
-
-    const handleCompanyToggle = (gId: string, rId: string, cId: string) => {
-        const compositeCompany = `${gId}|${rId}|${cId}`;
-        const compositeRegion = `${gId}|${rId}`;
-        const isChecking = !allowedCompanies.includes(compositeCompany);
-
-        let nextGroups = [...allowedGroups];
-        let nextRegions = [...allowedRegions];
-        let nextCompanies = [...allowedCompanies];
-
-        if (isChecking) {
-            nextCompanies.push(compositeCompany);
-            if (rId !== 'null' && !nextRegions.includes(compositeRegion)) {
-                nextRegions.push(compositeRegion);
-            }
-            if (!nextGroups.includes(gId)) {
-                nextGroups.push(gId);
-            }
-            
-            // Auto enable toggles
-            setData('can_change_company', true);
-            if (rId !== 'null') setData('can_change_region', true);
-            setData('can_change_company_group', true);
-        } else {
-            nextCompanies = nextCompanies.filter(v => v !== compositeCompany);
-        }
-
-        setData('allowed_company_groups', nextGroups);
-        setData('allowed_regions', nextRegions);
-        setData('allowed_companies', nextCompanies);
-    };
-
-    const Cb = ({ checked, disabled }: { checked: boolean; disabled?: boolean }) => (
-        <span className={cn(
-            'w-[15px] h-[15px] rounded border-[1.5px] flex items-center justify-center shrink-0 transition-all cursor-pointer',
-            checked
-                ? 'bg-primary border-primary'
-                : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800',
-            disabled && 'opacity-40'
-        )}>
-            {checked && <LucideIcons.Check size={9} strokeWidth={3.5} className="text-white" />}
-        </span>
-    );
-
-    const isGroupChangeable = true;
-    const isRegionChangeable = true;
-    const isCompanyChangeable = true;
-
-    return (
-        <div className={cn(
-            "flex flex-col gap-3 w-full border border-surface-border rounded-2xl p-4 bg-surface-base/30 transition-all duration-200",
-            disabled && "opacity-60 pointer-events-none select-none bg-surface-muted/20"
-        )}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <Label className="text-xs font-semibold text-text-main uppercase">
-                            Whitelist Hak Akses Organisasi (Tree View)
-                        </Label>
-                        {disabled && (
-                            <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
-                                Mengikuti Filter Role
-                            </span>
-                        )}
-                    </div>
-                    <p className="text-[10px] text-text-desc mt-0.5">
-                        Tentukan Holding, Wilayah, dan Perusahaan mana saja yang boleh diakses dan dipilih oleh user ini.
-                    </p>
-                </div>
-                
-                {/* Control Actions */}
-                <div className="flex items-center gap-1.5 shrink-0 bg-surface-muted/30 p-1.5 rounded-xl border border-surface-border">
-                    <button
-                        type="button"
-                        onClick={() => {
-                            const nextGroups: string[] = [];
-                            const nextRegions: string[] = [];
-                            const nextCompanies: string[] = [];
-                            
-                            organizationTree.forEach(group => {
-                                const gId = String(group.id);
-                                nextGroups.push(gId);
-                                if (group.children) {
-                                    group.children.forEach((region: any) => {
-                                        const match = String(region.id).match(/^r_(.*?)_g_(.*)$/);
-                                        const rId = match ? match[1] : String(region.id).replace(/^r_/, '');
-                                        if (rId !== 'null') {
-                                            nextRegions.push(`${gId}|${rId}`);
-                                        }
-                                        if (region.children) {
-                                            region.children.forEach((company: any) => {
-                                                const cleanCId = String(company.id).replace(/^c_/, '');
-                                                nextCompanies.push(`${gId}|${rId}|${cleanCId}`);
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                            
-                            if (isGroupChangeable) setData('allowed_company_groups', nextGroups);
-                            if (isRegionChangeable) setData('allowed_regions', nextRegions);
-                            if (isCompanyChangeable) setData('allowed_companies', nextCompanies);
-                        }}
-                        className="px-2 py-1 text-[9px] font-bold uppercase rounded-md bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all cursor-pointer"
-                    >
-                        Check All
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (isGroupChangeable) setData('allowed_company_groups', []);
-                            if (isRegionChangeable) setData('allowed_regions', []);
-                            if (isCompanyChangeable) setData('allowed_companies', []);
-                        }}
-                        className="px-2 py-1 text-[9px] font-bold uppercase rounded-md border border-surface-border text-text-desc hover:bg-rose-50 hover:text-rose-500 hover:border-rose-200 transition-all cursor-pointer"
-                    >
-                        Uncheck All
-                    </button>
-                    <div className="w-px h-3 bg-surface-border mx-0.5" />
-                    <button
-                        type="button"
-                        onClick={() => {
-                            const next: Record<string, boolean> = {};
-                            organizationTree.forEach(group => {
-                                const gId = String(group.id);
-                                next[`g_${gId}`] = true;
-                                if (group.children) {
-                                    group.children.forEach((region: any) => {
-                                        next[`r_${region.id}`] = true;
-                                    });
-                                }
-                            });
-                            setExpanded(next);
-                        }}
-                        className="p-1 rounded-md text-text-desc hover:bg-surface-muted hover:text-text-main transition-all cursor-pointer"
-                        title="Expand All"
-                    >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m15 18 3 3 3-3"/><path d="M18 21V10"/><path d="m15 6-3-3-3 3"/><path d="M12 3v14"/><path d="m9 18-3 3-3-3"/><path d="M6 21V10"/>
-                        </svg>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            const next: Record<string, boolean> = {};
-                            organizationTree.forEach(group => {
-                                const gId = String(group.id);
-                                next[`g_${gId}`] = false;
-                                if (group.children) {
-                                    group.children.forEach((region: any) => {
-                                        next[`r_${region.id}`] = false;
-                                    });
-                                }
-                            });
-                            setExpanded(next);
-                        }}
-                        className="p-1 rounded-md text-text-desc hover:bg-surface-muted hover:text-text-main transition-all cursor-pointer"
-                        title="Collapse All"
-                    >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="m18 15 3-3 3 3"/><path d="M21 12V3"/><path d="m12 6 3 3 3-3"/><path d="M15 9V3"/><path d="m6 15 3-3 3 3"/><path d="M9 12V3"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
-            <div className="h-px bg-surface-border my-0.5" />
-
-            <div className="max-h-[380px] overflow-y-auto pr-1 flex flex-col gap-1 select-none">
-    
-                {organizationTree.map((group) => {
-                    const gId = String(group.id);
-                    const gSelected = allowedGroups.includes(gId);
-                    const gExpanded = expanded[`g_${gId}`] !== false; // default true
-                    const hasChildren = group.children && group.children.length > 0;
-
-                    return (
-                        <div key={gId} className="mb-1">
-                            {/* Group level */}
-                            <div className="flex items-center gap-2 hover:bg-surface-muted/30 rounded-lg p-1.5 transition-all">
-                                {hasChildren ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => toggle(`g_${gId}`)}
-                                        className="flex items-center justify-center w-5 h-5 text-text-desc hover:text-text-main"
-                                    >
-                                        <LucideIcons.ChevronDown size={11} className={cn('transition-transform', gExpanded ? '' : '-rotate-90')} />
-                                    </button>
-                                ) : (
-                                    <span className="w-5 shrink-0" />
-                                )}
-
-                                <div 
-                                    className="flex items-center gap-2.5 flex-1 cursor-pointer"
-                                    onClick={() => isGroupChangeable && handleGroupToggle(gId)}
-                                >
-                                    <Cb checked={gSelected} disabled={!isGroupChangeable} />
-                                    <div className="flex items-center gap-1.5 min-w-0">
-                                        {group.code && (
-                                            <span className="text-[9px] px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-text-desc font-bold uppercase shrink-0">
-                                                {group.code}
-                                            </span>
-                                        )}
-                                        <span className="text-xs font-semibold text-text-main truncate">{group.name}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Regions level */}
-                            {gExpanded && group.children && group.children.map((region: any) => {
-                                const rId = String(region.id);
-                                const match = rId.match(/^r_(.*?)_g_(.*)$/);
-                                const cleanRId = match ? match[1] : rId.replace(/^r_/, '');
-                                
-                                const rComposite = `${gId}|${cleanRId}`;
-                                const rSelected = allowedRegions.includes(rComposite);
-                                const rExpanded = expanded[`r_${rId}`] === true; // default false
-                                const rHasChildren = region.children && region.children.length > 0;
-
-                                return (
-                                    <div key={rId} className="ml-6 mt-1 border-l border-slate-200/50 dark:border-slate-800/50 pl-2">
-                                        <div className="flex items-center gap-2 hover:bg-surface-muted/30 rounded-lg p-1.5 transition-all">
-                                            {rHasChildren ? (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggle(`r_${rId}`)}
-                                                    className="flex items-center justify-center w-5 h-5 text-text-desc hover:text-text-main"
-                                                >
-                                                    <LucideIcons.ChevronDown size={10} className={cn('transition-transform', rExpanded ? '' : '-rotate-90')} />
-                                                </button>
-                                            ) : (
-                                                <span className="w-5 shrink-0" />
-                                            )}
-
-                                            <div 
-                                                className="flex items-center gap-2.5 flex-1 cursor-pointer"
-                                                onClick={() => isRegionChangeable && cleanRId !== 'null' && handleRegionToggle(gId, cleanRId)}
-                                            >
-                                                <Cb checked={rSelected} disabled={!isRegionChangeable || cleanRId === 'null'} />
-                                                <div className="flex items-center gap-1.5 min-w-0">
-                                                    {region.code && region.code !== '-' && (
-                                                        <span className="text-[9px] px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-text-desc font-bold uppercase tracking-wide shrink-0">
-                                                            {region.code}
-                                                        </span>
-                                                    )}
-                                                    <span className="text-xs font-medium text-text-main truncate">{region.name}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Companies level */}
-                                        {rExpanded && region.children && region.children.map((company: any) => {
-                                            const cId = String(company.id);
-                                            const cleanCId = cId.replace(/^c_/, '');
-                                            
-                                            const cComposite = `${gId}|${cleanRId}|${cleanCId}`;
-                                            const cSelected = allowedCompanies.includes(cComposite);
-
-                                            return (
-                                                <div 
-                                                    key={cId} 
-                                                    className="ml-6 mt-1 border-l border-slate-200/50 dark:border-slate-800/50 pl-2 flex items-center gap-2.5 hover:bg-surface-muted/30 rounded-lg p-1.5 transition-all cursor-pointer"
-                                                    onClick={() => isCompanyChangeable && handleCompanyToggle(gId, cleanRId, cleanCId)}
-                                                >
-                                                    <div className="w-5 shrink-0" />
-                                                    <Cb checked={cSelected} disabled={!isCompanyChangeable} />
-                                                    <div className="flex items-center gap-1.5 min-w-0">
-                                                        {company.code && (
-                                                            <span className="text-[9px] text-text-desc font-mono shrink-0">
-                                                                {company.code}
-                                                            </span>
-                                                        )}
-                                                        <span className="text-xs text-text-desc truncate">{company.name}</span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    );
-                })}
-            </div>
-        </div>
-    );
-}
 
 interface Props {
     resourceSlug: string;
@@ -872,10 +498,13 @@ interface Props {
     returnUrl?: string | null;
 }
 
-export default function ResourceForm({ resourceSlug, title, formSchema, formColumns = 1, record, organizationTree, returnUrl }: Props) {
+export default function ResourceForm({ resourceSlug, title, formSchema, formColumns = 1, record, returnUrl }: Props) {
     const isEdit = !!record;
     const [activeTab, setActiveTab] = useState<'info' | 'detail'>('info');
+    const [dashboardTab, setDashboardTab] = useState<'setting' | 'authority' | 'filtering'>('setting');
+    const [userTab, setUserTab] = useState<'profile' | 'policy'>('profile');
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
+    const [isSlaSimOpen, setIsSlaSimOpen] = useState(false);
 
     // States for custom contract filter table manager dialog
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
@@ -892,28 +521,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         allowed_departments: [] as string[],
     });
 
-    const openFilterModal = () => {
-        setLocalFilterData({
-            can_change_company_group: data.can_change_company_group === true || data.can_change_company_group === 1 || String(data.can_change_company_group) === 'true',
-            allowed_company_groups: Array.isArray(data.allowed_company_groups) ? [...data.allowed_company_groups] : [],
-            can_change_region: data.can_change_region === true || data.can_change_region === 1 || String(data.can_change_region) === 'true',
-            allowed_regions: Array.isArray(data.allowed_regions) ? [...data.allowed_regions] : [],
-            can_change_company: data.can_change_company === true || data.can_change_company === 1 || String(data.can_change_company) === 'true',
-            allowed_companies: Array.isArray(data.allowed_companies) ? [...data.allowed_companies] : [],
-            can_change_division: data.can_change_division === true || data.can_change_division === 1 || String(data.can_change_division) === 'true',
-            allowed_divisions: Array.isArray(data.allowed_divisions) ? [...data.allowed_divisions] : [],
-            can_change_department: data.can_change_department === true || data.can_change_department === 1 || String(data.can_change_department) === 'true',
-            allowed_departments: Array.isArray(data.allowed_departments) ? [...data.allowed_departments] : [],
-        });
-        setIsFilterModalOpen(true);
-    };
 
-    const saveFilterData = () => {
-        Object.entries(localFilterData).forEach(([key, val]) => {
-            setData(key, val);
-        });
-        setIsFilterModalOpen(false);
-    };
 
     // Helper to get flattened fields for initial state and validation
     const getFlattenedFields = (schema: any[]): any[] => {
@@ -944,7 +552,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
         if (fieldName === 'f1_form_template_id') return data.f1_input_mechanism === 'digital' || data.f1_input_mechanism === 'none';
         if (fieldName === 'f2_form_template_id') return data.f2_input_mechanism === 'digital' || data.f2_input_mechanism === 'none';
         if (fieldName === 'contract_form_template_id') return data.contract_input_mechanism === 'digital' || data.contract_input_mechanism === 'none';
-        
+
         return false;
     };
 
@@ -968,7 +576,22 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
     // ponytail: auto-sync group & region live in form when company is changed
     useEffect(() => {
-        if (resourceSlug === 'users' && data.company_name) {
+        if (resourceSlug === 'users' && data.company_id) {
+            const companyField = flattenedFields.find(f => f.name === 'company_id');
+            const companyMap = companyField?.meta?.company_map;
+            if (companyMap && companyMap[data.company_id]) {
+                const info = companyMap[data.company_id];
+                setData((prev: any) => ({
+                    ...prev,
+                    company_name: info.name || '',
+                    idcompany: info.idcompany ?? null,
+                    company_group_name: info.company_group_name || '',
+                    company_group_id: info.company_group_id || '',
+                    region_name: info.region_name || '',
+                    region_id: info.region_id || '',
+                }));
+            }
+        } else if (resourceSlug === 'users' && data.company_name) {
             const companyField = flattenedFields.find(f => f.name === 'company_name');
             const companyMap = companyField?.meta?.company_map;
             if (companyMap && companyMap[data.company_name]) {
@@ -980,7 +603,47 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 }));
             }
         }
-    }, [data.company_name, resourceSlug]);
+    }, [data.company_id, data.company_name, resourceSlug]);
+
+    // ponytail: auto-sync company, group & region live in form when location_id is changed
+    useEffect(() => {
+        if (resourceSlug === 'users' && data.location_id) {
+            const locField = flattenedFields.find(f => f.name === 'location_id');
+            const locMap = locField?.meta?.location_map;
+            if (locMap && locMap[data.location_id]) {
+                const info = locMap[data.location_id];
+                setData((prev: any) => ({
+                    ...prev,
+                    location_name: info.location_name || '',
+                    idlocation: info.idlocation ?? null,
+                    business_unit_id: info.business_unit_id || '',
+                    company_name: info.company_name || '',
+                    company_id: info.company_id || '',
+                    idcompany: info.idcompany ?? null,
+                    company_group_name: info.company_group_name || '',
+                    company_group_id: info.company_group_id || '',
+                    region_name: info.region_name || '',
+                    region_id: info.region_id || '',
+                }));
+            }
+        }
+    }, [data.location_id, resourceSlug]);
+
+    // ponytail: auto-sync job level live in form when job position/title is changed
+    useEffect(() => {
+        if (resourceSlug === 'users' && data.job_position_id) {
+            const jobField = flattenedFields.find(f => f.name === 'job_position_id');
+            const jobMap = jobField?.meta?.job_title_map;
+            if (jobMap && jobMap[data.job_position_id]) {
+                const info = jobMap[data.job_position_id];
+                setData((prev: any) => ({
+                    ...prev,
+                    job_level_id: info.job_level_id || '',
+                    joblevel_name: info.job_level_name || '',
+                }));
+            }
+        }
+    }, [data.job_position_id, resourceSlug]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -1004,7 +667,7 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
     };
 
     const getSpanClass = (field: any) => {
-        if (['allowed_company_groups', 'allowed_regions', 'allowed_companies', 'allowed_divisions', 'allowed_departments'].includes(field.name)) {
+        if (['allowed_company_groups', 'allowed_regions', 'allowed_companies', 'allowed_divisions', 'allowed_departments', 'sla_stages'].includes(field.name)) {
             return 'col-span-full';
         }
         if (field.columnSpan === 'full' || field.columnSpan >= formColumns) return 'col-span-full';
@@ -1020,9 +683,376 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
 
         return (
             <div key={field.name} className={getSpanClass(field)}>
-                {field.type === 'text' && (
+                {field.name === 'sla_stages' ? (() => {
+                    const stages: Array<{ id?: string; contract_status?: string; status?: string; duration_hours: number; is_active?: boolean }> = Array.isArray(data.sla_stages) && data.sla_stages.length > 0
+                        ? data.sla_stages
+                        : [
+                            { contract_status: 'draft', duration_hours: 24, is_active: true },
+                            { contract_status: 'in_review', duration_hours: 48, is_active: true },
+                            { contract_status: 'pending', duration_hours: 48, is_active: true }
+                        ];
+
+                    const CONTRACT_STATUSES = [
+                        { value: 'all', label: 'Semua Status (Global)' },
+                        { value: 'draft', label: 'Draft (Pengajuan Awal)' },
+                        { value: 'in_review', label: 'Dalam Review (Umum)' },
+                        { value: 'review_f1', label: 'Review F1 (Formulir 1)' },
+                        { value: 'review_f2', label: 'Review F2 (Formulir 2)' },
+                        { value: 'review_agreement', label: 'Review Agreement (Draft Perjanjian)' },
+                        { value: 'review_legal', label: 'Review Legal (Hukum & Kepatuhan)' },
+                        { value: 'review_finance', label: 'Review Keuangan & Pajak' },
+                        { value: 'review_compliance', label: 'Review Kepatuhan & Risiko' },
+                        { value: 'review_vendor', label: 'Review Mitra / Vendor' },
+                        { value: 'pending', label: 'Menunggu Persetujuan (Approval)' },
+                        { value: 'revision', label: 'Revisi Dokumen (Revision)' },
+                        { value: 'approved', label: 'Disetujui (Approved)' },
+                        { value: 'signed', label: 'Proses Tanda Tangan (Signing)' },
+                        { value: 'queue', label: 'Antrian Pemrosesan (Queue)' },
+                        { value: 'active', label: 'Kontrak Aktif (Active)' },
+                        { value: 'completed', label: 'Selesai (Completed)' },
+                        { value: 'closed', label: 'Ditutup (Closed)' },
+                        { value: 'rejected', label: 'Ditolak (Rejected)' },
+                        { value: 'cancelled', label: 'Dibatalkan (Cancelled)' },
+                        { value: 'expired', label: 'Kedaluwarsa (Expired)' },
+                    ];
+
+                    const handleStageChange = (idx: number, key: string, val: any) => {
+                        const newStages = [...stages];
+                        newStages[idx] = { ...newStages[idx], [key]: val };
+                        if (key === 'duration_days') {
+                            const days = parseFloat(val) || 0;
+                            newStages[idx].duration_hours = Math.round(days * 24);
+                        }
+                        setData('sla_stages', newStages);
+
+                        // Auto-calculate sla_total_hours from active stage hours
+                        const totalH = newStages.reduce((sum, item) => sum + (item.is_active !== false ? (Number(item.duration_hours) || 0) : 0), 0);
+                        setData('sla_total_hours', totalH);
+                    };
+
+                    const handleAddStage = () => {
+                        const newStages = [
+                            ...stages,
+                            { contract_status: 'in_review', duration_hours: 24, duration_days: 1, is_active: true }
+                        ];
+                        setData('sla_stages', newStages);
+                        const totalH = newStages.reduce((sum, item) => sum + (item.is_active !== false ? (Number(item.duration_hours) || 0) : 0), 0);
+                        setData('sla_total_hours', totalH);
+                    };
+
+                    const handleRemoveStage = (idx: number) => {
+                        if (stages.length <= 1) return;
+                        const newStages = stages.filter((_, i) => i !== idx);
+                        setData('sla_stages', newStages);
+                        const totalH = newStages.reduce((sum, item) => sum + (item.is_active !== false ? (Number(item.duration_hours) || 0) : 0), 0);
+                        setData('sla_total_hours', totalH);
+                    };
+
+                    const activeStagesCount = stages.filter(st => st.is_active !== false).length;
+                    const totalAccumulatedHours = stages.reduce((sum, item) => sum + (item.is_active !== false ? (Number(item.duration_hours) || 0) : 0), 0);
+                    const totalDaysFormatted = (totalAccumulatedHours / 24).toFixed(1).replace(/\.0$/, '');
+
+                    return (
+                        <div className="space-y-2.5 w-full">
+                            {/* Action & Summary Header */}
+                            <div className="flex items-center justify-between gap-3 pb-1">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[11px] font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full border border-primary/20">
+                                        {activeStagesCount}/{stages.length} Tahap Aktif
+                                    </span>
+                                    <span className="text-xs text-muted-foreground hidden sm:inline">
+                                        Total Target SLA: <strong className="text-foreground font-semibold">{totalDaysFormatted} Hari</strong>
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2.5">
+                                    <span className="text-xs text-muted-foreground sm:hidden font-semibold">
+                                        {totalDaysFormatted} Hari
+                                    </span>
+                                    <Button
+                                        type="button"
+                                        variant="white"
+                                        className="h-8 text-xs font-bold gap-1 rounded-lg border-primary/30 text-primary hover:bg-primary/10 cursor-pointer shadow-none"
+                                        onClick={handleAddStage}
+                                    >
+                                        <Plus className="w-3.5 h-3.5" /> Tambah Status
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Column Header for Desktop */}
+                            <div className="hidden md:grid md:grid-cols-12 gap-3 px-1 pb-1.5 border-b border-border/60 text-[10px] font-bold uppercase text-muted-foreground tracking-wider">
+                                <div className="col-span-7">Status Kontrak</div>
+                                <div className="col-span-3">Target Durasi</div>
+                                <div className="col-span-2 text-right pr-1">Status & Aksi</div>
+                            </div>
+
+                            {/* Item List Rows (Flat Divider-separated rows) */}
+                            <div className="divide-y divide-border/40 border-b border-border/40">
+                                {stages.map((st, idx) => {
+                                    const rawH = Number(st.duration_hours) || 0;
+                                    const dVal = (st as any).duration_days ?? (rawH > 0 ? (rawH / 24).toFixed(1).replace(/\.0$/, '') : '');
+                                    const isStageActive = st.is_active !== false;
+
+                                    // Resolve current values with fallback compatibility
+                                    const currentContractStatus = st.contract_status || (
+                                        ['draft', 'in_review', 'review_f1', 'review_f2', 'review_agreement', 'review_legal', 'review_finance', 'review_compliance', 'review_vendor', 'pending', 'revision', 'approved', 'signed', 'queue', 'active', 'completed', 'closed', 'rejected', 'cancelled', 'expired', 'all'].includes(st.status || '')
+                                            ? st.status
+                                            : 'draft'
+                                    );
+
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className={cn(
+                                                "grid grid-cols-1 md:grid-cols-12 gap-3 items-center py-2 px-1 transition-colors",
+                                                isStageActive
+                                                    ? "hover:bg-surface-muted/30"
+                                                    : "opacity-60 hover:opacity-80"
+                                            )}
+                                        >
+                                            {/* 1. Status Kontrak (col-span-7) */}
+                                            <div className="md:col-span-7">
+                                                <span className="text-[10px] font-bold uppercase text-muted-foreground block md:hidden mb-1">
+                                                    #{idx + 1} Status Kontrak
+                                                </span>
+                                                <div className="relative flex items-center">
+                                                    <span className="hidden md:inline-flex text-[10px] font-mono font-bold text-muted-foreground mr-1.5 w-4 shrink-0 text-right">
+                                                        {idx + 1}.
+                                                    </span>
+                                                    <div className="relative w-full">
+                                                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-muted-foreground">
+                                                            <LucideIcons.FileText className="w-3.5 h-3.5 shrink-0 text-slate-500 dark:text-zinc-400" />
+                                                        </div>
+                                                        <select
+                                                            value={currentContractStatus}
+                                                            onChange={(e) => handleStageChange(idx, 'contract_status', e.target.value)}
+                                                            className="w-full h-8.5 rounded-md border border-border/80 bg-background pl-8 pr-3 text-xs font-semibold text-foreground focus:ring-1 focus:ring-primary focus:outline-none cursor-pointer"
+                                                        >
+                                                            {CONTRACT_STATUSES.map((opt) => (
+                                                                <option key={opt.value} value={opt.value}>
+                                                                    {opt.label}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 2. Duration Days Input (col-span-3) */}
+                                            <div className="md:col-span-3">
+                                                <span className="text-[10px] font-bold uppercase text-muted-foreground block md:hidden mb-1">
+                                                    Target Durasi (Hari)
+                                                </span>
+                                                <FormInput
+                                                    type="number"
+                                                    step="0.5"
+                                                    min="0"
+                                                    placeholder="0"
+                                                    value={dVal}
+                                                    onChange={(e) => {
+                                                        const days = parseFloat(e.target.value);
+                                                        handleStageChange(idx, 'duration_days', isNaN(days) ? '' : days);
+                                                    }}
+                                                    rightAction={<span className="text-[11px] font-medium text-muted-foreground pr-2">Hari</span>}
+                                                />
+                                            </div>
+
+                                            {/* 3. Status Aktif Toggle & Delete Action (col-span-2) */}
+                                            <div className="md:col-span-2 flex items-center justify-end gap-1.5 pt-1 md:pt-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleStageChange(idx, 'is_active', !isStageActive)}
+                                                    className={cn(
+                                                        "h-8 px-2.5 rounded-md border flex items-center gap-1.5 text-xs font-semibold transition-all cursor-pointer select-none",
+                                                        isStageActive
+                                                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
+                                                            : "bg-surface-muted border-border text-muted-foreground hover:bg-surface-border"
+                                                    )}
+                                                    title={isStageActive ? "Tahap Aktif (Dihitung)" : "Tahap Nonaktif"}
+                                                >
+                                                    <span className={cn(
+                                                        "w-1.5 h-1.5 rounded-full",
+                                                        isStageActive ? "bg-emerald-500" : "bg-muted-foreground/50"
+                                                    )} />
+                                                    <span>{isStageActive ? 'Aktif' : 'Off'}</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    disabled={stages.length <= 1}
+                                                    onClick={() => handleRemoveStage(idx)}
+                                                    className={cn(
+                                                        "w-8 h-8 rounded-md flex items-center justify-center border transition-all shrink-0",
+                                                        stages.length <= 1
+                                                            ? "opacity-25 cursor-not-allowed border-border text-muted-foreground"
+                                                            : "border-border hover:border-rose-300 text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                                                    )}
+                                                    title={stages.length <= 1 ? "Minimal 1 status SLA" : "Hapus status ini"}
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Summary Footer */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-1 px-1 text-[11px] text-muted-foreground gap-1">
+                                <span>* Klik &ldquo;Tambah Status&rdquo; untuk menambah tahapan alur kontrak.</span>
+                                <span className="font-semibold text-foreground">
+                                    Total Target SLA: <span className="text-primary font-bold">{totalDaysFormatted} Hari</span>
+                                </span>
+                            </div>
+                        </div>
+                    );
+                })() : (field.name === 'sla_drafting_hours' || field.name === 'sla_total_hours' || field.name === 'sla_review_hours') ? (() => {
+                    const rawVal = Number(data[field.name]) || 0;
+                    const daysVal = rawVal > 0 ? (rawVal / 24).toFixed(1).replace(/\.0$/, '') : '';
+                    return (
+                        <div className="space-y-1 w-full">
+                            <div className="flex items-center justify-between px-0.5">
+                                <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200">
+                                    {field.label} {field.required && <span className="text-rose-500">*</span>}
+                                </Label>
+                                {rawVal > 0 && (
+                                    <span className="text-[9.5px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded">
+                                        = {daysVal} Hari ({rawVal} Jam)
+                                    </span>
+                                )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                                <div className="relative">
+                                    <FormInput
+                                        type="number"
+                                        placeholder="0"
+                                        value={daysVal}
+                                        onChange={(e) => {
+                                            const days = parseFloat(e.target.value);
+                                            const h = isNaN(days) ? '' : Math.round(days * 24);
+                                            setData(field.name, h);
+                                        }}
+                                        rightAction={<span className="text-[11px] font-semibold text-muted-foreground pr-2">Hari</span>}
+                                    />
+                                </div>
+                                <div className="relative">
+                                    <FormInput
+                                        type="number"
+                                        placeholder="0"
+                                        value={data[field.name] ?? ''}
+                                        onChange={(e) => {
+                                            const hours = parseInt(e.target.value, 10);
+                                            setData(field.name, isNaN(hours) ? '' : hours);
+                                        }}
+                                        rightAction={<span className="text-[11px] font-semibold text-muted-foreground pr-2">Jam</span>}
+                                        error={errors[field.name]}
+                                    />
+                                </div>
+                            </div>
+                            {field.helperText && !errors[field.name] && (
+                                <p className="text-[10px] text-muted-foreground px-0.5 font-normal">
+                                    {field.helperText}
+                                </p>
+                            )}
+                        </div>
+                    );
+                })() : field.name === 'sla_cutoff_hour' ? (() => {
+                    const cutoffVal = data['sla_cutoff_hour'] !== '' && data['sla_cutoff_hour'] !== null && data['sla_cutoff_hour'] !== undefined ? Number(data['sla_cutoff_hour']) : '';
+                    const cutoffTimeFormatted = cutoffVal !== '' && !isNaN(cutoffVal) ? `${String(cutoffVal).padStart(2, '0')}:00 WIB` : '';
+                    return (
+                        <div className="space-y-1 w-full">
+                            <div className="flex items-center justify-between px-0.5">
+                                <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200">
+                                    {field.label} {field.required && <span className="text-rose-500">*</span>}
+                                </Label>
+                                {cutoffTimeFormatted && (
+                                    <span className="text-[9.5px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded font-mono">
+                                        = {cutoffTimeFormatted}
+                                    </span>
+                                )}
+                            </div>
+                            <FormInput
+                                type="number"
+                                min="0"
+                                max="23"
+                                placeholder="0-23"
+                                value={data['sla_cutoff_hour'] ?? ''}
+                                onChange={(e) => {
+                                    const h = parseInt(e.target.value, 10);
+                                    setData('sla_cutoff_hour', isNaN(h) ? '' : Math.max(0, Math.min(23, h)));
+                                }}
+                                rightAction={<span className="text-[11px] font-semibold text-muted-foreground pr-2 font-mono">:00 WIB</span>}
+                                error={errors['sla_cutoff_hour']}
+                            />
+                            {field.helperText && !errors['sla_cutoff_hour'] && (
+                                <p className="text-[10px] text-muted-foreground px-0.5 font-normal">
+                                    {field.helperText}
+                                </p>
+                            )}
+                        </div>
+                    );
+                })() : field.name === 'working_days' ? (() => {
+                    const DAYS = [
+                        { key: '1', short: 'Sen', label: 'Senin' },
+                        { key: '2', short: 'Sel', label: 'Selasa' },
+                        { key: '3', short: 'Rab', label: 'Rabu' },
+                        { key: '4', short: 'Kam', label: 'Kamis' },
+                        { key: '5', short: 'Jum', label: 'Jumat' },
+                        { key: '6', short: 'Sab', label: 'Sabtu' },
+                        { key: '7', short: 'Min', label: 'Minggu' },
+                    ];
+                    const currentDays: string[] = Array.isArray(data['working_days'])
+                        ? data['working_days'].map(String)
+                        : ['1', '2', '3', '4', '5'];
+                    const activeDaysCount = currentDays.length;
+
+                    return (
+                        <div className="space-y-1 w-full">
+                            <div className="flex items-center justify-between px-0.5">
+                                <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200">
+                                    {field.label}
+                                </Label>
+                                <span className="text-[9.5px] font-bold text-primary bg-primary/10 px-1.5 py-0.2 rounded font-mono">
+                                    {activeDaysCount} Hari Aktif / Minggu
+                                </span>
+                            </div>
+                            <div className="grid grid-cols-7 gap-1 h-9 items-center">
+                                {DAYS.map((d) => {
+                                    const isSelected = currentDays.includes(d.key);
+                                    return (
+                                        <button
+                                            key={d.key}
+                                            type="button"
+                                            onClick={() => {
+                                                const next = isSelected
+                                                    ? currentDays.filter((k) => k !== d.key)
+                                                    : [...currentDays, d.key].sort();
+                                                setData('working_days', next);
+                                            }}
+                                            className={cn(
+                                                "h-9 rounded-md border text-xs font-bold transition-all cursor-pointer select-none flex flex-col items-center justify-center",
+                                                isSelected
+                                                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-semibold"
+                                                    : "bg-surface-muted/40 text-muted-foreground border-border/80 hover:bg-surface-muted hover:text-foreground"
+                                            )}
+                                            title={`${d.label} (${isSelected ? 'Aktif dihitung SLA' : 'Libur / Tidak dihitung'})`}
+                                        >
+                                            <span className="text-[11px] leading-none">{d.short}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {field.helperText && !errors['working_days'] && (
+                                <p className="text-[10px] text-muted-foreground px-0.5 font-normal">
+                                    {field.helperText}
+                                </p>
+                            )}
+                        </div>
+                    );
+                })() : (field.name === 'sla_cutoff_hour' || field.name === 'working_days') ? null : (field.type === 'text' || field.type === 'number' || field.type === 'integer' || field.type === 'email' || field.type === 'password') && (
                     <FormInput
                         label={field.label}
+                        type={field.type === 'integer' ? 'number' : field.type}
                         value={data[field.name]}
                         onChange={(e) => setData(field.name, e.target.value)}
                         error={errors[field.name]}
@@ -1122,16 +1152,42 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         )}
                     </div>
                 )}
-                {field.type === 'select' && field.multiple ? (() => {
-                    const toggleName = field.name === 'allowed_company_groups' ? 'can_change_company_group'
-                                     : field.name === 'allowed_regions' ? 'can_change_region'
-                                     : field.name === 'allowed_companies' ? 'can_change_company'
-                                     : field.name === 'allowed_divisions' ? 'can_change_division'
-                                     : field.name === 'allowed_departments' ? 'can_change_department'
-                                     : null;
+                {field.type === 'select' && field.multiple && field.name !== 'working_days' ? (() => {
+                    let toggleName: string | null = null;
+                    let toggleLabel: string | undefined = undefined;
+
+                    if (resourceSlug === 'dashboard-types') {
+                        if (field.name === 'company_group_ids') {
+                            toggleName = 'scope_to_user_company_group';
+                            toggleLabel = 'Sesuai Profil User';
+                        } else if (field.name === 'region_ids') {
+                            toggleName = 'scope_to_user_region';
+                            toggleLabel = 'Sesuai Profil User';
+                        } else if (field.name === 'company_ids') {
+                            toggleName = 'scope_to_user_company';
+                            toggleLabel = 'Sesuai Profil User';
+                        } else if (field.name === 'division_ids') {
+                            toggleName = 'scope_to_user_division';
+                            toggleLabel = 'Sesuai Profil User';
+                        } else if (field.name === 'department_ids') {
+                            toggleName = 'scope_to_user_department';
+                            toggleLabel = 'Sesuai Profil User';
+                        }
+                    } else {
+                        if (field.name === 'allowed_company_groups') toggleName = 'can_change_company_group';
+                        else if (field.name === 'allowed_regions') toggleName = 'can_change_region';
+                        else if (field.name === 'allowed_companies') toggleName = 'can_change_company';
+                        else if (field.name === 'allowed_divisions') toggleName = 'can_change_division';
+                        else if (field.name === 'allowed_departments') toggleName = 'can_change_department';
+                    }
+
                     const toggleVal = toggleName ? (
                         data[toggleName] === true || data[toggleName] === 1 || data[toggleName] === '1' || data[toggleName] === 'true'
                     ) : false;
+
+                    // If dashboard-types scoping toggle is active (Sesuai Profil User), disable specific list dropdown
+                    const isScopedToUser = resourceSlug === 'dashboard-types' && Boolean(toggleVal);
+
                     return (
                         <div className="space-y-1">
                             <MultiSelectField
@@ -1140,18 +1196,20 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                 onChange={(val) => setData(field.name, val)}
                                 error={errors[field.name]}
                                 toggleName={toggleName}
+                                toggleLabel={toggleLabel}
                                 toggleValue={toggleVal}
                                 onToggleChange={toggleName ? (val) => setData(toggleName, val) : undefined}
                                 disabled={isFieldDisabled(field.name)}
+                                isInputDisabled={isScopedToUser}
                             />
                             {field.helperText && !errors[field.name] && (
                                 <p className="text-[11px] text-muted-foreground px-0.5 mt-1 font-normal">
-                                    {field.helperText}
+                                    {isScopedToUser ? `Otomatis mengikuti ${field.label.toLowerCase()} dari profil user login.` : field.helperText}
                                 </p>
                             )}
                         </div>
                     );
-                })() : field.type === 'select' && (
+                })() : field.type === 'select' && field.name !== 'working_days' && (
                     <div className="space-y-1">
                         <SingleSelectField
                             field={field}
@@ -1194,32 +1252,66 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                 {field.type === 'switch' && (() => {
                     const isChecked = data[field.name] === true || data[field.name] === 1 || data[field.name] === '1' || data[field.name] === 'true';
                     return (
-                        <div className="space-y-1.5 w-full">
-                            <Label className="text-[11px] font-bold uppercase text-slate-700 dark:text-zinc-200 px-0.5">
-                                {field.label}
-                            </Label>
-                            <div className="flex items-center h-11">
+                        <div
+                            onClick={() => setData(field.name, !isChecked)}
+                            className={cn(
+                                "group relative flex items-start justify-between p-4 rounded-xl border transition-all cursor-pointer select-none",
+                                isChecked
+                                    ? "bg-primary/5 border-primary/40 shadow-xs ring-1 ring-primary/20 dark:bg-primary/10 dark:border-primary/50"
+                                    : "bg-surface-base border-border hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-surface-muted/30"
+                            )}
+                        >
+                            <div className="flex items-start gap-3 pr-2">
+                                <div className={cn(
+                                    "p-2 rounded-lg transition-colors shrink-0",
+                                    isChecked
+                                        ? "bg-primary/15 text-primary dark:bg-primary/25"
+                                        : "bg-surface-muted text-muted-foreground group-hover:text-foreground"
+                                )}>
+                                    {IconComponent ? (
+                                        <IconComponent className="h-4 w-4" />
+                                    ) : (
+                                        <LucideIcons.Eye className="h-4 w-4" />
+                                    )}
+                                </div>
+                                <div className="space-y-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <h4 className={cn(
+                                            "text-xs font-bold leading-tight transition-colors",
+                                            isChecked ? "text-foreground font-semibold" : "text-slate-700 dark:text-zinc-200"
+                                        )}>
+                                            {field.label}
+                                        </h4>
+                                        {isChecked && (
+                                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary/10 text-primary uppercase font-mono">
+                                                Aktif
+                                            </span>
+                                        )}
+                                    </div>
+                                    {field.helperText && (
+                                        <p className="text-[10.5px] text-muted-foreground line-clamp-2 leading-relaxed font-normal">
+                                            {field.helperText}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="shrink-0 pt-0.5" onClick={(e) => e.stopPropagation()}>
                                 <button
                                     type="button"
                                     role="switch"
                                     aria-checked={isChecked}
                                     onClick={() => setData(field.name, !isChecked)}
-                                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden active:scale-95 ${
+                                    className={cn(
+                                        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-all duration-300 outline-hidden active:scale-95",
                                         isChecked ? 'bg-primary dark:bg-white' : 'bg-slate-200 dark:bg-slate-800'
-                                    }`}
+                                    )}
                                 >
                                     <span
-                                        className={`pointer-events-none block h-4 w-4 rounded-full shadow-lg transition-transform duration-300 ring-0 ${
-                                            isChecked ? 'translate-x-6 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
-                                        }`}
+                                        className={`pointer-events-none block h-3 w-3 rounded-full shadow-lg transition-transform duration-300 ring-0 ${isChecked ? 'translate-x-5 bg-white dark:bg-primary' : 'translate-x-1 bg-white dark:bg-white/50'
+                                            }`}
                                     />
                                 </button>
                             </div>
-                            {field.helperText && (
-                                <p className="text-[11px] text-muted-foreground px-0.5 font-normal">
-                                    {field.helperText}
-                                </p>
-                            )}
                         </div>
                     );
                 })()}
@@ -1245,14 +1337,107 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                 </Link>
                                 <div className="flex flex-col justify-center">
                                     <h1 className="text-[13.5px] font-bold text-text-main tracking-tight leading-tight">
-                                         {isEdit ? `Edit ${title}` : `Tambah ${title}`}
+                                        {isEdit ? `Edit ${title}` : `Tambah ${title}`}
                                     </h1>
                                     <p className="text-[10.5px] text-text-muted leading-tight mt-0.5">
                                         {isEdit ? 'Ubah informasi data yang sudah ada.' : 'Tambahkan data master baru ke sistem.'}
                                     </p>
                                 </div>
                             </div>
+
+                            {resourceSlug === 'contract-sla-configs' && (
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="white"
+                                        className="h-8 gap-1.5 text-xs font-semibold border-border hover:bg-surface-muted text-primary"
+                                        onClick={() => setIsSlaSimOpen(true)}
+                                    >
+                                        <Calculator size={14} className="text-primary" /> Simulasi SLA
+                                    </Button>
+                                </div>
+                            )}
                         </div>
+
+                        {/* Navigation Tabs for Dashboard Types */}
+                        {resourceSlug === 'dashboard-types' && (
+                            <div className="flex items-center gap-2 px-6 border-t border-surface-border/60 pt-2 bg-surface-base">
+                                <button
+                                    type="button"
+                                    onClick={() => setDashboardTab('setting')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        dashboardTab === 'setting'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.LayoutDashboard size={14} className={dashboardTab === 'setting' ? 'text-primary' : 'text-slate-400'} />
+                                    1. Pengaturan & Visibilitas Tab
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setDashboardTab('authority')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        dashboardTab === 'authority'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.Users size={14} className={dashboardTab === 'authority' ? 'text-primary' : 'text-slate-400'} />
+                                    2. Target Pengguna & Matriks Organisasi
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setDashboardTab('filtering')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        dashboardTab === 'filtering'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.FileText size={14} className={dashboardTab === 'filtering' ? 'text-primary' : 'text-slate-400'} />
+                                    3. Cakupan Dokumen & Pengajuan
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Navigation Tabs for Users */}
+                        {resourceSlug === 'users' && isEdit && (
+                            <div className="flex items-center gap-2 px-6 border-t border-surface-border/60 pt-2 bg-surface-base">
+                                <button
+                                    type="button"
+                                    onClick={() => setUserTab('profile')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        userTab === 'profile'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.UserCheck size={14} className={userTab === 'profile' ? 'text-primary' : 'text-slate-400'} />
+                                    1. Profil & Akses Pengguna
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setUserTab('policy')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        userTab === 'policy'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.SlidersHorizontal size={14} className={userTab === 'policy' ? 'text-primary' : 'text-slate-400'} />
+                                    2. Kebijakan Dashboard & Filter Dokumen
+                                    <span className="ml-1 px-1.5 py-0.2 text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 rounded-full">
+                                        View Only
+                                    </span>
+                                </button>
+                            </div>
+                        )}
 
                         {/* Navigation Tabs for Vendors */}
                         {resourceSlug === 'vendors' && isEdit && (
@@ -1285,41 +1470,56 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         )}
                     </div>
 
-                    {activeTab === 'info' && (
+                    {activeTab === 'info' && (resourceSlug !== 'users' || userTab === 'profile') && (
                         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden animate-in fade-in duration-200">
                             {/* Scrollable Form Body */}
                             <div className="flex-1 overflow-y-auto p-6 pb-8 space-y-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                                 <div className={getGridClass()}>
-                                    {formSchema.map((field: any) => {
-                                        if (field.isGroup) {
-                                            const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
-                                                ? (LucideIcons as any)[field.icon]
-                                                : undefined;
+                                    {formSchema
+                                        .filter((field: any) => {
+                                            if (resourceSlug !== 'dashboard-types') return true;
+                                            const label = (field.label || '').toLowerCase();
+                                            if (dashboardTab === 'setting') {
+                                                return label.includes('identitas') || label.includes('informasi') || label.includes('visibility') || label.includes('visibilitas');
+                                            }
+                                            if (dashboardTab === 'authority') {
+                                                return label.includes('target pengguna') || label.includes('user matrix') || label.includes('role') || label.includes('cakupan organisasi') || label.includes('organisasi') || label.includes('dynamic scoping');
+                                            }
+                                            if (dashboardTab === 'filtering') {
+                                                return label.includes('cakupan dokumen') || label.includes('dokumen & pengajuan') || (label.includes('scoping') && !label.includes('organisasi') && !label.includes('dynamic'));
+                                            }
+                                            return true;
+                                        })
+                                        .map((field: any) => {
+                                            if (field.isGroup) {
+                                                const GroupIcon = field.icon && (LucideIcons as any)[field.icon]
+                                                    ? (LucideIcons as any)[field.icon]
+                                                    : undefined;
 
-                                            return (
-                                                <div key={field.label} className="col-span-full flex flex-col gap-4 pt-2">
-                                                    <div className="flex items-center justify-between pb-2 border-b border-surface-border gap-4">
-                                                        <div className="flex items-center gap-2">
-                                                            {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
-                                                            <div>
-                                                                <h3 className="text-xs font-semibold uppercase tracking-wider text-text-main">{field.label}</h3>
-                                                                {field.description && (
-                                                                    <p className="text-[11px] text-text-muted mt-0.5">{field.description}</p>
-                                                                )}
+                                                return (
+                                                    <div key={field.label} className="col-span-full flex flex-col gap-4 pt-2">
+                                                        <div className="flex items-center justify-between pb-2 border-b border-surface-border gap-4">
+                                                            <div className="flex items-center gap-2">
+                                                                {GroupIcon && <GroupIcon className="h-4 w-4 text-primary shrink-0 opacity-80" />}
+                                                                <div>
+                                                                    <h3 className="text-xs font-semibold uppercase tracking-wider text-text-main">{field.label}</h3>
+                                                                    {field.description && (
+                                                                        <p className="text-[11px] text-text-muted mt-0.5">{field.description}</p>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
+                                                        <div className={getGridClass()}>
+                                                            {field.schema
+                                                                .filter((subField: any) => !['can_change_company_group', 'can_change_region', 'can_change_company', 'can_change_division', 'can_change_department', 'use_role_filter'].includes(subField.name))
+                                                                .map((subField: any) => renderField(subField))}
+                                                        </div>
                                                     </div>
-                                                    <div className={getGridClass()}>
-                                                        {field.schema
-                                                            .filter((subField: any) => !['can_change_company_group', 'can_change_region', 'can_change_company', 'can_change_division', 'can_change_department', 'use_role_filter'].includes(subField.name))
-                                                            .map((subField: any) => renderField(subField))}
-                                                    </div>
-                                                </div>
-                                            );
-                                        }
+                                                );
+                                            }
 
-                                        return renderField(field);
-                                    })}
+                                            return renderField(field);
+                                        })}
                                 </div>
                             </div>
 
@@ -1336,6 +1536,204 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                             </div>
                         </form>
                     )}
+
+                    {/* Tab 2: User Resolved Policy View (Read Only & Compact) */}
+                    {resourceSlug === 'users' && isEdit && userTab === 'policy' && record?.resolved_policy && (() => {
+                        const policy = record.resolved_policy;
+                        const activeTabs = [
+                            policy.show_overview && 'Overview Kontrak & Metrik',
+                            policy.show_overview_contract && 'Overview Kontrak',
+                            policy.show_overview_non_contract && 'Overview Non-Kontrak',
+                            policy.show_overview_nda && 'Overview NDA',
+                            policy.show_workload && 'Workload Tim & Approval',
+                            policy.show_master_data && 'Master Data Terkait',
+                        ].filter(Boolean);
+
+                        const categories = (policy.categories || []).map((cat: string) => {
+                            if (cat === 'contract') return 'Kontrak (Contract)';
+                            if (cat === 'non-contract') return 'Non-Kontrak';
+                            if (cat === 'nda') return 'Kerahasiaan (NDA)';
+                            return cat;
+                        });
+
+                        return (
+                            <div className="flex flex-col flex-1 min-h-0 overflow-hidden animate-in fade-in duration-200">
+                                <div className="flex-1 overflow-y-auto p-6 pb-8 space-y-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                    {/* User Context Header Banner */}
+                                    <div className="p-4 rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-surface-base to-surface-muted/30 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-2xs">
+                                        <div className="flex items-center gap-3.5">
+                                            <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                                                {(record.name || 'U').substring(0, 2).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <h3 className="text-sm font-bold text-text-main">{record.name}</h3>
+                                                    <span className="px-2 py-0.5 text-[10px] font-bold bg-primary/10 text-primary rounded-md border border-primary/20">
+                                                        {record.roleRelation?.name || record.role || 'User'}
+                                                    </span>
+                                                    {record.division?.name && (
+                                                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md">
+                                                            Divisi: {record.division.name}
+                                                        </span>
+                                                    )}
+                                                    {record.department?.name && (
+                                                        <span className="px-2 py-0.5 text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-md">
+                                                            Dept: {record.department.name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="text-[11px] text-text-muted mt-0.5">
+                                                    NIK: {record.nik || '-'} &bull; Email: {record.email || '-'} &bull; Perusahaan: {record.company_name || '-'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2 shrink-0 md:self-center">
+                                            <span className="px-2.5 py-1 text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                                                {policy.dashboard_type_name}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Compact Policy Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                                        {/* Card 1: Profil & Visibilitas Dashboard */}
+                                        <div className="p-4 rounded-xl border border-surface-border bg-surface-base flex flex-col justify-between gap-3 shadow-2xs">
+                                            <div className="space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <LucideIcons.LayoutDashboard size={13} className="text-primary" /> Profil Dashboard
+                                                    </span>
+                                                    <span className="px-1.5 py-0.2 text-[9px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 rounded">
+                                                        Aktif
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-xs font-bold text-text-main leading-snug">{policy.dashboard_type_name}</h4>
+                                                    <p className="text-[11px] text-text-muted mt-1 leading-relaxed">{policy.dashboard_type_description}</p>
+                                                </div>
+                                            </div>
+
+                                            {activeTabs.length > 0 && (
+                                                <div className="pt-2.5 border-t border-surface-border/60">
+                                                    <span className="text-[10px] font-semibold text-text-muted block mb-1.5">Visibilitas Tab Aktif:</span>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {activeTabs.map((tab: string) => (
+                                                            <span key={tab} className="px-2 py-0.5 text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900 rounded">
+                                                                {tab}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Card 2: Cakupan Organisasi (Dynamic Scope) */}
+                                        <div className="p-4 rounded-xl border border-surface-border bg-surface-base flex flex-col justify-between gap-3 shadow-2xs">
+                                            <div className="space-y-2.5">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <LucideIcons.ShieldCheck size={13} className="text-primary" /> Cakupan Organisasi
+                                                    </span>
+                                                    <span className="px-1.5 py-0.2 text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded">
+                                                        Dynamic Scope
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-1.5 text-xs">
+                                                    <div className="flex items-center justify-between py-1 border-b border-surface-border/50">
+                                                        <span className="text-text-muted text-[11px]">Cakupan Divisi:</span>
+                                                        <span className={cn(
+                                                            "font-semibold text-[11px]",
+                                                            policy.scope_to_user_division ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+                                                        )}>
+                                                            {policy.scope_to_user_division ? `Terkunci (${record.division?.name || 'Divisi User'})` : 'Lintas Divisi (Bebas)'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between py-1 border-b border-surface-border/50">
+                                                        <span className="text-text-muted text-[11px]">Cakupan Dept:</span>
+                                                        <span className={cn(
+                                                            "font-semibold text-[11px]",
+                                                            policy.scope_to_user_department ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+                                                        )}>
+                                                            {policy.scope_to_user_department ? `Terkunci (${record.department?.name || 'Dept User'})` : 'Semua Dept di Divisi'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center justify-between py-1">
+                                                        <span className="text-text-muted text-[11px]">Cakupan PT/Group:</span>
+                                                        <span className={cn(
+                                                            "font-semibold text-[11px]",
+                                                            policy.scope_to_user_company ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"
+                                                        )}>
+                                                            {policy.scope_to_user_company ? 'Terkunci PT Sendiri' : 'Lintas Perusahaan'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Card 3: Filter Dokumen & Pengajuan */}
+                                        <div className="p-4 rounded-xl border border-surface-border bg-surface-base flex flex-col justify-between gap-3 shadow-2xs">
+                                            <div className="space-y-2.5">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                                        <LucideIcons.FileText size={13} className="text-primary" /> Filter Pengajuan Dokumen
+                                                    </span>
+                                                    <span className="px-1.5 py-0.2 text-[9px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded">
+                                                        Filter
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <div>
+                                                        <span className="text-[10.5px] text-text-muted block mb-1">Kategori Dokumen Terbuka:</span>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {categories.map((cat: string) => (
+                                                                <span key={cat} className="px-2 py-0.5 text-[10px] font-semibold bg-primary/10 text-primary rounded border border-primary/20">
+                                                                    {cat}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div className="pt-2 border-t border-surface-border/50 flex items-center justify-between text-xs">
+                                                        <span className="text-text-muted text-[11px]">Tipe Dokumen:</span>
+                                                        <span className="font-semibold text-[11px] text-text-main">
+                                                            {policy.contract_type_ids?.length > 0
+                                                                ? `${policy.contract_type_ids.length} Tipe Dokumen Terpilih`
+                                                                : 'Semua Tipe Dokumen'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Informational Callout */}
+                                    <div className="p-3.5 rounded-xl border border-surface-border/80 bg-surface-muted/30 flex items-center gap-3">
+                                        <LucideIcons.Info size={16} className="text-primary shrink-0" />
+                                        <p className="text-[11px] text-text-muted leading-relaxed">
+                                            Pengaturan kebijakan dashboard ini dihitung secara dinamis oleh sistem berdasarkan matriks Role dan Divisi pengguna. Untuk menyesuaikan otoritas, Anda dapat mengubah <strong>Role</strong> atau <strong>Divisi</strong> pada Tab Profil, atau mengubah matriks di menu <Link href="/admin/core/dashboard-types" className="text-primary font-semibold hover:underline">Tipe Dashboard</Link>.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Tab 2 Footer */}
+                                <div className="flex items-center justify-between gap-3 px-6 py-3.5 border-t border-surface-border bg-surface-muted/30 shrink-0">
+                                    <Link href={returnUrl || `/admin/core/${resourceSlug}`}>
+                                        <Button type="button" variant="white" className="h-9 text-xs rounded-xl border-surface-border">
+                                            Kembali ke Registri Pengguna
+                                        </Button>
+                                    </Link>
+                                    <Button
+                                        type="button"
+                                        variant="primary"
+                                        onClick={() => setUserTab('profile')}
+                                        className="h-9 text-xs rounded-xl gap-1.5"
+                                    >
+                                        <LucideIcons.Pencil size={13} />
+                                        Ubah Profil Pengguna
+                                    </Button>
+                                </div>
+                            </div>
+                        );
+                    })()}
 
                     {/* Tab 2: Vendor Detail View */}
                     {activeTab === 'detail' && (() => {
@@ -1356,14 +1754,14 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                                     display = value ? 'Ya' : 'Tidak';
                                 } else if (Array.isArray(value)) {
                                     display = value.length > 0 ? value.join(', ') : '-';
-                                } else if (isFile || (typeof value === 'string' && (value.includes('.pdf') || value.includes('.doc') || value.includes('.png') || value.includes('.jpg') || value.includes('.jpeg')))) {
+                                } else if (isFile || (typeof value === 'string' && (/\.(pdf|png|jpe?g|jfif|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar|txt|csv)$/i.test(value) || value.includes('__')))) {
                                     const valStr = String(value);
                                     display = (
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                const fileUrl = valStr.startsWith('http') || valStr.startsWith('/') 
-                                                    ? valStr 
+                                                const fileUrl = valStr.startsWith('http') || valStr.startsWith('/')
+                                                    ? valStr
                                                     : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
                                                 window.open(fileUrl, '_blank');
                                             }}
@@ -1596,8 +1994,27 @@ export default function ResourceForm({ resourceSlug, title, formSchema, formColu
                         );
                     })()}
 
+                </div>
             </div>
-        </div>
+
+            {resourceSlug === 'contract-sla-configs' && (
+                <SlaSimulationModal
+                    open={isSlaSimOpen}
+                    onOpenChange={setIsSlaSimOpen}
+                    currentConfig={{
+                        name: data.name,
+                        contract_type_id: data.contract_type_id,
+                        topic: data.topic,
+                        sla_drafting_hours: data.sla_drafting_hours,
+                        sla_review_hours: data.sla_review_hours,
+                        sla_total_hours: data.sla_total_hours,
+                        sla_start_hour: data.sla_start_hour,
+                        sla_cutoff_hour: data.sla_cutoff_hour,
+                        working_days: data.working_days,
+                        warning_threshold_percent: data.warning_threshold_percent,
+                    }}
+                />
+            )}
         </>
     );
 }

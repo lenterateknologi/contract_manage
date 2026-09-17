@@ -12,6 +12,7 @@ interface StepEligibleUsersPopoverProps {
     roles?: any[];
     departments?: any[];
     divisions?: any[];
+    locations?: any[];
     companyGroups?: any[];
     companies?: any[];
     regions?: any[];
@@ -32,6 +33,7 @@ export function StepEligibleUsersPopover({
     roles = [],
     departments = [],
     divisions = [],
+    locations = [],
     companyGroups = [],
     companies = [],
     regions = [],
@@ -183,6 +185,8 @@ export function StepEligibleUsersPopover({
                         auth.department_use_initiator ||
                         auth.division_id ||
                         auth.division_use_initiator ||
+                        auth.location_id ||
+                        auth.location_use_initiator ||
                         auth.company_group_id ||
                         auth.company_group_use_initiator ||
                         auth.company_id ||
@@ -205,12 +209,25 @@ export function StepEligibleUsersPopover({
                             ruleParts.push(`Unit: ${dName}`);
                         }
 
+                        if (auth.division_use_initiator) ruleParts.push('Divisi Inisiator');
+                        else if (auth.division_id) {
+                            const dvName = divisions.find((d: any) => String(d.id) === String(auth.division_id))?.name || auth.division_id;
+                            ruleParts.push(`Divisi: ${dvName}`);
+                        }
+
+                        if (auth.location_use_initiator) ruleParts.push('Lokasi Inisiator');
+                        else if (auth.location_id) {
+                            const lName = locations.find((l: any) => String(l.id) === String(auth.location_id) || l.code === auth.location_id || l.name === auth.location_id)?.name || auth.location_id;
+                            ruleParts.push(`Lokasi: ${lName}`);
+                        }
+
                         if (ruleParts.length > 0) criteriaParts.push(ruleParts.join(' & '));
 
                         users.forEach((user: any) => {
                             const userRoleId = String(user.role_id || user.role || '');
                             const userDeptId = String(user.department_id || user.department?.id || '');
                             const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+                            const userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
                             const userCompId = String(user.company_id || user.company?.id || '');
                             const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
                             const userRegionId = String(user.region_id || user.company?.region_id || '');
@@ -249,6 +266,26 @@ export function StepEligibleUsersPopover({
                                 }
                             } else if (match && auth.division_id) {
                                 if (userDivId !== String(auth.division_id)) match = false;
+                            }
+
+                            if (match && auth.location_use_initiator) {
+                                if (!simInitiatorUser) match = false;
+                                else {
+                                    const initLocId = String(simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '');
+                                    const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '').toLowerCase().trim();
+                                    const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                                    const isLocMatch = (initLocId && userLocId && initLocId === userLocId) ||
+                                                       (initLocName && userLocName && initLocName === userLocName);
+                                    if (!isLocMatch) match = false;
+                                }
+                            } else if (match && auth.location_id) {
+                                const targetLocId = String(auth.location_id);
+                                const targetLoc = locations.find((l: any) => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId);
+                                const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
+                                const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
+                                const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                                const isLocMatch = userLocId === matchLocId || (userLocName && userLocName === matchLocName);
+                                if (!isLocMatch) match = false;
                             }
 
                             if (match && auth.company_group_use_initiator) {

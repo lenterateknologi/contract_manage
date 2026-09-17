@@ -2,10 +2,13 @@ import { Contract, ContractType } from '@/pages/contracts/types';
 import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ContractInfoForm } from './ContractInfoForm';
+import { resolveVendorTaxPkp } from '@/pages/contracts/utils';
 
 // Re-export for backward compatibility
 export { RequesterInfoCard } from './RequesterInfoCard';
 export { VendorInfoCard } from './VendorInfoCard';
+export { PicInfoCard } from './PicInfoCard';
+export { AdvancedInfoCard } from './AdvancedInfoCard';
 
 export interface FormTemplateInfo {
     id: string;
@@ -112,6 +115,18 @@ export function DraftEditableInfoCard({
         setPrice(p !== undefined && p !== null ? String(p) : '');
     }, [selected, types]);
 
+    // When vendor selection changes, auto-set taxRequired based on vendor's PKP status
+    const handleVendorChange = (newVendorId: string) => {
+        setVendorId(newVendorId);
+        if (newVendorId) {
+            const foundVendor = vendors.find((v) => String(v.id) === String(newVendorId));
+            if (foundVendor) {
+                const { isPkp } = resolveVendorTaxPkp(foundVendor);
+                setTaxRequired(isPkp);
+            }
+        }
+    };
+
     // Track pristine state
     const originalState = useMemo(() => {
         const typeVal = selected.contract_type_id
@@ -207,11 +222,11 @@ export function DraftEditableInfoCard({
 
     return (
         <div className="flex flex-col gap-4 relative">
-            {/* Card 1: Informasi Kontrak */}
+            {/* Card 1: Informasi Pengajuan */}
             <div className="flex flex-col gap-3">
                 <div className="bg-primary text-primary-foreground shrink-0 flex h-9.5 min-h-[38px] max-h-[38px] items-center justify-between px-4 rounded-xl shadow-xs">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
-                        <Info size={15} className="text-primary-foreground/90" /> Informasi Kontrak
+                        <Info size={15} className="text-primary-foreground/90" /> Informasi Pengajuan
                     </div>
                     <div className="flex items-center gap-2">
                         <button
@@ -243,7 +258,7 @@ export function DraftEditableInfoCard({
                             submissionTypeId={submissionTypeId}
                             setSubmissionTypeId={setSubmissionTypeId}
                             vendorId={vendorId}
-                            setVendorId={setVendorId}
+                            setVendorId={handleVendorChange}
                             types={types}
                             submissionTypes={submissionTypes}
                             vendors={vendors}

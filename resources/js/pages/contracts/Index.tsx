@@ -1,48 +1,42 @@
-import { ProfileView } from '@/pages/contracts/components/parts/ProfileView';
-import { DashboardMetrics, DashboardTab } from '@/pages/dashboard/components/DashboardMetrics';
+import { Icons } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
-import { PageTable } from '@/components/ui/navigation/PageTable';
-import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
-import { Card } from '@/components/ui/cards/Card';
-import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
-import { Column, DataTable as TableContract } from '@/components/ui/tables/DataTable';
-import { FilterPopover } from '@/components/ui/selection/FilterPopover';
-import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
 import { ContractCardSkeleton, ContractTableSkeleton } from '@/components/ui/feedback/ContractSkeleton';
 import { DashboardSkeleton } from '@/components/ui/feedback/DashboardSkeleton';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { ToastProvider, useToast } from '@/components/ui/feedback/Toast';
-import { SearchInput } from '@/components/ui/inputs/SearchInput';
+import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
 import { LayoutToggle, LayoutType } from '@/components/ui/navigation/LayoutToggle';
-import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
+import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
+import { PageTable } from '@/components/ui/navigation/PageTable';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuTrigger,
-    DropdownMenuSub,
-    DropdownMenuSubTrigger,
-    DropdownMenuSubContent,
     DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
 } from '@/components/ui/selection/DropdownMenu';
+import { Column, DataTable as TableContract } from '@/components/ui/tables/DataTable';
 import { useDebounce } from '@/hooks/use-debounce';
 import { usePermissions } from '@/hooks/use-permissions';
-import { usePov } from '@/stores/usePovStore';
-import { contractApi } from '@/pages/contracts/utils';
-import { cn } from '@/lib/utils';
+import { getClientPref, setClientPref } from '@/lib/clientStorage';
+import { cn, formatDate } from '@/lib/utils';
+import { ProfileView } from '@/pages/contracts/components/parts/ProfileView';
 import { Contract, ContractType, PaginatedData } from '@/pages/contracts/types';
+import { DashboardMetrics, DashboardTab } from '@/pages/dashboard/components/DashboardMetrics';
+import { usePov } from '@/stores/usePovStore';
 import { Head, router, usePage } from '@inertiajs/react';
-import axios from 'axios';
-import { AppIcon, Icons } from '@/components/ui';
+import { Building2 } from 'lucide-react';
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { PageFilter } from './components/PageFilter';
 
 const {
-    AlertCircle,
-    AlertTriangle,
     Archive,
     Check,
-    CheckCircle2,
-    ChevronLeft,
-    ChevronRight,
     ChevronDown,
     Clock,
     Download,
@@ -57,22 +51,17 @@ const {
     Hash,
     Layers,
     MoreVertical,
-    PlusCircle,
     Trash2,
     User,
     UserPlus,
     Calendar,
     Zap,
-    X,
-    Search,
     History,
     LayoutGrid,
     LayoutDashboard,
     Briefcase,
+    ExternalLink,
 } = Icons;
-import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense, memo } from 'react';
-import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
-import { PageFilter } from './components/PageFilter';
 
 // Lazy loaded views and modals for fast initial page render
 const ContractDetailView = lazy(() => import('./components/ContractDetailView'));
@@ -81,24 +70,19 @@ const EditContractModal = lazy(() => import('@/pages/contracts/components/modals
 const PreviewModal = lazy(() => import('@/pages/contracts/components/modals/PreviewModal'));
 const SendApprovalModal = lazy(() => import('@/pages/contracts/components/modals/SendApprovalModal'));
 
-const ensureArray = (val: any): any[] => {
-    if (Array.isArray(val)) return val;
-    return val ? [val] : [];
-};
 
 type View = 'dashboard' | 'contracts' | 'pending' | 'audit' | 'f1' | 'f2' | 'profile' | 'mine' | 'expiry' | 'archived' | 'in_progress';
 
 import {
-    renderAssignedBy,
+    ContractNoAndTitleCell,
+    ExpiryBadge,
     renderAssignedPic,
-    renderContractNoAndTitle,
     renderContractPeriod,
     renderInitiator,
     renderStatusAndStep,
     renderVendor,
-    ContractNoAndTitleCell,
-    ExpiryBadge,
 } from './components/ContractTableCells';
+import { contractApi } from './utils';
 
 const SLACountdown = memo(({ deadline, status }: Readonly<{ deadline: string | null; status: string }>) => {
     const [timeLeft, setTimeLeft] = useState<string>('');
@@ -253,95 +237,6 @@ const RowActions = memo(({
 RowActions.displayName = 'RowActions';
 
 // ─── Multi Select Filter Dropdown (Divisi / Departemen) ─────────────────────
-function MultiSelectFilterDropdown({
-    label, hasActive, options, activeIds, onToggle, onReset
-}: {
-    label: string;
-    hasActive: boolean;
-    options: { id: string; name: string }[];
-    activeIds: string[];
-    onToggle: (id: string) => void;
-    onReset: () => void;
-}) {
-    const [search, setSearch] = useState('');
-    const filtered = options.filter(opt => 
-        opt.name.toLowerCase().includes(search.toLowerCase())
-    );
-
-    const Cb = ({ checked }: { checked: boolean }) => (
-        <span className={cn(
-            'w-[14px] h-[14px] rounded border flex items-center justify-center shrink-0 transition-all',
-            checked
-                ? 'bg-primary border-primary'
-                : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
-        )}>
-            {checked && <Check size={8} strokeWidth={4} className="text-white" />}
-        </span>
-    );
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant={hasActive ? 'primary' : 'white'}
-                    className="relative flex h-9 items-center justify-center gap-1.5 rounded-xl px-3 text-[11px] font-semibold border"
-                >
-                    <span>{label}</span>
-                    <ChevronDown size={12} className="opacity-60" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl p-3 w-[260px] flex flex-col gap-2 max-h-[380px]">
-                {/* Search */}
-                <div className="relative">
-                    <Search size={11} className="absolute left-2.5 top-2.5 text-text-desc" />
-                    <input
-                        type="text"
-                        placeholder="Cari..."
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-7 pr-2 py-1.5 text-[10px] outline-none focus:border-primary text-text-main"
-                    />
-                </div>
-
-                <div className="h-px bg-surface-border my-0.5" />
-
-                {/* Items List */}
-                <div className="flex-1 overflow-y-auto max-h-[220px] pr-1 flex flex-col gap-0.5">
-                    {filtered.map(opt => {
-                        const isChecked = activeIds.includes(String(opt.id));
-                        return (
-                            <button
-                                key={opt.id}
-                                type="button"
-                                onClick={() => onToggle(String(opt.id))}
-                                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[11px] text-left text-text-desc hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-text-main transition-all cursor-pointer font-medium"
-                            >
-                                <Cb checked={isChecked} />
-                                <span className="truncate">{opt.name}</span>
-                            </button>
-                        );
-                    })}
-                    {filtered.length === 0 && (
-                        <span className="text-[10px] text-text-desc text-center py-4">Tidak ada data</span>
-                    )}
-                </div>
-
-                {hasActive && (
-                    <>
-                        <div className="h-px bg-surface-border my-0.5" />
-                        <button
-                            type="button"
-                            onClick={onReset}
-                            className="w-full flex items-center justify-center gap-1 py-1.5 rounded-lg text-[10px] text-danger hover:bg-danger/10 transition-all font-semibold cursor-pointer"
-                        >
-                            Reset Filter
-                        </button>
-                    </>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-}
 
 
 
@@ -359,13 +254,10 @@ function ContractPage({
     users = [],
     vendors = [],
     departments = [],
-    roles = [],
     companyGroups = [],
     companies = [],
     regions = [],
-    locations = [],
     divisions = [],
-    organizationTree = [],
     mineCounts,
     parentCategoryCounts,
     pendingCounts,
@@ -453,7 +345,7 @@ function ContractPage({
             if (tabParam && validTabs.includes(tabParam)) {
                 return tabParam as any;
             }
-            const saved = sessionStorage.getItem('dashboard_active_tab') || localStorage.getItem('dashboard_active_tab');
+            const saved = getClientPref<string>('dashboard_active_tab', '');
             if (saved && validTabs.includes(saved)) {
                 return saved as any;
             }
@@ -463,10 +355,7 @@ function ContractPage({
 
     const handleDashboardTabChange = (newTab: 'overview' | 'overview_contract' | 'overview_non_contract' | 'overview_nda' | 'workload' | 'master_data') => {
         setDashboardTab(newTab);
-        if (typeof window !== 'undefined') {
-            sessionStorage.setItem('dashboard_active_tab', newTab);
-            localStorage.setItem('dashboard_active_tab', newTab);
-        }
+        setClientPref('dashboard_active_tab', newTab);
     };
 
     const effectiveDashboardConfig = useMemo(() => {
@@ -621,18 +510,25 @@ function ContractPage({
     const [previewHasFile, setPreviewHasFile] = useState(false);
     const [timelinePdfPreviewUrl, setTimelinePdfPreviewUrl] = useState<string | null>(null);
 
-    const [layout, setLayout] = useState<'table' | 'grid'>('table');
+    const [layout, setLayout] = useState<'table' | 'grid'>(() => {
+        return getClientPref<'table' | 'grid'>('view_layout', 'table');
+    });
+
+    const handleLayoutChange = useCallback((val: 'table' | 'grid') => {
+        setLayout(val);
+        setClientPref('view_layout', val);
+    }, []);
+
     const [selectedRows, setSelectedRows] = useState<Contract[]>([]);
 
     const [isFilterExpanded, setIsFilterExpanded] = useState<boolean>(() => {
-        const saved = localStorage.getItem('contracts_filter_expanded');
-        return saved !== null ? saved === 'true' : false;
+        return getClientPref<boolean>('filter_expanded', false);
     });
 
     const toggleFilterExpanded = useCallback(() => {
         setIsFilterExpanded((prev) => {
             const next = !prev;
-            localStorage.setItem('contracts_filter_expanded', String(next));
+            setClientPref('filter_expanded', next);
             return next;
         });
     }, []);
@@ -682,9 +578,6 @@ function ContractPage({
         return false;
     }, [types]);
 
-    const rootTypes = useMemo(() => {
-        return (types as DBContractType[]).filter(t => !t.parent_id || t.level === 0);
-    }, [types]);
 
     const renderDropdownItems = useCallback((parentId: string | null) => {
         const children = (types as DBContractType[]).filter(t => t.parent_id === parentId);
@@ -918,13 +811,6 @@ function ContractPage({
         return list;
     }, [companyGroups, regions, companies, divisions, departments, types, masterContractStatuses]);
 
-    const activeFiltersCount = useMemo(() => {
-        const getCount = (val: any) => {
-            if (Array.isArray(val)) return val.length;
-            return val ? 1 : 0;
-        };
-        return getCount(filters.department_id);
-    }, [filters]);
 
     const handleCreate = async (data: any) => {
         setProcessing(true);
@@ -1028,40 +914,7 @@ function ContractPage({
         }
     }, [showToast]);
 
-    const handleSingleFilterToggle = (key: string, value: any) => {
-        if (key === 'created_from' || key === 'created_to') {
-            handleFilterChange({ [key]: value || '' });
-            return;
-        }
 
-        const f = filters as any;
-        const currentValues = ensureArray(f[key]);
-        let newValues: any[];
-        if (Array.isArray(value)) {
-            newValues = value;
-        } else {
-            const stringValue = String(value);
-            newValues = currentValues.map(String).includes(stringValue)
-                ? currentValues.filter((v: any) => String(v) !== stringValue)
-                : [...currentValues, stringValue];
-        }
-
-        handleFilterChange({ [key]: newValues });
-    };
-
-    const handleClearAllFilters = () => {
-        handleFilterChange({
-            status: [],
-            contract_type_id: [],
-            department_id: [],
-            created_from: '',
-            created_to: '',
-            company_group_id: [],
-            region_id: [],
-            company_id: [],
-            division_id: [],
-        });
-    };
 
     const renderBulkActions = useCallback(
         (selectedRows: Contract[]) => {
@@ -1161,6 +1014,29 @@ function ContractPage({
                 ),
                 cell: renderCreatedAt,
                 sortable: true,
+            },
+            {
+                accessorKey: 'actions',
+                header: (
+                    <div className="flex items-center justify-center">
+                        <span>Aksi</span>
+                    </div>
+                ),
+                align: 'center',
+                className: 'w-16 text-center px-2 py-1.5',
+                cell: (c: Contract) => (
+                    <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+                        <a
+                            href={`/contracts/${c.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 border border-transparent hover:border-primary/20 transition-all cursor-pointer"
+                            title="Buka di Tab Baru"
+                        >
+                            <ExternalLink size={14} />
+                        </a>
+                    </div>
+                ),
             },
         ],
         [renderContractWithTypes, renderPeriodWithExpiry, isExpiryView],
@@ -1372,7 +1248,7 @@ function ContractPage({
                                     searchPlaceholder: "Cari kontrak...",
                                     actions: (
                                         <>
-                                            <LayoutToggle value={layout as LayoutType} onChange={(val) => setLayout(val)} />
+                                            <LayoutToggle value={layout as LayoutType} onChange={handleLayoutChange} />
                                             <Button
                                                 variant={isFilterExpanded || activeFilterCount > 0 ? 'primary' : 'white'}
                                                 fontSize="11px"
@@ -1490,54 +1366,151 @@ function ContractPage({
                                                 ) : processing ? (
                                                     <ContractCardSkeleton />
                                                 ) : (
-                                                    <div className="flex flex-col gap-8">
-                                                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                                                            {contractsPaged.data.map((c) => (
-                                                                <button
-                                                                    key={c.id}
-                                                                    onClick={() => openDetail(c)}
-                                                                    className="group border-surface-border bg-white dark:bg-zinc-900 hover:border-primary/50 focus:ring-primary relative flex cursor-pointer flex-col gap-2 rounded-xl border p-3 text-left transition-colors hover:shadow-xs focus:ring-2 focus:outline-none"
-                                                                >
-                                                                    <div className="flex items-center justify-between gap-2">
-                                                                        <span className="group-hover:text-primary text-text-soft text-[9px] font-bold tracking-wider uppercase transition-colors">
-                                                                            {c.form_no || 'No Req'}
-                                                                        </span>
-                                                                        <div className="flex-shrink-0 origin-right scale-[0.75]">
-                                                                            <StatusBadge status={c.status} statusInfo={(c as any).status_info} />
-                                                                        </div>
-                                                                    </div>
+                                                    <div className="flex flex-col gap-6">
+                                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+                                                            {contractsPaged.data.map((c) => {
+                                                                const type = types?.find((t) => t.id === c.contract_type_id);
+                                                                const typeName = type?.name || c.contract_type || '';
+                                                                const cleanTypeName = typeName ? typeName.replace('Perjanjian ', '').replace('Addendum / ', '') : '';
+                                                                const progressPercent = c.progress?.total > 0 ? Math.round((c.progress.done / c.progress.total) * 100) : 0;
+                                                                const currentStepName = c.workflow_step?.description || c.workflow_step?.role || (c.status === 'draft' ? 'Pengajuan Draft' : null);
 
-                                                                    <div className="flex flex-col gap-0.5">
-                                                                        <h3 className="group-hover:text-primary text-text-main truncate text-xs font-semibold tracking-tight uppercase transition-colors">
-                                                                            {c.title}
-                                                                        </h3>
-                                                                        <span className="text-text-desc text-[9px] font-medium uppercase truncate">
-                                                                            {c.contract_type}
-                                                                        </span>
-                                                                        {isExpiryView && c.end_date && (
-                                                                            <div className="pt-0.5">
-                                                                                <ExpiryBadge endDate={c.end_date} />
+                                                                return (
+                                                                    <div
+                                                                        key={c.id}
+                                                                        onClick={() => openDetail(c)}
+                                                                        className="group relative flex flex-col justify-between rounded-xl border border-border/70 bg-card hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden text-left"
+                                                                    >
+                                                                        {/* Top Section: Header & Numbers */}
+                                                                        <div className="p-4 pb-3 space-y-2.5">
+                                                                            {/* Top Row: Form/Contract No + Status Badge */}
+                                                                            <div className="flex items-center justify-between gap-2">
+                                                                                <div className="flex items-center gap-1.5 min-w-0">
+                                                                                    <span className="font-mono text-[11px] font-bold text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/50 truncate">
+                                                                                        {c.form_no || c.contract_no || 'DRAFT'}
+                                                                                    </span>
+                                                                                    {!!c.current_version && c.current_version > 0 && (
+                                                                                        <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-primary/10 text-primary border border-primary/20">
+                                                                                            v{c.current_version}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="shrink-0">
+                                                                                    <StatusBadge status={c.status} statusInfo={(c as any).status_info} size="sm" />
+                                                                                </div>
                                                                             </div>
-                                                                        )}
-                                                                    </div>
 
-                                                                    <div className="flex items-center justify-between border-t border-surface-border/40 pt-2 text-[9px] font-semibold text-text-soft uppercase">
-                                                                        <div className="flex items-center gap-1.5 truncate max-w-[60%]">
-                                                                            <span className="truncate">{c.initiator?.department_name || 'Umum'}</span>
-                                                                            <span className="text-text-soft/40">•</span>
-                                                                            <span className="truncate font-normal">{c.assigned_pic?.name || 'No PIC'}</span>
+                                                                            {/* Title & Type */}
+                                                                            <div className="space-y-1">
+                                                                                <h3
+                                                                                    className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-snug"
+                                                                                    title={c.title}
+                                                                                >
+                                                                                    {c.title}
+                                                                                </h3>
+                                                                                {cleanTypeName && (
+                                                                                    <div className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+                                                                                        <span className="inline-block px-1.5 py-0.5 rounded bg-surface-muted border border-border/60 text-text-desc">
+                                                                                            {cleanTypeName}
+                                                                                        </span>
+                                                                                        {c.contract_no && c.contract_no !== c.form_no && (
+                                                                                            <span className="font-mono text-muted-foreground truncate" title={`No. Kontrak: ${c.contract_no}`}>
+                                                                                                • {c.contract_no}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* Vendor / Pihak Kedua */}
+                                                                            <div className="flex items-center gap-2 text-xs py-1.5 px-2.5 rounded-lg bg-muted/30 border border-border/40 text-foreground">
+                                                                                <Building2 size={13} className="text-primary shrink-0" />
+                                                                                <span className="font-medium truncate text-[11px]" title={c.vendor?.name || 'Pihak Kedua'}>
+                                                                                    {c.vendor?.name || 'Pihak Kedua Tidak Terdaftar'}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            {/* People: Inisiator & PIC */}
+                                                                            <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-border/40 text-[11px]">
+                                                                                {/* Inisiator */}
+                                                                                <div className="flex flex-col min-w-0">
+                                                                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Pengaju</span>
+                                                                                    <span className="font-semibold text-foreground truncate text-[11px]" title={c.initiator?.name}>
+                                                                                        {c.initiator?.name || '—'}
+                                                                                    </span>
+                                                                                    {c.initiator?.department_name && (
+                                                                                        <span className="text-[9.5px] text-muted-foreground truncate" title={c.initiator.department_name}>
+                                                                                            {c.initiator.department_name}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+
+                                                                                {/* PIC */}
+                                                                                <div className="flex flex-col min-w-0">
+                                                                                    <span className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">PIC</span>
+                                                                                    <span className="font-semibold text-foreground truncate text-[11px]" title={c.assigned_pic?.name || 'Belum Ada'}>
+                                                                                        {c.assigned_pic?.name || 'Belum Ada'}
+                                                                                    </span>
+                                                                                    {c.assigned_pic?.department_name && (
+                                                                                        <span className="text-[9.5px] text-muted-foreground truncate" title={c.assigned_pic.department_name}>
+                                                                                            {c.assigned_pic.department_name}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Periode Kontrak / Expiry (if applicable) */}
+                                                                            {(c.start_date || c.end_date) && (
+                                                                                <div className="flex items-center justify-between gap-1 text-[10.5px] text-muted-foreground pt-1 border-t border-border/40">
+                                                                                    <div className="flex items-center gap-1.5 truncate">
+                                                                                        <Calendar size={11} className="shrink-0 text-muted-foreground/70" />
+                                                                                        <span className="truncate">
+                                                                                            {c.start_date ? formatDate(c.start_date, { day: 'numeric', month: 'short', year: '2-digit' }) : '—'} s/d{' '}
+                                                                                            {c.end_date ? formatDate(c.end_date, { day: 'numeric', month: 'short', year: '2-digit' }) : '—'}
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    {c.end_date && (
+                                                                                        <div className="shrink-0 scale-90 origin-right">
+                                                                                            <ExpiryBadge endDate={c.end_date} />
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
                                                                         </div>
-                                                                        <div className="flex items-center gap-2 shrink-0">
-                                                                            <span className="text-primary bg-primary/5 rounded px-1.5 py-0.5 font-bold">
-                                                                                {c.progress.done}/{c.progress.total}
-                                                                            </span>
-                                                                            <div className="origin-right scale-[0.65]">
+
+                                                                        {/* Bottom Section: Workflow Progress & SLA Bar */}
+                                                                        <div className="p-3 bg-muted/20 border-t border-border/50 flex items-center justify-between gap-2 text-xs">
+                                                                            {/* Workflow Step & Progress Track */}
+                                                                            <div className="flex flex-col gap-1 min-w-0 max-w-[65%]">
+                                                                                <div className="flex items-center gap-1.5">
+                                                                                    <span className="text-[10px] font-bold text-foreground truncate" title={currentStepName || `Tahap ${c.progress?.done || 0}/${c.progress?.total || 0}`}>
+                                                                                        {currentStepName || `Tahap ${c.progress?.done || 0}/${c.progress?.total || 0}`}
+                                                                                    </span>
+                                                                                    {c.progress?.total > 0 && (
+                                                                                        <span className="text-[9.5px] font-bold text-primary font-mono shrink-0">
+                                                                                            ({c.progress.done}/{c.progress.total})
+                                                                                        </span>
+                                                                                    )}
+                                                                                </div>
+                                                                                {/* Mini Progress Bar */}
+                                                                                {c.progress?.total > 0 && (
+                                                                                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                                                                        <div
+                                                                                            className="h-full bg-primary rounded-full transition-all duration-300"
+                                                                                            style={{ width: `${progressPercent}%` }}
+                                                                                        />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+
+                                                                            {/* SLA Countdown */}
+                                                                            <div className="shrink-0 flex items-center gap-1">
                                                                                 <SLACountdown deadline={c.sla_deadline ?? null} status={c.status} />
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                </button>
-                                                            ))}
+                                                                );
+                                                            })}
                                                         </div>
                                                     </div>
                                                 )}

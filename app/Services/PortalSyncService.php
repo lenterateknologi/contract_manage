@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\CompanyGroup;
 use App\Models\ContractFilterTemplate;
 use App\Models\Department;
+use App\Models\Division;
 use App\Models\JobLevel;
 use App\Models\JobTitle;
 use App\Models\Location;
@@ -880,78 +881,108 @@ class PortalSyncService
 
             // Default fallback role: Staff
             $staffRoleId = Role::where('name', 'Staff')->value('id');
-            $defaultFilterTemplateId = ContractFilterTemplate::where('name', 'like', '%staff biasa%')->value('id');
+            // Default fallback division: General Staff
+            $generalStaffDivisionId = Division::where('name', 'General Staff')
+                ->orWhere('code', 'gen_staff')
+                ->value('id');
+            if (! $generalStaffDivisionId) {
+                $genStaff = Division::firstOrCreate(
+                    ['name' => 'General Staff'],
+                    ['code' => 'gen_staff', 'is_active' => true]
+                );
+                $generalStaffDivisionId = $genStaff->id;
+            }
 
-            // Preload existing relations & records in 1 query
-            $existingByIdEmployee = User::withTrashed()
-                ->whereNotNull('idemployee')
-                ->get()
-                ->keyBy('idemployee');
+            // Preload existing relations & records using lightweight DB queries to avoid Eloquent hydration memory overhead
+            $existingUsers = DB::table('m_users')
+                ->select('id', 'idemployee', 'email', 'nik', 'username', 'code')
+                ->get();
 
-            $existingByEmail = User::withTrashed()
-                ->whereNotNull('email')
-                ->get()
-                ->keyBy(fn ($u) => strtolower(trim($u->email)));
+            $existingByIdEmployee = [];
+            $existingByEmail = [];
+            $existingByNik = [];
+            $existingByUsername = [];
+            $existingByCode = [];
 
-            $existingByNik = User::withTrashed()
-                ->whereNotNull('nik')
-                ->get()
-                ->keyBy('nik');
-
-            $existingByUsername = User::withTrashed()
-                ->whereNotNull('username')
-                ->get()
-                ->keyBy('username');
-
-            $existingByCode = User::withTrashed()
-                ->whereNotNull('code')
-                ->get()
-                ->keyBy('code');
+            foreach ($existingUsers as $u) {
+                if (! empty($u->idemployee)) {
+                    $existingByIdEmployee[$u->idemployee] = $u;
+                }
+                if (! empty($u->email)) {
+                    $existingByEmail[strtolower(trim($u->email))] = $u;
+                }
+                if (! empty($u->nik)) {
+                    $existingByNik[$u->nik] = $u;
+                }
+                if (! empty($u->username)) {
+                    $existingByUsername[$u->username] = $u;
+                }
+                if (! empty($u->code)) {
+                    $existingByCode[$u->code] = $u;
+                }
+            }
+            unset($existingUsers);
 
             $companiesById = Company::withTrashed()
+                ->select('id', 'idcompany', 'company_group_id', 'region_id')
                 ->whereNotNull('idcompany')
                 ->get()
                 ->keyBy('idcompany');
 
             $locationsById = Location::withTrashed()
+                ->select('id', 'idlocation', 'name')
                 ->whereNotNull('idlocation')
                 ->get()
                 ->keyBy('idlocation');
 
             $locationsByName = Location::withTrashed()
+                ->select('id', 'name')
                 ->whereNotNull('name')
                 ->get()
                 ->keyBy(fn ($l) => strtolower(trim($l->name)));
 
             $departmentsByIdOrg = Department::withTrashed()
+                ->select('id', 'idorganization', 'name')
                 ->whereNotNull('idorganization')
                 ->get()
                 ->keyBy('idorganization');
 
             $departmentsByName = Department::withTrashed()
+                ->select('id', 'name')
                 ->whereNotNull('name')
                 ->get()
                 ->keyBy(fn ($d) => strtolower(trim($d->name)));
 
             $jobTitlesById = JobTitle::withTrashed()
+                ->select('id', 'idjobtitle', 'name')
                 ->whereNotNull('idjobtitle')
                 ->get()
                 ->keyBy('idjobtitle');
 
             $jobTitlesByName = JobTitle::withTrashed()
+                ->select('id', 'name')
                 ->whereNotNull('name')
                 ->get()
                 ->keyBy(fn ($jt) => strtolower(trim($jt->name)));
 
             $jobLevelsById = JobLevel::withTrashed()
+                ->select('id', 'idjoblevel', 'name')
                 ->whereNotNull('idjoblevel')
                 ->get()
                 ->keyBy('idjoblevel');
 
             $jobLevelsByName = JobLevel::withTrashed()
+                ->select('id', 'name')
                 ->whereNotNull('name')
                 ->get()
                 ->keyBy(fn ($jl) => strtolower(trim($jl->name)));
+
+            $businessUnitsByKey = BusinessUnit::withTrashed()
+                ->select('id', 'idcompany', 'idlocation')
+                ->whereNotNull('idcompany')
+                ->whereNotNull('idlocation')
+                ->get()
+                ->keyBy(fn ($bu) => "{$bu->idcompany}_{$bu->idlocation}");
 
             $defaultPasswordHash = Hash::make('Password@123');
             $now = now();
@@ -960,15 +991,15 @@ class PortalSyncService
                 $data,
                 $userId,
                 $staffRoleId,
-                $defaultFilterTemplateId,
+                $generalStaffDivisionId,
                 $defaultPasswordHash,
                 $now,
                 &$syncedCount,
-                $existingByIdEmployee,
-                $existingByEmail,
-                $existingByNik,
-                $existingByUsername,
-                $existingByCode,
+                &$existingByIdEmployee,
+                &$existingByEmail,
+                &$existingByNik,
+                &$existingByUsername,
+                &$existingByCode,
                 $companiesById,
                 $locationsById,
                 $locationsByName,
@@ -978,6 +1009,7 @@ class PortalSyncService
                 $jobTitlesByName,
                 $jobLevelsById,
                 $jobLevelsByName,
+                $businessUnitsByKey,
                 $isUsedMode
             ) {
                 foreach ($data as $item) {
@@ -1051,17 +1083,36 @@ class PortalSyncService
                         $jobLevelId = $jobLevelsByName[strtolower($jobLevelName)]->id;
                     }
 
-                    $username = $nik ?: (! empty($officeMail) ? explode('@', $officeMail)[0] : "user_{$idEmployee}");
+                    $businessUnitId = null;
+                    if (! empty($idCompany) && ! empty($idLocation) && isset($businessUnitsByKey["{$idCompany}_{$idLocation}"])) {
+                        $businessUnitId = $businessUnitsByKey["{$idCompany}_{$idLocation}"]->id;
+                    }
 
-                    $attributes = [
+                    // Username: index pertama dari email dengan split @, fallback ke nik atau user_idemployee
+                    $baseUsername = ! empty($officeMail) ? explode('@', $officeMail)[0] : ($nik ?: "user_{$idEmployee}");
+                    $username = $baseUsername;
+                    $suffix = 1;
+
+                    // Ensure unique username across records
+                    while (isset($existingByUsername[$username]) && (! $user || $existingByUsername[$username]->id !== $user->id)) {
+                        $username = $nik ? "{$baseUsername}_{$nik}" : "{$baseUsername}_{$suffix}";
+                        if (isset($existingByUsername[$username]) && (! $user || $existingByUsername[$username]->id !== $user->id)) {
+                            $username = "{$baseUsername}_{$idEmployee}";
+                            break;
+                        }
+                        $suffix++;
+                    }
+
+                    // Data yang berasal murni dari Portal API
+                    $portalAttributes = [
                         'idemployee' => $idEmployee,
                         'nik' => $nik ?: null,
-                        'username' => $username,
                         'name' => $name,
                         'email' => $officeMail ?: ($nik ? "{$nik}@local.sys" : "user_{$idEmployee}@local.sys"),
                         'gender' => $item['gender'] ?? null,
                         'mobile_no' => $item['mobileNo'] ?? null,
                         'department_id' => $departmentId,
+                        'business_unit_id' => $businessUnitId,
                         'idorganization' => $idOrg,
                         'org_name' => $orgName,
                         'company_id' => $companyId,
@@ -1090,32 +1141,36 @@ class PortalSyncService
                     ];
 
                     if ($isUsedMode === 'set_true') {
-                        $attributes['is_used'] = true;
+                        $portalAttributes['is_used'] = true;
                     } elseif ($isUsedMode === 'set_false') {
-                        $attributes['is_used'] = false;
+                        $portalAttributes['is_used'] = false;
                     }
 
                     if ($user) {
-                        $attributes['updated_by'] = $userId;
-                        $attributes['updated_at'] = $now;
-                        $attributes['deleted_at'] = null;
-                        DB::table('m_users')->where('id', $user->id)->update($attributes);
+                        // UPDATE: Hanya perbarui data dari portal & metadata audit, abaikan konfigurasi internal (divisi internal, role, username, password)
+                        $portalAttributes['updated_by'] = $userId;
+                        $portalAttributes['updated_at'] = $now;
+                        $portalAttributes['deleted_at'] = null;
+                        DB::table('m_users')->where('id', $user->id)->update($portalAttributes);
                     } else {
+                        // INSERT BARU: Set default untuk internal sistem
                         $newId = (string) Str::uuid();
-                        $attributes['id'] = $newId;
-                        $attributes['password'] = $defaultPasswordHash;
-                        $attributes['role_id'] = $staffRoleId;
-                        $attributes['contract_filter_template_id'] = $defaultFilterTemplateId;
-                        if (! isset($attributes['is_used'])) {
-                            $attributes['is_used'] = false; // default false for system
-                        }
-                        $attributes['created_by'] = $userId;
-                        $attributes['updated_by'] = $userId;
-                        $attributes['created_at'] = $now;
-                        $attributes['updated_at'] = $now;
-                        DB::table('m_users')->insert($attributes);
+                        $newAttributes = array_merge($portalAttributes, [
+                            'id' => $newId,
+                            'username' => $username,
+                            'division_id' => $generalStaffDivisionId,
+                            'role_id' => $staffRoleId,
+                            'password' => $defaultPasswordHash,
+                            'is_used' => $portalAttributes['is_used'] ?? false,
+                            'created_by' => $userId,
+                            'updated_by' => $userId,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
+                        DB::table('m_users')->insert($newAttributes);
 
-                        $obj = (object) ['id' => $newId, 'nik' => $nik, 'email' => $attributes['email'], 'username' => $username];
+                        $obj = (object) ['id' => $newId, 'idemployee' => $idEmployee, 'nik' => $nik, 'email' => $newAttributes['email'], 'username' => $username, 'code' => null];
+                        $existingByUsername[$username] = $obj;
                         if (! empty($idEmployee)) {
                             $existingByIdEmployee[$idEmployee] = $obj;
                         }
@@ -1124,13 +1179,14 @@ class PortalSyncService
                         }
                         if (! empty($nik)) {
                             $existingByNik[$nik] = $obj;
-                            $existingByUsername[$nik] = $obj;
                         }
                     }
 
                     $syncedCount++;
                 }
             });
+
+            \Illuminate\Support\Facades\Cache::forget('admin_members_tree_users_v2');
 
             return [
                 'success' => true,

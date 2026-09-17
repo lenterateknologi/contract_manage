@@ -1,6 +1,6 @@
+import { Head } from '@inertiajs/react';
+import { ArrowLeft, Building2, ExternalLink, FileText } from 'lucide-react';
 import React from 'react';
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Building2, FileText, ExternalLink } from 'lucide-react';
 
 interface VendorDocumentProps {
     vendor: Record<string, any>;
@@ -24,14 +24,14 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                 display = value ? 'Ya' : 'Tidak';
             } else if (Array.isArray(value)) {
                 display = value.length > 0 ? value.join(', ') : '-';
-            } else if (isFile || (typeof value === 'string' && (value.includes('.pdf') || value.includes('.doc') || value.includes('.png') || value.includes('.jpg') || value.includes('.jpeg')))) {
+            } else if (isFile || (typeof value === 'string' && (/\.(pdf|png|jpe?g|jfif|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar|txt|csv)$/i.test(value) || value.includes('__')))) {
                 const valStr = String(value);
                 display = (
                     <button
                         type="button"
                         onClick={() => {
-                            const fileUrl = valStr.startsWith('http') || valStr.startsWith('/') 
-                                ? valStr 
+                            const fileUrl = valStr.startsWith('http') || valStr.startsWith('/')
+                                ? valStr
                                 : `/admin/core/vendors/file-download?fileName=${encodeURIComponent(valStr)}`;
                             window.open(fileUrl, '_blank');
                         }}
@@ -78,7 +78,7 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
 
                 {/* Flat Paper View Container */}
                 <div className="w-full max-w-4xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 p-8 md:p-12 space-y-8 text-slate-900 dark:text-slate-100">
-                    
+
                     {/* Document Header / Kop Resmi */}
                     <div className="border-b-2 border-slate-900 dark:border-slate-100 pb-5">
                         <div className="inline-flex items-center gap-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 font-sans">
@@ -257,7 +257,7 @@ export default function VendorDocument({ vendor }: VendorDocumentProps) {
                             {renderDocRow('File Profile Perusahaan', detail.companyProfileAttachment)}
                             {renderDocRow('File Single Vendor', detail.singleVendorFile)}
                             {renderDocRow('File Compliance', detail.complianceFile)}
-                            
+
                             {/* Lampiran Legalitas */}
                             {renderDocRow('Lampiran NIB', legality.nibattachment)}
                             {renderDocRow('Lampiran Izin Usaha', legality.businessPermitAttachment)}

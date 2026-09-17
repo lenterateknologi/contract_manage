@@ -61,6 +61,14 @@ class ContractFilterScopeService
         $this->scopeField($request, 'company_id', $companies);
         $this->scopeArrayField($request, 'division_id', $divisions);
         $this->scopeArrayField($request, 'department_id', $departments);
+
+        // Scope tipe kontrak & kategori jika ditentukan pada profil DashboardType
+        if (! empty($settings['contract_type_ids'])) {
+            $this->scopeArrayField($request, 'contract_type_id', $settings['contract_type_ids']);
+        }
+        if (! empty($settings['categories'])) {
+            $this->scopeArrayField($request, 'category', $settings['categories']);
+        }
     }
 
     /**

@@ -5,19 +5,19 @@ import React, { useState } from 'react';
 
 export function VendorInfoCard({ selected, isTabView = false }: { selected: Contract; isTabView?: boolean }) {
     const [minimized, setMinimized] = useState(false);
-    const vendor = (selected as any)?.vendor || {};
-    const detail = (vendor?.vendor_detail || vendor?.detail || {}) as Record<string, any>;
+    const secondParty = (selected as any)?.vendor || {};
+    const detail = (secondParty?.vendor_detail || secondParty?.detail || {}) as Record<string, any>;
     const tax = (detail.tax || {}) as Record<string, any>;
     const legality = (detail.legality || {}) as Record<string, any>;
     const bankList = (Array.isArray(detail.bank) ? detail.bank : []) as Record<string, any>[];
     const paymentMethods = (Array.isArray(detail.paymentMethod) ? detail.paymentMethod : []) as Record<string, any>[];
     const businessFields = (Array.isArray(detail.businessFields) ? detail.businessFields : []) as Record<string, any>[];
 
-    const vendorName = vendor?.name || vendor?.vendor_name || detail?.name || selected.metadata?.meta_p2_entity || 'Nama Vendor Tidak Tersedia';
-    const picName = vendor?.pic_name || detail?.pic || selected.metadata?.meta_p2_signer || '—';
-    const picPosition = vendor?.pic_position || detail?.pic_position || detail?.jobTitle || selected.metadata?.meta_p2_signer_position || '—';
-    const address = vendor?.address || detail?.address || selected.metadata?.meta_p2_alamat || '—';
-    const vendorCode = vendor?.vendor_code || detail?.registrationNumber || '-';
+    const partyName = secondParty?.name || secondParty?.vendor_name || detail?.name || selected.metadata?.meta_p2_entity || selected.p2_entity || 'Nama Pihak Kedua Tidak Tersedia';
+    const picName = secondParty?.pic_name || detail?.pic || selected.metadata?.meta_p2_signer || selected.p2_signer || '—';
+    const picPosition = secondParty?.pic_position || detail?.pic_position || detail?.jobTitle || selected.metadata?.meta_p2_signer_position || selected.p2_signer_position || '—';
+    const address = secondParty?.address || detail?.address || selected.metadata?.meta_p2_alamat || selected.p2_address || '—';
+    const partyCode = secondParty?.vendor_code || detail?.registrationNumber || '-';
 
     const renderDocRow = (label: string, value: any, isFile = false) => {
         let display: React.ReactNode = '-';
@@ -28,7 +28,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                 display = value ? 'Ya' : 'Tidak';
             } else if (Array.isArray(value)) {
                 display = value.length > 0 ? value.join(', ') : '-';
-            } else if (isFile || (typeof value === 'string' && (/\.(pdf|png|jpe?g|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar)$/i.test(value) || value.includes('__')))) {
+            } else if (isFile || (typeof value === 'string' && (/\.(pdf|png|jpe?g|jfif|webp|gif|svg|docx?|xlsx?|pptx?|zip|rar|txt|csv)$/i.test(value) || value.includes('__')))) {
                 const valStr = String(value).trim();
                 display = (
                     <button
@@ -64,16 +64,16 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
             {/* Section 1: Informasi Umum */}
             <div className="space-y-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
-                    I. Informasi Umum Vendor
+                    I. Informasi Umum Pihak Kedua
                 </h3>
                 <div>
-                    {renderDocRow('Nama Vendor / Perusahaan', vendorName)}
-                    {renderDocRow('Kode Vendor / No. Registrasi', vendorCode)}
+                    {renderDocRow('Nama Pihak Kedua / Perusahaan', partyName)}
+                    {renderDocRow('Kode / No. Registrasi', partyCode)}
                     {renderDocRow('Bentuk Badan Usaha', detail.vendorType)}
                     {renderDocRow('Status Usaha', detail.businessStatus)}
                     {renderDocRow('Status Kepemilikan', detail.ownership)}
                     {renderDocRow('Sektor Bisnis', detail.businessSector)}
-                    {renderDocRow('Kategori Vendor', detail.vendorCategory)}
+                    {renderDocRow('Kategori Pihak Kedua', detail.vendorCategory)}
                     {renderDocRow('Website Resmi', detail.website)}
                 </div>
             </div>
@@ -93,10 +93,10 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                 </div>
             </div>
 
-            {/* Section 3: Kontak & PIC */}
+            {/* Section 3: Kontak & Penandatangan / PIC */}
             <div className="space-y-2">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-foreground border-b border-border pb-1">
-                    III. Informasi Kontak & Person in Charge (PIC)
+                    III. Informasi Kontak & Penandatangan Pihak Kedua
                 </h3>
                 <div>
                     {renderDocRow('Email Perusahaan', detail.companyEmail)}
@@ -104,9 +104,9 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                     {renderDocRow('Fax Perusahaan', detail.companyFax)}
                     {renderDocRow('Email Bagian Keuangan', detail.financeEmail)}
                     {renderDocRow('Email Bagian Perpajakan', detail.taxEmail)}
-                    {renderDocRow('Nama PIC', detail.pic || picName)}
-                    {renderDocRow('Jabatan PIC', picPosition)}
-                    {renderDocRow('Email PIC', detail.picemail)}
+                    {renderDocRow('Nama Penandatangan / PIC', detail.pic || picName)}
+                    {renderDocRow('Jabatan Penandatangan', picPosition)}
+                    {renderDocRow('Email Penandatangan / PIC', detail.picemail)}
                     {renderDocRow('No. HP / Telepon PIC', detail.picphone)}
                 </div>
             </div>
@@ -209,7 +209,7 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
                     {renderDocRow('File KTP (ID Card File)', detail.idCardFile, true)}
                     {renderDocRow('File Master Agreement', detail.masterAgreementAttachment, true)}
                     {renderDocRow('File Profile Perusahaan', detail.companyProfileAttachment, true)}
-                    {renderDocRow('File Single Vendor', detail.singleVendorFile, true)}
+                    {renderDocRow('File Dokumen Tunggal', detail.singleVendorFile, true)}
                     {renderDocRow('File Compliance', detail.complianceFile, true)}
                     {renderDocRow('Lampiran NIB', legality.nibattachment, true)}
                     {renderDocRow('Lampiran Izin Usaha', legality.businessPermitAttachment, true)}
@@ -240,11 +240,11 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
             <div className="flex flex-col flex-1 p-3 lg:p-4 gap-3 h-full min-h-0">
                 <div className="bg-primary text-primary-foreground flex h-9.5 min-h-[38px] max-h-[38px] shrink-0 items-center justify-between px-4 rounded-xl shadow-xs">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-tight text-primary-foreground">
-                        <Building2 size={15} className="text-primary-foreground/90" /> Detail Profil & Dokumen Legalitas Vendor
+                        <Building2 size={15} className="text-primary-foreground/90" /> Detail Profil & Dokumen Legalitas Pihak Kedua
                     </div>
-                    {vendor?.id && (
+                    {secondParty?.id && (
                         <a
-                            href={`/admin/core/vendors/${vendor.id}/document`}
+                            href={`/admin/core/vendors/${secondParty.id}/document`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 hover:bg-white/25 border border-white/20 px-2.5 py-1 text-[11px] font-medium text-white transition-all active:scale-95 cursor-pointer"
@@ -266,12 +266,12 @@ export function VendorInfoCard({ selected, isTabView = false }: { selected: Cont
         <Card className="border-border/80 shadow-xs">
             <CardHeader className="p-3 bg-primary text-primary-foreground flex flex-row items-center justify-between rounded-t-lg space-y-0">
                 <CardTitle className="text-xs font-semibold uppercase tracking-tight text-primary-foreground flex items-center gap-2">
-                    <Building2 size={15} className="text-primary-foreground/90" /> Detail Profil & Legalitas Vendor
+                    <Building2 size={15} className="text-primary-foreground/90" /> Detail Profil & Legalitas Pihak Kedua
                 </CardTitle>
                 <div className="flex items-center gap-1.5">
-                    {vendor?.id && (
+                    {secondParty?.id && (
                         <a
-                            href={`/admin/core/vendors/${vendor.id}/document`}
+                            href={`/admin/core/vendors/${secondParty.id}/document`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="bg-white/15 hover:bg-white/25 text-white border border-white/20 h-6 px-2 flex items-center gap-1 rounded-md text-[10px] font-medium transition-all active:scale-95 cursor-pointer"

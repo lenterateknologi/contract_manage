@@ -96,6 +96,7 @@ interface GroupedStepSectionsProps {
     roles?: any[];
     departments?: any[];
     divisions?: any[];
+    locations?: any[];
     users?: any[];
     companyGroups?: any[];
     companies?: any[];
@@ -123,6 +124,7 @@ export const GroupedStepSections: React.FC<GroupedStepSectionsProps> = ({
     roles = [],
     departments = [],
     divisions = [],
+    locations = [],
     users = [],
     companyGroups = [],
     companies = [],
@@ -353,6 +355,7 @@ export const GroupedStepSections: React.FC<GroupedStepSectionsProps> = ({
                                                     roles={roles}
                                                     departments={departments}
                                                     divisions={divisions}
+                                                    locations={locations}
                                                     users={users}
                                                     companyGroups={companyGroups}
                                                     companies={companies}
@@ -372,11 +375,11 @@ export const GroupedStepSections: React.FC<GroupedStepSectionsProps> = ({
                                                     allWorkflowSteps={steps}
                                                     onSavePreset={onSavePreset}
                                                     duplicateLocalStep={isExternal ? undefined : duplicateLocalStep}
-                                                    updateLocalStep={isExternal ? () => {} : updateLocalStep}
+                                                    updateLocalStep={isExternal ? () => { } : updateLocalStep}
                                                     removeLocalStep={isExternal ? undefined : removeLocalStep}
                                                     moveLocalStep={isExternal ? undefined : moveLocalStep}
                                                     isSelected={selectedStepIds.has(step.id)}
-                                                    onToggleSelect={isExternal ? () => {} : toggleSelectStep}
+                                                    onToggleSelect={isExternal ? () => { } : toggleSelectStep}
                                                     onMoveKeyboard={isExternal ? undefined : onMoveKeyboard}
                                                     simulationContext={simulationContext}
                                                     onOpenSimulationModal={onOpenSimulationModal}

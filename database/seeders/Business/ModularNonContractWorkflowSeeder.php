@@ -18,10 +18,9 @@ class ModularNonContractWorkflowSeeder extends Seeder
         $roleMap = Role::pluck('id', 'name')->toArray();
         $staffRoleId = $roleMap['Staff'] ?? null;
         $managerRoleId = $roleMap['Manager'] ?? null;
-        $vpRoleId = $roleMap['VP'] ?? null;
-        $astManagerLegalRoleId = $roleMap['Ast Manager Legal'] ?? null;
-        $managerLegalRoleId = $roleMap['Manager Legal'] ?? null;
-        $staffLegalRoleId = $roleMap['Staff Legal'] ?? null;
+        $astManagerLegalRoleId = $roleMap['Ast Manager Legal'] ?? ($roleMap['Ast Manager'] ?? null);
+        $managerLegalRoleId = $roleMap['Manager Legal'] ?? ($roleMap['Manager'] ?? null);
+        $staffLegalRoleId = $roleMap['Staff Legal'] ?? ($roleMap['Staff'] ?? null);
 
         // Cleanup existing modular workflows if previously created
         $existingWfIds = Workflow::whereIn('name', [

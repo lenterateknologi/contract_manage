@@ -184,6 +184,16 @@ export const contractApi = {
             unwrap(api.patch(`/api/contracts/${contractId}/reference`, { parent_id: parentId })),
     },
 
+    // 5.3 Contract Purchase Orders (PO)
+    purchaseOrders: {
+        list: (contractId: string) => unwrap(api.get(`/api/contracts/${contractId}/purchase-orders`)),
+        create: (contractId: string, data: any) => unwrap(api.post(`/api/contracts/${contractId}/purchase-orders`, data)),
+        update: (contractId: string, poId: string, data: any) =>
+            unwrap(api.patch(`/api/contracts/${contractId}/purchase-orders/${poId}`, data)),
+        delete: (contractId: string, poId: string) =>
+            unwrap(api.delete(`/api/contracts/${contractId}/purchase-orders/${poId}`)),
+    },
+
     // 6. Dynamic Form Submissions (F1 / F2)
     formSubmissions: {
         save: (
@@ -249,3 +259,24 @@ export const cleanSingleLineText = (text?: string | null): string => {
     if (!text) return '';
     return text.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
 };
+
+/**
+ * Helper to determine if a vendor is taxable based on their PKP status.
+ * - PKP -> tax required (true)
+ * - Non-PKP, PTKP, '-', or empty -> not taxable (false)
+ */
+export const resolveVendorTaxPkp = (vendor: any): { isPkp: boolean; pkpStatus: string } => {
+    if (!vendor) return { isPkp: false, pkpStatus: '-' };
+
+    const detail = vendor.vendor_detail || vendor.detail || {};
+    const tax = detail.tax || vendor.tax || {};
+    const typePkp = String(tax.typePkp || tax.type_pkp || tax.pkp_type || tax.status_pkp || '').trim();
+
+    if (!typePkp || typePkp === '-' || typePkp.toLowerCase() === 'non pkp' || typePkp.toLowerCase() === 'non-pkp' || typePkp.toLowerCase() === 'ptkp') {
+        return { isPkp: false, pkpStatus: typePkp || '-' };
+    }
+
+    const isPkp = typePkp.toUpperCase() === 'PKP';
+    return { isPkp, pkpStatus: typePkp };
+};
+

@@ -1,56 +1,32 @@
-import { detailSidebarStore, type DetailSidebarTabItem, type DetailSidebarTabChild } from '@/stores/useDetailSidebarStore';
-import { Button } from '@/components/ui/buttons/Button';
-import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/navigation/Tabs';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/selection/DropdownMenu';
-import { contractApi } from '@/pages/contracts/utils';
+import { Icons } from '@/components/ui';
 import { cn } from '@/lib/utils';
+import { ContractActionSection } from '@/pages/contracts/components/parts/ContractActionSection';
+import { ContractDetailHeader } from '@/pages/contracts/components/parts/ContractDetailHeader';
+import { AdvancedInfoCard, DraftEditableInfoCard, PicInfoCard, RequesterInfoCard, VendorInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
 import { Contract, ContractType } from '@/pages/contracts/types';
+import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
-import { router, usePage } from '@inertiajs/react';
-import { AppIcon, Icons, getActionConfig } from '@/components/ui';
+import { detailSidebarStore, type DetailSidebarTabChild, type DetailSidebarTabItem } from '@/stores/useDetailSidebarStore';
+import { usePage } from '@inertiajs/react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 
 const {
-    AlertCircle,
-    Archive,
     Building2,
-    Check,
-    CheckCircle2,
-    ChevronDown,
-    ChevronLeft,
-    ChevronUp,
     Clock,
-    Download,
     FileCheck,
     FileText,
-    GitBranch,
     GitCommit,
     History,
     Link2,
-    Loader2,
-    Lock,
     MessageSquare,
-    MoreVertical,
     Paperclip,
     PenTool,
-    Save,
     ShieldCheck,
-    Trash2,
-    Unlock,
-    Upload,
+    ShoppingCart,
     User,
     UserCheck,
-    UserPlus,
     Users,
-    Zap,
 } = Icons;
-import React, { useMemo, useState, lazy, Suspense, useEffect } from 'react';
-import { TooltipProvider } from '@/components/ui/feedback/Tooltip';
-import { ActionPreviewTooltip, getActionTransitionPreview } from '@/pages/contracts/components/parts/ActionPreviewTooltip';
-
-import { DraftEditableInfoCard, RequesterInfoCard, VendorInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
-import { ContractDetailHeader } from '@/pages/contracts/components/parts/ContractDetailHeader';
-import { ContractActionSection } from '@/pages/contracts/components/parts/ContractActionSection';
 
 // Lazy load modals
 const SharedAddhocModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
@@ -78,69 +54,98 @@ const TabSkeleton = () => (
     </div>
 );
 
-const ContractDetailView = ({
+import { cleanupStorage, getClientPref, setClientPref } from '@/lib/clientStorage';
+
+export const ContractDetailView = ({
     contract,
     meId,
-    types,
-    submissionTypes,
-    vendors,
-    formTemplates,
-    canUpdate,
+    types = [],
+    submissionTypes = [],
+    vendors = [],
+    formTemplates = [],
+    users = [],
+    canUpdate = true,
     onClose,
     onUpdate,
     showToast,
-    setDeleteOpen,
+    meUser,
     setPreviewTitle,
     setPreviewUrl,
     setPreviewHasFile,
     setPreviewOpen,
-    meUser,
-    users,
 }: {
     contract: Contract;
-    meId: string;
-    types: ContractType[];
-    submissionTypes: any[];
-    vendors: any[];
-    meUser: any;
+    meId?: string;
+    types?: ContractType[];
+    submissionTypes?: any[];
+    vendors?: any[];
+    formTemplates?: any[];
     users?: any[];
-    formTemplates: any[];
-    canUpdate: boolean;
+    canUpdate?: boolean;
     onClose: () => void;
-    onUpdate: (c: Contract, silent?: boolean) => void;
-    showToast: (msg: string, type: any) => void;
+    onUpdate?: (updated: Contract, silent?: boolean) => void;
+    showToast: (toast: { title?: string; message: string; type: 'success' | 'error' | 'info' | 'warning' } | string, type?: any) => void;
     setDeleteOpen: (open: boolean) => void;
+    meUser?: any;
     setPreviewTitle: (title: string) => void;
     setPreviewUrl: (url: string) => void;
-    setPreviewHasFile: (has: boolean) => void;
+    setPreviewHasFile: (hasFile: boolean) => void;
     setPreviewOpen: (open: boolean) => void;
 }) => {
+    // Run lightweight periodic cleanup on mount
+    useEffect(() => {
+        cleanupStorage();
+    }, []);
+
     const { masterContractStatuses } = usePage<any>().props;
     const params = new URLSearchParams(window.location.search);
-    const rawTab = (params.get('tab') as string) || 'documents';
-    const initialTab = rawTab === 'reference' ? 'references' : rawTab;
+
+    // Tab
+    const rawTab = params.get('tab') || getClientPref<string>('detail_tab', 'documents');
+    const initialTab = rawTab === 'reference' ? 'references' : (rawTab === 'vendor' ? 'parties' : rawTab);
     const [detailTab, setDetailTabState] = useState(initialTab);
-    const [docSubTab, setDocSubTabState] = useState<'f1' | 'f2' | 'agreement'>((params.get('subtab') as any) || 'f1');
-    const [partySubTab, setPartySubTabState] = useState<'requester' | 'vendor'>((params.get('partysubtab') as any) || 'requester');
-    const [discSubTab, setDiscSubTabState] = useState<'chat' | 'members'>((params.get('discsubtab') as any) || 'chat');
-    const [historySubTab, setHistorySubTabState] = useState<'timeline' | 'audit'>((params.get('histsubtab') as any) || 'timeline');
+
+    // Document subtab (f1, f2, agreement)
+    const rawDocSub = params.get('subtab') || getClientPref<'f1' | 'f2' | 'agreement'>('detail_doc_subtab', 'f1');
+    const [docSubTab, setDocSubTabState] = useState<'f1' | 'f2' | 'agreement'>(['f1', 'f2', 'agreement'].includes(rawDocSub) ? (rawDocSub as any) : 'f1');
+
+    // Parties subtab
+    const rawPartySub = params.get('partysubtab') || params.get('subtab') || getClientPref<string>('detail_party_subtab', 'requester');
+    const initialPartySub = rawPartySub === 'vendor' ? 'second_party' : (['sla', 'advanced_info', 'timeline'].includes(rawPartySub) ? 'timeline' : rawPartySub);
+    const [partySubTab, setPartySubTabState] = useState<'requester' | 'second_party' | 'pic' | 'timeline'>((['requester', 'second_party', 'pic', 'timeline'].includes(initialPartySub) ? initialPartySub : 'requester') as any);
+
+    // Discussion subtab
+    const rawDiscSub = params.get('discsubtab') || params.get('subtab') || getClientPref<string>('detail_disc_subtab', 'chat');
+    const [discSubTab, setDiscSubTabState] = useState<'chat' | 'members'>((['chat', 'members'].includes(rawDiscSub) ? rawDiscSub : 'chat') as any);
+
+    // History subtab
+    const rawHistSub = params.get('histsubtab') || params.get('subtab') || getClientPref<string>('detail_hist_subtab', 'timeline');
+    const [historySubTab, setHistorySubTabState] = useState<'timeline' | 'audit'>((['timeline', 'audit'].includes(rawHistSub) ? rawHistSub : 'timeline') as any);
+
+    // Ref subtab
+    const rawRefSub = params.get('refsubtab') || params.get('subtab') || getClientPref<string>('detail_ref_subtab', 'parent');
+    const [refSubTab, setRefSubTabState] = useState<'parent' | 'purchase_orders'>((['parent', 'purchase_orders'].includes(rawRefSub) ? rawRefSub : 'parent') as any);
 
     const setDetailTab = (tab: string) => {
         setDetailTabState(tab);
+        setClientPref('detail_tab', tab);
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('tab', tab);
         window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
     };
 
-    const setPartySubTab = (sub: 'requester' | 'vendor') => {
+    const setPartySubTab = (sub: 'requester' | 'second_party' | 'pic' | 'timeline') => {
         setPartySubTabState(sub);
+        setClientPref('detail_party_subtab', sub);
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('partysubtab', sub);
+        newParams.set('subtab', sub);
         window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
     };
 
     const setDocSubTab = (sub: 'f1' | 'f2' | 'agreement') => {
         setDocSubTabState(sub);
+        setClientPref('detail_doc_subtab', sub);
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('subtab', sub);
         window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
@@ -148,15 +153,28 @@ const ContractDetailView = ({
 
     const setDiscSubTab = (sub: 'chat' | 'members') => {
         setDiscSubTabState(sub);
+        setClientPref('detail_disc_subtab', sub);
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('discsubtab', sub);
+        newParams.set('subtab', sub);
         window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
     };
 
     const setHistorySubTab = (sub: 'timeline' | 'audit') => {
         setHistorySubTabState(sub);
+        setClientPref('detail_hist_subtab', sub);
         const newParams = new URLSearchParams(window.location.search);
         newParams.set('histsubtab', sub);
+        newParams.set('subtab', sub);
+        window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
+    };
+
+    const setRefSubTab = (sub: 'parent' | 'purchase_orders') => {
+        setRefSubTabState(sub);
+        setClientPref('detail_ref_subtab', sub);
+        const newParams = new URLSearchParams(window.location.search);
+        newParams.set('refsubtab', sub);
+        newParams.set('subtab', sub);
         window.history.replaceState({}, '', `${window.location.pathname}?${newParams.toString()}`);
     };
 
@@ -212,10 +230,10 @@ const ContractDetailView = ({
         try {
             const c = await contractApi.update(contract.id, data);
             onUpdate(c, silent);
-            if (!silent) showToast('Informasi kontrak diperbarui.', 'success');
+            if (!silent) showToast('Informasi pengajuan diperbarui.', 'success');
             return c;
         } catch (error) {
-            if (!silent) showToast('Gagal memperbarui kontrak.', 'danger');
+            if (!silent) showToast('Gagal memperbarui pengajuan.', 'danger');
             throw error;
         } finally {
             if (!silent) setProcessing(false);
@@ -253,8 +271,8 @@ const ContractDetailView = ({
             );
             onUpdate(c);
 
-            let msg = contract.status === 'draft' && contract.workflow_step?.step === 1 ? 'Pengajuan persetujuan berhasil dikirim.' : 'Kontrak disetujui.';
-            if (assignedPicId) msg = 'PIC ditugaskan dan kontrak disetujui.';
+            let msg = contract.status === 'draft' && contract.workflow_step?.step === 1 ? 'Pengajuan persetujuan berhasil dikirim.' : 'Pengajuan disetujui.';
+            if (assignedPicId) msg = 'PIC ditugaskan dan pengajuan disetujui.';
             if (signerUserIds && signerUserIds.length > 0) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
             if (isFinal) msg = 'Penandatanganan selesai dikonfigurasi sebagai final.';
 
@@ -271,7 +289,7 @@ const ContractDetailView = ({
             await autoSaveDirtyDataBeforeAction();
             const updated = await contractApi.reject(contract.id, reason, attachment, activeStepAction?.id);
             onUpdate(updated);
-            showToast('Kontrak ditolak.', 'info');
+            showToast('Pengajuan ditolak.', 'info');
             setActiveActionCode(undefined);
             setActiveStepAction(null);
         } catch {
@@ -279,25 +297,7 @@ const ContractDetailView = ({
         }
     };
 
-    const handleDeleteAdhoc = async (approvalId: string) => {
-        try {
-            const updated = await contractApi.removeAdhocApprover(contract.id, approvalId);
-            onUpdate(updated);
-            showToast('Persetujuan tambahan dihapus.', 'success');
-        } catch {
-            showToast('Gagal menghapus persetujuan.', 'danger');
-        }
-    };
 
-    const handleSubmitAdhoc = async () => {
-        try {
-            const updated = await contractApi.submitAdhocApprovers(contract.id);
-            onUpdate(updated);
-            showToast('Persetujuan tambahan diajukan.', 'success');
-        } catch (e: any) {
-            showToast(e.response?.data?.message || 'Gagal mengajukan persetujuan.', 'danger');
-        }
-    };
 
     const canApprove = !!contract.can_approve;
 
@@ -313,17 +313,6 @@ const ContractDetailView = ({
         return !!activePendingApproval && (activePendingApproval.sub_step != null || activePendingApproval.role === 'Persetujuan Tambahan');
     }, [activePendingApproval]);
 
-    const isLastApproverInSubStep = useMemo(() => {
-        if (!activePendingApproval || !contract.approvals) return true;
-        const currentSub = activePendingApproval.sub_step ?? activePendingApproval.sort_order ?? 0;
-        const hasNextWaiting = contract.approvals.some((a: any) => 
-            String(a.workflow_step_id) === String(activePendingApproval.workflow_step_id) &&
-            a.id !== activePendingApproval.id &&
-            a.status === 'waiting' &&
-            ((a.sub_step != null && a.sub_step > currentSub) || (a.sort_order != null && a.sort_order > currentSub))
-        );
-        return !hasNextWaiting;
-    }, [activePendingApproval, contract.approvals]);
 
     const applicableStepActions = useMemo(() => {
         const rawActions = contract.workflow_step?.actions || [];
@@ -338,9 +327,9 @@ const ContractDetailView = ({
     const availableCustomActions = useMemo(() => {
         if (isSubStepReviewer) return [];
 
-        const customActions: any[] = 
-            contract.workflow?.meta?.custom_actions || 
-            contract.origin_workflow?.meta?.custom_actions || 
+        const customActions: any[] =
+            contract.workflow?.meta?.custom_actions ||
+            contract.origin_workflow?.meta?.custom_actions ||
             ((contract.workflow_step as any)?.workflow as any)?.meta?.custom_actions || [];
         if (!customActions || !Array.isArray(customActions) || customActions.length === 0) return [];
 
@@ -349,13 +338,11 @@ const ContractDetailView = ({
             (a: any) => a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan'
         );
 
-        const isAdmin = meUser?.role === 'Admin' || meUser?.role === 'Super Admin' || !!meUser?.is_admin;
-
         return customActions.filter((act) => {
             if (act.is_active === false) return false;
 
             // Do not allow nested ad-hoc action on ad-hoc review steps
-            if ((act.action_code === 'forward' || act.id === 'action_adhoc') && 
+            if ((act.action_code === 'forward' || act.id === 'action_adhoc') &&
                 (contract.workflow_step?.step_category === 'adhoc_review' || (contract.workflow_step?.meta as any)?.is_adhoc_step)) {
                 return false;
             }
@@ -378,7 +365,7 @@ const ContractDetailView = ({
 
             // Authority check: jika otoritas tidak ditentukan/kosong, aksi muncul secara default
             const authorities = act.authorities || [];
-            if (!authorities || authorities.length === 0 || isAdmin) return true;
+            if (!authorities || authorities.length === 0) return true;
 
             // Use the unified matchUserAgainstWorkflowPool to evaluate the logged-in user
             const currentUserObj = meUser || { id: meId };
@@ -399,9 +386,6 @@ const ContractDetailView = ({
 
     const isSigner = !!activeSignerApproval;
 
-    const isP1 = useMemo(() => (contract.approvals || []).some((a) => a.role === 'Pihak 1' && a.user_id === meId), [contract.approvals, meId]);
-    const p1Downloaded = contract.metadata?.p1_downloaded_at;
-    const p2Downloaded = contract.metadata?.p2_downloaded_at;
     const stepDownloaded = activeSignerApproval ? contract.metadata?.[`downloaded_step_${activeSignerApproval.id}`] : null;
 
     const [signingUploading, setSigningUploading] = useState(false);
@@ -448,14 +432,6 @@ const ContractDetailView = ({
         }
     };
 
-    const currentStepSequence = contract.workflow_step?.step;
-    const currentStepAdhocApprovals = useMemo(
-        () =>
-            (contract.approvals || [])
-                .filter((a: any) => a.role === 'Persetujuan Tambahan' && Number(a.sequence) === Number(currentStepSequence))
-                .sort((a: any, b: any) => (a.sort_order || 0) - (b.sort_order || 0)),
-        [contract.approvals, currentStepSequence],
-    );
 
     const tabs = useMemo(
         () => {
@@ -478,7 +454,7 @@ const ContractDetailView = ({
                 { id: 'attachments', label: 'Lampiran', icon: Paperclip, mode: meta.show_tab_attachments === false ? 'none' : 'always' },
                 { id: 'discussion', label: 'Diskusi & Member', icon: MessageSquare, mode: hasDiscussion ? 'always' : 'none' },
                 { id: 'references', label: 'Referensi', icon: Link2, mode: meta.show_tab_references === false ? 'none' : 'always' },
-                { id: 'parties', label: 'Pihak & Pengaju', icon: Users, mode: 'always' },
+                { id: 'parties', label: 'Informasi Lanjutan', icon: Users, mode: 'always' },
             ].filter((tab) => tab.mode !== 'none');
         },
         [contract],
@@ -508,14 +484,16 @@ const ContractDetailView = ({
             });
         }
 
-        // 2. Pihak Terkait Tab (with subtabs Informasi Pengaju & Pihak Kedua / Vendor)
+        // 2. Informasi Lanjutan Tab (with subtabs Informasi Pengaju, Informasi Pihak Kedua, Informasi PIC, Timeline)
         result.push({
             id: 'parties',
-            label: 'Pihak Terkait',
+            label: 'Informasi Lanjutan',
             icon: Users,
             children: [
                 { id: 'requester', label: 'Informasi Pengaju', icon: User },
-                { id: 'vendor', label: 'Pihak Kedua / Vendor', icon: Building2 },
+                { id: 'second_party', label: 'Informasi Pihak Kedua', icon: Building2 },
+                { id: 'pic', label: 'Informasi PIC', icon: UserCheck },
+                { id: 'timeline', label: 'Timeline', icon: Clock },
             ],
         });
 
@@ -556,12 +534,16 @@ const ContractDetailView = ({
             });
         }
 
-        // 6. Referensi Tab
+        // 6. Referensi Tab (with subtabs Dokumen / Kontrak Induk & Purchase Order)
         if (meta.show_tab_references !== false) {
             result.push({
                 id: 'references',
                 label: 'Referensi',
                 icon: Link2,
+                children: [
+                    { id: 'parent', label: 'Kontrak Induk / Terkait', icon: Link2 },
+                    { id: 'purchase_orders', label: 'Purchase Order (PO)', icon: ShoppingCart },
+                ],
             });
         }
 
@@ -575,6 +557,7 @@ const ContractDetailView = ({
         else if (detailTab === 'parties') currentSub = partySubTab;
         else if (detailTab === 'history') currentSub = historySubTab;
         else if (detailTab === 'discussion') currentSub = discSubTab;
+        else if (detailTab === 'references') currentSub = refSubTab;
 
         detailSidebarStore.setState({
             isActive: true,
@@ -591,6 +574,7 @@ const ContractDetailView = ({
                     else if (tabId === 'parties') setPartySubTab(subtabId as any);
                     else if (tabId === 'history') setHistorySubTab(subtabId as any);
                     else if (tabId === 'discussion') setDiscSubTab(subtabId as any);
+                    else if (tabId === 'references') setRefSubTab(subtabId as any);
                 }
             },
             onClose: onClose,
@@ -599,13 +583,13 @@ const ContractDetailView = ({
         return () => {
             detailSidebarStore.setState(null);
         };
-    }, [detailTab, docSubTab, partySubTab, discSubTab, historySubTab, detailSidebarTabs, contract, onClose]);
+    }, [detailTab, docSubTab, partySubTab, discSubTab, historySubTab, refSubTab, detailSidebarTabs, contract, onClose]);
 
     useEffect(() => {
         const meta = contract.workflow_step?.meta || {};
         const isAudit = detailTab === 'audit';
         const isMembers = detailTab === 'members' && meta.show_tab_members !== false;
-        const isParty = detailTab === 'parties' || detailTab === 'requester' || detailTab === 'vendor';
+        const isParty = detailTab === 'parties' || detailTab === 'requester' || detailTab === 'second_party' || detailTab === 'vendor' || detailTab === 'pic' || detailTab === 'timeline' || detailTab === 'advanced_info';
         const isExternalTab = isAudit || isMembers || isParty;
 
         if (tabs.length > 0 && !tabs.some(t => t.id === detailTab) && !isExternalTab) {
@@ -624,14 +608,16 @@ const ContractDetailView = ({
         if (detailTab === 'parties') return partySubTab;
         if (detailTab === 'history') return historySubTab;
         if (detailTab === 'discussion') return discSubTab;
+        if (detailTab === 'references') return refSubTab;
         return undefined;
-    }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab]);
+    }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab, refSubTab]);
 
     const handleSubTabChange = (subId: string) => {
         if (detailTab === 'documents') setDocSubTab(subId as any);
         else if (detailTab === 'parties') setPartySubTab(subId as any);
         else if (detailTab === 'history') setHistorySubTab(subId as any);
         else if (detailTab === 'discussion') setDiscSubTab(subId as any);
+        else if (detailTab === 'references') setRefSubTab(subId as any);
     };
 
     const currentActiveSubLabel = useMemo(() => {
@@ -642,10 +628,14 @@ const ContractDetailView = ({
         }
         if (detailTab === 'parties') {
             if (partySubTab === 'requester') return 'Informasi Pengaju';
-            if (partySubTab === 'vendor') return 'Pihak Kedua / Vendor';
+            if (partySubTab === 'second_party') return 'Informasi Pihak Kedua';
+            if (partySubTab === 'pic') return 'Informasi PIC';
+            if (partySubTab === 'timeline') return 'Timeline';
         }
         if (detailTab === 'requester') return 'Informasi Pengaju';
-        if (detailTab === 'vendor') return 'Pihak Kedua / Vendor';
+        if (detailTab === 'second_party' || detailTab === 'vendor') return 'Informasi Pihak Kedua';
+        if (detailTab === 'pic') return 'Informasi PIC';
+        if (detailTab === 'timeline' || detailTab === 'advanced_info') return 'Timeline';
         if (detailTab === 'history') {
             if (historySubTab === 'timeline') return 'Alur Approval & Proses';
             if (historySubTab === 'audit') return 'Audit Log & Activity';
@@ -654,8 +644,12 @@ const ContractDetailView = ({
             if (discSubTab === 'chat') return 'Chat & Diskusi';
             if (discSubTab === 'members') return 'Member / Anggota Tim';
         }
+        if (detailTab === 'references') {
+            if (refSubTab === 'parent') return 'Kontrak Induk / Terkait';
+            if (refSubTab === 'purchase_orders') return 'Purchase Order (PO)';
+        }
         return undefined;
-    }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab]);
+    }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab, refSubTab]);
 
 
     return (
@@ -713,198 +707,206 @@ const ContractDetailView = ({
                                 )}
                                 <div className="flex flex-1 flex-col min-h-0 h-full overflow-hidden">
                                     <Suspense fallback={<TabSkeleton />}>
-                                {detailTab === 'documents' && (() => {
-                                    const meta = contract.workflow_step?.meta || {};
-                                    const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
-                                    const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
-                                    const hasAgreement = meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
+                                        {detailTab === 'documents' && (() => {
+                                            const meta = contract.workflow_step?.meta || {};
+                                            const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
+                                            const hasF2 = meta.show_tab_f2 !== false && ((contract as any).f2_mode || 'upload') !== 'none';
+                                            const hasAgreement = meta.show_tab_agreement !== false && ((contract as any).contract_mode || 'upload') !== 'none';
 
-                                    const docSubTabs = [
-                                        { id: 'f1', label: 'F1 (Permohonan)', icon: FileText, show: hasF1 },
-                                        { id: 'f2', label: 'F2 (Ringkasan)', icon: FileCheck, show: hasF2 },
-                                        { id: 'agreement', label: 'Perjanjian', icon: PenTool, show: hasAgreement },
-                                    ].filter(t => t.show);
+                                            const docSubTabs = [
+                                                { id: 'f1', label: 'F1 (Permohonan)', icon: FileText, show: hasF1 },
+                                                { id: 'f2', label: 'F2 (Ringkasan)', icon: FileCheck, show: hasF2 },
+                                                { id: 'agreement', label: 'Perjanjian', icon: PenTool, show: hasAgreement },
+                                            ].filter(t => t.show);
 
-                                    const activeSub = docSubTabs.some(t => t.id === docSubTab) ? docSubTab : (docSubTabs[0]?.id || 'f1');
+                                            const activeSub = docSubTabs.some(t => t.id === docSubTab) ? docSubTab : (docSubTabs[0]?.id || 'f1');
 
-                                    return (
-                                        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+                                            return (
+                                                <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+                                                    <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
+                                                        {activeSub === 'f1' && (
+                                                            <F1Tab
+                                                                contract={contract}
+                                                                formTemplates={formTemplates}
+                                                                vendors={vendors}
+                                                                meUser={meUser}
+                                                                onUpdate={onUpdate}
+                                                                onFormDirty={(dirty) => setHasFormChanges(dirty)}
+                                                                onFormSave={(fn) => {
+                                                                    saveFormRef.current = fn;
+                                                                }}
+                                                            />
+                                                        )}
+                                                        {activeSub === 'f2' && (
+                                                            <F2Tab
+                                                                contract={contract}
+                                                                formTemplates={formTemplates}
+                                                                vendors={vendors}
+                                                                meUser={meUser}
+                                                                onUpdate={onUpdate}
+                                                                onFormDirty={(dirty) => setHasFormChanges(dirty)}
+                                                                onFormSave={(fn) => {
+                                                                    saveFormRef.current = fn;
+                                                                }}
+                                                            />
+                                                        )}
+                                                        {activeSub === 'agreement' && (
+                                                            <AgreementTab
+                                                                contract={contract}
+                                                                formTemplates={formTemplates}
+                                                                vendors={vendors}
+                                                                meUser={meUser}
+                                                                onUpdate={onUpdate}
+                                                            />
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                        {(detailTab === 'parties' || detailTab === 'requester' || detailTab === 'second_party' || detailTab === 'vendor' || detailTab === 'pic' || detailTab === 'timeline' || detailTab === 'advanced_info') && (
                                             <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-                                                {activeSub === 'f1' && (
-                                                    <F1Tab
-                                                        contract={contract}
-                                                        formTemplates={formTemplates}
-                                                        vendors={vendors}
-                                                        meUser={meUser}
-                                                        onUpdate={onUpdate}
-                                                        onFormDirty={(dirty) => setHasFormChanges(dirty)}
-                                                        onFormSave={(fn) => {
-                                                            saveFormRef.current = fn;
-                                                        }}
-                                                    />
+                                                {(partySubTab === 'requester' || detailTab === 'requester') && (
+                                                    <RequesterInfoCard selected={contract} isTabView={true} />
                                                 )}
-                                                {activeSub === 'f2' && (
-                                                    <F2Tab
-                                                        contract={contract}
-                                                        formTemplates={formTemplates}
-                                                        vendors={vendors}
-                                                        meUser={meUser}
-                                                        onUpdate={onUpdate}
-                                                        onFormDirty={(dirty) => setHasFormChanges(dirty)}
-                                                        onFormSave={(fn) => {
-                                                            saveFormRef.current = fn;
-                                                        }}
-                                                    />
+                                                {(partySubTab === 'second_party' || detailTab === 'second_party' || detailTab === 'vendor') && (
+                                                    <VendorInfoCard selected={contract} isTabView={true} />
                                                 )}
-                                                {activeSub === 'agreement' && (
-                                                    <AgreementTab
-                                                        contract={contract}
-                                                        formTemplates={formTemplates}
-                                                        vendors={vendors}
-                                                        meUser={meUser}
-                                                        onUpdate={onUpdate}
-                                                    />
+                                                {(partySubTab === 'pic' || detailTab === 'pic') && (
+                                                    <PicInfoCard selected={contract} isTabView={true} />
+                                                )}
+                                                {(partySubTab === 'timeline' || detailTab === 'timeline' || detailTab === 'advanced_info') && (
+                                                    <AdvancedInfoCard selected={contract} isTabView={true} />
                                                 )}
                                             </div>
-                                        </div>
-                                    );
-                                })()}
-                                {(detailTab === 'parties' || detailTab === 'requester' || detailTab === 'vendor') && (
-                                    <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-                                        {(partySubTab === 'requester' || detailTab === 'requester') && (
-                                            <RequesterInfoCard selected={contract} isTabView={true} />
                                         )}
-                                        {(partySubTab === 'vendor' || detailTab === 'vendor') && (
-                                            <VendorInfoCard selected={contract} isTabView={true} />
+                                        {detailTab === 'attachments' && (
+                                            <AttachmentsTab contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} showToast={showToast} meUser={meUser} />
                                         )}
-                                    </div>
-                                )}
-                                {detailTab === 'attachments' && (
-                                    <AttachmentsTab contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} showToast={showToast} meUser={meUser} />
-                                )}
 
-                                {detailTab === 'history' && (() => {
-                                    const activeSub = ['timeline', 'audit'].includes(historySubTab) ? historySubTab : 'timeline';
+                                        {detailTab === 'history' && (() => {
+                                            const activeSub = ['timeline', 'audit'].includes(historySubTab) ? historySubTab : 'timeline';
 
-                                    return (
-                                        <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-                                            {activeSub === 'timeline' && (
-                                                <TimelineTab
-                                                    contract={contract}
-                                                    meId={meId}
-                                                    onApprove={(note, file) => handleApprove(note, file)}
-                                                    showToast={showToast}
-                                                />
-                                            )}
-                                            {activeSub === 'audit' && <AuditTrailTab contract={contract} />}
-                                        </div>
-                                    );
-                                })()}
-                                {detailTab === 'references' && (
-                                    <ReferencesTab
-                                        contract={contract}
-                                        canUpdate={canUpdate}
-                                        onUpdate={async (d: any) => {
-                                            await handleUpdate(d);
-                                        }}
-                                        processing={processing}
-                                        meId={meId}
-                                    />
-                                )}
+                                            return (
+                                                <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
+                                                    {activeSub === 'timeline' && (
+                                                        <TimelineTab
+                                                            contract={contract}
+                                                            meId={meId}
+                                                            onApprove={(note, file) => handleApprove(note, file)}
+                                                            showToast={showToast}
+                                                        />
+                                                    )}
+                                                    {activeSub === 'audit' && <AuditTrailTab contract={contract} />}
+                                                </div>
+                                            );
+                                        })()}
+                                        {detailTab === 'references' && (
+                                            <ReferencesTab
+                                                contract={contract}
+                                                canUpdate={canUpdate}
+                                                onUpdate={async (d: any) => {
+                                                    await handleUpdate(d);
+                                                }}
+                                                processing={processing}
+                                                meId={meId}
+                                                subTab={refSubTab}
+                                                vendors={vendors}
+                                            />
+                                        )}
 
-                                {detailTab === 'discussion' && (() => {
-                                    const activeSub = ['chat', 'members'].includes(discSubTab) ? discSubTab : 'chat';
+                                        {detailTab === 'discussion' && (() => {
+                                            const activeSub = ['chat', 'members'].includes(discSubTab) ? discSubTab : 'chat';
 
-                                    return (
-                                        <div className="flex-1 min-h-0 flex flex-col">
-                                            {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={users || []} onUpdate={onUpdate} />}
-                                            {activeSub === 'members' && <MembersTab contract={contract} users={users || []} />}
-                                        </div>
-                                    );
-                                })()}
-                                {detailTab === 'empty' && (
-                                    <div className="flex h-full min-h-[400px] flex-col items-center justify-center text-slate-400">
-                                        <FileText size={48} className="mb-4 text-slate-300 opacity-50" />
-                                        <p className="text-sm font-semibold uppercase">Tidak Ada Tab Tersedia</p>
-                                        <p className="mt-1 text-xs text-slate-500">Semua tab disembunyikan berdasarkan pengaturan alur kerja saat ini.</p>
-                                    </div>
-                                )}
-                            </Suspense>
-                        </div>
+                                            return (
+                                                <div className="flex-1 min-h-0 flex flex-col">
+                                                    {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={users || []} onUpdate={onUpdate} />}
+                                                    {activeSub === 'members' && <MembersTab contract={contract} users={users || []} />}
+                                                </div>
+                                            );
+                                        })()}
+                                        {detailTab === 'empty' && (
+                                            <div className="flex h-full min-h-[400px] flex-col items-center justify-center text-slate-400">
+                                                <FileText size={48} className="mb-4 text-slate-300 opacity-50" />
+                                                <p className="text-sm font-semibold uppercase">Tidak Ada Tab Tersedia</p>
+                                                <p className="mt-1 text-xs text-slate-500">Semua tab disembunyikan berdasarkan pengaturan alur kerja saat ini.</p>
+                                            </div>
+                                        )}
+                                    </Suspense>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    )}
-                </div>
-                {/* Right Column: Panel Informasi & Aksi */}
-                <div className="flex flex-col gap-3.5 min-w-0 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-6">
-                    {/* SECTION: AKSI PERSYARATAN & APPROVAL (WRAPPED IN CARD) */}
-                    <ContractActionSection
-                        contract={contract}
-                        canApprove={canApprove}
-                        availableCustomActions={availableCustomActions}
-                        applicableStepActions={applicableStepActions}
-                        isStepActionLocked={isStepActionLocked}
-                        isSubStepReviewer={isSubStepReviewer}
-                        isSigner={isSigner}
-                        stepDownloaded={stepDownloaded}
-                        signingUploading={signingUploading}
-                        showSpecialActions={showSpecialActions}
-                        masterContractStatuses={masterContractStatuses}
-                        onToggleSpecialActions={() => setShowSpecialActions(!showSpecialActions)}
-                        onActionClick={(action, actionCode) => {
-                            const code = (actionCode || action?.action_code)?.toLowerCase();
-                            setActiveStepAction(action);
-                            setActiveActionCode(actionCode || action?.action_code);
+                    {/* Right Column: Panel Informasi & Aksi */}
+                    <div className="flex flex-col gap-3.5 min-w-0 h-full min-h-0 overflow-y-auto custom-scrollbar pr-1 pb-6">
+                        {/* SECTION: AKSI PERSYARATAN & APPROVAL (WRAPPED IN CARD) */}
+                        <ContractActionSection
+                            contract={contract}
+                            canApprove={canApprove}
+                            availableCustomActions={availableCustomActions}
+                            applicableStepActions={applicableStepActions}
+                            isStepActionLocked={isStepActionLocked}
+                            isSubStepReviewer={isSubStepReviewer}
+                            isSigner={isSigner}
+                            stepDownloaded={stepDownloaded}
+                            signingUploading={signingUploading}
+                            showSpecialActions={showSpecialActions}
+                            masterContractStatuses={masterContractStatuses}
+                            onToggleSpecialActions={() => setShowSpecialActions(!showSpecialActions)}
+                            onActionClick={(action, actionCode) => {
+                                const code = (actionCode || action?.action_code)?.toLowerCase();
+                                setActiveStepAction(action);
+                                setActiveActionCode(actionCode || action?.action_code);
 
-                            if (['forward', 'add_adhoc'].includes(code)) {
-                                setAddhocOpen(true);
-                            } else if (['reject'].includes(code)) {
-                                setRejectOpen(true);
-                            } else if (code === 'assign' || code === 'assign_pic' || (code === 'approve' && contract.requires_pic_assignment)) {
-                                setAssignOpen(true);
-                            } else if (code === 'sign' || code === 'signature') {
-                                const hasSignersAssigned = (contract?.approvals || []).some(
-                                    (a: any) =>
-                                        String(a.workflow_step_id) === String(contract.workflow_step_id) &&
-                                        (a.role === 'Penandatangan' || a.role === 'Pihak 1' || a.role === 'Pihak 2' || (action && a.role === action.alias)),
-                                );
-                                if (hasSignersAssigned) {
-                                    setApproveOpen(true);
+                                if (['forward', 'add_adhoc'].includes(code)) {
+                                    setAddhocOpen(true);
+                                } else if (['reject'].includes(code)) {
+                                    setRejectOpen(true);
+                                } else if (code === 'assign' || code === 'assign_pic' || (code === 'approve' && contract.requires_pic_assignment)) {
+                                    setAssignOpen(true);
+                                } else if (code === 'sign' || code === 'signature') {
+                                    const hasSignersAssigned = (contract?.approvals || []).some(
+                                        (a: any) =>
+                                            String(a.workflow_step_id) === String(contract.workflow_step_id) &&
+                                            (a.role === 'Penandatangan' || a.role === 'Pihak 1' || a.role === 'Pihak 2' || (action && a.role === action.alias)),
+                                    );
+                                    if (hasSignersAssigned) {
+                                        setApproveOpen(true);
+                                    } else {
+                                        setSignerOpen(true);
+                                    }
                                 } else {
-                                    setSignerOpen(true);
+                                    setApproveOpen(true);
                                 }
-                            } else {
-                                setApproveOpen(true);
-                            }
-                        }}
-                        onSigningAction={handleSigningAction}
-                    />
-
-                    {contract.workflow_step?.meta?.show_info !== false && (
-                        <DraftEditableInfoCard
-                            selected={contract}
-                            types={types}
-                            submissionTypes={submissionTypes}
-                            vendors={vendors}
-                            formTemplates={formTemplates}
-                            canUpdate={canUpdate}
-                            onUpdate={(d: any) => handleUpdate(d, true)}
-                            processing={processing}
-                            setPreviewTitle={setPreviewTitle}
-                            setPreviewUrl={setPreviewUrl}
-                            setPreviewHasFile={setPreviewHasFile}
-                            setPreviewOpen={setPreviewOpen}
-                            meId={meId}
-                            onStateChange={(hasChanges, isSaving) => {
-                                setHasInfoChanges(hasChanges);
-                                setInfoSaving(isSaving);
                             }}
-                            saveRef={saveInfoCardRef}
-                            resetRef={resetInfoCardRef}
+                            onSigningAction={handleSigningAction}
                         />
-                    )}
 
-                    {/* Debug Access Control Panel */}
-                    {/* <div className="text-text-main rounded-2xl border border-black/5 bg-black/5 p-4 opacity-60 transition-opacity hover:opacity-100 dark:border-white/5 dark:bg-white/5">
+                        {contract.workflow_step?.meta?.show_info !== false && (
+                            <DraftEditableInfoCard
+                                selected={contract}
+                                types={types}
+                                submissionTypes={submissionTypes}
+                                vendors={vendors}
+                                formTemplates={formTemplates}
+                                canUpdate={canUpdate}
+                                onUpdate={(d: any) => handleUpdate(d, true)}
+                                processing={processing}
+                                setPreviewTitle={setPreviewTitle}
+                                setPreviewUrl={setPreviewUrl}
+                                setPreviewHasFile={setPreviewHasFile}
+                                setPreviewOpen={setPreviewOpen}
+                                meId={meId}
+                                onStateChange={(hasChanges, isSaving) => {
+                                    setHasInfoChanges(hasChanges);
+                                    setInfoSaving(isSaving);
+                                }}
+                                saveRef={saveInfoCardRef}
+                                resetRef={resetInfoCardRef}
+                            />
+                        )}
+
+                        {/* Debug Access Control Panel */}
+                        {/* <div className="text-text-main rounded-2xl border border-black/5 bg-black/5 p-4 opacity-60 transition-opacity hover:opacity-100 dark:border-white/5 dark:bg-white/5">
                         <div className="mb-3 flex items-center justify-between border-b border-black/10 pb-2">
                             <div className="flex items-center gap-2">
                                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
@@ -1011,9 +1013,9 @@ const ContractDetailView = ({
                             </div>
                         </div>
                     </div> */}
+                    </div>
                 </div>
             </div>
-        </div>
 
             <Suspense fallback={null}>
                 <SharedApproveModal

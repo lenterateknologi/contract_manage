@@ -155,13 +155,12 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
 
     const rows: any[] = workflows.data || [];
 
-    // Group workflows by contract_type_name (parent/first item only)
+    // Group workflows by parent category (parent_contract_type_name)
     const grouped = useMemo(() => {
         const map = new Map<string, any[]>();
         rows.forEach((w) => {
-            const key = w.contract_type_name
-                ? w.contract_type_name.split(',')[0].trim()
-                : 'Global / Semua Tipe';
+            const rawKey = w.parent_contract_type_name || w.contract_type_name || 'Global / Semua Tipe';
+            const key = rawKey.split(',')[0].trim();
             if (!map.has(key)) map.set(key, []);
             map.get(key)!.push(w);
         });

@@ -21,7 +21,36 @@ class ApprovalTimelineFormatter
         $workflowService = app(ContractWorkflowService::class);
 
         // 1. Build chronological execution chunks based on real approval timestamps
-        $executedApprovals = $c->approvals->sortBy('created_at')->values();
+        $executedApprovals = $c->approvals->sort(function ($a, $b) use ($c) {
+            if ($a->created_at && $b->created_at && $a->created_at->ne($b->created_at)) {
+                return $a->created_at <=> $b->created_at;
+            }
+            // If one is approved/rejected and the other is pending/waiting at same timestamp, completed one came first
+            $aDone = in_array($a->status, ['approved', 'rejected']);
+            $bDone = in_array($b->status, ['approved', 'rejected']);
+            if ($aDone !== $bDone) {
+                return $aDone ? -1 : 1;
+            }
+            if ($a->decided_at && $b->decided_at && $a->decided_at->ne($b->decided_at)) {
+                return $a->decided_at <=> $b->decided_at;
+            }
+            $aWfId = $a->workflow_id ?? $a->workflowStep?->workflow_id;
+            $bWfId = $b->workflow_id ?? $b->workflowStep?->workflow_id;
+            if ($aWfId && $bWfId && $aWfId !== $bWfId) {
+                // If returning from sub-workflow to origin, sub-workflow execution comes first
+                if ($c->origin_workflow_id) {
+                    if ($aWfId !== $c->origin_workflow_id) return -1;
+                    if ($bWfId !== $c->origin_workflow_id) return 1;
+                }
+            }
+            if ($a->sequence != $b->sequence) {
+                return $a->sequence <=> $b->sequence;
+            }
+            if ($a->sub_step !== null && $b->sub_step !== null && $a->sub_step != $b->sub_step) {
+                return $a->sub_step <=> $b->sub_step;
+            }
+            return ($a->sort_order ?? 0) <=> ($b->sort_order ?? 0);
+        })->values();
         $chunks = [];
 
         if ($executedApprovals->isEmpty()) {
@@ -36,22 +65,19 @@ class ApprovalTimelineFormatter
             }
         } else {
             foreach ($executedApprovals as $appr) {
+                $wfId = $appr->workflow_id ?? $appr->workflowStep?->workflow_id ?? $c->workflow_id;
                 $step = $appr->workflowStep;
                 $wf = null;
-                if ($step) {
-                    if ($step->relationLoaded('workflow')) {
-                        $wf = $step->workflow;
-                    } elseif ($c->workflow_id === $step->workflow_id) {
-                        $wf = $c->workflow;
-                    } else {
-                        $step->load('workflow');
-                        $wf = $step->workflow;
-                    }
+                if ($wfId === $c->workflow_id && $c->workflow) {
+                    $wf = $c->workflow;
+                } elseif ($step?->relationLoaded('workflow')) {
+                    $wf = $step->workflow;
+                } else {
+                    $wf = $step?->workflow;
                 }
                 if (! $wf && $c->workflow) {
                     $wf = $c->workflow;
                 }
-                $wfId = $wf?->id ?? $c->workflow_id;
 
                 $lastIdx = count($chunks) - 1;
                 if ($lastIdx < 0 || $chunks[$lastIdx]['workflow_id'] !== $wfId) {
@@ -230,7 +256,15 @@ class ApprovalTimelineFormatter
                         return true;
                     }
                     return false;
-                });
+                })->sort(function ($a, $b) {
+                    if ($a->sub_step !== null && $b->sub_step !== null && $a->sub_step != $b->sub_step) {
+                        return $a->sub_step <=> $b->sub_step;
+                    }
+                    if ($a->sort_order !== null && $b->sort_order !== null && $a->sort_order != $b->sort_order) {
+                        return $a->sort_order <=> $b->sort_order;
+                    }
+                    return $a->created_at <=> $b->created_at;
+                })->values();
 
                 $hasApprovals = $regularApprovals->isNotEmpty() || $adhocApprovals->isNotEmpty();
                 $isCurrentStep = $isCurrentChunk && ($c->workflow_step_id === $step->id);

@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { cn, formatDateTime } from '@/lib/utils';
-import { formatFileSize } from '@/lib/formatters';
-import { Contract, ContractApproval } from '@/pages/contracts/types';
-import { Check, Clock, ChevronDown, CheckCircle2, X, Lock, GitBranch, UserCheck, Paperclip, Download } from 'lucide-react';
 import { UserAvatarIcon } from '@/components/profile/UserAvatar';
+import { ActionBadge, FileChipIcon } from '@/components/ui';
 import { Badge } from '@/components/ui/feedback/Badge';
-import { ChipIcon, FileChipIcon, ActionBadge } from '@/components/ui';
+import { formatFileSize } from '@/lib/formatters';
+import { cn, formatDateTime } from '@/lib/utils';
+import { Contract, ContractApproval } from '@/pages/contracts/types';
+import { Check, CheckCircle2, ChevronDown, Clock, Download, Lock, X } from 'lucide-react';
+import { useState } from 'react';
 import { StatusBadge } from '../ui/ui';
 
 interface ApprovalCardProps {
@@ -21,11 +21,10 @@ interface ApprovalCardProps {
 
 export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false, contract, showDetails = false, isLite = false, isSubStep = false, isPending = false }: ApprovalCardProps) {
     const [isApproverListExpanded, setIsApproverListExpanded] = useState(false);
-    const isStaged = !a.is_active || (a.status as string) === 'SELANJUTNYA';
     const isApproved = a.status === 'approved';
     const isRejected = a.status === 'rejected';
     const isSkipped = (a.status as string) === 'SKIPPED';
-    
+
     // Status is truly Pending if explicitly marked as pending or passed via isPending prop
     const isCardPending = !isApproved && !isRejected && !isSkipped && Boolean(isPending || a.status === 'pending');
     const isCardWaiting = !isApproved && !isRejected && !isSkipped && !isCardPending;
@@ -38,11 +37,9 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
     // Cari workflow step yang cocok untuk card ini
     const matchedStep = contract?.workflow?.steps?.find((s: any) => s.step === a.sequence || s.id === a.workflow_step_id) || a.workflow_step;
     const stepMeta = (matchedStep as any)?.meta || {};
-    const stepActions: any[] = (matchedStep as any)?.actions || (matchedStep as any)?.action_configs || [];
 
     // Ambil target status: jika sudah diputuskan (approved/rejected), cari action terkait jika ada, atau gunakan target_status dari step
     const targetStatusCode = stepMeta.target_status || null;
-    const statusColor = (isCardPending && contract?.status_info?.color) ? contract.status_info.color : null;
 
     return (
         <div
@@ -156,7 +153,12 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                                 })()}
                             </div>
                             {a.role && (
-                                <div className="flex items-center gap-1 text-[9px] text-muted-foreground mt-0.5">
+                                <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5 flex-wrap">
+                                    {hasSubStep && (
+                                        <Badge variant="outline" className="px-1 py-0 font-bold uppercase text-indigo-700 dark:text-indigo-300 border-indigo-500/25 bg-indigo-500/10 text-[8px] tracking-wider rounded-xs">
+                                            Sub {finalStepNumber}
+                                        </Badge>
+                                    )}
                                     <span className="font-semibold uppercase">{a.role}</span>
                                     {a.department_name && <span>• {a.department_name}</span>}
                                 </div>
@@ -206,7 +208,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
             {showDetails && !hasSubStep && (() => {
                 let stepMeta = a.workflow_step?.meta;
                 let actions = a.workflow_step?.action_configs || [];
-                
+
                 if (!stepMeta && contract?.workflow?.steps) {
                     const matchedStep = contract.workflow.steps.find((s: any) => s.step === a.sequence || s.id === a.workflow_step_id);
                     if (matchedStep) {
@@ -241,7 +243,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
 
                 if (requireTitle) {
                     const isFilled = !!contract?.title;
-                    reqList.push({ label: 'Judul Kontrak', isFilled });
+                    reqList.push({ label: 'Judul Pengajuan', isFilled });
                 }
                 if (requireVendor) {
                     const isFilled = !!(contract?.vendor_id || (contract as any)?.vendor);
@@ -249,11 +251,11 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 }
                 if (requireCategory) {
                     const isFilled = !!(contract?.contract_type_id || (contract as any)?.contract_type);
-                    reqList.push({ label: 'Kategori Kontrak', isFilled });
+                    reqList.push({ label: 'Kategori Dokumen', isFilled });
                 }
                 if (requireContractNo) {
                     const isFilled = !!contract?.contract_no;
-                    reqList.push({ label: 'No. Kontrak', isFilled });
+                    reqList.push({ label: 'No. Dokumen', isFilled });
                 }
                 if (requireTax) {
                     const isFilled = (contract?.tax_required !== null && contract?.tax_required !== undefined) || contract?.metadata?.tax_required !== undefined;
@@ -261,7 +263,7 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                 }
                 if (requirePrice) {
                     const isFilled = contract?.price !== null && contract?.price !== undefined && contract?.price !== '';
-                    reqList.push({ label: 'Nilai/Harga Kontrak', isFilled });
+                    reqList.push({ label: 'Nilai / Estimasi Biaya', isFilled });
                 }
                 if (requirePeriod) {
                     const isFilled = (!!contract?.contract_date || !!contract?.start_date) && !!contract?.end_date;

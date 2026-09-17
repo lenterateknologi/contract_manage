@@ -48,6 +48,21 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
     const resolveTargetStepId = (contractData: any, actCode?: string): string | null => {
         const currentStep = contractData?.workflow_step;
         const steps = contractData?.workflow?.steps || [];
+
+        // 0. Priority: If current step is initiator or step 1, check if there is an explicit adhoc step in the workflow
+        const explicitAdhocStep = steps.find((s: any) => 
+            s.approver_type === 'adhoc' ||
+            s.step_category === 'adhoc' ||
+            s.step_category === 'adhoc_review' ||
+            (s.approver_authorities || s.authorities || []).some((auth: any) => 
+                auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers'
+            )
+        );
+
+        if (explicitAdhocStep && (currentStep?.approver_type === 'initiator' || Number(currentStep?.step) === 1)) {
+            return String(explicitAdhocStep.id);
+        }
+
         const customActions: any[] = 
             contractData?.workflow?.meta?.custom_actions || 
             contractData?.origin_workflow?.meta?.custom_actions || 
@@ -55,8 +70,14 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         const customAction = customActions.find((ca: any) => 
             ca.id === 'action_adhoc' || 
             ca.action_code === 'forward' || 
+            ca.action_code === 'branch' ||
             (actCode && ca.action_code === actCode)
         );
+
+        // If action is configured as cross-workflow, return null so backend auto-resolves to sub-workflow step
+        if (customAction && (customAction.execution_type === 'cross_workflow' || customAction.transition_config?.type === 'cross_workflow')) {
+            return null;
+        }
 
         // 1. Check custom action target_step configuration
         if (customAction && (customAction.target_step_mode || customAction.target_step_position)) {
@@ -77,11 +98,9 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 const targetSeq = anchorSeq + 1;
                 const matched = steps.find((s: any) => Number(s.step) === targetSeq);
                 if (matched) return String(matched.id);
-            } else {
-                // 'at' (pada tahap acuan)
-                if (anchorStep?.id && (!customAction.target_step_id || String(anchorStep.id) === String(customAction.target_step_id))) {
-                    return String(anchorStep.id);
-                }
+            } else if (position === 'at' && customAction.target_step_id) {
+                const matched = steps.find((s: any) => String(s.id) === String(customAction.target_step_id) || Number(s.step) === Number(customAction.target_step_id));
+                if (matched) return String(matched.id);
             }
         }
 
@@ -110,19 +129,9 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             }
         }
 
-        // 3. Look for explicit adhoc steps in the current workflow
-        if (!targetStepId && steps.length > 0) {
-            const adhocStep = steps.find((s: any) => 
-                s.approver_type === 'adhoc' ||
-                s.step_category === 'adhoc' ||
-                s.step_category === 'adhoc_review' ||
-                (s.approver_authorities || s.authorities || []).some((auth: any) => 
-                    auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers'
-                )
-            );
-            if (adhocStep) {
-                targetStepId = String(adhocStep.id);
-            }
+        // 3. Fallback to explicit adhoc steps if found
+        if (!targetStepId && explicitAdhocStep) {
+            targetStepId = String(explicitAdhocStep.id);
         }
 
         return targetStepId ? String(targetStepId) : (contractData?.workflow_step_id ? String(contractData.workflow_step_id) : null);
@@ -207,37 +216,44 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             const targetStep = (contract?.workflow?.steps || []).find((s: any) => String(s.id) === String(finalTargetStepId))
                 || contract?.workflow_step;
 
-            // Existing ad-hoc approvers should be pre-selected
-            const existingAdhocUserIds = (contract?.approvals || [])
+            // Only currently active (pending/waiting) ad-hoc approvers for this target step should be pre-selected
+            const activeAdhocApprovals = (contract?.approvals || [])
                 .filter(
                     (a: any) =>
                         String(a.workflow_step_id) === String(finalTargetStepId) &&
                         a.role === 'Persetujuan Tambahan' &&
-                        a.status !== 'rejected' &&
+                        (a.status === 'pending' || a.status === 'waiting') &&
                         a.user_id != null &&
                         String(a.user_id) !== 'null' &&
                         String(a.user_id) !== 'undefined',
-                )
-                .map((a: any) => String(a.user_id));
+                );
+            const activeAdhocUserIds = activeAdhocApprovals.map((a: any) => String(a.user_id));
 
             let availableUsers: any[] = [];
             if (config && Object.keys(config).length > 0) {
                 availableUsers = allUsers.filter((u: any) => {
                     return matchUserAgainstWorkflowPool(u, config, contract);
                 });
+            } else {
+                availableUsers = allUsers;
             }
 
-            const uniqueUsers = Array.from(new Map(availableUsers.map((u: any) => [u.id, u])).values());
+            const activeUsersFromApprovals = activeAdhocApprovals.map((a: any) => {
+                const matched = allUsers.find((u: any) => String(u.id) === String(a.user_id));
+                if (matched) return matched;
+                return {
+                    id: a.user_id,
+                    name: a.approver_name || 'Approver',
+                    role: a.job_title || a.role || 'User',
+                    department_name: '',
+                };
+            });
+
+            const uniqueUsers = Array.from(new Map([...availableUsers, ...activeUsersFromApprovals].map((u: any) => [String(u.id), u])).values());
             setUsers(uniqueUsers);
 
-            // Set initial selected users based on existing ones
-            // Use unique array to prevent double entries from state + db
-            setSelectedUserIds((prev) => {
-                const combined = [...prev, ...existingAdhocUserIds].filter(
-                    (uid) => Boolean(uid) && uid !== 'null' && uid !== 'undefined'
-                );
-                return Array.from(new Set(combined));
-            });
+            // Set initial selected users based on currently active ones
+            setSelectedUserIds(Array.from(new Set(activeAdhocUserIds)));
         } catch (error) {
             console.error('Failed to fetch users:', error);
         } finally {
@@ -299,7 +315,7 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         (a: any) =>
             String(a.workflow_step_id) === String(selectedTargetStepId || contract?.workflow_step_id) &&
             a.role === 'Persetujuan Tambahan' &&
-            a.status !== 'rejected',
+            (a.status === 'pending' || a.status === 'waiting'),
     );
 
     return (

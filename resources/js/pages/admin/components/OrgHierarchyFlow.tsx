@@ -40,7 +40,9 @@ import {
     Network,
     Save,
     Shield,
+    RefreshCw,
 } from 'lucide-react';
+import { router } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'org_hierarchy_view_settings_v1';
@@ -151,10 +153,10 @@ function OrgHierarchyNode({ data }: NodeProps<Node<TreeNodeData>>) {
                 isCurrentMatch
                     ? 'border-amber-500 ring-4 ring-amber-400/50 shadow-xl scale-105 z-30 bg-amber-50/20 dark:bg-amber-950/30 animate-pulse'
                     : isHighlighted
-                    ? 'border-amber-400 ring-2 ring-amber-300/40 shadow-md'
-                    : isSelected
-                    ? 'border-primary ring-2 ring-primary/20 shadow-md scale-102'
-                    : 'border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-md'
+                        ? 'border-amber-400 ring-2 ring-amber-300/40 shadow-md'
+                        : isSelected
+                            ? 'border-primary ring-2 ring-primary/20 shadow-md scale-102'
+                            : 'border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-md'
             )}
         >
             {isCurrentMatch && (
@@ -163,7 +165,7 @@ function OrgHierarchyNode({ data }: NodeProps<Node<TreeNodeData>>) {
                 </div>
             )}
             <Handle type="target" position={Position.Top} className="!w-2.5 !h-2.5 !bg-slate-400 dark:!bg-zinc-600 border-2 border-white dark:border-zinc-900" />
-            
+
             <div className="flex items-center justify-between gap-2 mb-2">
                 <span className={cn('text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border', badgeBg)}>
                     {levelLabel}
@@ -211,10 +213,10 @@ function EmployeeListNode({ data }: NodeProps<Node<TreeNodeData>>) {
                 isCurrentMatch
                     ? 'border-amber-500 ring-4 ring-amber-400/50 shadow-2xl scale-102 z-30 bg-amber-50/10 dark:bg-amber-950/20'
                     : isHighlighted
-                    ? 'border-amber-400 ring-2 ring-amber-300/40'
-                    : isSelected
-                    ? 'border-primary ring-2 ring-primary/20'
-                    : 'border-slate-200/90 dark:border-zinc-800 hover:border-slate-300'
+                        ? 'border-amber-400 ring-2 ring-amber-300/40'
+                        : isSelected
+                            ? 'border-primary ring-2 ring-primary/20'
+                            : 'border-slate-200/90 dark:border-zinc-800 hover:border-slate-300'
             )}
         >
             {isCurrentMatch && (
@@ -223,7 +225,7 @@ function EmployeeListNode({ data }: NodeProps<Node<TreeNodeData>>) {
                 </div>
             )}
             <Handle type="target" position={Position.Top} className="!w-2.5 !h-2.5 !bg-slate-400 dark:!bg-zinc-600 border-2 border-white dark:border-zinc-900" />
-            
+
             <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-slate-100 dark:border-zinc-800">
                 <div>
                     <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border bg-cyan-50 border-cyan-200 text-cyan-700 dark:bg-cyan-950/40 dark:border-cyan-800 dark:text-cyan-300">
@@ -496,6 +498,21 @@ export function OrgHierarchyFlow({
     const [usedFilter, setUsedFilter] = useState<'used_only' | 'all'>(() => {
         return savedInitial.usedFilter || 'used_only';
     });
+
+    // Server-side cache sync / refresh state
+    const [isSyncing, setIsSyncing] = useState(false);
+    const handleSyncData = () => {
+        setIsSyncing(true);
+        router.get(
+            '/admin/members',
+            { refresh: 1 },
+            {
+                preserveState: false,
+                preserveScroll: true,
+                onFinish: () => setIsSyncing(false),
+            }
+        );
+    };
 
     // Multiple Select Filter States (restored from cache)
     const [selectedGroups, setSelectedGroups] = useState<string[]>(() => savedInitial.selectedGroups || []);
@@ -1230,6 +1247,18 @@ export function OrgHierarchyFlow({
                             </div>
                         )}
                     </div>
+
+                    {/* Server-side Sync / Refresh Button */}
+                    <button
+                        type="button"
+                        onClick={handleSyncData}
+                        disabled={isSyncing}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60"
+                        title="Segarkan data hierarki langsung dari database terbaru"
+                    >
+                        <RefreshCw size={13} className={cn('text-primary', isSyncing && 'animate-spin')} />
+                        <span>{isSyncing ? 'Menyinkronkan...' : 'Sync Data'}</span>
+                    </button>
 
                     {/* Hierarchy Setting Toggle Button */}
                     <button

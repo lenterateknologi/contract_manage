@@ -56,10 +56,18 @@ class ContractFormController extends Controller
 
         $isNew = ! $submission->exists;
 
+        $currentStep = $contract->workflowStep;
+        $stepNumber = $currentStep?->step ?? $contract->current_step_number ?? 1;
+        $workflowStepId = $contract->workflow_step_id ?: $currentStep?->id;
+        $iteration = $contract->workflow_iteration ?? 1;
+
         if ($isNew) {
             $submission->form_template_id = $request->form_template_id;
             $submission->submitted_by = Auth::id();
             $submission->current_version = 1;
+            $submission->workflow_step_id = $workflowStepId;
+            $submission->step_number = $stepNumber;
+            $submission->workflow_iteration = $iteration;
             $submission->save();
         }
 
@@ -113,6 +121,9 @@ class ContractFormController extends Controller
                 $existingVersion->update([
                     'form_data' => $formData,
                     'change_summary' => $changeSummary ?: $existingVersion->change_summary,
+                    'workflow_step_id' => $workflowStepId,
+                    'step_number' => $stepNumber,
+                    'workflow_iteration' => $iteration,
                 ]);
             } else {
                 FormSubmissionHistory::create([
@@ -121,6 +132,9 @@ class ContractFormController extends Controller
                     'form_data' => $formData,
                     'change_summary' => $changeSummary,
                     'created_by' => Auth::id(),
+                    'workflow_step_id' => $workflowStepId,
+                    'step_number' => $stepNumber,
+                    'workflow_iteration' => $iteration,
                 ]);
             }
         } else {
@@ -130,11 +144,17 @@ class ContractFormController extends Controller
                 'form_data' => $formData,
                 'change_summary' => $changeSummary,
                 'created_by' => Auth::id(),
+                'workflow_step_id' => $workflowStepId,
+                'step_number' => $stepNumber,
+                'workflow_iteration' => $iteration,
             ]);
         }
 
         // Update main submission model
         $submission->current_version = $versionNo;
+        $submission->workflow_step_id = $workflowStepId;
+        $submission->step_number = $stepNumber;
+        $submission->workflow_iteration = $iteration;
         $submission->save();
 
         // Sync critical fields from F1 to Contract main table

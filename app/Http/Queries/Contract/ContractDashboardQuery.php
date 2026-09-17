@@ -280,31 +280,32 @@ class ContractDashboardQuery
         $todayApproved = $todayUpdatedContracts->where('status', 'approved')->count();
 
         // Resolve matching dashboard type configuration:
-        // 1. Direct role relation dashboard_type_id
+        // 1. Direct role relation dashboard_type_id (if present)
         // 2. Matching rules from m_dashboard_types table
         $dashboardConfig = null;
         if ($user && $user->role_id) {
             $userRole = $user->roleRelation;
-            if ($userRole && $userRole->dashboard_type_id) {
-                $dashboardConfig = DashboardType::find($userRole->dashboard_type_id);
+            $roleDashboardTypeId = data_get($userRole?->getAttributes(), 'dashboard_type_id');
+            if ($roleDashboardTypeId) {
+                $dashboardConfig = DashboardType::find($roleDashboardTypeId);
             }
         }
 
         if (! $dashboardConfig) {
             $dashboardConfig = DashboardType::all()->filter(function ($dt) use ($user) {
-                $rawRoles = $dt->role_ids ?? $dt->getAttributeFromArray('role_ids');
+                $rawRoles = $dt->role_ids ?? data_get($dt->getAttributes(), 'role_ids');
                 $roleIds = DashboardType::normalizeIds($rawRoles);
                 if ($rawRoles === null && ! empty($dt->role_id)) {
                     $roleIds = [$dt->role_id];
                 }
 
-                $rawDivisions = $dt->division_ids ?? $dt->getAttributeFromArray('division_ids');
+                $rawDivisions = $dt->division_ids ?? data_get($dt->getAttributes(), 'division_ids');
                 $divisionIds = DashboardType::normalizeIds($rawDivisions);
                 if ($rawDivisions === null && ! empty($dt->division_id)) {
                     $divisionIds = [$dt->division_id];
                 }
 
-                $rawDepartments = $dt->department_ids ?? $dt->getAttributeFromArray('department_ids');
+                $rawDepartments = $dt->department_ids ?? data_get($dt->getAttributes(), 'department_ids');
                 $departmentIds = DashboardType::normalizeIds($rawDepartments);
                 if ($rawDepartments === null && ! empty($dt->department_id)) {
                     $departmentIds = [$dt->department_id];
@@ -316,19 +317,19 @@ class ContractDashboardQuery
 
                 return $roleMatch && $divisionMatch && $departmentMatch;
             })->sortByDesc(function ($dt) {
-                $rawRoles = $dt->role_ids ?? $dt->getAttributeFromArray('role_ids');
+                $rawRoles = $dt->role_ids ?? data_get($dt->getAttributes(), 'role_ids');
                 $roleIds = DashboardType::normalizeIds($rawRoles);
                 if ($rawRoles === null && ! empty($dt->role_id)) {
                     $roleIds = [$dt->role_id];
                 }
 
-                $rawDivisions = $dt->division_ids ?? $dt->getAttributeFromArray('division_ids');
+                $rawDivisions = $dt->division_ids ?? data_get($dt->getAttributes(), 'division_ids');
                 $divisionIds = DashboardType::normalizeIds($rawDivisions);
                 if ($rawDivisions === null && ! empty($dt->division_id)) {
                     $divisionIds = [$dt->division_id];
                 }
 
-                $rawDepartments = $dt->department_ids ?? $dt->getAttributeFromArray('department_ids');
+                $rawDepartments = $dt->department_ids ?? data_get($dt->getAttributes(), 'department_ids');
                 $departmentIds = DashboardType::normalizeIds($rawDepartments);
                 if ($rawDepartments === null && ! empty($dt->department_id)) {
                     $departmentIds = [$dt->department_id];

@@ -7,11 +7,13 @@ use App\Core\Crud\Resources\BusinessUnitResource;
 use App\Core\Crud\Resources\CompanyGroupResource;
 use App\Core\Crud\Resources\CompanyResource;
 use App\Core\Crud\Resources\ContractFilterTemplateResource;
+use App\Core\Crud\Resources\ContractSlaConfigResource;
 use App\Core\Crud\Resources\ContractStatusResource;
 use App\Core\Crud\Resources\ContractTypeResource;
 use App\Core\Crud\Resources\DashboardTypeResource;
 use App\Core\Crud\Resources\DepartmentResource;
 use App\Core\Crud\Resources\DivisionResource;
+use App\Core\Crud\Resources\HolidayResource;
 use App\Core\Crud\Resources\JobLevelResource;
 use App\Core\Crud\Resources\JobTitleResource;
 use App\Core\Crud\Resources\LocationResource;
@@ -54,12 +56,14 @@ class ResourceController extends Controller
         'companies' => CompanyResource::class,
         'vendors' => VendorResource::class,
         'divisions' => DivisionResource::class,
+        'contract-sla-configs' => ContractSlaConfigResource::class,
         'contract-filter-templates' => ContractFilterTemplateResource::class,
         'dashboard-types' => DashboardTypeResource::class,
         'locations' => LocationResource::class,
         'business-units' => BusinessUnitResource::class,
         'job-levels' => JobLevelResource::class,
         'job-titles' => JobTitleResource::class,
+        'holidays' => HolidayResource::class,
     ];
 
     /**
@@ -293,7 +297,10 @@ class ResourceController extends Controller
 
         // Implement sorting
         $sortBy = $request->input('sort_by');
-        $sortDir = $request->input('sort_dir', 'asc');
+        $sortDir = strtolower($request->input('sort_dir', 'asc')) === 'desc' ? 'desc' : 'asc';
+        $modelInstance = new $modelClass;
+        $tableName = $modelInstance->getTable();
+
         if ($sortBy) {
             $sortColumnMap = [
                 'user_identity' => 'name',
@@ -307,34 +314,56 @@ class ResourceController extends Controller
                 'region_group' => 'location_group_name',
                 'bu_identity' => 'name',
                 'company_placement' => 'company_name',
+                'role_name' => 'roleRelation.name',
+                'role' => 'roleRelation.name',
+                'division_name' => 'division.name',
+                'department_name' => 'department.name',
+                'company_group_name' => 'companyGroup.name',
+                'company_group_code' => 'companyGroup.code',
+                'region_name' => 'region.name',
             ];
             $actualSortBy = $sortColumnMap[$sortBy] ?? $sortBy;
 
             if (str_contains($actualSortBy, '.')) {
                 [$relation, $relColumn] = explode('.', $actualSortBy, 2);
-                $modelInstance = new $modelClass;
                 $method = method_exists($modelInstance, $relation) ? $relation : Str::camel($relation);
                 if (method_exists($modelInstance, $method)) {
                     $relationInstance = $modelInstance->{$method}();
                     if ($relationInstance instanceof BelongsTo) {
-                        $relatedTable = $relationInstance->getRelated()->getTable();
+                        $relatedModel = $relationInstance->getRelated();
+                        $relatedTable = $relatedModel->getTable();
                         $foreignKey = $relationInstance->getForeignKeyName();
                         $ownerKey = $relationInstance->getOwnerKeyName();
 
-                        $query->leftJoin($relatedTable, "{$modelInstance->getTable()}.{$foreignKey}", '=', "{$relatedTable}.{$ownerKey}")
-                            ->orderBy("{$relatedTable}.{$relColumn}", $sortDir)
-                            ->select("{$modelInstance->getTable()}.*");
+                        $query->orderBy(
+                            $relatedModel->newQuery()
+                                ->select($relColumn)
+                                ->whereColumn("{$relatedTable}.{$ownerKey}", "{$tableName}.{$foreignKey}")
+                                ->limit(1),
+                            $sortDir
+                        );
                     } else {
-                        $query->orderBy($actualSortBy, $sortDir);
+                        $query->orderBy("{$tableName}.id", $sortDir);
                     }
                 } else {
-                    $query->orderBy($actualSortBy, $sortDir);
+                    $query->orderBy("{$tableName}.id", $sortDir);
                 }
             } else {
-                $query->orderBy($actualSortBy, $sortDir);
+                if (Schema::hasColumn($tableName, $actualSortBy)) {
+                    $query->orderBy("{$tableName}.{$actualSortBy}", $sortDir);
+                } else {
+                    $query->orderBy("{$tableName}.id", $sortDir);
+                }
+            }
+        } elseif (! empty($resourceClass::$defaultSortBy)) {
+            $defaultCol = $resourceClass::$defaultSortBy;
+            if (Schema::hasColumn($tableName, $defaultCol)) {
+                $query->orderBy("{$tableName}.{$defaultCol}", $resourceClass::$defaultSortDir ?? 'asc');
+            } else {
+                $query->latest("{$tableName}.id");
             }
         } else {
-            $query->latest('id');
+            $query->latest("{$tableName}.id");
         }
 
         // Execute pagination
@@ -390,7 +419,7 @@ class ResourceController extends Controller
             $rules[$field->getName()] = $field->getRules();
         }
 
-        $validated = $request->validate($rules);
+        $validated = $request->validate($this->resolveValidationRules($rules, null));
 
         if (array_key_exists('password', $validated) && ($validated['password'] === null || $validated['password'] === '')) {
             unset($validated['password']);
@@ -416,6 +445,29 @@ class ResourceController extends Controller
         $withRelations = $resourceClass::$with ?? [];
         $record = ! empty($withRelations) ? $modelClass::with($withRelations)->findOrFail($id) : $modelClass::findOrFail($id);
         $returnUrl = $request->query('return_url');
+
+        if ($resourceSlug === 'users' && $record instanceof \App\Models\User) {
+            $resolvedType = \App\Models\DashboardType::resolveForUser($record);
+            $filterSettings = $record->getContractFilterSettings();
+            $record->setAttribute('resolved_policy', [
+                'dashboard_type_name' => $resolvedType?->name ?? 'Default (Fallback)',
+                'dashboard_type_description' => $resolvedType?->description ?? 'Tidak ada profil spesifik, menggunakan kebijakan default.',
+                'categories' => $resolvedType?->categories ?? ['contract', 'non-contract', 'nda'],
+                'contract_type_ids' => $resolvedType?->contract_type_ids ?? [],
+                'scope_to_user_division' => (bool) ($resolvedType?->scope_to_user_division ?? false),
+                'scope_to_user_department' => (bool) ($resolvedType?->scope_to_user_department ?? false),
+                'scope_to_user_company' => (bool) ($resolvedType?->scope_to_user_company ?? false),
+                'scope_to_user_company_group' => (bool) ($resolvedType?->scope_to_user_company_group ?? false),
+                'scope_to_user_region' => (bool) ($resolvedType?->scope_to_user_region ?? false),
+                'show_overview' => (bool) ($resolvedType?->show_overview ?? true),
+                'show_overview_contract' => (bool) ($resolvedType?->show_overview_contract ?? true),
+                'show_overview_non_contract' => (bool) ($resolvedType?->show_overview_non_contract ?? true),
+                'show_overview_nda' => (bool) ($resolvedType?->show_overview_nda ?? true),
+                'show_workload' => (bool) ($resolvedType?->show_workload ?? false),
+                'show_master_data' => (bool) ($resolvedType?->show_master_data ?? false),
+                'filter_settings' => $filterSettings,
+            ]);
+        }
 
         return Inertia::render('Core/ResourceForm', [
             'resourceSlug' => $resourceSlug,
@@ -478,10 +530,20 @@ class ResourceController extends Controller
             'png' => 'image/png',
             'jpg' => 'image/jpeg',
             'jpeg' => 'image/jpeg',
+            'jfif' => 'image/jpeg',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+            'svg' => 'image/svg+xml',
             'doc' => 'application/msword',
             'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
             'xls' => 'application/vnd.ms-excel',
             'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt' => 'application/vnd.ms-powerpoint',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'csv' => 'text/csv',
+            'txt' => 'text/plain',
+            'zip' => 'application/zip',
+            'rar' => 'application/x-rar-compressed',
         ];
         $contentType = $mimeTypes[$ext] ?? 'application/octet-stream';
 
@@ -503,7 +565,7 @@ class ResourceController extends Controller
             $rules[$field->getName()] = $field->getRules();
         }
 
-        $validated = $request->validate($rules);
+        $validated = $request->validate($this->resolveValidationRules($rules, $id));
 
         if (array_key_exists('password', $validated) && ($validated['password'] === null || $validated['password'] === '')) {
             unset($validated['password']);
@@ -589,8 +651,11 @@ class ResourceController extends Controller
         return redirect()->back()->with('success', 'Beberapa data '.$resourceClass::getTitle().' berhasil diperbarui.');
     }
 
-    public function export(string $resourceSlug)
+    public function export(Request $request, string $resourceSlug)
     {
+        ini_set('memory_limit', '512M');
+        set_time_limit(300);
+
         $resourceClass = $this->getResourceClass($resourceSlug);
 
         if (! $resourceClass::$exportClass) {
@@ -600,7 +665,13 @@ class ResourceController extends Controller
         $exportClass = $resourceClass::$exportClass;
         $fileName = str_replace(' ', '_', strtolower($resourceClass::getTitle())).'_'.date('Ymd').'.xlsx';
 
-        return Excel::download(new $exportClass, $fileName);
+        try {
+            $exportInstance = new $exportClass($request);
+        } catch (\ArgumentCountError) {
+            $exportInstance = new $exportClass;
+        }
+
+        return Excel::download($exportInstance, $fileName);
     }
 
     public function import(ImportFileRequest $request, string $resourceSlug)
@@ -734,5 +805,34 @@ class ResourceController extends Controller
         }
 
         return $fields;
+    }
+
+    private function resolveValidationRules(array $rules, $recordId = null): array
+    {
+        $resolved = [];
+        foreach ($rules as $field => $fieldRules) {
+            if (is_string($fieldRules)) {
+                $fieldRules = explode('|', $fieldRules);
+            }
+            if (is_array($fieldRules)) {
+                $fieldRules = array_map(function ($rule) use ($recordId) {
+                    if (is_string($rule)) {
+                        if ($recordId !== null) {
+                            return str_replace('{id}', (string) $recordId, $rule);
+                        } else {
+                            return str_replace([',{id}', '{id}'], ['', 'NULL'], $rule);
+                        }
+                    }
+                    if ($rule instanceof \Closure) {
+                        return $rule($recordId);
+                    }
+
+                    return $rule;
+                }, $fieldRules);
+            }
+            $resolved[$field] = $fieldRules;
+        }
+
+        return $resolved;
     }
 }

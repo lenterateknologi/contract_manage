@@ -44,8 +44,16 @@ class UploadRevisionAction
         $fileName = "{$safeNo}_{$typeLabel}_v{$newVer}.{$ext}";
         $filePath = $request->file('file')->storeAs("contracts/{$contract->id}", "v{$newVer}_{$type}_{$fileName}", 'local');
 
+        $currentStep = $contract->workflowStep;
+        $stepNumber = $currentStep?->step ?? $contract->current_step_number ?? 1;
+        $workflowStepId = $contract->workflow_step_id ?: $currentStep?->id;
+        $iteration = $contract->workflow_iteration ?? 1;
+
         ContractVersion::create([
             'contract_id' => $contract->id,
+            'workflow_step_id' => $workflowStepId,
+            'step_number' => $stepNumber,
+            'workflow_iteration' => $iteration,
             'document_type' => $type,
             'version_no' => $newVer,
             'file_name' => $fileName,

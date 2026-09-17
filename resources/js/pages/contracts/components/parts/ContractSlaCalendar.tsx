@@ -25,8 +25,22 @@ import {
     UserCheck,
     Columns,
     CalendarDays,
+    BarChart3,
+    TrendingUp,
+    Sparkles,
+    CheckCircle,
 } from 'lucide-react';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip as RechartsTooltip,
+    ResponsiveContainer,
+    Cell,
+} from 'recharts';
 
 export interface CalendarEvent {
     id: string;
@@ -398,154 +412,286 @@ export function ContractSlaCalendar({ selected }: { selected: Contract }) {
         return Math.max(1, Math.round(diff / (1000 * 60 * 60 * 24)));
     }, [submittedDate, closedDate]);
 
+    // Data for Stage SLA Breakdown Chart
+    const stageChartData = useMemo(() => {
+        const p1 = phase1Days || 2;
+        const p2 = phase2Days || 2;
+        const p3 = phase3Days || 2;
+        const sum = p1 + p2 + p3;
+
+        return [
+            {
+                id: 'phase1',
+                name: '1. Pengajuan',
+                fullName: 'Tahap 1: Pengajuan s/d Disposisi PIC',
+                days: p1,
+                percentage: Math.round((p1 / sum) * 100),
+                color: '#2563eb', // Blue
+                bgColor: 'bg-blue-600',
+                lightBg: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30',
+                status: submittedDate && assignedDate ? 'Selesai' : submittedDate ? 'Berjalan' : 'Menunggu',
+                startDate: submittedDate,
+                endDate: assignedDate,
+                actor: selected.initiator?.name || selected.creator?.name || 'Inisiator / Pengaju',
+            },
+            {
+                id: 'phase2',
+                name: '2. Pengerjaan PIC',
+                fullName: 'Tahap 2: Proses Review & Draft oleh PIC',
+                days: p2,
+                percentage: Math.round((p2 / sum) * 100),
+                color: '#4f46e5', // Indigo
+                bgColor: 'bg-indigo-600',
+                lightBg: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/30',
+                status: assignedDate && (finishedDate || closedDate) ? 'Selesai' : assignedDate ? 'Sedang Dikerjakan' : 'Belum Mulai',
+                startDate: assignedDate,
+                endDate: finishedDate || closedDate,
+                actor: selected.assigned_pic?.name || 'PIC Legal / Penanggung Jawab',
+            },
+            {
+                id: 'phase3',
+                name: '3. Selesai s/d Closed',
+                fullName: 'Tahap 3: Finalisasi, Penandatanganan & Tutup',
+                days: p3,
+                percentage: Math.round((p3 / sum) * 100),
+                color: '#059669', // Emerald
+                bgColor: 'bg-emerald-600',
+                lightBg: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+                status: closedDate ? 'Selesai & Closed' : finishedDate ? 'Menunggu Penutupan' : 'Belum Mulai',
+                startDate: finishedDate || assignedDate,
+                endDate: closedDate,
+                actor: selected.creator?.name || 'Admin / PIC / Signer',
+            },
+        ];
+    }, [phase1Days, phase2Days, phase3Days, submittedDate, assignedDate, finishedDate, closedDate, selected]);
+
     const activeSelectedEvents = selectedDateKey ? eventsByDate.get(selectedDateKey) || [] : [];
 
     const firstDayVisible = weeklyDaysList[0];
     const lastDayVisible = weeklyDaysList[weeklyDaysList.length - 1];
 
     return (
-        <Card className="rounded-xl border border-border/60 bg-card shadow-none overflow-hidden">
-            <CardHeader className="p-4 pb-3 border-b border-border/50 bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 space-y-0">
-                <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                        <CalendarIcon size={16} />
+        <div className="flex flex-col gap-4">
+            {/* Card 1: Diagram Batang Mandiri Durasi SLA */}
+            <Card className="rounded-xl border border-border/60 bg-card shadow-none overflow-hidden">
+                <CardHeader className="p-4 pb-3 border-b border-border/50 bg-muted/20 flex flex-row items-center justify-between gap-3 space-y-0">
+                    <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                            <BarChart3 size={16} />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xs font-bold text-foreground">
+                                Diagram Durasi SLA per Tahapan
+                            </CardTitle>
+                        </div>
                     </div>
-                    <div>
-                        <CardTitle className="text-xs font-bold text-foreground">
-                            Timeline Kalender SLA Kontrak
-                        </CardTitle>
-                    </div>
-                </div>
-
-                {/* Quick Navigation Shortcuts & View Mode Switcher Dropdowns */}
-                <div className="flex items-center gap-2 flex-wrap">
-                    {/* Dropdown 1: View Mode (Weekly vs Monthly) */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <button
-                                type="button"
-                                className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-border/60 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                    {totalDays && (
+                        <Badge className="px-2.5 py-0.5 text-[11px] font-bold bg-primary text-primary-foreground">
+                            Total SLA: {totalDays} Hari
+                        </Badge>
+                    )}
+                </CardHeader>
+                <CardContent className="p-4">
+                    <div className="h-40 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                                data={stageChartData}
+                                layout="vertical"
+                                margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                             >
+                                <CartesianGrid strokeDasharray="3 3" horizontal={false} opacity={0.3} />
+                                <XAxis
+                                    type="number"
+                                    allowDecimals={false}
+                                    tick={{ fontSize: 11 }}
+                                    domain={[0, (dataMax: number) => Math.max(3, Math.ceil(dataMax) + 1)]}
+                                    tickFormatter={(v) => `${Math.round(v)}`}
+                                />
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    tick={{ fontSize: 11, fontWeight: 700 }}
+                                    width={140}
+                                />
+                                <RechartsTooltip
+                                    content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                            const data = payload[0].payload;
+                                            return (
+                                                <div className="bg-popover text-popover-foreground border border-border rounded-lg p-2.5 text-xs shadow-md space-y-1">
+                                                    <div className="font-bold">{data.fullName}</div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-muted-foreground">Durasi:</span>
+                                                        <span className="font-bold text-primary">{data.days} Hari ({data.percentage}%)</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-muted-foreground">Penanggung Jawab:</span>
+                                                        <span className="font-medium">{data.actor}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-muted-foreground">Status:</span>
+                                                        <span className="font-semibold">{data.status}</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
+                                />
+                                <Bar dataKey="days" radius={[0, 6, 6, 0]} barSize={20}>
+                                    {stageChartData.map((entry) => (
+                                        <Cell key={`cell-${entry.id}`} fill={entry.color} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Card 2: Kalender & Timeline SLA */}
+            <Card className="rounded-xl border border-border/60 bg-card shadow-none overflow-hidden">
+                <CardHeader className="p-4 pb-3 border-b border-border/50 bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 space-y-0">
+                    <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                            <CalendarIcon size={16} />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xs font-bold text-foreground">
+                                Timeline Kalender SLA Kontrak
+                            </CardTitle>
+                        </div>
+                    </div>
+
+                    {/* Quick Navigation Shortcuts & View Mode Switcher Dropdowns */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {/* Dropdown 1: View Mode (Weekly vs Monthly) */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-border/60 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                                >
+                                    {viewMode === 'weekly' ? (
+                                        <Columns size={12} className="text-primary" />
+                                    ) : (
+                                        <CalendarDays size={12} className="text-primary" />
+                                    )}
+                                    <span>{viewMode === 'weekly' ? 'Weekly (2 Minggu)' : 'Monthly (Grid 4x4)'}</span>
+                                    <ChevronDown size={12} className="text-muted-foreground ml-1" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="min-w-[170px] p-1">
+                                <DropdownMenuItem
+                                    onClick={() => setViewMode('weekly')}
+                                    className={cn(
+                                        'cursor-pointer text-xs font-semibold gap-2 py-1.5',
+                                        viewMode === 'weekly' && 'bg-muted text-foreground font-bold'
+                                    )}
+                                >
+                                    <Columns size={13} className="text-primary" />
+                                    <span>Weekly (2 Minggu)</span>
+                                    {viewMode === 'weekly' && <Check size={13} className="ml-auto text-primary" />}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => setViewMode('monthly')}
+                                    className={cn(
+                                        'cursor-pointer text-xs font-semibold gap-2 py-1.5',
+                                        viewMode === 'monthly' && 'bg-muted text-foreground font-bold'
+                                    )}
+                                >
+                                    <CalendarDays size={13} className="text-primary" />
+                                    <span>Monthly (Grid 4x4)</span>
+                                    {viewMode === 'monthly' && <Check size={13} className="ml-auto text-primary" />}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {/* Dropdown 2: Milestone Data Shortcuts */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-border/60 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
+                                >
+                                    <Clock size={12} className="text-primary" />
+                                    <span>Milestone SLA</span>
+                                    <ChevronDown size={12} className="text-muted-foreground ml-1" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="min-w-[210px] p-1">
+                                {submittedDate && (
+                                    <DropdownMenuItem
+                                        onClick={() => jumpToDate(submittedDate)}
+                                        className="cursor-pointer text-xs font-medium gap-2 py-1.5"
+                                    >
+                                        <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" />
+                                        <span className="font-bold text-foreground">1. Pengajuan</span>
+                                        <span className="text-muted-foreground text-[10.5px] ml-auto">
+                                            {formatDate(submittedDate, { day: 'numeric', month: 'short' })}
+                                        </span>
+                                    </DropdownMenuItem>
+                                )}
+                                {assignedDate && (
+                                    <DropdownMenuItem
+                                        onClick={() => jumpToDate(assignedDate)}
+                                        className="cursor-pointer text-xs font-medium gap-2 py-1.5"
+                                    >
+                                        <span className="h-2 w-2 rounded-full bg-sky-600 shrink-0" />
+                                        <span className="font-bold text-foreground">2. Assigned PIC</span>
+                                        <span className="text-muted-foreground text-[10.5px] ml-auto">
+                                            {formatDate(assignedDate, { day: 'numeric', month: 'short' })}
+                                        </span>
+                                    </DropdownMenuItem>
+                                )}
+                                {finishedDate && (
+                                    <DropdownMenuItem
+                                        onClick={() => jumpToDate(finishedDate)}
+                                        className="cursor-pointer text-xs font-medium gap-2 py-1.5"
+                                    >
+                                        <span className="h-2 w-2 rounded-full bg-indigo-600 shrink-0" />
+                                        <span className="font-bold text-foreground">3. Selesai</span>
+                                        <span className="text-muted-foreground text-[10.5px] ml-auto">
+                                            {formatDate(finishedDate, { day: 'numeric', month: 'short' })}
+                                        </span>
+                                    </DropdownMenuItem>
+                                )}
+                                {closedDate && (
+                                    <DropdownMenuItem
+                                        onClick={() => jumpToDate(closedDate)}
+                                        className="cursor-pointer text-xs font-medium gap-2 py-1.5"
+                                    >
+                                        <span className="h-2 w-2 rounded-full bg-emerald-600 shrink-0" />
+                                        <span className="font-bold text-foreground">{finishedDate ? '4' : '3'}. Closed</span>
+                                        <span className="text-muted-foreground text-[10.5px] ml-auto">
+                                            {formatDate(closedDate, { day: 'numeric', month: 'short' })}
+                                        </span>
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    onClick={() => jumpToDate(new Date())}
+                                    className="cursor-pointer text-xs font-medium gap-2 py-1.5"
+                                >
+                                    <RotateCcw size={12} className="text-muted-foreground shrink-0" />
+                                    <span className="font-bold text-foreground">Hari Ini</span>
+                                    <span className="text-muted-foreground text-[10.5px] ml-auto">
+                                        {formatDate(new Date(), { day: 'numeric', month: 'short' })}
+                                    </span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </CardHeader>
+
+                <CardContent className="p-4 space-y-4">
+                    {/* Timeline Range Indicator & Mode Specific Navigation Controls */}
+                    <div className="flex items-center justify-between pt-1">
+                        <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-foreground tracking-tight flex items-center gap-1.5">
                                 {viewMode === 'weekly' ? (
-                                    <Columns size={12} className="text-primary" />
-                                ) : (
-                                    <CalendarDays size={12} className="text-primary" />
-                                )}
-                                <span>{viewMode === 'weekly' ? 'Weekly (2 Minggu)' : 'Monthly (Grid 4x4)'}</span>
-                                <ChevronDown size={12} className="text-muted-foreground ml-1" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="min-w-[170px] p-1">
-                            <DropdownMenuItem
-                                onClick={() => setViewMode('weekly')}
-                                className={cn(
-                                    'cursor-pointer text-xs font-semibold gap-2 py-1.5',
-                                    viewMode === 'weekly' && 'bg-muted text-foreground font-bold'
-                                )}
-                            >
-                                <Columns size={13} className="text-primary" />
-                                <span>Weekly (2 Minggu)</span>
-                                {viewMode === 'weekly' && <Check size={13} className="ml-auto text-primary" />}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={() => setViewMode('monthly')}
-                                className={cn(
-                                    'cursor-pointer text-xs font-semibold gap-2 py-1.5',
-                                    viewMode === 'monthly' && 'bg-muted text-foreground font-bold'
-                                )}
-                            >
-                                <CalendarDays size={13} className="text-primary" />
-                                <span>Monthly (Grid 4x4)</span>
-                                {viewMode === 'monthly' && <Check size={13} className="ml-auto text-primary" />}
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    {/* Dropdown 2: Milestone Data Shortcuts */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <button
-                                type="button"
-                                className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-border/60 bg-background hover:bg-muted text-foreground transition-all cursor-pointer"
-                            >
-                                <Clock size={12} className="text-primary" />
-                                <span>Milestone SLA</span>
-                                <ChevronDown size={12} className="text-muted-foreground ml-1" />
-                            </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="min-w-[210px] p-1">
-                            {submittedDate && (
-                                <DropdownMenuItem
-                                    onClick={() => jumpToDate(submittedDate)}
-                                    className="cursor-pointer text-xs font-medium gap-2 py-1.5"
-                                >
-                                    <span className="h-2 w-2 rounded-full bg-blue-600 shrink-0" />
-                                    <span className="font-bold text-foreground">1. Pengajuan</span>
-                                    <span className="text-muted-foreground text-[10.5px] ml-auto">
-                                        {formatDate(submittedDate, { day: 'numeric', month: 'short' })}
-                                    </span>
-                                </DropdownMenuItem>
-                            )}
-                            {assignedDate && (
-                                <DropdownMenuItem
-                                    onClick={() => jumpToDate(assignedDate)}
-                                    className="cursor-pointer text-xs font-medium gap-2 py-1.5"
-                                >
-                                    <span className="h-2 w-2 rounded-full bg-sky-600 shrink-0" />
-                                    <span className="font-bold text-foreground">2. Assigned PIC</span>
-                                    <span className="text-muted-foreground text-[10.5px] ml-auto">
-                                        {formatDate(assignedDate, { day: 'numeric', month: 'short' })}
-                                    </span>
-                                </DropdownMenuItem>
-                            )}
-                            {finishedDate && (
-                                <DropdownMenuItem
-                                    onClick={() => jumpToDate(finishedDate)}
-                                    className="cursor-pointer text-xs font-medium gap-2 py-1.5"
-                                >
-                                    <span className="h-2 w-2 rounded-full bg-indigo-600 shrink-0" />
-                                    <span className="font-bold text-foreground">3. Selesai</span>
-                                    <span className="text-muted-foreground text-[10.5px] ml-auto">
-                                        {formatDate(finishedDate, { day: 'numeric', month: 'short' })}
-                                    </span>
-                                </DropdownMenuItem>
-                            )}
-                            {closedDate && (
-                                <DropdownMenuItem
-                                    onClick={() => jumpToDate(closedDate)}
-                                    className="cursor-pointer text-xs font-medium gap-2 py-1.5"
-                                >
-                                    <span className="h-2 w-2 rounded-full bg-emerald-600 shrink-0" />
-                                    <span className="font-bold text-foreground">{finishedDate ? '4' : '3'}. Closed</span>
-                                    <span className="text-muted-foreground text-[10.5px] ml-auto">
-                                        {formatDate(closedDate, { day: 'numeric', month: 'short' })}
-                                    </span>
-                                </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={() => jumpToDate(new Date())}
-                                className="cursor-pointer text-xs font-medium gap-2 py-1.5"
-                            >
-                                <RotateCcw size={12} className="text-muted-foreground shrink-0" />
-                                <span className="font-bold text-foreground">Hari Ini</span>
-                                <span className="text-muted-foreground text-[10.5px] ml-auto">
-                                    {formatDate(new Date(), { day: 'numeric', month: 'short' })}
-                                </span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            </CardHeader>
-
-            <CardContent className="p-4 space-y-3">
-                {/* Timeline Range Indicator & Mode Specific Navigation Controls */}
-                <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold text-foreground tracking-tight flex items-center gap-1.5">
-                            {viewMode === 'weekly' ? (
-                                <>
-                                    <span>Rentang Tampil:</span>
+                                    <>
+                                        <span>Rentang Tampil:</span>
                                     <span className="font-semibold text-muted-foreground">
                                         {firstDayVisible?.dayNumber} {firstDayVisible?.monthName} {firstDayVisible?.year} — {lastDayVisible?.dayNumber} {lastDayVisible?.monthName} {lastDayVisible?.year}
                                     </span>
@@ -957,5 +1103,6 @@ export function ContractSlaCalendar({ selected }: { selected: Contract }) {
                 </div>
             </CardContent>
         </Card>
+    </div>
     );
 }

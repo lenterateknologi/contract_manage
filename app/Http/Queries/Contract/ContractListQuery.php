@@ -15,14 +15,14 @@ class ContractListQuery
      * Eager loads applied to every contract list query.
      */
     private const WITH = [
-        'creator:id,name,role_id,department_id,division_id,company_id,email',
+        'creator:id,name,role_id,department_id,division_id,company_id,email,spv_id,idreporting_to,reporting_to,nik,jobtitle_name,phone_number,mobile_no',
         'creator.department:id,name',
         'creator.company:id,name,company_group_id,region_id',
         'contractType:id,name,parent_id,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'contractTypeParent:id,name,f1_input_mechanism,f1_form_template_id,f2_input_mechanism,f2_form_template_id,contract_input_mechanism,contract_form_template_id',
         'submissionType:id,name',
         'statusDetail:code,label,color,bg_color,icon',
-        'approvals.approver:id,name,role_id,department_id,division_id,company_id,email',
+        'approvals.approver:id,name,role_id,department_id,division_id,company_id,email,spv_id,idreporting_to,reporting_to,nik,jobtitle_name,phone_number,mobile_no',
         'approvals.approver.department:id,name',
         'approvals.workflowStep:id,step,description,step_category,workflow_id,meta,is_visible,is_active,approver_type,filter_department,filter_company_group,filter_region,filter_company',
         'approvals.workflowStep.workflow:id,name,contract_type_id,meta',
@@ -30,13 +30,13 @@ class ContractListQuery
         'workflowStep:id,step,description,step_category,workflow_id,meta,is_visible,is_active,approver_type,filter_department,filter_company_group,filter_region,filter_company',
         'workflowStep.workflow:id,name,contract_type_id,meta',
         'vendor:id,vendor_code,vendor_name,vendor_detail',
-        'initiator:id,name,role_id,department_id,division_id,company_id,email',
+        'initiator:id,name,role_id,department_id,division_id,company_id,email,spv_id,idreporting_to,reporting_to,nik,jobtitle_name,phone_number,mobile_no',
         'initiator.department:id,name',
         'initiator.company:id,name,company_group_id,region_id',
         'parent:id,form_no,contract_no,title',
-        'assignedPic:id,name,role_id,department_id,division_id,company_id,email',
+        'assignedPic:id,name,role_id,department_id,division_id,company_id,email,spv_id,idreporting_to,reporting_to,nik,jobtitle_name,phone_number,mobile_no',
         'assignedPic.department:id,name',
-        'assignedBy:id,name,role_id,department_id,division_id,company_id,email',
+        'assignedBy:id,name,role_id,department_id,division_id,company_id,email,spv_id,idreporting_to,reporting_to,nik,jobtitle_name,phone_number,mobile_no',
         'assignedBy.department:id,name',
         'meta:contract_id,kop_topik,kop_sub_topik,p1_entity,p1_signer,p1_signer_position,p1_address,p2_entity,p2_signer,p2_signer_position,p2_address,f2_scope,f2_price,f2_payment,f2_tenure,f2_location',
     ];
@@ -51,7 +51,9 @@ class ContractListQuery
         'created_at', 'updated_at', 'initiated_by_id', 'vendor_id', 'parent_id',
         'submission_type_id', 'contract_no', 'assigned_pic_id', 'assigned_by_id',
         'received_at', 'assigned_at', 'finished_at', 'closed_at', 'closed_by',
-        'contract_type_parent_id',
+        'contract_type_parent_id', 'metadata', 'is_digital_signature',
+        'updated_by', 'is_in_sub_workflow', 'branch_step_number', 'current_step_number',
+        'current_sub_workflow_id', 'workflow_iteration',
     ];
 
     /**

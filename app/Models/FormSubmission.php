@@ -21,6 +21,9 @@ class FormSubmission extends Model
         'document_type',
         'current_version',
         'submitted_by',
+        'workflow_step_id',
+        'step_number',
+        'workflow_iteration',
     ];
 
     public function contract(): BelongsTo

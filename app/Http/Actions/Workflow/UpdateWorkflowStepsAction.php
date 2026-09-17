@@ -93,13 +93,14 @@ class UpdateWorkflowStepsAction
                     if (isset($stepData['approver_authorities'])) {
                         foreach ((array) $stepData['approver_authorities'] as $auth) {
                             $authType = ($auth['authority_type'] ?? null) === 'custom' ? ($auth['user_id'] ?? null) : ($auth['authority_type'] ?? null);
-                            $userId = in_array($authType, ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc', 'group', 'role', 'department', 'division', 'company_group', 'company', 'region']) ? null : (! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null);
+                            $userId = in_array($authType, ['initiator', 'assigned_pic', 'creator', 'atasan', 'adhoc_approvers', 'adhoc', 'group', 'role', 'department', 'division', 'location', 'company_group', 'company', 'region']) ? null : (! empty($auth['user_id']) ? $this->resolveUserId($auth['user_id']) : null);
 
                             $step->approverAuthorities()->create([
                                 'authority_type' => $authType,
                                 'role_id' => ! empty($auth['role_id']) && $authType !== $auth['role_id'] ? $this->resolveRoleId($auth['role_id']) : null,
                                 'department_id' => ! empty($auth['department_id']) ? $this->resolveDepartmentId($auth['department_id']) : null,
                                 'division_id' => $auth['division_id'] ?? null,
+                                'location_id' => $auth['location_id'] ?? null,
                                 'user_id' => $userId,
                                 'company_group_id' => $auth['company_group_id'] ?? null,
                                 'company_id' => $auth['company_id'] ?? null,
@@ -107,6 +108,7 @@ class UpdateWorkflowStepsAction
                                 'role_use_initiator' => $auth['role_use_initiator'] ?? false,
                                 'department_use_initiator' => $auth['department_use_initiator'] ?? false,
                                 'division_use_initiator' => $auth['division_use_initiator'] ?? false,
+                                'location_use_initiator' => $auth['location_use_initiator'] ?? false,
                                 'company_group_use_initiator' => $auth['company_group_use_initiator'] ?? false,
                                 'company_use_initiator' => $auth['company_use_initiator'] ?? false,
                                 'region_use_initiator' => $auth['region_use_initiator'] ?? false,

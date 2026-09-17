@@ -21,6 +21,22 @@ export interface UserProfile {
     avatar_url?: string;
 }
 
+export interface ContractPurchaseOrder {
+    id: string;
+    contract_id: string;
+    po_number: string;
+    title?: string | null;
+    po_date?: string | null;
+    amount?: number | string | null;
+    currency?: string;
+    vendor_name?: string | null;
+    status: 'active' | 'cancelled' | 'completed' | string;
+    description?: string | null;
+    file_path?: string | null;
+    created_at?: string;
+    creator?: UserProfile;
+}
+
 export interface ContractVersion {
     id: string;
     document_type: 'contract' | 'f1' | 'f2' | 'agreement';
@@ -248,6 +264,7 @@ export interface Contract {
     histories: ContractHistory[];
     messages?: ContractMessage[];
     attachments?: ContractAttachment[];
+    purchase_orders?: ContractPurchaseOrder[];
     form_submissions?: FormSubmissionInfo[];
     initiator?: UserProfile;
     workflow_phase?: string;
@@ -259,9 +276,13 @@ export interface Contract {
     vendor?: {
         id: string;
         name: string;
+        code?: string;
+        vendor_code?: string;
         pic_name?: string;
         pic_position?: string;
         address?: string;
+        detail?: Record<string, any>;
+        vendor_detail?: Record<string, any>;
         documents?: Array<{
             id: string;
             name: string;

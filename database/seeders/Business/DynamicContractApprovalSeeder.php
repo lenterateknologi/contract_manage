@@ -20,8 +20,7 @@ class DynamicContractApprovalSeeder extends Seeder
         $managerRoleId = $roleMap['Manager'] ?? null;
         $vpRoleId = $roleMap['VP'] ?? null;
         $astManagerRoleId = $roleMap['Ast Manager'] ?? null;
-        $managerLegalRoleId = $roleMap['Manager Legal'] ?? null;
-        $staffLegalRoleId = $roleMap['Staff Legal'] ?? null;
+        $legalDivisionId = \App\Models\Division::where('name', 'Legal')->orWhere('code', 'lga')->value('id');
 
         $wf1Name = 'ALUR PERSETUJUAN KONTRAK DINAMIS (WF 1 - PERMOHONAN & PENUGASAN PIC)';
         $wf2Name = 'ALUR PROSES LEGAL & PENANDATANGANAN (WF 2 - REVIEW & SIGNING)';
@@ -65,15 +64,17 @@ class DynamicContractApprovalSeeder extends Seeder
             'is_selectable' => false,
         ]);
 
-        if ($staffLegalRoleId) {
+        if ($staffRoleId) {
             $wf2->initiatorAuthorities()->create([
-                'role_id' => $staffLegalRoleId,
+                'role_id' => $staffRoleId,
+                'division_id' => $legalDivisionId,
                 'authority_type' => 'group',
             ]);
         }
-        if ($managerLegalRoleId) {
+        if ($managerRoleId) {
             $wf2->initiatorAuthorities()->create([
-                'role_id' => $managerLegalRoleId,
+                'role_id' => $managerRoleId,
+                'division_id' => $legalDivisionId,
                 'authority_type' => 'group',
             ]);
         }
@@ -91,8 +92,12 @@ class DynamicContractApprovalSeeder extends Seeder
             'is_active' => true,
         ]);
         $wf2_s1->approverAuthorities()->create(['authority_type' => 'assigned_pic']);
-        if ($staffLegalRoleId) {
-            $wf2_s1->approverAuthorities()->create(['authority_type' => 'group', 'role_id' => $staffLegalRoleId]);
+        if ($staffRoleId) {
+            $wf2_s1->approverAuthorities()->create([
+                'authority_type' => 'group',
+                'role_id' => $staffRoleId,
+                'division_id' => $legalDivisionId,
+            ]);
         }
         $wf2_s1->actions()->create([
             'action_code' => WorkflowAction::APPROVE,
@@ -123,11 +128,19 @@ class DynamicContractApprovalSeeder extends Seeder
             'meta' => ['target_status' => 'in_review'],
             'is_active' => true,
         ]);
-        if ($managerLegalRoleId) {
-            $wf2_s2->approverAuthorities()->create(['authority_type' => 'group', 'role_id' => $managerLegalRoleId]);
+        if ($managerRoleId) {
+            $wf2_s2->approverAuthorities()->create([
+                'authority_type' => 'group',
+                'role_id' => $managerRoleId,
+                'division_id' => $legalDivisionId,
+            ]);
         }
         if ($astManagerRoleId) {
-            $wf2_s2->approverAuthorities()->create(['authority_type' => 'group', 'role_id' => $astManagerRoleId]);
+            $wf2_s2->approverAuthorities()->create([
+                'authority_type' => 'group',
+                'role_id' => $astManagerRoleId,
+                'division_id' => $legalDivisionId,
+            ]);
         }
         $wf2_s2->actions()->create([
             'action_code' => WorkflowAction::APPROVE,
@@ -265,8 +278,12 @@ class DynamicContractApprovalSeeder extends Seeder
             'is_active' => true,
         ]);
         $wf2_s7->approverAuthorities()->create(['authority_type' => 'assigned_pic']);
-        if ($staffLegalRoleId) {
-            $wf2_s7->approverAuthorities()->create(['authority_type' => 'group', 'role_id' => $staffLegalRoleId]);
+        if ($staffRoleId) {
+            $wf2_s7->approverAuthorities()->create([
+                'authority_type' => 'group',
+                'role_id' => $staffRoleId,
+                'division_id' => $legalDivisionId,
+            ]);
         }
         $wf2_s7->actions()->create([
             'action_code' => WorkflowAction::APPROVE,
@@ -453,10 +470,11 @@ class DynamicContractApprovalSeeder extends Seeder
             'meta' => ['target_status' => 'in_review'],
             'is_active' => true,
         ]);
-        if ($managerLegalRoleId) {
+        if ($managerRoleId) {
             $s5->approverAuthorities()->create([
                 'authority_type' => 'group',
-                'role_id' => $managerLegalRoleId,
+                'role_id' => $managerRoleId,
+                'division_id' => $legalDivisionId,
             ]);
         }
         $s5->actions()->create([

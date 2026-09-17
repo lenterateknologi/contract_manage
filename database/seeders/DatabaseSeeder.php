@@ -19,7 +19,9 @@ class DatabaseSeeder extends Seeder
             Business\OrganizationalSeeder::class,
             Business\DepartmentSeeder::class,
             Business\UserSeeder::class,
+            System\DashboardTypeSeeder::class,
             Business\DynamicContractApprovalSeeder::class,
+            Business\ContractSlaConfigSeeder::class,
         ]);
     }
 }

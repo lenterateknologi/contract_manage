@@ -19,6 +19,9 @@ class FormSubmissionHistory extends Model
         'form_data',
         'change_summary',
         'created_by',
+        'workflow_step_id',
+        'step_number',
+        'workflow_iteration',
     ];
 
     protected function casts(): array

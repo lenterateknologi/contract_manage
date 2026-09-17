@@ -20,10 +20,9 @@ class ContractFlowSeeder extends Seeder
         $managerRoleId = $roleMap['Manager'] ?? null;
         $vpRoleId = $roleMap['VP'] ?? null;
         $astManagerRoleId = $roleMap['Ast Manager'] ?? null;
-        $directorRoleId = $roleMap['Director'] ?? null;
-        $astManagerLegalRoleId = $roleMap['Ast Manager Legal'] ?? null;
-        $managerLegalRoleId = $roleMap['Manager Legal'] ?? null;
-        $staffLegalRoleId = $roleMap['Staff Legal'] ?? null;
+        $astManagerLegalRoleId = $roleMap['Ast Manager Legal'] ?? ($roleMap['Ast Manager'] ?? null);
+        $managerLegalRoleId = $roleMap['Manager Legal'] ?? ($roleMap['Manager'] ?? null);
+        $staffLegalRoleId = $roleMap['Staff Legal'] ?? ($roleMap['Staff'] ?? null);
 
         // Cleanup existing workflows if previously created
         $workflowNames = [

@@ -59,6 +59,19 @@ class UsersImport implements ToCollection, WithHeadingRow
                 }
             }
 
+            // Resolve Division
+            $divId = isset($row['id_divisi']) ? trim((string) $row['id_divisi']) : '';
+            $divName = isset($row['nama_divisi']) ? trim((string) $row['nama_divisi']) : (isset($row['divisi']) ? trim((string) $row['divisi']) : '');
+            $division = null;
+
+            if (! empty($divId) && Str::isUuid($divId)) {
+                $division = \App\Models\Division::find($divId);
+            }
+
+            if (! $division && ! empty($divName)) {
+                $division = \App\Models\Division::whereRaw('lower(name) = ?', [strtolower($divName)])->first();
+            }
+
             // Resolve Department
             $deptId = isset($row['id_departemen']) ? trim((string) $row['id_departemen']) : '';
             $deptName = isset($row['nama_departemen']) ? trim((string) $row['nama_departemen']) : '';
@@ -109,10 +122,14 @@ class UsersImport implements ToCollection, WithHeadingRow
                     $updateData['role_id'] = $roleObj->id;
                 }
 
+                if ($division) {
+                    $updateData['division_id'] = $division->id;
+                }
+
                 if ($department) {
                     $updateData['department_id'] = $department->id;
-                } elseif (empty($deptId) && empty($deptName)) {
-                    $updateData['department_id'] = null;
+                } elseif (empty($deptId) && empty($deptName) && ! isset($row['id_departemen']) && ! isset($row['nama_departemen'])) {
+                    // keep existing department_id
                 }
 
                 $user->update($updateData);
@@ -130,6 +147,7 @@ class UsersImport implements ToCollection, WithHeadingRow
                     'phone_number' => isset($row['no_telepon']) ? trim((string) $row['no_telepon']) : null,
                     'is_active' => $isActive,
                     'role_id' => $roleObj ? $roleObj->id : null,
+                    'division_id' => $division ? $division->id : null,
                     'department_id' => $department ? $department->id : null,
                     'password' => bcrypt('Karyawan123!'), // Default password
                 ]);

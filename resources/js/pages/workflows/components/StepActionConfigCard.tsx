@@ -1,13 +1,11 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/buttons/Button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialogs/Dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { SearchableMultiSelectPortal } from '@/components/ui/selection/SearchableMultiSelectPortal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/selection/Select';
 import {
     ArrowDown,
     ArrowRight,
     ArrowUp,
-    Briefcase,
     Copy,
     CornerDownLeft,
     Eye,
@@ -15,25 +13,33 @@ import {
     FileSignature,
     Flag,
     GitBranch,
+    Key,
     RefreshCw,
     Settings2,
-    Shield,
+    Sliders,
     Sparkles,
+    Target,
     Trash2,
+    UserCheck,
+    UserPlus,
     Users as UsersIcon,
     Workflow as WorkflowIcon,
+    Zap,
 } from 'lucide-react';
+import { useState } from 'react';
 
-import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, TRANSITION_OPTIONS, getActionTheme } from '../constants';
-import { cn } from '@/lib/utils';
 import LucideIcons from '@/lib/lucide-dynamic';
-import AuthoritySelector from './AuthoritySelector';
+import { cn } from '@/lib/utils';
+import { AUTOFILLED_PARAMS, AVAILABLE_FIELDS, MASTER_ACTIONS, TRANSITION_OPTIONS } from '../constants';
 import AuthorityTableManager from './AuthorityTableManager';
 
 const mapConfigToAuthorities = (config: any) => {
     if (!config) return [];
     if (config.authorities && Array.isArray(config.authorities)) {
         return config.authorities;
+    }
+    if (Array.isArray(config)) {
+        return config;
     }
 
     const list: any[] = [];
@@ -62,6 +68,11 @@ const mapConfigToAuthorities = (config: any) => {
             if (d) list.push({ authority_type: 'division', division_id: d });
         });
     }
+    if (config.locations && Array.isArray(config.locations)) {
+        config.locations.forEach((loc: string) => {
+            if (loc) list.push({ authority_type: 'location', location_id: loc });
+        });
+    }
     if (config.company_groups && Array.isArray(config.company_groups)) {
         config.company_groups.forEach((cg: string) => {
             if (cg) list.push({ authority_type: 'company_group', company_group_id: cg });
@@ -82,6 +93,7 @@ const mapAuthoritiesToConfig = (authorities: any[]) => {
         roles: [],
         departments: [],
         divisions: [],
+        locations: [],
         company_groups: [],
         regions: [],
         authorities: authorities,
@@ -99,6 +111,8 @@ const mapAuthoritiesToConfig = (authorities: any[]) => {
             if (auth.department_id) config.departments.push(auth.department_id);
         } else if (auth.authority_type === 'division') {
             if (auth.division_id) config.divisions.push(auth.division_id);
+        } else if (auth.authority_type === 'location') {
+            if (auth.location_id) config.locations.push(auth.location_id);
         } else if (auth.authority_type === 'company_group') {
             if (auth.company_group_id) config.company_groups.push(auth.company_group_id);
         } else if (auth.authority_type === 'region') {
@@ -119,7 +133,9 @@ interface StepActionConfigCardProps {
     roles: any[];
     departments: any[];
     divisions?: any[];
+    locations?: any[];
     companyGroups?: any[];
+    companies?: any[];
     regions?: any[];
     users: any[];
     contractStatuses?: any[];
@@ -127,6 +143,8 @@ interface StepActionConfigCardProps {
     removeAction: (actIdx: number) => void;
     cloneAction: (actIdx: number) => void;
     moveAction?: (actIdx: number, direction: 'up' | 'down') => void;
+    simulationContext?: any;
+    onOpenSimulationModal?: () => void;
 }
 
 export function StepActionConfigCard({
@@ -140,7 +158,9 @@ export function StepActionConfigCard({
     roles,
     departments,
     divisions = [],
+    locations = [],
     companyGroups = [],
+    companies = [],
     regions = [],
     users,
     contractStatuses = [],
@@ -148,12 +168,16 @@ export function StepActionConfigCard({
     removeAction,
     cloneAction,
     moveAction,
+    simulationContext,
+    onOpenSimulationModal,
 }: StepActionConfigCardProps) {
     const actionCode = (act.master_action?.code || act.action_code || act.master_action_id || '').toLowerCase();
     const isForwardAction = actionCode === 'forward';
     const isSignatureAction = ['signature', 'sign'].includes(actionCode);
-    const isAssignOrForwardAction = ['assign', 'forward'].includes(actionCode);
+    const isAssignAction = ['assign', 'assign_pic'].includes(actionCode);
+    const isSelectionAction = isAssignAction || isForwardAction || isSignatureAction;
 
+    const [isButtonAuthorityModalOpen, setIsButtonAuthorityModalOpen] = useState(false);
     const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
 
     // Fallback status: act.target_status -> step.meta?.target_status
@@ -162,87 +186,83 @@ export function StepActionConfigCard({
         ? contractStatuses.find((s: any) => s.code === effectiveStatusCode)
         : null;
 
-    const { color } = getActionTheme(actionCode);
+    // Calculate authority counts
+    const buttonAuthorities = mapConfigToAuthorities(act.authorities || act.authority_config);
+    const buttonAuthorityCount = buttonAuthorities.length;
 
-    const headerThemes: Record<string, { bg: string; text: string; border: string; buttonHover: string; activeColor: string }> = {
+    const personnelAuthorities = isSignatureAction
+        ? mapConfigToAuthorities(act.signing_parties)
+        : mapConfigToAuthorities(act.assignee_config);
+    const personnelCount = personnelAuthorities.length;
+
+    const headerThemes: Record<string, { badgeBg: string; text: string; icon: React.ReactNode; label: string }> = {
         approve: {
-            bg: 'bg-emerald-700/90 dark:bg-emerald-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-emerald-600 text-white',
+            text: 'text-emerald-600 dark:text-emerald-400',
+            icon: <Sparkles size={12} className="text-emerald-500 shrink-0" />,
+            label: `#${actIdx + 1} Setujui`,
         },
         reject: {
-            bg: 'bg-rose-600/90 dark:bg-rose-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-rose-600 text-white',
+            text: 'text-rose-600 dark:text-rose-400',
+            icon: <Trash2 size={12} className="text-rose-500 shrink-0" />,
+            label: `#${actIdx + 1} Tolak`,
         },
         assign: {
-            bg: 'bg-blue-700/90 dark:bg-blue-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-blue-600 text-white',
+            text: 'text-blue-600 dark:text-blue-400',
+            icon: <UsersIcon size={12} className="text-blue-500 shrink-0" />,
+            label: `#${actIdx + 1} Tugaskan`,
         },
         assign_pic: {
-            bg: 'bg-blue-700/90 dark:bg-blue-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-blue-600 text-white',
+            text: 'text-blue-600 dark:text-blue-400',
+            icon: <UsersIcon size={12} className="text-blue-500 shrink-0" />,
+            label: `#${actIdx + 1} Tugaskan`,
         },
         sign: {
-            bg: 'bg-amber-700/90 dark:bg-amber-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-amber-600 text-white',
+            text: 'text-amber-600 dark:text-amber-400',
+            icon: <UserCheck size={12} className="text-amber-500 shrink-0" />,
+            label: `#${actIdx + 1} TTD`,
         },
         signature: {
-            bg: 'bg-amber-700/90 dark:bg-amber-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-amber-600 text-white',
+            text: 'text-amber-600 dark:text-amber-400',
+            icon: <FileSignature size={12} className="text-amber-500 shrink-0" />,
+            label: `#${actIdx + 1} TTD`,
         },
         forward: {
-            bg: 'bg-indigo-600/90 dark:bg-indigo-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-indigo-600 text-white',
+            text: 'text-indigo-600 dark:text-indigo-400',
+            icon: <UserPlus size={12} className="text-indigo-500 shrink-0" />,
+            label: `#${actIdx + 1} Tambahan`,
         },
         branch: {
-            bg: 'bg-sky-600/90 dark:bg-sky-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-sky-600 text-white',
+            text: 'text-sky-600 dark:text-sky-400',
+            icon: <GitBranch size={12} className="text-sky-500 shrink-0" />,
+            label: `#${actIdx + 1} Cabang`,
         },
         auto: {
-            bg: 'bg-emerald-700/90 dark:bg-emerald-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-purple-600 text-white',
+            text: 'text-purple-600 dark:text-purple-400',
+            icon: <Zap size={12} className="text-purple-500 shrink-0" />,
+            label: `#${actIdx + 1} Otomatis`,
         },
         automation: {
-            bg: 'bg-emerald-700/90 dark:bg-emerald-900/80',
-            text: 'text-white',
-            border: 'border-transparent',
-            buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-            activeColor: 'bg-primary text-white shadow-xs'
+            badgeBg: 'bg-purple-600 text-white',
+            text: 'text-purple-600 dark:text-purple-400',
+            icon: <Zap size={12} className="text-purple-500 shrink-0" />,
+            label: `#${actIdx + 1} Otomatis`,
         }
     };
 
-    const headerTheme = headerThemes[actionCode] || {
-        bg: 'bg-slate-700 dark:bg-slate-800',
-        text: 'text-white',
-        border: 'border-transparent',
-        buttonHover: 'text-white/80 hover:text-white hover:bg-white/15',
-        activeColor: 'bg-primary text-white shadow-xs'
+    const theme = headerThemes[actionCode] || {
+        badgeBg: 'bg-slate-600 text-white',
+        text: 'text-slate-600',
+        icon: <Sliders size={12} />,
+        label: `#${actIdx + 1} Aksi`,
     };
 
     const transitionType = (() => {
@@ -270,7 +290,9 @@ export function StepActionConfigCard({
             if (firstStep && act.next_step_id === firstStep.id && idx > 0) return 'absolute';
             const prevStep = allWorkflowSteps[idx - 1];
             if (prevStep && act.next_step_id === prevStep.id) return 'back';
+            return 'absolute';
         }
+        if (actionCode === 'reject') return 'back';
         if (actionCode === 'assign' || actionCode === 'assign_pic') return 'stay';
         return 'sequential';
     })();
@@ -279,25 +301,22 @@ export function StepActionConfigCard({
     const showAbsoluteStepSelector = transitionType === 'absolute';
 
     return (
-        <div className="relative space-y-3 rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm transition-all hover:border-slate-300 dark:border-zinc-800 dark:bg-zinc-900/95 focus-within:z-30">
-            {/* Card Header */}
-            <div
-                className={cn(
-                    "flex flex-wrap items-center justify-between gap-2.5 border-b pb-2.5 px-4 py-3 -mx-4 -mt-4 rounded-t-xl transition-all shadow-xs",
-                    !effectiveStatusObj && headerTheme.bg,
-                    headerTheme.border
-                )}
-                style={effectiveStatusObj?.color ? {
-                    backgroundColor: effectiveStatusObj.color,
-                    borderColor: 'transparent',
-                } : undefined}
-            >
-                <div className="flex flex-wrap items-center gap-2.5">
-                    <span className="text-sm font-bold text-white tracking-wide shrink-0">
-                        Aksi #{actIdx + 1}
+        <div
+            className={cn(
+                "rounded-lg border bg-white dark:bg-zinc-900/90 transition-all p-3 shadow-2xs space-y-2.5",
+                act.is_active !== false
+                    ? "border-slate-200/90 hover:border-slate-300 dark:border-zinc-800"
+                    : "border-slate-200/50 bg-slate-50/50 dark:bg-zinc-900/40 opacity-60"
+            )}
+        >
+            {/* Row 1: Header (Badge, Master Action, Status, Action Buttons) */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
+                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <span className={cn("text-[10px] font-bold uppercase px-2 py-1 rounded-md tracking-wider shrink-0", theme.badgeBg)}>
+                        {theme.label}
                     </span>
 
-                    {/* Nama Aksi (Master Action) di Header */}
+                    {/* Master Action Selector */}
                     <div className="w-40 sm:w-48">
                         <Select
                             value={act.master_action_id || ''}
@@ -315,10 +334,10 @@ export function StepActionConfigCard({
                                 });
                             }}
                         >
-                            <SelectTrigger className="h-8 py-1 px-2.5 rounded-lg border-white/25 bg-white/20 hover:bg-white/25 text-white text-xs font-semibold focus:ring-1 focus:ring-white/40 focus:border-white shadow-none backdrop-blur-xs [&>svg]:text-white [&>svg]:opacity-80">
+                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-semibold dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
                                 <SelectValue placeholder="Pilih Aksi" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
+                            <SelectContent className="rounded-lg border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100">
                                 {MASTER_ACTIONS.map((ma: any) => (
                                     <SelectItem key={ma.id} value={ma.id} className="text-xs font-medium">
                                         {ma.name}
@@ -328,8 +347,8 @@ export function StepActionConfigCard({
                         </Select>
                     </div>
 
-                    {/* Status Kontrak Target di Header */}
-                    <div className="w-40 sm:w-56">
+                    {/* Status Target Selector */}
+                    <div className="w-40 sm:w-48">
                         <Select
                             value={act.target_status || 'default'}
                             onValueChange={(v) => {
@@ -338,19 +357,17 @@ export function StepActionConfigCard({
                                 });
                             }}
                         >
-                            <SelectTrigger className="h-8 py-1 px-2.5 rounded-lg border-white/25 bg-white/20 hover:bg-white/25 text-white text-xs font-semibold focus:ring-1 focus:ring-white/40 focus:border-white shadow-none backdrop-blur-xs [&>svg]:text-white [&>svg]:opacity-80">
-                                <SelectValue placeholder="Pilih Status" />
+                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                <SelectValue placeholder="Status Target" />
                             </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 max-h-72">
-                                <SelectItem value="default" className="py-2 text-xs font-medium text-slate-500 uppercase">
-                                    <div className="flex items-center gap-2">
+                            <SelectContent className="rounded-lg border-slate-200 bg-white text-slate-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 max-h-72">
+                                <SelectItem value="default" className="text-xs font-medium text-slate-500">
+                                    <div className="flex items-center gap-1.5">
                                         <div
-                                            className="h-2.5 w-2.5 rounded-full border border-slate-300 shrink-0"
+                                            className="h-2 w-2 rounded-full border border-slate-300 shrink-0"
                                             style={{ backgroundColor: step?.meta?.target_status ? (contractStatuses.find((s: any) => s.code === step.meta.target_status)?.color || '#cbd5e1') : '#cbd5e1' }}
                                         />
-                                        <span>
-                                            DEFAULT{step?.meta?.target_status ? ` (${step.meta.target_status.toUpperCase()})` : ''}
-                                        </span>
+                                        <span>DEFAULT{step?.meta?.target_status ? ` (${step.meta.target_status.toUpperCase()})` : ''}</span>
                                     </div>
                                 </SelectItem>
                                 {contractStatuses.map((status: any) => {
@@ -359,21 +376,21 @@ export function StepActionConfigCard({
                                         <SelectItem
                                             key={status.id}
                                             value={status.code}
-                                            className="py-2 text-xs font-medium uppercase"
+                                            className="text-xs font-medium uppercase"
                                         >
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5">
                                                 {StatusIcon ? (
                                                     <StatusIcon
-                                                        className="h-3.5 w-3.5 shrink-0"
+                                                        className="h-3 w-3 shrink-0"
                                                         style={{ color: status.color || 'currentColor' }}
                                                     />
                                                 ) : (
                                                     <div
-                                                        className="h-2.5 w-2.5 rounded-full shrink-0"
+                                                        className="h-2 w-2 rounded-full shrink-0"
                                                         style={{ backgroundColor: status.color || '#cbd5e1' }}
                                                     />
                                                 )}
-                                                <span className="font-semibold tracking-wide">
+                                                <span className="font-semibold">
                                                     {status.code?.toUpperCase()}{status.label ? ` • ${status.label}` : ''}
                                                 </span>
                                             </div>
@@ -385,82 +402,130 @@ export function StepActionConfigCard({
                     </div>
                 </div>
 
+                {/* Right Side Header Controls */}
                 <div className="flex items-center gap-1.5 shrink-0">
-                    {/* Reorder Buttons (Tukar Posisi Aksi) */}
+                    {/* 1. Tombol Otoritas Akses Tombol (Siapa yang bisa melihat / klik tombol) */}
+                    <button
+                        type="button"
+                        title="Tentukan siapa yang berhak melihat dan mengklik tombol aksi ini"
+                        onClick={() => setIsButtonAuthorityModalOpen(true)}
+                        className={cn(
+                            "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer border",
+                            buttonAuthorityCount > 0
+                                ? "bg-slate-800 text-white border-slate-800 hover:bg-slate-700 dark:bg-zinc-700 dark:border-zinc-600"
+                                : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
+                        )}
+                    >
+                        <Key size={13} className="text-amber-400" />
+                        <span>Otoritas Tombol</span>
+                        <span className={cn(
+                            "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
+                            buttonAuthorityCount > 0 ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-zinc-300"
+                        )}>
+                            {buttonAuthorityCount}
+                        </span>
+                    </button>
+
+                    {/* 2. Tombol Tentukan Personil / Atur Reviewer / Aktor Penandatangan */}
+                    {isSelectionAction && (
+                        <button
+                            type="button"
+                            title={isForwardAction ? 'Tentukan lingkup reviewer tambahan' : isSignatureAction ? 'Tentukan aktor penandatangan dokumen' : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'}
+                            onClick={() => setIsAssigneeModalOpen(true)}
+                            className={cn(
+                                "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer border",
+                                personnelCount > 0
+                                    ? "bg-primary text-white border-primary hover:bg-primary/90"
+                                    : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
+                            )}
+                        >
+                            {isSignatureAction ? <UserCheck size={13} className="text-amber-400" /> : <UsersIcon size={13} className="text-blue-500" />}
+                            <span>{isForwardAction ? 'Atur Reviewer' : isSignatureAction ? 'Aktor TTD' : 'Tentukan Personil'}</span>
+                            <span className={cn(
+                                "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
+                                personnelCount > 0 ? "bg-white/25 text-white" : "bg-primary text-white"
+                            )}>
+                                {personnelCount}
+                            </span>
+                        </button>
+                    )}
+
+                    {/* 3. Reorder Buttons */}
                     {moveAction && totalActions > 1 && (
-                        <div className="flex items-center gap-0.5 rounded-lg bg-white/15 p-0.5 border border-white/15 shadow-xs mr-0.5">
+                        <div className="flex items-center gap-0.5 h-8 rounded-lg bg-slate-100 dark:bg-zinc-800 p-0.5 border border-slate-200 dark:border-zinc-700 shadow-2xs">
                             <button
                                 type="button"
                                 disabled={actIdx === 0}
                                 onClick={() => moveAction(actIdx, 'up')}
                                 className={cn(
-                                    'cursor-pointer transition-all p-1 rounded-md text-white flex items-center justify-center',
-                                    actIdx === 0
-                                        ? 'opacity-30 cursor-not-allowed'
-                                        : 'hover:bg-white/20 active:scale-95'
+                                    'cursor-pointer transition-all p-1.5 h-7 w-7 rounded-md text-slate-600 dark:text-zinc-300 flex items-center justify-center',
+                                    actIdx === 0 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white dark:hover:bg-zinc-700 active:scale-95'
                                 )}
                                 title="Pindah ke Atas (Tukar Posisi)"
                             >
-                                <ArrowUp size={13} />
+                                <ArrowUp size={12} />
                             </button>
                             <button
                                 type="button"
                                 disabled={actIdx === totalActions - 1}
                                 onClick={() => moveAction(actIdx, 'down')}
                                 className={cn(
-                                    'cursor-pointer transition-all p-1 rounded-md text-white flex items-center justify-center',
-                                    actIdx === totalActions - 1
-                                        ? 'opacity-30 cursor-not-allowed'
-                                        : 'hover:bg-white/20 active:scale-95'
+                                    'cursor-pointer transition-all p-1.5 h-7 w-7 rounded-md text-slate-600 dark:text-zinc-300 flex items-center justify-center',
+                                    actIdx === totalActions - 1 ? 'opacity-30 cursor-not-allowed' : 'hover:bg-white dark:hover:bg-zinc-700 active:scale-95'
                                 )}
                                 title="Pindah ke Bawah (Tukar Posisi)"
                             >
-                                <ArrowDown size={13} />
+                                <ArrowDown size={12} />
                             </button>
                         </div>
                     )}
 
-                    {/* Toggle Visible/Invisible (Eye Icon) */}
+                    {/* 4. Toggle Visible/Invisible (Eye Icon) */}
                     <button
                         type="button"
                         onClick={() => updateAction(actIdx, { is_visible: act.is_visible === false ? true : false })}
                         className={cn(
-                            'cursor-pointer transition-all p-1.5 rounded-lg border flex items-center justify-center shadow-xs',
+                            'cursor-pointer transition-all p-1.5 h-8 w-8 rounded-lg border flex items-center justify-center shadow-2xs',
                             act.is_visible !== false
-                                ? 'bg-white/20 hover:bg-white/30 text-white border-white/20'
-                                : 'bg-amber-500/90 hover:bg-amber-500 text-white border-amber-400/60 ring-1 ring-amber-300/40'
+                                ? 'bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border-slate-200 dark:border-zinc-700'
+                                : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-800'
                         )}
                         title={act.is_visible !== false ? 'Aksi Terlihat (Tombol Tampil di Form/Detail Kontrak)' : 'Aksi Tersembunyi (Aksi Otomatis/Sistem Tanpa Tombol)'}
                     >
-                        {act.is_visible !== false ? <Eye size={13} /> : <EyeOff size={13} />}
+                        {act.is_visible !== false ? <Eye size={14} /> : <EyeOff size={14} />}
                     </button>
 
-                    {/* Toggle Active/Inactive */}
+                    {/* 5. Toggle Active/Inactive */}
                     <button
                         type="button"
                         onClick={() => updateAction(actIdx, { is_active: act.is_active !== false ? false : true })}
                         className={cn(
-                            'flex h-6.5 cursor-pointer items-center gap-1 rounded-full px-3 text-[9.5px] font-bold uppercase transition-all mr-1 shadow-xs',
-                            act.is_active !== false ? 'bg-primary text-white hover:bg-primary/90' : 'bg-white/20 text-white/80 hover:bg-white/30'
+                            'flex h-8 cursor-pointer items-center rounded-lg px-3 text-[10px] font-bold uppercase transition-all shadow-2xs',
+                            act.is_active !== false
+                                ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                : 'bg-slate-200 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400 hover:bg-slate-300'
                         )}
                     >
                         {act.is_active !== false ? 'AKTIF' : 'NON-AKTIF'}
                     </button>
 
+                    {/* 6. Duplicate Button */}
                     {actionCode !== 'auto' && actionCode !== 'automation' && (
                         <button
                             type="button"
                             onClick={() => cloneAction(actIdx)}
-                            className="cursor-pointer transition-colors p-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white border border-white/10 flex items-center justify-center shadow-xs"
+                            className="cursor-pointer transition-colors p-1.5 h-8 w-8 rounded-lg bg-white dark:bg-zinc-800 hover:bg-slate-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700 flex items-center justify-center shadow-2xs"
                             title="Duplikat Aksi"
                         >
                             <Copy size={13} />
                         </button>
                     )}
+
+                    {/* 7. Delete Button */}
                     <button
                         type="button"
                         onClick={() => removeAction(actIdx)}
-                        className="cursor-pointer transition-colors p-1.5 rounded-lg bg-white/15 hover:bg-rose-500/90 text-white border border-white/10 flex items-center justify-center shadow-xs"
+                        className="cursor-pointer transition-colors p-1.5 h-8 w-8 rounded-lg bg-white dark:bg-zinc-800 hover:bg-rose-50 text-rose-600 dark:text-rose-400 hover:border-rose-200 dark:hover:bg-rose-950/30 border border-slate-200 dark:border-zinc-700 flex items-center justify-center shadow-2xs"
                         title="Hapus Aksi"
                     >
                         <Trash2 size={13} />
@@ -468,533 +533,532 @@ export function StepActionConfigCard({
                 </div>
             </div>
 
-            {/* Grid Input */}
-            <div className={cn("grid grid-cols-1 gap-3.5 sm:grid-cols-2 pt-1 transition-opacity duration-200", act.is_active === false && "opacity-45 pointer-events-none")}>
-                {/* Alias Aksi */}
-                <div className="space-y-1.5 sm:col-span-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Alias Aksi (Label Tombol)</label>
-                    <input
-                        type="text"
-                        value={act.alias || ''}
-                        onChange={(e) => updateAction(actIdx, { alias: e.target.value })}
-                        className="h-9.5 w-full py-2 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium transition-all focus:border-primary focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none"
-                        placeholder="Contoh: Kirim Review, Kembalikan ke Legal"
-                    />
-                </div>
-
-                {/* Deskripsi Aksi */}
-                <div className="space-y-1.5 sm:col-span-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Deskripsi Aksi (Keterangan / Tooltip)</label>
-                    <input
-                        type="text"
-                        value={act.description || ''}
-                        onChange={(e) => updateAction(actIdx, { description: e.target.value })}
-                        className="h-9.5 w-full py-2 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium transition-all focus:border-primary focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none"
-                        placeholder="Deskripsi singkat fungsi tombol ini..."
-                    />
-                </div>
-
-                {/* Pengaturan Transisi (Single Flat Section, No Nested Card) */}
-                <div className="space-y-1.5 sm:col-span-2">
-                    <div className="flex items-center gap-1.5">
-                        <GitBranch size={13} className="text-slate-500 dark:text-zinc-400" />
-                        <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
-                            Pengaturan Transisi (Next Step)
+            {/* Row 2: Standardized Normalized Fields Layout */}
+            {act.is_active !== false && (
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-3 border-t border-slate-100 dark:border-zinc-800/80 text-xs">
+                    {/* Label Tombol */}
+                    <div className="sm:col-span-6 space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                            Label Tombol (Alias):
                         </label>
+                        <input
+                            type="text"
+                            value={act.alias || ''}
+                            onChange={(e) => updateAction(actIdx, { alias: e.target.value })}
+                            className="h-8.5 w-full py-1.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium transition-all focus:border-primary focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs placeholder:text-slate-400"
+                            placeholder="Label tombol aksi..."
+                        />
                     </div>
 
-                    <div className="space-y-2">
-                        <Select
-                            value={transitionType}
-                            onValueChange={(val) => {
-                                if (val === 'sequential') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'relative', offset: 1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'stay') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'relative', offset: 0 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'back') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'relative', offset: -1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'absolute') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'absolute', sequence: 1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'origin_return') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'cross_workflow', workflow_id: 'origin_workflow', return_mode: 'branch_next', sequence: 1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'cross_workflow') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'cross_workflow', workflow_id: '', sequence: 1 },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                } else if (val === 'initial_step') {
-                                    updateAction(actIdx, {
-                                        transition_config: { type: 'initial_step' },
-                                        next_step_id: null,
-                                        next_workflow_id: null,
-                                        next_workflow_step_id: null,
-                                    });
-                                }
-                            }}
-                        >
-                            <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
-                                <SelectValue placeholder="Pilih Transisi" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                {TRANSITION_OPTIONS.map((opt) => {
-                                    const getTransitionIcon = (val: string) => {
-                                        switch (val) {
-                                            case 'sequential':
-                                                return <ArrowRight size={13} className="text-emerald-500 shrink-0" />;
-                                            case 'origin_return':
-                                                return <RefreshCw size={13} className="text-indigo-500 shrink-0" />;
-                                            case 'cross_workflow':
-                                                return <GitBranch size={13} className="text-blue-500 shrink-0" />;
-                                            case 'stay':
-                                                return <Settings2 size={13} className="text-slate-400 shrink-0" />;
-                                            case 'back':
-                                                return <CornerDownLeft size={13} className="text-amber-500 shrink-0" />;
-                                            case 'initial_step':
-                                                return <Flag size={13} className="text-rose-500 shrink-0" />;
-                                            case 'absolute':
-                                                return <ArrowRight size={13} className="text-teal-500 shrink-0" />;
-                                            default:
-                                                return <ArrowRight size={13} className="shrink-0" />;
+                    {/* Deskripsi Aksi */}
+                    <div className="sm:col-span-6 space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                            Deskripsi / Tooltip Aksi:
+                        </label>
+                        <input
+                            type="text"
+                            value={act.description || ''}
+                            onChange={(e) => updateAction(actIdx, { description: e.target.value })}
+                            className="h-8.5 w-full py-1.5 px-3 rounded-lg border border-slate-200 bg-white text-xs font-medium transition-all focus:border-primary focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs placeholder:text-slate-400"
+                            placeholder="Deskripsi / tooltip fungsi tombol..."
+                        />
+                    </div>
+
+                    {/* Pengaturan Transisi (Next Step) */}
+                    <div className="sm:col-span-12 pt-2 border-t border-dashed border-slate-200 dark:border-zinc-800 space-y-1.5">
+                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
+                            <GitBranch size={13} className="text-primary" />
+                            <span>Transisi Alur & Tahap Target:</span>
+                        </label>
+
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            <div className="w-56 sm:w-64">
+                                <Select
+                                    value={transitionType}
+                                    onValueChange={(val) => {
+                                        if (val === 'sequential') {
+                                            updateAction(actIdx, {
+                                                transition_config: { type: 'relative', offset: 1 },
+                                                next_step_id: null,
+                                                next_workflow_id: null,
+                                                next_workflow_step_id: null,
+                                            });
+                                        } else if (val === 'stay') {
+                                            updateAction(actIdx, {
+                                                transition_config: { type: 'relative', offset: 0 },
+                                                next_step_id: null,
+                                                next_workflow_id: null,
+                                                next_workflow_step_id: null,
+                                            });
+                                        } else if (val === 'back') {
+                                            updateAction(actIdx, {
+                                                transition_config: { type: 'relative', offset: -1 },
+                                                next_step_id: null,
+                                                next_workflow_id: null,
+                                                next_workflow_step_id: null,
+                                            });
+                                        } else if (val === 'absolute') {
+                                            const defaultTarget = allWorkflowSteps.find((s: any) => s.id !== step?.id) || allWorkflowSteps[0];
+                                            updateAction(actIdx, {
+                                                transition_config: {
+                                                    type: 'absolute',
+                                                    step_id: defaultTarget?.id || null,
+                                                    sequence: defaultTarget?.step || 1,
+                                                },
+                                                next_step_id: defaultTarget?.id || null,
+                                                next_workflow_id: null,
+                                                next_workflow_step_id: null,
+                                            });
+                                        } else if (val === 'origin_return') {
+                                            updateAction(actIdx, {
+                                                transition_config: { type: 'cross_workflow', workflow_id: 'origin_workflow', return_mode: 'branch_next', sequence: 1 },
+                                                next_step_id: null,
+                                                next_workflow_id: null,
+                                                next_workflow_step_id: null,
+                                            });
+                                        } else if (val === 'cross_workflow') {
+                                            updateAction(actIdx, {
+                                                transition_config: { type: 'cross_workflow', workflow_id: '', sequence: 1 },
+                                                next_step_id: null,
+                                                next_workflow_id: null,
+                                                next_workflow_step_id: null,
+                                            });
+                                        } else if (val === 'initial_step') {
+                                            updateAction(actIdx, {
+                                                transition_config: { type: 'initial_step' },
+                                                next_step_id: null,
+                                                next_workflow_id: null,
+                                                next_workflow_step_id: null,
+                                            });
                                         }
-                                    };
+                                    }}
+                                >
+                                    <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                        <SelectValue placeholder="Pilih Transisi" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                        {TRANSITION_OPTIONS.map((opt) => {
+                                            const getTransitionIcon = (val: string) => {
+                                                switch (val) {
+                                                    case 'sequential':
+                                                        return <ArrowRight size={13} className="text-emerald-500 shrink-0" />;
+                                                    case 'origin_return':
+                                                        return <RefreshCw size={13} className="text-indigo-500 shrink-0" />;
+                                                    case 'cross_workflow':
+                                                        return <GitBranch size={13} className="text-blue-500 shrink-0" />;
+                                                    case 'stay':
+                                                        return <Settings2 size={13} className="text-slate-400 shrink-0" />;
+                                                    case 'back':
+                                                        return <CornerDownLeft size={13} className="text-amber-500 shrink-0" />;
+                                                    case 'initial_step':
+                                                        return <Flag size={13} className="text-rose-500 shrink-0" />;
+                                                    case 'absolute':
+                                                        return <Target size={13} className="text-teal-500 shrink-0" />;
+                                                    default:
+                                                        return <ArrowRight size={13} className="shrink-0" />;
+                                                }
+                                            };
 
-                                    return (
-                                        <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
-                                            <div className="flex items-center gap-1.5">
-                                                {getTransitionIcon(opt.value)}
-                                                <span>{opt.label}</span>
-                                            </div>
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-
-                        {/* Cross Workflow / Dynamic Origin Return Selector (Flat Inline) */}
-                        {showCrossWorkflowSelector && (
-                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-1 animate-in fade-in-50 duration-200">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Target Alur Kerja</label>
-                                    <Select
-                                        value={act.transition_config?.workflow_id || act.next_workflow_id || ''}
-                                        onValueChange={(val) => {
-                                            if (val === 'origin_workflow') {
-                                                updateAction(actIdx, {
-                                                    transition_config: {
-                                                        type: 'cross_workflow',
-                                                        workflow_id: 'origin_workflow',
-                                                        return_mode: 'branch_next',
-                                                        sequence: 1,
-                                                    },
-                                                    next_workflow_id: null,
-                                                    next_workflow_step_id: null,
-                                                });
-                                            } else {
-                                                const targetWf = allWorkflows.find((w: any) => String(w.id) === val);
-                                                updateAction(actIdx, {
-                                                    transition_config: {
-                                                        type: 'cross_workflow',
-                                                        workflow_id: val,
-                                                        sequence: targetWf?.steps?.[0]?.step || 1,
-                                                    },
-                                                    next_workflow_id: null,
-                                                    next_workflow_step_id: null,
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
-                                            <SelectValue placeholder="Pilih Alur Kerja" />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-[9999] rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                            <SelectItem value="origin_workflow" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                                                <div className="flex items-center gap-1.5">
-                                                    <RefreshCw size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
-                                                    <span>Workflow Asal (Origin Workflow Dinamis)</span>
-                                                </div>
-                                            </SelectItem>
-                                            {allWorkflows.map((w: any) => (
-                                                <SelectItem key={w.id} value={String(w.id)} className="text-xs font-medium">
+                                            return (
+                                                <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">
                                                     <div className="flex items-center gap-1.5">
-                                                        <WorkflowIcon size={12} className="shrink-0 text-slate-400" />
-                                                        <span>{w.name} {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}</span>
+                                                        {getTransitionIcon(opt.value)}
+                                                        <span>{opt.label}</span>
                                                     </div>
                                                 </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Mulai Dari Langkah</label>
-                                    {(act.transition_config?.workflow_id || act.next_workflow_id) === 'origin_workflow' ? (
+                                            );
+                                        })}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Cross Workflow Target Selector */}
+                            {showCrossWorkflowSelector && (
+                                <div className="flex flex-wrap items-center gap-2.5">
+                                    <div className="w-52 sm:w-60">
                                         <Select
-                                            value={act.transition_config?.return_mode || String(act.transition_config?.sequence || 'branch_next')}
+                                            value={act.transition_config?.workflow_id || act.next_workflow_id || ''}
                                             onValueChange={(val) => {
-                                                if (val === 'branch_next' || val === 'branch_origin') {
+                                                if (val === 'origin_workflow') {
                                                     updateAction(actIdx, {
                                                         transition_config: {
-                                                            ...act.transition_config,
                                                             type: 'cross_workflow',
                                                             workflow_id: 'origin_workflow',
-                                                            return_mode: val,
+                                                            return_mode: 'branch_next',
                                                             sequence: 1,
                                                         },
+                                                        next_workflow_id: null,
                                                         next_workflow_step_id: null,
                                                     });
                                                 } else {
+                                                    const targetWf = allWorkflows.find((w: any) => String(w.id) === val);
                                                     updateAction(actIdx, {
                                                         transition_config: {
-                                                            ...act.transition_config,
                                                             type: 'cross_workflow',
-                                                            workflow_id: 'origin_workflow',
-                                                            return_mode: null,
-                                                            sequence: Number(val),
+                                                            workflow_id: val,
+                                                            sequence: targetWf?.steps?.[0]?.step || 1,
                                                         },
+                                                        next_workflow_id: null,
                                                         next_workflow_step_id: null,
                                                     });
                                                 }
                                             }}
                                         >
-                                            <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
-                                                <SelectValue placeholder="Pilih Tahap Target" />
+                                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                <SelectValue placeholder="Pilih Alur Kerja" />
                                             </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                                <SelectItem value="branch_next" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                            <SelectContent className="z-[9999] rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                <SelectItem value="origin_workflow" className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
                                                     <div className="flex items-center gap-1.5">
-                                                        <Sparkles size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                                        <span>Lanjut ke Step Berikutnya (Origin Step + 1)</span>
+                                                        <RefreshCw size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+                                                        <span>Workflow Asal (Origin Workflow)</span>
                                                     </div>
                                                 </SelectItem>
-                                                <SelectItem value="branch_origin" className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <CornerDownLeft size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
-                                                        <span>Kembali ke Step Pemanggil (Origin Step)</span>
-                                                    </div>
-                                                </SelectItem>
-                                                <SelectItem value="1" className="text-xs font-medium">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <Flag size={13} className="shrink-0 text-slate-500" />
-                                                        <span>Langkah Awal Workflow Asal (Tahap 1)</span>
-                                                    </div>
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <Select
-                                            value={String(act.transition_config?.sequence || '')}
-                                            onValueChange={(val) =>
-                                                updateAction(actIdx, {
-                                                    transition_config: { ...act.transition_config, type: 'cross_workflow', sequence: Number(val), return_mode: null },
-                                                    next_workflow_step_id: null,
-                                                })
-                                            }
-                                        >
-                                            <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
-                                                <SelectValue placeholder="Pilih Tahap Target" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
-                                                {(
-                                                    allWorkflows.find(
-                                                        (w: any) => String(w.id) === (act.transition_config?.workflow_id || act.next_workflow_id),
-                                                    )?.steps || []
-                                                ).map((s: any, sIdx: number) => (
-                                                    <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-xs font-medium">
-                                                        Tahap {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                                {allWorkflows.map((w: any) => (
+                                                    <SelectItem key={w.id} value={String(w.id)} className="text-xs font-medium">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <WorkflowIcon size={12} className="shrink-0 text-slate-400" />
+                                                            <span>{w.name} {w.contract_type ? `[${w.contract_type.name}]` : '[SEMUA JENIS]'}</span>
+                                                        </div>
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                                    </div>
 
-                        {/* Absolute Step Selector (Flat Inline) */}
-                        {showAbsoluteStepSelector && (
-                            <div className="pt-1 animate-in fade-in-50 duration-200">
-                                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 block">Pilih Langkah Target</label>
+                                    <div className="w-52 sm:w-60">
+                                        {(act.transition_config?.workflow_id || act.next_workflow_id) === 'origin_workflow' ? (
+                                            <Select
+                                                value={act.transition_config?.return_mode || String(act.transition_config?.sequence || 'branch_next')}
+                                                onValueChange={(val) => {
+                                                    if (val === 'branch_next' || val === 'branch_origin') {
+                                                        updateAction(actIdx, {
+                                                            transition_config: {
+                                                                ...act.transition_config,
+                                                                type: 'cross_workflow',
+                                                                workflow_id: 'origin_workflow',
+                                                                return_mode: val,
+                                                                sequence: 1,
+                                                            },
+                                                            next_workflow_step_id: null,
+                                                        });
+                                                    } else {
+                                                        updateAction(actIdx, {
+                                                            transition_config: {
+                                                                ...act.transition_config,
+                                                                type: 'cross_workflow',
+                                                                workflow_id: 'origin_workflow',
+                                                                return_mode: null,
+                                                                sequence: Number(val),
+                                                            },
+                                                            next_workflow_step_id: null,
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                    <SelectValue placeholder="Pilih Tahap Target" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                    <SelectItem value="branch_next" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Sparkles size={13} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                            <span>Lanjut ke Step Berikutnya (+1)</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="branch_origin" className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <CornerDownLeft size={13} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                                                            <span>Kembali ke Step Pemanggil</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem value="1" className="text-xs font-medium">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Flag size={13} className="shrink-0 text-slate-500" />
+                                                            <span>Tahap 1 Workflow Asal</span>
+                                                        </div>
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        ) : (
+                                            <Select
+                                                value={String(act.transition_config?.sequence || '')}
+                                                onValueChange={(val) =>
+                                                    updateAction(actIdx, {
+                                                        transition_config: { ...act.transition_config, type: 'cross_workflow', sequence: Number(val), return_mode: null },
+                                                        next_workflow_step_id: null,
+                                                    })
+                                                }
+                                            >
+                                                <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                    <SelectValue placeholder="Pilih Tahap Target" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                                    {(
+                                                        allWorkflows.find(
+                                                            (w: any) => String(w.id) === (act.transition_config?.workflow_id || act.next_workflow_id),
+                                                        )?.steps || []
+                                                    ).map((s: any, sIdx: number) => (
+                                                        <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-xs font-medium">
+                                                            Tahap {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Absolute Step Selector */}
+                            {showAbsoluteStepSelector && (
+                                <div className="w-52 sm:w-60">
+                                    <Select
+                                        value={(() => {
+                                            if (act.transition_config?.step_id) {
+                                                const found = allWorkflowSteps.find((s: any) => String(s.id) === String(act.transition_config.step_id));
+                                                if (found) return String(found.id);
+                                            }
+                                            if (act.next_step_id) {
+                                                const found = allWorkflowSteps.find((s: any) => String(s.id) === String(act.next_step_id));
+                                                if (found) return String(found.id);
+                                            }
+                                            if (act.transition_config?.sequence) {
+                                                const found = allWorkflowSteps.find((s: any) => (s.step || 0) === Number(act.transition_config.sequence));
+                                                if (found) return String(found.id);
+                                            }
+                                            return allWorkflowSteps[0]?.id ? String(allWorkflowSteps[0].id) : '';
+                                        })()}
+                                        onValueChange={(val) => {
+                                            const targetStep = allWorkflowSteps.find((s: any) => String(s.id) === val);
+                                            updateAction(actIdx, {
+                                                transition_config: {
+                                                    ...act.transition_config,
+                                                    type: 'absolute',
+                                                    step_id: val,
+                                                    sequence: targetStep?.step || 1,
+                                                },
+                                                next_step_id: val,
+                                            });
+                                        }}
+                                    >
+                                        <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                            <SelectValue placeholder="Pilih Tahap Target" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                            {allWorkflowSteps.map((s: any, sIdx: number) => (
+                                                <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
+                                                    Tahap {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Kolom Wajib & Autofill Fields */}
+                    <div className="sm:col-span-6 space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                            Kolom Wajib Diisi (Required):
+                        </label>
+                        <SearchableMultiSelectPortal
+                            values={act.required_fields || []}
+                            onValuesChange={(vals: string[]) => updateAction(actIdx, { required_fields: vals })}
+                            options={AVAILABLE_FIELDS}
+                            placeholder="Pilih Kolom..."
+                            triggerClassName="min-h-[34px] py-1 px-3 text-xs rounded-lg"
+                        />
+                    </div>
+
+                    <div className="sm:col-span-6 space-y-1">
+                        <label className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 block">
+                            Kolom Isi / Hapus Otomatis (Autofill):
+                        </label>
+                        <SearchableMultiSelectPortal
+                            values={act.autofilled_fields || []}
+                            onValuesChange={(vals: string[]) => updateAction(actIdx, { autofilled_fields: vals })}
+                            options={AUTOFILLED_PARAMS}
+                            placeholder="Pilih Kolom Isi / Hapus..."
+                            triggerClassName="min-h-[34px] py-1 px-3 text-xs rounded-lg"
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Modal Dialog 1: Otoritas Tombol (Siapa yang bisa melihat / klik tombol) */}
+            <Dialog open={isButtonAuthorityModalOpen} onOpenChange={setIsButtonAuthorityModalOpen}>
+                <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
+                    <div className="px-6 py-4 border-b border-slate-800 bg-slate-900 text-white flex items-center justify-between rounded-t-[12px] shrink-0">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 text-white border border-white/20 flex h-9 w-9 items-center justify-center rounded-lg">
+                                <Key size={18} className="text-amber-400" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-sm font-bold tracking-tight text-white">
+                                    Otoritas Akses Tombol — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
+                                </DialogTitle>
+                                <DialogDescription className="text-white/80 text-xs font-medium mt-0.5">
+                                    Tentukan siapa yang berhak melihat dan mengklik tombol aksi ini pada form persetujuan
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto">
+                        <AuthorityTableManager
+                            title="Otoritas Akses Tombol"
+                            authorities={buttonAuthorities}
+                            onChange={(vals) => updateAction(actIdx, { authorities: vals, authority_config: mapAuthoritiesToConfig(vals) })}
+                            users={users}
+                            roles={roles}
+                            departments={departments}
+                            divisions={divisions}
+                            locations={locations}
+                            companyGroups={companyGroups}
+                            companies={companies}
+                            regions={regions}
+                            showCustom={true}
+                            showCombinations={true}
+                            simulationContext={simulationContext}
+                            onOpenSimulationModal={onOpenSimulationModal}
+                        />
+                    </div>
+
+                    <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                        <Button
+                            type="button"
+                            onClick={() => setIsButtonAuthorityModalOpen(false)}
+                            className="cursor-pointer font-bold text-xs"
+                        >
+                            Selesai
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal Dialog 2: Tentukan Personil / Assignee / Reviewer / Signer Pool */}
+            <Dialog open={isAssigneeModalOpen} onOpenChange={setIsAssigneeModalOpen}>
+                <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
+                    <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
+                                {isSignatureAction ? <UserCheck size={18} className="text-amber-400" /> : <UsersIcon size={18} />}
+                            </div>
+                            <div>
+                                <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
+                                    {isForwardAction ? 'Konfigurasi Reviewer Tambahan' : isSignatureAction ? 'Konfigurasi Aktor Penandatangan (Signers)' : 'Konfigurasi Personil Penugasan (Assignee Pool)'} — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
+                                </DialogTitle>
+                                <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
+                                    {isForwardAction
+                                        ? 'Tentukan langkah target dan daftar reviewer yang berhak menerima pengajuan'
+                                        : isSignatureAction
+                                            ? 'Tentukan langkah target upload dan aktor penandatangan dokumen'
+                                            : 'Tentukan aktor/pengguna yang dapat dipilih dan ditugaskan sebagai PIC'}
+                                </DialogDescription>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
+                        {isForwardAction && (
+                            <div className="space-y-1 max-w-sm">
+                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    Target Langkah (Insert To)
+                                </label>
                                 <Select
-                                    value={String(act.transition_config?.sequence || '1')}
-                                    onValueChange={(val) =>
+                                    value={act.next_step_id || 'current'}
+                                    onValueChange={(val) => {
                                         updateAction(actIdx, {
-                                            transition_config: { ...act.transition_config, type: 'absolute', sequence: Number(val) },
-                                        })
-                                    }
+                                            next_step_id: val === 'current' ? null : val,
+                                        });
+                                    }}
                                 >
-                                    <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-none">
+                                    <SelectTrigger className="h-9 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
                                         <SelectValue placeholder="Pilih Tahap Target" />
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                        <SelectItem value="current" className="text-xs font-medium">
+                                            Langkah Saat Ini (Default)
+                                        </SelectItem>
                                         {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                            <SelectItem key={s.id} value={String(s.step || sIdx + 1)} className="text-xs font-medium">
-                                                Tahap {s.step || sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                            <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
+                                                Tahap {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
                         )}
-                    </div>
-                </div>
 
-                {/* Cell 3: Required Fields */}
-                <div className="relative space-y-1.5 z-20 focus-within:z-40">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Kolom Wajib Diisi (Required)</label>
-                    <SearchableMultiSelectPortal
-                        values={act.required_fields || []}
-                        onValuesChange={(vals: string[]) => updateAction(actIdx, { required_fields: vals })}
-                        options={AVAILABLE_FIELDS}
-                        placeholder="Pilih Kolom..."
-                    />
-                </div>
-
-                {/* Cell 4: Autofill Fields */}
-                <div className="relative space-y-1.5 z-10 focus-within:z-40">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-zinc-300">Kolom Isi / Hapus Otomatis (Autofill)</label>
-                    <SearchableMultiSelectPortal
-                        values={act.autofilled_fields || []}
-                        onValuesChange={(vals: string[]) => updateAction(actIdx, { autofilled_fields: vals })}
-                        options={AUTOFILLED_PARAMS}
-                        placeholder="Pilih Kolom Isi / Hapus..."
-                    />
-                </div>
-
-                {/* Cell 5: Signers (Conditional) */}
-                {isSignatureAction && (
-                    <div className="col-span-1 space-y-3 pt-2 border-t border-slate-100 dark:border-zinc-800 sm:col-span-2 w-full">
-                        <div className="flex items-center gap-1.5">
-                            <FileSignature size={13} className="text-amber-500" />
-                            <label className="text-xs font-bold text-amber-600 dark:text-amber-400">
-                                Konfigurasi Upload Tanda Tangan
-                            </label>
-                        </div>
-
-                        {/* Target Langkah (Sub-Step) */}
-                        <div className="space-y-1 max-w-sm">
-                            <label className="text-xs font-medium text-slate-600 dark:text-zinc-400">Target Langkah (Sub-Step)</label>
-                            <Select
-                                value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
-                                onValueChange={(val) =>
-                                    updateAction(actIdx, {
-                                        assignee_config: {
-                                            ...act.assignee_config,
-                                            signature_target_step: val,
-                                        },
-                                    })
-                                }
-                            >
-                                <SelectTrigger className="h-9.5 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-primary dark:border-zinc-700 dark:bg-zinc-900">
-                                    <SelectValue placeholder="Pilih Tahap Target" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-lg bg-white dark:bg-zinc-950">
-                                    {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                        <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
-                                            Tahap {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="pt-2">
-                            <AuthorityTableManager
-                                title="Aktor Penandatangan"
-                                authorities={mapConfigToAuthorities(act.signing_parties)}
-                                onChange={(vals) => updateAction(actIdx, { signing_parties: mapAuthoritiesToConfig(vals) })}
-                                users={users}
-                                roles={roles}
-                                departments={departments}
-                                divisions={divisions}
-                                companyGroups={companyGroups}
-                                regions={regions}
-                                showCustom={true}
-                                showCombinations={true}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* Cell 6: Assignee Config (Button + Modal - Flat Strip) */}
-                {isAssignOrForwardAction && (() => {
-                    const assigneeAuthorities = mapConfigToAuthorities(act.assignee_config);
-                    const assigneeCount = assigneeAuthorities.length;
-
-                    return (
-                        <div className="col-span-1 sm:col-span-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-zinc-800/80">
-                            <div className="space-y-0.5">
-                                <div className="flex items-center gap-1.5">
-                                    <UsersIcon size={14} className="text-primary" />
-                                    <span className="text-xs font-bold text-slate-800 dark:text-zinc-200">
-                                        {isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Konfigurasi Penugasan (Assignee)'}
-                                    </span>
-                                </div>
-                                <p className="text-[11px] text-slate-500 dark:text-zinc-400">
-                                    {assigneeCount > 0
-                                        ? `${assigneeCount} otoritas / aktor telah dikonfigurasi.`
-                                        : 'Belum ada aktor penugasan yang ditentukan.'}
-                                </p>
+                        {isSignatureAction && (
+                            <div className="space-y-1 max-w-sm">
+                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    Target Langkah Upload Tanda Tangan (Insert To)
+                                </label>
+                                <Select
+                                    value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
+                                    onValueChange={(val) =>
+                                        updateAction(actIdx, {
+                                            assignee_config: {
+                                                ...act.assignee_config,
+                                                signature_target_step: val,
+                                            },
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger className="h-9 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
+                                        <SelectValue placeholder="Pilih Tahap Target" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
+                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
+                                            <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
+                                                Tahap {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
+                        )}
 
-                            <button
-                                type="button"
-                                onClick={() => setIsAssigneeModalOpen(true)}
-                                className={cn(
-                                    "inline-flex items-center gap-1.5 px-3.5 h-8.5 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer shrink-0 border",
-                                    assigneeCount > 0
-                                        ? "bg-primary text-white border-primary hover:bg-primary/90"
-                                        : "bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-zinc-800"
-                                )}
-                            >
-                                <Settings2 size={13} />
-                                <span>{isForwardAction ? 'Atur Reviewer' : 'Atur Aktor Penugasan'}</span>
-                                <span className={cn(
-                                    "ml-1 rounded-full px-1.5 py-0.2 text-[10px] font-bold",
-                                    assigneeCount > 0 ? "bg-white/25 text-white" : "bg-primary text-white"
-                                )}>
-                                    {assigneeCount}
-                                </span>
-                            </button>
+                        {/* Authority Table Manager for Assignee / Signers */}
+                        <AuthorityTableManager
+                            title={isForwardAction ? 'Lingkup Reviewer Tambahan' : isSignatureAction ? 'Aktor Penandatangan' : 'Aktor Penugasan (Assignee Pool)'}
+                            authorities={personnelAuthorities}
+                            onChange={(vals) => {
+                                if (isSignatureAction) {
+                                    updateAction(actIdx, { signing_parties: mapAuthoritiesToConfig(vals) });
+                                } else {
+                                    updateAction(actIdx, { assignee_config: mapAuthoritiesToConfig(vals) });
+                                }
+                            }}
+                            users={users}
+                            roles={roles}
+                            departments={departments}
+                            divisions={divisions}
+                            locations={locations}
+                            companyGroups={companyGroups}
+                            companies={companies}
+                            regions={regions}
+                            showCustom={true}
+                            showCombinations={true}
+                            simulationContext={simulationContext}
+                            onOpenSimulationModal={onOpenSimulationModal}
+                        />
+                    </div>
 
-                            {/* Modal Dialog for Assignee Configuration */}
-                            <Dialog open={isAssigneeModalOpen} onOpenChange={setIsAssigneeModalOpen}>
-                                <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
-                                    <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
-                                                <UsersIcon size={18} />
-                                            </div>
-                                            <div>
-                                                <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
-                                                    {isForwardAction ? 'Konfigurasi Reviewer Tambahan' : 'Konfigurasi Aktor Penugasan (Assignee)'} — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
-                                                </DialogTitle>
-                                                <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
-                                                    {isForwardAction
-                                                        ? 'Tentukan langkah target dan daftar reviewer yang berhak menerima dokumen'
-                                                        : 'Tentukan langkah target dan aktor/pengguna yang dapat ditugaskan sebagai PIC'}
-                                                </DialogDescription>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-6 bg-white dark:bg-zinc-900 flex-1 overflow-y-auto space-y-4">
-                                        {isForwardAction && (
-                                            <div className="space-y-1 max-w-sm">
-                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                                    Target Langkah (Insert To)
-                                                </label>
-                                                <Select
-                                                    value={act.next_step_id || 'current'}
-                                                    onValueChange={(val) => {
-                                                        updateAction(actIdx, {
-                                                            next_step_id: val === 'current' ? null : val,
-                                                        });
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="h-10 py-2 px-3 rounded-lg border-slate-200 bg-white text-sm font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                                        <SelectValue placeholder="Pilih Tahap Target" />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                                        <SelectItem value="current" className="text-sm font-medium">
-                                                            Langkah Saat Ini (Default)
-                                                        </SelectItem>
-                                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                                            <SelectItem key={s.id} value={String(s.id)} className="text-sm font-medium">
-                                                                Tahap {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        )}
-
-                                        {isSignatureAction && (
-                                            <div className="space-y-1 max-w-sm">
-                                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                                    Target Langkah Upload Tanda Tangan (Insert To)
-                                                </label>
-                                                <Select
-                                                    value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
-                                                    onValueChange={(val) =>
-                                                        updateAction(actIdx, {
-                                                            assignee_config: {
-                                                                ...act.assignee_config,
-                                                                signature_target_step: val,
-                                                            },
-                                                        })
-                                                    }
-                                                >
-                                                    <SelectTrigger className="h-10 py-2 px-3 rounded-lg border-slate-200 bg-white text-sm font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                                        <SelectValue placeholder="Pilih Tahap Target" />
-                                                    </SelectTrigger>
-                                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                                            <SelectItem key={s.id} value={String(s.id)} className="text-sm font-medium">
-                                                                Tahap {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        )}
-
-                                        {/* Authority Table Manager for Assignee */}
-                                        <AuthorityTableManager
-                                            title={isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Aktor Penugasan (Assignee)'}
-                                            authorities={assigneeAuthorities}
-                                            onChange={(vals) => updateAction(actIdx, { assignee_config: mapAuthoritiesToConfig(vals) })}
-                                            users={users}
-                                            roles={roles}
-                                            departments={departments}
-                                            divisions={divisions}
-                                            companyGroups={companyGroups}
-                                            regions={regions}
-                                            showCustom={true}
-                                            showCombinations={true}
-                                        />
-                                    </div>
-
-                                    <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
-                                        <Button
-                                            type="button"
-                                            onClick={() => setIsAssigneeModalOpen(false)}
-                                            className="cursor-pointer"
-                                        >
-                                            Selesai
-                                        </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    );
-                })()}
-            </div>
+                    <DialogFooter className="p-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-800/50 flex items-center justify-end">
+                        <Button
+                            type="button"
+                            onClick={() => setIsAssigneeModalOpen(false)}
+                            className="cursor-pointer font-bold text-xs"
+                        >
+                            Selesai
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

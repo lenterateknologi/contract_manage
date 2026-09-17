@@ -53,8 +53,16 @@ class UploadAgreementAction
             }
         }
 
+        $currentStep = $contract->workflowStep;
+        $stepNumber = $currentStep?->step ?? $contract->current_step_number ?? 1;
+        $workflowStepId = $contract->workflow_step_id ?: $currentStep?->id;
+        $iteration = $contract->workflow_iteration ?? 1;
+
         ContractVersion::create([
             'contract_id' => $contract->id,
+            'workflow_step_id' => $workflowStepId,
+            'step_number' => $stepNumber,
+            'workflow_iteration' => $iteration,
             'document_type' => 'agreement',
             'version_no' => $versionNo,
             'file_name' => $file->getClientOriginalName(),

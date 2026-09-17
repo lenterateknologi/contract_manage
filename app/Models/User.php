@@ -33,6 +33,7 @@ class User extends Authenticatable
         'org_name',
         'department_id',
         'division_id',
+        'business_unit_id',
         'idcompany',
         'company_name',
         'company_id',
@@ -64,7 +65,6 @@ class User extends Authenticatable
         'is_active',
         'is_employee',
         'id_employee_portal_master',
-        'contract_filter_template_id',
         'login_status',
         'last_login',
         'last_connected',
@@ -87,8 +87,6 @@ class User extends Authenticatable
         'verified_at' => 'datetime',
     ];
 
-    protected $with = ['roleRelation'];
-
     protected $hidden = [
         'password',
         'remember_token',
@@ -97,28 +95,63 @@ class User extends Authenticatable
     protected $appends = [
         'initials',
         'role',
+        'role_name',
         'can_create_on_behalf',
         'division_name',
         'department_name',
         'company_group_name',
         'company_group_code',
         'region_name',
+        'location_name',
     ];
 
     protected static function booted(): void
     {
-        static::creating(function ($user) {
-            if (empty($user->contract_filter_template_id) && ! empty($user->role_id)) {
-                $roleTemplateId = Role::where('id', $user->role_id)->value('contract_filter_template_id');
-                if ($roleTemplateId) {
-                    $user->contract_filter_template_id = $roleTemplateId;
-                }
-            }
-        });
-
-        // ponytail: sync company, group, and region from master business unit & company when company_name is updated/created
+        // ponytail: sync company, location, group, and region from master business unit & location
         static::saving(function ($user) {
-            if ($user->isDirty('company_name') && ! empty($user->company_name)) {
+            if ($user->isDirty('company_id') && ! empty($user->company_id)) {
+                $comp = Company::find($user->company_id);
+                if ($comp) {
+                    $user->idcompany = $comp->idcompany;
+                    $user->company_name = $comp->name;
+                    $user->company_group_id = $comp->company_group_id ?? $user->company_group_id;
+                    $user->region_id = $comp->region_id ?? $user->region_id;
+                }
+            } elseif ($user->isDirty('location_id') && ! empty($user->location_id)) {
+                $loc = Location::find($user->location_id);
+                if ($loc) {
+                    $user->idlocation = $loc->idlocation;
+                    $user->location_name = $loc->name;
+
+                    $bu = BusinessUnit::where('location_id', $loc->id)
+                        ->orWhere('idlocation', $loc->idlocation)
+                        ->whereNotNull('company_name')
+                        ->first();
+
+                    if ($bu) {
+                        $user->business_unit_id = $bu->id;
+                        $user->company_id = $bu->company_id;
+                        $user->idcompany = $bu->idcompany;
+                        $user->company_name = $bu->company_name;
+                        $user->company_group_id = $bu->company_group_id;
+                        $user->region_id = $bu->region_id;
+                    } elseif ($loc->company_group_id) {
+                        $user->company_group_id = $loc->company_group_id;
+                    }
+                }
+            } elseif ($user->isDirty('business_unit_id') && ! empty($user->business_unit_id)) {
+                $bu = BusinessUnit::find($user->business_unit_id);
+                if ($bu) {
+                    $user->company_id = $bu->company_id;
+                    $user->idcompany = $bu->idcompany;
+                    $user->company_name = $bu->company_name;
+                    $user->location_id = $bu->location_id;
+                    $user->idlocation = $bu->idlocation;
+                    $user->location_name = $bu->location_name;
+                    $user->company_group_id = $bu->company_group_id;
+                    $user->region_id = $bu->region_id;
+                }
+            } elseif ($user->isDirty('company_name') && ! empty($user->company_name)) {
                 $company = Company::where('name', $user->company_name)->first();
                 $bu = BusinessUnit::where('company_name', $user->company_name)
                     ->orWhere(function ($q) use ($company) {
@@ -135,6 +168,39 @@ class User extends Authenticatable
                     $user->region_id = $company?->region_id ?? $bu?->region_id;
                 }
             }
+
+            // ponytail: auto-sync job level and names when job_position_id is updated/created
+            if ($user->isDirty('job_position_id') && ! empty($user->job_position_id)) {
+                $jobTitle = JobTitle::with('jobLevel')->find($user->job_position_id);
+                if ($jobTitle) {
+                    $user->idjobtitle = $jobTitle->idjobtitle;
+                    $user->jobtitle_name = $jobTitle->name;
+                    $user->job_level_id = $jobTitle->job_level_id;
+                    $user->idjoblevel = $jobTitle->idjoblevel;
+                    $user->joblevel_name = $jobTitle->jobLevel?->name ?? $jobTitle->getRawOriginal('job_level_name');
+                }
+            }
+
+            // ponytail: auto-sync org_name and idorganization when department_id is updated/created
+            if ($user->isDirty('department_id')) {
+                if (! empty($user->department_id)) {
+                    $dept = Department::find($user->department_id);
+                    if ($dept) {
+                        $user->idorganization = $dept->idorganization ?? $user->idorganization;
+                        $user->org_name = $dept->name;
+                    }
+                } else {
+                    $user->org_name = null;
+                }
+            }
+        });
+
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('admin_members_tree_users_v2');
+        });
+
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('admin_members_tree_users_v2');
         });
     }
 
@@ -157,22 +223,32 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class, 'department_id');
     }
 
+    private static array $roleMemoryCache = [];
+    private static array $divisionMemoryCache = [];
+    private static array $departmentMemoryCache = [];
+
     public function getRoleAttribute(): ?string
     {
-        $roleId = $this->getAttributeFromArray('role_id');
-        if (empty($roleId)) {
-            return null;
-        }
-
         if ($this->relationLoaded('roleRelation')) {
             return $this->getRelation('roleRelation')?->name;
         }
 
-        return $this->roleRelation?->name;
+        $roleId = $this->attributes['role_id'] ?? null;
+        if (! empty($roleId)) {
+            if (! array_key_exists($roleId, self::$roleMemoryCache)) {
+                self::$roleMemoryCache[$roleId] = Role::find($roleId)?->name;
+            }
+
+            return self::$roleMemoryCache[$roleId];
+        }
+
+        return null;
     }
 
-    private static array $divisionMemoryCache = [];
-    private static array $departmentMemoryCache = [];
+    public function getRoleNameAttribute(): ?string
+    {
+        return $this->getRoleAttribute();
+    }
 
     public function getDivisionNameAttribute(): ?string
     {
@@ -180,7 +256,7 @@ class User extends Authenticatable
             return $this->division->name;
         }
 
-        $divisionId = $this->getAttributeFromArray('division_id');
+        $divisionId = $this->attributes['division_id'] ?? null;
         if (! empty($divisionId)) {
             if (! array_key_exists($divisionId, self::$divisionMemoryCache)) {
                 self::$divisionMemoryCache[$divisionId] = Division::find($divisionId)?->name;
@@ -198,7 +274,7 @@ class User extends Authenticatable
             return $this->department->name;
         }
 
-        $departmentId = $this->getAttributeFromArray('department_id');
+        $departmentId = $this->attributes['department_id'] ?? null;
         if (! empty($departmentId)) {
             if (! array_key_exists($departmentId, self::$departmentMemoryCache)) {
                 self::$departmentMemoryCache[$departmentId] = Department::find($departmentId)?->name;
@@ -207,7 +283,7 @@ class User extends Authenticatable
             return self::$departmentMemoryCache[$departmentId];
         }
 
-        return $this->getAttributeFromArray('org_name');
+        return $this->attributes['org_name'] ?? null;
     }
 
     private static array $companyGroupMemoryCache = [];
@@ -228,7 +304,7 @@ class User extends Authenticatable
             return $this->company->getAttributes()['company_group_name'];
         }
 
-        $companyGroupId = $this->getAttributeFromArray('company_group_id');
+        $companyGroupId = $this->attributes['company_group_id'] ?? null;
         if (! empty($companyGroupId)) {
             if (! array_key_exists($companyGroupId, self::$companyGroupMemoryCache)) {
                 self::$companyGroupMemoryCache[$companyGroupId] = CompanyGroup::find($companyGroupId)?->name;
@@ -237,7 +313,7 @@ class User extends Authenticatable
             return self::$companyGroupMemoryCache[$companyGroupId];
         }
 
-        $companyName = $this->getAttributeFromArray('company_name');
+        $companyName = $this->attributes['company_name'] ?? null;
         if (! empty($companyName)) {
             if (! array_key_exists($companyName, self::$companyMemoryCache)) {
                 self::$companyMemoryCache[$companyName] = Company::where('name', $companyName)->value('company_group_name');
@@ -255,7 +331,7 @@ class User extends Authenticatable
             return $this->companyGroup->code;
         }
 
-        $companyGroupId = $this->getAttributeFromArray('company_group_id');
+        $companyGroupId = $this->attributes['company_group_id'] ?? null;
         if (! empty($companyGroupId)) {
             $cacheKey = "code_{$companyGroupId}";
             if (! array_key_exists($cacheKey, self::$companyGroupMemoryCache)) {
@@ -275,7 +351,7 @@ class User extends Authenticatable
             if ($this->company->relationLoaded('companyGroup') && $this->company->companyGroup) {
                 return $this->company->companyGroup->code;
             }
-            $groupId = $this->company->getAttributeFromArray('company_group_id');
+            $groupId = $this->company->getAttributes()['company_group_id'] ?? null;
             if (! empty($groupId)) {
                 $cacheKey = "code_{$groupId}";
                 if (! array_key_exists($cacheKey, self::$companyGroupMemoryCache)) {
@@ -299,7 +375,7 @@ class User extends Authenticatable
             return $this->company->getAttributes()['region_name'];
         }
 
-        $regionId = $this->getAttributeFromArray('region_id');
+        $regionId = $this->attributes['region_id'] ?? null;
         if (! empty($regionId)) {
             if (! array_key_exists($regionId, self::$regionMemoryCache)) {
                 self::$regionMemoryCache[$regionId] = Region::find($regionId)?->name;
@@ -308,7 +384,7 @@ class User extends Authenticatable
             return self::$regionMemoryCache[$regionId];
         }
 
-        $companyName = $this->getAttributeFromArray('company_name');
+        $companyName = $this->attributes['company_name'] ?? null;
         if (! empty($companyName)) {
             $cacheKey = "reg_{$companyName}";
             if (! array_key_exists($cacheKey, self::$companyMemoryCache)) {
@@ -319,6 +395,26 @@ class User extends Authenticatable
         }
 
         return null;
+    }
+
+    private static array $locationMemoryCache = [];
+
+    public function getLocationNameAttribute(): ?string
+    {
+        if ($this->relationLoaded('location') && $this->location) {
+            return $this->location->name;
+        }
+
+        $locationId = $this->attributes['location_id'] ?? null;
+        if (! empty($locationId)) {
+            if (! array_key_exists($locationId, self::$locationMemoryCache)) {
+                self::$locationMemoryCache[$locationId] = Location::find($locationId)?->name;
+            }
+
+            return self::$locationMemoryCache[$locationId];
+        }
+
+        return $this->attributes['location_name'] ?? null;
     }
 
     public function company(): BelongsTo
@@ -361,6 +457,16 @@ class User extends Authenticatable
         return $this->belongsTo(JobLevel::class, 'job_level_id');
     }
 
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'spv_id');
+    }
+
+    public function reportingTo(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'idreporting_to', 'idemployee');
+    }
+
     public function workflowSteps(): BelongsToMany
     {
         return $this->belongsToMany(WorkflowStep::class, 't_workflow_step_users')->withTimestamps();
@@ -391,7 +497,7 @@ class User extends Authenticatable
             return (bool) ($this->roleRelation->can_create_on_behalf ?? false);
         }
 
-        $roleId = $this->getAttributeFromArray('role_id');
+        $roleId = $this->attributes['role_id'] ?? null;
         if (! empty($roleId)) {
             return (bool) Role::where('id', $roleId)->value('can_create_on_behalf');
         }
@@ -410,11 +516,6 @@ class User extends Authenticatable
         return strtoupper(substr($name, 0, 2));
     }
 
-    public function contractFilterTemplate()
-    {
-        return $this->belongsTo(ContractFilterTemplate::class, 'contract_filter_template_id');
-    }
-
     private ?array $contractFilterSettingsCache = null;
 
     public function getContractFilterSettings(): array
@@ -423,40 +524,14 @@ class User extends Authenticatable
             return $this->contractFilterSettingsCache;
         }
 
-        $templateId = $this->getAttributeFromArray('contract_filter_template_id');
+        $dashboardType = DashboardType::resolveForUser($this);
+        if ($dashboardType) {
+            $this->contractFilterSettingsCache = $dashboardType->getFilterSettings($this);
 
-        // If not set on user, fallback to role's contract_filter_template_id
-        if (! $templateId && $this->role_id) {
-            $role = $this->roleRelation;
-            if ($role && $role->contract_filter_template_id) {
-                $templateId = $role->contract_filter_template_id;
-            }
+            return $this->contractFilterSettingsCache;
         }
 
-        if ($templateId) {
-            if (! isset(self::$templateMemoryCache[$templateId])) {
-                self::$templateMemoryCache[$templateId] = ContractFilterTemplate::find($templateId);
-            }
-            $template = self::$templateMemoryCache[$templateId];
-            if ($template) {
-                $this->contractFilterSettingsCache = [
-                    'can_change_company_group' => (bool) $template->can_change_company_group,
-                    'allowed_company_groups' => (array) ($template->allowed_company_groups ?? []),
-                    'can_change_region' => (bool) $template->can_change_region,
-                    'allowed_regions' => (array) ($template->allowed_regions ?? []),
-                    'can_change_company' => (bool) $template->can_change_company,
-                    'allowed_companies' => (array) ($template->allowed_companies ?? []),
-                    'can_change_division' => (bool) $template->can_change_division,
-                    'allowed_divisions' => (array) ($template->allowed_divisions ?? []),
-                    'can_change_department' => (bool) $template->can_change_department,
-                    'allowed_departments' => (array) ($template->allowed_departments ?? []),
-                ];
-
-                return $this->contractFilterSettingsCache;
-            }
-        }
-
-        // Fallback default berdasarkan nama role
+        // Fallback default jika belum ada konfigurasi DashboardType sama sekali
         $roleName = $this->role;
         $isHighLevel = in_array($roleName, ['Admin', 'Super Admin', 'Director', 'CEO', 'VP']);
 
@@ -471,6 +546,8 @@ class User extends Authenticatable
             'allowed_divisions' => [],
             'can_change_department' => $isHighLevel || in_array($roleName, ['Manager']),
             'allowed_departments' => [],
+            'contract_type_ids' => [],
+            'categories' => [],
         ];
 
         return $this->contractFilterSettingsCache;

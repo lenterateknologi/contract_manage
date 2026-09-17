@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/buttons/Button';
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import { MasterPageLayout } from '@/components/ui/navigation/MasterPageLayout';
 import { FloatingPanel } from '@/components/ui/navigation/FloatingPanel';
-import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield, RefreshCw, MoreVertical, Copy, LayoutDashboard } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, Database, Building2, Layers, GitBranch, MapPin, Building, Users, Handshake, FileText, Shield, RefreshCw, MoreVertical, Copy, LayoutDashboard, Calculator, Calendar } from 'lucide-react';
 import LucideIcons from '@/lib/lucide-dynamic';
 import { cn } from '@/lib/utils';
 import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
@@ -21,6 +21,8 @@ import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { SideFilterCard } from '@/components/ui/selection/SideFilterCard';
 import { useToast } from '@/components/ui/feedback/Toast';
 import { ColumnVisibilityDropdown } from '@/components/ui/selection/ColumnVisibilityDropdown';
+import { SlaSimulationModal } from '@/pages/contracts/components/parts/SlaSimulationModal';
+import { parseDateInput } from '@/lib/formatters';
 
 interface Props {
     resourceSlug: string;
@@ -91,7 +93,7 @@ function getCookie(name: string): string | null {
     return match ? decodeURIComponent(match[3]) : null;
 }
 
-const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'dashboard-types', 'locations', 'business-units', 'job-levels', 'job-titles'];
+const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'locations', 'business-units', 'job-levels', 'job-titles'];
 
 export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false, hasPortalSync = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -110,8 +112,8 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
     const [isSyncing, setIsSyncing] = useState(false);
     const [showSyncConfirm, setShowSyncConfirm] = useState(false);
-    const [syncIsUsedMode, setSyncIsUsedMode] = useState<'keep' | 'set_true' | 'set_false'>('keep');
     const [updatingRowId, setUpdatingRowId] = useState<string | null>(null);
+    const [isSlaSimOpen, setIsSlaSimOpen] = useState(false);
 
     const handleSingleToggle = (rowId: string, colName: string, currentVal: boolean) => {
         setUpdatingRowId(rowId);
@@ -523,6 +525,18 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         oracle_code: 140,
         is_used: 96,
         is_active: 96,
+        // Dashboard types specific column widths
+        contract_type_names: 220,
+        role_names: 180,
+        division_names: 180,
+        department_names: 180,
+        users_count: 100,
+        show_overview: 140,
+        show_overview_contract: 145,
+        show_overview_non_contract: 165,
+        show_overview_nda: 135,
+        show_workload: 120,
+        show_master_data: 120,
     };
 
     // Calculate pinning layout for columns
@@ -737,6 +751,57 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     return <span className="text-text-muted">—</span>;
                 }
 
+                // Dashboard types matrix columns custom badge render
+                if (resourceSlug === 'dashboard-types' && (col.name === 'contract_type_names' || col.name === 'role_names' || col.name === 'division_names' || col.name === 'department_names')) {
+                    const strVal = String(val || '').trim();
+                    if (!strVal || strVal === '—' || strVal === '-') {
+                        return <span className="text-text-muted">—</span>;
+                    }
+
+                    const isAll = strVal.startsWith('- (Semua') || strVal.toLowerCase().includes('semua');
+                    const isScoped = strVal.startsWith('Sesuai');
+
+                    if (isAll) {
+                        return (
+                            <span className="inline-flex items-center text-[10.5px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                {strVal.replace(/^-\s*\(/, '').replace(/\)$/, '')}
+                            </span>
+                        );
+                    }
+
+                    if (isScoped) {
+                        return (
+                            <span className="inline-flex items-center text-[10.5px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-200 dark:border-indigo-800 whitespace-nowrap shadow-2xs">
+                                {strVal}
+                            </span>
+                        );
+                    }
+
+                    const items = strVal.split(',').map((s) => s.trim()).filter(Boolean);
+                    if (items.length === 1) {
+                        return (
+                            <span className="inline-flex items-center text-[11px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded border border-primary/20 max-w-[200px] truncate" title={items[0]}>
+                                {items[0]}
+                            </span>
+                        );
+                    }
+
+                    return (
+                        <div className="flex flex-wrap gap-1 items-center max-w-[220px]">
+                            {items.slice(0, 2).map((item, idx) => (
+                                <span key={idx} className="inline-flex items-center text-[10px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 whitespace-nowrap truncate max-w-[95px]" title={item}>
+                                    {item}
+                                </span>
+                            ))}
+                            {items.length > 2 && (
+                                <span className="text-[10px] text-text-desc font-bold cursor-help px-1 bg-slate-100 dark:bg-zinc-800 rounded border border-slate-200 dark:border-zinc-700" title={strVal}>
+                                    +{items.length - 2}
+                                </span>
+                            )}
+                        </div>
+                    );
+                }
+
                 // Specific badge formats
                 if (col.name === 'role_name') {
                     return val ? (
@@ -787,6 +852,20 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 }
 
                 if (col.name === 'name') {
+                    if (resourceSlug === 'dashboard-types') {
+                        return (
+                            <div className="flex flex-col py-0.5">
+                                <span className="font-semibold text-xs text-text-main max-w-[240px] truncate" title={val}>
+                                    {val || '—'}
+                                </span>
+                                {row.description && (
+                                    <span className="text-[10px] text-text-desc max-w-[240px] truncate" title={row.description}>
+                                        {row.description}
+                                    </span>
+                                )}
+                            </div>
+                        );
+                    }
                     return (
                         <span className="font-semibold text-xs text-text-main whitespace-nowrap">
                             {val || '—'}
@@ -913,6 +992,26 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     );
                 }
 
+                if (col.name === 'holiday_date' && resourceSlug === 'holidays') {
+                    const d = parseDateInput(val);
+                    if (!d) return <span className="font-mono text-xs text-text-muted">—</span>;
+                    const dayName = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][d.getDay()];
+                    const dayNum = String(d.getDate()).padStart(2, '0');
+                    const monthName = MONTH_NAMES[d.getMonth()];
+                    const year = d.getFullYear();
+
+                    return (
+                        <div className="flex items-center gap-2 py-0.5">
+                            <span className="font-mono text-xs font-semibold text-text-main">
+                                {dayNum} {monthName} {year}
+                            </span>
+                            <span className="text-[10px] font-medium text-text-muted bg-surface-muted px-1.5 py-0.5 rounded border border-surface-border">
+                                {dayName}
+                            </span>
+                        </div>
+                    );
+                }
+
                 return (
                     <span className="text-xs text-text-main whitespace-nowrap">
                         {val || '—'}
@@ -933,8 +1032,42 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         'contract-types': FileText,
         locations: MapPin,
         'business-units': Layers,
+        holidays: Calendar,
     };
     const HeaderIcon = resourceIcons[resourceSlug] || Database;
+
+    const MONTH_NAMES = [
+        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    const renderHolidaySubHeader = React.useCallback((row: any, prevRow: any | null) => {
+        if (resourceSlug !== 'holidays') return null;
+
+        const currentDate = parseDateInput(row.holiday_date);
+        if (!currentDate) return null;
+
+        const currentMonthYear = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
+        const prevDate = prevRow ? parseDateInput(prevRow.holiday_date) : null;
+        const prevMonthYear = prevDate ? `${prevDate.getFullYear()}-${prevDate.getMonth()}` : null;
+
+        if (currentMonthYear !== prevMonthYear) {
+            const monthName = MONTH_NAMES[currentDate.getMonth()];
+            const year = currentDate.getFullYear();
+
+            return (
+                <div className="flex items-center gap-2 py-1">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-bold text-xs border border-primary/20 shadow-2xs">
+                        <Calendar size={13} className="text-primary shrink-0" />
+                        <span>{monthName} {year}</span>
+                    </div>
+                    <div className="h-px flex-1 bg-gradient-to-r from-surface-border to-transparent" />
+                </div>
+            );
+        }
+
+        return null;
+    }, [resourceSlug]);
 
     return (
         <>
@@ -992,6 +1125,17 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                                     />
                                 )}
 
+                                {resourceSlug === 'contract-sla-configs' && (
+                                    <Button
+                                        type="button"
+                                        variant="white"
+                                        className="h-9 gap-1.5 text-xs font-semibold border-border hover:bg-surface-muted text-primary"
+                                        onClick={() => setIsSlaSimOpen(true)}
+                                    >
+                                        <Calculator size={15} className="text-primary" /> Simulasi SLA
+                                    </Button>
+                                )}
+
                                 {DIALOG_RESOURCES.includes(resourceSlug) ? (
                                     <Button 
                                         variant="primary" 
@@ -1029,6 +1173,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                             columns={columns}
                             borderless={true}
                             data={processedData}
+                            renderSubHeader={renderHolidaySubHeader}
                             sortBy={activeFilters.sort_by}
                             sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
                             onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}
@@ -1196,7 +1341,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     setIsSyncing(true);
                     showProgress('portal_sync', `Sedang menyinkronkan data ${title} dari Portal...`, 40);
                     router.post(`/admin/core/${resourceSlug}/sync-portal`, {
-                        is_used_mode: syncIsUsedMode,
+                        is_used_mode: 'keep',
                     }, {
                         preserveScroll: true,
                         onFinish: () => {
@@ -1210,100 +1355,15 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                 description={
                     isSyncing
                         ? `Sedang memproses sinkronisasi data ${title} dari Portal... Mohon tunggu sejenak.`
-                        : `Pilih perlakuan status "Is Used" untuk data yang disinkronkan:`
+                        : `Apakah Anda yakin ingin menyinkronkan data master ${title} terbaru dari Portal API?`
                 }
-                confirmText={isSyncing ? "Menyinkronkan..." : "Ya, Sinkron Sekarang"}
+                confirmText={isSyncing ? "Menyinkronkan..." : "Ya, Sinkronkan Sekarang"}
                 cancelText={isSyncing ? "" : "Batal"}
                 variant="info"
                 processing={isSyncing}
                 className="max-w-md"
                 icon={<RefreshCw size={24} className={isSyncing ? "animate-spin text-primary" : "text-primary"} />}
-            >
-                {!isSyncing && (
-                    <div className="mt-4 text-left space-y-2 rounded-2xl bg-slate-50 dark:bg-slate-800/50 p-3.5 border border-slate-200/60 dark:border-slate-700/50">
-                        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-2">
-                            Opsi Status Is Used
-                        </label>
-                        <div
-                            onClick={() => setSyncIsUsedMode('keep')}
-                            className={cn(
-                                "flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer border transition-all",
-                                syncIsUsedMode === 'keep'
-                                    ? "bg-primary/10 border-primary text-slate-900 dark:text-slate-100"
-                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                            )}
-                        >
-                            <input
-                                type="radio"
-                                name="syncIsUsedMode"
-                                checked={syncIsUsedMode === 'keep'}
-                                onChange={() => setSyncIsUsedMode('keep')}
-                                className="mt-0.5 text-primary focus:ring-primary h-3.5 w-3.5"
-                            />
-                            <div>
-                                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                    Pertahankan Nilai Saat Ini (Default)
-                                </div>
-                                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
-                                    Data lama tetap memakai status is_used yang ada. Data baru otomatis bernilai Tidak (False).
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            onClick={() => setSyncIsUsedMode('set_true')}
-                            className={cn(
-                                "flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer border transition-all",
-                                syncIsUsedMode === 'set_true'
-                                    ? "bg-primary/10 border-primary text-slate-900 dark:text-slate-100"
-                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                            )}
-                        >
-                            <input
-                                type="radio"
-                                name="syncIsUsedMode"
-                                checked={syncIsUsedMode === 'set_true'}
-                                onChange={() => setSyncIsUsedMode('set_true')}
-                                className="mt-0.5 text-primary focus:ring-primary h-3.5 w-3.5"
-                            />
-                            <div>
-                                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                    Setel Semua ke Is Used = Ya (True)
-                                </div>
-                                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
-                                    Semua data yang disinkronkan akan ditandai aktif digunakan (Is Used = True).
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            onClick={() => setSyncIsUsedMode('set_false')}
-                            className={cn(
-                                "flex items-start gap-2.5 p-2.5 rounded-xl cursor-pointer border transition-all",
-                                syncIsUsedMode === 'set_false'
-                                    ? "bg-primary/10 border-primary text-slate-900 dark:text-slate-100"
-                                    : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300"
-                            )}
-                        >
-                            <input
-                                type="radio"
-                                name="syncIsUsedMode"
-                                checked={syncIsUsedMode === 'set_false'}
-                                onChange={() => setSyncIsUsedMode('set_false')}
-                                className="mt-0.5 text-primary focus:ring-primary h-3.5 w-3.5"
-                            />
-                            <div>
-                                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                    Setel Semua ke Is Used = Tidak (False)
-                                </div>
-                                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
-                                    Semua data yang disinkronkan akan disetel tidak digunakan (Is Used = False).
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </ConfirmationModal>
+            />
 
             {/* ponytail: Bulk Edit Modal */}
             {showBulkEditModal && (
@@ -1764,6 +1824,14 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                         </form>
                     </DialogContent>
                 </Dialog>
+            )}
+
+            {resourceSlug === 'contract-sla-configs' && (
+                <SlaSimulationModal
+                    open={isSlaSimOpen}
+                    onOpenChange={setIsSlaSimOpen}
+                    slaConfigs={Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : [])}
+                />
             )}
         </>
     );

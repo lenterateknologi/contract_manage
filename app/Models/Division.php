@@ -30,6 +30,15 @@ class Division extends Model
         'is_active' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function ($division) {
+            if (empty($division->code)) {
+                $division->code = (string) \Illuminate\Support\Str::uuid();
+            }
+        });
+    }
+
     /**
      * @return BelongsTo<Department, Division>
      */

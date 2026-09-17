@@ -75,6 +75,7 @@ export default function WorkflowEditor({
     companyGroups = [],
     regions = [],
     companies = [],
+    locations = [],
     allWorkflows = [],
     masterWorkflows = [],
     workflowTypes = [],
@@ -409,10 +410,27 @@ export default function WorkflowEditor({
     const bulkDeleteSelected = () => {
         if (selectedStepIds.size === 0) return;
         const filtered = form.data.steps.filter((s: any) => !selectedStepIds.has(s.id));
-        const normalized = filtered.map((item: any, index: number) => ({
-            ...item,
-            step: index + 1,
-        }));
+        const normalized = filtered.map((item: any, index: number) => {
+            const updatedActions = (item.actions || []).map((act: any) => {
+                if (act.transition_config?.type === 'absolute' && (selectedStepIds.has(act.transition_config?.step_id) || selectedStepIds.has(act.next_step_id))) {
+                    return {
+                        ...act,
+                        transition_config: {
+                            ...act.transition_config,
+                            step_id: null,
+                            sequence: null,
+                        },
+                        next_step_id: null,
+                    };
+                }
+                return act;
+            });
+            return {
+                ...item,
+                step: index + 1,
+                actions: updatedActions,
+            };
+        });
         form.setData('steps', normalized);
         clearSelection();
     };
@@ -900,6 +918,7 @@ export default function WorkflowEditor({
                                         roles={roles}
                                         departments={departments}
                                         divisions={divisions}
+                                        locations={locations}
                                         companyGroups={companyGroups}
                                         companies={companies}
                                         regions={regions}
@@ -1287,6 +1306,7 @@ export default function WorkflowEditor({
                                                             roles={roles}
                                                             departments={departments}
                                                             divisions={divisions}
+                                                            locations={locations}
                                                             users={users}
                                                             companyGroups={companyGroups}
                                                             companies={companies}
@@ -1334,13 +1354,32 @@ export default function WorkflowEditor({
                                                                 form.setData('steps', s);
                                                             }}
                                                             removeLocalStep={(i: number) => {
+                                                                const removedStep = form.data.steps[i];
+                                                                const removedStepId = removedStep?.id;
                                                                 const filtered = form.data.steps.filter(
                                                                     (_: any, index: number) => index !== i,
                                                                 );
-                                                                const normalized = filtered.map((item: any, index: number) => ({
-                                                                    ...item,
-                                                                    step: index + 1,
-                                                                }));
+                                                                const normalized = filtered.map((item: any, index: number) => {
+                                                                    const updatedActions = (item.actions || []).map((act: any) => {
+                                                                        if (removedStepId && act.transition_config?.type === 'absolute' && (act.transition_config?.step_id === removedStepId || act.next_step_id === removedStepId)) {
+                                                                            return {
+                                                                                ...act,
+                                                                                transition_config: {
+                                                                                    ...act.transition_config,
+                                                                                    step_id: null,
+                                                                                    sequence: null,
+                                                                                },
+                                                                                next_step_id: null,
+                                                                            };
+                                                                        }
+                                                                        return act;
+                                                                    });
+                                                                    return {
+                                                                        ...item,
+                                                                        step: index + 1,
+                                                                        actions: updatedActions,
+                                                                    };
+                                                                });
                                                                 form.setData('steps', normalized);
                                                             }}
                                                             moveLocalStep={(i: number, direction: 'up' | 'down') => {
@@ -1441,6 +1480,7 @@ export default function WorkflowEditor({
                                     roles={roles}
                                     departments={departments}
                                     divisions={divisions}
+                                    locations={locations}
                                     companyGroups={companyGroups}
                                     companies={companies}
                                     regions={regions}
@@ -1463,9 +1503,11 @@ export default function WorkflowEditor({
                                         })
                                     }
                                     steps={form.data.steps}
+                                    allWorkflows={allWorkflows}
                                     roles={roles}
                                     departments={departments}
                                     divisions={divisions}
+                                    locations={locations}
                                     companyGroups={companyGroups}
                                     companies={companies}
                                     regions={regions}

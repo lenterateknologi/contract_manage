@@ -1,14 +1,10 @@
-import * as React from 'react';
-import { ChevronLeft, ChevronRight, Search, SlidersHorizontal, Filter } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/buttons/Button';
-import { Checkbox } from '@/components/ui/selection/Checkbox';
-import { SearchInput } from '@/components/ui/inputs/SearchInput';
-import { useDebounce } from '@/hooks/use-debounce';
-import { FilterPopover } from '@/components/ui/selection/FilterPopover';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
-import { router } from '@inertiajs/react';
-import { ConfirmationModal } from '@/components/ui/dialogs/ConfirmationModal';
+import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { useDebounce } from '@/hooks/use-debounce';
+import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import * as React from 'react';
 
 /**
  * Unified Column Configuration
@@ -70,6 +66,9 @@ export interface DataTableProps<T> {
     onSortChange?: (sortBy: string, sortDir: 'asc' | 'desc') => void;
     isRowSelectable?: (row: T) => boolean;
     onRowContextMenu?: (row: T, event: React.MouseEvent) => void;
+
+    // Sub-header / Row grouping
+    renderSubHeader?: (row: T, prevRow: T | null, index: number) => React.ReactNode;
 }
 
 /**
@@ -78,7 +77,6 @@ export interface DataTableProps<T> {
  * Premium aesthetics, lightened typography, centralized logic.
  */
 export function DataTable<T extends Record<string, any>>({
-    title,
     columns,
     data = [],
     loading = false,
@@ -87,14 +85,8 @@ export function DataTable<T extends Record<string, any>>({
     onSelectionChange,
     selectedRows = [],
     bulkActions,
-    searchKey = "name",
-    searchPlaceholder = "Cari data...",
     searchValue = "",
     onSearchChange,
-    filters = [],
-    activeFilters = {},
-    onFilterChange,
-    headerActions,
     rowActions,
     borderless = false,
     skeleton,
@@ -103,6 +95,7 @@ export function DataTable<T extends Record<string, any>>({
     onSortChange,
     isRowSelectable,
     onRowContextMenu,
+    renderSubHeader,
 }: DataTableProps<T>) {
 
     const [localPerPage, setLocalPerPage] = React.useState(pagination?.perPage || 15);
@@ -262,73 +255,85 @@ export function DataTable<T extends Record<string, any>>({
                                 </tr>
                             ) : (
                                 displayData.map((row, rowIdx) => {
+                                    const prevRow = rowIdx > 0 ? displayData[rowIdx - 1] : null;
+                                    const subHeader = renderSubHeader ? renderSubHeader(row, prevRow, rowIdx) : null;
+                                    const totalColSpan = columns.length + (onSelectionChange ? 1 : 0) + (rowActions ? 1 : 0);
+
                                     return (
-                                        <tr
-                                            key={row.id || rowIdx}
-                                            onClick={(e) => {
-                                                const target = e.target as HTMLElement | null;
-                                                if (target?.closest('button, a, input, select, textarea, [data-interactive="true"], [role="button"], [role="menuitem"], [role="option"]')) {
-                                                    return;
-                                                }
-                                                onRowClick?.(row);
-                                            }}
-                                            onContextMenu={(e) => {
-                                                if (onRowContextMenu) {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    onRowContextMenu(row, e);
-                                                }
-                                            }}
-                                            className={cn(
-                                                "border-b border-surface-border/30 transition-all hover:bg-slate-50 dark:hover:bg-zinc-800/60 cursor-pointer group select-none [content-visibility:auto] [contain-intrinsic-size:0_45px]",
-                                                activeSelectedRows.some(r => r.id === row.id) ? "bg-primary/5 dark:bg-primary/10" : "bg-white dark:bg-zinc-900"
-                                            )}
-                                        >
-                                            {onSelectionChange && (
-                                                <td className="py-2 px-3 w-9 sticky left-0 z-20 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors" onClick={(e) => e.stopPropagation()}>
-                                                    {(!isRowSelectable || isRowSelectable(row)) ? (
-                                                        <Checkbox
-                                                            checked={activeSelectedRows.some(r => r.id === row.id)}
-                                                            onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
-                                                            className="border-surface-border"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-text-soft/20 text-xs select-none flex items-center justify-center font-bold">—</span>
-                                                    )}
-                                                </td>
-                                            )}
-                                            {columns.map((col, colIdx) => {
-                                                const isPinned = Boolean(col.pinned);
-                                                const pinOffset = col.pinOffset;
-                                                const isLastPinned = col.isLastPinned;
-
-                                                const tdStyles: React.CSSProperties = isPinned ? {
-                                                    position: 'sticky',
-                                                    left: pinOffset !== undefined ? `${pinOffset}px` : undefined,
-                                                    zIndex: 15,
-                                                } : {};
-
-                                                return (
-                                                    <td
-                                                        key={colIdx}
-                                                        style={tdStyles}
-                                                        className={cn(
-                                                            "py-2 px-3 align-middle text-xs font-normal text-text-main whitespace-nowrap",
-                                                            isPinned && "sticky z-15 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors",
-                                                            isLastPinned && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.12)] border-r border-surface-border",
-                                                            col.className
-                                                        )}
-                                                    >
-                                                        {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
+                                        <React.Fragment key={row.id || rowIdx}>
+                                            {subHeader && (
+                                                <tr className="bg-slate-50/90 dark:bg-zinc-800/80 border-y border-surface-border select-none">
+                                                    <td colSpan={totalColSpan} className="px-4 py-2 text-xs font-semibold text-text-main">
+                                                        {subHeader}
                                                     </td>
-                                                );
-                                            })}
-                                            {rowActions && (
-                                                <td className="py-2 px-3 w-16 text-center align-middle sticky right-0 z-20 bg-white dark:bg-zinc-900 border-l border-surface-border/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.12)] group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors" onClick={(e) => e.stopPropagation()}>
-                                                    {rowActions(row)}
-                                                </td>
+                                                </tr>
                                             )}
-                                        </tr>
+                                            <tr
+                                                onClick={(e) => {
+                                                    const target = e.target as HTMLElement | null;
+                                                    if (target?.closest('button, a, input, select, textarea, [data-interactive="true"], [role="button"], [role="menuitem"], [role="option"]')) {
+                                                        return;
+                                                    }
+                                                    onRowClick?.(row);
+                                                }}
+                                                onContextMenu={(e) => {
+                                                    if (onRowContextMenu) {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        onRowContextMenu(row, e);
+                                                    }
+                                                }}
+                                                className={cn(
+                                                    "border-b border-surface-border/30 transition-all hover:bg-slate-50 dark:hover:bg-zinc-800/60 cursor-pointer group select-none [content-visibility:auto] [contain-intrinsic-size:0_45px]",
+                                                    activeSelectedRows.some(r => r.id === row.id) ? "bg-primary/5 dark:bg-primary/10" : "bg-white dark:bg-zinc-900"
+                                                )}
+                                            >
+                                                {onSelectionChange && (
+                                                    <td className="py-2 px-3 w-9 sticky left-0 z-20 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors" onClick={(e) => e.stopPropagation()}>
+                                                        {(!isRowSelectable || isRowSelectable(row)) ? (
+                                                            <Checkbox
+                                                                checked={activeSelectedRows.some(r => r.id === row.id)}
+                                                                onCheckedChange={(checked) => handleSelectRow(row, !!checked)}
+                                                                className="border-surface-border"
+                                                            />
+                                                        ) : (
+                                                            <span className="text-text-soft/20 text-xs select-none flex items-center justify-center font-bold">—</span>
+                                                        )}
+                                                    </td>
+                                                )}
+                                                {columns.map((col, colIdx) => {
+                                                    const isPinned = Boolean(col.pinned);
+                                                    const pinOffset = col.pinOffset;
+                                                    const isLastPinned = col.isLastPinned;
+
+                                                    const tdStyles: React.CSSProperties = isPinned ? {
+                                                        position: 'sticky',
+                                                        left: pinOffset !== undefined ? `${pinOffset}px` : undefined,
+                                                        zIndex: 15,
+                                                    } : {};
+
+                                                    return (
+                                                        <td
+                                                            key={colIdx}
+                                                            style={tdStyles}
+                                                            className={cn(
+                                                                "py-2 px-3 align-middle text-xs font-normal text-text-main whitespace-nowrap",
+                                                                isPinned && "sticky z-15 bg-white dark:bg-zinc-900 group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors",
+                                                                isLastPinned && "shadow-[4px_0_6px_-2px_rgba(0,0,0,0.12)] border-r border-surface-border",
+                                                                col.className
+                                                            )}
+                                                        >
+                                                            {col.cell ? col.cell(row) : ((col.accessorKey as string).split('.').reduce((acc: any, part: string) => acc && acc[part], row) as React.ReactNode)}
+                                                        </td>
+                                                    );
+                                                })}
+                                                {rowActions && (
+                                                    <td className="py-2 px-3 w-16 text-center align-middle sticky right-0 z-20 bg-white dark:bg-zinc-900 border-l border-surface-border/70 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.12)] group-hover:bg-slate-50 dark:group-hover:bg-zinc-800 transition-colors" onClick={(e) => e.stopPropagation()}>
+                                                        {rowActions(row)}
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        </React.Fragment>
                                     );
                                 })
                             )}

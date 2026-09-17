@@ -1,17 +1,17 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { Trash2, Plus, Shield, Pencil, Search, Users, CheckCircle2, XCircle, Info, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/buttons/Button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialogs/Dialog';
-import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
-import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from '@/components/ui/dialogs/Dialog';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { cn } from '@/lib/utils';
+import { ArrowDown, ArrowUp, ArrowUpDown, CheckCircle2, ChevronDown, Info, Pencil, Plus, Search, Shield, Trash2, Users } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 interface AuthorityItem {
     id?: string;
     authority_type: string;
     role_id?: string | null;
     department_id?: string | null;
     division_id?: string | null;
+    location_id?: string | null;
     user_id?: string | null;
     company_group_id?: string | null;
     company_id?: string | null;
@@ -19,6 +19,7 @@ interface AuthorityItem {
     role_use_initiator?: boolean;
     department_use_initiator?: boolean;
     division_use_initiator?: boolean;
+    location_use_initiator?: boolean;
     company_group_use_initiator?: boolean;
     company_use_initiator?: boolean;
     region_use_initiator?: boolean;
@@ -31,6 +32,7 @@ interface AuthorityTableManagerProps {
     roles: any[];
     departments: any[];
     divisions?: any[];
+    locations?: any[];
     companyGroups: any[];
     companies?: any[];
     regions: any[];
@@ -66,6 +68,7 @@ export default function AuthorityTableManager({
     roles = [],
     departments = [],
     divisions = [],
+    locations = [],
     companyGroups = [],
     companies = [],
     regions = [],
@@ -99,14 +102,16 @@ export default function AuthorityTableManager({
     const [modalRoleIds, setModalRoleIds] = useState<string[]>([]);
     const [modalDepartmentIds, setModalDepartmentIds] = useState<string[]>([]);
     const [modalDivisionIds, setModalDivisionIds] = useState<string[]>([]);
+    const [modalLocationIds, setModalLocationIds] = useState<string[]>([]);
     const [modalCompanyGroupIds, setModalCompanyGroupIds] = useState<string[]>([]);
     const [modalCompanyIds, setModalCompanyIds] = useState<string[]>([]);
     const [modalRegionIds, setModalRegionIds] = useState<string[]>([]);
-    
+
     // Per-dimension initiator flags
     const [roleUseInitiator, setRoleUseInitiator] = useState<boolean>(false);
     const [departmentUseInitiator, setDepartmentUseInitiator] = useState<boolean>(false);
     const [divisionUseInitiator, setDivisionUseInitiator] = useState<boolean>(false);
+    const [locationUseInitiator, setLocationUseInitiator] = useState<boolean>(false);
     const [companyGroupUseInitiator, setCompanyGroupUseInitiator] = useState<boolean>(false);
     const [companyUseInitiator, setCompanyUseInitiator] = useState<boolean>(false);
     const [regionUseInitiator, setRegionUseInitiator] = useState<boolean>(false);
@@ -130,6 +135,7 @@ export default function AuthorityTableManager({
     const activeUsers = React.useMemo(() => (users || []).filter(u => u.is_used !== false && u.is_used !== 0 && String(u.is_used) !== '0'), [users]);
     const activeDepartments = React.useMemo(() => (departments || []).filter(d => d.is_used !== false && d.is_used !== 0 && String(d.is_used) !== '0'), [departments]);
     const activeDivisions = React.useMemo(() => (divisions || []).filter(d => d.is_used !== false && d.is_used !== 0 && String(d.is_used) !== '0'), [divisions]);
+    const activeLocations = React.useMemo(() => (locations || []).filter(l => l.is_used !== false && l.is_used !== 0 && String(l.is_used) !== '0'), [locations]);
     const activeCompanyGroups = React.useMemo(() => (companyGroups || []).filter(cg => cg.is_used !== false && cg.is_used !== 0 && String(cg.is_used) !== '0'), [companyGroups]);
     const activeCompanies = React.useMemo(() => (companies || []).filter(c => c.is_used !== false && c.is_used !== 0 && String(c.is_used) !== '0'), [companies]);
     const activeRegions = React.useMemo(() => (regions || []).filter(r => r.is_used !== false && r.is_used !== 0 && String(r.is_used) !== '0'), [regions]);
@@ -142,12 +148,14 @@ export default function AuthorityTableManager({
             setModalRoleIds([]);
             setModalDepartmentIds([]);
             setModalDivisionIds([]);
+            setModalLocationIds([]);
             setModalCompanyGroupIds([]);
             setModalCompanyIds([]);
             setModalRegionIds([]);
             setRoleUseInitiator(false);
             setDepartmentUseInitiator(false);
             setDivisionUseInitiator(false);
+            setLocationUseInitiator(false);
             setCompanyGroupUseInitiator(false);
             setCompanyUseInitiator(false);
             setRegionUseInitiator(false);
@@ -158,6 +166,7 @@ export default function AuthorityTableManager({
         if (type === 'role') setModalRoleIds(val);
         if (type === 'department') setModalDepartmentIds(val);
         if (type === 'division') setModalDivisionIds(val);
+        if (type === 'location') setModalLocationIds(val);
         if (type === 'company_group') setModalCompanyGroupIds(val);
         if (type === 'company') setModalCompanyIds(val);
         if (type === 'region') setModalRegionIds(val);
@@ -176,12 +185,14 @@ export default function AuthorityTableManager({
         setModalRoleIds([]);
         setModalDepartmentIds([]);
         setModalDivisionIds([]);
+        setModalLocationIds([]);
         setModalCompanyGroupIds([]);
         setModalCompanyIds([]);
         setModalRegionIds([]);
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
         setDivisionUseInitiator(false);
+        setLocationUseInitiator(false);
         setCompanyGroupUseInitiator(false);
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
@@ -200,12 +211,14 @@ export default function AuthorityTableManager({
         setModalRoleIds([]);
         setModalDepartmentIds([]);
         setModalDivisionIds([]);
+        setModalLocationIds([]);
         setModalCompanyGroupIds([]);
         setModalCompanyIds([]);
         setModalRegionIds([]);
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
         setDivisionUseInitiator(false);
+        setLocationUseInitiator(false);
         setCompanyGroupUseInitiator(false);
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
@@ -219,6 +232,7 @@ export default function AuthorityTableManager({
                 if (firstAuth.role_id) setModalRoleIds([firstAuth.role_id]);
                 if (firstAuth.department_id) setModalDepartmentIds([firstAuth.department_id]);
                 if (firstAuth.division_id) setModalDivisionIds([firstAuth.division_id]);
+                if (firstAuth.location_id) setModalLocationIds([firstAuth.location_id]);
                 if (firstAuth.company_group_id) setModalCompanyGroupIds([firstAuth.company_group_id]);
                 if (firstAuth.company_id) setModalCompanyIds([firstAuth.company_id]);
                 if (firstAuth.region_id) setModalRegionIds([firstAuth.region_id]);
@@ -226,6 +240,7 @@ export default function AuthorityTableManager({
                 if (firstAuth.role_use_initiator) setRoleUseInitiator(true);
                 if (firstAuth.department_use_initiator) setDepartmentUseInitiator(true);
                 if (firstAuth.division_use_initiator) setDivisionUseInitiator(true);
+                if (firstAuth.location_use_initiator) setLocationUseInitiator(true);
                 if (firstAuth.company_group_use_initiator) setCompanyGroupUseInitiator(true);
                 if (firstAuth.company_use_initiator) setCompanyUseInitiator(true);
                 if (firstAuth.region_use_initiator) setRegionUseInitiator(true);
@@ -245,19 +260,21 @@ export default function AuthorityTableManager({
         const auth = authorities[index];
         setEditIndex(index);
         setIsBulkEdit(false);
-        
+
         // Reset fields first
         setModalUserIds([]);
         setModalCustomIds([]);
         setModalRoleIds([]);
         setModalDepartmentIds([]);
         setModalDivisionIds([]);
+        setModalLocationIds([]);
         setModalCompanyGroupIds([]);
         setModalCompanyIds([]);
         setModalRegionIds([]);
         setRoleUseInitiator(false);
         setDepartmentUseInitiator(false);
         setDivisionUseInitiator(false);
+        setLocationUseInitiator(false);
         setCompanyGroupUseInitiator(false);
         setCompanyUseInitiator(false);
         setRegionUseInitiator(false);
@@ -271,13 +288,15 @@ export default function AuthorityTableManager({
             if (auth.role_id) setModalRoleIds([auth.role_id]);
             if (auth.department_id) setModalDepartmentIds([auth.department_id]);
             if (auth.division_id) setModalDivisionIds([auth.division_id]);
+            if (auth.location_id) setModalLocationIds([auth.location_id]);
             if (auth.company_group_id) setModalCompanyGroupIds([auth.company_group_id]);
             if (auth.company_id) setModalCompanyIds([auth.company_id]);
             if (auth.region_id) setModalRegionIds([auth.region_id]);
-            
+
             if (auth.role_use_initiator) setRoleUseInitiator(true);
             if (auth.department_use_initiator) setDepartmentUseInitiator(true);
             if (auth.division_use_initiator) setDivisionUseInitiator(true);
+            if (auth.location_use_initiator) setLocationUseInitiator(true);
             if (auth.company_group_use_initiator) setCompanyGroupUseInitiator(true);
             if (auth.company_use_initiator) setCompanyUseInitiator(true);
             if (auth.region_use_initiator) setRegionUseInitiator(true);
@@ -313,14 +332,16 @@ export default function AuthorityTableManager({
             const roleList = roleUseInitiator ? ['__initiator__'] : (modalRoleIds.length > 0 ? modalRoleIds : [null]);
             const deptList = departmentUseInitiator ? ['__initiator__'] : (modalDepartmentIds.length > 0 ? modalDepartmentIds : [null]);
             const divList = divisionUseInitiator ? ['__initiator__'] : (modalDivisionIds.length > 0 ? modalDivisionIds : [null]);
+            const locList = locationUseInitiator ? ['__initiator__'] : (modalLocationIds.length > 0 ? modalLocationIds : [null]);
             const cgList = companyGroupUseInitiator ? ['__initiator__'] : (modalCompanyGroupIds.length > 0 ? modalCompanyGroupIds : [null]);
             const compList = companyUseInitiator ? ['__initiator__'] : (modalCompanyIds.length > 0 ? modalCompanyIds : [null]);
             const regList = regionUseInitiator ? ['__initiator__'] : (modalRegionIds.length > 0 ? modalRegionIds : [null]);
 
-            const hasAnyDimension = 
+            const hasAnyDimension =
                 roleUseInitiator || modalRoleIds.length > 0 ||
                 departmentUseInitiator || modalDepartmentIds.length > 0 ||
                 divisionUseInitiator || modalDivisionIds.length > 0 ||
+                locationUseInitiator || modalLocationIds.length > 0 ||
                 companyGroupUseInitiator || modalCompanyGroupIds.length > 0 ||
                 companyUseInitiator || modalCompanyIds.length > 0 ||
                 regionUseInitiator || modalRegionIds.length > 0;
@@ -329,23 +350,27 @@ export default function AuthorityTableManager({
                 roleList.forEach(r => {
                     deptList.forEach(d => {
                         divList.forEach(dv => {
-                            cgList.forEach(cg => {
-                                compList.forEach(cp => {
-                                    regList.forEach(rg => {
-                                        newItems.push({
-                                            authority_type: 'group',
-                                            role_id: r === '__initiator__' ? null : r,
-                                            department_id: d === '__initiator__' ? null : d,
-                                            division_id: dv === '__initiator__' ? null : dv,
-                                            company_group_id: cg === '__initiator__' ? null : cg,
-                                            company_id: cp === '__initiator__' ? null : cp,
-                                            region_id: rg === '__initiator__' ? null : rg,
-                                            role_use_initiator: r === '__initiator__',
-                                            department_use_initiator: d === '__initiator__',
-                                            division_use_initiator: dv === '__initiator__',
-                                            company_group_use_initiator: cg === '__initiator__',
-                                            company_use_initiator: cp === '__initiator__',
-                                            region_use_initiator: rg === '__initiator__',
+                            locList.forEach(loc => {
+                                cgList.forEach(cg => {
+                                    compList.forEach(cp => {
+                                        regList.forEach(rg => {
+                                            newItems.push({
+                                                authority_type: 'group',
+                                                role_id: r === '__initiator__' ? null : r,
+                                                department_id: d === '__initiator__' ? null : d,
+                                                division_id: dv === '__initiator__' ? null : dv,
+                                                location_id: loc === '__initiator__' ? null : loc,
+                                                company_group_id: cg === '__initiator__' ? null : cg,
+                                                company_id: cp === '__initiator__' ? null : cp,
+                                                region_id: rg === '__initiator__' ? null : rg,
+                                                role_use_initiator: r === '__initiator__',
+                                                department_use_initiator: d === '__initiator__',
+                                                division_use_initiator: dv === '__initiator__',
+                                                location_use_initiator: loc === '__initiator__',
+                                                company_group_use_initiator: cg === '__initiator__',
+                                                company_use_initiator: cp === '__initiator__',
+                                                region_use_initiator: rg === '__initiator__',
+                                            });
                                         });
                                     });
                                 });
@@ -380,6 +405,7 @@ export default function AuthorityTableManager({
                 r: a.role_id,
                 d: a.department_id,
                 dv: a.division_id,
+                loc: a.location_id,
                 u: a.user_id,
                 cg: a.company_group_id,
                 c: a.company_id,
@@ -387,6 +413,7 @@ export default function AuthorityTableManager({
                 ru: a.role_use_initiator,
                 du: a.department_use_initiator,
                 dvu: a.division_use_initiator,
+                locu: a.location_use_initiator,
                 cgu: a.company_group_use_initiator,
                 cu: a.company_use_initiator,
                 rgu: a.region_use_initiator,
@@ -397,6 +424,7 @@ export default function AuthorityTableManager({
                 r: a.role_id,
                 d: a.department_id,
                 dv: a.division_id,
+                loc: a.location_id,
                 u: a.user_id,
                 cg: a.company_group_id,
                 c: a.company_id,
@@ -404,6 +432,7 @@ export default function AuthorityTableManager({
                 ru: a.role_use_initiator,
                 du: a.department_use_initiator,
                 dvu: a.division_use_initiator,
+                locu: a.location_use_initiator,
                 cgu: a.company_group_use_initiator,
                 cu: a.company_use_initiator,
                 rgu: a.region_use_initiator,
@@ -444,6 +473,10 @@ export default function AuthorityTableManager({
     const getDivLabel = (id?: string | null) => {
         if (!id) return '-';
         return divisions.find(d => String(d.id) === id)?.name || id;
+    };
+    const getLocationLabel = (id?: string | null) => {
+        if (!id) return '-';
+        return locations.find(l => String(l.id) === id || l.code === id)?.name || id;
     };
     const getCompanyGroupLabel = (id?: string | null) => {
         if (!id) return '-';
@@ -508,6 +541,7 @@ export default function AuthorityTableManager({
                 const userRoleId = String(user.role_id || user.role || '');
                 const userDeptId = String(user.department_id || user.department?.id || '');
                 const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+                const userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
                 const userCompId = String(user.company_id || user.company?.id || '');
                 const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
                 const userRegionId = String(user.region_id || user.company?.region_id || '');
@@ -541,6 +575,25 @@ export default function AuthorityTableManager({
                     }
                 } else if (auth.division_id) {
                     if (userDivId !== String(auth.division_id)) return false;
+                }
+
+                if (auth.location_use_initiator) {
+                    if (simInitiatorUser) {
+                        const initLocId = String(simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '');
+                        const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '').toLowerCase().trim();
+                        const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                        const isLocMatch = (initLocId && userLocId && initLocId === userLocId) ||
+                                           (initLocName && userLocName && initLocName === userLocName);
+                        if (!isLocMatch) return false;
+                    }
+                } else if (auth.location_id) {
+                    const targetLocId = String(auth.location_id);
+                    const targetLoc = activeLocations.find(l => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId);
+                    const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
+                    const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
+                    const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                    const isLocMatch = userLocId === matchLocId || (userLocName && userLocName === matchLocName);
+                    if (!isLocMatch) return false;
                 }
 
                 if (auth.company_group_use_initiator) {
@@ -618,12 +671,13 @@ export default function AuthorityTableManager({
                     const roleName = auth.role_use_initiator ? 'sesuai inisiator' : (getRoleLabel(auth.role_id || undefined) || '').toLowerCase();
                     const deptName = auth.department_use_initiator ? 'sesuai inisiator' : (getDeptLabel(auth.department_id || undefined) || '').toLowerCase();
                     const divName = auth.division_use_initiator ? 'sesuai inisiator' : (getDivLabel(auth.division_id || undefined) || '').toLowerCase();
+                    const locName = auth.location_use_initiator ? 'sesuai inisiator' : (getLocationLabel(auth.location_id || undefined) || '').toLowerCase();
                     const cgName = auth.company_group_use_initiator ? 'sesuai inisiator' : (getCompanyGroupLabel(auth.company_group_id || undefined) || '').toLowerCase();
                     const compName = auth.company_use_initiator ? 'sesuai inisiator' : (getCompanyLabel(auth.company_id || undefined) || '').toLowerCase();
                     const regName = auth.region_use_initiator ? 'sesuai inisiator' : (getRegionLabel(auth.region_id || undefined) || '').toLowerCase();
 
-                    return roleName.includes(q) || deptName.includes(q) || divName.includes(q) ||
-                           cgName.includes(q) || compName.includes(q) || regName.includes(q);
+                    return roleName.includes(q) || deptName.includes(q) || divName.includes(q) || locName.includes(q) ||
+                        cgName.includes(q) || compName.includes(q) || regName.includes(q);
                 }
                 return false;
             });
@@ -646,6 +700,9 @@ export default function AuthorityTableManager({
                 } else if (sortField === 'division') {
                     valA = a.division_use_initiator ? 'Sesuai Inisiator' : (getDivLabel(a.division_id || undefined) || '');
                     valB = b.division_use_initiator ? 'Sesuai Inisiator' : (getDivLabel(b.division_id || undefined) || '');
+                } else if (sortField === 'location') {
+                    valA = a.location_use_initiator ? 'Sesuai Inisiator' : (getLocationLabel(a.location_id || undefined) || '');
+                    valB = b.location_use_initiator ? 'Sesuai Inisiator' : (getLocationLabel(b.location_id || undefined) || '');
                 } else if (sortField === 'companyGroup') {
                     valA = a.company_group_use_initiator ? 'Sesuai Inisiator' : (getCompanyGroupLabel(a.company_group_id || undefined) || '');
                     valB = b.company_group_use_initiator ? 'Sesuai Inisiator' : (getCompanyGroupLabel(b.company_group_id || undefined) || '');
@@ -672,7 +729,7 @@ export default function AuthorityTableManager({
         }
 
         return result;
-    }, [authorities, searchQuery, sortField, sortDirection, users, roles, departments, divisions, companyGroups, companies, regions, getAuthorityUserCount]);
+    }, [authorities, searchQuery, sortField, sortDirection, users, roles, departments, divisions, locations, companyGroups, companies, regions, getAuthorityUserCount]);
 
     const isAllFilteredSelected = filteredAuthorities.length > 0 && filteredAuthorities.every(f => selectedIndices.includes(f.originalIndex));
 
@@ -710,6 +767,7 @@ export default function AuthorityTableManager({
             const userRoleId = String(user.role_id || user.role || '');
             const userDeptId = String(user.department_id || user.department?.id || '');
             const userDivId = String(user.division_id || user.division?.id || user.department?.division_id || '');
+            const userLocId = String(user.location_id || user.idlocation || user.location?.id || '');
             const userCompId = String(user.company_id || user.company?.id || '');
             const userCgId = String(user.company_group_id || user.company?.company_group_id || '');
             const userRegionId = String(user.region_id || user.company?.region_id || '');
@@ -774,6 +832,26 @@ export default function AuthorityTableManager({
                         if (userDivId !== String(auth.division_id)) return false;
                     }
 
+                    // Cek Lokasi Kerja
+                    if (auth.location_use_initiator) {
+                        if (simInitiatorUser) {
+                            const initLocId = String(simInitiatorUser.location_id || simInitiatorUser.idlocation || simInitiatorUser.location?.id || '');
+                            const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '').toLowerCase().trim();
+                            const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                            const isLocMatch = (initLocId && userLocId && initLocId === userLocId) ||
+                                               (initLocName && userLocName && initLocName === userLocName);
+                            if (!isLocMatch) return false;
+                        }
+                    } else if (auth.location_id) {
+                        const targetLocId = String(auth.location_id);
+                        const targetLoc = activeLocations.find(l => String(l.id) === targetLocId || l.code === targetLocId || l.name === targetLocId);
+                        const matchLocId = targetLoc ? String(targetLoc.id) : targetLocId;
+                        const matchLocName = targetLoc ? targetLoc.name.toLowerCase() : targetLocId.toLowerCase();
+                        const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
+                        const isLocMatch = userLocId === matchLocId || (userLocName && userLocName === matchLocName);
+                        if (!isLocMatch) return false;
+                    }
+
                     // Cek Company Group
                     if (auth.company_group_use_initiator) {
                         if (simInitiatorUser) {
@@ -809,7 +887,7 @@ export default function AuthorityTableManager({
                 return false;
             });
         });
-    }, [authorities, activeUsers, roles, simInitiatorUser, simPicUser, simCreatorUser]);
+    }, [authorities, activeUsers, roles, simInitiatorUser, simPicUser, simCreatorUser, simAdhocUsers]);
 
     const filteredSimUsers = useMemo(() => {
         if (!simSearch.trim()) return matchedUsers;
@@ -1094,6 +1172,15 @@ export default function AuthorityTableManager({
                                     </div>
                                 </th>
                                 <th
+                                    onClick={() => toggleSort('location')}
+                                    className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
+                                >
+                                    <div className="flex items-center">
+                                        <span>Lokasi Kerja</span>
+                                        {renderSortIcon('location')}
+                                    </div>
+                                </th>
+                                <th
                                     onClick={() => toggleSort('company_group')}
                                     className="px-3.5 py-3 font-bold uppercase tracking-wider text-white dark:text-zinc-200 cursor-pointer hover:bg-white/10 transition-colors"
                                 >
@@ -1160,8 +1247,8 @@ export default function AuthorityTableManager({
                                                     isCustomAuth(auth)
                                                         ? "bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border border-violet-200/60"
                                                         : auth.authority_type === 'user'
-                                                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60"
-                                                        : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                                                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60"
+                                                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                                                 )}>
                                                     {isCustomAuth(auth) ? 'Custom' : auth.authority_type || 'Group'}
                                                 </span>
@@ -1227,6 +1314,11 @@ export default function AuthorityTableManager({
                                             ) : getDivLabel(auth.division_id)}
                                         </td>
                                         <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
+                                            {auth.location_use_initiator ? (
+                                                <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
+                                            ) : getLocationLabel(auth.location_id)}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">
                                             {auth.company_group_use_initiator ? (
                                                 <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] uppercase font-bold text-primary">Sesuai Inisiator</span>
                                             ) : getCompanyGroupLabel(auth.company_group_id)}
@@ -1260,7 +1352,7 @@ export default function AuthorityTableManager({
                                                     title="Ubah"
                                                 >
                                                     <Pencil size={14} />
-                                                 </button>
+                                                </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => removeAuthority(originalIndex)}
@@ -1436,6 +1528,37 @@ export default function AuthorityTableManager({
                                             options={activeDivisions.map(div => ({ value: String(div.id), label: div.name }))}
                                             placeholder="Semua Divisi..."
                                             disabled={showInitiatorOption && divisionUseInitiator}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Pilih Lokasi Kerja</label>
+                                            {showInitiatorOption && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <Checkbox
+                                                        id="location_initiator"
+                                                        checked={locationUseInitiator}
+                                                        onCheckedChange={(c) => {
+                                                            setLocationUseInitiator(!!c);
+                                                            if (c) {
+                                                                setModalLocationIds([]);
+                                                                setModalCustomIds([]);
+                                                                setModalUserIds([]);
+                                                            }
+                                                        }}
+                                                        className="h-3.5 w-3.5"
+                                                    />
+                                                    <label htmlFor="location_initiator" className="text-[11px] text-slate-500 font-medium cursor-pointer">Sesuai Inisiator</label>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <SearchableMultiSelect
+                                            values={modalLocationIds}
+                                            onValuesChange={(vals) => handleGroupChange('location', vals)}
+                                            options={activeLocations.map(loc => ({ value: String(loc.id), label: loc.name }))}
+                                            placeholder="Semua Lokasi..."
+                                            disabled={showInitiatorOption && locationUseInitiator}
                                         />
                                     </div>
 

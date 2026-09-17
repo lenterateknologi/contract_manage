@@ -30,6 +30,8 @@ class Vendor extends Model
         'address',
         'documents',
         'detail',
+        'is_pkp',
+        'pkp_status',
     ];
 
     protected $casts = [
@@ -67,6 +69,20 @@ class Vendor extends Model
     public function getAddressAttribute(): ?string
     {
         return $this->vendor_detail['address'] ?? null;
+    }
+
+    public function getIsPkpAttribute(): bool
+    {
+        $tax = $this->vendor_detail['tax'] ?? [];
+        $typePkp = strtoupper(trim((string) ($tax['typePkp'] ?? $tax['type_pkp'] ?? $tax['pkp_type'] ?? '')));
+
+        return $typePkp === 'PKP';
+    }
+
+    public function getPkpStatusAttribute(): string
+    {
+        $tax = $this->vendor_detail['tax'] ?? [];
+        return trim((string) ($tax['typePkp'] ?? $tax['type_pkp'] ?? $tax['pkp_type'] ?? '-')) ?: '-';
     }
 
     public function contracts(): HasMany

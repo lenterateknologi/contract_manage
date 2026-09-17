@@ -92,15 +92,13 @@ class DepartmentsExport implements FromCollection, ShouldAutoSize, WithEvents, W
                 $sheet = $event->sheet->getDelegate();
                 $dimension = $sheet->calculateWorksheetDimension();
                 $sheet->setAutoFilter($dimension);
-                $highestRow = $sheet->getHighestRow();
+                $highestRow = min($sheet->getHighestRow(), 50);
 
                 for ($row = 2; $row <= $highestRow; $row++) {
                     $validationSistem = $sheet->getCell("G{$row}")->getDataValidation();
                     $validationSistem->setType(DataValidation::TYPE_LIST);
                     $validationSistem->setErrorStyle(DataValidation::STYLE_STOP);
                     $validationSistem->setAllowBlank(true);
-                    $validationSistem->setShowInputMessage(true);
-                    $validationSistem->setShowErrorMessage(true);
                     $validationSistem->setShowDropDown(true);
                     $validationSistem->setErrorTitle('Peringatan');
                     $validationSistem->setError('Status Sistem harus Ya atau Tidak.');
@@ -110,8 +108,6 @@ class DepartmentsExport implements FromCollection, ShouldAutoSize, WithEvents, W
                     $validationStatus->setType(DataValidation::TYPE_LIST);
                     $validationStatus->setErrorStyle(DataValidation::STYLE_STOP);
                     $validationStatus->setAllowBlank(true);
-                    $validationStatus->setShowInputMessage(true);
-                    $validationStatus->setShowErrorMessage(true);
                     $validationStatus->setShowDropDown(true);
                     $validationStatus->setErrorTitle('Peringatan');
                     $validationStatus->setError('Status harus Aktif atau Nonaktif.');

@@ -16,6 +16,7 @@ class WorkflowStepAuthority extends Model
         'user',
         'division',
         'department',
+        'location',
         'role',
         'company_group',
         'region',
@@ -30,6 +31,7 @@ class WorkflowStepAuthority extends Model
         'role_id',
         'department_id',
         'division_id',
+        'location_id',
         'user_id',
         'company_group_id',
         'company_id',
@@ -37,6 +39,7 @@ class WorkflowStepAuthority extends Model
         'role_use_initiator',
         'department_use_initiator',
         'division_use_initiator',
+        'location_use_initiator',
         'company_group_use_initiator',
         'company_use_initiator',
         'region_use_initiator',
@@ -53,11 +56,17 @@ class WorkflowStepAuthority extends Model
             'role_use_initiator' => 'boolean',
             'department_use_initiator' => 'boolean',
             'division_use_initiator' => 'boolean',
+            'location_use_initiator' => 'boolean',
             'company_group_use_initiator' => 'boolean',
             'company_use_initiator' => 'boolean',
             'region_use_initiator' => 'boolean',
             'is_additional' => 'boolean',
         ];
+    }
+
+    public function location(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'location_id');
     }
 
     public function role(): BelongsTo

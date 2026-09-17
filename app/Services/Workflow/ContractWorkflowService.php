@@ -70,19 +70,14 @@ class ContractWorkflowService
 
         $workflow->loadMissing('steps');
 
-        $draftingHours = $workflow->sla_drafting_hours ?: 72;
-        $totalHours = $workflow->sla_total_hours ?: 240;
-        $cutoffHour = $workflow->sla_cutoff_hour ?: 16;
-
-        $draftingDeadline = $this->slaService->calculateBusinessDeadline($now, $draftingHours, $cutoffHour);
-        $totalDeadline = null;
-        if (strtolower($topic) !== 'review') {
-            $totalDeadline = $this->slaService->calculateBusinessDeadline($now, $totalHours, $cutoffHour);
-        }
+        $deadlines = $this->slaService->calculateContractDeadlines($contract, $topic, $now);
+        $draftingDeadline = $deadlines['drafting_deadline'];
+        $totalDeadline = $deadlines['total_deadline'];
 
         $metadata = array_merge($contract->metadata ?? [], $metadata, [
             'tax_required' => $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false),
             'topic' => $topic,
+            'sla_config_id' => $deadlines['sla_config_id'],
             'drafting_deadline' => $draftingDeadline->toIso8601String(),
             'total_deadline' => $totalDeadline ? $totalDeadline->toIso8601String() : null,
             'current_phase' => 'drafting',
@@ -158,6 +153,21 @@ class ContractWorkflowService
 
         $initialStatus = $hasAdhoc ? 'waiting' : 'pending';
 
+        // When entering a new approval session for this step, archive/deactivate prior decided records
+        $hasPendingWaitingRegular = Approval::where('contract_id', $contract->id)
+            ->where('workflow_step_id', $step->id)
+            ->whereNotIn('role', ['Persetujuan Tambahan', 'Penandatangan', 'Pihak 1', 'Pihak 2'])
+            ->whereIn('status', ['pending', 'waiting'])
+            ->exists();
+
+        if (! $hasPendingWaitingRegular) {
+            Approval::where('contract_id', $contract->id)
+                ->where('workflow_step_id', $step->id)
+                ->whereNotIn('role', ['Persetujuan Tambahan', 'Penandatangan', 'Pihak 1', 'Pihak 2'])
+                ->whereIn('status', ['approved', 'rejected'])
+                ->update(['is_active' => false]);
+        }
+
         // Stale pending/waiting approver cleanup: remove regular approvals for users who are no longer approvers for this step
         $approverUserIds = $approvers->pluck('id')->filter()->toArray();
         if (! empty($approverUserIds)) {
@@ -189,16 +199,22 @@ class ContractWorkflowService
 
             Approval::create([
                 'contract_id' => $contract->id,
+                'workflow_id' => $step->workflow_id,
                 'workflow_step_id' => $step->id,
                 'user_id' => $approver->id,
                 'approver_name' => $approver->name,
                 'role' => count($roles) > 0 ? $roles[0] : 'Approver',
                 'job_title' => $approver->job_title ?? null,
+                'approver_type' => $step->approver_type ?? 'role',
                 'status' => $initialStatus,
                 'created_by' => Auth::id(),
                 'updated_by' => Auth::id(),
                 'sequence' => $step->step,
+                'step_number' => $step->step,
                 'is_active' => true,
+                'is_current_step' => true,
+                'batch_no' => $contract->workflow_iteration ?? 1,
+                'is_adhoc' => false,
             ]);
         }
 
@@ -278,7 +294,7 @@ class ContractWorkflowService
                         $picId = $metadata['assigned_pic_id'] ?? null;
                         $pic = $picId ? User::find($picId) : null;
                         $approvers = $pic ? collect([$pic]) : collect();
-                        $roles = ['Staff Legal'];
+                        $roles = ['PIC Legal'];
                     }
                 }
             }
@@ -391,6 +407,23 @@ class ContractWorkflowService
                         $hasFilters = true;
                     }
 
+                    if ($a->location_use_initiator) {
+                        $locationId = data_get($contract->initiator, 'location_id') ?: data_get($contract->initiator, 'idlocation');
+                        if (! $locationId) {
+                            $invalidInitiatorFilter = true;
+                        }
+                    } else {
+                        $locationId = $a->location_id;
+                    }
+
+                    if (($a->location_use_initiator || $locationId) && ($isGroup || $a->authority_type === 'location')) {
+                        $query->where(function ($q) use ($locationId) {
+                            $q->where('location_id', $locationId)
+                                ->orWhere('idlocation', $locationId);
+                        });
+                        $hasFilters = true;
+                    }
+
                     if ($a->company_group_use_initiator) {
                         $companyGroupId = data_get($contract->initiator, 'company_group_id') ?: data_get($contract->initiator, 'company.company_group_id');
                         if (! $companyGroupId) {
@@ -474,7 +507,7 @@ class ContractWorkflowService
                     in_array('initiator', $customs) ? ['Initiator'] : [],
                     in_array('creator', $customs) ? ['Creator'] : [],
                     in_array('atasan', $customs) ? ['Atasan Langsung'] : [],
-                    in_array('assigned_pic', $customs) ? ['Staff Legal'] : []
+                    in_array('assigned_pic', $customs) ? ['PIC Legal'] : []
                 );
             } else {
                 $cfg = $step->approver_config ?? [];
@@ -496,7 +529,7 @@ class ContractWorkflowService
                             $pic = User::find($picId);
                             if ($pic) {
                                 $approvers->push($pic);
-                                $roles[] = 'Staff Legal';
+                                $roles[] = 'PIC Legal';
                             }
                         }
                     }
@@ -525,7 +558,7 @@ class ContractWorkflowService
                         $pic = User::find($picId);
                         if ($pic) {
                             $approvers->push($pic);
-                            $roles[] = 'Staff Legal';
+                            $roles[] = 'PIC Legal';
                         }
                     }
                 } elseif ($step->approver_type === 'adhoc') {
@@ -660,10 +693,40 @@ class ContractWorkflowService
         $currentStep = $approval->workflowStep;
         $requestActionId = $actionId ?: request()->input('action_id') ?: request()->input('step_action_id');
         $stepAction = null;
-        if ($requestActionId && $currentStep) {
+
+        // 1. Check if matching specific action by UUID in step actions
+        if ($requestActionId && \Illuminate\Support\Str::isUuid($requestActionId) && $currentStep) {
             $stepAction = $currentStep->actions()->where('id', $requestActionId)->first();
         }
 
+        // 2. Check workflow meta custom actions (e.g. action_branch, branch, cross_workflow, or custom action IDs)
+        if (! $stepAction) {
+            $customActions = $contract->workflow?->meta['custom_actions']
+                ?? $contract->origin_workflow?->meta['custom_actions']
+                ?? [];
+            if (is_array($customActions)) {
+                foreach ($customActions as $cAct) {
+                    $cId = $cAct['id'] ?? '';
+                    $cCode = $cAct['action_code'] ?? '';
+                    if (($requestActionId && ($cId === $requestActionId || ($requestActionId === 'action_branch' && in_array($cCode, ['branch', 'cross_workflow'])))) ||
+                        ($actionCode && ($cCode === $actionCode || ($actionCode === 'branch' && in_array($cCode, ['branch', 'cross_workflow']))))) {
+                        $stepAction = new WorkflowStepAction();
+                        $stepAction->forceFill([
+                            'id' => $cId ?: $cCode,
+                            'action_code' => $cCode ?: $actionCode,
+                            'alias' => $cAct['alias'] ?? $cAct['name'] ?? null,
+                            'transition_config' => $cAct['transition_config'] ?? null,
+                            'target_status' => $cAct['target_status'] ?? null,
+                            'required_fields' => $cAct['required_fields'] ?? [],
+                            'autofilled_fields' => $cAct['autofilled_fields'] ?? [],
+                        ]);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 3. Match action code in step actions
         if (! $stepAction && $currentStep) {
             $matchingActions = $currentStep->actions()
                 ->where(function ($q) use ($actionCode) {
@@ -682,7 +745,7 @@ class ContractWorkflowService
         if (! $stepAction && $actionCode === 'approve' && $approval->role === 'Persetujuan Tambahan' && $currentStep) {
             $stepAction = $currentStep->actions()->where('action_code', 'forward')->first();
         }
-        if (! $stepAction && $currentStep) {
+        if (! $stepAction && $currentStep && in_array($actionCode, ['approve', 'assign', 'assign_pic'])) {
             $stepAction = $currentStep->actions()->whereIn('action_code', ['approve', 'assign', 'assign_pic'])->first();
         }
 
@@ -695,7 +758,7 @@ class ContractWorkflowService
             $this->applyAutofilledFields($contract, $stepAction->autofilled_fields);
         }
 
-        $actionIdToSave = $stepAction?->id ?? $actionId;
+        $actionIdToSave = ($stepAction?->id && \Illuminate\Support\Str::isUuid($stepAction->id)) ? $stepAction->id : (\Illuminate\Support\Str::isUuid($actionId) ? $actionId : null);
         $actionCodeToSave = $stepAction?->action_code instanceof \App\Enums\WorkflowAction ? $stepAction->action_code->value : ($stepAction?->action_code ?? $actionCode);
         $actionAliasToSave = $stepAction?->alias;
 
@@ -791,7 +854,8 @@ class ContractWorkflowService
             $this->handleSigningCompletion($contract, $approval, $attachmentPath);
         }
 
-        if ($allApproved) {
+        $isBranchAction = in_array($actionCode, ['branch', 'cross_workflow']) || in_array($actionCodeToSave, ['branch', 'cross_workflow']);
+        if ($allApproved || $isBranchAction) {
             $this->handleWorkflowTransition($contract, $approval, $actionCode, $actionId);
         }
 
@@ -827,8 +891,8 @@ class ContractWorkflowService
             foreach ($signerUserIds as $index => $id) {
                 $user = User::find($id);
                 if ($user) {
-                    $maxSort = Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStepId)->max('sort_order') ?: 0;
-                    $maxSubStep = Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStepId)->whereNotNull('sub_step')->max('sub_step') ?: 0;
+                    $maxSort = Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStepId)->where('is_active', true)->max('sort_order') ?: 0;
+                    $maxSubStep = Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStepId)->where('is_active', true)->whereNotNull('sub_step')->max('sub_step') ?: 0;
 
                     $role = (request()->has('p1_user_id') || request()->has('p2_user_id')) ? (($index === 0) ? 'Pihak 1' : 'Pihak 2') : 'Penandatangan';
 
@@ -907,8 +971,8 @@ class ContractWorkflowService
                 $nextApprovalQuery->whereIn('role', ['Penandatangan', 'Pihak 1', 'Pihak 2']);
             }
 
-            $nextApproval = $nextApprovalQuery->orderBy('sort_order')
-                ->orderBy('sub_step')
+            $nextApproval = $nextApprovalQuery->orderBy('sub_step')
+                ->orderBy('sort_order')
                 ->first();
 
             if ($nextApproval) {
@@ -1023,7 +1087,8 @@ class ContractWorkflowService
     private function handleWorkflowTransition(Contract $contract, Approval $approval, string $actionCode, ?string $actionId = null): void
     {
         $isRoleBased = $approval->workflowStep->approver_type === 'role';
-        if ($isRoleBased) {
+        $isBranchAction = in_array($actionCode, ['branch', 'cross_workflow']);
+        if ($isRoleBased && ! $isBranchAction) {
             $contract->approvals()->where('workflow_step_id', $approval->workflow_step_id)->where('role', '!=', 'Persetujuan Tambahan')->whereIn('status', ['pending', 'waiting'])->delete();
         }
 
@@ -1036,11 +1101,43 @@ class ContractWorkflowService
 
         $requestActionId = $actionId ?: request()->input('action_id') ?: request()->input('step_action_id');
         $stepAction = null;
-        if ($requestActionId) {
+
+        // 1. Check if matching specific action by UUID in step actions
+        if ($requestActionId && \Illuminate\Support\Str::isUuid($requestActionId) && $approval->workflowStep) {
             $stepAction = $approval->workflowStep->actions()->where('id', $requestActionId)->first();
         }
 
+        // 2. Check workflow meta custom actions (e.g. action_branch, branch, cross_workflow, or custom action IDs)
         if (! $stepAction) {
+            $customActions = $contract->workflow?->meta['custom_actions']
+                ?? $contract->origin_workflow?->meta['custom_actions']
+                ?? [];
+            if (is_array($customActions)) {
+                foreach ($customActions as $cAct) {
+                    $cId = $cAct['id'] ?? '';
+                    $cCode = $cAct['action_code'] ?? '';
+                    if (($requestActionId && ($cId === $requestActionId || ($requestActionId === 'action_branch' && in_array($cCode, ['branch', 'cross_workflow'])))) ||
+                        ($actionCode && ($cCode === $actionCode || ($actionCode === 'branch' && in_array($cCode, ['branch', 'cross_workflow']))))) {
+                        $stepAction = new WorkflowStepAction();
+                        $stepAction->forceFill([
+                            'id' => $cId ?: $cCode,
+                            'action_code' => $cCode ?: $actionCode,
+                            'alias' => $cAct['alias'] ?? $cAct['name'] ?? null,
+                            'transition_config' => $cAct['transition_config'] ?? null,
+                            'target_status' => $cAct['target_status'] ?? null,
+                            'next_workflow_id' => $cAct['next_workflow_id'] ?? null,
+                            'next_step_id' => $cAct['next_step_id'] ?? null,
+                            'required_fields' => $cAct['required_fields'] ?? [],
+                            'autofilled_fields' => $cAct['autofilled_fields'] ?? [],
+                        ]);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 3. Match action code in step actions
+        if (! $stepAction && $approval->workflowStep) {
             $matchingActions = $approval->workflowStep->actions()
                 ->where(function ($q) use ($actionCode) {
                     $q->where('action_code', $actionCode);
@@ -1055,10 +1152,10 @@ class ContractWorkflowService
             $stepAction = $matchingActions->first();
         }
 
-        if (! $stepAction && $actionCode === 'approve' && $approval->role === 'Persetujuan Tambahan') {
+        if (! $stepAction && $actionCode === 'approve' && $approval->role === 'Persetujuan Tambahan' && $approval->workflowStep) {
             $stepAction = $approval->workflowStep->actions()->where('action_code', 'forward')->first();
         }
-        if (! $stepAction) {
+        if (! $stepAction && $approval->workflowStep && in_array($actionCode, ['approve', 'assign', 'assign_pic'])) {
             $stepAction = $approval->workflowStep->actions()->whereIn('action_code', ['approve', 'assign', 'assign_pic'])->first();
         }
         if ($stepAction && ! empty($stepAction->autofilled_fields)) {
@@ -1076,7 +1173,45 @@ class ContractWorkflowService
         }
 
         if (! $nextStep && ! $hasExplicitTransition) {
-            $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
+            if ($contract->origin_workflow_id && $contract->workflow_id !== $contract->origin_workflow_id) {
+                // Sub-workflow completed its steps, return to origin workflow
+                $metadata = $contract->metadata ?? [];
+                $targetSequence = (int) ($metadata['branch_from_step_num'] ?? 1);
+                $originWfId = $contract->origin_workflow_id;
+
+                $targetStep = WorkflowStep::where('workflow_id', $originWfId)->where('step', $targetSequence)->first()
+                    ?: WorkflowStep::where('workflow_id', $originWfId)->orderBy('step')->first();
+
+                if ($targetStep) {
+                    unset($metadata['branch_from_step_num'], $metadata['branch_from_step_id']);
+                    $contract->update([
+                        'workflow_id' => $originWfId,
+                        'workflow_step_id' => $targetStep->id,
+                        'metadata' => $metadata,
+                    ]);
+
+                    // Deactivate prior decided records on origin step so they don't auto-approve the new session
+                    Approval::where('contract_id', $contract->id)
+                        ->where('workflow_step_id', $targetStep->id)
+                        ->whereIn('status', ['approved', 'rejected'])
+                        ->update(['is_active' => false]);
+
+                    // Reactivate waiting approvals on the origin step
+                    $reactivatedCount = Approval::where('contract_id', $contract->id)
+                        ->where('workflow_step_id', $targetStep->id)
+                        ->where('status', 'waiting')
+                        ->update(['status' => 'pending']);
+
+                    if ($reactivatedCount === 0 && ! Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStep->id)->where('status', 'pending')->exists()) {
+                        $this->createApprovalForStep($contract, $targetStep);
+                    }
+
+                    $nextStep = $targetStep;
+                    $this->queryService->logHistory($contract, 'WORKFLOW_RETURNED', "Sub-alur kerja selesai. Kembali ke alur kerja utama pada Tahap {$targetStep->step}: {$targetStep->name}", Auth::id());
+                }
+            } else {
+                $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
+            }
         }
 
         if ($nextStep) {
@@ -1091,12 +1226,28 @@ class ContractWorkflowService
             $isSameStep = $nextStep->id === $approval->workflow_step_id;
 
             $contract->update([
+                'workflow_id' => $nextStep->workflow_id ?: $contract->workflow_id,
                 'workflow_step_id' => $nextStep->id,
                 'status' => $nextStatus?->code ?: $statusStr,
             ]);
 
             if (! $isSameStep) {
-                $this->createApprovalForStep($contract, $nextStep);
+                // Deactivate prior decided records on target step so they don't auto-pass the step in the new session
+                Approval::where('contract_id', $contract->id)
+                    ->where('workflow_step_id', $nextStep->id)
+                    ->whereIn('status', ['approved', 'rejected'])
+                    ->update(['is_active' => false]);
+
+                // Reactivate any waiting approvals on target step (e.g. paused from branch)
+                $reactivatedCount = Approval::where('contract_id', $contract->id)
+                    ->where('workflow_step_id', $nextStep->id)
+                    ->where('status', 'waiting')
+                    ->update(['status' => 'pending']);
+
+                if ($reactivatedCount === 0 && ! Approval::where('contract_id', $contract->id)->where('workflow_step_id', $nextStep->id)->where('status', 'pending')->exists()) {
+                    $this->createApprovalForStep($contract, $nextStep);
+                }
+
                 $this->handleAutoApproval($contract, Auth::user());
                 $nextStepLabel = $nextStep->name ?: $nextStep->description ?: "Tahap {$nextStep->step}";
                 $this->queryService->logHistory($contract, 'WORKFLOW_ADVANCED', "Alur kerja berlanjut ke Tahap {$nextStep->step}: {$nextStepLabel}", Auth::id());
@@ -1120,7 +1271,7 @@ class ContractWorkflowService
     {
         $requestActionId = request()->input('action_id') ?: request()->input('step_action_id');
         $stepAction = null;
-        if ($requestActionId && $approval->workflowStep) {
+        if ($requestActionId && \Illuminate\Support\Str::isUuid($requestActionId) && $approval->workflowStep) {
             $stepAction = $approval->workflowStep->actions()->where('id', $requestActionId)->first();
         }
 
@@ -1237,7 +1388,9 @@ class ContractWorkflowService
                         'status' => $nextStatus?->code ?: $statusStr,
                     ]);
 
-                    $this->queryService->logHistory($contract, 'WORKFLOW_AUTO_ADVANCED', "Tahap otomatis dijalankan: {$step->label} -> Lanjut ke tahap {$nextStep->step}: {$nextStep->description}", Auth::id());
+                    $stepLabel = $step->name ?: $step->description ?: "Tahap {$step->step}";
+                    $nextStepLabel = $nextStep->name ?: $nextStep->description ?: "Tahap {$nextStep->step}";
+                    $this->queryService->logHistory($contract, 'WORKFLOW_AUTO_ADVANCED', "Tahap otomatis dijalankan oleh Sistem: [{$stepLabel}] -> Lanjut ke Tahap {$nextStep->step}: {$nextStepLabel}", null);
 
                     $this->createApprovalForStep($contract, $nextStep);
                     $this->handleAutoApproval($contract, Auth::user());
@@ -1295,8 +1448,17 @@ class ContractWorkflowService
                     return null;
 
                 case 'absolute':
-                    $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
-                    $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', $targetSequence)->first();
+                    $targetStep = null;
+                    if (! empty($transition['step_id'])) {
+                        $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)->find($transition['step_id']);
+                    }
+                    if (! $targetStep && ! empty($stepAction->next_step_id)) {
+                        $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)->find($stepAction->next_step_id);
+                    }
+                    if (! $targetStep) {
+                        $targetSequence = max(1, (int) ($transition['sequence'] ?? 1));
+                        $targetStep = WorkflowStep::where('workflow_id', $contract->workflow_id)->where('step', $targetSequence)->first();
+                    }
                     if ($targetStep) {
                         $contract->update([
                             'workflow_id' => $contract->workflow_id,
@@ -1340,15 +1502,54 @@ class ContractWorkflowService
                             if ($workflowId !== $originWfId) {
                                 $metadata['branch_from_step_num'] = $currentStep->step;
                                 $metadata['branch_from_step_id'] = $currentStep->id;
-                            } elseif (isset($metadata['branch_from_step_num'])) {
-                                unset($metadata['branch_from_step_num'], $metadata['branch_from_step_id']);
-                            }
 
-                            $contract->update([
-                                'workflow_id' => $workflowId,
-                                'workflow_step_id' => $targetStep->id,
-                                'metadata' => $metadata,
-                            ]);
+                                // Pause pending approvals on the origin workflow step so they become 'waiting'
+                                Approval::where('contract_id', $contract->id)
+                                    ->where('workflow_step_id', $currentStep->id)
+                                    ->where('status', 'pending')
+                                    ->update(['status' => 'waiting']);
+
+                                $contract->update([
+                                    'origin_workflow_id' => $originWfId,
+                                    'workflow_id' => $workflowId,
+                                    'workflow_step_id' => $targetStep->id,
+                                    'is_in_sub_workflow' => true,
+                                    'branch_step_number' => $currentStep->step,
+                                    'current_step_number' => $targetStep->step,
+                                    'current_sub_workflow_id' => $workflowId,
+                                    'metadata' => $metadata,
+                                ]);
+                            } else {
+                                if (isset($metadata['branch_from_step_num'])) {
+                                    unset($metadata['branch_from_step_num'], $metadata['branch_from_step_id']);
+                                }
+
+                                $contract->update([
+                                    'workflow_id' => $originWfId,
+                                    'workflow_step_id' => $targetStep->id,
+                                    'is_in_sub_workflow' => false,
+                                    'branch_step_number' => null,
+                                    'current_step_number' => $targetStep->step,
+                                    'current_sub_workflow_id' => null,
+                                    'metadata' => $metadata,
+                                ]);
+
+                                // Deactivate prior decided records on return target step
+                                Approval::where('contract_id', $contract->id)
+                                    ->where('workflow_step_id', $targetStep->id)
+                                    ->whereIn('status', ['approved', 'rejected'])
+                                    ->update(['is_active' => false]);
+
+                                // Reactivate waiting approvals on return target step
+                                $waitingCount = Approval::where('contract_id', $contract->id)
+                                    ->where('workflow_step_id', $targetStep->id)
+                                    ->where('status', 'waiting')
+                                    ->update(['status' => 'pending']);
+
+                                if ($waitingCount === 0 && ! Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStep->id)->where('status', 'pending')->exists()) {
+                                    $this->createApprovalForStep($contract, $targetStep);
+                                }
+                            }
 
                             return $targetStep;
                         }
@@ -1606,8 +1807,15 @@ class ContractWorkflowService
             return;
         }
 
-        $stepMeta = $step->meta ?? [];
-        $actionReqFields = ($action && is_array($action->required_fields)) ? $action->required_fields : [];
+        // If action has explicitly configured required_fields array, only validate those fields
+        if ($action && is_array($action->required_fields)) {
+            $actionReqFields = $action->required_fields;
+            $stepMeta = [];
+        } else {
+            $isNonStandard = in_array($actionCode, ['branch', 'reject', 'forward', 'cross_workflow']);
+            $stepMeta = $isNonStandard ? [] : ($step->meta ?? []);
+            $actionReqFields = [];
+        }
 
         // 1. PIC Validation
         $requirePic = (! empty($stepMeta['require_pic']) && (! $actionCode || in_array($actionCode, ['approve', 'assign', 'assign_pic'])))
@@ -1620,17 +1828,81 @@ class ContractWorkflowService
             }
         }
 
+        $currentStepId = $step->id;
+        $currentStepNo = $step->step ?? $contract->current_step_number;
+        $iteration = $contract->workflow_iteration ?? 1;
+
+        // Helper to check if a document exists and matches the current step or current iteration
+        $checkDocumentStepFulfillment = function (string|array $types) use ($contract, $currentStepId, $currentStepNo, $iteration) {
+            $typeArr = (array) $types;
+
+            // 1. Check t_contract_versions with matching step or iteration
+            $hasMatchingVersion = $contract->versions()
+                ->whereIn('document_type', $typeArr)
+                ->where(function ($q) use ($currentStepId, $currentStepNo, $iteration) {
+                    $q->where('workflow_step_id', $currentStepId)
+                      ->orWhere('step_number', $currentStepNo)
+                      ->orWhere(function ($q2) use ($iteration) {
+                          $q2->where('workflow_iteration', $iteration)
+                             ->whereNull('workflow_step_id')
+                             ->whereNull('step_number');
+                      });
+                })->exists();
+
+            if ($hasMatchingVersion) {
+                return true;
+            }
+
+            // 2. Check t_form_submissions with matching step or iteration
+            $hasMatchingSubmission = $contract->formSubmissions()
+                ->whereIn('document_type', $typeArr)
+                ->where(function ($q) use ($currentStepId, $currentStepNo, $iteration) {
+                    $q->where('workflow_step_id', $currentStepId)
+                      ->orWhere('step_number', $currentStepNo)
+                      ->orWhere(function ($q2) use ($iteration) {
+                          $q2->where('workflow_iteration', $iteration)
+                             ->whereNull('workflow_step_id')
+                             ->whereNull('step_number');
+                      });
+                })->exists();
+
+            if ($hasMatchingSubmission) {
+                return true;
+            }
+
+            // 3. Check FormSubmissionHistory records matching step or iteration
+            $hasMatchingHistory = \App\Models\FormSubmissionHistory::whereHas('submission', function ($q) use ($contract, $typeArr) {
+                $q->where('contract_id', $contract->id)->whereIn('document_type', $typeArr);
+            })->where(function ($q) use ($currentStepId, $currentStepNo, $iteration) {
+                $q->where('workflow_step_id', $currentStepId)
+                  ->orWhere('step_number', $currentStepNo)
+                  ->orWhere('workflow_iteration', $iteration);
+            })->exists();
+
+            if ($hasMatchingHistory) {
+                return true;
+            }
+
+            // 4. Fallback for Step 1 / Initial Draft if step_id was not explicitly populated
+            if ((int) $currentStepNo <= 1) {
+                return $contract->versions()->whereIn('document_type', $typeArr)->exists()
+                    || $contract->formSubmissions()->whereIn('document_type', $typeArr)->exists();
+            }
+
+            return false;
+        };
+
         // 2. F1 Validation
         $requireF1 = (! empty($stepMeta['require_f1']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('f1', $actionReqFields);
         if ($requireF1) {
-            $hasF1 = ! empty($contract->metadata['f1_file'])
+            $hasF1 = $checkDocumentStepFulfillment('f1')
+                || ! empty($contract->f1_file)
+                || ! empty($contract->metadata['f1_file'])
                 || ! empty($contract->metadata['f1_form_data'])
-                || ! empty($contract->f1_items)
-                || $contract->versions()->where('document_type', 'f1')->exists()
-                || $contract->formSubmissions()->where('document_type', 'f1')->exists();
+                || ! empty($contract->f1_items);
             if (! $hasF1) {
-                throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen F1 (Permohonan) wajib diisi/diunggah terlebih dahulu.');
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen F1 (Permohonan) wajib diisi/diunggah pada tahap ini terlebih dahulu.');
             }
         }
 
@@ -1638,14 +1910,12 @@ class ContractWorkflowService
         $requireF2 = (! empty($stepMeta['require_f2']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('f2', $actionReqFields);
         if ($requireF2) {
-            $hasF2 = ! empty($contract->metadata['f2_file'])
-                || ! empty($contract->metadata['f2_form_data'])
-                || ! empty($contract->contract_no)
-                || ! empty($contract->price)
-                || $contract->versions()->where('document_type', 'f2')->exists()
-                || $contract->formSubmissions()->where('document_type', 'f2')->exists();
+            $hasF2 = $checkDocumentStepFulfillment('f2')
+                || ! empty($contract->f2_file)
+                || ! empty($contract->metadata['f2_file'])
+                || ! empty($contract->metadata['f2_form_data']);
             if (! $hasF2) {
-                throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen F2 (Ringkasan) wajib diisi/diunggah terlebih dahulu.');
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen F2 (Ringkasan) wajib diisi/diunggah pada tahap ini terlebih dahulu.');
             }
         }
 
@@ -1653,12 +1923,20 @@ class ContractWorkflowService
         $requireAgreement = (! empty($stepMeta['require_agreement']) && (! $actionCode || $actionCode === 'approve'))
             || in_array('agreement', $actionReqFields);
         if ($requireAgreement) {
-            $hasAgreement = ! empty($contract->metadata['agreement_file'])
+            $hasAgreement = $checkDocumentStepFulfillment(['agreement', 'contract'])
+                || ! empty($contract->agreement_file)
+                || ! empty($contract->agreement_content)
+                || ! empty($contract->metadata['agreement_file'])
                 || ! empty($contract->metadata['agreement_content'])
-                || $contract->versions()->whereIn('document_type', ['agreement', 'contract'])->exists()
-                || $contract->formSubmissions()->where('document_type', 'agreement')->exists();
+                || $contract->attachments()->where(function ($q) {
+                    $q->whereIn('category', ['Perjanjian', 'agreement', 'draft', 'kontrak', 'Draft Kontrak'])
+                      ->orWhere('file_type', 'like', '%word%')
+                      ->orWhere('file_type', 'like', '%pdf%')
+                      ->orWhere('label', 'like', '%Draft%')
+                      ->orWhere('label', 'like', '%Perjanjian%');
+                })->exists();
             if (! $hasAgreement) {
-                throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen Perjanjian / Draft wajib diisi/diunggah terlebih dahulu.');
+                throw new \Exception('Tidak dapat melanjutkan persetujuan. Sub-dokumen Perjanjian / Draft wajib diisi/diunggah pada tahap ini terlebih dahulu.');
             }
         }
 

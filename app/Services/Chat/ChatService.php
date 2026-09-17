@@ -22,6 +22,24 @@ class ChatService
             ->latest('created_at')
             ->limit(1);
 
+        $allTypes = \App\Models\ContractType::all();
+        $typeToRootMap = [];
+        foreach ($allTypes as $t) {
+            $curr = $t;
+            while ($curr && $curr->parent_id) {
+                $curr = $allTypes->firstWhere('id', $curr->parent_id);
+            }
+            $rootCode = $curr?->code;
+            $rootName = strtolower($curr?->name ?? '');
+            if ($rootCode === 'NDA' || str_contains($rootName, 'nda') || str_contains($rootName, 'kerahasiaan')) {
+                $typeToRootMap[$t->id] = 'nda';
+            } elseif ($rootCode === 'A-2' || str_contains($rootName, 'non kontrak')) {
+                $typeToRootMap[$t->id] = 'non_kontrak';
+            } else {
+                $typeToRootMap[$t->id] = 'kontrak';
+            }
+        }
+
         $contracts = Contract::query()
             ->select(['id', 'form_no', 'contract_no', 'title', 'contract_type_id', 'created_by', 'created_at', 'updated_at'])
             ->selectSub($lastMessageQuery, 'last_message_at')
@@ -47,7 +65,7 @@ class ChatService
             }])
             ->orderByRaw('COALESCE(('.$lastMessageQuery->toSql().'), t_contracts.updated_at) DESC')
             ->get()
-            ->map(function ($c) {
+            ->map(function ($c) use ($typeToRootMap) {
                 $effectiveTimestamp = $c->last_message_at
                     ? Carbon::parse($c->last_message_at)
                     : ($c->updated_at ?? $c->created_at);
@@ -58,6 +76,8 @@ class ChatService
                     'contract_no' => $c->contract_no,
                     'title' => $c->title,
                     'contract_type' => $c->contractType?->name ?? '—',
+                    'contract_type_id' => $c->contract_type_id,
+                    'parent_category' => $c->contract_type_id ? ($typeToRootMap[$c->contract_type_id] ?? 'kontrak') : 'kontrak',
                     'unread_count' => $c->unread_count ?? 0,
                     'updated_at' => $effectiveTimestamp ? $effectiveTimestamp->toIso8601String() : null,
                     'updated_at_formatted' => $effectiveTimestamp ? $effectiveTimestamp->diffForHumans() : '',

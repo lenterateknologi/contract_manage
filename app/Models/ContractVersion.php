@@ -23,6 +23,9 @@ class ContractVersion extends Model
         'uploaded_by',
         'is_final',
         'file_hash',
+        'workflow_step_id',
+        'step_number',
+        'workflow_iteration',
     ];
 
     protected $casts = [

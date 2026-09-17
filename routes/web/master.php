@@ -175,10 +175,10 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('{resource}', [ResourceController::class, 'index'])->name('core.index');
         Route::get('{resource}/create', [ResourceController::class, 'create'])->name('core.create');
         Route::post('{resource}', [ResourceController::class, 'store'])->name('core.store');
-        Route::get('{resource}/{id}/edit', [ResourceController::class, 'edit'])->name('core.edit');
-        Route::get('{resource}/{id}', [ResourceController::class, 'edit'])->name('core.show');
-        Route::put('{resource}/{id}', [ResourceController::class, 'update'])->name('core.update');
-        Route::delete('{resource}/{id}', [ResourceController::class, 'destroy'])->name('core.destroy');
+        Route::get('{resource}/{id}/edit', [ResourceController::class, 'edit'])->name('core.edit')->whereUuid('id');
+        Route::get('{resource}/{id}', [ResourceController::class, 'edit'])->name('core.show')->whereUuid('id');
+        Route::put('{resource}/{id}', [ResourceController::class, 'update'])->name('core.update')->whereUuid('id');
+        Route::delete('{resource}/{id}', [ResourceController::class, 'destroy'])->name('core.destroy')->whereUuid('id');
     });
 
     Route::controller(BackupController::class)->prefix('backups')->group(function () {

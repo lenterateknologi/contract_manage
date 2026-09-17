@@ -4,11 +4,10 @@ import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { PortalSelect } from '@/components/ui/selection/PortalSelect';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { Modal } from '@/components/ui/dialogs/Modal';
-import { contractApi } from '@/pages/contracts/utils';
+import { contractApi, resolveVendorTaxPkp } from '@/pages/contracts/utils';
 import { usePage } from '@inertiajs/react';
 import { AlertCircle, Check, FilePlus2, Loader2, ShieldCheck } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { TaxToggle } from '../parts/TaxToggle';
+import { useEffect, useMemo, useState } from 'react';
 import { validateContractForm } from '@/pages/contracts/validations/contractValidation';
 import { type SharedData } from '@/types';
 import { usePov } from '@/stores/usePovStore';
@@ -41,6 +40,20 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const [workflowId, setWorkflowId] = useState('');
     const [fetchingWorkflows, setFetchingWorkflows] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const selectedVendor = useMemo(() => vendors.find((v) => String(v.id) === String(vendorId)), [vendors, vendorId]);
+    const vendorTaxInfo = useMemo(() => resolveVendorTaxPkp(selectedVendor), [selectedVendor]);
+
+    const handleVendorSelect = (vId: string) => {
+        setVendorId(vId);
+        if (vId) {
+            const v = vendors.find((item) => String(item.id) === String(vId));
+            if (v) {
+                const { isPkp } = resolveVendorTaxPkp(v);
+                setTaxRequired(isPkp);
+            }
+        }
+    };
 
     const initiatorOptions = [
         { value: String(auth?.user?.id), label: `Diri Sendiri (${auth?.user?.name})` },
@@ -268,8 +281,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     error={errors.title}
                     required
                 />
-
-                <TaxToggle taxRequired={taxRequired} setTaxRequired={setTaxRequired} />
 
                 <FormTextarea
                     label="Keterangan (Optional)"

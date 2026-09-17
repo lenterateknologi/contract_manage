@@ -123,13 +123,8 @@ const NavTreeItem = memo(function NavTreeItem({
     const isChildActive = hasChildren ? isAnyChildActive(item) : false;
     const isSelfActive = checkActive(item.url);
 
-    // Default minimized, only expand when this specific item or its child is selected/active
-    const [isExpanded, setIsExpanded] = useState<boolean>(() => isChildActive || isSelfActive);
-
-    // When active selection changes (user navigates to another menu), collapse this item if not active
-    useEffect(() => {
-        setIsExpanded(isChildActive || isSelfActive);
-    }, [isChildActive, isSelfActive]);
+    // Default expanded as requested
+    const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
     const ItemIcon = item.icon ?? FileText;
 
@@ -191,6 +186,17 @@ const NavTreeItem = memo(function NavTreeItem({
                     )}
                 </Link>
 
+                <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-lg text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors opacity-0 group-hover/nav:opacity-100 focus:opacity-100 shrink-0 cursor-pointer"
+                    title="Buka di tab/jendela baru"
+                >
+                    <ExternalLink size={13} />
+                </a>
+
                 {hasChildren && (
                     <button
                         type="button"
@@ -217,60 +223,72 @@ const NavTreeItem = memo(function NavTreeItem({
                         const ChildIcon = child.icon ?? FileText;
 
                         return (
-                            <Link
-                                key={child.url}
-                                href={child.url}
-                                onClick={() => {
-                                    if (isMobile) setOpenMobile(false);
-                                    onNavigate?.();
-                                }}
-                                className={cn(
-                                    'relative group flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12px] font-medium transition-all duration-150 min-w-0 hover:bg-sidebar-accent/40',
-                                    'before:absolute before:-left-[15px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/80 before:rounded-full',
-                                    isSubActive && 'before:!bg-primary',
-                                )}
-                            >
-                                <div
+                            <div key={child.url} className="flex items-center w-full group/subnav">
+                                <Link
+                                    href={child.url}
+                                    onClick={() => {
+                                        if (isMobile) setOpenMobile(false);
+                                        onNavigate?.();
+                                    }}
                                     className={cn(
-                                        'flex size-5.5 shrink-0 items-center justify-center rounded-md transition-all',
-                                        isSubActive
-                                            ? 'bg-primary text-primary-foreground shadow-xs'
-                                            : 'bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                        'relative group flex flex-1 items-center gap-2.5 rounded-lg px-2 py-1.5 text-[12px] font-medium transition-all duration-150 min-w-0 hover:bg-sidebar-accent/40',
+                                        'before:absolute before:-left-[15px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/80 before:rounded-full',
+                                        isSubActive && 'before:!bg-primary',
                                     )}
                                 >
-                                    <ChildIcon
+                                    <div
                                         className={cn(
-                                            'size-3 transition-colors',
+                                            'flex size-5.5 shrink-0 items-center justify-center rounded-md transition-all',
                                             isSubActive
-                                                ? 'text-primary-foreground'
-                                                : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground',
+                                                ? 'bg-primary text-primary-foreground shadow-xs'
+                                                : 'bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
                                         )}
-                                    />
-                                </div>
-                                <div className="flex flex-col flex-1 min-w-0 justify-center">
-                                    <span className="truncate tracking-tight leading-snug text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-medium">
-                                        {child.title}
-                                    </span>
-                                    {child.description && (
-                                        <span className="text-[10px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70">
-                                            {child.description}
+                                    >
+                                        <ChildIcon
+                                            className={cn(
+                                                'size-3 transition-colors',
+                                                isSubActive
+                                                    ? 'text-primary-foreground'
+                                                    : 'text-sidebar-foreground/60 group-hover:text-sidebar-foreground',
+                                            )}
+                                        />
+                                    </div>
+                                    <div className="flex flex-col flex-1 min-w-0 justify-center">
+                                        <span className="truncate tracking-tight leading-snug text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-medium">
+                                            {child.title}
+                                        </span>
+                                        {child.description && (
+                                            <span className="text-[10px] leading-tight truncate mt-0.5 font-normal text-sidebar-foreground/50 group-hover:text-sidebar-foreground/70">
+                                                {child.description}
+                                            </span>
+                                        )}
+                                    </div>
+                                    {child.badge !== undefined && child.badge !== null && (
+                                        <span
+                                            className={cn(
+                                                'ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
+                                                isSubActive
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
+                                            )}
+                                            title={`${child.badge} data aktif`}
+                                        >
+                                            {child.badge}
                                         </span>
                                     )}
-                                </div>
-                                {child.badge !== undefined && child.badge !== null && (
-                                    <span
-                                        className={cn(
-                                            'ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums shrink-0 transition-colors',
-                                            isSubActive
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-sidebar-accent/80 text-sidebar-foreground/70 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
-                                        )}
-                                        title={`${child.badge} data aktif`}
-                                    >
-                                        {child.badge}
-                                    </span>
-                                )}
-                            </Link>
+                                </Link>
+
+                                <a
+                                    href={child.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-1 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors opacity-0 group-hover/subnav:opacity-100 focus:opacity-100 shrink-0 ml-1 cursor-pointer"
+                                    title="Buka di tab/jendela baru"
+                                >
+                                    <ExternalLink size={12} />
+                                </a>
+                            </div>
                         );
                     })}
                 </div>
@@ -284,80 +302,107 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
     activeTab,
     activeSubTab,
     onSelectTab,
+    contractId,
 }: {
     tab: DetailSidebarTabItem;
     activeTab: string;
     activeSubTab?: string;
     onSelectTab: (tabId: string, subtabId?: string) => void;
+    contractId?: string;
 }) {
     const hasChildren = Boolean(tab.children && tab.children.length > 0);
     const isParentActive = activeTab === tab.id;
     const isChildActive = Boolean(
         tab.children?.some((child) => isParentActive && activeSubTab === child.id),
     );
-    const [isOpen, setIsOpen] = useState<boolean>(Boolean(isParentActive));
+    // Default expanded as requested
+    const [isOpen, setIsOpen] = useState<boolean>(true);
 
-    useEffect(() => {
-        if (isParentActive) {
-            setIsOpen(true);
+    const getTabUrl = (tabId: string, subtabId?: string) => {
+        let basePath = '';
+        if (contractId) {
+            basePath = `/contracts/${contractId}`;
+        } else if (typeof window !== 'undefined') {
+            basePath = window.location.pathname;
         }
-    }, [isParentActive]);
+        const params = new URLSearchParams();
+        params.set('tab', tabId);
+        if (subtabId) {
+            params.set('subtab', subtabId);
+        }
+        return `${basePath}?${params.toString()}`;
+    };
 
+    const parentUrl = getTabUrl(tab.id, hasChildren ? tab.children?.[0]?.id : undefined);
     const TabIcon = tab.icon;
 
     return (
         <div className="flex flex-col">
-            <div
-                onClick={() => {
-                    if (hasChildren) {
-                        const firstChild = tab.children?.[0]?.id;
-                        onSelectTab(tab.id, firstChild);
-                        setIsOpen(true);
-                    } else {
-                        onSelectTab(tab.id);
-                    }
-                }}
-                className="group relative flex items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer select-none hover:bg-sidebar-accent/50"
-            >
-                <div className="flex items-center gap-2.5 min-w-0">
-                    <div
-                        className={cn(
-                            'flex size-7 shrink-0 items-center justify-center rounded-lg transition-all',
-                            isParentActive && !isChildActive
-                                ? 'bg-primary text-primary-foreground shadow-xs'
-                                : isParentActive
-                                  ? 'bg-primary/15 text-primary'
-                                  : 'bg-sidebar-accent/70 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
-                        )}
-                    >
-                        <TabIcon
+            <div className="flex items-center w-full group/detailparent">
+                <div
+                    onClick={() => {
+                        if (hasChildren) {
+                            const firstChild = tab.children?.[0]?.id;
+                            onSelectTab(tab.id, firstChild);
+                            setIsOpen(true);
+                        } else {
+                            onSelectTab(tab.id);
+                        }
+                    }}
+                    className="group relative flex flex-1 items-center justify-between gap-2.5 rounded-lg px-2 py-1.5 text-xs font-semibold transition-all duration-150 cursor-pointer select-none hover:bg-sidebar-accent/50 min-w-0"
+                >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                        <div
                             className={cn(
-                                'size-4 transition-colors',
+                                'flex size-7 shrink-0 items-center justify-center rounded-lg transition-all',
                                 isParentActive && !isChildActive
-                                    ? 'text-primary-foreground'
+                                    ? 'bg-primary text-primary-foreground shadow-xs'
                                     : isParentActive
-                                      ? 'text-primary'
-                                      : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground',
+                                      ? 'bg-primary/15 text-primary'
+                                      : 'bg-sidebar-accent/70 text-sidebar-foreground/60 group-hover:bg-sidebar-accent group-hover:text-sidebar-foreground',
                             )}
-                        />
+                        >
+                            <TabIcon
+                                className={cn(
+                                    'size-4 transition-colors',
+                                    isParentActive && !isChildActive
+                                        ? 'text-primary-foreground'
+                                        : isParentActive
+                                          ? 'text-primary'
+                                          : 'text-sidebar-foreground/70 group-hover:text-sidebar-foreground',
+                                )}
+                            />
+                        </div>
+                        <span className="truncate text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-semibold">{tab.label}</span>
                     </div>
-                    <span className="truncate text-sidebar-foreground/80 group-hover:text-sidebar-foreground font-semibold">{tab.label}</span>
+
+                    {hasChildren && (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsOpen(!isOpen);
+                            }}
+                            className="p-0.5 rounded text-sidebar-foreground/50 hover:text-sidebar-foreground transition-transform shrink-0"
+                            title={isOpen ? 'Sembunyikan sub-menu' : 'Buka sub-menu'}
+                        >
+                            <ChevronDown
+                                className={cn('size-3.5 transition-transform duration-200', isOpen ? 'rotate-0' : '-rotate-90')}
+                            />
+                        </button>
+                    )}
                 </div>
 
-                {hasChildren && (
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setIsOpen(!isOpen);
-                        }}
-                        className="p-0.5 rounded text-sidebar-foreground/50 hover:text-sidebar-foreground transition-transform"
-                    >
-                        <ChevronDown
-                            className={cn('size-3.5 transition-transform duration-200', isOpen ? 'rotate-0' : '-rotate-90')}
-                        />
-                    </button>
-                )}
+                <a
+                    href={parentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 rounded-lg text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors opacity-0 group-hover/detailparent:opacity-100 focus:opacity-100 shrink-0 cursor-pointer"
+                    title="Buka di tab/jendela baru"
+                >
+                    <ExternalLink size={13} />
+                </a>
             </div>
 
             {/* Tree Branch for Children */}
@@ -368,23 +413,36 @@ const DetailNavTreeItem = memo(function DetailNavTreeItem({
                             isParentActive &&
                             (activeSubTab === child.id || (!activeSubTab && tab.children![0].id === child.id));
                         const ChildIcon = child.icon;
+                        const childUrl = getTabUrl(tab.id, child.id);
 
                         return (
-                            <button
-                                key={child.id}
-                                type="button"
-                                onClick={() => onSelectTab(tab.id, child.id)}
-                                className={cn(
-                                    'relative flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11.5px] font-medium transition-all duration-150 cursor-pointer text-left',
-                                    'before:absolute before:-left-[14px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/70 before:rounded-full',
-                                    isThisChildActive
-                                        ? 'bg-primary text-primary-foreground font-bold shadow-2xs before:!bg-primary'
-                                        : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground',
-                                )}
-                            >
-                                {ChildIcon && <ChildIcon className="size-3.5 shrink-0" />}
-                                <span className="truncate">{child.label}</span>
-                            </button>
+                            <div key={child.id} className="flex items-center w-full group/detailchild">
+                                <button
+                                    type="button"
+                                    onClick={() => onSelectTab(tab.id, child.id)}
+                                    className={cn(
+                                        'relative flex flex-1 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11.5px] font-medium transition-all duration-150 cursor-pointer text-left min-w-0',
+                                        'before:absolute before:-left-[14px] before:top-1/2 before:-translate-y-1/2 before:w-2.5 before:h-[2px] before:bg-sidebar-border/70 before:rounded-full',
+                                        isThisChildActive
+                                            ? 'bg-primary text-primary-foreground font-bold shadow-2xs before:!bg-primary'
+                                            : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/40 hover:text-sidebar-foreground',
+                                    )}
+                                >
+                                    {ChildIcon && <ChildIcon className="size-3.5 shrink-0" />}
+                                    <span className="truncate">{child.label}</span>
+                                </button>
+
+                                <a
+                                    href={childUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-1 rounded-md text-sidebar-foreground/40 hover:text-sidebar-foreground hover:bg-sidebar-accent/70 transition-colors opacity-0 group-hover/detailchild:opacity-100 focus:opacity-100 shrink-0 ml-1 cursor-pointer"
+                                    title="Buka di tab/jendela baru"
+                                >
+                                    <ExternalLink size={12} />
+                                </a>
+                            </div>
                         );
                     })}
                 </div>
@@ -1126,6 +1184,7 @@ export const AppSidebar = memo(function AppSidebar() {
                                             activeTab={detailSidebar.activeTab}
                                             activeSubTab={detailSidebar.activeSubTab}
                                             onSelectTab={detailSidebar.onSelectTab}
+                                            contractId={detailSidebar.contract?.id}
                                         />
                                     ))}
                                 </div>
