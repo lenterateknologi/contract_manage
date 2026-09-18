@@ -48,7 +48,7 @@ export const MASTER_ACTIONS = [
     { id: 'approve', code: 'approve', name: 'Setujui' },
     { id: 'reject', code: 'reject', name: 'Tolak' },
     { id: 'assign', code: 'assign', name: 'Tugaskan' },
-    { id: 'forward', code: 'forward', name: 'Approval Tambahan' },
+    { id: 'add_adhoc', code: 'add_adhoc', name: 'Approval Tambahan' },
     { id: 'branch', code: 'branch', name: 'Pindah Workflow (Cabang)' },
     { id: 'auto', code: 'auto', name: 'Otomatis (Auto Transition)' },
 ];
@@ -84,8 +84,7 @@ export const ACTION_THEMES: Record<string, { color: string; icon: any; actionTyp
     reject: { color: 'bg-rose-500 hover:bg-rose-600', icon: XCircle, actionType: 'reject' },
     assign_pic: { color: 'bg-blue-600 hover:bg-blue-700', icon: UserCheck, actionType: 'assign_pic' },
     assign: { color: 'bg-blue-600 hover:bg-blue-700', icon: UserCheck, actionType: 'assign_pic' },
-    sign: { color: 'bg-amber-600 hover:bg-amber-700', icon: FileSignature, actionType: 'sign' },
-    forward: { color: 'bg-indigo-500 hover:bg-indigo-600', icon: UserCheck, actionType: 'forward' },
+    add_adhoc: { color: 'bg-indigo-500 hover:bg-indigo-600', icon: UserCheck, actionType: 'add_adhoc' },
     branch: { color: 'bg-sky-600 hover:bg-sky-700', icon: GitBranch, actionType: 'branch' },
     auto: { color: 'bg-purple-600 hover:bg-purple-700', icon: Settings2, actionType: 'auto' },
 };
@@ -95,8 +94,7 @@ export function getActionTheme(code: string) {
     if (cleanCode === 'approve') return ACTION_THEMES.approve;
     if (cleanCode === 'reject') return ACTION_THEMES.reject;
     if (cleanCode === 'assign_pic' || cleanCode === 'assign') return ACTION_THEMES.assign;
-    if (cleanCode.includes('sign') || cleanCode.includes('tangan') || cleanCode.includes('paraf')) return ACTION_THEMES.sign;
-    if (cleanCode === 'forward' || cleanCode === 'add_adhoc') return ACTION_THEMES.forward;
+    if (cleanCode === 'add_adhoc') return ACTION_THEMES.add_adhoc;
     if (cleanCode === 'branch' || cleanCode === 'cross_workflow') return ACTION_THEMES.branch;
     if (cleanCode === 'auto' || cleanCode === 'system') return ACTION_THEMES.auto;
 
@@ -265,7 +263,7 @@ export const BUILTIN_STEP_TEMPLATES = [
             role: ['director', 'vp_legal'],
             actions: [
                 {
-                    action_code: 'signature',
+                    action_code: 'approve',
                     name: 'Tanda Tangani & Upload Dokumen',
                     transition_type: 'sequential',
                     is_active: true,

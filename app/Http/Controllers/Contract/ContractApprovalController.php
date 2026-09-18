@@ -187,7 +187,7 @@ class ContractApprovalController extends Controller
         if (! $approval) {
             $actionCode = $request->input('action_code') ?: 'approve';
             $requestActionId = $request->input('action_id') ?: $request->input('step_action_id');
-            $isCustomOrBranch = in_array($actionCode, ['branch', 'cross_workflow', 'forward', 'assign', 'assign_pic'])
+            $isCustomOrBranch = in_array($actionCode, ['branch', 'cross_workflow', 'add_adhoc', 'assign', 'assign_pic'])
                 || $requestActionId === 'action_branch'
                 || $requestActionId === 'action_adhoc'
                 || $requestActionId === 'action_assign_pic';
@@ -255,9 +255,7 @@ class ContractApprovalController extends Controller
             $filesToProcess = [$request->file('attachment')];
         }
 
-        $isSigner = str_contains(strtolower($approval->role ?? ''), 'tanda tangan') || in_array($request->action_code, ['signature', 'sign']);
-        $category = $isSigner ? 'Tanda Tangan' : 'Persetujuan';
-
+        
         $isFirst = true;
         foreach ($filesToProcess as $file) {
             if (! $file) continue;
@@ -277,19 +275,6 @@ class ContractApprovalController extends Controller
             ]);
         }
 
-        $signerUserIds = $request->input('signer_user_ids');
-        if (empty($signerUserIds)) {
-            $p1 = $request->input('p1_user_id');
-            $p2 = $request->input('p2_user_id');
-            $signerUserIds = [];
-            if ($p1) {
-                $signerUserIds[] = $p1;
-            }
-            if ($p2) {
-                $signerUserIds[] = $p2;
-            }
-        }
-
         $contract = $this->approveAction->approve(
             $contract,
             $approval,
@@ -299,7 +284,6 @@ class ContractApprovalController extends Controller
             $request->execution_order,
             $request->action_code,
             $request->target_step_id,
-            ! empty($signerUserIds) ? $signerUserIds : null,
             $request->input('action_id'),
         );
 
@@ -412,7 +396,37 @@ class ContractApprovalController extends Controller
                 $targetStepId = null;
             }
 
-            $targetStepId = $targetStepId ?: $contract->workflow_step_id;
+            // Check if the workflow has an explicit step configured with adhoc authorities
+            $wf = $contract->workflow()->with('steps.approverAuthorities')->first();
+            $adhocStep = $wf?->steps?->first(function ($s) {
+                return $s->approver_type === 'adhoc'
+                    || $s->step_category === 'adhoc'
+                    || $s->step_category === 'adhoc_review'
+                    || $s->approverAuthorities->contains(function ($auth) {
+                        return in_array($auth->authority_type, ['adhoc_approvers', 'adhoc']) || $auth->user_id === 'adhoc_approvers';
+                    });
+            });
+
+            if (! $targetStepId) {
+                if ($adhocStep) {
+                    $targetStepId = $adhocStep->id;
+                } else {
+                    $targetStepId = $contract->workflow_step_id;
+                }
+            } elseif ($adhocStep && $targetStepId === $contract->workflow_step_id) {
+                // If targetStepId passed was current step, verify if current step actually has adhoc authority
+                $currentStep = $contract->workflowStep ?: WorkflowStep::find($contract->workflow_step_id);
+                $currentStepHasAdhoc = $currentStep && (
+                    $currentStep->approver_type === 'adhoc'
+                    || $currentStep->step_category === 'adhoc'
+                    || $currentStep->step_category === 'adhoc_review'
+                    || $currentStep->approverAuthorities->contains(fn ($auth) => in_array($auth->authority_type, ['adhoc_approvers', 'adhoc']) || $auth->user_id === 'adhoc_approvers')
+                );
+                if (! $currentStepHasAdhoc) {
+                    $targetStepId = $adhocStep->id;
+                }
+            }
+
             if (! $targetStepId) {
                 return response()->json(['message' => 'Tahap alur kerja tidak aktif saat ini.'], 422);
             }
@@ -436,52 +450,6 @@ class ContractApprovalController extends Controller
             }
 
             $targetStep = WorkflowStep::findOrFail($targetStepId);
-
-            // Auto-detect if adhoc action is configured as cross-workflow branching
-            $customActions = $contract->workflow?->meta['custom_actions']
-                ?? $contract->origin_workflow?->meta['custom_actions']
-                ?? [];
-            $customAction = collect($customActions)->first(function ($ca) use ($request) {
-                $code = $request->input('action_code') ?: 'forward';
-                return ($ca['id'] ?? '') === 'action_adhoc'
-                    || ($ca['action_code'] ?? '') === 'forward'
-                    || ($ca['action_code'] ?? '') === 'branch'
-                    || ($ca['action_code'] ?? '') === $code;
-            });
-
-            if ($customAction && (($customAction['execution_type'] ?? '') === 'cross_workflow' || ($customAction['transition_config']['type'] ?? '') === 'cross_workflow') && ! empty($customAction['transition_config']['workflow_id'])) {
-                $subWfId = $customAction['transition_config']['workflow_id'];
-                $subAdhocStep = WorkflowStep::where('workflow_id', $subWfId)
-                    ->where(function ($q) {
-                        $q->where('approver_type', 'adhoc')
-                            ->orWhere('step_category', 'adhoc')
-                            ->orWhere('step_category', 'adhoc_review');
-                    })
-                    ->first();
-
-                if (! $subAdhocStep) {
-                    $seq = (int) ($customAction['transition_config']['sequence'] ?? 1);
-                    $subAdhocStep = WorkflowStep::where('workflow_id', $subWfId)->where('step', $seq)->first()
-                        ?: WorkflowStep::where('workflow_id', $subWfId)->orderBy('step')->first();
-                }
-
-                if ($subAdhocStep) {
-                    $targetStepId = $subAdhocStep->id;
-                    $targetStep = $subAdhocStep;
-                }
-            } elseif ($targetStepId === $contract->workflow_step_id && ($targetStep->approver_type === 'initiator' || $targetStep->step === 1)) {
-                $adhocStep = WorkflowStep::where('workflow_id', $contract->workflow_id)
-                    ->where(function ($q) {
-                        $q->where('approver_type', 'adhoc')
-                            ->orWhere('step_category', 'adhoc')
-                            ->orWhere('step_category', 'adhoc_review');
-                    })
-                    ->first();
-                if ($adhocStep && $adhocStep->id !== $targetStepId) {
-                    $targetStepId = $adhocStep->id;
-                    $targetStep = $adhocStep;
-                }
-            }
 
             $isSequential = $request->boolean('is_sequential', false);
             $approvalRule = $request->input('approval_rule', 'all');

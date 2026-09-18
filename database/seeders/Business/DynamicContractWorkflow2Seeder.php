@@ -492,33 +492,7 @@ class DynamicContractWorkflow2Seeder extends Seeder
             ],
             [
                 'id' => (string) Str::uuid(),
-                'action_code' => 'signature',
-                'name' => 'Tentukan Penandatangan',
-                'alias' => 'Tentukan Penandatangan',
-                'description' => 'Aksi untuk menentukan pihak penandatangan kontrak (Pihak 1, Pihak 2, Penandatangan).',
-                'is_active' => true,
-                'scope' => 'all_steps',
-                'step_ids' => [],
-                'visibility_condition' => 'always',
-                'unlocks_other_actions' => false,
-                'authorities' => [
-                    [
-                        'actor_type' => 'initiator',
-                        'authority_type' => 'group',
-                    ],
-                    [
-                        'authority_type' => 'group',
-                        'role_id' => $managerLegalRoleId,
-                    ],
-                    [
-                        'authority_type' => 'group',
-                        'role_id' => $staffLegalRoleId,
-                    ],
-                ],
-            ],
-            [
-                'id' => (string) Str::uuid(),
-                'action_code' => 'forward',
+                'action_code' => 'add_adhoc',
                 'name' => 'Tambah Approval Tambahan (Ad-Hoc)',
                 'alias' => 'Tambah Approval Tambahan (Ad-Hoc)',
                 'description' => 'Aksi default untuk menambahkan approver tambahan di luar alur kerja standar jika diperlukan telaah khusus.',

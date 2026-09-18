@@ -157,7 +157,7 @@ export function StepSimulatorButtons({ actions, idx, totalSteps, allWorkflows, a
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             close();
-                                            if (['approve', 'reject', 'assign_pic', 'sign', 'forward'].includes(btn.actionType)) {
+                                            if (['approve', 'reject', 'assign_pic', 'add_adhoc'].includes(btn.actionType)) {
                                                 setActiveModal(btn.actionType as any, btn.act);
                                             } else {
                                                 showToast(

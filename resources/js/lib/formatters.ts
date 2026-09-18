@@ -60,3 +60,15 @@ export function formatFileSize(bytes: number | null | undefined): string {
     }
     return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
+
+/**
+ * Format a number to ID locale string with thousands separator (e.g. 500.000).
+ */
+export function formatNumber(val: number | string | null | undefined): string {
+    if (val === null || val === undefined || val === '') return '';
+    const clean = typeof val === 'string' ? val.replace(/\D/g, '') : String(val);
+    if (!clean) return '';
+    const num = parseInt(clean, 10);
+    return isNaN(num) ? '' : new Intl.NumberFormat('id-ID').format(num);
+}
+

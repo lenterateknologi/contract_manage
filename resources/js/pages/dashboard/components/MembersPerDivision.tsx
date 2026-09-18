@@ -1,5 +1,5 @@
 import { ChipIcon } from '@/components/ui/feedback/ChipIcon';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { usePage } from '@inertiajs/react';
 import { Building2, Mail, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -73,15 +73,6 @@ export function MembersPerDivision({ users: propUsers, departments: propDepts, d
         const nameB = deptMap.get(b)?.name ?? '';
         return nameA.localeCompare(nameB);
     });
-
-    const getInitials = (name: string) => {
-        return name
-            .split(' ')
-            .map((n) => n[0])
-            .slice(0, 2)
-            .join('')
-            .toUpperCase();
-    };
 
     return (
         <div className="animate-in fade-in m-5 space-y-5 duration-500 select-none">

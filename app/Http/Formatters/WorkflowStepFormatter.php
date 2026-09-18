@@ -30,12 +30,22 @@ class WorkflowStepFormatter
 
         return [
             'id' => $step->id,
+            'name' => $step->name,
             'step' => $step->step,
             'role' => is_array($step->role) ? implode(', ', $step->role) : $step->role,
+            'approver_type' => $step->approver_type,
             'description' => $step->description,
             'step_type' => 'APPROVAL',
             'step_category' => $step->step_category,
             'meta' => $step->meta ?? [],
+            'approver_authorities' => $step->relationLoaded('approverAuthorities') ? $step->approverAuthorities->map(fn ($auth) => [
+                'id' => $auth->id,
+                'authority_type' => $auth->authority_type,
+                'user_id' => $auth->user_id,
+                'role_id' => $auth->role_id,
+                'department_id' => $auth->department_id,
+                'division_id' => $auth->division_id,
+            ])->toArray() : [],
             'target_approvers' => $targetApprovers,
             'actions' => self::formatStepActions($step, $c),
         ];

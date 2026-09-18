@@ -19,10 +19,10 @@ export function ForwardModal({ isOpen, onClose, step, idx, showToast }: ForwardM
             open={isOpen}
             onClose={onClose}
             contract={mockContract}
-            actionCode="forward"
-            actionAlias="Forward/Add-hoc"
+            actionCode="add_adhoc"
+            actionAlias="Approval Tambahan"
             onUpdate={() => {
-                showToast('Simulasi Teruskan (Forward) / Add-hoc berhasil!', 'success');
+                showToast('Simulasi Approval Tambahan berhasil!', 'success');
                 onClose();
             }}
             showToast={showToast}

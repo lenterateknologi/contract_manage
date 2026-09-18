@@ -16,7 +16,6 @@ import { AssignModal } from './modals/AssignModal';
 import { ConditionExpressionModal } from './modals/ConditionExpressionModal';
 import { ForwardModal } from './modals/ForwardModal';
 import { RejectModal } from './modals/RejectModal';
-import { SignerModal } from './modals/SignerModal';
 
 const {
     Bookmark,
@@ -177,7 +176,6 @@ export default function SortableStepItem({
             }));
     }, [users]);
 
-    const [advancedSettingsOpen, setAdvancedSettingsOpen] = useState(false);
     const [conditionModalOpen, setConditionModalOpen] = useState(false);
     const [actorsModalOpen, setActorsModalOpen] = useState(false);
     const [stepTab, setStepTab] = useState<'config' | 'actions' | 'advanced'>('config');
@@ -328,7 +326,7 @@ export default function SortableStepItem({
                                 const initLocName = (simInitiatorUser.location_name || simInitiatorUser.location?.name || '').toLowerCase().trim();
                                 const userLocName = (user.location_name || user.location?.name || '').toLowerCase().trim();
                                 const isLocMatch = (initLocId && userLocId && initLocId === userLocId) ||
-                                                   (initLocName && userLocName && initLocName === userLocName);
+                                    (initLocName && userLocName && initLocName === userLocName);
                                 if (!isLocMatch) return false;
                             }
                         } else if (auth.location_id) {
@@ -465,9 +463,6 @@ export default function SortableStepItem({
         simAdhocUsers,
     ]);
 
-    const signerOptions = useMemo(() => {
-        return users;
-    }, [users]);
 
 
     const selectedStatus = useMemo(() => {
@@ -1680,15 +1675,7 @@ export default function SortableStepItem({
                 showToast={showToast}
             />
 
-            <SignerModal
-                isOpen={activeModal === 'sign'}
-                onClose={() => setActiveModal(null)}
-                step={step}
-                idx={idx}
-                showToast={showToast}
-                userOptions={signerOptions || []}
-            />
-            <ForwardModal isOpen={activeModal === 'forward'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
+            <ForwardModal isOpen={activeModal === 'add_adhoc'} onClose={() => setActiveModal(null)} step={step} idx={idx} showToast={showToast} />
 
             <ConditionExpressionModal
                 open={conditionModalOpen}

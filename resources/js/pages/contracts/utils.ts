@@ -64,7 +64,6 @@ export const contractApi = {
         attachment?: File | File[],
         assignedPicId?: string,
         executionOrder?: string,
-        signerUserIds?: string[],
         actionCode?: string,
         isFinal?: boolean,
         targetStepId?: string,
@@ -81,9 +80,6 @@ export const contractApi = {
         }
         if (assignedPicId) fd.append('assigned_pic_id', assignedPicId);
         if (executionOrder) fd.append('execution_order', executionOrder);
-        if (signerUserIds && Array.isArray(signerUserIds)) {
-            signerUserIds.forEach((uid) => fd.append('signer_user_ids[]', uid));
-        }
         if (actionCode) fd.append('action_code', actionCode);
         if (actionId) fd.append('action_id', actionId);
         if (isFinal) fd.append('is_final', '1');
@@ -279,4 +275,130 @@ export const resolveVendorTaxPkp = (vendor: any): { isPkp: boolean; pkpStatus: s
     const isPkp = typePkp.toUpperCase() === 'PKP';
     return { isPkp, pkpStatus: typePkp };
 };
+
+export interface TransitionPreview {
+    label: string;
+    target: string;
+}
+
+/**
+ * Computes transition preview label and target step for workflow approval/rejection actions.
+ */
+export function resolveTransitionPreview({
+    contract,
+    action,
+    actionCode,
+    allWorkflows = [],
+}: {
+    contract: any;
+    action?: any;
+    actionCode?: string;
+    allWorkflows?: any[];
+}): TransitionPreview | null {
+    if (!contract) return null;
+
+    let transition = action?.transition_config;
+    if (!action && actionCode === 'reject') {
+        const rejectAction = contract?.workflow_step?.actions?.find((a: any) => a.action_code === 'reject');
+        if (rejectAction) {
+            transition = rejectAction.transition_config;
+        }
+    }
+
+    const currentStep = contract?.workflow_step;
+    if (!currentStep) return null;
+
+    const currentStepSeq = Number(currentStep.step || 1);
+    const steps = contract?.workflow?.steps || [];
+
+    const formatStepInfo = (stepObj: any) => {
+        if (!stepObj) return 'Selesai / Disetujui (Langkah Terakhir)';
+        return `Tahap ${stepObj.step} - ${stepObj.description || stepObj.label || 'Tanpa Keterangan'}`;
+    };
+
+    if (transition && typeof transition === 'object') {
+        const { type, offset, sequence, workflow_id, return_mode } = transition;
+        switch (type) {
+            case 'relative': {
+                const offNum = Number(offset ?? (actionCode === 'reject' ? -1 : 1));
+                if (offNum === 0) {
+                    return {
+                        label: 'Tetap di Tahap Ini (Stay / Offset 0)',
+                        target: formatStepInfo(currentStep),
+                    };
+                } else if (offNum < 0) {
+                    const targetSeq = Math.max(1, currentStepSeq + offNum);
+                    const prevStep = steps.find((s: any) => Number(s.step) === targetSeq) || steps.find((s: any) => Number(s.step) < currentStepSeq);
+                    return {
+                        label: `Mundur ${Math.abs(offNum)} Langkah (Offset ${offNum})`,
+                        target: formatStepInfo(prevStep),
+                    };
+                } else {
+                    const targetSeq = currentStepSeq + offNum;
+                    const nextStep = steps.find((s: any) => Number(s.step) === targetSeq) || steps.find((s: any) => Number(s.step) > currentStepSeq);
+                    return {
+                        label: `Maju ${offNum} Langkah (Offset +${offNum})`,
+                        target: formatStepInfo(nextStep),
+                    };
+                }
+            }
+            case 'absolute': {
+                const targetSeq = Number(sequence ?? 1);
+                const targetStep = steps.find((s: any) => Number(s.step) === targetSeq);
+                return {
+                    label: actionCode === 'reject' ? `Kembali ke Tahap Spesifik (Tahap ${targetSeq})` : `Lompat ke Tahap Spesifik (Tahap ${targetSeq})`,
+                    target: formatStepInfo(targetStep),
+                };
+            }
+            case 'cross_workflow': {
+                const isOrigin = workflow_id === 'origin_workflow' || workflow_id === 'origin' || workflow_id === contract.origin_workflow_id;
+                const targetWfId = isOrigin ? (contract.origin_workflow_id || contract.workflow_id) : workflow_id;
+                const targetWf = allWorkflows.find((w: any) => String(w.id) === String(targetWfId));
+                const wfName = targetWf?.name || (isOrigin ? 'Alur Kerja Utama' : 'Alur Kerja Target');
+
+                let stepLabel = `Tahap ${sequence || 1}`;
+                if (isOrigin) {
+                    switch (return_mode) {
+                        case 'branch_origin':
+                        case 'origin_step':
+                            stepLabel = 'Kembali ke Tahap Semula di Alur Utama';
+                            break;
+                        case 'branch_next':
+                            stepLabel = 'Lanjut ke Tahap Berikutnya di Alur Utama';
+                            break;
+                        default:
+                            stepLabel = sequence ? `Tahap ${sequence} di Alur Utama` : 'Kembali ke Alur Utama';
+                            break;
+                    }
+                } else {
+                    const targetStep = targetWf?.steps?.find((s: any) => Number(s.step) === Number(sequence));
+                    if (targetStep) {
+                        stepLabel = `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || 'Tanpa Keterangan'}`;
+                    }
+                }
+
+                return {
+                    label: isOrigin ? 'Kembali ke Alur Kerja Utama' : `Pindah ke Alur Kerja: ${wfName}`,
+                    target: stepLabel,
+                };
+            }
+            default:
+                break;
+        }
+    }
+
+    if (actionCode === 'reject') {
+        const step1 = steps.find((s: any) => Number(s.step) === 1);
+        return {
+            label: 'Kembali untuk Revisi (Default Reject)',
+            target: formatStepInfo(step1),
+        };
+    }
+
+    const nextStep = steps.find((s: any) => Number(s.step) > currentStepSeq);
+    return {
+        label: 'Maju ke Langkah Berikutnya (Default Sequential)',
+        target: formatStepInfo(nextStep),
+    };
+}
 

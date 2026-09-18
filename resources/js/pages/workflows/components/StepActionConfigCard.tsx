@@ -6,11 +6,11 @@ import {
     ArrowDown,
     ArrowRight,
     ArrowUp,
+    CheckCircle2,
     Copy,
     CornerDownLeft,
     Eye,
     EyeOff,
-    FileSignature,
     Flag,
     GitBranch,
     Key,
@@ -24,6 +24,7 @@ import {
     UserPlus,
     Users as UsersIcon,
     Workflow as WorkflowIcon,
+    XCircle,
     Zap,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -172,46 +173,40 @@ export function StepActionConfigCard({
     onOpenSimulationModal,
 }: StepActionConfigCardProps) {
     const actionCode = (act.master_action?.code || act.action_code || act.master_action_id || '').toLowerCase();
-    const isForwardAction = actionCode === 'forward';
-    const isSignatureAction = ['signature', 'sign'].includes(actionCode);
+    const isForwardAction = actionCode === 'add_adhoc';
     const isAssignAction = ['assign', 'assign_pic'].includes(actionCode);
-    const isSelectionAction = isAssignAction || isForwardAction || isSignatureAction;
+    const isSelectionAction = isAssignAction || isForwardAction;
 
     const [isButtonAuthorityModalOpen, setIsButtonAuthorityModalOpen] = useState(false);
     const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
 
     // Fallback status: act.target_status -> step.meta?.target_status
-    const effectiveStatusCode = act.target_status || step?.meta?.target_status;
-    const effectiveStatusObj = effectiveStatusCode
-        ? contractStatuses.find((s: any) => s.code === effectiveStatusCode)
-        : null;
 
     // Calculate authority counts
     const buttonAuthorities = mapConfigToAuthorities(act.authorities || act.authority_config);
     const buttonAuthorityCount = buttonAuthorities.length;
 
-    const personnelAuthorities = isSignatureAction
-        ? mapConfigToAuthorities(act.signing_parties)
-        : mapConfigToAuthorities(act.assignee_config);
+    const personnelAuthorities = mapConfigToAuthorities(act.assignee_config || act.eligible_personnel);
     const personnelCount = personnelAuthorities.length;
 
-    const headerThemes: Record<string, { badgeBg: string; text: string; icon: React.ReactNode; label: string }> = {
+    // Precomputed action styling
+    const actionStyleMap: Record<string, { badgeBg: string; text: string; icon: React.ReactNode; label: string }> = {
         approve: {
             badgeBg: 'bg-emerald-600 text-white',
             text: 'text-emerald-600 dark:text-emerald-400',
-            icon: <Sparkles size={12} className="text-emerald-500 shrink-0" />,
-            label: `#${actIdx + 1} Setujui`,
+            icon: <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />,
+            label: `#${actIdx + 1} Setuju`,
         },
         reject: {
             badgeBg: 'bg-rose-600 text-white',
             text: 'text-rose-600 dark:text-rose-400',
-            icon: <Trash2 size={12} className="text-rose-500 shrink-0" />,
+            icon: <XCircle size={12} className="text-rose-500 shrink-0" />,
             label: `#${actIdx + 1} Tolak`,
         },
         assign: {
             badgeBg: 'bg-blue-600 text-white',
             text: 'text-blue-600 dark:text-blue-400',
-            icon: <UsersIcon size={12} className="text-blue-500 shrink-0" />,
+            icon: <UserCheck size={12} className="text-blue-500 shrink-0" />,
             label: `#${actIdx + 1} Tugaskan`,
         },
         assign_pic: {
@@ -220,19 +215,7 @@ export function StepActionConfigCard({
             icon: <UsersIcon size={12} className="text-blue-500 shrink-0" />,
             label: `#${actIdx + 1} Tugaskan`,
         },
-        sign: {
-            badgeBg: 'bg-amber-600 text-white',
-            text: 'text-amber-600 dark:text-amber-400',
-            icon: <UserCheck size={12} className="text-amber-500 shrink-0" />,
-            label: `#${actIdx + 1} TTD`,
-        },
-        signature: {
-            badgeBg: 'bg-amber-600 text-white',
-            text: 'text-amber-600 dark:text-amber-400',
-            icon: <FileSignature size={12} className="text-amber-500 shrink-0" />,
-            label: `#${actIdx + 1} TTD`,
-        },
-        forward: {
+        add_adhoc: {
             badgeBg: 'bg-indigo-600 text-white',
             text: 'text-indigo-600 dark:text-indigo-400',
             icon: <UserPlus size={12} className="text-indigo-500 shrink-0" />,
@@ -258,7 +241,7 @@ export function StepActionConfigCard({
         }
     };
 
-    const theme = headerThemes[actionCode] || {
+    const theme = actionStyleMap[actionCode] || {
         badgeBg: 'bg-slate-600 text-white',
         text: 'text-slate-600',
         icon: <Sliders size={12} />,
@@ -426,11 +409,11 @@ export function StepActionConfigCard({
                         </span>
                     </button>
 
-                    {/* 2. Tombol Tentukan Personil / Atur Reviewer / Aktor Penandatangan */}
+                    {/* 2. Tombol Tentukan Personil / Atur Reviewer */}
                     {isSelectionAction && (
                         <button
                             type="button"
-                            title={isForwardAction ? 'Tentukan lingkup reviewer tambahan' : isSignatureAction ? 'Tentukan aktor penandatangan dokumen' : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'}
+                            title={isForwardAction ? 'Tentukan lingkup reviewer tambahan' : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'}
                             onClick={() => setIsAssigneeModalOpen(true)}
                             className={cn(
                                 "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer border",
@@ -439,8 +422,8 @@ export function StepActionConfigCard({
                                     : "bg-white dark:bg-zinc-800 border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-zinc-300 hover:bg-slate-50"
                             )}
                         >
-                            {isSignatureAction ? <UserCheck size={13} className="text-amber-400" /> : <UsersIcon size={13} className="text-blue-500" />}
-                            <span>{isForwardAction ? 'Atur Reviewer' : isSignatureAction ? 'Aktor TTD' : 'Tentukan Personil'}</span>
+                            <UsersIcon size={13} className="text-blue-500" />
+                            <span>{isForwardAction ? 'Atur Reviewer' : 'Tentukan Personil'}</span>
                             <span className={cn(
                                 "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
                                 personnelCount > 0 ? "bg-white/25 text-white" : "bg-primary text-white"
@@ -938,24 +921,22 @@ export function StepActionConfigCard({
                 </DialogContent>
             </Dialog>
 
-            {/* Modal Dialog 2: Tentukan Personil / Assignee / Reviewer / Signer Pool */}
+            {/* Modal Dialog 2: Tentukan Personil / Assignee / Reviewer Pool */}
             <Dialog open={isAssigneeModalOpen} onOpenChange={setIsAssigneeModalOpen}>
                 <DialogContent className="sm:max-w-[96vw] w-[96vw] max-w-[96vw] h-[90vh] max-h-[90vh] border-slate-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 rounded-[12px] border p-0 shadow-2xl overflow-hidden flex flex-col">
                     <div className="px-6 py-4 border-b border-primary/20 dark:border-zinc-700/80 bg-primary dark:bg-zinc-800/90 text-white dark:text-zinc-200 flex items-center justify-between rounded-t-[12px] shrink-0">
                         <div className="flex items-center gap-3">
                             <div className="bg-white/20 text-white border border-white/20 dark:bg-primary/20 dark:text-primary dark:border-primary/30 flex h-9 w-9 items-center justify-center rounded-lg">
-                                {isSignatureAction ? <UserCheck size={18} className="text-amber-400" /> : <UsersIcon size={18} />}
+                                <UsersIcon size={18} />
                             </div>
                             <div>
                                 <DialogTitle className="text-sm font-bold tracking-tight text-white dark:text-zinc-100">
-                                    {isForwardAction ? 'Konfigurasi Reviewer Tambahan' : isSignatureAction ? 'Konfigurasi Aktor Penandatangan (Signers)' : 'Konfigurasi Personil Penugasan (Assignee Pool)'} — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
+                                    {isForwardAction ? 'Konfigurasi Reviewer Tambahan' : 'Konfigurasi Personil Penugasan (Assignee Pool)'} — Aksi #{actIdx + 1}: {act.alias || act.master_action?.name || 'Aksi'}
                                 </DialogTitle>
                                 <DialogDescription className="text-white/80 dark:text-zinc-400 text-xs font-medium mt-0.5">
                                     {isForwardAction
                                         ? 'Tentukan langkah target dan daftar reviewer yang berhak menerima pengajuan'
-                                        : isSignatureAction
-                                            ? 'Tentukan langkah target upload dan aktor penandatangan dokumen'
-                                            : 'Tentukan aktor/pengguna yang dapat dipilih dan ditugaskan sebagai PIC'}
+                                        : 'Tentukan aktor/pengguna yang dapat dipilih dan ditugaskan sebagai PIC'}
                                 </DialogDescription>
                             </div>
                         </div>
@@ -992,46 +973,12 @@ export function StepActionConfigCard({
                             </div>
                         )}
 
-                        {isSignatureAction && (
-                            <div className="space-y-1 max-w-sm">
-                                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    Target Langkah Upload Tanda Tangan (Insert To)
-                                </label>
-                                <Select
-                                    value={act.assignee_config?.signature_target_step ? String(act.assignee_config?.signature_target_step) : ''}
-                                    onValueChange={(val) =>
-                                        updateAction(actIdx, {
-                                            assignee_config: {
-                                                ...act.assignee_config,
-                                                signature_target_step: val,
-                                            },
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger className="h-9 py-2 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium focus:border-slate-900 dark:border-slate-800 dark:bg-slate-950">
-                                        <SelectValue placeholder="Pilih Tahap Target" />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-lg bg-white dark:bg-slate-950">
-                                        {allWorkflowSteps.map((s: any, sIdx: number) => (
-                                            <SelectItem key={s.id} value={String(s.id)} className="text-xs font-medium">
-                                                Tahap {sIdx + 1}: {s.label || `Langkah ${sIdx + 1}`}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        )}
-
-                        {/* Authority Table Manager for Assignee / Signers */}
+                        {/* Authority Table Manager for Assignee */}
                         <AuthorityTableManager
-                            title={isForwardAction ? 'Lingkup Reviewer Tambahan' : isSignatureAction ? 'Aktor Penandatangan' : 'Aktor Penugasan (Assignee Pool)'}
+                            title={isForwardAction ? 'Lingkup Reviewer Tambahan' : 'Aktor Penugasan (Assignee Pool)'}
                             authorities={personnelAuthorities}
                             onChange={(vals) => {
-                                if (isSignatureAction) {
-                                    updateAction(actIdx, { signing_parties: mapAuthoritiesToConfig(vals) });
-                                } else {
-                                    updateAction(actIdx, { assignee_config: mapAuthoritiesToConfig(vals) });
-                                }
+                                updateAction(actIdx, { assignee_config: mapAuthoritiesToConfig(vals) });
                             }}
                             users={users}
                             roles={roles}

@@ -1,19 +1,17 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
 import LucideIcons from '@/lib/lucide-dynamic';
-import type { StatusInfo } from './StatusBadge';
+import { cn } from '@/lib/utils';
 import {
-    CheckCircle2,
     AlertCircle,
-    UserCheck,
-    PenTool,
-    UserPlus,
-    GitBranch,
-    Clock,
+    CheckCircle2,
     Eye,
+    GitBranch,
+    LucideIcon,
     Send,
-    LucideIcon
+    UserCheck,
+    UserPlus
 } from 'lucide-react';
+import React from 'react';
+import type { StatusInfo } from './StatusBadge';
 
 export interface ActionConfig {
     code: string;
@@ -33,7 +31,7 @@ export interface ActionConfig {
 export function getActionConfig(
     actionOrCode?: any,
     aliasParam?: string | null,
-    isApproved?: boolean,
+    _isApproved?: boolean,
     isRejected?: boolean,
     targetStatusParam?: string | null,
     statusInfo?: StatusInfo | null,
@@ -64,58 +62,79 @@ export function getActionConfig(
 
     // Default icon based on action code
     let defaultIcon: LucideIcon = CheckCircle2;
-    if (cleanCode === 'reject' || cleanCode.includes('reject') || isRejected) {
+    if (isRejected) {
         defaultIcon = AlertCircle;
-    } else if (cleanCode === 'assign' || cleanCode === 'assign_pic' || cleanCode.includes('assign')) {
-        defaultIcon = UserCheck;
-    } else if (cleanCode === 'signature' || cleanCode === 'sign' || cleanCode.includes('sign')) {
-        defaultIcon = PenTool;
-    } else if (cleanCode === 'forward' || cleanCode === 'adhoc' || cleanCode === 'add_adhoc' || cleanCode.includes('adhoc')) {
-        defaultIcon = UserPlus;
-    } else if (cleanCode === 'branch' || cleanCode === 'cross_workflow' || cleanCode.includes('branch')) {
-        defaultIcon = GitBranch;
-    } else if (cleanCode === 'toggle_access' || cleanCode.includes('access')) {
-        defaultIcon = Eye;
-    } else if (isStep1) {
-        defaultIcon = Send;
+    } else {
+        switch (cleanCode) {
+            case 'reject':
+                defaultIcon = AlertCircle;
+                break;
+            case 'assign':
+            case 'assign_pic':
+                defaultIcon = UserCheck;
+                break;
+            case 'add_adhoc':
+                defaultIcon = UserPlus;
+                break;
+            case 'branch':
+            case 'cross_workflow':
+                defaultIcon = GitBranch;
+                break;
+            case 'toggle_access':
+                defaultIcon = Eye;
+                break;
+            default:
+                defaultIcon = isStep1 ? Send : CheckCircle2;
+                break;
+        }
     }
 
     // Default label based on action code
-    const defaultLabel =
-        alias ||
-        (cleanCode === 'reject'
-            ? 'Tolak Kontrak'
-            : cleanCode === 'assign' || cleanCode === 'assign_pic'
-            ? 'Tugaskan PIC'
-            : cleanCode === 'signature' || cleanCode === 'sign'
-            ? 'Upload Tanda Tangan'
-            : cleanCode === 'forward' || cleanCode === 'adhoc'
-            ? 'Persetujuan Tambahan'
-            : cleanCode === 'branch'
-            ? 'Pindah Workflow'
-            : cleanCode === 'toggle_access'
-            ? 'Akses Dokumen'
-            : isStep1
-            ? 'Kirim Persetujuan'
-            : cleanCode === 'approve'
-            ? 'Setujui Kontrak'
-            : cleanCode
-            ? cleanCode.toUpperCase()
-            : 'Setujui Kontrak');
+    const resolveDefaultLabel = (): string => {
+        if (alias) return alias;
+        switch (cleanCode) {
+            case 'reject':
+                return 'Tolak Kontrak';
+            case 'assign':
+            case 'assign_pic':
+                return 'Tugaskan PIC';
+            case 'add_adhoc':
+                return 'Persetujuan Tambahan';
+            case 'branch':
+            case 'cross_workflow':
+                return 'Pindah Workflow';
+            case 'toggle_access':
+                return 'Akses Dokumen';
+            case 'approve':
+                return isStep1 ? 'Kirim Persetujuan' : 'Setujui Kontrak';
+            default:
+                return isStep1 ? 'Kirim Persetujuan' : (cleanCode ? cleanCode.toUpperCase() : 'Setujui Kontrak');
+        }
+    };
+    const defaultLabel = resolveDefaultLabel();
 
     // Tentukan status key efektif: Prioritaskan target_status, jika tidak ada fallback ke status default aksi
     let effectiveStatusKey = cleanStatus && cleanStatus !== 'default' ? cleanStatus : '';
     if (!effectiveStatusKey) {
-        if (isRejected || cleanCode === 'reject' || cleanCode.includes('reject')) {
+        if (isRejected) {
             effectiveStatusKey = 'rejected';
-        } else if (cleanCode === 'assign' || cleanCode === 'assign_pic' || cleanCode.includes('assign')) {
-            effectiveStatusKey = 'active';
-        } else if (cleanCode === 'signature' || cleanCode === 'sign' || cleanCode.includes('sign')) {
-            effectiveStatusKey = 'signed';
-        } else if (cleanCode === 'branch' || cleanCode === 'cross_workflow') {
-            effectiveStatusKey = 'pending';
         } else {
-            effectiveStatusKey = 'approved';
+            switch (cleanCode) {
+                case 'reject':
+                    effectiveStatusKey = 'rejected';
+                    break;
+                case 'assign':
+                case 'assign_pic':
+                    effectiveStatusKey = 'active';
+                    break;
+                case 'branch':
+                case 'cross_workflow':
+                    effectiveStatusKey = 'pending';
+                    break;
+                default:
+                    effectiveStatusKey = 'approved';
+                    break;
+            }
         }
     }
 

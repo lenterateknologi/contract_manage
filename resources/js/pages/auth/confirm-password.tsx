@@ -1,13 +1,11 @@
-// Components
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
-import InputError from '@/components/ui/forms/InputError';
-import { Label } from '@/components/ui/forms/Label';
 import AuthLayout from '@/layouts/auth-layout';
+import { AuthErrorAlert } from './components/AuthErrorAlert';
+import { PasswordField } from './components/PasswordField';
 
 export default function ConfirmPassword() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -24,37 +22,38 @@ export default function ConfirmPassword() {
 
     return (
         <AuthLayout
-            title="Confirm your password"
-            description="This is a secure area of the application. Please confirm your password before continuing."
+            title="Konfirmasi Kata Sandi"
+            description="Ini adalah area aman aplikasi. Silakan konfirmasi kata sandi Anda sebelum melanjutkan."
         >
-            <Head title="Confirm password" />
+            <Head title="Konfirmasi Kata Sandi" />
 
-            <form onSubmit={submit}>
-                <div className="space-y-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
+            <div className="rounded-xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <form onSubmit={submit} className="flex flex-col gap-6">
+                    <AuthErrorAlert errors={errors} title="Konfirmasi Gagal" />
+
+                    <div className="grid gap-5">
+                        <PasswordField
                             id="password"
-                            type="password"
-                            name="password"
-                            placeholder="Password"
-                            autoComplete="current-password"
+                            label="Kata Sandi"
                             value={data.password}
-                            autoFocus
                             onChange={(e) => setData('password', e.target.value)}
+                            placeholder="Kata sandi Anda"
+                            error={errors.password}
+                            autoComplete="current-password"
+                            disabled={processing}
                         />
 
-                        <InputError message={errors.password} />
-                    </div>
-
-                    <div className="flex items-center">
-                        <Button className="w-full" disabled={processing}>
-                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            Confirm password
+                        <Button
+                            type="submit"
+                            className="h-11 w-full rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98]"
+                            disabled={processing}
+                        >
+                            {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
+                            Konfirmasi Kata Sandi
                         </Button>
                     </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </AuthLayout>
     );
 }

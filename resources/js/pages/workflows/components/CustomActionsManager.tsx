@@ -5,13 +5,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import LucideIcons from '@/lib/lucide-dynamic';
 import { cn } from '@/lib/utils';
 import {
-    ArrowDown,
     ArrowRight,
-    ArrowUp,
-    CheckCircle2,
     Copy,
     CornerDownLeft,
-    FileSignature,
     Flag,
     GitBranch,
     Key,
@@ -21,10 +17,7 @@ import {
     Settings2,
     Sliders,
     Sparkles,
-    Target,
     Trash2,
-    Unlock,
-    UserCheck,
     UserPlus,
     Users as UsersIcon,
     Workflow as WorkflowIcon,
@@ -32,7 +25,7 @@ import {
     Zap,
 } from 'lucide-react';
 import React, { useState } from 'react';
-import { MASTER_ACTIONS, TRANSITION_OPTIONS, getActionTheme } from '../constants';
+import { MASTER_ACTIONS, TRANSITION_OPTIONS } from '../constants';
 import AuthorityTableManager from './AuthorityTableManager';
 
 export interface CustomActionItem {
@@ -125,7 +118,7 @@ export const CUSTOM_ACTION_TEMPLATES = [
         },
     },
     {
-        action_code: 'forward',
+        action_code: 'add_adhoc',
         name: 'Approval Tambahan',
         alias: 'Minta Persetujuan Tambahan',
         description: 'Aksi untuk menambahkan reviewer / approver ad-hoc tambahan ke dalam tahapan alur persetujuan.',
@@ -368,7 +361,7 @@ export function CustomActionsManager({
                     const actionCode = (act.action_code || 'assign').toLowerCase();
                     const authorityCount = (act.authorities || []).length;
                     const personnelCount = (act.eligible_personnel || []).length;
-                    const isSelectionAction = ['assign', 'signature', 'forward'].includes(actionCode);
+                    const isSelectionAction = ['assign', 'add_adhoc'].includes(actionCode);
 
                     const headerThemes: Record<string, { badgeBg: string; text: string; icon: React.ReactNode; label: string }> = {
                         approve: {
@@ -389,7 +382,7 @@ export function CustomActionsManager({
                             icon: <UsersIcon size={12} className="text-blue-500 shrink-0" />,
                             label: `#${actIdx + 1} Tugaskan`,
                         },
-                        forward: {
+                        add_adhoc: {
                             badgeBg: 'bg-indigo-600 text-white',
                             text: 'text-indigo-600 dark:text-indigo-400',
                             icon: <UserPlus size={12} className="text-indigo-500 shrink-0" />,
@@ -559,7 +552,7 @@ export function CustomActionsManager({
                                     {isSelectionAction && !isCrossWorkflowMode && (
                                         <button
                                             type="button"
-                                            title={actionCode === 'forward' ? 'Tentukan lingkup reviewer tambahan' : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'}
+                                            title={actionCode === 'add_adhoc' ? 'Tentukan lingkup reviewer tambahan' : 'Tentukan daftar personil yang bisa dipilih saat aksi digunakan'}
                                             onClick={() => setEditingPersonnelActionId(act.id)}
                                             className={cn(
                                                 "inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer border",
@@ -569,7 +562,7 @@ export function CustomActionsManager({
                                             )}
                                         >
                                             <UsersIcon size={13} className="text-blue-500" />
-                                            <span>{actionCode === 'forward' ? 'Atur Reviewer' : 'Tentukan Personil'}</span>
+                                            <span>{actionCode === 'add_adhoc' ? 'Atur Reviewer' : 'Tentukan Personil'}</span>
                                             <span className={cn(
                                                 "ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
                                                 personnelCount > 0 ? "bg-white/25 text-white" : "bg-primary text-white"
@@ -936,7 +929,7 @@ export function CustomActionsManager({
                                     </div>
 
                                     {/* Dedicated Setting for Approval Tambahan (Position of Reviewer) */}
-                                    {actionCode === 'forward' && (
+                                    {actionCode === 'add_adhoc' && (
                                         <div className="sm:col-span-12 pt-2 border-t border-dashed border-slate-200 dark:border-zinc-800 space-y-1.5">
                                             <div className="flex flex-wrap items-center gap-2.5">
                                                 <span className="text-[11px] font-semibold text-slate-700 dark:text-zinc-300 shrink-0 flex items-center gap-1.5">

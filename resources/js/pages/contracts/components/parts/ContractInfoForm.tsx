@@ -5,7 +5,7 @@ import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
 import { cn } from '@/lib/utils';
-import { formatDate } from '@/lib/formatters';
+import { formatDate, formatCurrency, formatNumber } from '@/lib/formatters';
 import {
     Building2,
     Calendar,
@@ -110,10 +110,7 @@ export function ContractInfoForm({
     const formattedPrice = React.useMemo(() => {
         const val = price || (selected.metadata?.meta_harga ?? selected.metadata?.f2_price ?? selected.meta?.f2_price);
         if (val === undefined || val === null || val === '') return null;
-        const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.]/g, ''));
-        return isNaN(num)
-            ? String(val)
-            : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(num);
+        return formatCurrency(val);
     }, [price, selected]);
 
     const categoryDisplayName = React.useMemo(() => {
@@ -398,12 +395,7 @@ export function ContractInfoForm({
                     <FieldLabel icon={Coins} required={!!(selected.require_price || selected.workflow_step?.meta?.require_price)}>Nilai / Estimasi Biaya</FieldLabel>
                     {canEditPrice ? (
                         <Input
-                            value={(() => {
-                                if (!price) return '';
-                                const clean = String(price).replace(/\D/g, '');
-                                if (!clean) return '';
-                                return new Intl.NumberFormat('id-ID').format(parseInt(clean, 10));
-                            })()}
+                            value={formatNumber(price)}
                             onChange={(e) => {
                                 const raw = e.target.value.replace(/\D/g, '');
                                 setPrice(raw);
@@ -413,9 +405,7 @@ export function ContractInfoForm({
                         />
                     ) : (
                         <span className="font-mono font-bold text-xs text-foreground">
-                            {price
-                                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(parseFloat(price))
-                                : '—'}
+                            {price ? formatCurrency(price) : '—'}
                         </span>
                     )}
                 </div>

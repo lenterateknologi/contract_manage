@@ -678,7 +678,7 @@ class ContractWorkflowService
     /**
      * Approve a contract and move to next step if conditions are met.
      */
-    public function approveContract(Contract $contract, Approval $approval, ?string $comment = null, ?string $attachmentPath = null, ?string $assignedPicId = null, ?string $executionOrder = null, string|WorkflowAction $actionCode = WorkflowAction::APPROVE, ?string $targetStepId = null, $signerUserIdsParam = null, ?string $actionId = null): Contract
+    public function approveContract(Contract $contract, Approval $approval, ?string $comment = null, ?string $attachmentPath = null, ?string $assignedPicId = null, ?string $executionOrder = null, string|WorkflowAction $actionCode = WorkflowAction::APPROVE, ?string $targetStepId = null, ?string $actionId = null): Contract
     {
         if (! $contract->relationLoaded('initiator')) {
             $contract->load(['initiator.department', 'initiator.company', 'creator.department', 'creator.company']);
@@ -708,14 +708,6 @@ class ContractWorkflowService
 
                 return $contract;
             }
-        }
-
-        $isSigningSetup = ($approval->workflowStep->step_category === 'signing' || in_array(strtolower($actionCode), ['signature', 'sign'])) &&
-            $approval->sub_step === null &&
-            (! empty($signerUserIdsParam) || request()->has('signer_user_ids'));
-
-        if ($isSigningSetup) {
-            return $this->handleSigningSetup($contract, $approval, $actionCode, $comment, $signerUserIdsParam, $targetStepId);
         }
 
         $currentStep = $approval->workflowStep;
@@ -759,9 +751,6 @@ class ContractWorkflowService
             $matchingActions = $currentStep->actions()
                 ->where(function ($q) use ($actionCode) {
                     $q->where('action_code', $actionCode);
-                    if (in_array(strtolower($actionCode), ['signature', 'sign'])) {
-                        $q->orWhereIn('action_code', ['signature', 'sign']);
-                    }
                     if (in_array(strtolower($actionCode), ['assign', 'assign_pic'])) {
                         $q->orWhereIn('action_code', ['assign', 'assign_pic', 'approve']);
                     }
@@ -771,7 +760,7 @@ class ContractWorkflowService
         }
 
         if (! $stepAction && $actionCode === 'approve' && $approval->role === 'Persetujuan Tambahan' && $currentStep) {
-            $stepAction = $currentStep->actions()->where('action_code', 'forward')->first();
+            $stepAction = $currentStep->actions()->where('action_code', 'add_adhoc')->first();
         }
         if (! $stepAction && $currentStep && in_array($actionCode, ['approve', 'assign', 'assign_pic'])) {
             $stepAction = $currentStep->actions()->whereIn('action_code', ['approve', 'assign', 'assign_pic'])->first();
@@ -795,8 +784,8 @@ class ContractWorkflowService
         $stepName = $approval->workflowStep?->name ?: "Tahap {$approval->sequence}";
         $commentSuffix = $comment ? " (Catatan: {$comment})" : '';
 
-        if (in_array($actionCodeToSave, ['branch', 'forward'])) {
-            $actionLabel = $actionAliasToSave ?: ($actionCodeToSave === 'branch' ? 'Pindah Workflow' : 'Teruskan');
+        if (in_array($actionCodeToSave, ['branch', 'add_adhoc'])) {
+            $actionLabel = $actionAliasToSave ?: ($actionCodeToSave === 'branch' ? 'Pindah Workflow' : 'Persetujuan Tambahan');
             $this->queryService->logHistory($contract, 'WORKFLOW_BRANCHED', "{$actionLabel} pada [{$stepName}] oleh {$approval->approver_name} ({$approval->role}){$commentSuffix}", Auth::id());
         } elseif (in_array($actionCodeToSave, ['assign', 'assign_pic'])) {
             $actionLabel = $actionAliasToSave ?: 'Persetujuan & Penugasan PIC';
@@ -876,9 +865,8 @@ class ContractWorkflowService
 
         $isSignerRole = in_array($approval->role, ['Penandatangan', 'Pihak 1', 'Pihak 2']);
         $isSigningCategory = $approval->workflowStep->step_category === 'signing';
-        $isSigningAction = in_array(strtolower($actionCode), ['sign', 'signature']);
 
-        if ($isSigningCategory || $isSignerRole || $isSigningAction) {
+        if ($isSigningCategory || $isSignerRole) {
             $this->handleSigningCompletion($contract, $approval, $attachmentPath);
         }
 
@@ -888,98 +876,6 @@ class ContractWorkflowService
         }
 
         return $contract->fresh();
-    }
-
-    /**
-     * Handle setup for signing process (adding signers as sequential sub-steps)
-     */
-    private function handleSigningSetup(Contract $contract, Approval $approval, string $actionCode, ?string $comment = null, $signerUserIdsParam = null, ?string $targetStepId = null): Contract
-    {
-        $signerUserIds = $signerUserIdsParam ?: request()->input('signer_user_ids', []);
-        if (! is_array($signerUserIds)) {
-            $signerUserIds = $signerUserIds ? [$signerUserIds] : [];
-        }
-
-        if (count($signerUserIds) > 0) {
-            $signingAction = $approval->workflowStep->actions->filter(function ($act) use ($actionCode) {
-                $code = $act->action_code instanceof WorkflowAction ? $act->action_code->value : ($act->action_code ?? $act->masterAction?->code);
-
-                return strtolower((string) $code) === strtolower($actionCode) || in_array(strtolower((string) $code), ['signature', 'sign']);
-            })->first();
-
-            $transitionStep = $signingAction ? $this->evaluateTransition($contract, $approval->workflowStep, $signingAction) : null;
-            $targetStepId = $targetStepId ?: ($transitionStep ? $transitionStep->id : null) ?: (request()->input('target_step_id') ?: ($signingAction?->assignee_config['signature_target_step'] ?? $approval->workflow_step_id));
-            $targetStep = $targetStepId == $approval->workflow_step_id ? $approval->workflowStep : WorkflowStep::find($targetStepId);
-            $targetSequence = $targetStep->step ?? $approval->workflowStep->step;
-            $currentSequence = $approval->workflowStep->step;
-
-            $initialStatus = ($targetSequence <= $currentSequence) ? 'pending' : 'waiting';
-            $allSigners = [];
-
-            foreach ($signerUserIds as $index => $id) {
-                $user = User::find($id);
-                if ($user) {
-                    $maxSort = Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStepId)->where('is_active', true)->max('sort_order') ?: 0;
-                    $maxSubStep = Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStepId)->where('is_active', true)->whereNotNull('sub_step')->max('sub_step') ?: 0;
-
-                    $role = (request()->has('p1_user_id') || request()->has('p2_user_id')) ? (($index === 0) ? 'Pihak 1' : 'Pihak 2') : 'Penandatangan';
-
-                    Approval::create([
-                        'contract_id' => $contract->id,
-                        'workflow_step_id' => $targetStepId,
-                        'user_id' => $user->id,
-                        'approver_name' => $user->name,
-                        'role' => $role,
-                        'status' => empty($allSigners) ? $initialStatus : 'waiting',
-                        'sequence' => $targetSequence,
-                        'sub_step' => $maxSubStep + 1,
-                        'sort_order' => $maxSort + 1,
-                        'is_active' => true,
-                        'created_by' => Auth::id(),
-                        'updated_by' => Auth::id(),
-                    ]);
-                    $allSigners[] = $user->name;
-                }
-            }
-
-            $this->queryService->logHistory($contract, 'SIGNING_SETUP', 'Delegasi Penandatanganan: '.implode(', ', $allSigners), Auth::id());
-
-            if ($targetStepId === $contract->workflow_step_id) {
-                $contract->approvals()
-                    ->where('workflow_step_id', $targetStepId)
-                    ->whereNotIn('role', ['initiator', 'Penandatangan', 'Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
-                    ->where('status', 'pending')
-                    ->update(['status' => 'waiting']);
-
-                $approval->update(['status' => 'waiting', 'comment' => $comment]);
-            } else {
-                $approval->update(['status' => 'approved', 'comment' => $comment]);
-
-                $statusStr = $targetStep->meta['target_status'] 
-                    ?? $targetStep->actions()->where('action_code', 'approve')->value('target_status') 
-                    ?? $contract->status;
-                $nextStatus = ContractStatus::where('code', $statusStr)->first();
-
-                $contract->update([
-                    'workflow_step_id' => $targetStepId,
-                    'status' => $nextStatus?->code ?: $statusStr,
-                ]);
-
-                // Activate the first signer approval of the new step
-                $firstSigner = Approval::where('contract_id', $contract->id)
-                    ->where('workflow_step_id', $targetStepId)
-                    ->whereIn('role', ['Penandatangan', 'Pihak 1', 'Pihak 2'])
-                    ->orderBy('sub_step')
-                    ->first();
-                if ($firstSigner) {
-                    $firstSigner->update(['status' => 'pending']);
-                }
-            }
-
-            return $contract->fresh();
-        }
-
-        return $contract;
     }
 
     /**
@@ -1169,9 +1065,6 @@ class ContractWorkflowService
             $matchingActions = $approval->workflowStep->actions()
                 ->where(function ($q) use ($actionCode) {
                     $q->where('action_code', $actionCode);
-                    if (in_array(strtolower($actionCode), ['signature', 'sign'])) {
-                        $q->orWhereIn('action_code', ['signature', 'sign']);
-                    }
                     if (in_array(strtolower($actionCode), ['assign', 'assign_pic'])) {
                         $q->orWhereIn('action_code', ['assign', 'assign_pic', 'approve']);
                     }
@@ -1181,7 +1074,7 @@ class ContractWorkflowService
         }
 
         if (! $stepAction && $actionCode === 'approve' && $approval->role === 'Persetujuan Tambahan' && $approval->workflowStep) {
-            $stepAction = $approval->workflowStep->actions()->where('action_code', 'forward')->first();
+            $stepAction = $approval->workflowStep->actions()->where('action_code', 'add_adhoc')->first();
         }
         if (! $stepAction && $approval->workflowStep && in_array($actionCode, ['approve', 'assign', 'assign_pic'])) {
             $stepAction = $approval->workflowStep->actions()->whereIn('action_code', ['approve', 'assign', 'assign_pic'])->first();
@@ -1618,7 +1511,7 @@ class ContractWorkflowService
             ? $stepAction->action_code->value
             : (string) ($stepAction->action_code ?? '');
 
-        if (in_array(strtolower($actionCodeStr), ['approve', 'sign', 'signature', 'assign', 'assign_pic', 'forward', 'auto'])) {
+        if (in_array(strtolower($actionCodeStr), ['approve', 'assign', 'assign_pic', 'add_adhoc', 'auto'])) {
             return $this->findNextValidStep($contract, $currentStep);
         }
 
@@ -1855,7 +1748,7 @@ class ContractWorkflowService
             $actionReqFields = $action->required_fields;
             $stepMeta = [];
         } else {
-            $isNonStandard = in_array($actionCode, ['branch', 'reject', 'forward', 'cross_workflow']);
+            $isNonStandard = in_array($actionCode, ['branch', 'reject', 'add_adhoc', 'cross_workflow']);
             $stepMeta = $isNonStandard ? [] : ($step->meta ?? []);
             $actionReqFields = [];
         }

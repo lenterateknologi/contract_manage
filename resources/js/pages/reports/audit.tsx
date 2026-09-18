@@ -3,7 +3,7 @@ import { PageTable } from '@/components/ui/navigation/PageTable';
 import { Button } from '@/components/ui/buttons/Button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/dialogs/Popover';
 import { DateRangeCalendar } from '@/components/ui/inputs/DateRangeCalendar';
-import { cn, formatDate, formatDateTime } from '@/lib/utils';
+import { cn, formatDate, formatDateTime, formatDateRange, getPresetDateRange, DATE_RANGE_PRESETS } from '@/lib/utils';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import axios from 'axios';
@@ -25,47 +25,6 @@ interface AuditData {
     histories: AuditLog[];
     users: { id: string; name: string }[];
 }
-
-const formatDateText = (dStr?: string) => {
-    if (!dStr) return '';
-    return formatDate(dStr);
-};
-
-const getPresetRange = (type: 'today' | '7days' | '30days' | 'thisMonth' | 'lastMonth') => {
-    const today = new Date();
-    const fmt = (d: Date) => {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-    };
-
-    if (type === 'today') {
-        const t = fmt(today);
-        return { date_from: t, date_to: t };
-    }
-    if (type === '7days') {
-        const past = new Date(today);
-        past.setDate(today.getDate() - 6);
-        return { date_from: fmt(past), date_to: fmt(today) };
-    }
-    if (type === '30days') {
-        const past = new Date(today);
-        past.setDate(today.getDate() - 29);
-        return { date_from: fmt(past), date_to: fmt(today) };
-    }
-    if (type === 'thisMonth') {
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-        const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        return { date_from: fmt(firstDay), date_to: fmt(lastDay) };
-    }
-    if (type === 'lastMonth') {
-        const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-        const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
-        return { date_from: fmt(firstDay), date_to: fmt(lastDay) };
-    }
-    return { date_from: '', date_to: '' };
-};
 
 export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem[] }) {
     const { showToast } = useToast();
@@ -160,21 +119,10 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
     const hasDateFilter = !!(filters.date_from || filters.date_to);
 
-    const dateDisplayText = useMemo(() => {
-        if (filters.date_from && filters.date_to) {
-            if (filters.date_from === filters.date_to) {
-                return formatDateText(filters.date_from);
-            }
-            return `${formatDateText(filters.date_from)} – ${formatDateText(filters.date_to)}`;
-        }
-        if (filters.date_from) {
-            return `Dari ${formatDateText(filters.date_from)}`;
-        }
-        if (filters.date_to) {
-            return `Sampai ${formatDateText(filters.date_to)}`;
-        }
-        return 'Semua Rentang Waktu';
-    }, [filters.date_from, filters.date_to]);
+    const dateDisplayText = useMemo(
+        () => formatDateRange(filters.date_from, filters.date_to, 'Semua Rentang Waktu'),
+        [filters.date_from, filters.date_to],
+    );
 
     const columns = [
         {
@@ -307,18 +255,12 @@ export default function AuditPage({ breadcrumbs }: { breadcrumbs: BreadcrumbItem
 
                                     {/* Preset Quick Buttons */}
                                     <div className="flex flex-wrap gap-1.5">
-                                        {[
-                                            { label: 'Hari Ini', type: 'today' as const },
-                                            { label: '7 Hari Terakhir', type: '7days' as const },
-                                            { label: '30 Hari Terakhir', type: '30days' as const },
-                                            { label: 'Bulan Ini', type: 'thisMonth' as const },
-                                            { label: 'Bulan Lalu', type: 'lastMonth' as const },
-                                        ].map((preset) => (
+                                        {DATE_RANGE_PRESETS.map((preset) => (
                                             <button
                                                 key={preset.type}
                                                 type="button"
                                                 onClick={() => {
-                                                    const range = getPresetRange(preset.type);
+                                                    const range = getPresetDateRange(preset.type);
                                                     handleFilterChange(range);
                                                 }}
                                                 className="px-2.5 py-1 text-[11px] font-medium rounded-md border border-slate-200 dark:border-zinc-800 bg-slate-50/80 hover:bg-slate-100 text-slate-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:text-zinc-300 transition-colors cursor-pointer"

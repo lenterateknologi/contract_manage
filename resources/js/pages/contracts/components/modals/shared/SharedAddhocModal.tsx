@@ -1,12 +1,10 @@
+import { getFileIcon } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
-import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
-import { CompactSwitch } from '@/components/ui/selection/CompactSwitch';
-import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
-import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { Modal } from '@/components/ui/dialogs/Modal';
-import { getFileIcon, AttachmentCategoryBadge } from '@/components/ui';
-import { cn } from '@/lib/utils';
+import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
+import { SearchableMultiSelect } from '@/components/ui/selection/SearchableMultiSelect';
 import { formatFileSize } from '@/lib/formatters';
+import { cn } from '@/lib/utils';
 import { contractApi } from '@/pages/contracts/utils';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
 import { CheckCircle2, Loader2, Paperclip, Plus, UserPlus, Users, X } from 'lucide-react';
@@ -44,43 +42,35 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
         }
     };
 
-    // Helper to accurately resolve target step (supports custom_actions settings, relative transition, next_step_id, and adhoc authority lookup)
+    // Helper to accurately resolve target step (supports explicit adhoc step, custom_actions settings, and step authority lookup)
     const resolveTargetStepId = (contractData: any, actCode?: string): string | null => {
         const currentStep = contractData?.workflow_step;
         const steps = contractData?.workflow?.steps || [];
 
-        // 0. Priority: If current step is initiator or step 1, check if there is an explicit adhoc step in the workflow
-        const explicitAdhocStep = steps.find((s: any) => 
+        // 1. Find explicit adhoc step configured in the workflow
+        const explicitAdhocStep = steps.find((s: any) =>
             s.approver_type === 'adhoc' ||
             s.step_category === 'adhoc' ||
             s.step_category === 'adhoc_review' ||
-            (s.approver_authorities || s.authorities || []).some((auth: any) => 
+            (s.approver_authorities || s.approverAuthorities || s.authorities || []).some((auth: any) =>
                 auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers'
             )
         );
 
-        if (explicitAdhocStep && (currentStep?.approver_type === 'initiator' || Number(currentStep?.step) === 1)) {
+        if (explicitAdhocStep) {
             return String(explicitAdhocStep.id);
         }
 
-        const customActions: any[] = 
-            contractData?.workflow?.meta?.custom_actions || 
-            contractData?.origin_workflow?.meta?.custom_actions || 
+        // 2. Check custom action target_step configuration
+        const customActions: any[] =
+            contractData?.workflow?.meta?.custom_actions ||
+            contractData?.origin_workflow?.meta?.custom_actions ||
             contractData?.workflow_step?.workflow?.meta?.custom_actions || [];
-        const customAction = customActions.find((ca: any) => 
-            (actCode && ca.action_code === actCode) ||
-            ca.action_code === 'forward' || 
-            ca.action_code === 'add_adhoc' ||
-            (ca.id === 'action_adhoc' && ca.action_code !== 'branch')
+        const customAction = customActions.find((ca: any) =>
+            actCode ? (ca.action_code === actCode || ca.id === actCode) : (ca.id === 'action_adhoc' || ca.action_code === 'add_adhoc' || ca.execution_type === 'adhoc_internal')
         );
 
-        // If action is configured as cross-workflow, return null so backend auto-resolves to sub-workflow step
-        if (customAction && (customAction.execution_type === 'cross_workflow' || customAction.transition_config?.type === 'cross_workflow')) {
-            return null;
-        }
-
-        // 1. Check custom action target_step configuration
-        if (customAction && (customAction.target_step_mode || customAction.target_step_position)) {
+        if (customAction && (customAction.target_step_mode || customAction.target_step_position || customAction.target_step_id)) {
             let anchorStep = currentStep;
             if (customAction.target_step_mode === 'specific_step' && customAction.target_step_id) {
                 const foundAnchor = steps.find((s: any) => String(s.id) === String(customAction.target_step_id) || Number(s.step) === Number(customAction.target_step_id));
@@ -104,37 +94,16 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             }
         }
 
-        // 2. Check step activeAction configuration
-        const activeAction = (currentStep?.actions || []).find((a: any) => {
-            if (actCode) return a.action_code === actCode || a.master_action_code === actCode || a.master_action?.code === actCode;
-            return (
-                a.master_action_code?.toLowerCase() === 'forward' ||
-                a.action_code?.toLowerCase() === 'forward' ||
-                a.master_action?.code?.toLowerCase() === 'forward'
-            );
-        });
+        // 3. Fallback: check if current step has adhoc authority
+        const currentStepHasAdhoc = (currentStep?.approver_authorities || currentStep?.approverAuthorities || currentStep?.authorities || []).some((auth: any) =>
+            auth.authority_type === 'adhoc_approvers' || auth.authority_type === 'adhoc' || auth.user_id === 'adhoc_approvers'
+        ) || currentStep?.approver_type === 'adhoc';
 
-        const config = activeAction?.assignee_config || {};
-        let targetStepId = activeAction?.next_step_id || config.default_target_step || null;
-
-        if (!targetStepId && activeAction?.transition_config) {
-            const tCfg = activeAction.transition_config;
-            if (tCfg.type === 'relative') {
-                const targetSeq = (currentStep?.step || 1) + (tCfg.offset ?? 1);
-                const matched = steps.find((s: any) => s.step === targetSeq);
-                if (matched) targetStepId = String(matched.id);
-            } else if (tCfg.type === 'absolute') {
-                const matched = steps.find((s: any) => s.step === tCfg.sequence);
-                if (matched) targetStepId = String(matched.id);
-            }
+        if (currentStepHasAdhoc) {
+            return String(currentStep.id);
         }
 
-        // 3. Fallback to explicit adhoc steps if found
-        if (!targetStepId && explicitAdhocStep) {
-            targetStepId = String(explicitAdhocStep.id);
-        }
-
-        return targetStepId ? String(targetStepId) : (contractData?.workflow_step_id ? String(contractData.workflow_step_id) : null);
+        return contractData?.workflow_step_id ? String(contractData.workflow_step_id) : null;
     };
 
     // Initial setup when modal opens
@@ -174,19 +143,19 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             const activeAction = (currentStep?.actions || []).find((a: any) => {
                 if (actionCode) return a.action_code === actionCode || a.master_action_code === actionCode || a.master_action?.code === actionCode;
                 return (
-                    a.master_action_code?.toLowerCase() === 'forward' ||
-                    a.action_code?.toLowerCase() === 'forward' ||
-                    a.master_action?.code?.toLowerCase() === 'forward'
+                    a.action_code?.toLowerCase() === 'add_adhoc' ||
+                    a.master_action_code?.toLowerCase() === 'add_adhoc' ||
+                    a.master_action?.code?.toLowerCase() === 'add_adhoc'
                 );
             });
 
-            // 1. Check custom action configuration from workflow meta (e.g. action_adhoc or forward action)
+            // 1. Check custom action configuration from workflow meta (e.g. action_adhoc or add_adhoc action)
             const customActions: any[] = contract?.workflow?.meta?.custom_actions || contract?.workflow_step?.workflow?.meta?.custom_actions || [];
-            const customAction = customActions.find((ca: any) => 
-                (actionCode && ca.action_code === actionCode) ||
-                ca.action_code === 'forward' || 
+            const customAction = customActions.find((ca: any) =>
+                (actionCode && (ca.action_code === actionCode || ca.id === actionCode)) ||
+                ca.id === 'action_adhoc' ||
                 ca.action_code === 'add_adhoc' ||
-                (ca.id === 'action_adhoc' && ca.action_code !== 'branch')
+                ca.execution_type === 'adhoc_internal'
             );
 
             // 2. Check step action configuration
@@ -447,11 +416,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                             <button
                                 type="button"
                                 onClick={() => setIsSequential(false)}
-                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${
-                                    !isSequential
+                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${!isSequential
                                         ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                }`}
+                                    }`}
                             >
                                 <span>Serentak (Bersamaan)</span>
                                 {!isSequential && <CheckCircle2 size={13} className="text-indigo-600 dark:text-indigo-400" />}
@@ -461,13 +429,12 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                                 type="button"
                                 disabled={selectedUserIds.length <= 1}
                                 onClick={() => setIsSequential(true)}
-                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${
-                                    selectedUserIds.length <= 1
+                                className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 text-left text-xs font-medium transition-all ${selectedUserIds.length <= 1
                                         ? 'cursor-not-allowed opacity-50 border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800 dark:bg-slate-900/20'
                                         : isSequential
-                                        ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
-                                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                }`}
+                                            ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
+                                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
+                                    }`}
                             >
                                 <span>Berurutan (Satu per satu)</span>
                                 {isSequential && <CheckCircle2 size={13} className="text-indigo-600 dark:text-indigo-400" />}
@@ -484,11 +451,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                             <button
                                 type="button"
                                 onClick={() => setApprovalRule('all')}
-                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
-                                    approvalRule === 'all'
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${approvalRule === 'all'
                                         ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                }`}
+                                    }`}
                             >
                                 Semua Wajib Setuju
                             </button>
@@ -496,11 +462,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                             <button
                                 type="button"
                                 onClick={() => setApprovalRule('any')}
-                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
-                                    approvalRule === 'any'
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${approvalRule === 'any'
                                         ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                }`}
+                                    }`}
                             >
                                 Cukup 1 Orang
                             </button>
@@ -508,11 +473,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                             <button
                                 type="button"
                                 onClick={() => setApprovalRule('quorum')}
-                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${
-                                    approvalRule === 'quorum'
+                                className={`rounded-md border px-2 py-1.5 text-center text-xs font-medium transition-all ${approvalRule === 'quorum'
                                         ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-semibold dark:border-indigo-500 dark:bg-indigo-950/40 dark:text-indigo-200'
                                         : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400'
-                                }`}
+                                    }`}
                             >
                                 Minimal N Orang
                             </button>

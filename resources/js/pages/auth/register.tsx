@@ -3,11 +3,11 @@ import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
-import InputError from '@/components/ui/forms/InputError';
-import { Label } from '@/components/ui/forms/Label';
+import { FormInput } from '@/components/ui/inputs/FormInput';
 import TextLink from '@/components/ui/navigation/TextLink';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
+import { AuthErrorAlert } from './components/AuthErrorAlert';
+import { PasswordField } from './components/PasswordField';
 
 interface RegisterForm {
     [key: string]: any;
@@ -18,7 +18,7 @@ interface RegisterForm {
 }
 
 export default function Register() {
-    const { data, setData, post, processing, errors, reset } = useForm<RegisterForm>({
+    const { data, setData, post, processing, errors, reset, wasSuccessful } = useForm<RegisterForm>({
         name: '',
         email: '',
         password: '',
@@ -37,86 +37,68 @@ export default function Register() {
             title="Daftar Akun"
             description="Lengkapi data untuk memulai."
             image="https://images.unsplash.com/photo-1542744094-24638eff58bb?auto=format&fit=crop&q=80&w=1200"
+            isSuccess={wasSuccessful}
         >
             <Head title="Daftar" />
             <form className="flex flex-col gap-6" onSubmit={submit}>
+                <AuthErrorAlert errors={errors} title="Gagal Mendaftar" />
+
                 <div className="grid gap-5">
-                    <div className="grid gap-2">
-                        <Label htmlFor="name" className="font-[var(--font-weight-bold)] tracking-tight text-[var(--font-size-small)] uppercase">
-                            Nama Lengkap
-                        </Label>
-                        <Input
-                            id="name"
-                            type="text"
-                            required
-                            autoFocus
-                            autoComplete="name"
-                            value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
-                            disabled={processing}
-                            placeholder="Nama Lengkap Anda"
-                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
-                        />
-                        <InputError message={errors.name} />
-                    </div>
+                    <FormInput
+                        id="name"
+                        label="Nama Lengkap"
+                        type="text"
+                        required
+                        autoFocus
+                        autoComplete="name"
+                        value={data.name}
+                        onChange={(e) => setData('name', e.target.value)}
+                        disabled={processing}
+                        placeholder="Nama Lengkap Anda"
+                        error={errors.name}
+                        className="rounded-xl"
+                    />
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="email" className="font-[var(--font-weight-bold)] tracking-tight uppercase">
-                            Alamat Email
-                        </Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            required
-                            autoComplete="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            disabled={processing}
-                            placeholder="email@example.com"
-                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
-                        />
-                        <InputError message={errors.email} />
-                    </div>
+                    <FormInput
+                        id="email"
+                        label="Alamat Email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        value={data.email}
+                        onChange={(e) => setData('email', e.target.value)}
+                        disabled={processing}
+                        placeholder="email@example.com"
+                        error={errors.email}
+                        className="rounded-xl"
+                    />
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="password" className="font-[var(--font-weight-bold)] tracking-tight uppercase">
-                            Kata Sandi
-                        </Label>
-                        <Input
-                            id="password"
-                            type="password"
-                            required
-                            autoComplete="new-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            disabled={processing}
-                            placeholder="Min 8 Karakter"
-                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
-                        />
-                        <InputError message={errors.password} />
-                    </div>
+                    <PasswordField
+                        id="password"
+                        label="Kata Sandi"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                        disabled={processing}
+                        placeholder="Min 8 Karakter"
+                        error={errors.password}
+                        autoComplete="new-password"
+                    />
 
-                    <div className="grid gap-2">
-                        <Label htmlFor="password_confirmation" className="font-[var(--font-weight-bold)] tracking-tight uppercase">
-                            Konfirmasi
-                        </Label>
-                        <Input
-                            id="password_confirmation"
-                            type="password"
-                            required
-                            autoComplete="new-password"
-                            value={data.password_confirmation}
-                            onChange={(e) => setData('password_confirmation', e.target.value)}
-                            disabled={processing}
-                            placeholder="Masukkan Kembali"
-                            className="h-[48px] rounded-[var(--radius-lg)] border-[var(--border)] bg-[var(--white)] px-4 transition-all focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)]"
-                        />
-                        <InputError message={errors.password_confirmation} />
-                    </div>
+                    <PasswordField
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        label="Konfirmasi Kata Sandi"
+                        value={data.password_confirmation}
+                        onChange={(e) => setData('password_confirmation', e.target.value)}
+                        disabled={processing}
+                        placeholder="Masukkan Kembali"
+                        error={errors.password_confirmation}
+                        autoComplete="new-password"
+                    />
 
                     <Button
                         type="submit"
-                        className="h-[48px] w-full rounded-[var(--radius-lg)] bg-[var(--primary)] font-[var(--font-weight-bold)] transition-all hover:bg-[var(--primary-hover)] active:scale-[0.98] active:bg-[var(--primary-active)]"
+                        className="h-11 w-full rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98]"
                         disabled={processing}
                     >
                         {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
@@ -124,11 +106,11 @@ export default function Register() {
                     </Button>
                 </div>
 
-                <div className="text-center font-[var(--font-weight-medium)] text-[var(--font-size-small)]">
+                <div className="text-center text-sm font-medium">
                     Sudah punya akun?{' '}
                     <TextLink
                         href={route('login')}
-                        className="font-[var(--font-weight-bold)] text-[var(--primary)] hover:text-[var(--primary-hover)] hover:underline"
+                        className="font-bold text-primary hover:text-primary/80 hover:underline"
                     >
                         Masuk Disini
                     </TextLink>

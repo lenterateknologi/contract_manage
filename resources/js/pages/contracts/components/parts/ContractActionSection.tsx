@@ -1,6 +1,6 @@
+import { getActionConfig } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
 import { TooltipProvider } from '@/components/ui/feedback/Tooltip';
-import { getActionConfig } from '@/components/ui';
 import { cn } from '@/lib/utils';
 import { ActionPreviewTooltip, getActionTransitionPreview } from '@/pages/contracts/components/parts/ActionPreviewTooltip';
 import { Contract } from '@/pages/contracts/types';
@@ -13,13 +13,12 @@ import {
     GitBranch,
     Loader2,
     Lock,
-    PenTool,
+    Sparkles,
     Unlock,
     Upload,
     UserCheck,
     UserPlus,
 } from 'lucide-react';
-import React from 'react';
 
 interface ContractActionSectionProps {
     contract: Contract;
@@ -65,24 +64,23 @@ export function ContractActionSection({
         (contract as any)?.assignedPic
     );
 
-    const hasSigners = (contract.approvals || []).some(
-        (a: any) => a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan',
-    );
+
+    const isAdhocAction = (a: any) => a.action_code === 'add_adhoc';
 
     const canToggleAccess = availableCustomActions.some((a) => a.action_code === 'toggle_access');
-    const canAssignPic = availableCustomActions.some((a) => a.action_code === 'assign' || a.action_code === 'assign_pic');
-    const canSignature = availableCustomActions.some((a) => a.action_code === 'signature' || a.action_code === 'sign');
-    const canAdhoc = availableCustomActions.some((a) => a.action_code === 'forward' || a.action_code === 'add_adhoc');
-    const branchActions = availableCustomActions.filter((a) => a.action_code === 'branch');
+    const canAssignPic = availableCustomActions.some((a) => a.action_code === 'assign');
+    const canAdhoc = availableCustomActions.some(isAdhocAction);
+    const branchActions = availableCustomActions.filter((a) => !isAdhocAction(a) && (a.action_code === 'branch' || a.execution_type === 'cross_workflow'));
     const canBranch = branchActions.length > 0;
 
-    const picAction = availableCustomActions.find((a) => a.action_code === 'assign' || a.action_code === 'assign_pic');
-    const sigAction = availableCustomActions.find((a) => a.action_code === 'signature' || a.action_code === 'sign');
-    const adhocAction = availableCustomActions.find((a) => a.action_code === 'forward' || a.action_code === 'add_adhoc');
+    const picAction = availableCustomActions.find((a) => a.action_code === 'assign');
+    const adhocAction = availableCustomActions.find(isAdhocAction);
     const toggleAction = availableCustomActions.find((a) => a.action_code === 'toggle_access');
 
-    const standardActionCodes = ['toggle_access', 'assign', 'assign_pic', 'signature', 'sign', 'forward', 'add_adhoc', 'branch'];
-    const otherCustomActions = availableCustomActions.filter((a) => !standardActionCodes.includes(a.action_code));
+    const standardActionCodes = ['toggle_access', 'assign', 'add_adhoc', 'branch'];
+    const otherCustomActions = availableCustomActions.filter(
+        (a) => !isAdhocAction(a) && !standardActionCodes.includes(a.action_code) && a.execution_type !== 'cross_workflow',
+    );
 
     const picActionConfig = picAction ? getActionConfig(
         { ...picAction, target_status: picAction.target_status },
@@ -91,16 +89,6 @@ export function ContractActionSection({
         false,
         picAction.target_status,
         picAction.target_status_info,
-        masterContractStatuses,
-    ) : null;
-
-    const sigActionConfig = sigAction ? getActionConfig(
-        { ...sigAction, target_status: sigAction.target_status },
-        sigAction.alias,
-        false,
-        false,
-        sigAction.target_status,
-        sigAction.target_status_info,
         masterContractStatuses,
     ) : null;
 
@@ -190,33 +178,14 @@ export function ContractActionSection({
                         </ActionPreviewTooltip>
                     )}
 
-                    {/* BUTTON TENTUKAN TANDA TANGAN */}
-                    {canSignature && (
-                        <ActionPreviewTooltip preview={getActionTransitionPreview(sigAction || { action_code: 'signature' }, contract)}>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                style={sigActionConfig?.buttonStyle}
-                                onClick={() => onActionClick(sigAction || { action_code: 'signature' }, 'signature')}
-                                className={cn(
-                                    'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
-                                    sigActionConfig?.buttonClass || 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800',
-                                )}
-                            >
-                                <PenTool size={16} />
-                                <span className="text-xs">{hasSigners ? (sigAction?.alias ? `Ubah ${sigAction.alias}` : 'Ubah Penandatangan') : (sigAction?.alias || 'Tentukan Penandatangan')}</span>
-                            </Button>
-                        </ActionPreviewTooltip>
-                    )}
-
                     {/* BUTTON TAMBAH APPROVAL TAMBAHAN / AD-HOC */}
                     {canAdhoc && (
-                        <ActionPreviewTooltip preview={getActionTransitionPreview(adhocAction || { action_code: 'forward' }, contract)}>
+                        <ActionPreviewTooltip preview={getActionTransitionPreview(adhocAction || { action_code: 'add_adhoc' }, contract)}>
                             <Button
                                 variant="primary"
                                 size="sm"
                                 style={adhocActionConfig?.buttonStyle}
-                                onClick={() => onActionClick(adhocAction || { action_code: 'forward' }, 'forward')}
+                                onClick={() => onActionClick(adhocAction || { action_code: 'add_adhoc' }, 'add_adhoc')}
                                 className={cn(
                                     'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
                                     adhocActionConfig?.buttonClass || 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800',
@@ -342,22 +311,23 @@ export function ContractActionSection({
                                                         <div className="flex items-center gap-2 truncate">
                                                             <Icon size={16} className="shrink-0" />
                                                             <span className="truncate">
-                                                                {action.alias ||
-                                                                    (action.action_code === 'approve'
-                                                                        ? contract.workflow_step?.step === 1
-                                                                            ? 'Kirim Persetujuan'
-                                                                            : contract.requires_pic_assignment
-                                                                                ? 'Tugaskan PIC'
-                                                                                : 'Setujui Kontrak'
-                                                                        : action.action_code === 'forward'
-                                                                            ? 'Approval Tambahan'
-                                                                            : action.action_code === 'branch'
-                                                                                ? 'Pindah Workflow'
-                                                                                : action.action_code === 'reject'
-                                                                                    ? 'Tolak Kontrak'
-                                                                                    : ['signature', 'sign'].includes(action.action_code?.toLowerCase())
-                                                                                        ? 'Upload Tanda Tangan'
-                                                                                        : action.action_code)}
+                                                                {action.alias || (() => {
+                                                                    const isStep1 = contract.workflow_step?.step === 1;
+                                                                    switch (action.action_code) {
+                                                                        case 'approve':
+                                                                            if (isStep1) return 'Kirim Persetujuan';
+                                                                            if (contract.requires_pic_assignment) return 'Tugaskan PIC';
+                                                                            return 'Setujui Kontrak';
+                                                                        case 'add_adhoc':
+                                                                            return 'Approval Tambahan';
+                                                                        case 'branch':
+                                                                            return 'Pindah Workflow';
+                                                                        case 'reject':
+                                                                            return 'Tolak Kontrak';
+                                                                        default:
+                                                                            return action.action_code || 'Setujui Kontrak';
+                                                                    }
+                                                                })()}
                                                             </span>
                                                         </div>
                                                         {isAssignPicAction && (
@@ -412,7 +382,7 @@ export function ContractActionSection({
                                 ) : isSigner ? (
                                     <div className="flex flex-col gap-2">
                                         {(() => {
-                                            const signCfg = getActionConfig({ action_code: 'signature' }, null, false, false, 'signed', null, masterContractStatuses);
+                                            const signCfg = getActionConfig({ action_code: 'approve' }, null, false, false, 'signed', null, masterContractStatuses);
                                             return (
                                                 <>
                                                     <Button

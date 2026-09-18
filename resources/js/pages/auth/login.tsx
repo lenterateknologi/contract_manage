@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { LoaderCircle } from 'lucide-react';
+import { FormEventHandler } from 'react';
 
 import { Button } from '@/components/ui/buttons/Button';
 import { Checkbox } from '@/components/ui/selection/Checkbox';
@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/forms/Label';
 import TextLink from '@/components/ui/navigation/TextLink';
 import { FormInput } from '@/components/ui/inputs/FormInput';
 import AuthSplitLayout from '@/layouts/auth/auth-split-layout';
+import { AuthErrorAlert } from './components/AuthErrorAlert';
+import { PasswordField } from './components/PasswordField';
 
 interface LoginForm {
     email: string;
@@ -22,7 +24,6 @@ interface LoginProps {
 }
 
 export default function Login({ status, canResetPassword }: Readonly<LoginProps>) {
-    const [showPassword, setShowPassword] = useState(false);
     const { data, setData, post, processing, errors, reset, wasSuccessful } = useForm<LoginForm>({
         email: '',
         password: '',
@@ -41,21 +42,8 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
             <Head title="Masuk" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
-                {Object.keys(errors).length > 0 && (
-                    <div className="animate-in fade-in slide-in-from-top-2 rounded-xl border border-red-200 bg-red-50 p-4 duration-300">
-                        <div className="flex gap-3">
-                            <div className="flex size-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
-                                !
-                            </div>
-                            <div>
-                                <h3 className="mb-1 text-xs leading-none font-bold text-red-900">Gagal Masuk</h3>
-                                <div className="text-[11px] font-medium text-red-700/80">
-                                    {errors.email || errors.password || Object.values(errors)[0]}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                <AuthErrorAlert errors={errors} title="Gagal Masuk" />
+
                 <div className="grid gap-5">
                     <FormInput
                         id="email"
@@ -71,27 +59,13 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                         className="rounded-xl"
                     />
 
-                    <FormInput
+                    <PasswordField
                         id="password"
                         label="Kata Sandi"
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        autoComplete="current-password"
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         placeholder="Kata sandi Anda"
                         error={errors.password}
-                        className="rounded-xl"
-                        rightAction={
-                            <button
-                                type="button"
-                                tabIndex={-1}
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="flex items-center justify-center text-slate-400 hover:text-slate-600 dark:text-zinc-400 dark:hover:text-zinc-200 transition-colors"
-                            >
-                                {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                            </button>
-                        }
                     />
 
                     <div className="flex items-center justify-between">
@@ -123,7 +97,6 @@ export default function Login({ status, canResetPassword }: Readonly<LoginProps>
                         Masuk ke Akun
                     </Button>
                 </div>
-
 
                 {status && <div className="mt-4 text-center text-sm font-semibold text-emerald-600">{status}</div>}
             </form>

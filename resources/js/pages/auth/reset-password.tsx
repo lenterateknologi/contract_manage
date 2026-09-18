@@ -3,10 +3,10 @@ import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 import { Button } from '@/components/ui/buttons/Button';
-import { Input } from '@/components/ui/inputs/Input';
-import InputError from '@/components/ui/forms/InputError';
-import { Label } from '@/components/ui/forms/Label';
+import { FormInput } from '@/components/ui/inputs/FormInput';
 import AuthLayout from '@/layouts/auth-layout';
+import { AuthErrorAlert } from './components/AuthErrorAlert';
+import { PasswordField } from './components/PasswordField';
 
 interface ResetPasswordProps {
     token: string;
@@ -36,61 +36,58 @@ export default function ResetPassword({ token, email }: Readonly<ResetPasswordPr
     };
 
     return (
-        <AuthLayout title="Reset password" description="Please enter your new password below">
-            <Head title="Reset password" />
+        <AuthLayout title="Atur Ulang Kata Sandi" description="Silakan masukkan kata sandi baru Anda di bawah ini">
+            <Head title="Atur Ulang Kata Sandi" />
 
-            <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm">
-                <form onSubmit={submit}>
-                    <div className="grid gap-6">
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                name="email"
-                                autoComplete="email"
-                                value={data.email}
-                                className="mt-1 block w-full"
-                                readOnly
-                                onChange={(e) => setData('email', e.target.value)}
-                            />
-                            <InputError message={errors.email} className="mt-2" />
-                        </div>
+            <div className="rounded-xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <form onSubmit={submit} className="flex flex-col gap-6">
+                    <AuthErrorAlert errors={errors} title="Gagal Mengatur Ulang Kata Sandi" />
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                name="password"
-                                autoComplete="new-password"
-                                value={data.password}
-                                className="mt-1 block w-full"
-                                autoFocus
-                                onChange={(e) => setData('password', e.target.value)}
-                                placeholder="Password"
-                            />
-                            <InputError message={errors.password} />
-                        </div>
+                    <div className="grid gap-5">
+                        <FormInput
+                            id="email"
+                            label="Email"
+                            type="email"
+                            name="email"
+                            autoComplete="email"
+                            value={data.email}
+                            readOnly
+                            disabled
+                            onChange={(e) => setData('email', e.target.value)}
+                            error={errors.email}
+                            className="rounded-xl bg-slate-50 dark:bg-zinc-800/50"
+                        />
 
-                        <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation">Confirm password</Label>
-                            <Input
-                                id="password_confirmation"
-                                type="password"
-                                name="password_confirmation"
-                                autoComplete="new-password"
-                                value={data.password_confirmation}
-                                className="mt-1 block w-full"
-                                onChange={(e) => setData('password_confirmation', e.target.value)}
-                                placeholder="Confirm password"
-                            />
-                            <InputError message={errors.password_confirmation} className="mt-2" />
-                        </div>
+                        <PasswordField
+                            id="password"
+                            label="Kata Sandi Baru"
+                            value={data.password}
+                            onChange={(e) => setData('password', e.target.value)}
+                            placeholder="Kata sandi baru"
+                            error={errors.password}
+                            autoComplete="new-password"
+                            disabled={processing}
+                        />
 
-                        <Button type="submit" className="mt-4 w-full" disabled={processing}>
-                            {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                            Reset password
+                        <PasswordField
+                            id="password_confirmation"
+                            name="password_confirmation"
+                            label="Konfirmasi Kata Sandi Baru"
+                            value={data.password_confirmation}
+                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                            placeholder="Ulangi kata sandi baru"
+                            error={errors.password_confirmation}
+                            autoComplete="new-password"
+                            disabled={processing}
+                        />
+
+                        <Button
+                            type="submit"
+                            className="h-11 w-full rounded-xl text-sm font-bold shadow-sm transition-all active:scale-[0.98]"
+                            disabled={processing}
+                        >
+                            {processing && <LoaderCircle className="mr-2 size-4 animate-spin" />}
+                            Atur Ulang Kata Sandi
                         </Button>
                     </div>
                 </form>

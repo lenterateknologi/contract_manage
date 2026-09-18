@@ -30,10 +30,8 @@ const {
 
 // Lazy load modals
 const SharedAddhocModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAddhocModal').then(m => ({ default: m.SharedAddhocModal })));
-const SharedApproveModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedApproveModal').then(m => ({ default: m.SharedApproveModal })));
+const SharedActionModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedApproveModal').then(m => ({ default: m.SharedActionModal })));
 const SharedAssignModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedAssignModal').then(m => ({ default: m.SharedAssignModal })));
-const SharedSignerModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedSignerModal').then(m => ({ default: m.SharedSignerModal })));
-const SharedRejectModal = lazy(() => import('@/pages/contracts/components/modals/shared/SharedRejectModal').then(m => ({ default: m.SharedRejectModal })));
 
 // Lazy load Tab Components for performance
 const AgreementTab = lazy(() => import('../show/tabs/AgreementTab').then(m => ({ default: m.AgreementTab })));
@@ -179,10 +177,8 @@ export const ContractDetailView = ({
     };
 
     const [processing, setProcessing] = useState(false);
-    const [approveOpen, setApproveOpen] = useState(false);
+    const [actionModalOpen, setActionModalOpen] = useState(false);
     const [assignOpen, setAssignOpen] = useState(false);
-    const [signerOpen, setSignerOpen] = useState(false);
-    const [rejectOpen, setRejectOpen] = useState(false);
     const [addhocOpen, setAddhocOpen] = useState(false);
     const [showSpecialActions, setShowSpecialActions] = useState(false);
     const canEditTitle =
@@ -225,11 +221,15 @@ export const ContractDetailView = ({
         }
     };
 
+    const handleContractUpdate = (updated: Contract, silent?: boolean) => {
+        onUpdate?.(updated, silent);
+    };
+
     const handleUpdate = async (data: any, silent = false) => {
         if (!silent) setProcessing(true);
         try {
             const c = await contractApi.update(contract.id, data);
-            onUpdate(c, silent);
+            handleContractUpdate(c, silent);
             if (!silent) showToast('Informasi pengajuan diperbarui.', 'success');
             return c;
         } catch (error) {
@@ -243,37 +243,49 @@ export const ContractDetailView = ({
     const [activeActionCode, setActiveActionCode] = useState<string | undefined>(undefined);
     const [activeStepAction, setActiveStepAction] = useState<any>(null);
 
-    const handleApprove = async (
+    const handleActionSubmit = async (
         note: string,
         attachment?: File | File[],
         assignedPicId?: string,
         executionOrder?: string,
-        signerUserIds?: string[],
         actionCode?: string,
         isFinal?: boolean,
         targetStepId?: string,
         actionId?: string,
     ) => {
+        const resolvedCode = actionCode || activeActionCode;
+
+        if (resolvedCode === 'reject') {
+            try {
+                await autoSaveDirtyDataBeforeAction();
+                const updated = await contractApi.reject(contract.id, note, attachment, actionId || activeStepAction?.id);
+                handleContractUpdate(updated);
+                showToast('Pengajuan ditolak.', 'info');
+                setActiveActionCode(undefined);
+                setActiveStepAction(null);
+            } catch {
+                showToast('Gagal reject.', 'danger');
+            }
+            return;
+        }
+
         try {
             await autoSaveDirtyDataBeforeAction();
-            let c: Contract;
-            c = await contractApi.approve(
+            const c = await contractApi.approve(
                 contract.id,
                 note,
                 attachment,
                 assignedPicId,
                 executionOrder,
-                signerUserIds,
-                actionCode || activeActionCode,
+                resolvedCode,
                 isFinal,
                 targetStepId,
                 actionId || activeStepAction?.id,
             );
-            onUpdate(c);
+            handleContractUpdate(c);
 
             let msg = contract.status === 'draft' && contract.workflow_step?.step === 1 ? 'Pengajuan persetujuan berhasil dikirim.' : 'Pengajuan disetujui.';
             if (assignedPicId) msg = 'PIC ditugaskan dan pengajuan disetujui.';
-            if (signerUserIds && signerUserIds.length > 0) msg = 'Delegasi penandatanganan berhasil dikonfigurasi.';
             if (isFinal) msg = 'Penandatanganan selesai dikonfigurasi sebagai final.';
 
             showToast(msg, 'success');
@@ -281,19 +293,6 @@ export const ContractDetailView = ({
             setActiveStepAction(null);
         } catch (error: any) {
             showToast(error.response?.data?.message || 'Gagal memproses persetujuan.', 'danger');
-        }
-    };
-
-    const handleReject = async (reason: string, attachment?: File | File[]) => {
-        try {
-            await autoSaveDirtyDataBeforeAction();
-            const updated = await contractApi.reject(contract.id, reason, attachment, activeStepAction?.id);
-            onUpdate(updated);
-            showToast('Pengajuan ditolak.', 'info');
-            setActiveActionCode(undefined);
-            setActiveStepAction(null);
-        } catch {
-            showToast('Gagal reject.', 'danger');
         }
     };
 
@@ -342,7 +341,7 @@ export const ContractDetailView = ({
             if (act.is_active === false) return false;
 
             // Do not allow nested ad-hoc action on ad-hoc review steps
-            if ((act.action_code === 'forward' || act.action_code === 'add_adhoc') &&
+            if (act.action_code === 'add_adhoc' &&
                 (contract.workflow_step?.step_category === 'adhoc_review' || (contract.workflow_step?.meta as any)?.is_adhoc_step)) {
                 return false;
             }
@@ -413,7 +412,7 @@ export const ContractDetailView = ({
 
             try {
                 const res = await contractApi.update(contract.id, { metadata: newMeta });
-                onUpdate(res);
+                handleContractUpdate(res);
                 showToast('Dokumen berhasil diunduh.', 'success');
             } catch (e) {
                 console.error(e);
@@ -422,7 +421,7 @@ export const ContractDetailView = ({
             setSigningUploading(true);
             try {
                 const res = await contractApi.approve(contract.id, 'Pembaruan Dokumen TTD', file);
-                onUpdate(res);
+                handleContractUpdate(res);
                 showToast('Pembaruan Dokumen TTD berhasil diunggah.', 'success');
             } catch (e: any) {
                 showToast(e.response?.data?.message || 'Gagal mengunggah dokumen.', 'danger');
@@ -553,11 +552,23 @@ export const ContractDetailView = ({
     // Synchronize detail state with sub-side menu
     useEffect(() => {
         let currentSub: string | undefined = undefined;
-        if (detailTab === 'documents') currentSub = docSubTab;
-        else if (detailTab === 'parties') currentSub = partySubTab;
-        else if (detailTab === 'history') currentSub = historySubTab;
-        else if (detailTab === 'discussion') currentSub = discSubTab;
-        else if (detailTab === 'references') currentSub = refSubTab;
+        switch (detailTab) {
+            case 'documents':
+                currentSub = docSubTab;
+                break;
+            case 'parties':
+                currentSub = partySubTab;
+                break;
+            case 'history':
+                currentSub = historySubTab;
+                break;
+            case 'discussion':
+                currentSub = discSubTab;
+                break;
+            case 'references':
+                currentSub = refSubTab;
+                break;
+        }
 
         detailSidebarStore.setState({
             isActive: true,
@@ -570,11 +581,23 @@ export const ContractDetailView = ({
             onSelectTab: (tabId: string, subtabId?: string) => {
                 setDetailTab(tabId);
                 if (subtabId) {
-                    if (tabId === 'documents') setDocSubTab(subtabId as any);
-                    else if (tabId === 'parties') setPartySubTab(subtabId as any);
-                    else if (tabId === 'history') setHistorySubTab(subtabId as any);
-                    else if (tabId === 'discussion') setDiscSubTab(subtabId as any);
-                    else if (tabId === 'references') setRefSubTab(subtabId as any);
+                    switch (tabId) {
+                        case 'documents':
+                            setDocSubTab(subtabId as any);
+                            break;
+                        case 'parties':
+                            setPartySubTab(subtabId as any);
+                            break;
+                        case 'history':
+                            setHistorySubTab(subtabId as any);
+                            break;
+                        case 'discussion':
+                            setDiscSubTab(subtabId as any);
+                            break;
+                        case 'references':
+                            setRefSubTab(subtabId as any);
+                            break;
+                    }
                 }
             },
             onClose: onClose,
@@ -589,7 +612,7 @@ export const ContractDetailView = ({
         const meta = contract.workflow_step?.meta || {};
         const isAudit = detailTab === 'audit';
         const isMembers = detailTab === 'members' && meta.show_tab_members !== false;
-        const isParty = detailTab === 'parties' || detailTab === 'requester' || detailTab === 'second_party' || detailTab === 'vendor' || detailTab === 'pic' || detailTab === 'timeline' || detailTab === 'advanced_info';
+        const isParty = detailTab === 'parties';
         const isExternalTab = isAudit || isMembers || isParty;
 
         if (tabs.length > 0 && !tabs.some(t => t.id === detailTab) && !isExternalTab) {
@@ -604,51 +627,103 @@ export const ContractDetailView = ({
     const activeSubChildren = activeSidebarTab?.children || [];
 
     const activeSubId = useMemo(() => {
-        if (detailTab === 'documents') return docSubTab;
-        if (detailTab === 'parties') return partySubTab;
-        if (detailTab === 'history') return historySubTab;
-        if (detailTab === 'discussion') return discSubTab;
-        if (detailTab === 'references') return refSubTab;
-        return undefined;
+        switch (detailTab) {
+            case 'documents':
+                return docSubTab;
+            case 'parties':
+                return partySubTab;
+            case 'history':
+                return historySubTab;
+            case 'discussion':
+                return discSubTab;
+            case 'references':
+                return refSubTab;
+            default:
+                return undefined;
+        }
     }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab, refSubTab]);
 
     const handleSubTabChange = (subId: string) => {
-        if (detailTab === 'documents') setDocSubTab(subId as any);
-        else if (detailTab === 'parties') setPartySubTab(subId as any);
-        else if (detailTab === 'history') setHistorySubTab(subId as any);
-        else if (detailTab === 'discussion') setDiscSubTab(subId as any);
-        else if (detailTab === 'references') setRefSubTab(subId as any);
+        switch (detailTab) {
+            case 'documents':
+                setDocSubTab(subId as any);
+                break;
+            case 'parties':
+                setPartySubTab(subId as any);
+                break;
+            case 'history':
+                setHistorySubTab(subId as any);
+                break;
+            case 'discussion':
+                setDiscSubTab(subId as any);
+                break;
+            case 'references':
+                setRefSubTab(subId as any);
+                break;
+        }
     };
 
     const currentActiveSubLabel = useMemo(() => {
-        if (detailTab === 'documents') {
-            if (docSubTab === 'f1') return 'F1 (Permohonan)';
-            if (docSubTab === 'f2') return 'F2 (Ringkasan)';
-            if (docSubTab === 'agreement') return 'Draft Perjanjian';
+        switch (detailTab) {
+            case 'documents':
+                switch (docSubTab) {
+                    case 'f1':
+                        return 'F1 (Permohonan)';
+                    case 'f2':
+                        return 'F2 (Ringkasan)';
+                    case 'agreement':
+                        return 'Draft Perjanjian';
+                    default:
+                        return undefined;
+                }
+
+            case 'parties':
+                switch (partySubTab) {
+                    case 'requester':
+                        return 'Informasi Pengaju';
+                    case 'second_party':
+                        return 'Informasi Pihak Kedua';
+                    case 'pic':
+                        return 'Informasi PIC';
+                    case 'timeline':
+                        return 'Timeline';
+                    default:
+                        return undefined;
+                }
+
+            case 'history':
+                switch (historySubTab) {
+                    case 'timeline':
+                        return 'Alur Approval & Proses';
+                    case 'audit':
+                        return 'Audit Log & Activity';
+                    default:
+                        return undefined;
+                }
+
+            case 'discussion':
+                switch (discSubTab) {
+                    case 'chat':
+                        return 'Chat & Diskusi';
+                    case 'members':
+                        return 'Member / Anggota Tim';
+                    default:
+                        return undefined;
+                }
+
+            case 'references':
+                switch (refSubTab) {
+                    case 'parent':
+                        return 'Kontrak Induk / Terkait';
+                    case 'purchase_orders':
+                        return 'Purchase Order (PO)';
+                    default:
+                        return undefined;
+                }
+
+            default:
+                return undefined;
         }
-        if (detailTab === 'parties') {
-            if (partySubTab === 'requester') return 'Informasi Pengaju';
-            if (partySubTab === 'second_party') return 'Informasi Pihak Kedua';
-            if (partySubTab === 'pic') return 'Informasi PIC';
-            if (partySubTab === 'timeline') return 'Timeline';
-        }
-        if (detailTab === 'requester') return 'Informasi Pengaju';
-        if (detailTab === 'second_party' || detailTab === 'vendor') return 'Informasi Pihak Kedua';
-        if (detailTab === 'pic') return 'Informasi PIC';
-        if (detailTab === 'timeline' || detailTab === 'advanced_info') return 'Timeline';
-        if (detailTab === 'history') {
-            if (historySubTab === 'timeline') return 'Alur Approval & Proses';
-            if (historySubTab === 'audit') return 'Audit Log & Activity';
-        }
-        if (detailTab === 'discussion') {
-            if (discSubTab === 'chat') return 'Chat & Diskusi';
-            if (discSubTab === 'members') return 'Member / Anggota Tim';
-        }
-        if (detailTab === 'references') {
-            if (refSubTab === 'parent') return 'Kontrak Induk / Terkait';
-            if (refSubTab === 'purchase_orders') return 'Purchase Order (PO)';
-        }
-        return undefined;
     }, [detailTab, docSubTab, partySubTab, historySubTab, discSubTab, refSubTab]);
 
 
@@ -730,7 +805,7 @@ export const ContractDetailView = ({
                                                                 formTemplates={formTemplates}
                                                                 vendors={vendors}
                                                                 meUser={meUser}
-                                                                onUpdate={onUpdate}
+                                                                onUpdate={handleContractUpdate}
                                                                 onFormDirty={(dirty) => setHasFormChanges(dirty)}
                                                                 onFormSave={(fn) => {
                                                                     saveFormRef.current = fn;
@@ -743,7 +818,7 @@ export const ContractDetailView = ({
                                                                 formTemplates={formTemplates}
                                                                 vendors={vendors}
                                                                 meUser={meUser}
-                                                                onUpdate={onUpdate}
+                                                                onUpdate={handleContractUpdate}
                                                                 onFormDirty={(dirty) => setHasFormChanges(dirty)}
                                                                 onFormSave={(fn) => {
                                                                     saveFormRef.current = fn;
@@ -756,31 +831,33 @@ export const ContractDetailView = ({
                                                                 formTemplates={formTemplates}
                                                                 vendors={vendors}
                                                                 meUser={meUser}
-                                                                onUpdate={onUpdate}
+                                                                onUpdate={handleContractUpdate}
                                                             />
                                                         )}
                                                     </div>
                                                 </div>
                                             );
                                         })()}
-                                        {(detailTab === 'parties' || detailTab === 'requester' || detailTab === 'second_party' || detailTab === 'vendor' || detailTab === 'pic' || detailTab === 'timeline' || detailTab === 'advanced_info') && (
+                                        {detailTab === 'parties' && (
                                             <div className="flex-1 min-h-0 h-full flex flex-col overflow-hidden">
-                                                {(partySubTab === 'requester' || detailTab === 'requester') && (
-                                                    <RequesterInfoCard selected={contract} isTabView={true} />
-                                                )}
-                                                {(partySubTab === 'second_party' || detailTab === 'second_party' || detailTab === 'vendor') && (
-                                                    <VendorInfoCard selected={contract} isTabView={true} />
-                                                )}
-                                                {(partySubTab === 'pic' || detailTab === 'pic') && (
-                                                    <PicInfoCard selected={contract} isTabView={true} />
-                                                )}
-                                                {(partySubTab === 'timeline' || detailTab === 'timeline' || detailTab === 'advanced_info') && (
-                                                    <AdvancedInfoCard selected={contract} isTabView={true} />
-                                                )}
+                                                {(() => {
+                                                    switch (partySubTab) {
+                                                        case 'requester':
+                                                            return <RequesterInfoCard selected={contract} isTabView={true} />;
+                                                        case 'second_party':
+                                                            return <VendorInfoCard selected={contract} isTabView={true} />;
+                                                        case 'pic':
+                                                            return <PicInfoCard selected={contract} isTabView={true} />;
+                                                        case 'timeline':
+                                                            return <AdvancedInfoCard selected={contract} isTabView={true} />;
+                                                        default:
+                                                            return <RequesterInfoCard selected={contract} isTabView={true} />;
+                                                    }
+                                                })()}
                                             </div>
                                         )}
                                         {detailTab === 'attachments' && (
-                                            <AttachmentsTab contract={contract} canUpdate={canUpdate} onUpdate={onUpdate} showToast={showToast} meUser={meUser} />
+                                            <AttachmentsTab contract={contract} canUpdate={canUpdate} onUpdate={handleContractUpdate} showToast={showToast} meUser={meUser} />
                                         )}
 
                                         {detailTab === 'history' && (() => {
@@ -819,7 +896,7 @@ export const ContractDetailView = ({
 
                                             return (
                                                 <div className="flex-1 min-h-0 flex flex-col">
-                                                    {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={users || []} onUpdate={onUpdate} />}
+                                                    {activeSub === 'chat' && <ChatTab contract={contract} meId={meId} users={users || []} onUpdate={handleContractUpdate} />}
                                                     {activeSub === 'members' && <MembersTab contract={contract} users={users || []} />}
                                                 </div>
                                             );
@@ -857,25 +934,18 @@ export const ContractDetailView = ({
                                 setActiveStepAction(action);
                                 setActiveActionCode(actionCode || action?.action_code);
 
-                                if (['forward', 'add_adhoc'].includes(code)) {
-                                    setAddhocOpen(true);
-                                } else if (['reject'].includes(code)) {
-                                    setRejectOpen(true);
-                                } else if (code === 'assign' || code === 'assign_pic' || (code === 'approve' && contract.requires_pic_assignment)) {
-                                    setAssignOpen(true);
-                                } else if (code === 'sign' || code === 'signature') {
-                                    const hasSignersAssigned = (contract?.approvals || []).some(
-                                        (a: any) =>
-                                            String(a.workflow_step_id) === String(contract.workflow_step_id) &&
-                                            (a.role === 'Penandatangan' || a.role === 'Pihak 1' || a.role === 'Pihak 2' || (action && a.role === action.alias)),
-                                    );
-                                    if (hasSignersAssigned) {
-                                        setApproveOpen(true);
-                                    } else {
-                                        setSignerOpen(true);
-                                    }
-                                } else {
-                                    setApproveOpen(true);
+                                switch (code) {
+                                    case 'add_adhoc':
+                                        setAddhocOpen(true);
+                                        break;
+
+                                    case 'assign':
+                                        setAssignOpen(true);
+                                        break;
+
+                                    default:
+                                        setActionModalOpen(true);
+                                        break;
                                 }
                             }}
                             onSigningAction={handleSigningAction}
@@ -1018,16 +1088,16 @@ export const ContractDetailView = ({
             </div>
 
             <Suspense fallback={null}>
-                <SharedApproveModal
-                    open={approveOpen}
+                <SharedActionModal
+                    open={actionModalOpen}
                     onClose={() => {
-                        setApproveOpen(false);
+                        setActionModalOpen(false);
                         setActiveActionCode(undefined);
                         setActiveStepAction(null);
                     }}
-                    onSubmit={handleApprove}
+                    onSubmit={handleActionSubmit}
                     contract={contract}
-                    onUpdate={onUpdate}
+                    onUpdate={handleContractUpdate}
                     actionCode={activeActionCode}
                     actionId={activeStepAction?.id}
                     actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? (isSubStepReviewer ? 'Setujui Penelaahan' : undefined))}
@@ -1044,41 +1114,10 @@ export const ContractDetailView = ({
                         setActiveStepAction(null);
                     }}
                     contract={contract}
-                    onUpdate={onUpdate}
+                    onUpdate={handleContractUpdate}
                     showToast={showToast}
                     actionCode={activeActionCode}
                     actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)}
-                />
-            </Suspense>
-
-            <Suspense fallback={null}>
-                <SharedSignerModal
-                    open={signerOpen}
-                    onClose={() => {
-                        setSignerOpen(false);
-                        setActiveActionCode(undefined);
-                        setActiveStepAction(null);
-                    }}
-                    contract={contract}
-                    onUpdate={onUpdate}
-                    showToast={showToast}
-                    actionCode={activeActionCode}
-                    actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)}
-                />
-            </Suspense>
-
-            <Suspense fallback={null}>
-                <SharedRejectModal
-                    open={rejectOpen}
-                    onClose={() => {
-                        setRejectOpen(false);
-                        setActiveActionCode(undefined);
-                        setActiveStepAction(null);
-                    }}
-                    onSubmit={handleReject}
-                    actionId={activeStepAction?.id}
-                    actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)}
-                    contract={contract}
                 />
             </Suspense>
             <Suspense fallback={null}>
@@ -1090,7 +1129,7 @@ export const ContractDetailView = ({
                         setActiveStepAction(null);
                     }}
                     contract={contract}
-                    onUpdate={onUpdate}
+                    onUpdate={handleContractUpdate}
                     showToast={showToast}
                     actionCode={activeActionCode}
                     actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)}

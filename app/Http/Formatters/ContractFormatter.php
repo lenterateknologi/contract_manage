@@ -239,9 +239,19 @@ class ContractFormatter
                 'steps' => ($isDetail && $c->workflow->relationLoaded('steps')) ? $c->workflow->steps->map(fn ($s) => [
                     'id' => $s->id,
                     'step' => $s->step,
+                    'name' => $s->name,
                     'description' => $s->description,
+                    'approver_type' => $s->approver_type,
                     'step_category' => $s->step_category,
                     'meta' => $s->meta ?? [],
+                    'approver_authorities' => $s->relationLoaded('approverAuthorities') ? $s->approverAuthorities->map(fn ($auth) => [
+                        'id' => $auth->id,
+                        'authority_type' => $auth->authority_type,
+                        'user_id' => $auth->user_id,
+                        'role_id' => $auth->role_id,
+                        'department_id' => $auth->department_id,
+                        'division_id' => $auth->division_id,
+                    ])->toArray() : [],
                     'actions' => $s->relationLoaded('actions') ? $s->actions->sortBy(fn ($act) => (int) data_get($act->transition_config, 'order', 999))->values()->map(fn ($act) => [
                         'id' => $act->id,
                         'action_code' => $act->action_code instanceof WorkflowAction ? $act->action_code->value : $act->action_code,

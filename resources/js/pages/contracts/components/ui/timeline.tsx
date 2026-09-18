@@ -34,6 +34,26 @@ export interface TimelineIconProps extends React.HTMLAttributes<HTMLDivElement> 
     status?: 'completed' | 'active' | 'rejected' | 'waiting' | 'skipped';
 }
 
+function getTimelineStatusClass(status: string, hasCustomBg: boolean): string {
+    if (hasCustomBg) {
+        return status === 'active' ? 'text-white animate-pulse shadow-xs' : '';
+    }
+
+    switch (status) {
+        case 'completed':
+            return 'bg-emerald-500 text-white dark:bg-emerald-600';
+        case 'rejected':
+            return 'bg-rose-500 text-white dark:bg-rose-600';
+        case 'active':
+            return 'bg-primary text-primary-foreground animate-pulse shadow-xs';
+        case 'skipped':
+            return 'bg-muted text-muted-foreground opacity-60';
+        case 'waiting':
+        default:
+            return 'bg-muted text-muted-foreground';
+    }
+}
+
 export const TimelineIcon = React.forwardRef<HTMLDivElement, TimelineIconProps>(
     ({ className, status = 'waiting', children, style, ...props }, ref) => {
         return (
@@ -45,12 +65,7 @@ export const TimelineIcon = React.forwardRef<HTMLDivElement, TimelineIconProps>(
                     style={style}
                     className={cn(
                         'flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-200',
-                        status === 'completed' && !style?.backgroundColor && 'bg-emerald-500 text-white dark:bg-emerald-600',
-                        status === 'rejected' && !style?.backgroundColor && 'bg-rose-500 text-white dark:bg-rose-600',
-                        status === 'active' && !style?.backgroundColor && 'bg-primary text-primary-foreground animate-pulse shadow-xs',
-                        status === 'active' && !!style?.backgroundColor && 'text-white animate-pulse shadow-xs',
-                        status === 'skipped' && !style?.backgroundColor && 'bg-muted text-muted-foreground opacity-60',
-                        status === 'waiting' && !style?.backgroundColor && 'bg-muted text-muted-foreground',
+                        getTimelineStatusClass(status, Boolean(style?.backgroundColor)),
                         className,
                     )}
                     {...props}

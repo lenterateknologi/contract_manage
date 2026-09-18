@@ -1,15 +1,14 @@
+import { getFileIcon } from '@/components/ui';
 import { Button } from '@/components/ui/buttons/Button';
-import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { Modal } from '@/components/ui/dialogs/Modal';
-import { ChipIcon, getFileIcon, AttachmentCategoryBadge } from '@/components/ui';
-import { contractApi } from '@/pages/contracts/utils';
-import { cn } from '@/lib/utils';
+import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { formatFileSize } from '@/lib/formatters';
-import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
-import { CheckCircle2, Gavel, Loader2, Paperclip, Plus, Send, Trash2, UserPen, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/lib/utils';
+import { contractApi, resolveTransitionPreview } from '@/pages/contracts/utils';
+import { AlertCircle, CheckCircle2, Gavel, Loader2, Paperclip, Plus, Send, UserPen, X, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
-interface Props {
+export interface SharedActionModalProps {
     open: boolean;
     onClose: () => void;
     onSubmit: (
@@ -17,14 +16,13 @@ interface Props {
         attachment?: File | File[],
         assignedPicId?: string,
         executionOrder?: string,
-        signerUserIds?: string[],
         actionCode?: string,
         isFinal?: boolean,
         targetStepId?: string,
         actionId?: string,
     ) => Promise<void>;
     contract: any;
-    onUpdate: (c: any) => void;
+    onUpdate?: (c: any) => void;
     actionCode?: string;
     actionId?: string;
     actionAlias?: string;
@@ -32,7 +30,17 @@ interface Props {
     isSubStep?: boolean;
 }
 
-export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate, actionCode, actionId, actionAlias, users: initialUsers, isSubStep }: Props) {
+export function SharedActionModal({
+    open,
+    onClose,
+    onSubmit,
+    contract,
+    actionCode = 'approve',
+    actionId,
+    actionAlias,
+    users: initialUsers,
+    isSubStep,
+}: SharedActionModalProps) {
     const [note, setNote] = useState('');
     const [attachments, setAttachments] = useState<File[]>([]);
     const [executionOrder, setExecutionOrder] = useState<string>('');
@@ -69,135 +77,24 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
 
     const activeAction = actionId
         ? (contract?.workflow_step?.actions?.find((a: any) => a.id === actionId) ||
-           customActionsList.find((a: any) => a.id === actionId || a.action_code === actionCode))
+            customActionsList.find((a: any) => a.id === actionId || a.action_code === actionCode))
         : (contract?.workflow_step?.actions?.find((a: any) => a.action_code === actionCode) ||
-           customActionsList.find((a: any) => a.action_code === actionCode));
+            customActionsList.find((a: any) => a.action_code === actionCode));
 
-    const getTransitionPreview = () => {
-        if (!contract) return null;
-
-        let transition = activeAction?.transition_config;
-        if (!activeAction && actionCode === 'reject') {
-            const rejectAction = contract?.workflow_step?.actions?.find((a: any) => a.action_code === 'reject');
-            if (rejectAction) {
-                transition = rejectAction.transition_config;
-            }
-        }
-
-        const currentStep = contract?.workflow_step;
-        if (!currentStep) return null;
-
-        const currentStepSeq = Number(currentStep.step || 1);
-        const steps = contract?.workflow?.steps || [];
-
-        const formatStepInfo = (stepObj: any) => {
-            if (!stepObj) return 'Selesai / Disetujui (Langkah Terakhir)';
-            return `Tahap ${stepObj.step} - ${stepObj.description || stepObj.label || 'Tanpa Keterangan'}`;
-        };
-
-        if (transition && typeof transition === 'object') {
-            const { type, offset, sequence, workflow_id } = transition;
-            if (type === 'relative') {
-                const offNum = Number(offset ?? 1);
-                if (offNum === 1) {
-                    const nextStep = steps.find((s: any) => Number(s.step) > currentStepSeq);
-                    return {
-                        label: 'Maju ke Langkah Berikutnya (Sequential +1)',
-                        target: formatStepInfo(nextStep)
-                    };
-                } else if (offNum === 0) {
-                    return {
-                        label: 'Tetap di Tahap Ini (Stay / Offset 0)',
-                        target: formatStepInfo(currentStep)
-                    };
-                } else if (offNum < 0) {
-                    const targetSeq = Math.max(1, currentStepSeq + offNum);
-                    const prevStep = steps.find((s: any) => Number(s.step) === targetSeq) || steps.find((s: any) => Number(s.step) < currentStepSeq);
-                    return {
-                        label: `Mundur ${Math.abs(offNum)} Langkah (Offset ${offNum})`,
-                        target: formatStepInfo(prevStep)
-                    };
-                } else {
-                    const targetSeq = currentStepSeq + offNum;
-                    const nextStep = steps.find((s: any) => Number(s.step) === targetSeq) || steps.find((s: any) => Number(s.step) > currentStepSeq);
-                    return {
-                        label: `Maju ${offNum} Langkah (Offset +${offNum})`,
-                        target: formatStepInfo(nextStep)
-                    };
-                }
-            } else if (type === 'absolute') {
-                const targetSeq = Number(sequence ?? 1);
-                const targetStep = steps.find((s: any) => Number(s.step) === targetSeq);
-                return {
-                    label: `Lompat ke Tahap Spesifik (Tahap ${targetSeq})`,
-                    target: formatStepInfo(targetStep)
-                };
-            } else if (type === 'cross_workflow') {
-                const isOrigin = workflow_id === 'origin_workflow' || workflow_id === 'origin' || workflow_id === contract.origin_workflow_id;
-                const returnMode = transition.return_mode;
-                const targetWfId = isOrigin ? (contract.origin_workflow_id || contract.workflow_id) : workflow_id;
-                const targetWf = allWorkflows.find((w: any) => String(w.id) === String(targetWfId));
-                const wfName = targetWf?.name || (isOrigin ? 'Alur Kerja Utama' : 'Alur Kerja Target');
-
-                let stepLabel = `Tahap ${sequence || 1}`;
-                if (isOrigin) {
-                    if (returnMode === 'branch_origin' || returnMode === 'origin_step') {
-                        stepLabel = 'Kembali ke Tahap Semula di Alur Utama';
-                    } else if (returnMode === 'branch_next') {
-                        stepLabel = 'Lanjut ke Tahap Berikutnya di Alur Utama';
-                    } else if (sequence) {
-                        stepLabel = `Tahap ${sequence} di Alur Utama`;
-                    } else {
-                        stepLabel = 'Kembali ke Alur Utama';
-                    }
-                } else {
-                    const targetStep = targetWf?.steps?.find((s: any) => Number(s.step) === Number(sequence));
-                    if (targetStep) {
-                        stepLabel = `Tahap ${targetStep.step} - ${targetStep.description || targetStep.label || 'Tanpa Keterangan'}`;
-                    }
-                }
-
-                return {
-                    label: isOrigin ? 'Kembali ke Alur Kerja Utama' : `Pindah ke Alur Kerja: ${wfName}`,
-                    target: stepLabel
-                };
-            }
-        }
-
-        if (actionCode === 'reject') {
-            const step1 = steps.find((s: any) => Number(s.step) === 1);
-            return {
-                label: 'Kembali untuk Revisi (Default Reject)',
-                target: formatStepInfo(step1)
-            };
-        }
-
-        const nextStep = steps.find((s: any) => Number(s.step) > currentStepSeq);
-        return {
-            label: 'Maju ke Langkah Berikutnya (Default Sequential)',
-            target: formatStepInfo(nextStep)
-        };
-    };
-
-    const preview = getTransitionPreview();
+    const preview = resolveTransitionPreview({
+        contract,
+        action: activeAction,
+        actionCode,
+        allWorkflows,
+    });
 
     const fetchUsers = async () => {
         if (initialUsers && initialUsers.length > 0) return;
-
         setFetchingUsers(true);
         try {
-            const allUsers = await contractApi.getUsers({ all: true });
-            const config = activeAction?.assignee_config || contract.next_step;
-
-            const filtered = allUsers.filter((u: any) => {
-                if (!u.is_active) return false;
-                return matchUserAgainstWorkflowPool(u, config, contract);
-            });
-
-            if (filtered.length > 0) {
-                setUsers(filtered);
-            } else {
-                setUsers(allUsers.filter((u: any) => u.is_active));
+            const data = await contractApi.getUsers();
+            if (Array.isArray(data)) {
+                setUsers(data);
             }
         } catch (error) {
             console.error('Failed to fetch users:', error);
@@ -206,10 +103,89 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         }
     };
 
+    const isReject = actionCode === 'reject';
+    const isBranch = actionCode === 'branch';
+
+    const modalConfig = useMemo(() => {
+        if (isReject) {
+            return {
+                headerVariant: 'danger' as const,
+                headerIcon: <XCircle size={18} className="text-white" />,
+                title: actionAlias || 'Tolak Kontrak',
+                description: 'Berikan catatan atau alasan penolakan kontrak',
+                btnVariant: 'destructive' as const,
+                btnIcon: <XCircle size={15} className="mr-1.5" />,
+                btnText: 'Konfirmasi Penolakan',
+                noteLabel: 'Alasan Penolakan',
+                notePlaceholder: 'Jelaskan alasan penolakan secara detail...',
+                noteRequired: true,
+                infoText: 'Mohon jelaskan alasan penolakan kontrak ini agar pihak inisiator dapat melakukan perbaikan yang diperlukan.',
+            };
+        }
+        if (isBranch) {
+            return {
+                headerVariant: 'default' as const,
+                headerIcon: <CheckCircle2 size={18} className="text-white" />,
+                title: actionAlias || 'Pindah Workflow (Cabang)',
+                description: 'Konfirmasi untuk mengarahkan alur kerja kontrak ke workflow cabang',
+                btnVariant: 'default' as const,
+                btnIcon: <CheckCircle2 size={15} className="mr-1.5" />,
+                btnText: 'Pindah Workflow',
+                noteLabel: 'Catatan Aksi (Opsional)',
+                notePlaceholder: 'Tambahkan catatan aksi...',
+                noteRequired: false,
+                infoText: 'Konfirmasi untuk melanjutkan proses ke workflow cabang / alur kerja yang dikonfigurasikan pada aksi ini.',
+            };
+        }
+        if (isSubStep) {
+            return {
+                headerVariant: 'default' as const,
+                headerIcon: <CheckCircle2 size={18} className="text-white" />,
+                title: actionAlias || 'Setujui Penelaahan',
+                description: 'Konfirmasi untuk menyetujui penelaahan / persetujuan tambahan pada kontrak ini',
+                btnVariant: 'default' as const,
+                btnIcon: <CheckCircle2 size={15} className="mr-1.5" />,
+                btnText: 'Konfirmasi Setuju',
+                noteLabel: 'Catatan Approval (Opsional)',
+                notePlaceholder: 'Tambahkan catatan approval...',
+                noteRequired: false,
+                infoText: 'Apakah Anda yakin ingin menyetujui penelaahan ini? Anda dapat memberikan catatan approval dan lampiran (opsional).',
+            };
+        }
+        if (contract?.workflow_step?.step === 1) {
+            return {
+                headerVariant: 'default' as const,
+                headerIcon: <Send size={18} className="text-white" />,
+                title: actionAlias || 'Kirim Persetujuan',
+                description: 'Konfirmasi untuk mengirim draft kontrak ke tahap persetujuan berikutnya',
+                btnVariant: 'default' as const,
+                btnIcon: <Send size={15} className="mr-1.5" />,
+                btnText: 'Kirim Sekarang',
+                noteLabel: 'Catatan Pengajuan (Opsional)',
+                notePlaceholder: 'Tambahkan catatan pengajuan...',
+                noteRequired: false,
+                infoText: 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.',
+            };
+        }
+        return {
+            headerVariant: 'default' as const,
+            headerIcon: <CheckCircle2 size={18} className="text-white" />,
+            title: actionAlias || 'Setujui Kontrak',
+            description: 'Berikan persetujuan atau catatan untuk memproses tahap kontrak ini',
+            btnVariant: 'default' as const,
+            btnIcon: <CheckCircle2 size={15} className="mr-1.5" />,
+            btnText: 'Konfirmasi Setuju',
+            noteLabel: 'Catatan Approval (Opsional)',
+            notePlaceholder: 'Tambahkan catatan approval...',
+            noteRequired: false,
+            infoText: 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).',
+        };
+    }, [isReject, isBranch, isSubStep, actionAlias, contract?.workflow_step?.step]);
+
     const getActionRequiredFields = () => {
-        if (isSubStep) return [];
+        if (isSubStep || isReject) return [];
         const code = (actionCode || activeAction?.action_code || '').toLowerCase();
-        const isNonStandardAction = ['reject', 'branch', 'forward', 'cross_workflow'].includes(code);
+        const isNonStandardAction = ['reject', 'branch', 'add_adhoc', 'cross_workflow'].includes(code);
 
         if (activeAction?.required_fields && Array.isArray(activeAction.required_fields)) {
             return activeAction.required_fields;
@@ -243,6 +219,28 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
     };
 
     const handleSubmit = async () => {
+        if (isReject) {
+            if (!note.trim()) return;
+            setLoading(true);
+            try {
+                await onSubmit(
+                    note,
+                    attachments.length > 0 ? (attachments.length === 1 ? attachments[0] : attachments) : undefined,
+                    undefined,
+                    undefined,
+                    undefined,
+                    'reject',
+                    undefined,
+                    undefined,
+                    actionId || activeAction?.id,
+                );
+                onClose();
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
         if (!isSubStep) {
             const requiredFields = getActionRequiredFields();
             const requirePic = requiredFields.includes('pic') || requiredFields.includes('assigned_pic');
@@ -368,7 +366,6 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                 attachments.length > 0 ? (attachments.length === 1 ? attachments[0] : attachments) : undefined,
                 undefined, // assignedPicId
                 executionOrder || undefined,
-                undefined, // signerUserIds
                 actionCode,
                 undefined, // isFinal
                 undefined, // targetStepId
@@ -380,17 +377,8 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
         }
     };
 
-    const isBranch = actionCode === 'branch';
-    const titleText = actionAlias || (isBranch ? 'Pindah Workflow (Cabang)' : isSubStep ? 'Setujui Penelaahan' : (contract?.workflow_step?.step === 1 ? 'Kirim Persetujuan' : 'Setujui Kontrak'));
-    const subtitleText = isBranch
-        ? 'Konfirmasi untuk mengarahkan alur kerja kontrak ke workflow cabang'
-        : isSubStep
-            ? 'Konfirmasi untuk menyetujui penelaahan / persetujuan tambahan pada kontrak ini'
-            : contract?.workflow_step?.step === 1
-                ? 'Konfirmasi untuk mengirim draft kontrak ke tahap persetujuan berikutnya'
-                : 'Berikan persetujuan atau catatan untuk memproses tahap kontrak ini';
-
     const checkIsSubmitDisabled = () => {
+        if (isReject) return !note.trim();
         if (isSubStep) return false;
         const requiredFields = getActionRequiredFields();
         if (requiredFields.length === 0) return false;
@@ -499,16 +487,10 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
             isOpen={open}
             onClose={onClose}
             maxWidth="2xl"
-            headerVariant="default"
-            headerIcon={
-                contract?.workflow_step?.step === 1 ? (
-                    <Send size={18} className="text-white" />
-                ) : (
-                    <CheckCircle2 size={18} className="text-white" />
-                )
-            }
-            title={titleText}
-            description={subtitleText}
+            headerVariant={modalConfig.headerVariant}
+            headerIcon={modalConfig.headerIcon}
+            title={modalConfig.title}
+            description={modalConfig.description}
             footer={
                 <div className="flex w-full justify-end gap-2.5">
                     <Button
@@ -520,6 +502,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                         Batal
                     </Button>
                     <Button
+                        variant={modalConfig.btnVariant}
                         onClick={handleSubmit}
                         disabled={isSubmitDisabled}
                         className="min-w-[140px] h-9 text-xs"
@@ -527,22 +510,27 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                         {loading ? (
                             <Loader2 size={15} className="mr-1.5 animate-spin" />
                         ) : (
-                            <>
-                                {contract?.workflow_step?.step === 1 ? (
-                                    <Send size={15} className="mr-1.5" />
-                                ) : (
-                                    <CheckCircle2 size={15} className="mr-1.5" />
-                                )}
-                            </>
+                            modalConfig.btnIcon
                         )}
-                        {isBranch ? 'Pindah Workflow' : contract?.workflow_step?.step === 1 ? 'Kirim Sekarang' : 'Konfirmasi Setuju'}
+                        {modalConfig.btnText}
                     </Button>
                 </div>
             }
         >
             <div className="space-y-3.5 pt-1">
                 {preview && (
-                    <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-2.5 text-left dark:border-slate-800 dark:bg-slate-900/40">
+                    <div className={cn(
+                        "rounded-lg border p-2.5 text-left",
+                        isReject
+                            ? "border-rose-100 bg-rose-50/50 dark:border-rose-950/30 dark:bg-rose-950/10"
+                            : "border-blue-100 bg-blue-50/50 dark:border-slate-800 dark:bg-slate-900/40"
+                    )}>
+                        {isReject && (
+                            <div className="flex items-center gap-2 text-[10px] font-extrabold tracking-wider text-rose-700 dark:text-rose-400 uppercase mb-1">
+                                <AlertCircle size={12} />
+                                Proyeksi Mundur Alur Kerja
+                            </div>
+                        )}
                         <div className="flex flex-col gap-0.5">
                             <span className="text-[9px] font-medium text-slate-400 uppercase">{preview.label}</span>
                             <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{preview.target}</span>
@@ -552,11 +540,7 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
 
                 <div className="space-y-6">
                     <p className="text-text-desc text-sm leading-relaxed font-medium">
-                        {isBranch
-                            ? 'Konfirmasi untuk melanjutkan proses ke workflow cabang / alur kerja yang dikonfigurasikan pada aksi ini.'
-                            : contract?.workflow_step?.step === 1
-                                ? 'Konfirmasi untuk mengirim draft kontrak ini ke tahap persetujuan berikutnya. Pastikan dokumen sudah lengkap.'
-                                : 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).'}
+                        {modalConfig.infoText}
                     </p>
 
                     {/* Check-list Syarat Dokumen / Data Wajib Aksi Ini */}
@@ -708,158 +692,106 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                         );
                     })()}
 
-                <div className="space-y-3">
-                    {/* Urutan Eksekusi Joint Upload jika Next Step adalah joint_upload dan belum di-set */}
-                    {contract?.next_step?.step_category === 'joint_upload' && !contract?.metadata?.step_12_order && (
-                        <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
-                            <label className="text-xs font-bold text-primary flex items-center gap-1.5">
-                                <UserPen size={14} />
-                                Pilih Urutan Unggah Dokumen Bersama
-                            </label>
-                            <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                Tahap berikutnya memerlukan unggahan berkas oleh Inisiator dan Reviewer. Tentukan siapa yang harus mengunggah terlebih dahulu.
-                            </p>
-                            <div className="grid grid-cols-2 gap-2.5 pt-1">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setExecutionOrder('reviewer_first')}
-                                    className={cn(
-                                        'flex flex-col items-center justify-center p-3 h-auto gap-1.5 rounded-xl border-2 transition-all',
-                                        executionOrder === 'reviewer_first'
-                                            ? 'border-primary bg-primary/10 text-primary shadow-xs'
-                                            : 'border-surface-border bg-surface hover:bg-surface-muted opacity-80',
-                                    )}
-                                >
-                                    <div
+                    <div className="space-y-3">
+                        {/* Urutan Eksekusi Joint Upload jika Next Step adalah joint_upload dan belum di-set */}
+                        {contract?.next_step?.step_category === 'joint_upload' && !contract?.metadata?.step_12_order && (
+                            <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+                                <label className="text-xs font-bold text-primary flex items-center gap-1.5">
+                                    <UserPen size={14} />
+                                    Pilih Urutan Unggah Dokumen Bersama
+                                </label>
+                                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                                    Tahap berikutnya memerlukan unggahan berkas oleh Inisiator dan Reviewer. Tentukan siapa yang harus mengunggah terlebih dahulu.
+                                </p>
+                                <div className="grid grid-cols-2 gap-2.5 pt-1">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setExecutionOrder('reviewer_first')}
                                         className={cn(
-                                            'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+                                            'flex flex-col items-center justify-center p-3 h-auto gap-1.5 rounded-xl border-2 transition-all',
                                             executionOrder === 'reviewer_first'
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-surface-muted text-text-soft',
+                                                ? 'border-primary bg-primary/10 text-primary shadow-xs'
+                                                : 'border-surface-border bg-surface hover:bg-surface-muted opacity-80',
                                         )}
                                     >
-                                        <Gavel size={18} />
-                                    </div>
-                                    <span
-                                        className={cn(
-                                            'text-xs font-bold tracking-tight uppercase',
-                                            executionOrder === 'reviewer_first' ? 'text-primary' : 'text-text-main',
-                                        )}
-                                    >
-                                        Reviewer Dulu
-                                    </span>
-                                    <span className="text-center text-[9px] leading-tight font-medium opacity-50">Reviewer upload, lalu Inisiator</span>
-                                </Button>
-
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setExecutionOrder('initiator_first')}
-                                    className={cn(
-                                        'flex flex-col items-center justify-center p-3 h-auto gap-1.5 rounded-xl border-2 transition-all',
-                                        executionOrder === 'initiator_first'
-                                            ? 'border-primary bg-primary/10 text-primary shadow-xs'
-                                            : 'border-surface-border bg-surface hover:bg-surface-muted opacity-80',
-                                    )}
-                                >
-                                    <div
-                                        className={cn(
-                                            'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
-                                            executionOrder === 'initiator_first'
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-surface-muted text-text-soft',
-                                        )}
-                                    >
-                                        <UserPen size={18} />
-                                    </div>
-                                    <span
-                                        className={cn(
-                                            'text-xs font-bold tracking-tight uppercase',
-                                            executionOrder === 'initiator_first' ? 'text-primary' : 'text-text-main',
-                                        )}
-                                    >
-                                        Inisiator Dulu
-                                    </span>
-                                    <span className="text-center text-[9px] leading-tight font-medium opacity-50">Inisiator upload, lalu Reviewer</span>
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-
-                    <FormTextarea
-                        label="Catatan Approval"
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        rows={3}
-                        placeholder="Tambahkan catatan approval..."
-                    />
-
-                    <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                            <label className="text-text-desc text-[11px] font-bold uppercase">Lampiran Berkas Pendukung (Opsional)</label>
-                            {attachments.length > 0 && (
-                                <span className="text-[10px] font-bold text-primary">
-                                    {attachments.length} Berkas Baru Dipilih
-                                </span>
-                            )}
-                        </div>
-
-                        <div className="mt-1 space-y-2">
-                            {attachments.length === 0 ? (
-                                <div
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    onDragOver={(e) => {
-                                        e.preventDefault();
-                                        setIsDragging(true);
-                                    }}
-                                    onDragLeave={(e) => {
-                                        e.preventDefault();
-                                        setIsDragging(false);
-                                    }}
-                                    onDrop={handleFileDrop}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault();
-                                            fileInputRef.current?.click();
-                                        }
-                                    }}
-                                    className={cn(
-                                        "border-surface-border text-text-desc hover:border-primary hover:text-primary hover:bg-surface-muted flex h-auto w-full flex-col items-center justify-center gap-1.5 border-2 border-dashed py-5 transition-all rounded-lg cursor-pointer",
-                                        isDragging && "border-primary bg-primary/10 scale-[0.99]"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Paperclip size={16} className="opacity-60" />
-                                        <span className="text-xs font-bold tracking-wide uppercase">Pilih / Drag & Drop Berkas</span>
-                                    </div>
-                                    <span className="text-[10px] text-muted-foreground font-normal">Mendukung format PDF, Gambar, Dokumen, dan Spreadsheet</span>
-                                </div>
-                            ) : (
-                                <div className="space-y-1.5">
-                                    {attachments.map((file, idx) => (
-                                        <div key={idx} className="border-surface-border bg-surface-muted/70 flex items-center justify-between rounded-lg border px-3 py-2">
-                                            <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
-                                                {getFileIcon(file.name)}
-                                                <div className="flex flex-col min-w-0">
-                                                    <span className="text-text-main truncate text-xs font-bold">{file.name}</span>
-                                                    <span className="text-text-desc text-[10px] font-medium">{formatFileSize(file.size)}</span>
-                                                </div>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
-                                                className="text-text-desc hover:text-danger hover:bg-danger/10 h-7 w-7 shrink-0"
-                                            >
-                                                <X size={14} />
-                                            </Button>
+                                        <div
+                                            className={cn(
+                                                'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+                                                executionOrder === 'reviewer_first'
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-surface-muted text-text-soft',
+                                            )}
+                                        >
+                                            <Gavel size={18} />
                                         </div>
-                                    ))}
+                                        <span
+                                            className={cn(
+                                                'text-xs font-bold tracking-tight uppercase',
+                                                executionOrder === 'reviewer_first' ? 'text-primary' : 'text-text-main',
+                                            )}
+                                        >
+                                            Reviewer Dulu
+                                        </span>
+                                        <span className="text-center text-[9px] leading-tight font-medium opacity-50">Reviewer upload, lalu Inisiator</span>
+                                    </Button>
 
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setExecutionOrder('initiator_first')}
+                                        className={cn(
+                                            'flex flex-col items-center justify-center p-3 h-auto gap-1.5 rounded-xl border-2 transition-all',
+                                            executionOrder === 'initiator_first'
+                                                ? 'border-primary bg-primary/10 text-primary shadow-xs'
+                                                : 'border-surface-border bg-surface hover:bg-surface-muted opacity-80',
+                                        )}
+                                    >
+                                        <div
+                                            className={cn(
+                                                'flex h-10 w-10 items-center justify-center rounded-xl transition-colors',
+                                                executionOrder === 'initiator_first'
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-surface-muted text-text-soft',
+                                            )}
+                                        >
+                                            <UserPen size={18} />
+                                        </div>
+                                        <span
+                                            className={cn(
+                                                'text-xs font-bold tracking-tight uppercase',
+                                                executionOrder === 'initiator_first' ? 'text-primary' : 'text-text-main',
+                                            )}
+                                        >
+                                            Inisiator Dulu
+                                        </span>
+                                        <span className="text-center text-[9px] leading-tight font-medium opacity-50">Inisiator upload, lalu Reviewer</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        <FormTextarea
+                            label={modalConfig.noteLabel}
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            rows={3}
+                            placeholder={modalConfig.notePlaceholder}
+                            required={modalConfig.noteRequired}
+                        />
+
+                        <div className="space-y-1.5">
+                            <div className="flex items-center justify-between">
+                                <label className="text-text-desc text-[11px] font-bold uppercase">Lampiran Berkas Pendukung (Opsional)</label>
+                                {attachments.length > 0 && (
+                                    <span className={cn("text-[10px] font-bold", isReject ? "text-danger" : "text-primary")}>
+                                        {attachments.length} Berkas Baru Dipilih
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className="mt-1 space-y-2">
+                                {attachments.length === 0 ? (
                                     <div
                                         role="button"
                                         tabIndex={0}
@@ -873,33 +805,126 @@ export function SharedApproveModal({ open, onClose, onSubmit, contract, onUpdate
                                             setIsDragging(false);
                                         }}
                                         onDrop={handleFileDrop}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                fileInputRef.current?.click();
+                                            }
+                                        }}
                                         className={cn(
-                                            "w-full text-xs font-semibold flex items-center justify-center gap-1.5 border border-dashed border-primary/40 text-primary hover:bg-primary/5 h-8 mt-1 rounded-md cursor-pointer transition-all",
-                                            isDragging && "bg-primary/15 border-primary"
+                                            "border-surface-border text-text-desc flex h-auto w-full flex-col items-center justify-center gap-1.5 border-2 border-dashed py-5 transition-all rounded-lg cursor-pointer",
+                                            isReject
+                                                ? "hover:border-danger hover:text-danger hover:bg-danger/5"
+                                                : "hover:border-primary hover:text-primary hover:bg-surface-muted",
+                                            isDragging && (isReject ? "border-danger bg-danger/10 scale-[0.99]" : "border-primary bg-primary/10 scale-[0.99]")
                                         )}
                                     >
-                                        <Plus size={14} />
-                                        <span>Tambah Berkas Lainnya</span>
+                                        <div className="flex items-center gap-2">
+                                            <Paperclip size={16} className="opacity-60" />
+                                            <span className="text-xs font-bold tracking-wide uppercase">Pilih / Drag & Drop Berkas</span>
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground font-normal">Mendukung format PDF, Gambar, Dokumen, dan Spreadsheet</span>
                                     </div>
-                                </div>
-                            )}
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                multiple
-                                className="hidden"
-                                onChange={(e) => {
-                                    if (e.target.files && e.target.files.length > 0) {
-                                        setAttachments((prev) => [...prev, ...Array.from(e.target.files!)]);
-                                    }
-                                    e.target.value = '';
-                                }}
-                            />
+                                ) : (
+                                    <div className="space-y-1.5">
+                                        {attachments.map((file, idx) => (
+                                            <div key={idx} className="border-surface-border bg-surface-muted/70 flex items-center justify-between rounded-lg border px-3 py-2">
+                                                <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
+                                                    {getFileIcon(file.name)}
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-text-main truncate text-xs font-bold">{file.name}</span>
+                                                        <span className="text-text-desc text-[10px] font-medium">{formatFileSize(file.size)}</span>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={() => setAttachments(prev => prev.filter((_, i) => i !== idx))}
+                                                    className="text-text-desc hover:text-danger hover:bg-danger/10 h-7 w-7 shrink-0"
+                                                >
+                                                    <X size={14} />
+                                                </Button>
+                                            </div>
+                                        ))}
+
+                                        <div
+                                            role="button"
+                                            tabIndex={0}
+                                            onClick={() => fileInputRef.current?.click()}
+                                            onDragOver={(e) => {
+                                                e.preventDefault();
+                                                setIsDragging(true);
+                                            }}
+                                            onDragLeave={(e) => {
+                                                e.preventDefault();
+                                                setIsDragging(false);
+                                            }}
+                                            onDrop={handleFileDrop}
+                                            className={cn(
+                                                "w-full text-xs font-semibold flex items-center justify-center gap-1.5 border border-dashed h-8 mt-1 rounded-md cursor-pointer transition-all",
+                                                isReject
+                                                    ? "border-danger/40 text-danger hover:bg-danger/5"
+                                                    : "border-primary/40 text-primary hover:bg-primary/5",
+                                                isDragging && (isReject ? "bg-danger/15 border-danger" : "bg-primary/15 border-primary")
+                                            )}
+                                        >
+                                            <Plus size={14} />
+                                            <span>Tambah Berkas Lainnya</span>
+                                        </div>
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    multiple
+                                    className="hidden"
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files.length > 0) {
+                                            setAttachments((prev) => [...prev, ...Array.from(e.target.files!)]);
+                                        }
+                                        e.target.value = '';
+                                    }}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </Modal>
-);
+        </Modal>
+    );
+}
+
+export const SharedApproveModal = SharedActionModal;
+
+export interface SharedRejectModalProps {
+    open: boolean;
+    onClose: () => void;
+    onSubmit: (reason: string, attachment?: File | File[]) => Promise<void>;
+    actionAlias?: string;
+    actionId?: string;
+    contract?: any;
+}
+
+export function SharedRejectModal({
+    open,
+    onClose,
+    onSubmit,
+    actionAlias,
+    actionId,
+    contract,
+}: SharedRejectModalProps) {
+    return (
+        <SharedActionModal
+            open={open}
+            onClose={onClose}
+            contract={contract}
+            actionCode="reject"
+            actionId={actionId}
+            actionAlias={actionAlias || 'Tolak Kontrak'}
+            onSubmit={async (reason, attachment) => {
+                await onSubmit(reason, attachment);
+            }}
+        />
+    );
 }

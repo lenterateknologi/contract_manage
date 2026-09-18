@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react';
 import { MASTER_ACTIONS } from '../constants';
 
 export function useWorkflowStepState({ step, idx, updateLocalStep }: { step: any; idx: number; updateLocalStep: (idx: number, data: any) => void }) {
-    const [activeModal, setActiveModalState] = useState<'approve' | 'reject' | 'assign_pic' | 'sign' | 'forward' | null>(null);
+    const [activeModal, setActiveModalState] = useState<'approve' | 'reject' | 'assign_pic' | 'add_adhoc' | null>(null);
     const [activeActionForModal, setActiveActionForModal] = useState<any>(null);
 
-    const setActiveModal = (type: 'approve' | 'reject' | 'assign_pic' | 'sign' | 'forward' | null, action?: any) => {
+    const setActiveModal = (type: 'approve' | 'reject' | 'assign_pic' | 'add_adhoc' | null, action?: any) => {
         setActiveModalState(type);
         setActiveActionForModal(action || null);
     };

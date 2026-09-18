@@ -3,7 +3,7 @@ import { Contract } from '@/pages/contracts/types';
 
 interface ChatTabProps {
     contract: Contract;
-    meId: string;
+    meId?: string;
     users: any[];
     onUpdate: (c: Contract, silent?: boolean) => void;
 }

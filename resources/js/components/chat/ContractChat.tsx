@@ -1,18 +1,17 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import axios from 'axios';
-import { ArrowDown, ExternalLink, FileText, MessageSquare, RefreshCw, Search, Users, X } from 'lucide-react';
+import { useToast } from '@/components/ui/feedback/Toast';
 import { cn } from '@/lib/utils';
+import DocumentPreviewModal from '@/pages/contracts/components/modals/DocumentPreviewModal';
 import { Contract, ContractMessage } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
-import { SearchInput } from '@/components/ui/inputs/SearchInput';
-import { useToast } from '@/components/ui/feedback/Toast';
-import DocumentPreviewModal from '@/pages/contracts/components/modals/DocumentPreviewModal';
-import { MessageBubble } from './components/MessageBubble';
+import axios from 'axios';
+import { ArrowDown, MessageSquare, RefreshCw, Search, X } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChatEditor } from './components/ChatEditor';
+import { MessageBubble } from './components/MessageBubble';
 
 interface ContractChatProps {
     contract: Contract;
-    meId: string;
+    meId?: string;
     users?: any[];
     onNewMessage: (c: Contract, silent?: boolean) => void;
 }

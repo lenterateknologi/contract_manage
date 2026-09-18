@@ -1,7 +1,7 @@
-import React from 'react';
-import { Contract } from '@/pages/contracts/types';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/feedback/Tooltip';
+import { Contract } from '@/pages/contracts/types';
 import { ArrowRight } from 'lucide-react';
+import React from 'react';
 
 export interface TransitionPreviewInfo {
     label: string;
@@ -40,7 +40,7 @@ export function getActionTransitionPreview(
                 targetStepText: `Tetap di Tahap ${currentStepSeq} (Catatan penolakan akan dicatat)`,
             };
         }
-        
+
         // Find if there is a next sub-step
         const pendingApprovals = contract.approvals?.filter((a: any) => a.workflow_step_id === currentStep?.id && a.sub_step != null) || [];
         const currentPending = pendingApprovals.find((a: any) => a.status === 'pending');
@@ -144,38 +144,47 @@ export function getActionTransitionPreview(
     }
 
     // 4. Default heuristics based on action_code
-    if (code === 'reject') {
-        const step1 = steps.find((s: any) => Number(s.step) === 1);
-        return {
-            label: 'Kembali untuk Revisi (Tolak)',
-            targetStepText: formatStepInfo(step1),
-            targetStatus: action?.target_status || 'REVISED',
-        };
-    }
+    switch (code) {
+        case 'reject': {
+            const step1 = steps.find((s: any) => Number(s.step) === 1);
+            return {
+                label: action?.alias || 'Kembali untuk Revisi (Tolak)',
+                targetStepText: formatStepInfo(step1),
+                targetStatus: action?.target_status || 'REVISED',
+            };
+        }
 
-    if (code === 'forward' || code === 'add_adhoc') {
-        return {
-            label: 'Penelaahan Tambahan (Ad-Hoc)',
-            targetStepText: `Tetap di Tahap ${currentStepSeq} (Menambahkan penelaah tambahan)`,
-        };
-    }
+        case 'add_adhoc': {
+            const nextStep = (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null)
+                || steps.find((s: any) => Number(s.step) > currentStepSeq);
+            return {
+                label: action?.alias || 'Approval Tambahan',
+                targetStepText: formatStepInfo(nextStep),
+                targetStatus: action?.target_status,
+            };
+        }
 
-    if (code === 'assign' || code === 'assign_pic') {
-        const nextStep = steps.find((s: any) => Number(s.step) > currentStepSeq);
-        return {
-            label: 'Tugaskan PIC & Lanjutkan',
-            targetStepText: formatStepInfo(nextStep),
-            targetStatus: action?.target_status,
-        };
-    }
+        case 'assign':
+        case 'assign_pic': {
+            const nextStep = (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null)
+                || steps.find((s: any) => Number(s.step) > currentStepSeq);
+            return {
+                label: action?.alias || 'Tugaskan PIC & Lanjutkan',
+                targetStepText: formatStepInfo(nextStep),
+                targetStatus: action?.target_status,
+            };
+        }
 
-    // 5. Default approve / next
-    const nextStep = steps.find((s: any) => Number(s.step) > currentStepSeq);
-    return {
-        label: currentStepSeq === 1 ? 'Kirim ke Persetujuan Pertama' : 'Setujui & Lanjut ke Langkah Berikutnya',
-        targetStepText: formatStepInfo(nextStep),
-        targetStatus: action?.target_status,
-    };
+        default: {
+            const nextStep = (action?.next_step_id ? steps.find((s: any) => String(s.id) === String(action.next_step_id)) : null)
+                || steps.find((s: any) => Number(s.step) > currentStepSeq);
+            return {
+                label: action?.alias || (currentStepSeq === 1 ? 'Kirim Persetujuan' : 'Setujui & Lanjut ke Langkah Berikutnya'),
+                targetStepText: formatStepInfo(nextStep),
+                targetStatus: action?.target_status,
+            };
+        }
+    }
 }
 
 interface ActionPreviewTooltipProps {

@@ -180,16 +180,18 @@ export function formatDateAndTimeParts(
 
 /**
  * Formats a date range filter text.
- * Example: "1 Jan 2026 – 31 Jan 2026", "Dari 1 Jan 2026", "Sampai 31 Jan 2026", or "-"
+ * Example: "1 Jan 2026 – 31 Jan 2026", "Dari 1 Jan 2026", "Sampai 31 Jan 2026", or fallback (default: "-")
  */
 export function formatDateRange(
     dateFrom?: string | Date | null,
     dateTo?: string | Date | null,
+    fallback: string = '-',
 ): string {
     const fromStr = dateFrom ? formatDate(dateFrom) : null;
     const toStr = dateTo ? formatDate(dateTo) : null;
 
     if (fromStr && toStr && fromStr !== '-' && toStr !== '-') {
+        if (fromStr === toStr) return fromStr;
         return `${fromStr} – ${toStr}`;
     }
     if (fromStr && fromStr !== '-') {
@@ -198,7 +200,7 @@ export function formatDateRange(
     if (toStr && toStr !== '-') {
         return `Sampai ${toStr}`;
     }
-    return '-';
+    return fallback;
 }
 
 /**
@@ -238,4 +240,56 @@ export function formatRelativeTime(date: string | Date | null | undefined): stri
     if (diffDay < 7) return `${diffDay} hari yang lalu`;
 
     return formatDate(d);
+}
+
+export type DatePresetType = 'today' | '7days' | '30days' | 'thisMonth' | 'lastMonth';
+
+export const DATE_RANGE_PRESETS: { label: string; type: DatePresetType }[] = [
+    { label: 'Hari Ini', type: 'today' },
+    { label: '7 Hari Terakhir', type: '7days' },
+    { label: '30 Hari Terakhir', type: '30days' },
+    { label: 'Bulan Ini', type: 'thisMonth' },
+    { label: 'Bulan Lalu', type: 'lastMonth' },
+];
+
+/**
+ * Returns start and end dates (YYYY-MM-DD) for common presets.
+ */
+export function getPresetDateRange(type: DatePresetType): { date_from: string; date_to: string } {
+    const today = new Date();
+    const fmt = (d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
+    switch (type) {
+        case 'today': {
+            const t = fmt(today);
+            return { date_from: t, date_to: t };
+        }
+        case '7days': {
+            const past = new Date(today);
+            past.setDate(today.getDate() - 6);
+            return { date_from: fmt(past), date_to: fmt(today) };
+        }
+        case '30days': {
+            const past = new Date(today);
+            past.setDate(today.getDate() - 29);
+            return { date_from: fmt(past), date_to: fmt(today) };
+        }
+        case 'thisMonth': {
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            return { date_from: fmt(firstDay), date_to: fmt(lastDay) };
+        }
+        case 'lastMonth': {
+            const firstDay = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth(), 0);
+            return { date_from: fmt(firstDay), date_to: fmt(lastDay) };
+        }
+        default:
+            return { date_from: '', date_to: '' };
+    }
 }
