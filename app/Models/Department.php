@@ -44,6 +44,14 @@ class Department extends Model
     ];
 
     /**
+     * @return BelongsTo<OrganizationGroup, Department>
+     */
+    public function organizationGroup(): BelongsTo
+    {
+        return $this->belongsTo(OrganizationGroup::class, 'idorg_group', 'idorg_group');
+    }
+
+    /**
      * @return BelongsTo<Company, Department>
      */
     public function company(): BelongsTo

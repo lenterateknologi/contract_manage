@@ -45,11 +45,10 @@ export const AUTOFILLED_PARAMS = [
 ];
 
 export const MASTER_ACTIONS = [
-    { id: 'approve', code: 'approve', name: 'Setujui' },
-    { id: 'reject', code: 'reject', name: 'Tolak' },
-    { id: 'assign', code: 'assign', name: 'Tugaskan' },
-    { id: 'add_adhoc', code: 'add_adhoc', name: 'Approval Tambahan' },
-    { id: 'branch', code: 'branch', name: 'Pindah Workflow (Cabang)' },
+    { id: 'approve', code: 'approve', name: 'Aksi Kustom / Standar (Custom Action)' },
+    { id: 'assign', code: 'assign', name: 'Tugaskan PIC (Assign Action)' },
+    { id: 'add_adhoc', code: 'add_adhoc', name: 'Persetujuan Tambahan (Ad-Hoc)' },
+    { id: 'branch', code: 'branch', name: 'Pindah Workflow (Branch)' },
     { id: 'auto', code: 'auto', name: 'Otomatis (Auto Transition)' },
 ];
 

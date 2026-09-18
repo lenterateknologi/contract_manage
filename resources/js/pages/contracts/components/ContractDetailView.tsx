@@ -929,24 +929,23 @@ export const ContractDetailView = ({
                             showSpecialActions={showSpecialActions}
                             masterContractStatuses={masterContractStatuses}
                             onToggleSpecialActions={() => setShowSpecialActions(!showSpecialActions)}
-                            onActionClick={(action, actionCode) => {
+                            onActionClick={(action, actionCode, isCustomAction) => {
                                 const code = (actionCode || action?.action_code)?.toLowerCase();
                                 setActiveStepAction(action);
                                 setActiveActionCode(actionCode || action?.action_code);
 
-                                switch (code) {
-                                    case 'add_adhoc':
+                                if (isCustomAction) {
+                                    if (code === 'add_adhoc') {
                                         setAddhocOpen(true);
-                                        break;
-
-                                    case 'assign':
+                                        return;
+                                    }
+                                    if (code === 'assign') {
                                         setAssignOpen(true);
-                                        break;
-
-                                    default:
-                                        setActionModalOpen(true);
-                                        break;
+                                        return;
+                                    }
                                 }
+
+                                setActionModalOpen(true);
                             }}
                             onSigningAction={handleSigningAction}
                         />

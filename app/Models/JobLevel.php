@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -19,6 +20,7 @@ class JobLevel extends Model
         'code',
         'name',
         'id_job_level_group',
+        'job_level_group_id',
         'group_name',
         'created_by_name',
         'modified_by_name',
@@ -36,6 +38,14 @@ class JobLevel extends Model
         'portal_created_date' => 'datetime',
         'portal_modified_date' => 'datetime',
     ];
+
+    /**
+     * @return BelongsTo<JobLevelGroup, JobLevel>
+     */
+    public function jobLevelGroup(): BelongsTo
+    {
+        return $this->belongsTo(JobLevelGroup::class, 'job_level_group_id');
+    }
 
     /**
      * @return HasMany<JobTitle, JobLevel>

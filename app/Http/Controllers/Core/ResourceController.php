@@ -14,9 +14,12 @@ use App\Core\Crud\Resources\DashboardTypeResource;
 use App\Core\Crud\Resources\DepartmentResource;
 use App\Core\Crud\Resources\DivisionResource;
 use App\Core\Crud\Resources\HolidayResource;
+use App\Core\Crud\Resources\JobLevelGroupResource;
 use App\Core\Crud\Resources\JobLevelResource;
 use App\Core\Crud\Resources\JobTitleResource;
 use App\Core\Crud\Resources\LocationResource;
+use App\Core\Crud\Resources\OrganizationGroupResource;
+use App\Core\Crud\Resources\OrganizationLevelResource;
 use App\Core\Crud\Resources\RegionResource;
 use App\Core\Crud\Resources\RoleResource;
 use App\Core\Crud\Resources\UserResource;
@@ -62,7 +65,10 @@ class ResourceController extends Controller
         'locations' => LocationResource::class,
         'business-units' => BusinessUnitResource::class,
         'job-levels' => JobLevelResource::class,
+        'job-level-groups' => JobLevelGroupResource::class,
         'job-titles' => JobTitleResource::class,
+        'organization-levels' => OrganizationLevelResource::class,
+        'organization-groups' => OrganizationGroupResource::class,
         'holidays' => HolidayResource::class,
     ];
 
@@ -156,24 +162,41 @@ class ResourceController extends Controller
                 } else {
                     $searchColumns = $searchableColumns;
                     if ($resourceSlug === 'users') {
-                        $searchColumns = collect(['nik', 'name', 'email', 'username', 'jobtitle_name', 'joblevel_name', 'company_name', 'location_name', 'org_name']);
-                    } elseif ($resourceSlug === 'companies') {
-                        $searchColumns = collect(['code', 'name', 'alias', 'npwp', 'company_group_name', 'region_name', 'city_name', 'oracle_code']);
-                    } elseif ($resourceSlug === 'locations') {
-                        $searchColumns = collect(['code', 'name', 'location_group_name', 'city_name', 'province_name', 'oracle_code']);
-                    } elseif ($resourceSlug === 'business-units') {
-                        $searchColumns = collect(['code', 'name', 'company_name', 'location_name', 'company_group_name', 'region_name', 'komoditi_name', 'kebun']);
-                    }
-                    $query->where(function ($q) use ($searchColumns, $searchTerms) {
-                        foreach ($searchTerms as $term) {
-                            $lowerTerm = strtolower($term);
-                            $q->orWhere(function ($subQ) use ($searchColumns, $lowerTerm) {
-                                foreach ($searchColumns as $column) {
-                                    $subQ->orWhere(DB::raw("LOWER(COALESCE(CAST({$column} AS text), ''))"), 'like', "%{$lowerTerm}%");
-                                }
-                            });
+                        $searchColumns = collect(['nik', 'name', 'email', 'username', 'jobtitle_name', 'joblevel_name', 'company_name', 'location_name', 'org_name', 'reporting_to']);
+                        $query->where(function ($q) use ($searchColumns, $searchTerms) {
+                            foreach ($searchTerms as $term) {
+                                $lowerTerm = strtolower($term);
+                                $q->orWhere(function ($subQ) use ($searchColumns, $lowerTerm) {
+                                    foreach ($searchColumns as $column) {
+                                        $subQ->orWhere(DB::raw("LOWER(COALESCE(CAST({$column} AS text), ''))"), 'like', "%{$lowerTerm}%");
+                                    }
+                                    $subQ->orWhereHas('department', function ($deptQ) use ($lowerTerm) {
+                                        $deptQ->where(DB::raw("LOWER(COALESCE(CAST(org_group_name AS text), ''))"), 'like', "%{$lowerTerm}%");
+                                    });
+                                });
+                            }
+                        });
+                    } else {
+                        if ($resourceSlug === 'companies') {
+                            $searchColumns = collect(['code', 'name', 'alias', 'npwp', 'company_group_name', 'region_name', 'city_name', 'oracle_code']);
+                        } elseif ($resourceSlug === 'locations') {
+                            $searchColumns = collect(['code', 'name', 'location_group_name', 'city_name', 'province_name', 'oracle_code']);
+                        } elseif ($resourceSlug === 'business-units') {
+                            $searchColumns = collect(['code', 'name', 'company_name', 'location_name', 'company_group_name', 'region_name', 'komoditi_name', 'kebun']);
+                        } else {
+                            $searchColumns = $searchableColumns;
                         }
-                    });
+                        $query->where(function ($q) use ($searchColumns, $searchTerms) {
+                            foreach ($searchTerms as $term) {
+                                $lowerTerm = strtolower($term);
+                                $q->orWhere(function ($subQ) use ($searchColumns, $lowerTerm) {
+                                    foreach ($searchColumns as $column) {
+                                        $subQ->orWhere(DB::raw("LOWER(COALESCE(CAST({$column} AS text), ''))"), 'like', "%{$lowerTerm}%");
+                                    }
+                                });
+                            }
+                        });
+                    }
                 }
             }
         }
@@ -232,6 +255,34 @@ class ResourceController extends Controller
                                         ->orWhere(DB::raw('CAST(company_group_name AS text)'), '');
                                 }
                             });
+                        } elseif ($key === 'organization_group_id' && $resourceSlug === 'users') {
+                            $hasEmpty = in_array('__empty__', $vals, true) || in_array('empty', $vals, true) || in_array('-', $vals, true);
+                            $concreteVals = array_values(array_filter($vals, fn ($v) => ! in_array($v, ['__empty__', 'empty', 'null', '-'], true)));
+                            $orgGroupNames = ! empty($concreteVals) ? \App\Models\OrganizationGroup::whereIn('id', $concreteVals)->pluck('name')->toArray() : [];
+                            $orgGroupIds = ! empty($concreteVals) ? \App\Models\OrganizationGroup::whereIn('id', $concreteVals)->pluck('idorg_group')->filter()->toArray() : [];
+
+                            $query->where(function ($q) use ($concreteVals, $orgGroupNames, $orgGroupIds, $hasEmpty) {
+                                if (! empty($concreteVals)) {
+                                    $q->whereHas('department', function ($deptQ) use ($orgGroupNames, $orgGroupIds) {
+                                        $deptQ->where(function ($subQ) use ($orgGroupNames, $orgGroupIds) {
+                                            if (! empty($orgGroupNames)) {
+                                                $subQ->whereIn('org_group_name', $orgGroupNames);
+                                            }
+                                            if (! empty($orgGroupIds)) {
+                                                $subQ->orWhereIn('idorg_group', $orgGroupIds);
+                                            }
+                                        });
+                                    });
+                                }
+                                if ($hasEmpty) {
+                                    $q->orWhereNull('department_id')
+                                        ->orWhereDoesntHave('department')
+                                        ->orWhereHas('department', function ($deptQ) {
+                                            $deptQ->whereNull('org_group_name')
+                                                ->orWhere('org_group_name', '');
+                                        });
+                                }
+                            });
                         } else {
                             $hasEmpty = in_array('__empty__', $vals, true) || in_array('empty', $vals, true) || in_array('null', $vals, true) || in_array('-', $vals, true);
                             $concreteVals = array_values(array_filter($vals, fn ($v) => ! in_array($v, ['__empty__', 'empty', 'null', '-'], true)));
@@ -271,6 +322,32 @@ class ResourceController extends Controller
                                 if ($groupName) {
                                     $q->orWhere('company_group_name', $groupName);
                                 }
+                            });
+                        }
+                    } elseif ($key === 'organization_group_id' && $resourceSlug === 'users') {
+                        if (in_array($val, ['__empty__', 'empty', 'null', '-'], true)) {
+                            $query->where(function ($q) {
+                                $q->whereNull('department_id')
+                                    ->orWhereDoesntHave('department')
+                                    ->orWhereHas('department', function ($deptQ) {
+                                        $deptQ->whereNull('org_group_name')
+                                            ->orWhere('org_group_name', '');
+                                    });
+                            });
+                        } else {
+                            $orgGroup = \App\Models\OrganizationGroup::find($val);
+                            $orgGroupName = $orgGroup?->name;
+                            $idOrgGroup = $orgGroup?->idorg_group;
+
+                            $query->whereHas('department', function ($deptQ) use ($orgGroupName, $idOrgGroup) {
+                                $deptQ->where(function ($subQ) use ($orgGroupName, $idOrgGroup) {
+                                    if ($orgGroupName) {
+                                        $subQ->where('org_group_name', $orgGroupName);
+                                    }
+                                    if ($idOrgGroup) {
+                                        $subQ->orWhere('idorg_group', $idOrgGroup);
+                                    }
+                                });
                             });
                         }
                     } else {
@@ -318,6 +395,7 @@ class ResourceController extends Controller
                 'role' => 'roleRelation.name',
                 'division_name' => 'division.name',
                 'department_name' => 'department.name',
+                'org_group_name' => 'department.org_group_name',
                 'company_group_name' => 'companyGroup.name',
                 'company_group_code' => 'companyGroup.code',
                 'region_name' => 'region.name',
@@ -780,8 +858,38 @@ class ResourceController extends Controller
             return back()->withErrors(['error' => $result['message']]);
         }
 
+        if ($resourceSlug === 'job-level-groups') {
+            $result = $this->portalSyncService->syncJobLevelGroups($isUsedMode);
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
         if ($resourceSlug === 'job-titles') {
             $result = $this->portalSyncService->syncJobTitles($isUsedMode);
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'organization-levels') {
+            $result = $this->portalSyncService->syncOrganizationLevels($isUsedMode);
+
+            if ($result['success']) {
+                return back()->with('success', $result['message']);
+            }
+
+            return back()->withErrors(['error' => $result['message']]);
+        }
+
+        if ($resourceSlug === 'organization-groups') {
+            $result = $this->portalSyncService->syncOrganizationGroups($isUsedMode);
 
             if ($result['success']) {
                 return back()->with('success', $result['message']);

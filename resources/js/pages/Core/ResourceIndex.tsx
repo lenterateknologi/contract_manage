@@ -93,7 +93,7 @@ function getCookie(name: string): string | null {
     return match ? decodeURIComponent(match[3]) : null;
 }
 
-const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'locations', 'business-units', 'job-levels', 'job-titles'];
+const DIALOG_RESOURCES = ['departments', 'company-groups', 'divisions', 'regions', 'companies', 'roles', 'contract-filter-templates', 'locations', 'business-units', 'job-levels', 'job-titles', 'organization-levels', 'organization-groups'];
 
 export default function ResourceIndex({ resourceSlug, title, tableSchema, formSchema, data, filters, activeFilters = {}, hasExport = false, hasImport = false, hasPortalSync = false }: Props) {
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -407,6 +407,18 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
             }
             return buildTreeFlattened(rawItems);
         }
+        if (resourceSlug === 'departments') {
+            return rawItems.map((item: any) => {
+                const lvl = Number(item.idorg_level) || 5;
+                // idorg_level mapping:
+                // 1=CEO/ROOT (0), 2=LOB (0), 3=COMPANY (0), 4=REGION (1), 5=DEPARTMENT (2), 6=SUBDEPARTMENT (3), 7=SECTION (4), 8=SUBSECTION (5)
+                const depth = Math.max(0, lvl - 3);
+                return {
+                    ...item,
+                    _depth: depth,
+                };
+            });
+        }
         return rawItems;
     }, [data?.data, resourceSlug]);
 
@@ -596,25 +608,63 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                     else if (col.name === 'location_group_name') val = row.location_group_name || row.location_group?.name;
                 }
 
-                // Tree structure render for contract types
-                if (col.name === 'name' && resourceSlug === 'contract-types') {
+                // Tree structure render for contract types and departments
+                if (col.name === 'name' && (resourceSlug === 'contract-types' || resourceSlug === 'departments')) {
                     const depth = row._depth || 0;
                     return (
-                        <span 
+                        <div 
                             style={{ paddingLeft: `${depth * 20}px` }} 
                             className="flex items-center gap-1.5 font-normal text-text-main whitespace-nowrap"
                         >
                             {depth > 0 && (
-                                <span className="text-text-main font-mono select-none">
+                                <span className="text-text-muted font-mono select-none">
                                     └─
                                 </span>
                             )}
-                            {row.code && (
+                            {row.code && resourceSlug === 'contract-types' && (
                                 <span className="text-[10px] bg-primary/10 px-1.5 py-0.5 rounded border border-primary/20 text-text-main font-mono uppercase tracking-wider">
                                     {row.code}
                                 </span>
                             )}
-                            <span>{val || '—'}</span>
+                            <span className={cn(depth === 0 && resourceSlug === 'departments' ? 'font-semibold text-text-main' : '')}>
+                                {val || '—'}
+                            </span>
+                        </div>
+                    );
+                }
+
+                // Department org_level_name badge
+                if (col.name === 'org_level_name' && resourceSlug === 'departments') {
+                    if (!val) return <span className="text-text-muted">—</span>;
+                    const level = String(val).toUpperCase();
+                    let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+                    if (level.includes('CEO') || level.includes('DIRECTOR')) {
+                        badgeColor = 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800';
+                    } else if (level.includes('COMPANY') || level.includes('BUSINESS')) {
+                        badgeColor = 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800';
+                    } else if (level.includes('REGION')) {
+                        badgeColor = 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800';
+                    } else if (level.includes('DEPARTMENT') && !level.includes('SUB')) {
+                        badgeColor = 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800';
+                    } else if (level.includes('SUBDEPARTMENT') || level.includes('SUB DEPARTMENT')) {
+                        badgeColor = 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800';
+                    } else if (level.includes('SECTION')) {
+                        badgeColor = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800';
+                    }
+
+                    return (
+                        <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border whitespace-nowrap', badgeColor)}>
+                            {val}
+                        </span>
+                    );
+                }
+
+                // Department org_group_name badge
+                if (col.name === 'org_group_name' && resourceSlug === 'departments') {
+                    if (!val) return <span className="text-text-muted">—</span>;
+                    return (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                            {val}
                         </span>
                     );
                 }
@@ -1041,29 +1091,48 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
     ];
 
-    const renderHolidaySubHeader = React.useCallback((row: any, prevRow: any | null) => {
-        if (resourceSlug !== 'holidays') return null;
+    const renderResourceSubHeader = React.useCallback((row: any, prevRow: any | null) => {
+        if (resourceSlug === 'holidays') {
+            const currentDate = parseDateInput(row.holiday_date);
+            if (!currentDate) return null;
 
-        const currentDate = parseDateInput(row.holiday_date);
-        if (!currentDate) return null;
+            const currentMonthYear = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
+            const prevDate = prevRow ? parseDateInput(prevRow.holiday_date) : null;
+            const prevMonthYear = prevDate ? `${prevDate.getFullYear()}-${prevDate.getMonth()}` : null;
 
-        const currentMonthYear = `${currentDate.getFullYear()}-${currentDate.getMonth()}`;
-        const prevDate = prevRow ? parseDateInput(prevRow.holiday_date) : null;
-        const prevMonthYear = prevDate ? `${prevDate.getFullYear()}-${prevDate.getMonth()}` : null;
+            if (currentMonthYear !== prevMonthYear) {
+                const monthName = MONTH_NAMES[currentDate.getMonth()];
+                const year = currentDate.getFullYear();
 
-        if (currentMonthYear !== prevMonthYear) {
-            const monthName = MONTH_NAMES[currentDate.getMonth()];
-            const year = currentDate.getFullYear();
-
-            return (
-                <div className="flex items-center gap-2 py-1">
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-bold text-xs border border-primary/20 shadow-2xs">
-                        <Calendar size={13} className="text-primary shrink-0" />
-                        <span>{monthName} {year}</span>
+                return (
+                    <div className="flex items-center gap-2 py-1">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary font-bold text-xs border border-primary/20 shadow-2xs">
+                            <Calendar size={13} className="text-primary shrink-0" />
+                            <span>{monthName} {year}</span>
+                        </div>
+                        <div className="h-px flex-1 bg-gradient-to-r from-surface-border to-transparent" />
                     </div>
-                    <div className="h-px flex-1 bg-gradient-to-r from-surface-border to-transparent" />
-                </div>
-            );
+                );
+            }
+            return null;
+        }
+
+        if (resourceSlug === 'departments') {
+            const currentGroup = row.org_group_name ? String(row.org_group_name).trim() : 'TANPA GROUP';
+            const prevGroup = prevRow ? (prevRow.org_group_name ? String(prevRow.org_group_name).trim() : 'TANPA GROUP') : null;
+
+            if (currentGroup !== prevGroup) {
+                return (
+                    <div className="flex items-center gap-2.5 py-1">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-xs border border-indigo-500/20 shadow-2xs tracking-wide">
+                            <LucideIcons.FolderClosed size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+                            <span>{currentGroup}</span>
+                        </div>
+                        <div className="h-px flex-1 bg-gradient-to-r from-surface-border to-transparent" />
+                    </div>
+                );
+            }
+            return null;
         }
 
         return null;
@@ -1173,7 +1242,7 @@ export default function ResourceIndex({ resourceSlug, title, tableSchema, formSc
                             columns={columns}
                             borderless={true}
                             data={processedData}
-                            renderSubHeader={renderHolidaySubHeader}
+                            renderSubHeader={renderResourceSubHeader}
                             sortBy={activeFilters.sort_by}
                             sortDir={activeFilters.sort_dir as 'asc' | 'desc'}
                             onSortChange={(sortBy, sortDir) => router.get(`/admin/core/${resourceSlug}`, { ...activeFilters, sort_by: sortBy, sort_dir: sortDir }, { preserveState: true, replace: true })}

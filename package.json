@@ -53,6 +53,7 @@
         "concurrently": "^9.0.1",
         "docx-preview": "^0.3.7",
         "globals": "^15.14.0",
+        "html-to-image": "^1.11.13",
         "laravel-vite-plugin": "^1.0",
         "lightningcss-darwin-arm64": "^1.33.0",
         "lottie-react": "^2.4.1",

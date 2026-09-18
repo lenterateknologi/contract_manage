@@ -29,6 +29,10 @@ class DepartmentResource extends Resource
 
     public static array $withCount = ['divisions', 'users'];
 
+    public static ?string $defaultSortBy = 'code';
+
+    public static string $defaultSortDir = 'asc';
+
     public static function table(): array
     {
         return [

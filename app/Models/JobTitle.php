@@ -45,15 +45,10 @@ class JobTitle extends Model
     public function getJobLevelNameAttribute(): ?string
     {
         $raw = $this->attributes['job_level_name'] ?? null;
-        if ($this->relationLoaded('jobLevel') && $this->jobLevel) {
-            $name = $this->jobLevel->name ?: $raw;
-            $code = $this->jobLevel->code;
-            return $code ? "({$code}) {$name}" : $name;
-        }
-
-        if (! empty($this->attributes['job_level_id']) && $this->jobLevel) {
-            $name = $this->jobLevel->name ?: $raw;
-            $code = $this->jobLevel->code;
+        if ($this->relationLoaded('jobLevel') && $this->getRelation('jobLevel')) {
+            $level = $this->getRelation('jobLevel');
+            $name = $level->name ?: $raw;
+            $code = $level->code;
             return $code ? "({$code}) {$name}" : $name;
         }
 

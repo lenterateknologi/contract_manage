@@ -159,6 +159,11 @@ export function ApprovalCard({ approval: a, stepNumber, displaySubSteps = false,
                             </div>
                             {a.role && (
                                 <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground mt-0.5 flex-wrap">
+                                    {a.batch_no && a.batch_no > 1 && (
+                                        <Badge variant="outline" className="px-1 py-0 font-bold uppercase text-amber-700 dark:text-amber-300 border-amber-500/25 bg-amber-500/10 text-[8px] tracking-wider rounded-xs">
+                                            Batch {a.batch_no}
+                                        </Badge>
+                                    )}
                                     {hasSubStep && (
                                         <Badge variant="outline" className="px-1 py-0 font-bold uppercase text-indigo-700 dark:text-indigo-300 border-indigo-500/25 bg-indigo-500/10 text-[8px] tracking-wider rounded-xs">
                                             Sub {finalStepNumber}

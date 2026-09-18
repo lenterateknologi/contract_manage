@@ -20,6 +20,9 @@ return [
         'users' => 'Employee/GetAllDataEmployeeAllColumnBystatusActive',
         'employees' => 'Employee/GetAllDataEmployeeAllColumnBystatusActive',
         'job_levels' => 'JobLevel/GetAllDataJobLevel',
+        'job_level_groups' => 'JobLevelGroup/GetAllDataJobLevelGroup',
         'job_titles' => 'JobTitle/GetAllDataJobTitle',
+        'organization_levels' => 'OrganizationLevel/GetAllDataOrganizationLevel',
+        'organization_groups' => 'OrganizationGroup/GetAllDataOrganizationGroup',
     ],
 ];

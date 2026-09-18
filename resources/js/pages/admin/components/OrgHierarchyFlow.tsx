@@ -12,8 +12,11 @@ import {
     NodeProps,
     MarkerType,
     ReactFlowInstance,
+    getNodesBounds,
+    getViewportForBounds,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { toPng } from 'html-to-image';
 import {
     Building2,
     MapPin,
@@ -41,6 +44,10 @@ import {
     Save,
     Shield,
     RefreshCw,
+    FolderClosed,
+    FolderTree,
+    GitBranch,
+    Download,
 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import { cn } from '@/lib/utils';
@@ -51,11 +58,14 @@ interface SavedHierarchySettings {
     enabledLevelKeys?: HierarchyLevelKey[];
     usedFilter?: 'used_only' | 'all';
     selectedGroups?: string[];
+    selectedOrganizationGroups?: string[];
     selectedRegions?: string[];
     selectedLocations?: string[];
     selectedCompanies?: string[];
     selectedDivisions?: string[];
     selectedDepartments?: string[];
+    selectedSubdepartments?: string[];
+    selectedSections?: string[];
     selectedJobLevels?: string[];
     selectedJobTitles?: string[];
     selectedRoles?: string[];
@@ -83,6 +93,7 @@ export interface HierarchyUser {
     is_used?: boolean;
     group_id?: string;
     group_name: string;
+    org_group_name?: string;
     region_id?: string;
     region_name: string;
     location_id?: string;
@@ -93,6 +104,10 @@ export interface HierarchyUser {
     division_name?: string;
     department_id?: string;
     department_name: string;
+    subdepartment_id?: string;
+    subdepartment_name?: string;
+    section_id?: string;
+    section_name?: string;
     job_title_id?: string;
     job_title_name: string;
     job_level_id?: string;
@@ -100,7 +115,7 @@ export interface HierarchyUser {
     role_name?: string;
 }
 
-export type HierarchyLevelKey = 'group' | 'region' | 'location' | 'company' | 'division' | 'department' | 'job_level' | 'job_title' | 'role' | 'employee';
+export type HierarchyLevelKey = 'group' | 'org_group' | 'region' | 'location' | 'company' | 'division' | 'department' | 'subdepartment' | 'section' | 'job_level' | 'job_title' | 'role' | 'employee';
 
 interface LevelConfig {
     key: HierarchyLevelKey;
@@ -113,11 +128,14 @@ interface LevelConfig {
 
 const ALL_LEVELS: LevelConfig[] = [
     { key: 'group', label: 'Company Group', field: 'group_name', icon: Layers, color: 'text-indigo-600 dark:text-indigo-400', badgeBg: 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950/40 dark:border-indigo-800 dark:text-indigo-300' },
+    { key: 'org_group', label: 'Group Organisasi', field: 'org_group_name', icon: FolderClosed, color: 'text-sky-600 dark:text-sky-400', badgeBg: 'bg-sky-50 border-sky-200 text-sky-700 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-300' },
     { key: 'region', label: 'Region', field: 'region_name', icon: MapPin, color: 'text-emerald-600 dark:text-emerald-400', badgeBg: 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300' },
     { key: 'location', label: 'Location', field: 'location_name', icon: Building2, color: 'text-amber-600 dark:text-amber-400', badgeBg: 'bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300' },
     { key: 'company', label: 'Company', field: 'company_name', icon: Building, color: 'text-blue-600 dark:text-blue-400', badgeBg: 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/40 dark:border-blue-800 dark:text-blue-300' },
     { key: 'division', label: 'Division', field: 'division_name', icon: Network, color: 'text-teal-600 dark:text-teal-400', badgeBg: 'bg-teal-50 border-teal-200 text-teal-700 dark:bg-teal-950/40 dark:border-teal-800 dark:text-teal-300' },
     { key: 'department', label: 'Department', field: 'department_name', icon: Briefcase, color: 'text-purple-600 dark:text-purple-400', badgeBg: 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950/40 dark:border-purple-800 dark:text-purple-300' },
+    { key: 'subdepartment', label: 'Sub-Departemen', field: 'subdepartment_name', icon: FolderTree, color: 'text-fuchsia-600 dark:text-fuchsia-400', badgeBg: 'bg-fuchsia-50 border-fuchsia-200 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:border-fuchsia-800 dark:text-fuchsia-300' },
+    { key: 'section', label: 'Seksi / Rayon', field: 'section_name', icon: GitBranch, color: 'text-pink-600 dark:text-pink-400', badgeBg: 'bg-pink-50 border-pink-200 text-pink-700 dark:bg-pink-950/40 dark:border-pink-800 dark:text-pink-300' },
     { key: 'job_level', label: 'Job Level', field: 'job_level_name', icon: Layers, color: 'text-orange-600 dark:text-orange-400', badgeBg: 'bg-orange-50 border-orange-200 text-orange-700 dark:bg-orange-950/40 dark:border-orange-800 dark:text-orange-300' },
     { key: 'job_title', label: 'Job Title', field: 'job_title_name', icon: UserCheck, color: 'text-rose-600 dark:text-rose-400', badgeBg: 'bg-rose-50 border-rose-200 text-rose-700 dark:bg-rose-950/40 dark:border-rose-800 dark:text-rose-300' },
     { key: 'role', label: 'Role Akses', field: 'role_name', icon: Shield, color: 'text-violet-600 dark:text-violet-400', badgeBg: 'bg-violet-50 border-violet-200 text-violet-700 dark:bg-violet-950/40 dark:border-violet-800 dark:text-violet-300' },
@@ -450,11 +468,14 @@ function MultiSelectDropdown({
 interface OrgHierarchyFlowProps {
     users: HierarchyUser[];
     masterGroups?: any[];
+    masterOrganizationGroups?: any[];
     masterRegions?: any[];
     masterLocations?: any[];
     masterCompanies?: any[];
     masterDivisions?: any[];
     masterDepartments?: any[];
+    masterSubdepartments?: any[];
+    masterSections?: any[];
     masterJobLevels?: any[];
     masterJobTitles?: any[];
     masterRoles?: any[];
@@ -463,11 +484,14 @@ interface OrgHierarchyFlowProps {
 export function OrgHierarchyFlow({
     users,
     masterGroups = [],
+    masterOrganizationGroups = [],
     masterRegions = [],
     masterLocations = [],
     masterCompanies = [],
     masterDivisions = [],
     masterDepartments = [],
+    masterSubdepartments = [],
+    masterSections = [],
     masterJobLevels = [],
     masterJobTitles = [],
     masterRoles = [],
@@ -516,11 +540,14 @@ export function OrgHierarchyFlow({
 
     // Multiple Select Filter States (restored from cache)
     const [selectedGroups, setSelectedGroups] = useState<string[]>(() => savedInitial.selectedGroups || []);
+    const [selectedOrganizationGroups, setSelectedOrganizationGroups] = useState<string[]>(() => savedInitial.selectedOrganizationGroups || []);
     const [selectedRegions, setSelectedRegions] = useState<string[]>(() => savedInitial.selectedRegions || []);
     const [selectedLocations, setSelectedLocations] = useState<string[]>(() => savedInitial.selectedLocations || []);
     const [selectedCompanies, setSelectedCompanies] = useState<string[]>(() => savedInitial.selectedCompanies || []);
     const [selectedDivisions, setSelectedDivisions] = useState<string[]>(() => savedInitial.selectedDivisions || []);
     const [selectedDepartments, setSelectedDepartments] = useState<string[]>(() => savedInitial.selectedDepartments || []);
+    const [selectedSubdepartments, setSelectedSubdepartments] = useState<string[]>(() => savedInitial.selectedSubdepartments || []);
+    const [selectedSections, setSelectedSections] = useState<string[]>(() => savedInitial.selectedSections || []);
     const [selectedJobLevels, setSelectedJobLevels] = useState<string[]>(() => savedInitial.selectedJobLevels || []);
     const [selectedJobTitles, setSelectedJobTitles] = useState<string[]>(() => savedInitial.selectedJobTitles || []);
     const [selectedRoles, setSelectedRoles] = useState<string[]>(() => savedInitial.selectedRoles || []);
@@ -532,11 +559,14 @@ export function OrgHierarchyFlow({
                 enabledLevelKeys,
                 usedFilter,
                 selectedGroups,
+                selectedOrganizationGroups,
                 selectedRegions,
                 selectedLocations,
                 selectedCompanies,
                 selectedDivisions,
                 selectedDepartments,
+                selectedSubdepartments,
+                selectedSections,
                 selectedJobLevels,
                 selectedJobTitles,
                 selectedRoles,
@@ -550,11 +580,14 @@ export function OrgHierarchyFlow({
         enabledLevelKeys,
         usedFilter,
         selectedGroups,
+        selectedOrganizationGroups,
         selectedRegions,
         selectedLocations,
         selectedCompanies,
         selectedDivisions,
         selectedDepartments,
+        selectedSubdepartments,
+        selectedSections,
         selectedJobLevels,
         selectedJobTitles,
         selectedRoles,
@@ -575,16 +608,19 @@ export function OrgHierarchyFlow({
 
         return {
             group: createMap(masterGroups),
+            org_group: createMap(masterOrganizationGroups),
             region: createMap(masterRegions),
             location: createMap(masterLocations),
             company: createMap(masterCompanies),
             division: createMap(masterDivisions),
             department: createMap(masterDepartments),
+            subdepartment: createMap(masterSubdepartments),
+            section: createMap(masterSections),
             job_level: createMap(masterJobLevels),
             job_title: createMap(masterJobTitles),
             role: createMap(masterRoles),
         };
-    }, [masterGroups, masterRegions, masterLocations, masterCompanies, masterDivisions, masterDepartments, masterJobLevels, masterJobTitles, masterRoles]);
+    }, [masterGroups, masterOrganizationGroups, masterRegions, masterLocations, masterCompanies, masterDivisions, masterDepartments, masterSubdepartments, masterSections, masterJobLevels, masterJobTitles, masterRoles]);
 
     // Available options filtered by usedFilter
     const getFilteredMaster = (items: any[]) => {
@@ -595,11 +631,14 @@ export function OrgHierarchyFlow({
     };
 
     const optGroups = useMemo(() => getFilteredMaster(masterGroups), [masterGroups, usedFilter]);
+    const optOrganizationGroups = useMemo(() => getFilteredMaster(masterOrganizationGroups), [masterOrganizationGroups, usedFilter]);
     const optRegions = useMemo(() => getFilteredMaster(masterRegions), [masterRegions, usedFilter]);
     const optLocations = useMemo(() => getFilteredMaster(masterLocations), [masterLocations, usedFilter]);
     const optCompanies = useMemo(() => getFilteredMaster(masterCompanies), [masterCompanies, usedFilter]);
     const optDivisions = useMemo(() => getFilteredMaster(masterDivisions), [masterDivisions, usedFilter]);
     const optDepartments = useMemo(() => getFilteredMaster(masterDepartments), [masterDepartments, usedFilter]);
+    const optSubdepartments = useMemo(() => getFilteredMaster(masterSubdepartments), [masterSubdepartments, usedFilter]);
+    const optSections = useMemo(() => getFilteredMaster(masterSections), [masterSections, usedFilter]);
     const optJobLevels = useMemo(() => getFilteredMaster(masterJobLevels), [masterJobLevels, usedFilter]);
     const optJobTitles = useMemo(() => getFilteredMaster(masterJobTitles), [masterJobTitles, usedFilter]);
     const optRoles = useMemo(() => masterRoles, [masterRoles]);
@@ -607,11 +646,14 @@ export function OrgHierarchyFlow({
     // Reset all multiple filters & clear client-side saved cache
     const resetAllFilters = () => {
         setSelectedGroups([]);
+        setSelectedOrganizationGroups([]);
         setSelectedRegions([]);
         setSelectedLocations([]);
         setSelectedCompanies([]);
         setSelectedDivisions([]);
         setSelectedDepartments([]);
+        setSelectedSubdepartments([]);
+        setSelectedSections([]);
         setSelectedJobLevels([]);
         setSelectedJobTitles([]);
         setSelectedRoles([]);
@@ -625,11 +667,14 @@ export function OrgHierarchyFlow({
 
     const hasActiveMultiFilters =
         selectedGroups.length > 0 ||
+        selectedOrganizationGroups.length > 0 ||
         selectedRegions.length > 0 ||
         selectedLocations.length > 0 ||
         selectedCompanies.length > 0 ||
         selectedDivisions.length > 0 ||
         selectedDepartments.length > 0 ||
+        selectedSubdepartments.length > 0 ||
+        selectedSections.length > 0 ||
         selectedJobLevels.length > 0 ||
         selectedJobTitles.length > 0 ||
         selectedRoles.length > 0 ||
@@ -656,7 +701,7 @@ export function OrgHierarchyFlow({
         } else if (type === 'company-employee') {
             setEnabledLevelKeys(['company', 'employee']);
         } else if (type === 'full') {
-            setEnabledLevelKeys(['group', 'region', 'location', 'company', 'division', 'department', 'job_level', 'job_title', 'role', 'employee']);
+            setEnabledLevelKeys(['group', 'org_group', 'region', 'location', 'company', 'division', 'department', 'subdepartment', 'section', 'job_level', 'job_title', 'role', 'employee']);
         }
     };
 
@@ -679,6 +724,10 @@ export function OrgHierarchyFlow({
             if (selectedGroups.length > 0 && !selectedGroups.some((g) => g.toLowerCase() === u.group_name?.toLowerCase())) {
                 return false;
             }
+            // Organization Group Filter
+            if (selectedOrganizationGroups.length > 0 && !selectedOrganizationGroups.some((og) => og.toLowerCase() === (u.org_group_name || '').toLowerCase())) {
+                return false;
+            }
             // Region Filter
             if (selectedRegions.length > 0 && !selectedRegions.some((r) => r.toLowerCase() === u.region_name?.toLowerCase())) {
                 return false;
@@ -697,6 +746,14 @@ export function OrgHierarchyFlow({
             }
             // Department Filter
             if (selectedDepartments.length > 0 && !selectedDepartments.some((d) => d.toLowerCase() === u.department_name?.toLowerCase())) {
+                return false;
+            }
+            // Subdepartment Filter
+            if (selectedSubdepartments.length > 0 && !selectedSubdepartments.some((sub) => sub.toLowerCase() === (u.subdepartment_name || '').toLowerCase())) {
+                return false;
+            }
+            // Section Filter
+            if (selectedSections.length > 0 && !selectedSections.some((sec) => sec.toLowerCase() === (u.section_name || '').toLowerCase())) {
                 return false;
             }
             // Job Level Filter
@@ -719,10 +776,13 @@ export function OrgHierarchyFlow({
                     u.nik?.toLowerCase().includes(q) ||
                     u.email?.toLowerCase().includes(q) ||
                     u.group_name?.toLowerCase().includes(q) ||
+                    (u.org_group_name && u.org_group_name.toLowerCase().includes(q)) ||
                     u.region_name?.toLowerCase().includes(q) ||
                     u.company_name?.toLowerCase().includes(q) ||
                     (u.division_name && u.division_name.toLowerCase().includes(q)) ||
                     u.department_name?.toLowerCase().includes(q) ||
+                    (u.subdepartment_name && u.subdepartment_name.toLowerCase().includes(q)) ||
+                    (u.section_name && u.section_name.toLowerCase().includes(q)) ||
                     (u.job_level_name && u.job_level_name.toLowerCase().includes(q)) ||
                     u.job_title_name?.toLowerCase().includes(q) ||
                     (u.role_name && u.role_name.toLowerCase().includes(q));
@@ -735,11 +795,14 @@ export function OrgHierarchyFlow({
         users,
         usedFilter,
         selectedGroups,
+        selectedOrganizationGroups,
         selectedRegions,
         selectedLocations,
         selectedCompanies,
         selectedDivisions,
         selectedDepartments,
+        selectedSubdepartments,
+        selectedSections,
         selectedJobLevels,
         selectedJobTitles,
         selectedRoles,
@@ -843,11 +906,18 @@ export function OrgHierarchyFlow({
                     selectedGroups.length > 0
                         ? masterGroups.filter((g) => selectedGroups.some((sg) => sg.toLowerCase() === g.name?.toLowerCase()))
                         : masterGroups;
+            } else if (firstLevel.key === 'org_group') {
+                masterList =
+                    selectedOrganizationGroups.length > 0
+                        ? masterOrganizationGroups.filter((og) => selectedOrganizationGroups.some((sog) => sog.toLowerCase() === og.name?.toLowerCase()))
+                        : masterOrganizationGroups;
             } else if (firstLevel.key === 'region') masterList = masterRegions;
             else if (firstLevel.key === 'location') masterList = masterLocations;
             else if (firstLevel.key === 'company') masterList = masterCompanies;
             else if (firstLevel.key === 'division') masterList = masterDivisions;
             else if (firstLevel.key === 'department') masterList = masterDepartments;
+            else if (firstLevel.key === 'subdepartment') masterList = masterSubdepartments;
+            else if (firstLevel.key === 'section') masterList = masterSections;
             else if (firstLevel.key === 'job_level') masterList = masterJobLevels;
             else if (firstLevel.key === 'job_title') masterList = masterJobTitles;
             else if (firstLevel.key === 'role') masterList = masterRoles;
@@ -1147,6 +1217,59 @@ export function OrgHierarchyFlow({
         );
     }, [selectedNode, userSearchText]);
 
+    // Export entire organizational tree flow to high-definition PNG (HD 2x)
+    const [isExporting, setIsExporting] = useState(false);
+
+    const handleExportPng = async () => {
+        if (nodes.length === 0) return;
+        try {
+            setIsExporting(true);
+
+            // Calculate precise canvas bounds
+            const nodesBounds = getNodesBounds(nodes);
+            const padding = 80;
+            const imageWidth = nodesBounds.width + padding * 2;
+            const imageHeight = nodesBounds.height + padding * 2;
+
+            const viewportElem = document.querySelector('.react-flow__viewport') as HTMLElement;
+            if (!viewportElem) {
+                setIsExporting(false);
+                return;
+            }
+
+            const transform = getViewportForBounds(
+                nodesBounds,
+                imageWidth,
+                imageHeight,
+                0.1,
+                2,
+                padding
+            );
+
+            const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
+            const dataUrl = await toPng(viewportElem, {
+                backgroundColor: isDark ? '#09090b' : '#f8fafc',
+                width: imageWidth,
+                height: imageHeight,
+                pixelRatio: 2, // High-DPI 2x crisp HD rendering
+                style: {
+                    width: `${imageWidth}px`,
+                    height: `${imageHeight}px`,
+                    transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.zoom})`,
+                },
+            });
+
+            const a = document.createElement('a');
+            a.download = `struktur-organisasi-hd-${new Date().toISOString().slice(0, 10)}.png`;
+            a.href = dataUrl;
+            a.click();
+        } catch (err) {
+            console.error('Failed to export high-definition PNG:', err);
+        } finally {
+            setIsExporting(false);
+        }
+    };
+
     return (
         <div className="flex h-full w-full flex-col bg-slate-50 dark:bg-zinc-950 relative overflow-hidden">
             {/* Header Control Toolbar */}
@@ -1248,6 +1371,18 @@ export function OrgHierarchyFlow({
                         )}
                     </div>
 
+                    {/* Export HD PNG Button */}
+                    <button
+                        type="button"
+                        onClick={handleExportPng}
+                        disabled={isExporting || nodes.length === 0}
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-zinc-700 text-xs font-semibold shadow-2xs transition-all cursor-pointer disabled:opacity-60"
+                        title="Ekspor seluruh struktur bagan menjadi file gambar PNG kualitas tinggi (HD)"
+                    >
+                        <Download size={13} className={cn('text-emerald-600', isExporting && 'animate-bounce')} />
+                        <span>{isExporting ? 'Mengekspor HD...' : 'Export PNG (HD)'}</span>
+                    </button>
+
                     {/* Server-side Sync / Refresh Button */}
                     <button
                         type="button"
@@ -1294,6 +1429,15 @@ export function OrgHierarchyFlow({
                             icon={Layers}
                         />
 
+                        {/* Multi Select Organization Groups */}
+                        <MultiSelectDropdown
+                            title="Group Organisasi"
+                            options={optOrganizationGroups}
+                            selectedValues={selectedOrganizationGroups}
+                            onChange={setSelectedOrganizationGroups}
+                            icon={FolderClosed}
+                        />
+
                         {/* Multi Select Regions */}
                         <MultiSelectDropdown
                             title="Region"
@@ -1337,6 +1481,24 @@ export function OrgHierarchyFlow({
                             selectedValues={selectedDepartments}
                             onChange={setSelectedDepartments}
                             icon={Briefcase}
+                        />
+
+                        {/* Multi Select Sub-Departments */}
+                        <MultiSelectDropdown
+                            title="Sub-Departemen"
+                            options={optSubdepartments}
+                            selectedValues={selectedSubdepartments}
+                            onChange={setSelectedSubdepartments}
+                            icon={FolderTree}
+                        />
+
+                        {/* Multi Select Sections */}
+                        <MultiSelectDropdown
+                            title="Seksi / Rayon"
+                            options={optSections}
+                            selectedValues={selectedSections}
+                            onChange={setSelectedSections}
+                            icon={GitBranch}
                         />
 
                         {/* Multi Select Job Levels */}
@@ -1576,8 +1738,11 @@ export function OrgHierarchyFlow({
                                                     <Building size={11} className="shrink-0" />
                                                     <span className="truncate">
                                                         {u.company_name}
+                                                        {u.org_group_name ? ` · Org: ${u.org_group_name}` : ''}
                                                         {u.division_name ? ` · Div: ${u.division_name}` : ''}
                                                         {` · Dept: ${u.department_name}`}
+                                                        {u.subdepartment_name ? ` · Sub: ${u.subdepartment_name}` : ''}
+                                                        {u.section_name ? ` · Sec: ${u.section_name}` : ''}
                                                     </span>
                                                 </div>
                                             </div>

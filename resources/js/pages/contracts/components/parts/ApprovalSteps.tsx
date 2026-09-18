@@ -472,6 +472,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                         {targetStatus}
                                                                     </span>
                                                                 )}
+                                                                {group.batchNo && group.batchNo > 1 && (
+                                                                    <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 text-[8.5px] font-bold tracking-wider uppercase text-amber-700 dark:text-amber-300">
+                                                                        <span>Batch {group.batchNo}</span>
+                                                                    </span>
+                                                                )}
                                                                 {(() => {
                                                                     if (group.items.length <= 1) return null;
                                                                     const adhocMeta = contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id || ''];

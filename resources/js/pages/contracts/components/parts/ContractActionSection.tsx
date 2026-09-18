@@ -33,7 +33,7 @@ interface ContractActionSectionProps {
     showSpecialActions: boolean;
     masterContractStatuses?: any[];
     onToggleSpecialActions: () => void;
-    onActionClick: (action: any, actionCode?: string) => void;
+    onActionClick: (action: any, actionCode?: string, isCustomAction?: boolean) => void;
     onSigningAction: (action: 'download' | 'upload', file?: File) => void;
 }
 
@@ -154,7 +154,7 @@ export function ContractActionSection({
                                 variant="primary"
                                 size="sm"
                                 style={picActionConfig?.buttonStyle}
-                                onClick={() => onActionClick(picAction || { action_code: 'assign' }, 'assign')}
+                                onClick={() => onActionClick(picAction || { action_code: 'assign' }, 'assign', true)}
                                 className={cn(
                                     'w-full justify-between cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 text-white',
                                     picActionConfig?.buttonClass || 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800',
@@ -185,7 +185,7 @@ export function ContractActionSection({
                                 variant="primary"
                                 size="sm"
                                 style={adhocActionConfig?.buttonStyle}
-                                onClick={() => onActionClick(adhocAction || { action_code: 'add_adhoc' }, 'add_adhoc')}
+                                onClick={() => onActionClick(adhocAction || { action_code: 'add_adhoc' }, 'add_adhoc', true)}
                                 className={cn(
                                     'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
                                     adhocActionConfig?.buttonClass || 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800',
@@ -246,7 +246,7 @@ export function ContractActionSection({
                                     variant="primary"
                                     size="sm"
                                     style={otherConfig?.buttonStyle}
-                                    onClick={() => onActionClick(otherAction, otherAction.action_code)}
+                                    onClick={() => onActionClick(otherAction, otherAction.action_code, true)}
                                     className={cn(
                                         'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
                                         otherConfig?.buttonClass || 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800',
@@ -301,7 +301,7 @@ export function ContractActionSection({
                                                 <ActionPreviewTooltip key={action.id} preview={preview}>
                                                     <Button
                                                         style={actionConfig.buttonStyle}
-                                                        onClick={() => onActionClick(action, action.action_code)}
+                                                        onClick={() => onActionClick(action, action.action_code, false)}
                                                         className={cn(
                                                             'w-full h-9.5 font-bold shadow-md cursor-pointer gap-2 transition-all text-white',
                                                             isAssignPicAction ? 'justify-between px-3' : 'justify-center',
@@ -311,23 +311,7 @@ export function ContractActionSection({
                                                         <div className="flex items-center gap-2 truncate">
                                                             <Icon size={16} className="shrink-0" />
                                                             <span className="truncate">
-                                                                {action.alias || (() => {
-                                                                    const isStep1 = contract.workflow_step?.step === 1;
-                                                                    switch (action.action_code) {
-                                                                        case 'approve':
-                                                                            if (isStep1) return 'Kirim Persetujuan';
-                                                                            if (contract.requires_pic_assignment) return 'Tugaskan PIC';
-                                                                            return 'Setujui Kontrak';
-                                                                        case 'add_adhoc':
-                                                                            return 'Approval Tambahan';
-                                                                        case 'branch':
-                                                                            return 'Pindah Workflow';
-                                                                        case 'reject':
-                                                                            return 'Tolak Kontrak';
-                                                                        default:
-                                                                            return action.action_code || 'Setujui Kontrak';
-                                                                    }
-                                                                })()}
+                                                                {action.alias || actionConfig.label || action.action_code || 'Setujui'}
                                                             </span>
                                                         </div>
                                                         {isAssignPicAction && (

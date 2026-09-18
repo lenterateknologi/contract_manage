@@ -16,6 +16,7 @@ use App\Models\Division;
 use App\Models\FormField;
 use App\Models\FormTemplate;
 use App\Models\JobLevel;
+use App\Models\JobLevelGroup;
 use App\Models\JobTitle;
 use App\Models\Module;
 use App\Models\ModuleGroup;
@@ -66,6 +67,7 @@ class MasterDataAdminController extends Controller
                 'companies' => Company::count(),
                 'departments' => Department::count(),
                 'divisions' => Division::count(),
+                'job_level_groups' => JobLevelGroup::count(),
                 'job_levels' => JobLevel::count(),
                 'job_titles' => JobTitle::count(),
                 'contract_statuses' => ContractStatus::count(),

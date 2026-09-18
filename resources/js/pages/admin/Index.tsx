@@ -1,12 +1,15 @@
 import { Head } from '@inertiajs/react';
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import LoadingLottie from '@/components/ui/feedback/LoadingLottie';
 import { ToastProvider } from '@/components/ui/feedback/Toast';
+import { Network, Layers, Sparkles } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const MasterDataSync = lazy(() => import('@/pages/admin/components/MasterDataSync').then(m => ({ default: m.MasterDataSync })));
 const NavigationManagement = lazy(() => import('@/pages/admin/components/NavigationManagement').then(m => ({ default: m.NavigationManagement })));
 const NumberingFormatManagement = lazy(() => import('@/pages/admin/components/NumberingFormatManagement').then(m => ({ default: m.NumberingFormatManagement })));
 const OrgHierarchyFlow = lazy(() => import('@/pages/admin/components/OrgHierarchyFlow').then(m => ({ default: m.OrgHierarchyFlow })));
+const JobHierarchyFlow = lazy(() => import('@/pages/admin/components/JobHierarchyFlow').then(m => ({ default: m.JobHierarchyFlow })));
 const WorkflowManagement = lazy(() => import('@/pages/admin/components/WorkflowManagement').then(m => ({ default: m.WorkflowManagement })));
 
 interface PaginatedData<T> {
@@ -88,11 +91,17 @@ export default function AdminIndex({
     companies,
     locations,
     divisions,
+    subdepartments,
+    sections,
     jobTitles,
     jobLevels,
+    jobLevelGroups,
+    organizationGroups,
     filters = {},
     counts,
-}: Readonly<Props & { locations?: any; divisions?: any; jobTitles?: any; jobLevels?: any }>) {
+}: Readonly<Props & { locations?: any; divisions?: any; subdepartments?: any; sections?: any; jobTitles?: any; jobLevels?: any; jobLevelGroups?: any; organizationGroups?: any }>) {
+    const [membersTab, setMembersTab] = useState<'org' | 'job'>('org');
+
     // View Metadata Mapping
     const viewTitleMap: Record<string, string> = {
         users: 'Manajemen Pengguna',
@@ -132,18 +141,67 @@ export default function AdminIndex({
             case 'members': {
                 const usersList = Array.isArray(users) ? users : users?.data || [];
                 return (
-                    <OrgHierarchyFlow
-                        users={usersList}
-                        masterGroups={companyGroups}
-                        masterRegions={regions}
-                        masterLocations={locations}
-                        masterCompanies={companies}
-                        masterDivisions={divisions}
-                        masterDepartments={departments}
-                        masterJobTitles={jobTitles}
-                        masterJobLevels={jobLevels}
-                        masterRoles={rolesArray}
-                    />
+                    <div className="flex flex-col h-full w-full gap-3">
+                        {/* Tab Mode Switcher */}
+                        <div className="flex items-center justify-between pb-1 border-b border-slate-200 dark:border-slate-800">
+                            <div className="inline-flex p-1 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner">
+                                <button
+                                    type="button"
+                                    onClick={() => setMembersTab('org')}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                                        membersTab === 'org'
+                                            ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <Network className="w-3.5 h-3.5" />
+                                    Struktur Unit Organisasi
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setMembersTab('job')}
+                                    className={cn(
+                                        "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                                        membersTab === 'job'
+                                            ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                                            : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    Pohon Jenjang Jabatan & Level
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Visualizer Content */}
+                        {membersTab === 'org' ? (
+                            <OrgHierarchyFlow
+                                users={usersList}
+                                masterGroups={companyGroups}
+                                masterOrganizationGroups={organizationGroups}
+                                masterRegions={regions}
+                                masterLocations={locations}
+                                masterCompanies={companies}
+                                masterDivisions={divisions}
+                                masterDepartments={departments}
+                                masterSubdepartments={subdepartments}
+                                masterSections={sections}
+                                masterJobTitles={jobTitles}
+                                masterJobLevels={jobLevels}
+                                masterRoles={rolesArray}
+                            />
+                        ) : (
+                            <JobHierarchyFlow
+                                users={usersList}
+                                masterJobLevelGroups={jobLevelGroups}
+                                masterJobLevels={jobLevels}
+                                masterJobTitles={jobTitles}
+                                masterCompanies={companies}
+                                masterDepartments={departments}
+                            />
+                        )}
+                    </div>
                 );
             }
             case 'master-data-sync':

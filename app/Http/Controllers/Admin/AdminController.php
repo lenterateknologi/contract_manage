@@ -21,10 +21,12 @@ use App\Models\CompanyGroup;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\JobLevel;
+use App\Models\JobLevelGroup;
 use App\Models\JobTitle;
 use App\Models\Location;
 use App\Models\Module;
 use App\Models\ModuleGroup;
+use App\Models\OrganizationGroup;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\RoleModuleGroup;
@@ -85,22 +87,31 @@ class AdminController extends Controller
 
     public function members(Request $request)
     {
-        if ($request->boolean('refresh') || $request->boolean('sync')) {
+        if ($request->has('refresh')) {
             Cache::forget('admin_members_tree_users_v2');
+            Cache::forget('admin_members_tree_users_v3');
             Cache::forget('admin_members_divisions');
             Cache::forget('admin_members_departments');
+            Cache::forget('admin_members_subdepartments');
+            Cache::forget('admin_members_sections');
             Cache::forget('admin_members_dept_traffic');
             Cache::forget('admin_members_company_groups');
+            Cache::forget('admin_members_organization_groups');
             Cache::forget('admin_members_regions');
             Cache::forget('admin_members_locations');
             Cache::forget('admin_members_companies');
             Cache::forget('admin_members_job_titles');
             Cache::forget('admin_members_job_levels');
+            Cache::forget('admin_members_job_level_groups');
             Cache::forget('admin_members_roles');
         }
 
         // Cache master data and users payload for high performance (5 min TTL)
-        $users = Cache::remember('admin_members_tree_users_v2', 300, function () {
+        $users = Cache::remember('admin_members_tree_users_v3', 300, function () {
+            $allDepts = Department::query()->get(['id', 'name', 'code', 'idorg_level', 'org_level_name', 'org_group_name', 'is_used']);
+            $deptByCode = $allDepts->keyBy('code');
+            $deptById = $allDepts->keyBy('id');
+
             return User::query()
                 ->where('is_active', true)
                 ->select([
@@ -113,14 +124,44 @@ class AdminController extends Controller
                     'location:id,name,code,is_used',
                     'company:id,name,code,is_used',
                     'division:id,name,code',
-                    'department:id,name,code,is_used',
                     'jobTitle:id,name,code,is_used',
-                    'jobLevel:id,name,code,is_used',
+                    'jobLevel.jobLevelGroup:id,name,code,is_used',
                     'roleRelation:id,name',
                 ])
                 ->orderBy('name')
                 ->get()
-                ->map(function ($u) {
+                ->map(function ($u) use ($deptById, $deptByCode) {
+                    $dept = $deptById->get($u->department_id);
+                    $deptName = $dept?->name ?? 'No Department';
+                    $subName = null;
+                    $subId = null;
+                    $secName = null;
+                    $secId = null;
+
+                    if ($dept) {
+                        if ($dept->idorg_level >= 7) {
+                            $secName = $dept->name;
+                            $secId = $dept->id;
+                            if (strlen((string) $dept->code) >= 15) {
+                                $subCode = substr($dept->code, 0, 11) . '0000';
+                                $sub = $deptByCode->get($subCode);
+                                $subName = $sub?->name;
+                                $subId = $sub?->id;
+                                $deptCode = substr($dept->code, 0, 8) . '0000000';
+                                $parentDept = $deptByCode->get($deptCode);
+                                $deptName = $parentDept?->name ?? $subName ?? $dept->name;
+                            }
+                        } elseif ($dept->idorg_level == 6) {
+                            $subName = $dept->name;
+                            $subId = $dept->id;
+                            if (strlen((string) $dept->code) >= 15) {
+                                $deptCode = substr($dept->code, 0, 8) . '0000000';
+                                $parentDept = $deptByCode->get($deptCode);
+                                $deptName = $parentDept?->name ?? $dept->name;
+                            }
+                        }
+                    }
+
                     return [
                         'id' => $u->id,
                         'name' => $u->name,
@@ -138,11 +179,18 @@ class AdminController extends Controller
                         'division_id' => $u->division_id,
                         'division_name' => $u->division?->name ?? $u->division_name ?? 'No Division',
                         'department_id' => $u->department_id,
-                        'department_name' => $u->department?->name ?? 'No Department',
+                        'department_name' => $deptName,
+                        'subdepartment_id' => $subId,
+                        'subdepartment_name' => $subName,
+                        'section_id' => $secId,
+                        'section_name' => $secName,
+                        'org_group_name' => $dept?->org_group_name ?? 'No Org Group',
                         'job_title_id' => $u->job_position_id,
                         'job_title_name' => $u->jobTitle?->name ?? $u->jobtitle_name ?? 'No Job Title',
                         'job_level_id' => $u->job_level_id,
                         'job_level_name' => $u->jobLevel?->name ?? $u->joblevel_name ?? 'No Job Level',
+                        'job_level_group_id' => $u->jobLevel?->job_level_group_id,
+                        'job_level_group_name' => $u->jobLevel?->jobLevelGroup?->name ?? $u->jobLevel?->group_name ?? 'No Group Level',
                         'role_name' => $u->roleRelation?->name ?? 'Member',
                     ];
                 });
@@ -150,14 +198,18 @@ class AdminController extends Controller
 
         $divisions = Cache::remember('admin_members_divisions', 600, fn () => Division::query()->orderBy('name')->get(['id', 'name', 'code']));
         $departments = Cache::remember('admin_members_departments', 600, fn () => Department::query()->orderBy('name')->get(['id', 'name', 'code', 'company_id', 'is_used']));
+        $subdepartments = Cache::remember('admin_members_subdepartments', 600, fn () => Department::query()->where('idorg_level', 6)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $sections = Cache::remember('admin_members_sections', 600, fn () => Department::query()->where('idorg_level', '>=', 7)->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
         $departmentTraffic = Cache::remember('admin_members_dept_traffic', 300, fn () => $this->organizationQuery->getDepartmentTraffic());
 
         $companyGroups = Cache::remember('admin_members_company_groups', 600, fn () => CompanyGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $organizationGroups = Cache::remember('admin_members_organization_groups', 600, fn () => OrganizationGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
         $regions = Cache::remember('admin_members_regions', 600, fn () => Region::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
         $locations = Cache::remember('admin_members_locations', 600, fn () => Location::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
         $companies = Cache::remember('admin_members_companies', 600, fn () => Company::query()->orderBy('name')->get(['id', 'name', 'code', 'company_group_id', 'region_id', 'is_used']));
-        $jobTitles = Cache::remember('admin_members_job_titles', 600, fn () => JobTitle::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
-        $jobLevels = Cache::remember('admin_members_job_levels', 600, fn () => JobLevel::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
+        $jobTitles = Cache::remember('admin_members_job_titles', 600, fn () => JobTitle::query()->orderBy('name')->get(['id', 'name', 'code', 'job_level_id', 'is_used']));
+        $jobLevels = Cache::remember('admin_members_job_levels', 600, fn () => JobLevel::query()->orderBy('name')->get(['id', 'name', 'code', 'job_level_group_id', 'group_name', 'is_used']));
+        $jobLevelGroups = Cache::remember('admin_members_job_level_groups', 600, fn () => JobLevelGroup::query()->orderBy('name')->get(['id', 'name', 'code', 'is_used']));
         $roles = Cache::remember('admin_members_roles', 600, fn () => Role::query()->orderBy('name')->get(['id', 'name']));
 
         return Inertia::render('admin/Index', [
@@ -166,12 +218,16 @@ class AdminController extends Controller
             'roles' => $roles,
             'divisions' => $divisions,
             'departments' => $departments,
+            'subdepartments' => $subdepartments,
+            'sections' => $sections,
             'companyGroups' => $companyGroups,
+            'organizationGroups' => $organizationGroups,
             'regions' => $regions,
             'locations' => $locations,
             'companies' => $companies,
             'jobTitles' => $jobTitles,
             'jobLevels' => $jobLevels,
+            'jobLevelGroups' => $jobLevelGroups,
             'departmentTraffic' => $departmentTraffic,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],

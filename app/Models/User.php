@@ -99,10 +99,14 @@ class User extends Authenticatable
         'can_create_on_behalf',
         'division_name',
         'department_name',
+        'org_group_name',
         'company_group_name',
         'company_group_code',
         'region_name',
         'location_name',
+        'supervisor_name',
+        'supervisor_job_title',
+        'supervisor_job_level',
     ];
 
     protected static function booted(): void
@@ -252,8 +256,8 @@ class User extends Authenticatable
 
     public function getDivisionNameAttribute(): ?string
     {
-        if ($this->relationLoaded('division') && $this->division) {
-            return $this->division->name;
+        if ($this->relationLoaded('division') && $this->division && array_key_exists('name', $this->division->getAttributes())) {
+            return $this->division->getAttributes()['name'];
         }
 
         $divisionId = $this->attributes['division_id'] ?? null;
@@ -270,8 +274,8 @@ class User extends Authenticatable
 
     public function getDepartmentNameAttribute(): ?string
     {
-        if ($this->relationLoaded('department') && $this->department) {
-            return $this->department->name;
+        if ($this->relationLoaded('department') && $this->department && array_key_exists('name', $this->department->getAttributes())) {
+            return $this->department->getAttributes()['name'];
         }
 
         $departmentId = $this->attributes['department_id'] ?? null;
@@ -284,6 +288,26 @@ class User extends Authenticatable
         }
 
         return $this->attributes['org_name'] ?? null;
+    }
+
+    private static array $departmentOrgGroupMemoryCache = [];
+
+    public function getOrgGroupNameAttribute(): ?string
+    {
+        if ($this->relationLoaded('department') && $this->department && array_key_exists('org_group_name', $this->department->getAttributes())) {
+            return $this->department->getAttributes()['org_group_name'];
+        }
+
+        $departmentId = $this->attributes['department_id'] ?? null;
+        if (! empty($departmentId)) {
+            if (! array_key_exists($departmentId, self::$departmentOrgGroupMemoryCache)) {
+                self::$departmentOrgGroupMemoryCache[$departmentId] = Department::find($departmentId)?->org_group_name;
+            }
+
+            return self::$departmentOrgGroupMemoryCache[$departmentId];
+        }
+
+        return null;
     }
 
     private static array $companyGroupMemoryCache = [];
@@ -515,6 +539,50 @@ class User extends Authenticatable
     public function reportingTo(): BelongsTo
     {
         return $this->belongsTo(User::class, 'idreporting_to', 'idemployee');
+    }
+
+    public function getSupervisorNameAttribute(): ?string
+    {
+        $raw = $this->attributes['reporting_to'] ?? null;
+        if (! empty($raw)) {
+            return $raw;
+        }
+
+        if ($this->relationLoaded('reportingTo') && $this->getRelation('reportingTo')) {
+            return $this->getRelation('reportingTo')->name;
+        }
+
+        if ($this->relationLoaded('supervisor') && $this->getRelation('supervisor')) {
+            return $this->getRelation('supervisor')->name;
+        }
+
+        return null;
+    }
+
+    public function getSupervisorJobTitleAttribute(): ?string
+    {
+        if ($this->relationLoaded('reportingTo') && $this->getRelation('reportingTo')) {
+            return $this->getRelation('reportingTo')->jobtitle_name;
+        }
+
+        if ($this->relationLoaded('supervisor') && $this->getRelation('supervisor')) {
+            return $this->getRelation('supervisor')->jobtitle_name;
+        }
+
+        return null;
+    }
+
+    public function getSupervisorJobLevelAttribute(): ?string
+    {
+        if ($this->relationLoaded('reportingTo') && $this->getRelation('reportingTo')) {
+            return $this->getRelation('reportingTo')->joblevel_name;
+        }
+
+        if ($this->relationLoaded('supervisor') && $this->getRelation('supervisor')) {
+            return $this->getRelation('supervisor')->joblevel_name;
+        }
+
+        return null;
     }
 
     public function workflowSteps(): BelongsToMany

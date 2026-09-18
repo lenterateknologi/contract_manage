@@ -9,8 +9,11 @@ use App\Models\ContractFilterTemplate;
 use App\Models\Department;
 use App\Models\Division;
 use App\Models\JobLevel;
+use App\Models\JobLevelGroup;
 use App\Models\JobTitle;
 use App\Models\Location;
+use App\Models\OrganizationGroup;
+use App\Models\OrganizationLevel;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\User;
@@ -1398,7 +1401,17 @@ class PortalSyncService
                 ->get()
                 ->keyBy('code');
 
-            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdJobLevel, $existingByCode, $isUsedMode) {
+            $jobLevelGroupsById = JobLevelGroup::withTrashed()
+                ->whereNotNull('idjoblevelgroup')
+                ->get()
+                ->keyBy('idjoblevelgroup');
+
+            $jobLevelGroupsByName = JobLevelGroup::withTrashed()
+                ->whereNotNull('name')
+                ->get()
+                ->keyBy(fn ($g) => strtolower(trim($g->name)));
+
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdJobLevel, $existingByCode, $jobLevelGroupsById, $jobLevelGroupsByName, $isUsedMode) {
                 foreach ($data as $item) {
                     $idJobLevel = $item['idjoblevel'] ?? null;
                     $code = isset($item['joblevelCode']) ? trim((string) $item['joblevelCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
@@ -1420,12 +1433,22 @@ class PortalSyncService
                         $jobLevel = $existingByCode[$code];
                     }
 
+                    $idJobLevelGroup = $item['idjobLevelGroup'] ?? ($item['id_job_level_group'] ?? null);
+                    $groupName = isset($item['groupName']) ? trim((string) $item['groupName']) : null;
+                    $jobLevelGroupId = null;
+                    if (! empty($idJobLevelGroup) && isset($jobLevelGroupsById[$idJobLevelGroup])) {
+                        $jobLevelGroupId = $jobLevelGroupsById[$idJobLevelGroup]->id;
+                    } elseif (! empty($groupName) && isset($jobLevelGroupsByName[strtolower($groupName)])) {
+                        $jobLevelGroupId = $jobLevelGroupsByName[strtolower($groupName)]->id;
+                    }
+
                     $attributes = [
                         'idjoblevel' => $idJobLevel,
                         'code' => $code,
                         'name' => $name,
-                        'id_job_level_group' => $item['idjobLevelGroup'] ?? null,
-                        'group_name' => $item['groupName'] ?? null,
+                        'id_job_level_group' => $idJobLevelGroup,
+                        'job_level_group_id' => $jobLevelGroupId,
+                        'group_name' => $groupName,
                         'created_by_name' => $item['createdBy'] ?? null,
                         'modified_by_name' => $item['modifiedBy'] ?? null,
                         'portal_created_date' => $createdDate,
@@ -1634,6 +1657,407 @@ class PortalSyncService
             ];
         } catch (\Throwable $e) {
             Log::error('Portal job title sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Synchronize Organization Levels from Portal API.
+     *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @return array{success: bool, message: string, synced: int, total: int, data?: array}
+     */
+    public function syncOrganizationLevels(string $isUsedMode = 'keep'): array
+    {
+        $baseUrl = $this->getBaseUrl();
+        $endpoint = $this->getEndpoint('organization_levels');
+        $fullUrl = "{$baseUrl}/{$endpoint}";
+
+        try {
+            $response = Http::timeout(30)->get($fullUrl);
+
+            if (! $response->successful()) {
+                Log::warning('Portal organization level sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
+                return [
+                    'success' => false,
+                    'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $json = $response->json();
+            $data = $json['data'] ?? [];
+
+            if (! is_array($data)) {
+                return [
+                    'success' => false,
+                    'message' => 'Format respon API Portal tidak valid (data bukan array).',
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $syncedCount = 0;
+            $userId = Auth::id();
+
+            $existingByIdOrgLevel = OrganizationLevel::withTrashed()
+                ->whereNotNull('idorg_level')
+                ->get()
+                ->keyBy('idorg_level');
+
+            $existingByCode = OrganizationLevel::withTrashed()
+                ->whereNotNull('code')
+                ->get()
+                ->keyBy('code');
+
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdOrgLevel, $existingByCode, $isUsedMode) {
+                foreach ($data as $item) {
+                    $idOrgLevel = $item['idorgLevel'] ?? ($item['idorg_level'] ?? null);
+                    $code = isset($item['orgLevelCode']) ? trim((string) $item['orgLevelCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
+                    $name = isset($item['orgLevelName']) ? trim((string) $item['orgLevelName']) : (isset($item['name']) ? trim((string) $item['name']) : '');
+
+                    if ($code === '' && empty($name)) {
+                        continue;
+                    }
+
+                    $isActive = isset($item['isActive']) ? (bool) $item['isActive'] : true;
+                    $createdDate = ! empty($item['createdDate']) ? Carbon::parse($item['createdDate']) : null;
+                    $modifiedDate = ! empty($item['modifiedDate']) ? Carbon::parse($item['modifiedDate']) : null;
+
+                    $level = null;
+                    if (! empty($idOrgLevel) && isset($existingByIdOrgLevel[$idOrgLevel])) {
+                        $level = $existingByIdOrgLevel[$idOrgLevel];
+                    } elseif ($code !== '' && isset($existingByCode[$code])) {
+                        $level = $existingByCode[$code];
+                    }
+
+                    $attributes = [
+                        'idorg_level' => $idOrgLevel,
+                        'code' => $code,
+                        'name' => $name,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
+                        'portal_modified_date' => $modifiedDate,
+                        'is_active' => $isActive,
+                    ];
+
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
+                    if ($level) {
+                        if ($level->trashed()) {
+                            $level->restore();
+                        }
+                        $attributes['updated_by'] = $userId;
+                        $level->update($attributes);
+                    } else {
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = $isActive;
+                        }
+                        $attributes['created_by'] = $userId;
+                        $attributes['updated_by'] = $userId;
+                        $newLevel = OrganizationLevel::create($attributes);
+
+                        if (! empty($idOrgLevel)) {
+                            $existingByIdOrgLevel[$idOrgLevel] = $newLevel;
+                        }
+                        if ($code !== '') {
+                            $existingByCode[$code] = $newLevel;
+                        }
+                    }
+
+                    $syncedCount++;
+                }
+            });
+
+            return [
+                'success' => true,
+                'message' => "Berhasil sinkronisasi {$syncedCount} data Organization Level dari Portal.",
+                'synced' => $syncedCount,
+                'total' => count($data),
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Portal organization level sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Synchronize Organization Groups from Portal API.
+     *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @return array{success: bool, message: string, synced: int, total: int, data?: array}
+     */
+    public function syncOrganizationGroups(string $isUsedMode = 'keep'): array
+    {
+        $baseUrl = $this->getBaseUrl();
+        $endpoint = $this->getEndpoint('organization_groups');
+        $fullUrl = "{$baseUrl}/{$endpoint}";
+
+        try {
+            $response = Http::timeout(30)->get($fullUrl);
+
+            if (! $response->successful()) {
+                Log::warning('Portal organization group sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
+                return [
+                    'success' => false,
+                    'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $json = $response->json();
+            $data = $json['data'] ?? [];
+
+            if (! is_array($data)) {
+                return [
+                    'success' => false,
+                    'message' => 'Format respon API Portal tidak valid (data bukan array).',
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $syncedCount = 0;
+            $userId = Auth::id();
+
+            $existingByIdOrgGroup = OrganizationGroup::withTrashed()
+                ->whereNotNull('idorg_group')
+                ->get()
+                ->keyBy('idorg_group');
+
+            $existingByCode = OrganizationGroup::withTrashed()
+                ->whereNotNull('code')
+                ->get()
+                ->keyBy('code');
+
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdOrgGroup, $existingByCode, $isUsedMode) {
+                foreach ($data as $item) {
+                    $idOrgGroup = $item['idorgGroup'] ?? ($item['idorg_group'] ?? null);
+                    $code = isset($item['orgGroupCode']) ? trim((string) $item['orgGroupCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
+                    $name = isset($item['orgGroupName']) ? trim((string) $item['orgGroupName']) : (isset($item['name']) ? trim((string) $item['name']) : '');
+                    $oracleCode = isset($item['oracleCode']) ? trim((string) $item['oracleCode']) : null;
+
+                    if ($code === '' && empty($name)) {
+                        continue;
+                    }
+
+                    $isActive = isset($item['isActive']) ? (bool) $item['isActive'] : true;
+                    $createdDate = ! empty($item['createdDate']) ? Carbon::parse($item['createdDate']) : null;
+                    $modifiedDate = ! empty($item['modifiedDate']) ? Carbon::parse($item['modifiedDate']) : null;
+
+                    $group = null;
+                    if (! empty($idOrgGroup) && isset($existingByIdOrgGroup[$idOrgGroup])) {
+                        $group = $existingByIdOrgGroup[$idOrgGroup];
+                    } elseif ($code !== '' && isset($existingByCode[$code])) {
+                        $group = $existingByCode[$code];
+                    }
+
+                    $attributes = [
+                        'idorg_group' => $idOrgGroup,
+                        'code' => $code,
+                        'name' => $name,
+                        'oracle_code' => $oracleCode,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
+                        'portal_modified_date' => $modifiedDate,
+                        'is_active' => $isActive,
+                    ];
+
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
+                    if ($group) {
+                        if ($group->trashed()) {
+                            $group->restore();
+                        }
+                        $attributes['updated_by'] = $userId;
+                        $group->update($attributes);
+                    } else {
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = $isActive;
+                        }
+                        $attributes['created_by'] = $userId;
+                        $attributes['updated_by'] = $userId;
+                        $newGroup = OrganizationGroup::create($attributes);
+
+                        if (! empty($idOrgGroup)) {
+                            $existingByIdOrgGroup[$idOrgGroup] = $newGroup;
+                        }
+                        if ($code !== '') {
+                            $existingByCode[$code] = $newGroup;
+                        }
+                    }
+
+                    $syncedCount++;
+                }
+            });
+
+            return [
+                'success' => true,
+                'message' => "Berhasil sinkronisasi {$syncedCount} data Organization Group dari Portal.",
+                'synced' => $syncedCount,
+                'total' => count($data),
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Portal organization group sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
+
+            return [
+                'success' => false,
+                'message' => 'Gagal melakukan sinkronisasi: '.$e->getMessage(),
+                'synced' => 0,
+                'total' => 0,
+            ];
+        }
+    }
+
+    /**
+     * Synchronize Job Level Groups from Portal API.
+     *
+     * @param string $isUsedMode Options: 'keep' (default), 'set_true', 'set_false'
+     * @return array{success: bool, message: string, synced: int, total: int, data?: array}
+     */
+    public function syncJobLevelGroups(string $isUsedMode = 'keep'): array
+    {
+        $baseUrl = $this->getBaseUrl();
+        $endpoint = $this->getEndpoint('job_level_groups');
+        $fullUrl = "{$baseUrl}/{$endpoint}";
+
+        try {
+            $response = Http::timeout(30)->get($fullUrl);
+
+            if (! $response->successful()) {
+                Log::warning('Portal job level group sync failed with HTTP status: '.$response->status(), ['url' => $fullUrl]);
+
+                return [
+                    'success' => false,
+                    'message' => "Gagal terhubung ke Portal API (HTTP {$response->status()}) pada {$fullUrl}",
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $json = $response->json();
+            $data = $json['data'] ?? [];
+
+            if (! is_array($data)) {
+                return [
+                    'success' => false,
+                    'message' => 'Format respon API Portal tidak valid (data bukan array).',
+                    'synced' => 0,
+                    'total' => 0,
+                ];
+            }
+
+            $syncedCount = 0;
+            $userId = Auth::id();
+
+            $existingByIdGroup = JobLevelGroup::withTrashed()
+                ->whereNotNull('idjoblevelgroup')
+                ->get()
+                ->keyBy('idjoblevelgroup');
+
+            $existingByCode = JobLevelGroup::withTrashed()
+                ->whereNotNull('code')
+                ->get()
+                ->keyBy('code');
+
+            DB::transaction(function () use ($data, $userId, &$syncedCount, $existingByIdGroup, $existingByCode, $isUsedMode) {
+                foreach ($data as $item) {
+                    $idGroup = $item['idjobLevelGroup'] ?? ($item['idjoblevelgroup'] ?? null);
+                    $code = isset($item['groupCode']) ? trim((string) $item['groupCode']) : (isset($item['code']) ? trim((string) $item['code']) : '');
+                    $name = isset($item['groupName']) ? trim((string) $item['groupName']) : (isset($item['name']) ? trim((string) $item['name']) : '');
+
+                    if ($code === '' && empty($name)) {
+                        continue;
+                    }
+
+                    $isActive = isset($item['isActive']) ? (bool) $item['isActive'] : true;
+                    $createdDate = ! empty($item['createdDate']) ? Carbon::parse($item['createdDate']) : null;
+                    $modifiedDate = ! empty($item['modifiedDate']) ? Carbon::parse($item['modifiedDate']) : null;
+
+                    $group = null;
+                    if (! empty($idGroup) && isset($existingByIdGroup[$idGroup])) {
+                        $group = $existingByIdGroup[$idGroup];
+                    } elseif ($code !== '' && isset($existingByCode[$code])) {
+                        $group = $existingByCode[$code];
+                    }
+
+                    $attributes = [
+                        'idjoblevelgroup' => $idGroup,
+                        'code' => $code,
+                        'name' => $name,
+                        'created_by_name' => $item['createdBy'] ?? null,
+                        'modified_by_name' => $item['modifiedBy'] ?? null,
+                        'portal_created_date' => $createdDate,
+                        'portal_modified_date' => $modifiedDate,
+                        'is_active' => $isActive,
+                    ];
+
+                    if ($isUsedMode === 'set_true') {
+                        $attributes['is_used'] = true;
+                    } elseif ($isUsedMode === 'set_false') {
+                        $attributes['is_used'] = false;
+                    }
+
+                    if ($group) {
+                        if ($group->trashed()) {
+                            $group->restore();
+                        }
+                        $attributes['updated_by'] = $userId;
+                        $group->update($attributes);
+                    } else {
+                        if (! isset($attributes['is_used'])) {
+                            $attributes['is_used'] = $isActive;
+                        }
+                        $attributes['created_by'] = $userId;
+                        $attributes['updated_by'] = $userId;
+                        $newGroup = JobLevelGroup::create($attributes);
+
+                        if (! empty($idGroup)) {
+                            $existingByIdGroup[$idGroup] = $newGroup;
+                        }
+                        if ($code !== '') {
+                            $existingByCode[$code] = $newGroup;
+                        }
+                    }
+
+                    $syncedCount++;
+                }
+            });
+
+            return [
+                'success' => true,
+                'message' => "Berhasil sinkronisasi {$syncedCount} data Job Level Group dari Portal.",
+                'synced' => $syncedCount,
+                'total' => count($data),
+            ];
+        } catch (\Throwable $e) {
+            Log::error('Portal job level group sync exception: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
 
             return [
                 'success' => false,

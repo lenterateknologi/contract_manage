@@ -32,6 +32,7 @@ interface Counts {
     companies: number;
     departments: number;
     divisions?: number;
+    job_level_groups?: number;
     job_levels?: number;
     job_titles?: number;
     contract_statuses: number;
@@ -65,6 +66,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
         companies: 0,
         departments: 0,
         divisions: 0,
+        job_level_groups: 0,
         job_levels: 0,
         job_titles: 0,
         contract_statuses: 0,
@@ -90,6 +92,7 @@ export function MasterDataSync({ counts }: Readonly<Props>) {
                 { id: 'companies', label: 'Perusahaan PT', count: activeCounts.companies, icon: Building2, desc: 'Entitas hukum terdaftar (Bergantung pada Group & Region)' },
                 { id: 'departments', label: 'Unit / Departemen', count: activeCounts.departments, icon: Network, desc: 'Unit kerja operasional (Bergantung pada Perusahaan)' },
                 { id: 'divisions', label: 'Divisi', count: activeCounts.divisions ?? 0, icon: Users, desc: 'Sub-unit kerja spesifik (Bergantung pada Departemen)' },
+                { id: 'job_level_groups', label: 'Group Job Level', count: activeCounts.job_level_groups ?? 0, icon: Layers, desc: 'Golongan besar level (Non Staff, Staff, Mgmt)' },
                 { id: 'job_levels', label: 'Job Level', count: activeCounts.job_levels ?? 0, icon: Tags, desc: 'Tingkatan level jabatan karyawan' },
                 { id: 'job_titles', label: 'Job Title', count: activeCounts.job_titles ?? 0, icon: Users, desc: 'Nama posisi / jabatan karyawan' },
             ]

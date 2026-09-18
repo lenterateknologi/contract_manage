@@ -192,16 +192,10 @@ export function StepActionConfigCard({
     // Precomputed action styling
     const actionStyleMap: Record<string, { badgeBg: string; text: string; icon: React.ReactNode; label: string }> = {
         approve: {
-            badgeBg: 'bg-emerald-600 text-white',
-            text: 'text-emerald-600 dark:text-emerald-400',
-            icon: <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />,
-            label: `#${actIdx + 1} Setuju`,
-        },
-        reject: {
-            badgeBg: 'bg-rose-600 text-white',
-            text: 'text-rose-600 dark:text-rose-400',
-            icon: <XCircle size={12} className="text-rose-500 shrink-0" />,
-            label: `#${actIdx + 1} Tolak`,
+            badgeBg: 'bg-primary text-white',
+            text: 'text-primary dark:text-primary-400',
+            icon: <Sparkles size={12} className="text-primary shrink-0" />,
+            label: `#${actIdx + 1} Aksi Alur`,
         },
         assign: {
             badgeBg: 'bg-blue-600 text-white',
@@ -242,10 +236,10 @@ export function StepActionConfigCard({
     };
 
     const theme = actionStyleMap[actionCode] || {
-        badgeBg: 'bg-slate-600 text-white',
-        text: 'text-slate-600',
-        icon: <Sliders size={12} />,
-        label: `#${actIdx + 1} Aksi`,
+        badgeBg: 'bg-primary text-white',
+        text: 'text-primary',
+        icon: <Sparkles size={12} />,
+        label: `#${actIdx + 1} Aksi Alur`,
     };
 
     const transitionType = (() => {
@@ -275,8 +269,6 @@ export function StepActionConfigCard({
             if (prevStep && act.next_step_id === prevStep.id) return 'back';
             return 'absolute';
         }
-        if (actionCode === 'reject') return 'back';
-        if (actionCode === 'assign' || actionCode === 'assign_pic') return 'stay';
         return 'sequential';
     })();
 
@@ -305,15 +297,10 @@ export function StepActionConfigCard({
                             value={act.master_action_id || ''}
                             onValueChange={(val) => {
                                 const ma = MASTER_ACTIONS.find((m: any) => m.id === val);
-                                const isAssign = val === 'assign' || val === 'assign_pic' || ma?.code === 'assign' || ma?.code === 'assign_pic';
                                 updateAction(actIdx, {
                                     master_action_id: val,
                                     master_action: ma || null,
                                     alias: act.alias || (ma ? ma.name : ''),
-                                    ...(isAssign && (!act.transition_config || (act.transition_config?.type === 'relative' && act.transition_config?.offset === 1)) ? {
-                                        transition_config: { type: 'relative', offset: 0 },
-                                        target_status: act.target_status || null,
-                                    } : {}),
                                 });
                             }}
                         >
