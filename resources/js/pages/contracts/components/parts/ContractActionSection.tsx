@@ -69,17 +69,50 @@ export function ContractActionSection({
         (a: any) => a.role === 'Pihak 1' || a.role === 'Pihak 2' || a.role === 'Penandatangan',
     );
 
-    const canToggleAccess = availableCustomActions.some((a) => a.action_code === 'toggle_access' || a.id === 'action_toggle_access');
-    const canAssignPic = availableCustomActions.some((a) => a.action_code === 'assign' || a.id === 'action_assign_pic');
-    const canSignature = availableCustomActions.some((a) => a.action_code === 'signature' || a.id === 'action_signature');
-    const canAdhoc = availableCustomActions.some((a) => a.action_code === 'forward' || a.id === 'action_adhoc');
-    const canBranch = availableCustomActions.some((a) => (a.action_code === 'branch' || a.id === 'action_branch') && a.id !== 'action_adhoc');
+    const canToggleAccess = availableCustomActions.some((a) => a.action_code === 'toggle_access');
+    const canAssignPic = availableCustomActions.some((a) => a.action_code === 'assign' || a.action_code === 'assign_pic');
+    const canSignature = availableCustomActions.some((a) => a.action_code === 'signature' || a.action_code === 'sign');
+    const canAdhoc = availableCustomActions.some((a) => a.action_code === 'forward' || a.action_code === 'add_adhoc');
+    const branchActions = availableCustomActions.filter((a) => a.action_code === 'branch');
+    const canBranch = branchActions.length > 0;
 
-    const picAction = availableCustomActions.find((a) => a.action_code === 'assign' || a.id === 'action_assign_pic');
-    const sigAction = availableCustomActions.find((a) => a.action_code === 'signature' || a.id === 'action_signature');
-    const adhocAction = availableCustomActions.find((a) => a.action_code === 'forward' || a.id === 'action_adhoc');
-    const branchAction = availableCustomActions.find((a) => (a.action_code === 'branch' || a.id === 'action_branch') && a.id !== 'action_adhoc');
-    const toggleAction = availableCustomActions.find((a) => a.action_code === 'toggle_access' || a.id === 'action_toggle_access');
+    const picAction = availableCustomActions.find((a) => a.action_code === 'assign' || a.action_code === 'assign_pic');
+    const sigAction = availableCustomActions.find((a) => a.action_code === 'signature' || a.action_code === 'sign');
+    const adhocAction = availableCustomActions.find((a) => a.action_code === 'forward' || a.action_code === 'add_adhoc');
+    const toggleAction = availableCustomActions.find((a) => a.action_code === 'toggle_access');
+
+    const standardActionCodes = ['toggle_access', 'assign', 'assign_pic', 'signature', 'sign', 'forward', 'add_adhoc', 'branch'];
+    const otherCustomActions = availableCustomActions.filter((a) => !standardActionCodes.includes(a.action_code));
+
+    const picActionConfig = picAction ? getActionConfig(
+        { ...picAction, target_status: picAction.target_status },
+        picAction.alias,
+        false,
+        false,
+        picAction.target_status,
+        picAction.target_status_info,
+        masterContractStatuses,
+    ) : null;
+
+    const sigActionConfig = sigAction ? getActionConfig(
+        { ...sigAction, target_status: sigAction.target_status },
+        sigAction.alias,
+        false,
+        false,
+        sigAction.target_status,
+        sigAction.target_status_info,
+        masterContractStatuses,
+    ) : null;
+
+    const adhocActionConfig = adhocAction ? getActionConfig(
+        { ...adhocAction, target_status: adhocAction.target_status },
+        adhocAction.alias,
+        false,
+        false,
+        adhocAction.target_status,
+        adhocAction.target_status_info,
+        masterContractStatuses,
+    ) : null;
 
     return (
         <TooltipProvider delayDuration={100}>
@@ -132,8 +165,12 @@ export function ContractActionSection({
                             <Button
                                 variant="primary"
                                 size="sm"
+                                style={picActionConfig?.buttonStyle}
                                 onClick={() => onActionClick(picAction || { action_code: 'assign' }, 'assign')}
-                                className="w-full justify-between bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3"
+                                className={cn(
+                                    'w-full justify-between cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 text-white',
+                                    picActionConfig?.buttonClass || 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800',
+                                )}
                             >
                                 <div className="flex items-center gap-2 truncate">
                                     <UserCheck size={16} className="shrink-0" />
@@ -159,8 +196,12 @@ export function ContractActionSection({
                             <Button
                                 variant="primary"
                                 size="sm"
+                                style={sigActionConfig?.buttonStyle}
                                 onClick={() => onActionClick(sigAction || { action_code: 'signature' }, 'signature')}
-                                className="w-full justify-center bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
+                                className={cn(
+                                    'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                    sigActionConfig?.buttonClass || 'bg-amber-600 hover:bg-amber-700 active:bg-amber-800',
+                                )}
                             >
                                 <PenTool size={16} />
                                 <span className="text-xs">{hasSigners ? (sigAction?.alias ? `Ubah ${sigAction.alias}` : 'Ubah Penandatangan') : (sigAction?.alias || 'Tentukan Penandatangan')}</span>
@@ -174,8 +215,12 @@ export function ContractActionSection({
                             <Button
                                 variant="primary"
                                 size="sm"
+                                style={adhocActionConfig?.buttonStyle}
                                 onClick={() => onActionClick(adhocAction || { action_code: 'forward' }, 'forward')}
-                                className="w-full justify-center bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
+                                className={cn(
+                                    'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                    adhocActionConfig?.buttonClass || 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800',
+                                )}
                             >
                                 <UserPlus size={16} />
                                 <span className="text-xs">{adhocAction?.alias || 'Tambah Persetujuan Ad-Hoc'}</span>
@@ -184,19 +229,66 @@ export function ContractActionSection({
                     )}
 
                     {/* BUTTON PINDAH WORKFLOW (SUB-WORKFLOW BRANCHING) */}
-                    {canBranch && (
-                        <ActionPreviewTooltip preview={getActionTransitionPreview(branchAction || { action_code: 'branch' }, contract)}>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => onActionClick(branchAction || { action_code: 'branch' }, 'branch')}
-                                className="w-full justify-center bg-violet-600 hover:bg-violet-700 active:bg-violet-800 text-white cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2"
-                            >
-                                <GitBranch size={16} />
-                                <span className="text-xs">{branchAction?.alias || 'Pindah Workflow'}</span>
-                            </Button>
-                        </ActionPreviewTooltip>
-                    )}
+                    {canBranch && branchActions.map((branchAction) => {
+                        const branchConfig = getActionConfig(
+                            { ...branchAction, target_status: branchAction.target_status },
+                            branchAction.alias,
+                            false,
+                            false,
+                            branchAction.target_status,
+                            branchAction.target_status_info,
+                            masterContractStatuses,
+                        );
+                        return (
+                            <ActionPreviewTooltip key={branchAction.id || branchAction.alias || branchAction.name} preview={getActionTransitionPreview(branchAction || { action_code: 'branch' }, contract)}>
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    style={branchConfig?.buttonStyle}
+                                    onClick={() => onActionClick(branchAction, 'branch')}
+                                    className={cn(
+                                        'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                        branchConfig?.buttonClass || 'bg-violet-600 hover:bg-violet-700 active:bg-violet-800',
+                                    )}
+                                >
+                                    <GitBranch size={16} />
+                                    <span className="text-xs">{branchAction?.alias || branchAction?.name || 'Pindah Workflow'}</span>
+                                </Button>
+                            </ActionPreviewTooltip>
+                        );
+                    })}
+
+                    {/* BUTTON CUSTOM ACTIONS LAINNYA */}
+                    {otherCustomActions.map((otherAction) => {
+                        const preview = getActionTransitionPreview(otherAction, contract);
+                        const otherConfig = getActionConfig(
+                            { ...otherAction, target_status: otherAction.target_status },
+                            otherAction.alias,
+                            false,
+                            false,
+                            otherAction.target_status,
+                            otherAction.target_status_info,
+                            masterContractStatuses,
+                        );
+                        const IconComponent = otherConfig?.icon || Sparkles;
+                        return (
+                            <ActionPreviewTooltip key={otherAction.id || otherAction.alias || otherAction.name} preview={preview}>
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    style={otherConfig?.buttonStyle}
+                                    onClick={() => onActionClick(otherAction, otherAction.action_code)}
+                                    className={cn(
+                                        'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                        otherConfig?.buttonClass || 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800',
+                                    )}
+                                >
+                                    <IconComponent size={16} />
+                                    <span className="text-xs">{otherAction?.alias || otherAction?.name}</span>
+                                </Button>
+                            </ActionPreviewTooltip>
+                        );
+                    })}
                 </div>
 
                 {/* MAIN STEP ACTIONS */}

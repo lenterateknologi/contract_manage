@@ -486,7 +486,9 @@ class ContractApprovalController extends Controller
             $isSequential = $request->boolean('is_sequential', false);
             $approvalRule = $request->input('approval_rule', 'all');
             $minApprovals = $request->input('min_approvals', count($userIds));
-            $isCurrentStep = $targetStepId === $contract->workflow_step_id && $targetStep->workflow_id === $contract->workflow_id;
+            $originWfId = $contract->origin_workflow_id ?: $contract->workflow_id;
+            $isSubWorkflow = $targetStep->workflow_id !== $originWfId;
+            $isCurrentStep = ($targetStepId === $contract->workflow_step_id && $targetStep->workflow_id === $contract->workflow_id) || $isSubWorkflow;
 
             // Save is_sequential and approval_rule setting to contract metadata
             $metadata = $contract->metadata ?? [];
@@ -520,7 +522,14 @@ class ContractApprovalController extends Controller
                 $query->whereNotIn('user_id', $userIds)->delete();
             }
 
-            $addedUsers = [];
+            $existingActiveBatch = Approval::where('contract_id', $contract->id)
+                ->where('workflow_step_id', $targetStepId)
+                ->where('is_adhoc', true)
+                ->where('is_active', true)
+                ->whereIn('status', ['pending', 'waiting'])
+                ->value('batch_no');
+
+            $currentBatchNo = $existingActiveBatch ?: ((Approval::where('contract_id', $contract->id)->where('is_adhoc', true)->max('batch_no') ?: 0) + 1);
 
             foreach ($userIds as $index => $userId) {
                 // Prevent duplicate among currently active pending/waiting on the same step
@@ -577,7 +586,7 @@ class ContractApprovalController extends Controller
                     'comment' => $request->input('note'),
                     'is_active' => true,
                     'is_current_step' => $isCurrentStep,
-                    'batch_no' => $contract->workflow_iteration ?? 1,
+                    'batch_no' => $currentBatchNo,
                     'is_adhoc' => true,
                     'created_by' => Auth::id(),
                     'updated_by' => Auth::id(),
@@ -586,20 +595,24 @@ class ContractApprovalController extends Controller
                 $addedUsers[] = $user->name;
             }
 
-            $originWfId = $contract->origin_workflow_id ?: $contract->workflow_id;
-            $isSubWorkflow = $targetStep->workflow_id !== $originWfId;
-
             // If branching to a sub-workflow, complete current step and advance to sub-workflow
             if ($isSubWorkflow) {
-                // Mark previous step approvals as approved so they don't remain pending concurrently
+                // Mark previous step approvals as approved and deactivate current step status
                 Approval::where('contract_id', $contract->id)
                     ->where('workflow_step_id', $contract->workflow_step_id)
                     ->whereIn('status', ['pending', 'waiting'])
                     ->update([
                         'status' => 'approved',
                         'is_active' => false,
+                        'is_current_step' => false,
                         'decided_at' => now(),
                         'updated_by' => Auth::id(),
+                    ]);
+
+                Approval::where('contract_id', $contract->id)
+                    ->where('workflow_step_id', '!=', $targetStepId)
+                    ->update([
+                        'is_current_step' => false,
                     ]);
 
                 $metadata['branch_from_step_num'] = $contract->workflowStep?->step ?? 1;
@@ -615,6 +628,8 @@ class ContractApprovalController extends Controller
                     'current_sub_workflow_id' => $targetStep->workflow_id,
                     'metadata' => $metadata,
                 ]);
+
+                $this->workflowService->createApprovalForStep($contract->fresh(), $targetStep);
 
                 $targetStepLabel = $targetStep->name ?: $targetStep->description ?: "Tahap {$targetStep->step}";
                 $contract->histories()->create([

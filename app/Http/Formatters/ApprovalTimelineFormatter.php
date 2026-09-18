@@ -80,10 +80,12 @@ class ApprovalTimelineFormatter
                 }
 
                 $lastIdx = count($chunks) - 1;
-                if ($lastIdx < 0 || $chunks[$lastIdx]['workflow_id'] !== $wfId) {
+                $batchNo = $appr->batch_no ?? 1;
+                if ($lastIdx < 0 || $chunks[$lastIdx]['workflow_id'] !== $wfId || ($chunks[$lastIdx]['batch_no'] ?? null) !== $batchNo) {
                     $chunks[] = [
                         'workflow_id' => $wfId,
                         'workflow' => $wf,
+                        'batch_no' => $batchNo,
                         'is_current' => false,
                         'step_ids' => collect($appr->workflow_step_id ? [$appr->workflow_step_id] : []),
                         'approvals' => collect([$appr]),
@@ -105,6 +107,7 @@ class ApprovalTimelineFormatter
                 $chunks[] = [
                     'workflow_id' => $c->workflow->id,
                     'workflow' => $c->workflow,
+                    'batch_no' => $c->workflow_iteration ?? 1,
                     'is_current' => true,
                     'step_ids' => collect(),
                     'approvals' => collect(),
@@ -325,6 +328,8 @@ class ApprovalTimelineFormatter
                         'target_emails' => $a->approver?->email,
                         'sequence' => $step->step,
                         'sub_step' => $a->sub_step,
+                        'batch_no' => $a->batch_no ?? 1,
+                        'is_adhoc' => (bool) ($a->is_adhoc ?? ($a->role === 'Persetujuan Tambahan')),
                         'status' => $a->status,
                         'action_id' => $a->action_id,
                         'action_code' => $a->action_code,
@@ -372,6 +377,8 @@ class ApprovalTimelineFormatter
                             'target_approvers' => 'Syarat tidak terpenuhi',
                             'target_emails' => null,
                             'sequence' => $step->step,
+                            'batch_no' => $chunk['batch_no'] ?? 1,
+                            'is_adhoc' => false,
                             'status' => 'SKIPPED',
                             'note' => 'Langkah ini dilewati berdasarkan logika sistem.',
                             'step_type' => 'APPROVAL',
@@ -411,6 +418,8 @@ class ApprovalTimelineFormatter
                                     'target_emails' => $a->approver?->email ?: $targetEmails,
                                     'sequence' => $step->step,
                                     'sub_step' => $a->sub_step,
+                                    'batch_no' => $a->batch_no ?? ($chunk['batch_no'] ?? 1),
+                                    'is_adhoc' => (bool) ($a->is_adhoc ?? false),
                                     'status' => $a->status,
                                     'action_id' => $a->action_id,
                                     'action_code' => $a->action_code,
@@ -471,6 +480,8 @@ class ApprovalTimelineFormatter
                                 'target_approvers' => $candidateNames ?: $targetApprovers,
                                 'target_emails' => $candidateEmails ?: $targetEmails,
                                 'sequence' => $step->step,
+                                'batch_no' => $first->batch_no ?? ($chunk['batch_no'] ?? 1),
+                                'is_adhoc' => (bool) ($first->is_adhoc ?? false),
                                 'status' => 'pending',
                                 'comment' => null,
                                 'decided_at' => null,
@@ -519,6 +530,8 @@ class ApprovalTimelineFormatter
                                 'target_approvers' => $candidateNames ?: $targetApprovers,
                                 'target_emails' => $candidateEmails ?: $targetEmails,
                                 'sequence' => $step->step,
+                                'batch_no' => $first->batch_no ?? ($chunk['batch_no'] ?? 1),
+                                'is_adhoc' => (bool) ($first->is_adhoc ?? false),
                                 'status' => 'pending',
                                 'comment' => null,
                                 'decided_at' => null,
@@ -570,6 +583,8 @@ class ApprovalTimelineFormatter
                                     'target_emails' => $a->approver?->email ?: $targetEmails,
                                     'sequence' => $step->step,
                                     'sub_step' => $a->sub_step,
+                                    'batch_no' => $a->batch_no ?? ($chunk['batch_no'] ?? 1),
+                                    'is_adhoc' => (bool) ($a->is_adhoc ?? false),
                                     'status' => $a->status,
                                     'action_id' => $a->action_id,
                                     'action_code' => $a->action_code,
@@ -684,6 +699,8 @@ class ApprovalTimelineFormatter
                              'target_approvers' => $stepTargetApprovers,
                              'target_emails' => $targetEmails,
                              'sequence' => $step->step,
+                             'batch_no' => $chunk['batch_no'] ?? 1,
+                             'is_adhoc' => false,
                              'status' => $mainStatus,
                              'note' => null,
                              'approved_at' => null,

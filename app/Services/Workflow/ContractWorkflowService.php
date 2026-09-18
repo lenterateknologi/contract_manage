@@ -1202,19 +1202,28 @@ class ContractWorkflowService
 
         if (! $nextStep && ! $hasExplicitTransition) {
             if ($contract->origin_workflow_id && $contract->workflow_id !== $contract->origin_workflow_id) {
-                // Sub-workflow completed its steps, return to origin workflow
+                // Sub-workflow completed its steps, return to origin workflow at next step (branch_from_step_num + 1)
                 $metadata = $contract->metadata ?? [];
-                $targetSequence = (int) ($metadata['branch_from_step_num'] ?? 1);
+                $targetSequence = (int) ($metadata['branch_from_step_num'] ?? 1) + 1;
                 $originWfId = $contract->origin_workflow_id;
 
-                $targetStep = WorkflowStep::where('workflow_id', $originWfId)->where('step', $targetSequence)->first()
-                    ?: WorkflowStep::where('workflow_id', $originWfId)->orderBy('step')->first();
+                $allSteps = WorkflowStep::where('workflow_id', $originWfId)
+                    ->where('step', '>=', $targetSequence)
+                    ->where('is_active', true)
+                    ->orderBy('step')
+                    ->get();
+                $targetStep = $allSteps->first(fn ($s) => $this->shouldExecuteStep($contract, $s))
+                    ?: WorkflowStep::where('workflow_id', $originWfId)->orderBy('step', 'desc')->first();
 
                 if ($targetStep) {
                     unset($metadata['branch_from_step_num'], $metadata['branch_from_step_id']);
                     $contract->update([
                         'workflow_id' => $originWfId,
                         'workflow_step_id' => $targetStep->id,
+                        'is_in_sub_workflow' => false,
+                        'branch_step_number' => null,
+                        'current_step_number' => $targetStep->step,
+                        'current_sub_workflow_id' => null,
                         'metadata' => $metadata,
                     ]);
 
@@ -1228,14 +1237,15 @@ class ContractWorkflowService
                     $reactivatedCount = Approval::where('contract_id', $contract->id)
                         ->where('workflow_step_id', $targetStep->id)
                         ->where('status', 'waiting')
-                        ->update(['status' => 'pending']);
+                        ->update(['status' => 'pending', 'is_current_step' => true]);
 
                     if ($reactivatedCount === 0 && ! Approval::where('contract_id', $contract->id)->where('workflow_step_id', $targetStep->id)->where('status', 'pending')->exists()) {
                         $this->createApprovalForStep($contract, $targetStep);
                     }
 
                     $nextStep = $targetStep;
-                    $this->queryService->logHistory($contract, 'WORKFLOW_RETURNED', "Sub-alur kerja selesai. Kembali ke alur kerja utama pada Tahap {$targetStep->step}: {$targetStep->name}", Auth::id());
+                    $targetStepLabel = $targetStep->label ?: $targetStep->name ?: $targetStep->description ?: "Tahap {$targetStep->step}";
+                    $this->queryService->logHistory($contract, 'WORKFLOW_RETURNED', "Sub-alur kerja selesai. Kembali ke alur kerja utama pada Tahap {$targetStep->step}: {$targetStepLabel}", Auth::id());
                 }
             } else {
                 $nextStep = $this->findNextValidStep($contract, $approval->workflowStep);
@@ -1599,7 +1609,20 @@ class ContractWorkflowService
             return $stepAction->next_workflow_step_id ? WorkflowStep::find($stepAction->next_workflow_step_id) : WorkflowStep::where('workflow_id', $stepAction->next_workflow_id)->orderBy('step')->first();
         }
 
-        return $stepAction->next_step_id ? WorkflowStep::find($stepAction->next_step_id) : null;
+        if ($stepAction->next_step_id) {
+            return WorkflowStep::find($stepAction->next_step_id);
+        }
+
+        // Default forward progression for approve/sign/assign/forward/auto actions when no explicit target is set
+        $actionCodeStr = $stepAction->action_code instanceof \BackedEnum
+            ? $stepAction->action_code->value
+            : (string) ($stepAction->action_code ?? '');
+
+        if (in_array(strtolower($actionCodeStr), ['approve', 'sign', 'signature', 'assign', 'assign_pic', 'forward', 'auto'])) {
+            return $this->findNextValidStep($contract, $currentStep);
+        }
+
+        return null;
     }
 
     private function applyStepFilters(Builder $query, WorkflowStep $step, Contract $contract): Builder

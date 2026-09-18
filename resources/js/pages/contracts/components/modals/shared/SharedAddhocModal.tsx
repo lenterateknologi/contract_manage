@@ -68,10 +68,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             contractData?.origin_workflow?.meta?.custom_actions || 
             contractData?.workflow_step?.workflow?.meta?.custom_actions || [];
         const customAction = customActions.find((ca: any) => 
-            ca.id === 'action_adhoc' || 
+            (actCode && ca.action_code === actCode) ||
             ca.action_code === 'forward' || 
-            ca.action_code === 'branch' ||
-            (actCode && ca.action_code === actCode)
+            ca.action_code === 'add_adhoc' ||
+            (ca.id === 'action_adhoc' && ca.action_code !== 'branch')
         );
 
         // If action is configured as cross-workflow, return null so backend auto-resolves to sub-workflow step
@@ -183,9 +183,10 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
             // 1. Check custom action configuration from workflow meta (e.g. action_adhoc or forward action)
             const customActions: any[] = contract?.workflow?.meta?.custom_actions || contract?.workflow_step?.workflow?.meta?.custom_actions || [];
             const customAction = customActions.find((ca: any) => 
-                ca.id === 'action_adhoc' || 
+                (actionCode && ca.action_code === actionCode) ||
                 ca.action_code === 'forward' || 
-                (actionCode && ca.action_code === actionCode)
+                ca.action_code === 'add_adhoc' ||
+                (ca.id === 'action_adhoc' && ca.action_code !== 'branch')
             );
 
             // 2. Check step action configuration

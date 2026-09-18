@@ -4,7 +4,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import { Contract, ContractApproval, UserProfile } from '@/pages/contracts/types';
 import { Badge } from '@/components/ui/feedback/Badge';
-import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight, Clock, UserCheck, CheckCircle2, AlertCircle, Hourglass, User as UserIcon } from 'lucide-react';
+import { Download, GitCommit, Layers, Workflow, ArrowRight, ArrowDownRight, Clock, UserCheck, CheckCircle2, AlertCircle, Hourglass, User as UserIcon, Users } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { ApprovalCard } from './ApprovalCard';
 import { InitiatorStepCard } from './InitiatorStepCard';
@@ -125,11 +125,13 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
         filteredSteps.forEach((a) => {
             const wfId = a.workflow_step?.workflow_id || contract.workflow_id;
             const wfName = a.workflow_step?.workflow?.name || contract.workflow?.name || 'Alur Kerja';
+            const batchNo = a.batch_no ?? 1;
 
-            if (!currentBlock || currentBlock.workflowId !== wfId) {
+            if (!currentBlock || currentBlock.workflowId !== wfId || currentBlock.batchNo !== batchNo) {
                 currentBlock = {
                     workflowId: wfId,
                     workflowName: wfName,
+                    batchNo: batchNo,
                     isSubWorkflow: Boolean(rootWorkflowId && wfId !== rootWorkflowId),
                     groups: [],
                 };
@@ -141,6 +143,7 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
             if (!group) {
                 group = {
                     sequence: seq,
+                    batchNo: batchNo,
                     stepName: '',
                     stepDescription: '',
                     items: [],
@@ -470,25 +473,76 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                                     </span>
                                                                 )}
                                                                 {(() => {
-                                                                    const hasSequential = group.items.some(it => it.sub_step != null) || Boolean(contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id || '']?.is_sequential);
-                                                                    if (!hasSequential || group.items.length <= 1) return null;
-                                                                    return (
-                                                                        <span className="inline-flex items-center gap-1 rounded bg-indigo-500/10 border border-indigo-500/25 px-1.5 py-0.5 text-[8.5px] font-bold tracking-wider uppercase text-indigo-700 dark:text-indigo-300">
-                                                                            <ArrowDownRight size={10} className="shrink-0" />
-                                                                            <span>Persetujuan Berurutan</span>
-                                                                        </span>
-                                                                    );
+                                                                    if (group.items.length <= 1) return null;
+                                                                    const adhocMeta = contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id || ''];
+                                                                    const isSigningGroup = group.items.some(it => it.role === 'Pihak 1' || it.role === 'Pihak 2' || it.role === 'Penandatangan');
+                                                                    const isAdhocGroup = group.items.some(it => it.role === 'Persetujuan Tambahan' || it.is_adhoc);
+
+                                                                    let isSequential = false;
+                                                                    if (adhocMeta && typeof adhocMeta.is_sequential === 'boolean') {
+                                                                        isSequential = adhocMeta.is_sequential;
+                                                                    } else if (isSigningGroup) {
+                                                                        isSequential = group.items.some(it => it.sub_step != null);
+                                                                    }
+
+                                                                    if (isSequential) {
+                                                                        return (
+                                                                            <span className="inline-flex items-center gap-1 rounded bg-indigo-500/10 border border-indigo-500/25 px-1.5 py-0.5 text-[8.5px] font-bold tracking-wider uppercase text-indigo-700 dark:text-indigo-300">
+                                                                                <ArrowDownRight size={10} className="shrink-0" />
+                                                                                <span>Persetujuan Berurutan</span>
+                                                                            </span>
+                                                                        );
+                                                                    }
+
+                                                                    if (isAdhocGroup) {
+                                                                        const rule = adhocMeta?.approval_rule;
+                                                                        const ruleLabel = rule === 'quorum' ? `Kuorum (${adhocMeta?.min_approvals ?? 1})` : rule === 'any' ? 'Salah Satu' : 'Semua';
+                                                                        return (
+                                                                            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 border border-emerald-500/25 px-1.5 py-0.5 text-[8.5px] font-bold tracking-wider uppercase text-emerald-700 dark:text-emerald-300">
+                                                                                <Users size={10} className="shrink-0" />
+                                                                                <span>Persetujuan Serentak ({ruleLabel})</span>
+                                                                            </span>
+                                                                        );
+                                                                    }
+
+                                                                    return null;
                                                                 })()}
                                                             </div>
                                                             {(() => {
-                                                                const hasSequential = group.items.some(it => it.sub_step != null) || Boolean(contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id || '']?.is_sequential);
-                                                                if (hasSequential && group.items.length > 1) {
+                                                                if (group.items.length <= 1) return null;
+                                                                const adhocMeta = contract?.metadata?.adhoc_steps?.[mainItem?.workflow_step_id || ''];
+                                                                const isSigningGroup = group.items.some(it => it.role === 'Pihak 1' || it.role === 'Pihak 2' || it.role === 'Penandatangan');
+                                                                const isAdhocGroup = group.items.some(it => it.role === 'Persetujuan Tambahan' || it.is_adhoc);
+
+                                                                let isSequential = false;
+                                                                if (adhocMeta && typeof adhocMeta.is_sequential === 'boolean') {
+                                                                    isSequential = adhocMeta.is_sequential;
+                                                                } else if (isSigningGroup) {
+                                                                    isSequential = group.items.some(it => it.sub_step != null);
+                                                                }
+
+                                                                if (isSequential) {
                                                                     return (
                                                                         <p className="text-[10px] text-indigo-600/90 dark:text-indigo-400 font-medium mt-0.5">
                                                                             Setiap peninjau harus menyetujui secara berurutan sebelum peninjau berikutnya dapat melakukan tindakan persetujuan.
                                                                         </p>
                                                                     );
                                                                 }
+
+                                                                if (isAdhocGroup) {
+                                                                    const rule = adhocMeta?.approval_rule;
+                                                                    const desc = rule === 'quorum'
+                                                                        ? `Persetujuan dapat dilakukan bersamaan. Membutuhkan minimal ${adhocMeta?.min_approvals ?? 1} persetujuan untuk melanjutkan tahap.`
+                                                                        : rule === 'any'
+                                                                        ? 'Persetujuan dapat dilakukan bersamaan. Cukup salah satu peninjau menyetujui untuk melanjutkan tahap.'
+                                                                        : 'Persetujuan dapat dilakukan bersamaan oleh seluruh peninjau.';
+                                                                    return (
+                                                                        <p className="text-[10px] text-emerald-600/90 dark:text-emerald-400 font-medium mt-0.5">
+                                                                            {desc}
+                                                                        </p>
+                                                                    );
+                                                                }
+
                                                                 return null;
                                                             })()}
                                                             {viewTab === 'pro' && group.stepDescription && (
@@ -700,6 +754,11 @@ export default function ApprovalSteps({ contract, approvals, creator, submittedA
                                                         <span className="text-[9px] font-bold tracking-wider uppercase bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 px-1.5 py-0.5 rounded font-mono">
                                                             Sub-Workflow
                                                         </span>
+                                                        {block.batchNo && block.batchNo > 1 && (
+                                                            <span className="text-[9px] font-bold tracking-wider uppercase bg-amber-500/15 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded font-mono border border-amber-500/30">
+                                                                Sesi #{block.batchNo}
+                                                            </span>
+                                                        )}
                                                         <h4 className="text-xs font-bold text-foreground truncate">
                                                             {block.workflowName}
                                                         </h4>

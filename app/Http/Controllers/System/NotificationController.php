@@ -116,7 +116,7 @@ class NotificationController extends Controller
             ->with([
                 'contract',
                 'contract.initiator',
-                'workflowStep:id,step,description',
+                'workflowStep',
             ])
             ->latest()
             ->limit(15)

@@ -12,6 +12,7 @@ import {
     AtSign,
     Bell,
     CheckCircle2,
+    BellRing,
     Clock,
     FileCheck,
     FileText,
@@ -20,7 +21,7 @@ import {
     UserCheck,
     XCircle,
 } from 'lucide-react';
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 
 interface NotificationItem {
     id: string;
@@ -45,6 +46,12 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
     const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'unread' | 'approvals'>('all');
+    const [pushPermission, setPushPermission] = useState<NotificationPermission | 'unsupported'>(() => {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            return Notification.permission;
+        }
+        return 'unsupported';
+    });
     const [readIds, setReadIds] = useState<string[]>(() => {
         try {
             return JSON.parse(localStorage.getItem(storageKey) || '[]');
@@ -52,6 +59,9 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
             return [];
         }
     });
+
+    const isInitialLoadRef = useRef(true);
+    const knownIdsRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         try {
@@ -61,16 +71,71 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
         }
     }, [storageKey]);
 
+    const showDesktopNotification = useCallback((item: NotificationItem) => {
+        if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+            return;
+        }
+
+        try {
+            const title = item.badge ? `[${item.badge}] ${item.title}` : item.title;
+            const body = `${item.actor_name ? item.actor_name + ': ' : ''}${item.description}`;
+            const notif = new Notification(title, {
+                body,
+                icon: '/favicon.ico',
+                tag: item.id,
+            });
+
+            notif.onclick = () => {
+                window.focus();
+                const link = item.type === 'new_message' ? `/admin/chat/${item.contract_id}` : `/contracts/${item.contract_id}`;
+                window.location.href = link;
+                notif.close();
+            };
+        } catch (e) {
+            console.error('Desktop notification error', e);
+        }
+    }, []);
+
+    const requestPushPermission = async () => {
+        if (typeof window === 'undefined' || !('Notification' in window)) {
+            return;
+        }
+        try {
+            const permission = await Notification.requestPermission();
+            setPushPermission(permission);
+            if (permission === 'granted') {
+                new Notification('🔔 Notifikasi Desktop Aktif', {
+                    body: 'Anda akan menerima pemberitahuan otomatis saat ada persetujuan atau pesan baru.',
+                    icon: '/favicon.ico',
+                });
+            }
+        } catch (err) {
+            console.error('Failed to request notification permission', err);
+        }
+    };
+
     const fetchNotifications = useCallback(async () => {
         try {
             const { data } = await axios.get<NotificationItem[]>('/api/services/notifications');
             setNotifications(data);
+
+            // Trigger desktop push notification for newly arrived unread items
+            if (!isInitialLoadRef.current && pushPermission === 'granted') {
+                const newItems = data.filter((n) => !knownIdsRef.current.has(n.id) && !readIds.includes(n.id));
+                newItems.slice(0, 3).forEach((item) => {
+                    showDesktopNotification(item);
+                });
+            }
+
+            // Record known IDs
+            data.forEach((n) => knownIdsRef.current.add(n.id));
+            isInitialLoadRef.current = false;
         } catch (err) {
             console.error('Failed to fetch notifications', err);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [pushPermission, readIds, showDesktopNotification]);
 
     useEffect(() => {
         fetchNotifications();
@@ -267,7 +332,7 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                         )}
                     </div>
 
-                    {/* Filter Pills */}
+                    {/* Filter Pills & Push Notification Banner */}
                     <div className="flex items-center gap-1.5 pt-1">
                         <button
                             type="button"
@@ -308,6 +373,30 @@ export const HeaderNotifications = memo(function HeaderNotifications() {
                             </button>
                         )}
                     </div>
+
+                    {/* Push Notification Opt-in Banner */}
+                    {pushPermission === 'default' && (
+                        <div className="mt-2.5 flex items-center justify-between rounded-lg bg-indigo-50/80 dark:bg-indigo-950/40 border border-indigo-200/80 dark:border-indigo-800/60 px-2.5 py-1.5 text-[11px]">
+                            <div className="flex items-center gap-1.5 text-indigo-900 dark:text-indigo-200 font-medium">
+                                <BellRing className="size-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                                <span>Aktifkan notifikasi desktop</span>
+                            </div>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={requestPushPermission}
+                                className="h-6 px-2 text-[10px] font-semibold bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white border-0 cursor-pointer"
+                            >
+                                Izinkan
+                            </Button>
+                        </div>
+                    )}
+                    {pushPermission === 'granted' && (
+                        <div className="mt-2 flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                            <CheckCircle2 className="size-3 shrink-0" />
+                            <span>Push notifikasi browser aktif</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Notifications List */}

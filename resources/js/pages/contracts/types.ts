@@ -64,6 +64,8 @@ export interface ContractApproval {
     sequence: number;
     sub_step?: number | null;
     sort_order?: number;
+    batch_no?: number;
+    is_adhoc?: boolean;
     status: 'pending' | 'waiting' | 'approved' | 'rejected';
     action_id?: string | null;
     action_code?: string | null;

@@ -342,7 +342,7 @@ export const ContractDetailView = ({
             if (act.is_active === false) return false;
 
             // Do not allow nested ad-hoc action on ad-hoc review steps
-            if ((act.action_code === 'forward' || act.id === 'action_adhoc') &&
+            if ((act.action_code === 'forward' || act.action_code === 'add_adhoc') &&
                 (contract.workflow_step?.step_category === 'adhoc_review' || (contract.workflow_step?.meta as any)?.is_adhoc_step)) {
                 return false;
             }
