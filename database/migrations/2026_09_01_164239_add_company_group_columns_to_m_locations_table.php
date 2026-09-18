@@ -20,20 +20,22 @@ return new class extends Migration
             $table->foreign('company_group_id')->references('id')->on('m_company_groups')->nullOnDelete();
         });
 
-        // Backfill company_group_id from m_business_units where location is matched
-        DB::statement('
-            UPDATE m_locations
-            SET company_group_id = sub.company_group_id,
-                company_group_name = sub.company_group_name,
-                idcompany_group = sub.idcompany_group
-            FROM (
-                SELECT DISTINCT ON (location_id) location_id, company_group_id, company_group_name, idcompany_group
-                FROM m_business_units
-                WHERE location_id IS NOT NULL AND company_group_id IS NOT NULL
-                ORDER BY location_id, created_at DESC
-            ) AS sub
-            WHERE m_locations.id = sub.location_id
-        ');
+        // Backfill company_group_id from m_business_units where location is matched (PostgreSQL only)
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('
+                UPDATE m_locations
+                SET company_group_id = sub.company_group_id,
+                    company_group_name = sub.company_group_name,
+                    idcompany_group = sub.idcompany_group
+                FROM (
+                    SELECT DISTINCT ON (location_id) location_id, company_group_id, company_group_name, idcompany_group
+                    FROM m_business_units
+                    WHERE location_id IS NOT NULL AND company_group_id IS NOT NULL
+                    ORDER BY location_id, created_at DESC
+                ) AS sub
+                WHERE m_locations.id = sub.location_id
+            ');
+        }
     }
 
     /**

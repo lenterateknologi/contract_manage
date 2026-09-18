@@ -32,6 +32,13 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'role_id' => null,
             'department_id' => null,
+            'division_id' => null,
+            'company_id' => null,
+            'location_id' => null,
+            'business_unit_id' => null,
+            'company_name' => null,
+            'location_name' => null,
+            'is_used' => true,
         ];
     }
 

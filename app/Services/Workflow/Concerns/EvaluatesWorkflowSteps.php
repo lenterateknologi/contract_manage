@@ -284,7 +284,40 @@ trait EvaluatesWorkflowSteps
      */
     private function handleAutoApproval(Contract $contract, ?User $user): void
     {
-        // Feature disabled as requested
+        if (! $user) {
+            return;
+        }
 
+        // Do not auto-approve if there are active adhoc approvals blocking
+        $hasAdhoc = Approval::where('contract_id', $contract->id)
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->whereIn('role', ['Persetujuan Tambahan', 'Penandatangan'])
+            ->whereIn('status', ['pending', 'waiting'])
+            ->exists();
+
+        if ($hasAdhoc) {
+            return;
+        }
+
+        $pendingApprovals = $contract->approvals()
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->where('status', 'pending')
+            ->where('is_active', true)
+            ->where('user_id', $user->id)
+            ->get();
+
+        foreach ($pendingApprovals as $approval) {
+            $step = $approval->workflowStep;
+
+            // Prevent auto-approving Step 1 (Drafting)
+            if ($step && $step->step === 1 && $step->step_category === 'drafting') {
+                continue;
+            }
+
+            $skipCategories = ['signing', 'upload', 'joint_upload'];
+            if ($step && ! in_array(strtolower($step->step_category ?? ''), $skipCategories)) {
+                $this->approveContract($contract, $approval, 'Sistem: Persetujuan Otomatis (Sama dengan penyetujui/inisiator sebelumnya)');
+            }
+        }
     }
 }

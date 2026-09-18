@@ -71,20 +71,45 @@ class ContractDashboardQuery
             $companyIds,
         );
 
-        // KPI Cards
-        $totalContracts = (clone $baseQuery)->whereRaw("UPPER(status) != 'ARCHIVED'")->whereNull('closed_at')->count();
+        // KPI Cards - Single pass conditional aggregation for instant calculation
+        $todayStr = now()->toDateString();
+        $inProcessStatuses = array_map(fn ($s) => "'{$s->value}'", ContractStatusEnum::inProcess());
+        $inProcessStatusesSql = implode(',', $inProcessStatuses);
+
+        $kpiAggregates = (clone $baseQuery)
+            ->selectRaw("
+                COUNT(*) FILTER (WHERE UPPER(status) != 'ARCHIVED' AND closed_at IS NULL) as total_contracts,
+                COUNT(*) FILTER (WHERE status = 'archived' OR closed_at IS NOT NULL) as archived_total,
+                COUNT(*) FILTER (WHERE status IN ({$inProcessStatusesSql}) AND closed_at IS NULL) as in_process,
+                COUNT(*) FILTER (WHERE status = 'approved' AND closed_at IS NULL AND (end_date IS NULL OR end_date >= CURRENT_DATE)) as active_contracts,
+                COUNT(*) FILTER (WHERE status = 'approved' AND closed_at IS NULL AND end_date >= CURRENT_DATE AND end_date <= (CURRENT_DATE + INTERVAL '30 days')) as expiring_soon,
+                COUNT(*) FILTER (WHERE status = 'approved' AND closed_at IS NULL AND end_date < CURRENT_DATE) as expired,
+                COUNT(*) FILTER (WHERE parent_id IS NOT NULL) as renewed,
+                COUNT(*) FILTER (WHERE status = 'approved') as approved_count,
+                COUNT(*) FILTER (WHERE status = 'revision') as revision_count,
+                COUNT(*) FILTER (WHERE status = 'rejected') as rejected_count,
+                COUNT(*) FILTER (WHERE DATE(created_at) = ?) as today_total,
+                COUNT(*) FILTER (WHERE DATE(created_at) = ? AND status IN ('draft', 'in_review', 'pending', 'revision')) as today_in_process,
+                COUNT(*) FILTER (WHERE DATE(updated_at) = ? AND status IN ('approved', 'locked')) as today_completed,
+                COUNT(*) FILTER (WHERE DATE(updated_at) = ? AND status = 'rejected') as today_rejected,
+                COUNT(*) FILTER (WHERE DATE(updated_at) = ? AND status = 'approved') as today_approved
+            ", [$todayStr, $todayStr, $todayStr, $todayStr, $todayStr])
+            ->first();
+
+        $totalContracts = (int) ($kpiAggregates->total_contracts ?? 0);
+        $archivedTotalContracts = (int) ($kpiAggregates->archived_total ?? 0);
+        $inProcessContracts = (int) ($kpiAggregates->in_process ?? 0);
+        $activeContracts = (int) ($kpiAggregates->active_contracts ?? 0);
+        $expiringSoonContracts = (int) ($kpiAggregates->expiring_soon ?? 0);
+        $expiredContracts = (int) ($kpiAggregates->expired ?? 0);
+        $renewedContractsCount = (int) ($kpiAggregates->renewed ?? 0);
+
         $myTotalContracts = DB::table('t_contracts')
             ->where('created_by', Auth::id())
             ->whereNull('deleted_at')
             ->where('status', '!=', 'draft')
             ->count();
-        $archivedTotalContracts = (clone $baseQuery)
-            ->where(fn (QueryBuilder $q) => $q->where('status', 'archived')->orWhereNotNull('closed_at'))
-            ->count();
-        $inProcessContracts = (clone $baseQuery)
-            ->whereIn('status', array_map(fn ($s) => $s->value, ContractStatusEnum::inProcess()))
-            ->whereNull('closed_at')
-            ->count();
+
         $pendingApprovalsForMe = DB::table('t_approvals')
             ->join('t_contracts', 't_approvals.contract_id', '=', 't_contracts.id')
             ->where('t_approvals.user_id', Auth::id())
@@ -96,25 +121,7 @@ class ContractDashboardQuery
             ->when(! empty($contractTypeIds), fn ($q) => $q->whereIn('t_contracts.contract_type_id', $contractTypeIds))
             ->distinct('t_contracts.id')
             ->count('t_contracts.id');
-        $activeContracts = (clone $baseQuery)
-            ->where('status', ContractStatusEnum::Approved->value)
-            ->whereNull('closed_at')
-            ->where(fn (QueryBuilder $q) => $q->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))
-            ->count();
-        $expiringSoonContracts = (clone $baseQuery)
-            ->where('status', ContractStatusEnum::Approved->value)
-            ->whereNull('closed_at')
-            ->whereNotNull('end_date')
-            ->whereDate('end_date', '>=', now()->toDateString())
-            ->whereDate('end_date', '<=', now()->addDays(30)->toDateString())
-            ->count();
-        $expiredContracts = (clone $baseQuery)
-            ->where('status', ContractStatusEnum::Approved->value)
-            ->whereNull('closed_at')
-            ->whereNotNull('end_date')
-            ->whereDate('end_date', '<', now()->toDateString())
-            ->count();
-        $renewedContractsCount = (clone $baseQuery)->whereNotNull('parent_id')->count();
+
         $renewalRate = ($expiredContracts + $renewedContractsCount) > 0
             ? round(($renewedContractsCount / ($expiredContracts + $renewedContractsCount)) * 100, 1)
             : 0;
@@ -154,10 +161,10 @@ class ContractDashboardQuery
         $statusDistribution = $this->getStatusDistribution($baseQuery);
         $expiryTimeline = $this->getExpiryTimeline($baseQuery);
         $approvalStatusCounts = [
-            'approved' => (clone $baseQuery)->where('status', ContractStatusEnum::Approved->value)->count(),
+            'approved' => (int) ($kpiAggregates->approved_count ?? 0),
             'pending' => $inProcessContracts,
-            'revision' => (clone $baseQuery)->where('status', ContractStatusEnum::Revision->value)->count(),
-            'rejected' => (clone $baseQuery)->where('status', ContractStatusEnum::Rejected->value)->count(),
+            'revision' => (int) ($kpiAggregates->revision_count ?? 0),
+            'rejected' => (int) ($kpiAggregates->rejected_count ?? 0),
         ];
 
         // Lists
@@ -260,24 +267,16 @@ class ContractDashboardQuery
         $categoryTraffic = $this->getCategoryTraffic($baseQuery);
         $departmentTraffic = $this->getDepartmentTraffic($baseQuery);
 
-        $totalRenewed = (clone $baseQuery)->whereNotNull('parent_id')->count();
+        $totalRenewed = $renewedContractsCount;
         $renewalCompletionRate = $expiredContracts > 0
             ? round(($totalRenewed / $expiredContracts) * 100, 1)
             : 100;
 
-        $todayStr = now()->toDateString();
-        $todayContracts = (clone $baseQuery)->whereDate('created_at', $todayStr)->get(['status']);
-        $todayUpdatedContracts = (clone $baseQuery)->whereDate('updated_at', $todayStr)->get(['status']);
-
-        $todayTotal = $todayContracts->count();
-        $todayInProcess = $todayContracts->whereIn('status', [
-            'draft', 'in_review', 'pending', 'revision',
-        ])->count();
-        $todayCompleted = $todayUpdatedContracts->whereIn('status', [
-            'approved', 'locked',
-        ])->count();
-        $todayRejected = $todayUpdatedContracts->where('status', 'rejected')->count();
-        $todayApproved = $todayUpdatedContracts->where('status', 'approved')->count();
+        $todayTotal = (int) ($kpiAggregates->today_total ?? 0);
+        $todayInProcess = (int) ($kpiAggregates->today_in_process ?? 0);
+        $todayCompleted = (int) ($kpiAggregates->today_completed ?? 0);
+        $todayRejected = (int) ($kpiAggregates->today_rejected ?? 0);
+        $todayApproved = (int) ($kpiAggregates->today_approved ?? 0);
 
         // Resolve matching dashboard type configuration:
         // 1. Direct role relation dashboard_type_id (if present)
@@ -1807,15 +1806,20 @@ class ContractDashboardQuery
             ->groupBy('dept_id')
             ->pluck('count', 'dept_id');
 
+        $userCountsByDept = User::whereNotNull('department_id')
+            ->select('department_id', DB::raw('count(*) as count'))
+            ->groupBy('department_id')
+            ->pluck('count', 'department_id');
+
         return Department::orderBy('name')
             ->get()
-            ->map(function ($dept) use ($incomingCounts, $outgoingCounts) {
+            ->map(function ($dept) use ($incomingCounts, $outgoingCounts, $userCountsByDept) {
                 return [
                     'department_id' => $dept->id,
                     'department_name' => $dept->name,
                     'incoming_count' => (int) $incomingCounts->get($dept->id, 0),
                     'outgoing_count' => (int) $outgoingCounts->get($dept->id, 0),
-                    'member_count' => User::where('department_id', $dept->id)->count(),
+                    'member_count' => (int) $userCountsByDept->get($dept->id, 0),
                 ];
             })
             ->values()

@@ -10,10 +10,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_contracts');
+        $isSqlite = DB::getDriverName() === 'sqlite';
+        $viewType = $isSqlite ? 'VIEW' : 'MATERIALIZED VIEW';
 
-        DB::statement('
-            CREATE MATERIALIZED VIEW mv_dashboard_contracts AS
+        DB::statement("DROP {$viewType} IF EXISTS mv_dashboard_contracts");
+
+        DB::statement("
+            CREATE {$viewType} mv_dashboard_contracts AS
             SELECT 
                 c.id,
                 c.form_no,
@@ -61,12 +64,14 @@ return new class extends Migration
             LEFT JOIN m_contract_types ct ON c.contract_type_id = ct.id
             LEFT JOIN m_vendors v ON c.vendor_id = v.id
             WHERE c.deleted_at IS NULL
-        ');
+        ");
 
-        DB::statement('CREATE UNIQUE INDEX mv_dashboard_contracts_id ON mv_dashboard_contracts (id)');
-        DB::statement('CREATE INDEX mv_dashboard_contracts_status ON mv_dashboard_contracts (status)');
-        DB::statement('CREATE INDEX mv_dashboard_contracts_created_at ON mv_dashboard_contracts (created_at)');
-        DB::statement('CREATE INDEX mv_dashboard_contracts_closed_at ON mv_dashboard_contracts (closed_at)');
+        if (! $isSqlite) {
+            DB::statement('CREATE UNIQUE INDEX mv_dashboard_contracts_id ON mv_dashboard_contracts (id)');
+            DB::statement('CREATE INDEX mv_dashboard_contracts_status ON mv_dashboard_contracts (status)');
+            DB::statement('CREATE INDEX mv_dashboard_contracts_created_at ON mv_dashboard_contracts (created_at)');
+            DB::statement('CREATE INDEX mv_dashboard_contracts_closed_at ON mv_dashboard_contracts (closed_at)');
+        }
     }
 
     /**
@@ -74,10 +79,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement('DROP MATERIALIZED VIEW IF EXISTS mv_dashboard_contracts');
+        $isSqlite = DB::getDriverName() === 'sqlite';
+        $viewType = $isSqlite ? 'VIEW' : 'MATERIALIZED VIEW';
 
-        DB::statement('
-            CREATE MATERIALIZED VIEW mv_dashboard_contracts AS
+        DB::statement("DROP {$viewType} IF EXISTS mv_dashboard_contracts");
+
+        DB::statement("
+            CREATE {$viewType} mv_dashboard_contracts AS
             SELECT 
                 c.id,
                 c.form_no,
@@ -122,10 +130,12 @@ return new class extends Migration
             LEFT JOIN m_contract_types ct ON c.contract_type_id = ct.id
             LEFT JOIN m_vendors v ON c.vendor_id = v.id
             WHERE c.deleted_at IS NULL
-        ');
+        ");
 
-        DB::statement('CREATE UNIQUE INDEX mv_dashboard_contracts_id ON mv_dashboard_contracts (id)');
-        DB::statement('CREATE INDEX mv_dashboard_contracts_status ON mv_dashboard_contracts (status)');
-        DB::statement('CREATE INDEX mv_dashboard_contracts_created_at ON mv_dashboard_contracts (created_at)');
+        if (! $isSqlite) {
+            DB::statement('CREATE UNIQUE INDEX mv_dashboard_contracts_id ON mv_dashboard_contracts (id)');
+            DB::statement('CREATE INDEX mv_dashboard_contracts_status ON mv_dashboard_contracts (status)');
+            DB::statement('CREATE INDEX mv_dashboard_contracts_created_at ON mv_dashboard_contracts (created_at)');
+        }
     }
 };

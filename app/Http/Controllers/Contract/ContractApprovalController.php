@@ -164,15 +164,21 @@ class ContractApprovalController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        // Find the pending approval for the current user (with self-healing if workflow step approver was updated)
-        $approval = Approval::where('contract_id', $id)
+        // Find the pending approval for the current user on the active step (with self-healing if workflow step approver was updated)
+        $approvalQuery = Approval::where('contract_id', $id)
             ->where('user_id', Auth::id())
-            ->where('status', 'pending')
-            ->first();
+            ->where('status', 'pending');
+
+        if ($contract->workflow_step_id) {
+            $approvalQuery->where('workflow_step_id', $contract->workflow_step_id);
+        }
+
+        $approval = $approvalQuery->first();
 
         if (! $approval && $contract->status === 'in_review' && $contract->workflow_step_id && $contract->workflowStep) {
             $this->workflowService->createApprovalForStep($contract, $contract->workflowStep);
             $approval = Approval::where('contract_id', $id)
+                ->where('workflow_step_id', $contract->workflow_step_id)
                 ->where('user_id', Auth::id())
                 ->where('status', 'pending')
                 ->first();
@@ -304,15 +310,21 @@ class ContractApprovalController extends Controller
     {
         $contract = $this->contractDetailQuery->find($id);
 
-        // Find the pending approval for the current user (with self-healing if workflow step approver was updated)
-        $approval = Approval::where('contract_id', $id)
+        // Find the pending approval for the current user on the active step (with self-healing if workflow step approver was updated)
+        $approvalQuery = Approval::where('contract_id', $id)
             ->where('user_id', Auth::id())
-            ->where('status', 'pending')
-            ->first();
+            ->where('status', 'pending');
+
+        if ($contract->workflow_step_id) {
+            $approvalQuery->where('workflow_step_id', $contract->workflow_step_id);
+        }
+
+        $approval = $approvalQuery->first();
 
         if (! $approval && $contract->status === 'in_review' && $contract->workflow_step_id && $contract->workflowStep) {
             $this->workflowService->createApprovalForStep($contract, $contract->workflowStep);
             $approval = Approval::where('contract_id', $id)
+                ->where('workflow_step_id', $contract->workflow_step_id)
                 ->where('user_id', Auth::id())
                 ->where('status', 'pending')
                 ->first();
@@ -527,10 +539,13 @@ class ContractApprovalController extends Controller
                 $user = User::findOrFail($userId);
 
                 // Initial status logic:
-                // - If sequential: first ad-hoc approver is 'pending', subsequent ones are 'waiting'.
-                // - If parallel: all newly added ad-hoc approvers are 'pending'.
+                // - If future step (not current): all added ad-hoc approvers start as 'waiting'.
+                // - If current step and sequential: first ad-hoc approver is 'pending', subsequent ones are 'waiting'.
+                // - If current step and parallel: all newly added ad-hoc approvers are 'pending'.
                 $status = 'pending';
-                if ($isSequential && $index > 0) {
+                if (! $isCurrentStep) {
+                    $status = 'waiting';
+                } elseif ($isSequential && $index > 0) {
                     $status = 'waiting';
                 }
 
@@ -571,8 +586,11 @@ class ContractApprovalController extends Controller
                 $addedUsers[] = $user->name;
             }
 
-            // If target step is next step (e.g. Step 1 configured adhoc for Step 2), complete current step and advance
-            if (! $isCurrentStep) {
+            $originWfId = $contract->origin_workflow_id ?: $contract->workflow_id;
+            $isSubWorkflow = $targetStep->workflow_id !== $originWfId;
+
+            // If branching to a sub-workflow, complete current step and advance to sub-workflow
+            if ($isSubWorkflow) {
                 // Mark previous step approvals as approved so they don't remain pending concurrently
                 Approval::where('contract_id', $contract->id)
                     ->where('workflow_step_id', $contract->workflow_step_id)
@@ -584,22 +602,17 @@ class ContractApprovalController extends Controller
                         'updated_by' => Auth::id(),
                     ]);
 
-                $originWfId = $contract->origin_workflow_id ?: $contract->workflow_id;
-                $isSubWorkflow = $targetStep->workflow_id !== $originWfId;
-                
-                if ($isSubWorkflow) {
-                    $metadata['branch_from_step_num'] = $contract->workflowStep?->step ?? 1;
-                    $metadata['branch_from_step_id'] = $contract->workflow_step_id;
-                }
+                $metadata['branch_from_step_num'] = $contract->workflowStep?->step ?? 1;
+                $metadata['branch_from_step_id'] = $contract->workflow_step_id;
 
                 $contract->update([
-                    'origin_workflow_id' => $isSubWorkflow ? $originWfId : ($contract->origin_workflow_id ?: null),
+                    'origin_workflow_id' => $originWfId,
                     'workflow_id' => $targetStep->workflow_id,
                     'workflow_step_id' => $targetStepId,
-                    'is_in_sub_workflow' => $isSubWorkflow,
-                    'branch_step_number' => $isSubWorkflow ? ($contract->workflowStep?->step ?? 1) : null,
+                    'is_in_sub_workflow' => true,
+                    'branch_step_number' => $contract->workflowStep?->step ?? 1,
                     'current_step_number' => $targetStep->step,
-                    'current_sub_workflow_id' => $isSubWorkflow ? $targetStep->workflow_id : null,
+                    'current_sub_workflow_id' => $targetStep->workflow_id,
                     'metadata' => $metadata,
                 ]);
 
@@ -609,7 +622,7 @@ class ContractApprovalController extends Controller
                     'description' => "Alur kerja berlanjut ke Tahap {$targetStep->step}: {$targetStepLabel}",
                     'actor_id' => Auth::id(),
                 ]);
-            } else {
+            } elseif ($isCurrentStep) {
                 // Sync main step regular approvals status when adding ad-hoc approvals to current step
                 $hasActiveAdhoc = Approval::where('contract_id', $contract->id)
                     ->where('workflow_step_id', $targetStepId)

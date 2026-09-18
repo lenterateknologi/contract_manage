@@ -10,8 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        $likeOp = DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
         $pengaturanGroupId = DB::table('m_module_groups')
-            ->where('name', 'ilike', '%Pengaturan%')
+            ->where('name', $likeOp, '%Pengaturan%')
             ->value('id');
 
         if ($pengaturanGroupId) {

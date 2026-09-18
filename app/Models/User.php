@@ -294,6 +294,33 @@ class User extends Authenticatable
 
     private static array $templateMemoryCache = [];
 
+    public function getCompanyGroupIdAttribute(): ?string
+    {
+        if (array_key_exists('company_group_id', $this->attributes)) {
+            return $this->attributes['company_group_id'];
+        }
+
+        if ($this->relationLoaded('company') && $this->company) {
+            return $this->company->company_group_id;
+        }
+
+        if ($this->relationLoaded('businessUnit') && $this->businessUnit) {
+            return $this->businessUnit->company_group_id;
+        }
+
+        $companyId = $this->attributes['company_id'] ?? null;
+        if (! empty($companyId)) {
+            return Company::where('id', $companyId)->value('company_group_id');
+        }
+
+        return null;
+    }
+
+    public function setCompanyGroupIdAttribute($value): void
+    {
+        // No-op as company_group_id is derived from company/location/businessUnit
+    }
+
     public function getCompanyGroupNameAttribute(): ?string
     {
         if ($this->relationLoaded('companyGroup') && $this->companyGroup) {
@@ -365,6 +392,29 @@ class User extends Authenticatable
         return null;
     }
 
+    public function getRegionIdAttribute(): ?string
+    {
+        if (array_key_exists('region_id', $this->attributes)) {
+            return $this->attributes['region_id'];
+        }
+
+        if ($this->relationLoaded('company') && $this->company) {
+            return $this->company->region_id;
+        }
+
+        $companyId = $this->attributes['company_id'] ?? null;
+        if (! empty($companyId)) {
+            return Company::where('id', $companyId)->value('region_id');
+        }
+
+        return null;
+    }
+
+    public function setRegionIdAttribute($value): void
+    {
+        // No-op as region is derived via company relationship
+    }
+
     public function getRegionNameAttribute(): ?string
     {
         if ($this->relationLoaded('region') && $this->region) {
@@ -375,7 +425,7 @@ class User extends Authenticatable
             return $this->company->getAttributes()['region_name'];
         }
 
-        $regionId = $this->attributes['region_id'] ?? null;
+        $regionId = $this->region_id;
         if (! empty($regionId)) {
             if (! array_key_exists($regionId, self::$regionMemoryCache)) {
                 self::$regionMemoryCache[$regionId] = Region::find($regionId)?->name;

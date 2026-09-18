@@ -18,6 +18,8 @@ return new class extends Migration
             });
         }
 
+        $likeOp = DB::getDriverName() === 'pgsql' ? 'ilike' : 'like';
+
         // Enable for Admin, Super Admin, Manager Legal, Ast Manager Legal, Staff Legal
         DB::table('m_roles')
             ->whereIn('name', [
@@ -27,8 +29,8 @@ return new class extends Migration
                 'Ast Manager Legal',
                 'Staff Legal',
             ])
-            ->orWhere('name', 'ilike', '%legal%')
-            ->orWhere('name', 'ilike', '%admin%')
+            ->orWhere('name', $likeOp, '%legal%')
+            ->orWhere('name', $likeOp, '%admin%')
             ->update(['can_create_on_behalf' => true]);
     }
 
