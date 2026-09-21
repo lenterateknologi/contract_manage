@@ -11,6 +11,7 @@ use App\Models\Department;
 use App\Models\Division;
 use App\Models\FormTemplate;
 use App\Models\Location;
+use App\Models\OrganizationGroup;
 use App\Models\Region;
 use App\Models\Role;
 use App\Models\SubmissionType;
@@ -129,13 +130,47 @@ class ContractOptionsQuery
             'users' => function () use ($isManager, $user) {
                 $cacheKey = 'contract_opts_users_'.($isManager && ! request()->boolean('all') ? 'div_'.$user?->division_id : 'all');
 
-                return Cache::remember($cacheKey, now()->addMinutes(3), function () use ($isManager, $user) {
-                    return User::with(['department:id,name', 'roleRelation:id,name'])
+                return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($isManager, $user) {
+                    $orgGroupMap = OrganizationGroup::pluck('id', 'idorg_group')->toArray();
+
+                    return User::query()
+                        ->select(['id', 'name', 'email', 'role_id', 'department_id', 'division_id', 'location_id', 'company_id', 'company_group_id', 'region_id', 'idlocation', 'location_name', 'org_name', 'company_name', 'is_used', 'is_active'])
+                        ->with(['department:id,name,idorg_group,org_group_name', 'roleRelation:id,name'])
                         ->where('is_used', true)
                         ->when($isManager && ! request()->boolean('all') && $user?->division_id, fn ($q) => $q->where('division_id', $user->division_id))
                         ->orderBy('name')
                         ->get()
-                        ->map(fn ($u) => ContractFormatter::formatUser($u))
+                        ->map(function ($u) use ($orgGroupMap) {
+                            $idOrgGroup = $u->department?->idorg_group;
+                            $orgGroupId = $idOrgGroup && isset($orgGroupMap[$idOrgGroup]) ? $orgGroupMap[$idOrgGroup] : null;
+
+                            return [
+                                'id' => $u->id,
+                                'name' => $u->name,
+                                'email' => $u->email,
+                                'role' => $u->role,
+                                'role_id' => $u->role_id,
+                                'department_id' => $u->department_id,
+                                'division_id' => $u->division_id,
+                                'location_id' => $u->location_id,
+                                'company_id' => $u->company_id,
+                                'company_group_id' => $u->company_group_id,
+                                'region_id' => $u->region_id,
+                                'location_name' => $u->location_name,
+                                'company_name' => $u->company_name,
+                                'department_name' => $u->department?->name,
+                                'org_group_name' => $u->org_group_name ?? $u->department?->org_group_name,
+                                'idorg_group' => $idOrgGroup,
+                                'organization_group_id' => $orgGroupId,
+                                'department' => $u->department ? [
+                                    'id' => $u->department->id,
+                                    'name' => $u->department->name,
+                                    'idorg_group' => $u->department->idorg_group,
+                                    'organization_group_id' => $orgGroupId,
+                                    'org_group_name' => $u->department->org_group_name,
+                                ] : null,
+                            ];
+                        })
                         ->toArray();
                 });
             },

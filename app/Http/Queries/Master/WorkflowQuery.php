@@ -25,11 +25,6 @@ class WorkflowQuery
                 'initiatorAuthorities.user:id,name,role_id',
                 'initiatorAuthorities.companyGroup:id,name',
                 'initiatorAuthorities.region:id,name',
-                'steps.actions',
-                'steps.approverAuthorities.role:id,name',
-                'steps.approverAuthorities.division:id,name',
-                'steps.approverAuthorities.department:id,name',
-                'steps.approverAuthorities.user:id,name,role_id',
             ])
             ->when($request->search, function ($q, $search) {
                 $search = strtolower($search);
@@ -106,6 +101,12 @@ class WorkflowQuery
             'steps.approverAuthorities.company',
             'steps.approverAuthorities.region',
             'steps.approverAuthorities.organizationGroup',
+            'steps.approverAuthorities.user.department',
+            'steps.approverAuthorities.user.division',
+            'steps.approverAuthorities.user.companyGroup',
+            'steps.approverAuthorities.user.company',
+            'steps.approverAuthorities.user.region',
+            'steps.approverAuthorities.user.roleRelation',
             'steps.actions.additionalAuthorities',
             'initiatorAuthorities.role',
             'initiatorAuthorities.department',
@@ -115,6 +116,12 @@ class WorkflowQuery
             'initiatorAuthorities.company',
             'initiatorAuthorities.region',
             'initiatorAuthorities.organizationGroup',
+            'initiatorAuthorities.user.department',
+            'initiatorAuthorities.user.division',
+            'initiatorAuthorities.user.companyGroup',
+            'initiatorAuthorities.user.company',
+            'initiatorAuthorities.user.region',
+            'initiatorAuthorities.user.roleRelation',
         ])->findOrFail($id);
     }
 

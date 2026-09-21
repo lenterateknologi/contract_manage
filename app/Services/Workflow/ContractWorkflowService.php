@@ -74,6 +74,7 @@ class ContractWorkflowService
         $deadlines = $this->slaService->calculateContractDeadlines($contract, $topic, $now);
         $draftingDeadline = $deadlines['drafting_deadline'];
         $totalDeadline = $deadlines['total_deadline'];
+        $stageDeadline = $deadlines['stage_deadline'] ?? $draftingDeadline;
 
         $metadata = array_merge($contract->metadata ?? [], $metadata, [
             'tax_required' => $metadata['tax_required'] ?? ($contract->metadata['tax_required'] ?? false),
@@ -84,7 +85,16 @@ class ContractWorkflowService
             'current_phase' => 'drafting',
         ]);
 
-        $contract->update(['metadata' => $metadata]);
+        $contract->update([
+            'metadata' => $metadata,
+            'sla_config_id' => $deadlines['sla_config_id'],
+            'sla_due_at' => $totalDeadline ?: $draftingDeadline,
+            'current_stage_due_at' => $stageDeadline,
+            'stage_sla_hours' => $deadlines['stage_hours'] ?? $deadlines['drafting_hours'],
+            'sla_total_hours' => $deadlines['total_hours'],
+            'stage_started_at' => $now,
+            'sla_status' => 'on_track',
+        ]);
         $contract->load(['initiator.department', 'initiator.company', 'creator.department', 'creator.company']);
 
         $contract->approvals()->delete();
@@ -112,11 +122,17 @@ class ContractWorkflowService
                 ?? $contract->status);
         $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
+        $stageSla = $this->slaService->resolveStageSla($contract, $nextStatus?->code ?: $statusStr, $now);
+
         $updateData = [
             'workflow_id' => $workflow->id,
             'workflow_step_id' => $firstStep->id,
             'status' => $nextStatus?->code ?: $statusStr,
             'submitted_at' => now(),
+            'current_stage_due_at' => $stageSla['stage_deadline'],
+            'stage_sla_hours' => $stageSla['stage_hours'],
+            'stage_started_at' => $now,
+            'sla_status' => 'on_track',
         ];
 
         if (empty($contract->origin_workflow_id)) {
@@ -190,6 +206,10 @@ class ContractWorkflowService
                 ->delete();
         }
 
+        $stageSla = $this->slaService->resolveStageSla($contract, $contract->status, now());
+        $stageDueAt = $stageSla['stage_deadline'] ?? null;
+        $stageHours = $stageSla['stage_hours'] ?? null;
+
         foreach ($approvers as $approver) {
             // Guard: skip if a non-adhoc pending/waiting approval for this user+step already exists
             $existing = Approval::where('contract_id', $contract->id)
@@ -201,9 +221,9 @@ class ContractWorkflowService
 
             if ($existing) {
                 if ($hasAdhoc && $existing->status === 'pending') {
-                    $existing->update(['status' => 'waiting']);
+                    $existing->update(['status' => 'waiting', 'due_at' => $stageDueAt, 'sla_hours' => $stageHours]);
                 } elseif (! $hasAdhoc && $existing->status === 'waiting') {
-                    $existing->update(['status' => 'pending']);
+                    $existing->update(['status' => 'pending', 'due_at' => $stageDueAt, 'sla_hours' => $stageHours]);
                 }
 
                 continue;
@@ -227,6 +247,9 @@ class ContractWorkflowService
                 'is_current_step' => true,
                 'batch_no' => $contract->workflow_iteration ?? 1,
                 'is_adhoc' => false,
+                'due_at' => $stageDueAt,
+                'sla_hours' => $stageHours,
+                'is_overdue' => false,
             ]);
         }
 
@@ -1194,11 +1217,17 @@ class ContractWorkflowService
             $nextStatus = ContractStatus::where('code', $statusStr)->first();
 
             $isSameStep = $nextStep->id === $approval->workflow_step_id;
+            $now = now();
+            $stageSla = $this->slaService->resolveStageSla($contract, $nextStatus?->code ?: $statusStr, $now);
 
             $contract->update([
                 'workflow_id' => $nextStep->workflow_id ?: $contract->workflow_id,
                 'workflow_step_id' => $nextStep->id,
                 'status' => $nextStatus?->code ?: $statusStr,
+                'current_stage_due_at' => $stageSla['stage_deadline'],
+                'stage_sla_hours' => $stageSla['stage_hours'],
+                'stage_started_at' => $now,
+                'sla_status' => 'on_track',
             ]);
 
             if (! $isSameStep) {
@@ -1221,7 +1250,12 @@ class ContractWorkflowService
                 ?: data_get($contract->workflow?->meta, 'completed_status')
                 ?: 'approved';
 
-            $contract->update(['status' => $targetStat, 'workflow_step_id' => null]);
+            $contract->update([
+                'status' => $targetStat,
+                'workflow_step_id' => null,
+                'current_stage_due_at' => null,
+                'finished_at' => now(),
+            ]);
             $this->queryService->logHistory($contract, 'CONTRACT_COMPLETED', 'Seluruh persetujuan alur kerja selesai.', Auth::id());
         }
     }

@@ -5,6 +5,7 @@ import { FormTextarea } from '@/components/ui/inputs/FormTextarea';
 import { formatFileSize } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import { contractApi, resolveTransitionPreview } from '@/pages/contracts/utils';
+import { resolveContractRequirements } from '@/pages/contracts/utils/requirements';
 import { AlertCircle, CheckCircle2, Eye, Gavel, Loader2, Paperclip, Plus, Send, UserPen, X, XCircle } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
@@ -152,7 +153,7 @@ export function SharedActionModal({
                 infoText: 'Apakah Anda yakin ingin menyetujui penelaahan ini? Anda dapat memberikan catatan approval dan lampiran (opsional).',
             };
         }
-        if (contract?.workflow_step?.step === 1) {
+        if (contract?.workflow_step?.step === 1 && (actionCode === 'approve' || actionCode === 'send_approval' || !actionCode)) {
             return {
                 headerVariant: 'default' as const,
                 headerIcon: <Send size={18} className="text-white" />,
@@ -174,13 +175,13 @@ export function SharedActionModal({
             description: 'Berikan persetujuan atau catatan untuk memproses tahap kontrak ini',
             btnVariant: 'default' as const,
             btnIcon: <CheckCircle2 size={15} className="mr-1.5" />,
-            btnText: 'Konfirmasi Setuju',
+            btnText: actionAlias ? `Konfirmasi ${actionAlias}` : 'Konfirmasi Setuju',
             noteLabel: 'Catatan Approval (Opsional)',
             notePlaceholder: 'Tambahkan catatan approval...',
             noteRequired: false,
             infoText: 'Apakah Anda yakin ingin menyetujui kontrak ini? Anda dapat memberikan catatan approval dan lampiran (opsional).',
         };
-    }, [isReject, isBranch, isSubStep, actionAlias, contract?.workflow_step?.step]);
+    }, [isReject, isBranch, isSubStep, actionAlias, actionCode, contract?.workflow_step?.step]);
 
     const getActionRequiredFields = () => {
         if (isSubStep || isReject) return [];
@@ -401,110 +402,14 @@ export function SharedActionModal({
         }
     };
 
-    const checkIsSubmitDisabled = () => {
-        if (isReject) return !note.trim();
-        if (isSubStep) return false;
-        const requiredFields = getActionRequiredFields();
-        if (requiredFields.length === 0) return false;
-
-        const requirePic = requiredFields.includes('pic') || requiredFields.includes('assigned_pic');
-        const requireF1 = requiredFields.includes('f1');
-        const requireF2 = requiredFields.includes('f2');
-        const requireAgreement = requiredFields.includes('agreement');
-
-        if (requirePic) {
-            const hasPic = !!(
-                contract?.assigned_pic_id ||
-                contract?.metadata?.assigned_pic_id ||
-                (contract as any)?.assigned_pic ||
-                (contract as any)?.assignedPic
-            );
-            if (!hasPic) return true;
+    const reqStatus = useMemo(() => {
+        if (isReject || isSubStep) {
+            return { items: [], allFilled: true, totalCount: 0, filledCount: 0, hasRequirements: false };
         }
+        return resolveContractRequirements(contract, activeAction);
+    }, [contract, activeAction, isReject, isSubStep]);
 
-        const currentApproval = (contract?.approvals || []).find((a: any) => a.status === 'pending');
-        const currentStepId = contract?.workflow_step_id || contract?.workflow_step?.id;
-        const currentStepNo = contract?.workflow_step?.step || contract?.current_step_number || (currentApproval?.sequence ?? currentApproval?.step_number);
-        const iteration = contract?.workflow_iteration || 1;
-        const stepStartTime = currentApproval?.created_at || contract?.workflow_step?.created_at;
-
-        const checkDocFulfillment = (type: string) => {
-            const types = type === 'agreement' ? ['agreement', 'contract'] : [type];
-
-            // 1. Check version tagged with step_id or step_number
-            const hasVersionMatch = contract?.versions && contract.versions.some((v: any) => {
-                if (!types.includes(v.document_type)) return false;
-                if (currentStepId && v.workflow_step_id === currentStepId) return true;
-                if (currentStepNo !== undefined && v.step_number === currentStepNo) return true;
-                if (v.workflow_iteration === iteration && !v.workflow_step_id && !v.step_number) return true;
-                // Fallback time-based check
-                if (stepStartTime && v.created_at_raw) {
-                    return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
-                }
-                return false;
-            });
-            if (hasVersionMatch) return true;
-
-            // 2. Check form submission tagged with step_id or step_number
-            const hasFormMatch = (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => {
-                if (!types.includes(fs.document_type)) return false;
-                if (currentStepId && fs.workflow_step_id === currentStepId) return true;
-                if (currentStepNo !== undefined && fs.step_number === currentStepNo) return true;
-                if (fs.workflow_iteration === iteration && !fs.workflow_step_id && !fs.step_number) return true;
-                return (fs.current_version ?? 0) > 0 || !!fs.id;
-            });
-            if (hasFormMatch) return true;
-
-            // 3. Step 1 / Initial draft fallback
-            if (!currentStepNo || currentStepNo <= 1) {
-                if (contract?.versions && contract.versions.some((v: any) => types.includes(v.document_type))) return true;
-                if ((contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => types.includes(fs.document_type))) return true;
-            }
-
-            return false;
-        };
-
-        if (requireF1) {
-            const hasF1 = checkDocFulfillment('f1') || !!(
-                contract?.f1_file ||
-                contract?.metadata?.f1_file ||
-                contract?.metadata?.f1_form_data ||
-                (contract?.f1_items && contract.f1_items.length > 0)
-            );
-            if (!hasF1) return true;
-        }
-
-        if (requireF2) {
-            const hasF2 = checkDocFulfillment('f2') || !!(
-                contract?.f2_file ||
-                contract?.metadata?.f2_file ||
-                contract?.metadata?.f2_form_data
-            );
-            if (!hasF2) return true;
-        }
-
-        if (requireAgreement) {
-            const hasAgreement = checkDocFulfillment('agreement') || !!(
-                contract?.agreement_file ||
-                contract?.metadata?.agreement_file ||
-                contract?.metadata?.agreement_content ||
-                (contract as any)?.agreement_content
-            );
-            if (!hasAgreement) return true;
-        }
-
-        if (requiredFields.includes('title') && !contract?.title) return true;
-        if (requiredFields.includes('vendor') && !contract?.vendor_id && !contract?.vendor?.id) return true;
-        if (requiredFields.includes('category') && !contract?.contract_type_id && !contract?.contract_type) return true;
-        if ((requiredFields.includes('contract_no') || requiredFields.includes('f2_contract_no')) && !contract?.contract_no) return true;
-        if ((requiredFields.includes('tax_toggle') || requiredFields.includes('tax')) && contract?.tax_required === undefined && contract?.metadata?.tax_required === undefined) return true;
-        if (requiredFields.includes('price') && (contract?.price === undefined || contract?.price === null || contract?.price === '')) return true;
-        if (requiredFields.includes('period') && ((!contract?.contract_date && !contract?.start_date) || !contract?.end_date)) return true;
-
-        return false;
-    };
-
-    const isSubmitDisabled = loading || checkIsSubmitDisabled();
+    const isSubmitDisabled = loading || (isReject ? !note.trim() : !reqStatus.allFilled);
 
     return (
         <Modal
@@ -642,179 +547,48 @@ export function SharedActionModal({
                     })()}
 
                     {/* Check-list Syarat Dokumen / Data Wajib Aksi Ini */}
-                    {(() => {
-                        const requiredFields = getActionRequiredFields();
-                        if (requiredFields.length === 0) return null;
-
-                        const requirePic = requiredFields.includes('pic') || requiredFields.includes('assigned_pic');
-                        const requireF1 = requiredFields.includes('f1');
-                        const requireF2 = requiredFields.includes('f2');
-                        const requireAgreement = requiredFields.includes('agreement');
-
-                        const currentApproval = (contract?.approvals || []).find((a: any) => a.status === 'pending');
-                        const currentStepId = contract?.workflow_step_id || contract?.workflow_step?.id;
-                        const currentStepNo = contract?.workflow_step?.step || contract?.current_step_number || (currentApproval?.sequence ?? currentApproval?.step_number);
-                        const iteration = contract?.workflow_iteration || 1;
-                        const stepStartTime = currentApproval?.created_at || contract?.workflow_step?.created_at;
-
-                        const checkDocFulfillment = (type: string) => {
-                            const types = type === 'agreement' ? ['agreement', 'contract'] : [type];
-
-                            const hasVersionMatch = contract?.versions && contract.versions.some((v: any) => {
-                                if (!types.includes(v.document_type)) return false;
-                                if (currentStepId && v.workflow_step_id === currentStepId) return true;
-                                if (currentStepNo !== undefined && v.step_number === currentStepNo) return true;
-                                if (v.workflow_iteration === iteration && !v.workflow_step_id && !v.step_number) return true;
-                                if (stepStartTime && v.created_at_raw) {
-                                    return new Date(v.created_at_raw).getTime() >= new Date(stepStartTime).getTime() - 5000;
-                                }
-                                return false;
-                            });
-                            if (hasVersionMatch) return true;
-
-                            const hasFormMatch = (contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => {
-                                if (!types.includes(fs.document_type)) return false;
-                                if (currentStepId && fs.workflow_step_id === currentStepId) return true;
-                                if (currentStepNo !== undefined && fs.step_number === currentStepNo) return true;
-                                if (fs.workflow_iteration === iteration && !fs.workflow_step_id && !fs.step_number) return true;
-                                return (fs.current_version ?? 0) > 0 || !!fs.id;
-                            });
-                            if (hasFormMatch) return true;
-
-                            if (!currentStepNo || currentStepNo <= 1) {
-                                if (contract?.versions && contract.versions.some((v: any) => types.includes(v.document_type))) return true;
-                                if ((contract?.form_submissions || (contract as any)?.formSubmissions || []).some((fs: any) => types.includes(fs.document_type))) return true;
-                            }
-
-                            return false;
-                        };
-
-                        const reqList: any[] = [];
-
-                        if (requirePic) {
-                            const isFilled = !!(
-                                contract.assigned_pic_id ||
-                                contract.metadata?.assigned_pic_id ||
-                                (contract as any)?.assigned_pic ||
-                                (contract as any)?.assignedPic
-                            );
-                            reqList.push({ label: 'Data PIC (Penanggung Jawab)', isFilled });
-                        }
-                        if (requireF1) {
-                            const isFilled = checkDocFulfillment('f1') || !!(
-                                contract.f1_file ||
-                                contract.metadata?.f1_file ||
-                                contract.metadata?.f1_form_data ||
-                                (contract.f1_items && contract.f1_items.length > 0)
-                            );
-                            reqList.push({ label: 'Sub-dokumen F1 (Permohonan)', isFilled });
-                        }
-                        if (requireF2) {
-                            const isFilled = checkDocFulfillment('f2') || !!(
-                                contract.f2_file ||
-                                contract.metadata?.f2_file ||
-                                contract.metadata?.f2_form_data
-                            );
-                            reqList.push({ label: 'Sub-dokumen F2 (Ringkasan)', isFilled });
-                        }
-                        if (requireAgreement) {
-                            const isFilled = checkDocFulfillment('agreement') || !!(
-                                contract.agreement_file ||
-                                contract.metadata?.agreement_file ||
-                                contract.metadata?.agreement_content ||
-                                (contract as any)?.agreement_content
-                            );
-                            reqList.push({ label: 'Sub-dokumen Perjanjian / Draft', isFilled });
-                        }
-
-                        if (requiredFields.includes('title')) {
-                            reqList.push({ label: 'Judul Kontrak', isFilled: !!contract.title });
-                        }
-                        if (requiredFields.includes('vendor')) {
-                            reqList.push({ label: 'Pihak Kedua ', isFilled: !!(contract.vendor_id || contract.vendor?.id) });
-                        }
-                        if (requiredFields.includes('category')) {
-                            reqList.push({ label: 'Kategori Kontrak', isFilled: !!(contract.contract_type_id || contract.contract_type) });
-                        }
-                        if (requiredFields.includes('contract_no') || requiredFields.includes('f2_contract_no')) {
-                            reqList.push({ label: 'No. Kontrak (F2)', isFilled: !!contract.contract_no });
-                        }
-                        if (requiredFields.includes('tax_toggle') || requiredFields.includes('tax')) {
-                            reqList.push({ label: 'Penentuan Pajak', isFilled: contract.tax_required !== undefined || contract.metadata?.tax_required !== undefined });
-                        }
-                        if (requiredFields.includes('price')) {
-                            reqList.push({ label: 'Nilai / Harga', isFilled: contract.price !== undefined && contract.price !== null && contract.price !== '' });
-                        }
-                        if (requiredFields.includes('period')) {
-                            reqList.push({ label: 'Masa Berlaku', isFilled: !!((contract.contract_date || contract.start_date) && contract.end_date) });
-                        }
-
-                        // Review Requirements
-                        const reqStepKey = contract?.workflow_step_id ? `step_${contract.workflow_step_id}` : 'general';
-                        const reqReviews = ((contract as any)?.doc_reviews?.[reqStepKey] || contract?.metadata?.doc_reviews?.[reqStepKey] || contract?.metadata?.[`doc_reviews_${reqStepKey}`] || {}) as Record<string, any>;
-
-                        if (requiredFields.includes('review_f1')) {
-                            reqList.push({ label: 'Tinjau F1 (Permohonan)', isFilled: !!reqReviews.f1?.reviewed });
-                        }
-                        if (requiredFields.includes('review_f2')) {
-                            reqList.push({ label: 'Tinjau F2 (Ringkasan)', isFilled: !!reqReviews.f2?.reviewed });
-                        }
-                        if (requiredFields.includes('review_agreement')) {
-                            reqList.push({ label: 'Tinjau Draft Perjanjian', isFilled: !!reqReviews.agreement?.reviewed });
-                        }
-                        if (requiredFields.includes('review_all_docs')) {
-                            const meta = contract?.workflow_step?.meta || {};
-                            const hasF1 = meta.show_tab_f1 !== false && ((contract as any)?.f1_mode || 'upload') !== 'none';
-                            const hasF2 = meta.show_tab_f2 !== false && ((contract as any)?.f2_mode || 'upload') !== 'none';
-                            const hasAgreement = meta.show_tab_agreement !== false && ((contract as any)?.contract_mode || 'upload') !== 'none';
-
-                            const allReviewed = (!hasF1 || !!reqReviews.f1?.reviewed) &&
-                                                (!hasF2 || !!reqReviews.f2?.reviewed) &&
-                                                (!hasAgreement || !!reqReviews.agreement?.reviewed);
-
-                            reqList.push({ label: 'Tinjau Semua Dokumen Aktif', isFilled: allReviewed });
-                        }
-
-                        if (reqList.length === 0) return null;
-
-                        return (
-                            <div className="rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/60 p-2.5 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
-                                        Checklist Syarat Wajib
-                                    </span>
-                                    <span className="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-200/80 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300">
-                                        {reqList.filter(r => r.isFilled).length} / {reqList.length} Terisi
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-1.5 pt-0.5">
-                                    {reqList.map((req, idx) => (
-                                        <div
-                                            key={idx}
-                                            className={cn(
-                                                'flex items-center justify-between px-2.5 py-1.5 rounded-md border text-[11px] font-semibold transition-colors',
-                                                req.isFilled
-                                                    ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-300'
-                                                    : 'bg-rose-50/90 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-300'
-                                            )}
-                                        >
-                                            <span className="flex items-center gap-1.5 truncate">
-                                                {req.isFilled ? (
-                                                    <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-                                                ) : (
-                                                    <X size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
-                                                )}
-                                                <span className="truncate">{req.label}</span>
-                                            </span>
-                                            <span className="text-[9px] uppercase font-bold tracking-tight shrink-0 ml-1">
-                                                {req.isFilled ? '✓' : '✗'}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
+                    {reqStatus.hasRequirements && (
+                        <div className="rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-zinc-900/60 p-2.5 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-zinc-400">
+                                    Checklist Syarat Wajib
+                                </span>
+                                <span className={cn(
+                                    "text-[9px] font-bold px-2 py-0.5 rounded",
+                                    reqStatus.allFilled
+                                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400"
+                                )}>
+                                    {reqStatus.filledCount} / {reqStatus.totalCount} Terisi
+                                </span>
                             </div>
-                        );
-                    })()}
+                            <div className="grid grid-cols-2 gap-1.5 pt-0.5">
+                                {reqStatus.items.map((req) => (
+                                    <div
+                                        key={req.id}
+                                        className={cn(
+                                            'flex items-center justify-between px-2.5 py-1.5 rounded-md border text-[11px] font-semibold transition-colors',
+                                            req.isFilled
+                                                ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800/60 dark:text-emerald-300'
+                                                : 'bg-rose-50/90 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800/60 dark:text-rose-300'
+                                        )}
+                                    >
+                                        <span className="flex items-center gap-1.5 truncate">
+                                            {req.isFilled ? (
+                                                <CheckCircle2 size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                            ) : (
+                                                <X size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+                                            )}
+                                            <span className="truncate">{req.label}</span>
+                                        </span>
+                                        <span className="text-[9px] uppercase font-bold tracking-tight shrink-0 ml-1">
+                                            {req.isFilled ? '✓' : '✗'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="space-y-3">
                         {/* Urutan Eksekusi Joint Upload jika Next Step adalah joint_upload dan belum di-set */}

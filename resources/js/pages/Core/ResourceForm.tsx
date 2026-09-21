@@ -646,6 +646,7 @@ export default function ResourceForm({
     const isEdit = !!record;
     const [activeTab, setActiveTab] = useState<'info' | 'detail'>('info');
     const [dashboardTab, setDashboardTab] = useState<'setting' | 'authority' | 'filtering'>('setting');
+    const [slaTab, setSlaTab] = useState<'config' | 'overdue_authority'>('config');
     const [userTab, setUserTab] = useState<'profile' | 'policy'>('profile');
     const [localAccessTypes, setLocalAccessTypes] = useState<Record<string, string>>({});
     const [isSlaSimOpen, setIsSlaSimOpen] = useState(false);
@@ -687,7 +688,7 @@ export default function ResourceForm({
         return acc;
     }, {});
 
-    if (resourceSlug === 'dashboard-types') {
+    if (resourceSlug === 'dashboard-types' || resourceSlug === 'contract-sla-configs') {
         initialFormState['authorities'] = record?.authorities || [];
     }
 
@@ -1537,18 +1538,40 @@ export default function ResourceForm({
                                     <LucideIcons.Users size={14} className={dashboardTab === 'authority' ? 'text-primary' : 'text-slate-400'} />
                                     2. Target Pengguna & Matriks Organisasi
                                 </button>
+                            </div>
+                        )}
+
+                        {/* Navigation Tabs for SLA Configs */}
+                        {resourceSlug === 'contract-sla-configs' && (
+                            <div className="flex items-center gap-2 px-6 border-t border-surface-border/60 pt-2 bg-surface-base">
                                 <button
                                     type="button"
-                                    onClick={() => setDashboardTab('filtering')}
+                                    onClick={() => setSlaTab('config')}
                                     className={cn(
                                         "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
-                                        dashboardTab === 'filtering'
+                                        slaTab === 'config'
                                             ? "border-primary text-primary font-bold"
                                             : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                                     )}
                                 >
-                                    <LucideIcons.FileText size={14} className={dashboardTab === 'filtering' ? 'text-primary' : 'text-slate-400'} />
-                                    3. Cakupan Dokumen & Pengajuan
+                                    <LucideIcons.Clock size={14} className={slaTab === 'config' ? 'text-primary' : 'text-slate-400'} />
+                                    1. Target SLA & Hari Kerja
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSlaTab('overdue_authority')}
+                                    className={cn(
+                                        "px-4 py-2 text-xs font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-1.5",
+                                        slaTab === 'overdue_authority'
+                                            ? "border-primary text-primary font-bold"
+                                            : "border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                                    )}
+                                >
+                                    <LucideIcons.BellRing size={14} className={slaTab === 'overdue_authority' ? 'text-primary' : 'text-slate-400'} />
+                                    2. Otoritas Notifikasi Overdue
+                                    <span className="ml-1 px-1.5 py-0.2 text-[9px] font-bold bg-primary/10 text-primary rounded-full">
+                                        {(data.authorities || []).length}
+                                    </span>
                                 </button>
                             </div>
                         )}
@@ -1623,7 +1646,37 @@ export default function ResourceForm({
                         <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden animate-in fade-in duration-200">
                             {/* Scrollable Form Body */}
                             <div className="flex-1 overflow-y-auto p-6 pb-8 space-y-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                {resourceSlug === 'dashboard-types' && dashboardTab === 'authority' ? (
+                                {resourceSlug === 'contract-sla-configs' && slaTab === 'overdue_authority' ? (
+                                    <div className="col-span-full space-y-4">
+                                        <div className="p-4 rounded-xl border border-amber-500/20 bg-amber-500/5 flex items-start gap-3">
+                                            <LucideIcons.BellRing className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                                            <div>
+                                                <h4 className="text-xs font-bold text-text-main">Penerima Notifikasi SLA Terlewat (Overdue Escalation)</h4>
+                                                <p className="text-[11px] text-text-muted mt-0.5">
+                                                    Tentukan personil, peran, atau atasan terkait yang akan otomatis menerima email alert ketika pengajuan kontrak pada konfigurasi SLA ini melewati batas waktu.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <AuthorityTableManager
+                                            authorities={data.authorities || []}
+                                            onChange={(newAuths) => setData('authorities', newAuths)}
+                                            roles={roles}
+                                            departments={departments}
+                                            divisions={divisions}
+                                            locations={locations}
+                                            users={users}
+                                            companyGroups={companyGroups}
+                                            organizationGroups={organizationGroups}
+                                            regions={regions}
+                                            companies={companies}
+                                            title="Matriks Penerima Notifikasi Overdue"
+                                            showCustom={true}
+                                            showCombinations={true}
+                                            showInitiatorOption={true}
+                                        />
+                                    </div>
+                                ) : resourceSlug === 'dashboard-types' && dashboardTab === 'authority' ? (
                                     <div className="col-span-full space-y-4">
                                         <div className="p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-3">
                                             <LucideIcons.ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />

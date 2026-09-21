@@ -191,6 +191,7 @@ interface CustomActionsManagerProps {
     divisions?: any[];
     locations?: any[];
     companyGroups?: any[];
+    organizationGroups?: any[];
     companies?: any[];
     regions?: any[];
     users: any[];
@@ -209,6 +210,7 @@ export function CustomActionsManager({
     divisions = [],
     locations = [],
     companyGroups = [],
+    organizationGroups = [],
     companies = [],
     regions = [],
     users = [],
@@ -1110,6 +1112,7 @@ export function CustomActionsManager({
                                     divisions={divisions}
                                     locations={locations}
                                     companyGroups={companyGroups}
+                                    organizationGroups={organizationGroups}
                                     companies={companies}
                                     regions={regions}
                                     showCustom={true}
@@ -1165,6 +1168,7 @@ export function CustomActionsManager({
                                     divisions={divisions}
                                     locations={locations}
                                     companyGroups={companyGroups}
+                                    organizationGroups={organizationGroups}
                                     companies={companies}
                                     regions={regions}
                                     showCustom={true}

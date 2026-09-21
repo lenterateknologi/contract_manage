@@ -802,6 +802,28 @@ export const ContractDetailView = ({
                 onUpdateTitle={(newTitle) => handleUpdate({ title: newTitle }, true)}
                 onResetAllChanges={onResetAllChanges}
                 onSaveAllChanges={onSaveAllChanges}
+                onNavigateTab={(tab, subTab) => {
+                    setDetailTab(tab);
+                    if (subTab) {
+                        switch (tab) {
+                            case 'documents':
+                                setDocSubTab(subTab as any);
+                                break;
+                            case 'parties':
+                                setPartySubTab(subTab as any);
+                                break;
+                            case 'history':
+                                setHistorySubTab(subTab as any);
+                                break;
+                            case 'discussion':
+                                setDiscSubTab(subTab as any);
+                                break;
+                            case 'references':
+                                setRefSubTab(subTab as any);
+                                break;
+                        }
+                    }
+                }}
             />
 
             <div className="flex-1 min-h-0 overflow-hidden p-3 lg:p-4 h-[calc(100vh-64px)]">
@@ -1010,15 +1032,13 @@ export const ContractDetailView = ({
                                 setActiveStepAction(action);
                                 setActiveActionCode(actionCode || action?.action_code);
 
-                                if (isCustomAction) {
-                                    if (code === 'add_adhoc') {
-                                        setAddhocOpen(true);
-                                        return;
-                                    }
-                                    if (code === 'assign') {
-                                        setAssignOpen(true);
-                                        return;
-                                    }
+                                if (code === 'add_adhoc') {
+                                    setAddhocOpen(true);
+                                    return;
+                                }
+                                if (code === 'assign' || code === 'assign_pic') {
+                                    setAssignOpen(true);
+                                    return;
                                 }
 
                                 setActionModalOpen(true);
@@ -1207,6 +1227,7 @@ export const ContractDetailView = ({
                     onUpdate={handleContractUpdate}
                     showToast={showToast}
                     actionCode={activeActionCode}
+                    actionId={activeStepAction?.id}
                     actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)}
                 />
             </Suspense>

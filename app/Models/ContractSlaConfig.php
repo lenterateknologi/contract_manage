@@ -126,4 +126,10 @@ class ContractSlaConfig extends Model
     {
         return $this->hasMany(ContractSlaStepItem::class, 'sla_config_id');
     }
+
+    public function overdueAuthorities(): HasMany
+    {
+        return $this->hasMany(Authority::class, 'context_id')
+            ->where('context_type', Authority::CONTEXT_SLA_OVERDUE);
+    }
 }

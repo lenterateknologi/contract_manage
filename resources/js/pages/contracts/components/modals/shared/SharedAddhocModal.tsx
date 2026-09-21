@@ -18,9 +18,10 @@ interface Props {
     showToast: (msg: string, type: any) => void;
     actionCode?: string;
     actionAlias?: string;
+    actionId?: string;
 }
 
-export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast, actionCode, actionAlias }: Props) {
+export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast, actionCode, actionAlias, actionId }: Props) {
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [note, setNote] = useState('');
     const [attachments, setAttachments] = useState<File[]>([]);
@@ -269,6 +270,8 @@ export function SharedAddhocModal({ open, onClose, contract, onUpdate, showToast
                 approvalRule,
                 approvalRule === 'quorum' ? minApprovals : undefined,
                 attachments.length > 0 ? (attachments.length === 1 ? attachments[0] : attachments) : undefined,
+                actionId,
+                actionCode,
             );
             onUpdate(updatedContract);
             showToast('Persetujuan tambahan berhasil dikaitkan.', 'success');

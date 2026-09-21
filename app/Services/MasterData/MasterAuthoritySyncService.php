@@ -93,4 +93,92 @@ class MasterAuthoritySyncService
 
         return $query->get();
     }
+
+    /**
+     * Get lightweight master options for AuthorityTableManager.
+     * Uses direct query and lightweight array structure to eliminate Eloquent appends overhead and achieve fast page loads.
+     */
+    public function getMasterOptions(): array
+    {
+        $users = DB::table('m_users')
+            ->leftJoin('m_roles', 'm_users.role_id', '=', 'm_roles.id')
+            ->leftJoin('m_departments', 'm_users.department_id', '=', 'm_departments.id')
+            ->leftJoin('m_companies', 'm_users.company_id', '=', 'm_companies.id')
+            ->leftJoin('m_locations', 'm_users.location_id', '=', 'm_locations.id')
+            ->where('m_users.is_used', true)
+            ->whereNull('m_users.deleted_at')
+            ->select([
+                'm_users.id',
+                'm_users.name',
+                'm_users.email',
+                'm_users.nik',
+                'm_users.username',
+                'm_roles.name as role',
+                'm_users.role_id',
+                'm_users.department_id',
+                'm_users.division_id',
+                'm_users.company_id',
+                'm_users.company_name',
+                'm_users.org_name',
+                'm_users.location_id',
+                'm_users.company_group_id',
+                'm_users.region_id',
+                'm_departments.idorg_group',
+                'm_departments.org_group_name',
+                'm_companies.company_group_name',
+                'm_companies.region_name',
+                'm_locations.code as location_code',
+                'm_locations.name as location_name_loc',
+            ])
+            ->orderBy('m_users.name')
+            ->get()
+            ->map(fn ($u) => [
+                'id' => (string) $u->id,
+                'name' => $u->name,
+                'email' => $u->email,
+                'nik' => $u->nik,
+                'role' => $u->role,
+                'role_id' => $u->role_id,
+                'department_id' => $u->department_id,
+                'division_id' => $u->division_id,
+                'company_id' => $u->company_id,
+                'company_name' => $u->company_name,
+                'org_name' => $u->org_name,
+                'location_id' => $u->location_id,
+                'company_group_id' => $u->company_group_id,
+                'region_id' => $u->region_id,
+                'is_used' => true,
+                'department' => $u->department_id ? [
+                    'id' => (string) $u->department_id,
+                    'name' => $u->org_name,
+                    'idorg_group' => $u->idorg_group,
+                    'org_group_name' => $u->org_group_name,
+                ] : null,
+                'company' => $u->company_id ? [
+                    'id' => (string) $u->company_id,
+                    'name' => $u->company_name,
+                    'company_group_name' => $u->company_group_name,
+                    'region_name' => $u->region_name,
+                ] : null,
+                'location' => $u->location_id ? [
+                    'id' => (string) $u->location_id,
+                    'name' => $u->location_name_loc,
+                    'code' => $u->location_code,
+                ] : null,
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'roles' => DB::table('m_roles')->select('id', 'name')->whereNull('deleted_at')->orderBy('name')->get(),
+            'departments' => DB::table('m_departments')->select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->whereNull('deleted_at')->orderBy('name')->get(),
+            'divisions' => DB::table('m_division')->select('id', 'name', 'code', 'department_id')->whereNull('deleted_at')->orderBy('name')->get(),
+            'locations' => DB::table('m_locations')->select('id', 'name', 'code')->where('is_used', true)->whereNull('deleted_at')->orderBy('name')->get(),
+            'companyGroups' => DB::table('m_company_groups')->select('id', 'name')->where('is_used', true)->whereNull('deleted_at')->orderBy('name')->get(),
+            'organizationGroups' => DB::table('m_organization_groups')->select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->whereNull('deleted_at')->orderBy('name')->get(),
+            'regions' => DB::table('m_regions')->select('id', 'name')->where('is_used', true)->whereNull('deleted_at')->orderBy('name')->get(),
+            'companies' => DB::table('m_companies')->select('id', 'name')->where('is_used', true)->whereNull('deleted_at')->orderBy('name')->get(),
+            'users' => $users,
+        ];
+    }
 }

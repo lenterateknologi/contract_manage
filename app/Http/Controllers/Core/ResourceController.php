@@ -160,7 +160,7 @@ class ResourceController extends Controller
         $returnUrl = $request->query('return_url');
 
         $extraProps = [];
-        if ($resourceSlug === 'dashboard-types') {
+        if ($resourceSlug === 'dashboard-types' || $resourceSlug === 'contract-sla-configs') {
             $extraProps = [
                 'roles' => \App\Models\Role::select('id', 'name')->orderBy('name')->get(),
                 'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
@@ -216,6 +216,12 @@ class ResourceController extends Controller
                 $created->id,
                 (array) $request->input('authorities', [])
             );
+        } elseif ($resourceSlug === 'contract-sla-configs' && $request->has('authorities')) {
+            $this->authoritySyncService->sync(
+                Authority::CONTEXT_SLA_OVERDUE,
+                $created->id,
+                (array) $request->input('authorities', [])
+            );
         }
 
         $returnUrl = $request->input('return_url') ?: $request->query('return_url');
@@ -238,6 +244,27 @@ class ResourceController extends Controller
 
         if ($resourceSlug === 'dashboard-types' && $record instanceof \App\Models\DashboardType) {
             $authorities = $this->authoritySyncService->getForContext(Authority::CONTEXT_DASHBOARD_TYPE, $record->id);
+            $record->setAttribute('authorities', $authorities);
+
+            $extraProps = [
+                'roles' => \App\Models\Role::select('id', 'name')->orderBy('name')->get(),
+                'departments' => \App\Models\Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
+                'divisions' => \App\Models\Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
+                'locations' => \App\Models\Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
+                'users' => \App\Models\User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')
+                    ->with(['department:id,name,idorg_group,org_group_name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])
+                    ->where('is_used', true)
+                    ->orderBy('name')
+                    ->get(),
+                'companyGroups' => \App\Models\CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'organizationGroups' => \App\Models\OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
+                'regions' => \App\Models\Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+                'companies' => \App\Models\Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
+            ];
+        }
+
+        if ($resourceSlug === 'contract-sla-configs' && $record instanceof \App\Models\ContractSlaConfig) {
+            $authorities = $this->authoritySyncService->getForContext(Authority::CONTEXT_SLA_OVERDUE, $record->id);
             $record->setAttribute('authorities', $authorities);
 
             $extraProps = [
@@ -390,6 +417,12 @@ class ResourceController extends Controller
         if ($resourceSlug === 'dashboard-types' && $request->has('authorities')) {
             $this->authoritySyncService->sync(
                 Authority::CONTEXT_DASHBOARD_TYPE,
+                $record->id,
+                (array) $request->input('authorities', [])
+            );
+        } elseif ($resourceSlug === 'contract-sla-configs' && $request->has('authorities')) {
+            $this->authoritySyncService->sync(
+                Authority::CONTEXT_SLA_OVERDUE,
                 $record->id,
                 (array) $request->input('authorities', [])
             );

@@ -21,7 +21,7 @@ class WorkflowStepFormatter
         }
 
         $targetApprovers = null;
-        if ($c) {
+        if ($c && $c->relationLoaded('approvals')) {
             $targetApprovers = $c->approvals
                 ->where('sequence', $step->step)
                 ->whereIn('status', ['pending', 'waiting'])

@@ -48,17 +48,136 @@ class WorkflowAdminController extends Controller
             $filters['is_selectable'] = 'true';
         }
 
+        // 1. Preload contract types for fast hierarchy and name resolution
+        $allTypes = ContractType::select('id', 'name', 'code', 'parent_id')->get()->keyBy('id');
+        $rootMap = [];
+        $getRoot = function ($id) use ($allTypes, &$getRoot, &$rootMap) {
+            if (isset($rootMap[$id])) {
+                return $rootMap[$id];
+            }
+            if (! isset($allTypes[$id])) {
+                return null;
+            }
+            $item = $allTypes[$id];
+            if (empty($item->parent_id)) {
+                return $rootMap[$id] = $item->name;
+            }
+
+            return $rootMap[$id] = $getRoot($item->parent_id);
+        };
+        foreach ($allTypes as $id => $item) {
+            $getRoot($id);
+        }
+
         $query = $this->workflowQuery->list($request);
+        $paginator = $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString();
+
+        // 2. Transform to clean lightweight DTO (instant page load)
+        $paginator->getCollection()->transform(function ($wf) use ($allTypes, $rootMap) {
+            // Resolve contract_type_name
+            if (! empty($wf->contract_type_id)) {
+                $typeName = $allTypes[$wf->contract_type_id]?->name ?? null;
+            } else {
+                $ids = $wf->contract_type_ids;
+                if (! empty($ids)) {
+                    $names = [];
+                    foreach ($ids as $id) {
+                        if (isset($allTypes[$id])) {
+                            $names[] = $allTypes[$id]->name;
+                        }
+                    }
+                    $typeName = ! empty($names) ? implode(', ', $names) : 'Global / Semua Tipe';
+                } else {
+                    $typeName = 'Global / Semua Tipe';
+                }
+            }
+
+            // Resolve parent_contract_type_name
+            $rootNames = [];
+            if (! empty($wf->contract_type_id) && isset($rootMap[$wf->contract_type_id])) {
+                $rootNames[] = $rootMap[$wf->contract_type_id];
+            }
+            foreach ($wf->contract_type_ids as $id) {
+                if (isset($rootMap[$id])) {
+                    $rootNames[] = $rootMap[$id];
+                }
+            }
+            $rootNames = array_values(array_unique(array_filter($rootNames)));
+            if (! empty($rootNames)) {
+                $parentTypeName = implode(', ', $rootNames);
+            } elseif ($wf->workflow_type === 'sub_workflow') {
+                $parentTypeName = 'Sub-Workflow';
+            } else {
+                $parentTypeName = 'Global / Semua Tipe';
+            }
+
+            return [
+                'id' => $wf->id,
+                'name' => $wf->name,
+                'description' => $wf->description,
+                'workflow_type' => $wf->workflow_type,
+                'is_default' => (bool) $wf->is_default,
+                'is_selectable' => (bool) $wf->is_selectable,
+                'is_active' => $wf->is_active !== false,
+                'steps_count' => (int) $wf->steps_count,
+                'contract_type_name' => $typeName,
+                'parent_contract_type_name' => $parentTypeName,
+                'initiator_summary' => $wf->initiator_summary,
+            ];
+        });
 
         return Inertia::render('admin/Index', [
             'currentView' => 'workflows',
-            'workflows' => $query->orderBy('name')->paginate($request->input('per_page', 15))->withQueryString(),
-            'contractTypes' => ContractType::select('id', 'name', 'code')->orderBy('name')->get(),
+            'workflows' => $paginator,
+            'contractTypes' => $allTypes->values()->map(fn ($t) => ['id' => $t->id, 'name' => $t->name, 'code' => $t->code]),
             'filters' => $filters,
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Alur Kerja (Workflows)', 'href' => route('admin.workflows'), 'description' => 'Konfigurasi tahapan persetujuan.', 'icon' => 'GitBranch'],
             ],
+        ]);
+    }
+
+    public function preview(Workflow $workflow)
+    {
+        $wf = $this->workflowQuery->findForEdit($workflow->id);
+
+        $steps = $wf->steps->map(function ($s) {
+            return [
+                'id' => $s->id,
+                'step' => $s->step,
+                'label' => $s->label,
+                'description' => $s->description,
+                'approver_type' => $s->approver_type,
+                'is_optional' => (bool) $s->is_optional,
+                'approver_authorities' => $s->approverAuthorities->map(function ($a) {
+                    return [
+                        'id' => $a->id,
+                        'authority_type' => $a->authority_type,
+                        'role' => $a->role ? ['id' => $a->role->id, 'name' => $a->role->name] : null,
+                        'department' => $a->department ? ['id' => $a->department->id, 'name' => $a->department->name] : null,
+                        'division' => $a->division ? ['id' => $a->division->id, 'name' => $a->division->name] : null,
+                        'user' => $a->user ? ['id' => $a->user->id, 'name' => $a->user->name] : null,
+                    ];
+                })->values()->all(),
+                'actions' => $s->actions->map(function ($act) {
+                    return [
+                        'id' => $act->id,
+                        'action_code' => is_object($act->action_code) ? $act->action_code->value : $act->action_code,
+                        'alias' => $act->alias,
+                    ];
+                })->values()->all(),
+            ];
+        })->values()->all();
+
+        return response()->json([
+            'id' => $wf->id,
+            'name' => $wf->name,
+            'description' => $wf->description,
+            'workflow_type' => $wf->workflow_type,
+            'contract_type_name' => $wf->contractType?->name ?? 'Global / Semua Tipe',
+            'initiator_summary' => $wf->initiator_summary,
+            'steps' => $steps,
         ]);
     }
 

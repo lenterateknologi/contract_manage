@@ -108,6 +108,7 @@ Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::post('/', 'store')->name('admin.workflows.store');
         Route::get('/export', 'export')->name('admin.workflows.export');
         Route::post('/import', 'import')->name('admin.workflows.import');
+        Route::get('/{workflow}/preview', 'preview')->name('admin.workflows.preview');
         Route::get('/{workflow}/edit', 'edit')->name('admin.workflows.edit');
         Route::put('/{workflow}', 'update')->name('admin.workflows.update');
         Route::patch('/{workflow}/toggle', 'toggleField')->name('admin.workflows.toggle');

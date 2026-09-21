@@ -62,106 +62,76 @@ class WorkflowQueryService
             }
         }
 
-        return $query->where(function ($q) use ($user) {
-            // Workflows that have NO initiatorAuthorities records are available to all (when initiator_type is 'all')
-            $q->where(function ($allQ) {
-                $allQ->where('initiator_type', 'all')
-                    ->whereDoesntHave('initiatorAuthorities');
-            });
+        $workflows = $query->with([
+            'steps',
+            'contractType',
+            'initiatorAuthorities.role',
+            'initiatorAuthorities.department',
+            'initiatorAuthorities.division',
+            'initiatorAuthorities.user',
+            'initiatorAuthorities.companyGroup',
+            'initiatorAuthorities.region',
+            'initiatorAuthorities.organizationGroup',
+        ])->get();
 
-            if ($user) {
-                $roleId = $this->getUserField($user, 'role_id');
-                $deptId = $this->getUserField($user, 'department_id');
-                $divId = $this->getUserField($user, 'division_id');
+        if (! $user) {
+            return $workflows->filter(fn ($w) => $w->initiator_type === 'all' && $w->initiatorAuthorities->isEmpty())->values();
+        }
 
-                $q->orWhere(function ($sq) use ($user, $roleId, $deptId, $divId) {
-                    $sq->whereHas('initiatorAuthorities')
-                        ->where(function ($ssq) use ($user, $roleId, $deptId, $divId) {
-                            // 1. Role match: user's role_id matches role_id in initiatorAuthorities
-                            $ssq->where(function ($q1) use ($roleId, $deptId, $divId) {
-                                $q1->whereHas('initiatorAuthorities', function ($roleQuery) use ($roleId) {
-                                    if ($roleId) {
-                                        $roleQuery->where('role_id', $roleId);
-                                    } else {
-                                        $roleQuery->whereRaw('1 = 0');
-                                    }
-                                })
-                                    ->where(function ($deptCheckQuery) use ($deptId) {
-                                        $deptCheckQuery->whereDoesntHave('initiatorAuthorities', function ($q) {
-                                            $q->whereNotNull('department_id');
-                                        })
-                                            ->orWhereHas('initiatorAuthorities', function ($q) use ($deptId) {
-                                                if (empty($deptId)) {
-                                                    $q->whereRaw('1 = 0');
-                                                } else {
-                                                    $q->where('department_id', $deptId);
-                                                }
-                                            });
-                                    })
-                                    ->where(function ($divCheckQuery) use ($divId) {
-                                        $divCheckQuery->whereDoesntHave('initiatorAuthorities', function ($q) {
-                                            $q->whereNotNull('division_id');
-                                        })
-                                            ->orWhereHas('initiatorAuthorities', function ($q) use ($divId) {
-                                                if (empty($divId)) {
-                                                    $q->whereRaw('1 = 0');
-                                                } else {
-                                                    $q->where('division_id', $divId);
-                                                }
-                                            });
-                                    });
-                            })
-                            // 2. Department match
-                                ->orWhereHas('initiatorAuthorities', function ($q) use ($deptId) {
-                                    if (empty($deptId)) {
-                                        $q->whereRaw('1 = 0');
-                                    } else {
-                                        $q->where('department_id', $deptId);
-                                    }
-                                })
-                            // 3. Division match
-                                ->orWhereHas('initiatorAuthorities', function ($q) use ($divId) {
-                                    if (empty($divId)) {
-                                        $q->whereRaw('1 = 0');
-                                    } else {
-                                        $q->where('division_id', $divId);
-                                    }
-                                })
-                            // 4. User match
-                                ->orWhereHas('initiatorAuthorities', function ($q) use ($user) {
-                                    $q->where('user_id', $user->id);
-                                })
-                            // 5. Organization Group match
-                                ->orWhereHas('initiatorAuthorities', function ($q) use ($user) {
-                                    $orgGroupId = data_get($user, 'department.idorg_group') ?: data_get($user, 'idorg_group');
-                                    $orgGroupName = data_get($user, 'department.org_group_name') ?: data_get($user, 'org_name');
-                                    if (empty($orgGroupId) && empty($orgGroupName)) {
-                                        $q->whereRaw('1 = 0');
-                                    } else {
-                                        $q->where(function ($subQ) use ($orgGroupId, $orgGroupName) {
-                                            if ($orgGroupId) {
-                                                $isNum = is_numeric($orgGroupId);
-                                                $subQ->where('organization_group_id', (string) $orgGroupId)
-                                                    ->orWhereHas('organizationGroup', function ($ogq) use ($orgGroupId, $isNum) {
-                                                        if ($isNum) {
-                                                            $ogq->where('idorg_group', $orgGroupId);
-                                                        } else {
-                                                            $ogq->where('id', $orgGroupId);
-                                                        }
-                                                    });
-                                            }
-                                            if ($orgGroupName) {
-                                                $subQ->orWhereHas('organizationGroup', fn ($ogq) => $ogq->where('name', $orgGroupName));
-                                            }
-                                        });
-                                    }
-                                });
-                        });
-                });
+        return $workflows->filter(function ($w) use ($user) {
+            // Workflows with no specific initiator authorities and initiator_type 'all' are available to everyone
+            if ($w->initiator_type === 'all' && $w->initiatorAuthorities->isEmpty()) {
+                return true;
             }
-        })
-            ->with(['steps', 'contractType', 'initiatorAuthorities.role', 'initiatorAuthorities.department', 'initiatorAuthorities.division', 'initiatorAuthorities.user', 'initiatorAuthorities.companyGroup', 'initiatorAuthorities.region', 'initiatorAuthorities.organizationGroup'])
-            ->get();
+
+            if ($w->initiatorAuthorities->isEmpty()) {
+                return false;
+            }
+
+            $userRoleId = $user->role_id;
+            $userDeptId = $user->department_id;
+            $userDivId = $user->division_id;
+            if (! $userDivId && $user->relationLoaded('department') && $user->getRelation('department')) {
+                $userDivId = $user->getRelation('department')->division_id;
+            }
+
+            // Check if any single rule directly matches the user
+            $roleRules = $w->initiatorAuthorities->whereNotNull('role_id');
+            $deptRules = $w->initiatorAuthorities->whereNotNull('department_id');
+            $divRules = $w->initiatorAuthorities->whereNotNull('division_id');
+            $otherRules = $w->initiatorAuthorities->filter(fn ($r) => empty($r->role_id) && empty($r->department_id) && empty($r->division_id));
+
+            // 1. Check composite role + department/division constraint
+            if ($roleRules->isNotEmpty()) {
+                $roleMatches = $roleRules->contains(fn ($r) => (string) $r->role_id === (string) $userRoleId);
+                if ($roleMatches) {
+                    $deptMatches = $deptRules->isEmpty() || $deptRules->contains(fn ($r) => (string) $r->department_id === (string) $userDeptId);
+                    $divMatches = $divRules->isEmpty() || $divRules->contains(fn ($r) => (string) $r->division_id === (string) $userDivId);
+                    if ($deptMatches && $divMatches) {
+                        return true;
+                    }
+                }
+            }
+
+            // 2. Check department-only or division-only rules (when not combined with role)
+            if ($roleRules->isEmpty()) {
+                if ($deptRules->isNotEmpty() && $deptRules->contains(fn ($r) => (string) $r->department_id === (string) $userDeptId)) {
+                    return true;
+                }
+                if ($divRules->isNotEmpty() && $divRules->contains(fn ($r) => (string) $r->division_id === (string) $userDivId)) {
+                    return true;
+                }
+            }
+
+            // 3. Check specific user or universal matching rules (e.g. org_group, user_id, location, etc.)
+            foreach ($otherRules as $rule) {
+                if (\App\Models\Authority::ruleMatchesUser($rule, $user)) {
+                    return true;
+                }
+            }
+
+            return false;
+        })->values();
     }
 
     /**

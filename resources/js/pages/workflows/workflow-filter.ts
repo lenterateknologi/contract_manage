@@ -74,7 +74,8 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
             let userCompId = String(user.company_id || user.company?.id || '');
             let userCgId = String(user.company_group_id || user.company?.company_group_id || '');
             let userRegionId = String(user.region_id || user.company?.region_id || '');
-            let userOrgGroupId = String(user.department?.organization_group_id || user.department?.idorg_group || user.organization_group_id || '');
+            let userOrgGroupUuid = String(user.organization_group_id || user.department?.organization_group_id || '');
+            let userOrgGroupId = String(user.department?.idorg_group || user.idorg_group || userOrgGroupUuid || '');
 
             if (auth.role_id) {
                 const targetRoleStr = String(auth.role_id);
@@ -162,7 +163,8 @@ export function matchUserAgainstWorkflowPool(user: any, config: any, contract: a
                     : (user.idorg_group !== undefined && user.idorg_group !== null ? String(user.idorg_group) : '');
                 const userOrgGroupName = (user.org_group_name || user.department?.org_group_name || '').toLowerCase().trim();
 
-                matchesOrgGroup = (targetOgId === userOrgGroupId) ||
+                matchesOrgGroup = (userOrgGroupUuid !== '' && targetOgId === userOrgGroupUuid) ||
+                                  (targetOgId === userOrgGroupId) ||
                                   (targetIdOrgGroup !== null && targetIdOrgGroup === userIdOrgGroup) ||
                                   (targetOgName && targetOgName === userOrgGroupName) ||
                                   (targetOgId === userIdOrgGroup);

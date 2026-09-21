@@ -47,13 +47,21 @@ class Approval extends Model
         'batch_no',
         'parent_approval_id',
         'is_adhoc',
+        'due_at',
+        'sla_hours',
+        'is_overdue',
+        'overdue_notified_at',
     ];
 
     protected $casts = [
         'decided_at' => 'datetime',
+        'due_at' => 'datetime',
+        'overdue_notified_at' => 'datetime',
         'is_active' => 'boolean',
         'is_current_step' => 'boolean',
         'is_adhoc' => 'boolean',
+        'is_overdue' => 'boolean',
+        'sla_hours' => 'integer',
         'batch_no' => 'integer',
         'step_number' => 'integer',
         'sequence' => 'integer',

@@ -33,7 +33,7 @@ class DashboardTypeResource extends Resource
 
     public static array $with = ['role', 'division', 'department'];
 
-    public static ?string $title = 'Profil Otoritas & Hak Akses';
+    public static ?string $title = 'Profil Visibilitas Dashboard';
 
     public static int $formColumns = 3;
 
@@ -44,7 +44,6 @@ class DashboardTypeResource extends Resource
         return [
             TextColumn::make('name', 'Nama Profil')->sortable()->searchable(),
             TextColumn::make('priority', 'Tingkat Prioritas (Level)')->sortable()->alignCenter(),
-            TextColumn::make('contract_type_names', 'Tipe Kontrak')->sortable(),
             TextColumn::make('role_names', 'Role Akses')->sortable(),
             TextColumn::make('org_group_names', 'Grup Organisasi')->sortable(),
             TextColumn::make('division_names', 'Divisi')->sortable(),
@@ -75,7 +74,7 @@ class DashboardTypeResource extends Resource
                     ->helperText('Angka lebih kecil = diprioritaskan lebih dulu. Misal Level 1 untuk Profil Khusus Manager, Level 2 untuk Profil General.'),
                 TextareaInput::make('description', 'Deskripsi')
                     ->rules(['nullable', 'string'])
-                    ->helperText('Penjelasan batasan akses, kuncian tipe pengajuan, dan visibilitas profil ini.')
+                    ->helperText('Penjelasan batasan akses dan visibilitas profil ini.')
                     ->columnSpan(2),
             ])->icon('ShieldCheck'),
 
@@ -105,18 +104,6 @@ class DashboardTypeResource extends Resource
                     ->searchable()
                     ->helperText('Kosongkan jika berlaku untuk semua jabatan.'),
             ])->icon('Users'),
-
-            Section::make('Kuncian Tipe Pengajuan (Document Scoping)', [
-                TreeSelectInput::make('contract_type_ids', 'Tipe Kontrak (Hierarki Tree)')
-                    ->multiple(true)
-                    ->options(fn () => ContractType::orderBy('name')->get()->map(fn ($t) => [
-                        'id' => $t->id,
-                        'name' => $t->name,
-                        'parent_id' => $t->parent_id,
-                    ])->toArray())
-                    ->placeholder('Pilih satu atau lebih Tipe Kontrak (Hierarki)...')
-                    ->helperText('Hanya pengajuan dengan tipe kontrak yang dipilih yang dapat dilihat dan diakses oleh user. Kosongkan untuk semua tipe.'),
-            ])->icon('FileText'),
 
             Section::make('Cakupan Organisasi & Pembatasan Antar Departemen', [
                 SelectInput::make('org_group_ids', 'Grup Organisasi (Organization Group)')

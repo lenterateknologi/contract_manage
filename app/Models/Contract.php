@@ -101,6 +101,16 @@ class Contract extends Model
         'closed_by',
         'tax_required',
 
+        // SLA Tracking
+        'sla_config_id',
+        'sla_due_at',
+        'current_stage_due_at',
+        'stage_sla_hours',
+        'sla_total_hours',
+        'stage_started_at',
+        'sla_status',
+        'overdue_notified_at',
+
         // Meta columns transparently handled by HasContractMeta
         'kop_topik', 'kop_sub_topik', 'kop_lampiran', 'f1_tujuan', 'f1_sifat',
         'p1_entity', 'p1_signer', 'p1_signer_position', 'p1_address', 'p1_contact_person',
@@ -124,6 +134,12 @@ class Contract extends Model
         'closed_at' => 'datetime',
         'contract_date' => 'date',
         'end_date' => 'date',
+        'sla_due_at' => 'datetime',
+        'current_stage_due_at' => 'datetime',
+        'stage_started_at' => 'datetime',
+        'overdue_notified_at' => 'datetime',
+        'stage_sla_hours' => 'integer',
+        'sla_total_hours' => 'integer',
     ];
 
     public function contractType(): BelongsTo
@@ -254,15 +270,25 @@ class Contract extends Model
         return $this->approvals()->where('status', 'pending')->first();
     }
 
-    public function progressData(): array
+    public function progressData(bool $isDetail = true): array
     {
         if ($this->workflow_id) {
-            $steps = $this->workflow ? $this->workflow->loadMissing('steps')->steps : collect();
+            $steps = ($this->relationLoaded('workflow') && $this->workflow && $this->workflow->relationLoaded('steps'))
+                ? $this->workflow->steps
+                : ($isDetail && $this->workflow ? $this->workflow->loadMissing('steps')->steps : collect());
             $total = $steps->count();
 
+            if ($total === 0) {
+                return ['done' => 0, 'total' => 0, 'pct' => 0];
+            }
+
             $doneCount = 0;
+            $allApprovals = $this->relationLoaded('approvals')
+                ? $this->approvals
+                : ($isDetail ? $this->approvals()->get() : collect());
+
             foreach ($steps as $step) {
-                $approvals = $this->approvals()->where('workflow_step_id', $step->id)->get();
+                $approvals = $allApprovals->where('workflow_step_id', $step->id);
                 $isDone = $approvals->isNotEmpty() && $approvals->every(function ($a) {
                     return $a->status === 'approved';
                 });

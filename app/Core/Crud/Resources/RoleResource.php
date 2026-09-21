@@ -37,7 +37,6 @@ class RoleResource extends Resource
             TextColumn::make('name', 'Nama Role')->sortable()->searchable(),
             TextColumn::make('description', 'Deskripsi')->sortable()->searchable(),
             TextColumn::make('users_count', 'Total User')->sortable()->alignRight(),
-            BooleanColumn::make('can_create_on_behalf', 'Buatkan Pengajuan')->sortable(),
         ];
     }
 
@@ -46,7 +45,6 @@ class RoleResource extends Resource
         return [
             TextInput::make('name', 'Nama Role')->required()->rules(['string', 'max:255']),
             TextareaInput::make('description', 'Deskripsi')->rules(['nullable', 'string', 'max:500']),
-            ToggleInput::make('can_create_on_behalf', 'Bisa Buatkan Pengajuan Untuk Orang Lain (On-Behalf)')->helperText('Jika aktif, user dengan role ini dapat memilih user lain sebagai inisiator pengajuan kontrak.'),
         ];
     }
 }

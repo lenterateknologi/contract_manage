@@ -28,28 +28,16 @@ class OnBehalfAuthorityController extends Controller
     public function index(): Response
     {
         $authorities = $this->authoritySyncService->getForContext(Authority::CONTEXT_ON_BEHALF_CREATE);
+        $masterOptions = $this->authoritySyncService->getMasterOptions();
 
-        return Inertia::render('admin/on-behalf-authorities/Index', [
+        return Inertia::render('admin/on-behalf-authorities/Index', array_merge([
             'initialAuthorities' => $authorities,
-            'roles' => Role::select('id', 'name')->orderBy('name')->get(),
-            'departments' => Department::select('id', 'name', 'code', 'idorg_group', 'org_group_name')->where('is_used', true)->orderBy('name')->get(),
-            'divisions' => Division::select('id', 'name', 'code', 'department_id')->orderBy('name')->get(),
-            'locations' => Location::select('id', 'name', 'code')->where('is_used', true)->orderBy('name')->get(),
-            'users' => User::select('id', 'name', 'email', 'nik', 'username', 'role_id', 'department_id', 'division_id', 'company_id', 'company_name', 'org_name', 'location_id', 'idlocation', 'location_name', 'company_group_id', 'region_id', 'is_used')
-                ->with(['department:id,name,idorg_group,org_group_name', 'company:id,name,company_group_name,region_name', 'location:id,name,code'])
-                ->where('is_used', true)
-                ->orderBy('name')
-                ->get(),
-            'companyGroups' => CompanyGroup::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
-            'organizationGroups' => OrganizationGroup::select('id', 'name', 'code', 'idorg_group')->where('is_used', true)->orderBy('name')->get(),
-            'regions' => Region::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
-            'companies' => Company::select('id', 'name')->where('is_used', true)->orderBy('name')->get(),
             'breadcrumbs' => [
                 ['title' => 'Administrasi', 'href' => '#', 'icon' => 'ShieldCheck'],
                 ['title' => 'Pengaturan Sistem', 'href' => '#', 'icon' => 'Settings2'],
                 ['title' => 'Otoritas Buat Pengajuan (On-Behalf)', 'href' => route('admin.on-behalf-authorities.index'), 'description' => 'Konfigurasi personil dan kriteria yang berhak membuatkan pengajuan atas nama orang lain.', 'icon' => 'UserCheck'],
             ],
-        ]);
+        ], $masterOptions));
     }
 
     public function save(Request $request)

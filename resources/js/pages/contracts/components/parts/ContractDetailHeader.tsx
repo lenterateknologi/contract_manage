@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/buttons/Button';
 import { StatusBadge } from '@/components/ui/feedback/StatusBadge';
 import { cn } from '@/lib/utils';
+import { HeaderTaskList } from '@/pages/contracts/components/parts/HeaderTaskList';
 import { Contract } from '@/pages/contracts/types';
 import { Check, Loader2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -15,6 +16,7 @@ interface ContractDetailHeaderProps {
     onUpdateTitle: (newTitle: string) => void;
     onResetAllChanges?: () => void;
     onSaveAllChanges?: () => void;
+    onNavigateTab?: (tab: string, subTab?: string) => void;
 }
 
 export function ContractDetailHeader({
@@ -27,6 +29,7 @@ export function ContractDetailHeader({
     onUpdateTitle,
     onResetAllChanges,
     onSaveAllChanges,
+    onNavigateTab,
 }: ContractDetailHeaderProps) {
     const [headerTitle, setHeaderTitle] = useState(contract.title);
     const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -112,6 +115,8 @@ export function ContractDetailHeader({
 
             {/* Right Column: Status & Save Buttons */}
             <div className="flex items-center gap-3 shrink-0">
+                <HeaderTaskList contract={contract} onNavigateTab={onNavigateTab} />
+
                 <StatusBadge status={effectiveStatus} statusInfo={contract.status_info} />
 
                 {/* Save button in navbar when contract info or forms have changes */}

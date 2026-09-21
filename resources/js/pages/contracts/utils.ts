@@ -113,6 +113,8 @@ export const contractApi = {
         approvalRule: string = 'all',
         minApprovals?: number,
         attachments?: File | File[],
+        actionId?: string,
+        actionCode?: string,
     ): Promise<Contract> => {
         const uids = Array.isArray(userIds) ? userIds : [userIds];
         const fd = new FormData();
@@ -123,6 +125,8 @@ export const contractApi = {
         if (role) fd.append('role', role);
         if (approvalRule) fd.append('approval_rule', approvalRule);
         if (minApprovals) fd.append('min_approvals', String(minApprovals));
+        if (actionId) fd.append('action_id', actionId);
+        if (actionCode) fd.append('action_code', actionCode);
         if (attachments) {
             if (Array.isArray(attachments)) {
                 attachments.forEach((f) => fd.append('attachments[]', f));

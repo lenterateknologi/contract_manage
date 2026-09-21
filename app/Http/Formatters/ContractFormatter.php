@@ -37,7 +37,7 @@ class ContractFormatter
         $nextStep = $isDetail ? self::getNextStep($c) : null;
         $requiresPicAssignment = $nextStep && $nextStep->approver_type === 'assigned_pic';
         $effectiveStep = $c->workflowStep ?: ($c->workflow && $c->workflow->relationLoaded('steps') ? $c->workflow->steps->first() : null);
-        $progress = $c->progressData();
+        $progress = $c->progressData($isDetail);
         $shortId = ShortIdService::encode($c->id);
 
         $actionReqFields = [];
@@ -192,8 +192,9 @@ class ContractFormatter
             'finished_at_formatted' => $c->finished_at ? $c->finished_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['finished_at']) ? Carbon::parse($c->metadata['finished_at'])->translatedFormat('j M Y, H:i') : (! empty($c->metadata['finish_at']) ? Carbon::parse($c->metadata['finish_at'])->translatedFormat('j M Y, H:i') : null)),
             'closed_at' => $c->closed_at ? $c->closed_at->toIso8601String() : ($c->metadata['closed_at'] ?? null),
             'closed_at_formatted' => $c->closed_at ? $c->closed_at->translatedFormat('j M Y, H:i') : (! empty($c->metadata['closed_at']) ? Carbon::parse($c->metadata['closed_at'])->translatedFormat('j M Y, H:i') : null),
-            'assigned_by' => self::formatUser($c->assignedBy)
-                ?: ($c->approvals->where('sequence', 3)->where('status', 'approved')->first()
+            'assigned_by' => ($c->relationLoaded('assignedBy') && $c->assignedBy)
+                ? self::formatUser($c->assignedBy)
+                : (($c->relationLoaded('approvals') && $c->approvals->where('sequence', 3)->where('status', 'approved')->first())
                     ? self::formatUser($c->approvals->where('sequence', 3)->where('status', 'approved')->first()->approver)
                     : null),
             'initiated_by_id' => $c->initiated_by_id,
@@ -293,7 +294,7 @@ class ContractFormatter
                 'created_at_raw' => $v->created_at->toIso8601String(),
                 'uploader' => self::formatUser($v->uploader),
             ])->sortByDesc('version_no')->values() : [],
-            'approvals' => self::mapApprovalTimeline($c, $isDetail),
+            'approvals' => $isDetail ? self::mapApprovalTimeline($c, $isDetail) : [],
             'histories' => $isDetail ? $c->histories->map(fn ($h) => [
                 'action' => $h->action,
                 'description' => $h->description,
@@ -328,14 +329,18 @@ class ContractFormatter
                 'submitted_by' => $fs->submitted_by,
                 'updated_at' => $fs->updated_at->format('Y-m-d H:i'),
             ]) : [],
-            'can_approve' => (function () use ($c) {
+            'can_approve' => (function () use ($c, $isDetail) {
+                if (! $c->relationLoaded('approvals')) {
+                    return false;
+                }
+
                 if ($c->status === 'in_review' && $c->workflow_step_id && $c->workflowStep) {
                     $hasPendingOrWaiting = $c->approvals
                         ->where('workflow_step_id', $c->workflow_step_id)
                         ->whereIn('status', ['pending', 'waiting'])
                         ->isNotEmpty();
 
-                    if (! $hasPendingOrWaiting) {
+                    if (! $hasPendingOrWaiting && $isDetail) {
                         app(ContractWorkflowService::class)->createApprovalForStep($c, $c->workflowStep);
                         $c->unsetRelation('approvals');
                         $c->load(['approvals.approver', 'approvals.workflowStep']);
@@ -354,7 +359,7 @@ class ContractFormatter
                     return ! $hasUnapprovedSubSteps;
                 })->isNotEmpty();
             })(),
-            'pending_approval_id' => $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
+            'pending_approval_id' => $c->relationLoaded('approvals') ? $c->approvals->where('workflow_step_id', $c->workflow_step_id)->where('status', 'pending')->where('user_id', Auth::id())->filter(function ($a) use ($c) {
                 if ($a->sub_step !== null) {
                     return true;
                 }
@@ -364,7 +369,7 @@ class ContractFormatter
                     ->contains(fn ($sub) => $sub->status !== 'approved');
 
                 return ! $hasUnapprovedSubSteps;
-            })->first()?->id,
+            })->first()?->id : null,
             'unread_count' => (int) ($c->unread_count ?? 0),
             'doc_reviews' => $isDetail ? (function () use ($c) {
                 $reviewsMap = [];

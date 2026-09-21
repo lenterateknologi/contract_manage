@@ -1231,11 +1231,37 @@ export function OrgHierarchyFlow({
         try {
             setIsExporting(true);
 
-            // Calculate precise canvas bounds
-            const nodesBounds = getNodesBounds(nodes);
-            const padding = 80;
-            const imageWidth = nodesBounds.width + padding * 2;
-            const imageHeight = nodesBounds.height + padding * 2;
+            // Compute exact content bounding box based on node positions and explicit dimensions
+            let minX = Infinity;
+            let minY = Infinity;
+            let maxX = -Infinity;
+            let maxY = -Infinity;
+
+            nodes.forEach((n) => {
+                const w = n.type === 'employeeListNode' ? 340 : 240;
+                const h = n.type === 'employeeListNode' ? 220 : 110;
+                const posX = n.position.x;
+                const posY = n.position.y;
+
+                if (posX < minX) minX = posX;
+                if (posY < minY) minY = posY;
+                if (posX + w > maxX) maxX = posX + w;
+                if (posY + h > maxY) maxY = posY + h;
+            });
+
+            if (minX === Infinity) {
+                const rawBounds = getNodesBounds(nodes);
+                minX = rawBounds.x;
+                minY = rawBounds.y;
+                maxX = rawBounds.x + rawBounds.width;
+                maxY = rawBounds.y + rawBounds.height;
+            }
+
+            const contentWidth = Math.max(maxX - minX, 100);
+            const contentHeight = Math.max(maxY - minY, 100);
+            const padding = 50;
+            const imageWidth = contentWidth + padding * 2;
+            const imageHeight = contentHeight + padding * 2;
 
             const viewportElem = document.querySelector('.react-flow__viewport') as HTMLElement;
             if (!viewportElem) {
@@ -1243,14 +1269,12 @@ export function OrgHierarchyFlow({
                 return;
             }
 
-            const transform = getViewportForBounds(
-                nodesBounds,
-                imageWidth,
-                imageHeight,
-                0.1,
-                2,
-                padding
-            );
+            // Transform to tightly frame and center only the diagram content with padding
+            const transform = {
+                x: -minX + padding,
+                y: -minY + padding,
+                zoom: 1,
+            };
 
             const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark');
             const dataUrl = await toPng(viewportElem, {
@@ -1266,7 +1290,7 @@ export function OrgHierarchyFlow({
             });
 
             const a = document.createElement('a');
-            a.download = `struktur-organisasi-hd-${new Date().toISOString().slice(0, 10)}.png`;
+            a.download = `struktur-organisasi-${new Date().toISOString().slice(0, 10)}.png`;
             a.href = dataUrl;
             a.click();
         } catch (err) {

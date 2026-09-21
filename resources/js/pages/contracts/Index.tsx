@@ -620,7 +620,14 @@ function ContractPage({
     }, [types, handleFilterChange]);
 
     useEffect(() => {
-        const removeStartListener = router.on('start', () => setProcessing(true));
+        const removeStartListener = router.on('start', (event: any) => {
+            const visit = event?.detail?.visit;
+            // Ignore deferred/partial visits so the existing table remains interactive with zero shimmer flicker
+            if (visit?.only?.length || visit?.headers?.['X-Inertia-Partial-Component']) {
+                return;
+            }
+            setProcessing(true);
+        });
         const removeFinishListener = router.on('finish', () => setProcessing(false));
 
         return () => {

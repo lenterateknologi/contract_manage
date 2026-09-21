@@ -136,6 +136,7 @@ interface StepActionConfigCardProps {
     divisions?: any[];
     locations?: any[];
     companyGroups?: any[];
+    organizationGroups?: any[];
     companies?: any[];
     regions?: any[];
     users: any[];
@@ -161,6 +162,7 @@ export function StepActionConfigCard({
     divisions = [],
     locations = [],
     companyGroups = [],
+    organizationGroups = [],
     companies = [],
     regions = [],
     users,
@@ -541,8 +543,9 @@ export function StepActionConfigCard({
                             <span>Transisi Alur & Tahap Target:</span>
                         </label>
 
-                        <div className="flex flex-wrap items-center gap-2.5">
-                            <div className="w-56 sm:w-64">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center w-full">
+                            {/* 1. Transition Type Selector (1/3 width) */}
+                            <div className="w-full">
                                 <Select
                                     value={transitionType}
                                     onValueChange={(val) => {
@@ -603,7 +606,7 @@ export function StepActionConfigCard({
                                         }
                                     }}
                                 >
-                                    <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                    <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
                                         <SelectValue placeholder="Pilih Transisi" />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -642,10 +645,10 @@ export function StepActionConfigCard({
                                 </Select>
                             </div>
 
-                            {/* Cross Workflow Target Selector */}
+                            {/* 2. Cross Workflow Target Selector (1/3 + 1/3) */}
                             {showCrossWorkflowSelector && (
-                                <div className="flex flex-wrap items-center gap-2.5">
-                                    <div className="w-52 sm:w-60">
+                                <>
+                                    <div className="w-full">
                                         <Select
                                             value={act.transition_config?.workflow_id || act.next_workflow_id || ''}
                                             onValueChange={(val) => {
@@ -674,7 +677,7 @@ export function StepActionConfigCard({
                                                 }
                                             }}
                                         >
-                                            <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                            <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
                                                 <SelectValue placeholder="Pilih Alur Kerja" />
                                             </SelectTrigger>
                                             <SelectContent className="z-[9999] rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -696,7 +699,7 @@ export function StepActionConfigCard({
                                         </Select>
                                     </div>
 
-                                    <div className="w-52 sm:w-60">
+                                    <div className="w-full">
                                         {(act.transition_config?.workflow_id || act.next_workflow_id) === 'origin_workflow' ? (
                                             <Select
                                                 value={act.transition_config?.return_mode || String(act.transition_config?.sequence || 'branch_next')}
@@ -726,7 +729,7 @@ export function StepActionConfigCard({
                                                     }
                                                 }}
                                             >
-                                                <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
                                                     <SelectValue placeholder="Pilih Tahap Target" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -760,7 +763,7 @@ export function StepActionConfigCard({
                                                     })
                                                 }
                                             >
-                                                <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                                <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
                                                     <SelectValue placeholder="Pilih Tahap Target" />
                                                 </SelectTrigger>
                                                 <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -777,12 +780,12 @@ export function StepActionConfigCard({
                                             </Select>
                                         )}
                                     </div>
-                                </div>
+                                </>
                             )}
 
-                            {/* Absolute Step Selector */}
+                            {/* 3. Absolute Step Selector (1/3 width) */}
                             {showAbsoluteStepSelector && (
-                                <div className="w-52 sm:w-60">
+                                <div className="w-full">
                                     <Select
                                         value={(() => {
                                             if (act.transition_config?.step_id) {
@@ -812,7 +815,7 @@ export function StepActionConfigCard({
                                             });
                                         }}
                                     >
-                                        <SelectTrigger className="h-8.5 py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
+                                        <SelectTrigger className="h-8.5 w-full py-1.5 px-3 rounded-lg border-slate-200 bg-white text-xs font-medium dark:border-zinc-700 dark:bg-zinc-900 text-slate-800 dark:text-zinc-100 shadow-2xs">
                                             <SelectValue placeholder="Pilih Tahap Target" />
                                         </SelectTrigger>
                                         <SelectContent className="rounded-lg border-slate-200 bg-white dark:border-zinc-700 dark:bg-zinc-900">
@@ -888,6 +891,7 @@ export function StepActionConfigCard({
                                 divisions={divisions}
                                 locations={locations}
                                 companyGroups={companyGroups}
+                                organizationGroups={organizationGroups}
                                 companies={companies}
                                 regions={regions}
                                 showCustom={true}
@@ -976,6 +980,7 @@ export function StepActionConfigCard({
                                 divisions={divisions}
                                 locations={locations}
                                 companyGroups={companyGroups}
+                                organizationGroups={organizationGroups}
                                 companies={companies}
                                 regions={regions}
                                 showCustom={true}

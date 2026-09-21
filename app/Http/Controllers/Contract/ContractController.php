@@ -111,9 +111,9 @@ class ContractController extends Controller
             'contracts' => $contracts,
             'types' => $loaders['types'](),
             'submissionTypes' => $loaders['submissionTypes'](),
-            'users' => $loaders['users'](),
-            'vendors' => $loaders['vendors'](),
-            'formTemplates' => $loaders['formTemplates'](),
+            'users' => Inertia::defer(fn () => $loaders['users']()),
+            'vendors' => Inertia::defer(fn () => $loaders['vendors']()),
+            'formTemplates' => Inertia::defer(fn () => $loaders['formTemplates']()),
             'departments' => $loaders['departments'](),
             'divisions' => $loaders['divisions'](),
             'roles' => $loaders['roles'](),
@@ -121,11 +121,11 @@ class ContractController extends Controller
             'locations' => $loaders['locations'](),
             'companyGroups' => $loaders['companyGroups'](),
             'companies' => $loaders['companies'](),
-            'organizationTree' => ContractFilterScopeService::buildOrganizationTree(
+            'organizationTree' => Inertia::defer(fn () => ContractFilterScopeService::buildOrganizationTree(
                 $loaders['companyGroups'](),
                 $loaders['regions'](),
                 $loaders['companies']()
-            ),
+            )),
             'contractStatuses' => $loaders['contractStatuses'](),
             'userFilterSettings' => Auth::user()?->getContractFilterSettings() ?? [],
             'filters' => array_merge($request->only([

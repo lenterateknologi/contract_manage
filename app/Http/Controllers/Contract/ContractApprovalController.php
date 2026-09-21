@@ -563,6 +563,43 @@ class ContractApprovalController extends Controller
                 $addedUsers[] = $user->name;
             }
 
+            // Process attachments if any
+            $filesToProcess = [];
+            if ($request->hasFile('attachments')) {
+                $filesToProcess = $request->file('attachments');
+            } elseif ($request->hasFile('attachment')) {
+                $filesToProcess = [$request->file('attachment')];
+            }
+            $firstAttachmentPath = null;
+            $isFirstAttachment = true;
+            foreach ($filesToProcess as $file) {
+                if (! $file) continue;
+                $path = $file->store("contracts/{$contract->id}/adhoc", 'local');
+                if ($isFirstAttachment) {
+                    $firstAttachmentPath = $path;
+                    $isFirstAttachment = false;
+                }
+                $contract->attachments()->create([
+                    'label' => $file->getClientOriginalName(),
+                    'category' => 'Lampiran',
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                    'file_type' => $file->getClientOriginalExtension() ?: 'file',
+                    'uploaded_by' => Auth::id(),
+                ]);
+            }
+
+            if (! empty($addedUsers)) {
+                // Log history only if new users were added
+                $actorName = Auth::user()?->name ?: 'Pengguna';
+                $count = count($addedUsers);
+                $contract->histories()->create([
+                    'action' => 'ADHOC_PARTICIPANT_ADDED',
+                    'description' => "{$count} {$role} ditambahkan oleh {$actorName}. Catatan: ".$request->input('note'),
+                    'actor_id' => Auth::id(),
+                ]);
+            }
+
             // If branching to a sub-workflow, complete current step and advance to sub-workflow
             if ($isSubWorkflow) {
                 // Mark previous step approvals as approved and deactivate current step status
@@ -605,53 +642,76 @@ class ContractApprovalController extends Controller
                     'description' => "Alur kerja berlanjut ke Tahap {$targetStep->step}: {$targetStepLabel}",
                     'actor_id' => Auth::id(),
                 ]);
-            } elseif ($isCurrentStep) {
-                // Sync main step regular approvals status when adding ad-hoc approvals to current step
-                $hasActiveAdhoc = Approval::where('contract_id', $contract->id)
-                    ->where('workflow_step_id', $targetStepId)
-                    ->where('role', $role)
-                    ->where('is_active', true)
-                    ->whereIn('status', ['pending', 'waiting'])
-                    ->exists();
+            } else {
+                // Check if this ad-hoc addition was executed as a step completion action on the current step
+                $requestActionId = $request->input('action_id') ?: $request->input('step_action_id');
+                $actionCodeInput = $request->input('action_code') ?: 'add_adhoc';
+                $currentStep = $contract->workflowStep ?: ($contract->workflow_step_id ? WorkflowStep::find($contract->workflow_step_id) : null);
 
-                if ($hasActiveAdhoc && $role === config('master.roles.adhoc_approver')) {
-                    Approval::where('contract_id', $contract->id)
-                        ->where('workflow_step_id', $targetStepId)
-                        ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
-                        ->where('status', 'pending')
-                        ->update(['status' => 'waiting']);
+                $stepAction = null;
+                if ($currentStep) {
+                    if ($requestActionId && \Illuminate\Support\Str::isUuid($requestActionId)) {
+                        $stepAction = $currentStep->actions()->where('id', $requestActionId)->first();
+                    }
+                    if (! $stepAction) {
+                        $stepAction = $currentStep->actions()->where(function ($q) use ($actionCodeInput) {
+                            $q->where('action_code', $actionCodeInput)
+                              ->orWhere('action_code', 'add_adhoc');
+                        })->first();
+                    }
                 }
-            }
 
-            // Process attachments if any
-            $filesToProcess = [];
-            if ($request->hasFile('attachments')) {
-                $filesToProcess = $request->file('attachments');
-            } elseif ($request->hasFile('attachment')) {
-                $filesToProcess = [$request->file('attachment')];
-            }
-            foreach ($filesToProcess as $file) {
-                if (! $file) continue;
-                $path = $file->store("contracts/{$contract->id}/adhoc", 'local');
-                $contract->attachments()->create([
-                    'label' => $file->getClientOriginalName(),
-                    'category' => 'Lampiran',
-                    'file_name' => $file->getClientOriginalName(),
-                    'file_path' => $path,
-                    'file_type' => $file->getClientOriginalExtension() ?: 'file',
-                    'uploaded_by' => Auth::id(),
-                ]);
-            }
+                $hasExplicitAction = $request->filled('action_id') || $request->filled('step_action_id') || $request->filled('action_code');
+                $isAddAdhocAction = ($actionCodeInput === 'add_adhoc' && $hasExplicitAction) || ($stepAction && $stepAction->action_code === 'add_adhoc' && $hasExplicitAction);
 
-            if (! empty($addedUsers)) {
-                // Log history only if new users were added
-                $actorName = Auth::user()->name;
-                $count = count($addedUsers);
-                $contract->histories()->create([
-                    'action' => 'ADHOC_PARTICIPANT_ADDED',
-                    'description' => "{$count} {$role} ditambahkan oleh {$actorName}. Catatan: ".$request->input('note'),
-                    'actor_id' => Auth::id(),
-                ]);
+                if ($isAddAdhocAction || ($hasExplicitAction && $stepAction)) {
+                    $currentApproval = Approval::where('contract_id', $contract->id)
+                        ->where('workflow_step_id', $contract->workflow_step_id)
+                        ->where('status', 'pending')
+                        ->where(function ($q) use ($contract) {
+                            $q->where('user_id', Auth::id())
+                              ->orWhere('user_id', $contract->created_by)
+                              ->orWhere('user_id', $contract->initiated_by_id);
+                        })
+                        ->first();
+
+                    if (! $currentApproval) {
+                        $currentApproval = Approval::where('contract_id', $contract->id)
+                            ->where('workflow_step_id', $contract->workflow_step_id)
+                            ->where('status', 'pending')
+                            ->first();
+                    }
+
+                    if ($currentApproval) {
+                        $contract = $this->approveAction->approve(
+                            $contract,
+                            $currentApproval,
+                            $request->input('note'),
+                            $firstAttachmentPath,
+                            null,
+                            null,
+                            $actionCodeInput,
+                            $targetStepId,
+                            $stepAction?->id ?: $requestActionId
+                        );
+                    }
+                } elseif ($isCurrentStep) {
+                    // Sync main step regular approvals status when adding ad-hoc approvals to current step
+                    $hasActiveAdhoc = Approval::where('contract_id', $contract->id)
+                        ->where('workflow_step_id', $targetStepId)
+                        ->where('role', $role)
+                        ->where('is_active', true)
+                        ->whereIn('status', ['pending', 'waiting'])
+                        ->exists();
+
+                    if ($hasActiveAdhoc && $role === config('master.roles.adhoc_approver')) {
+                        Approval::where('contract_id', $contract->id)
+                            ->where('workflow_step_id', $targetStepId)
+                            ->whereNotIn('role', ['Persetujuan Tambahan', 'Pihak 1', 'Pihak 2'])
+                            ->where('status', 'pending')
+                            ->update(['status' => 'waiting']);
+                    }
+                }
             }
 
             return response()->json(ContractFormatter::formatContract($contract->fresh()), 200);

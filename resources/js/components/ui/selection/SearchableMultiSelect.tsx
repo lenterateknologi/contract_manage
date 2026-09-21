@@ -223,7 +223,7 @@ export function SearchableMultiSelect({
                                 {emptyText}
                             </div>
                         )}
-                        {filtered.map(opt => {
+                        {filtered.slice(0, 100).map(opt => {
                             const isSelected = (values || []).includes(opt.value);
                             return (
                                 <div
@@ -252,6 +252,11 @@ export function SearchableMultiSelect({
                                 </div>
                             );
                         })}
+                        {filtered.length > 100 && (
+                            <div className="py-2 text-center text-[11px] font-medium text-slate-400 dark:text-zinc-500 italic bg-slate-50/50 dark:bg-zinc-900/30 rounded-md">
+                                Menampilkan 100 dari {filtered.length} opsi. Ketik untuk memfilter lebih spesifik.
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

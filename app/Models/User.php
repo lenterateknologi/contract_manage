@@ -262,8 +262,11 @@ class User extends Authenticatable
 
     public function getDivisionNameAttribute(): ?string
     {
-        if ($this->relationLoaded('division') && $this->division && array_key_exists('name', $this->division->getAttributes())) {
-            return $this->division->getAttributes()['name'];
+        if ($this->relationLoaded('division')) {
+            $division = $this->getRelation('division');
+            if ($division && array_key_exists('name', $division->getAttributes())) {
+                return $division->getAttributes()['name'];
+            }
         }
 
         $divisionId = $this->attributes['division_id'] ?? null;
@@ -280,8 +283,11 @@ class User extends Authenticatable
 
     public function getDepartmentNameAttribute(): ?string
     {
-        if ($this->relationLoaded('department') && $this->department && array_key_exists('name', $this->department->getAttributes())) {
-            return $this->department->getAttributes()['name'];
+        if ($this->relationLoaded('department')) {
+            $department = $this->getRelation('department');
+            if ($department && array_key_exists('name', $department->getAttributes())) {
+                return $department->getAttributes()['name'];
+            }
         }
 
         $departmentId = $this->attributes['department_id'] ?? null;
@@ -300,8 +306,11 @@ class User extends Authenticatable
 
     public function getOrgGroupNameAttribute(): ?string
     {
-        if ($this->relationLoaded('department') && $this->department && array_key_exists('org_group_name', $this->department->getAttributes())) {
-            return $this->department->getAttributes()['org_group_name'];
+        if ($this->relationLoaded('department')) {
+            $department = $this->getRelation('department');
+            if ($department && array_key_exists('org_group_name', $department->getAttributes())) {
+                return $department->getAttributes()['org_group_name'];
+            }
         }
 
         $departmentId = $this->attributes['department_id'] ?? null;
@@ -330,12 +339,12 @@ class User extends Authenticatable
             return $this->attributes['company_group_id'];
         }
 
-        if ($this->relationLoaded('company') && $this->company) {
-            return $this->company->company_group_id;
+        if ($this->relationLoaded('company') && $this->getRelation('company')) {
+            return $this->getRelation('company')->company_group_id;
         }
 
-        if ($this->relationLoaded('businessUnit') && $this->businessUnit) {
-            return $this->businessUnit->company_group_id;
+        if ($this->relationLoaded('businessUnit') && $this->getRelation('businessUnit')) {
+            return $this->getRelation('businessUnit')->company_group_id;
         }
 
         $companyId = $this->attributes['company_id'] ?? null;
@@ -353,12 +362,15 @@ class User extends Authenticatable
 
     public function getCompanyGroupNameAttribute(): ?string
     {
-        if ($this->relationLoaded('companyGroup') && $this->companyGroup) {
-            return $this->companyGroup->name;
+        if ($this->relationLoaded('companyGroup') && $this->getRelation('companyGroup')) {
+            return $this->getRelation('companyGroup')->name;
         }
 
-        if ($this->relationLoaded('company') && $this->company && array_key_exists('company_group_name', $this->company->getAttributes())) {
-            return $this->company->getAttributes()['company_group_name'];
+        if ($this->relationLoaded('company')) {
+            $company = $this->getRelation('company');
+            if ($company && array_key_exists('company_group_name', $company->getAttributes())) {
+                return $company->getAttributes()['company_group_name'];
+            }
         }
 
         $companyGroupId = $this->attributes['company_group_id'] ?? null;
@@ -384,8 +396,8 @@ class User extends Authenticatable
 
     public function getCompanyGroupCodeAttribute(): ?string
     {
-        if ($this->relationLoaded('companyGroup') && $this->companyGroup) {
-            return $this->companyGroup->code;
+        if ($this->relationLoaded('companyGroup') && $this->getRelation('companyGroup')) {
+            return $this->getRelation('companyGroup')->code;
         }
 
         $companyGroupId = $this->attributes['company_group_id'] ?? null;
@@ -398,24 +410,27 @@ class User extends Authenticatable
             return self::$companyGroupMemoryCache[$cacheKey];
         }
 
-        if ($this->relationLoaded('company') && $this->company) {
-            if (array_key_exists('company_group_code', $this->company->getAttributes()) && ! empty($this->company->getAttributes()['company_group_code'])) {
-                return $this->company->getAttributes()['company_group_code'];
-            }
-            if ($this->company->relationLoaded('group') && $this->company->group) {
-                return $this->company->group->code;
-            }
-            if ($this->company->relationLoaded('companyGroup') && $this->company->companyGroup) {
-                return $this->company->companyGroup->code;
-            }
-            $groupId = $this->company->getAttributes()['company_group_id'] ?? null;
-            if (! empty($groupId)) {
-                $cacheKey = "code_{$groupId}";
-                if (! array_key_exists($cacheKey, self::$companyGroupMemoryCache)) {
-                    self::$companyGroupMemoryCache[$cacheKey] = CompanyGroup::find($groupId)?->code;
+        if ($this->relationLoaded('company')) {
+            $company = $this->getRelation('company');
+            if ($company) {
+                if (array_key_exists('company_group_code', $company->getAttributes()) && ! empty($company->getAttributes()['company_group_code'])) {
+                    return $company->getAttributes()['company_group_code'];
                 }
+                if ($company->relationLoaded('group') && $company->getRelation('group')) {
+                    return $company->getRelation('group')->code;
+                }
+                if ($company->relationLoaded('companyGroup') && $company->getRelation('companyGroup')) {
+                    return $company->getRelation('companyGroup')->code;
+                }
+                $groupId = $company->getAttributes()['company_group_id'] ?? null;
+                if (! empty($groupId)) {
+                    $cacheKey = "code_{$groupId}";
+                    if (! array_key_exists($cacheKey, self::$companyGroupMemoryCache)) {
+                        self::$companyGroupMemoryCache[$cacheKey] = CompanyGroup::find($groupId)?->code;
+                    }
 
-                return self::$companyGroupMemoryCache[$cacheKey];
+                    return self::$companyGroupMemoryCache[$cacheKey];
+                }
             }
         }
 
@@ -428,8 +443,8 @@ class User extends Authenticatable
             return $this->attributes['region_id'];
         }
 
-        if ($this->relationLoaded('company') && $this->company) {
-            return $this->company->region_id;
+        if ($this->relationLoaded('company') && $this->getRelation('company')) {
+            return $this->getRelation('company')->region_id;
         }
 
         $companyId = $this->attributes['company_id'] ?? null;
@@ -447,12 +462,15 @@ class User extends Authenticatable
 
     public function getRegionNameAttribute(): ?string
     {
-        if ($this->relationLoaded('region') && $this->region) {
-            return $this->region->name;
+        if ($this->relationLoaded('region') && $this->getRelation('region')) {
+            return $this->getRelation('region')->name;
         }
 
-        if ($this->relationLoaded('company') && $this->company && array_key_exists('region_name', $this->company->getAttributes())) {
-            return $this->company->getAttributes()['region_name'];
+        if ($this->relationLoaded('company')) {
+            $company = $this->getRelation('company');
+            if ($company && array_key_exists('region_name', $company->getAttributes())) {
+                return $company->getAttributes()['region_name'];
+            }
         }
 
         $regionId = $this->region_id;
@@ -481,8 +499,8 @@ class User extends Authenticatable
 
     public function getLocationNameAttribute(): ?string
     {
-        if ($this->relationLoaded('location') && $this->location) {
-            return $this->location->name;
+        if ($this->relationLoaded('location') && $this->getRelation('location')) {
+            return $this->getRelation('location')->name;
         }
 
         $locationId = $this->attributes['location_id'] ?? null;

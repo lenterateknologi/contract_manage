@@ -27,6 +27,7 @@ const {
     Sparkles,
     Shield,
     X,
+    Loader2,
 } = Icons;
 import { PageTable } from '@/components/ui/navigation/PageTable';
 import {
@@ -36,6 +37,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialogs/Dialog';
+import axios from 'axios';
 import React, { useMemo, useState } from 'react';
 
 interface WorkflowManagementProps {
@@ -171,11 +173,23 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
     const openCreate = () => router.visit(route('admin.workflows.create'));
 
     const [previewWorkflow, setPreviewWorkflow] = useState<any | null>(null);
+    const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
     const [togglingKey, setTogglingKey] = useState<string | null>(null);
 
-    const openPreview = (w: any, e: React.MouseEvent) => {
+    const openPreview = async (w: any, e: React.MouseEvent) => {
         e.stopPropagation();
-        setPreviewWorkflow(w);
+        setPreviewWorkflow({ ...w, steps: w.steps || [] });
+        setIsLoadingPreview(true);
+        try {
+            const res = await axios.get(route('admin.workflows.preview', w.id));
+            if (res.data) {
+                setPreviewWorkflow(res.data);
+            }
+        } catch (err) {
+            console.error('Failed to load workflow preview:', err);
+        } finally {
+            setIsLoadingPreview(false);
+        }
     };
 
     const toggleSelect = (id: string) => {
@@ -327,9 +341,9 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                 <Tag size={13} /> Tipe Pengajuan
                             </div>
                         </th>
-                        <th className="px-4 py-3 text-right text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
-                            <div className="flex items-center justify-end gap-1.5">
-                                <Users size={13} /> Akses Inisiator
+                        <th className="px-4 py-3 text-left text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
+                            <div className="flex items-center gap-1.5">
+                                <Users size={13} /> Target Inisiator
                             </div>
                         </th>
                         <th className="px-4 py-3 text-center text-[11px] font-bold uppercase text-white dark:text-zinc-200 bg-primary dark:bg-zinc-800/90">
@@ -491,12 +505,28 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
                                             })()}
                                         </td>
 
-                                        {/* User Count (Akses Inisiator) */}
-                                        <td className="px-4 py-3 text-right">
-                                            <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground tabular-nums">
-                                                <Users size={11} className="text-muted-foreground" />
-                                                {(row.users_count ?? 0).toLocaleString()} User
-                                            </span>
+                                        {/* Target Inisiator (initiator_summary) */}
+                                        <td className="px-4 py-3">
+                                            {(() => {
+                                                const summary = row.initiator_summary || 'Seluruh Staff';
+                                                const items = summary.split('|').map((s: string) => s.trim()).filter(Boolean);
+                                                const firstItem = items[0] || 'Seluruh Staff';
+                                                const hasMore = items.length > 1;
+
+                                                return (
+                                                    <div className="flex flex-wrap gap-1 items-center">
+                                                        <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-foreground" title={summary}>
+                                                            <Users size={10} className="text-muted-foreground shrink-0" />
+                                                            <span className="truncate max-w-[150px]">{firstItem}</span>
+                                                        </span>
+                                                        {hasMore && (
+                                                            <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/5 px-1.5 py-0.5 text-[9px] font-semibold text-primary" title={items.slice(1).join(' | ')}>
+                                                                +{items.length - 1}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
 
                                         {/* Default */}
@@ -708,7 +738,12 @@ export function WorkflowManagement({ workflows, contractTypes, filters }: Readon
 
                     {/* Body: Step List Timeline */}
                     <div className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[60vh]">
-                        {previewWorkflow && (!previewWorkflow.steps || previewWorkflow.steps.length === 0) ? (
+                        {isLoadingPreview ? (
+                            <div className="py-16 flex flex-col items-center justify-center text-muted-foreground gap-2">
+                                <Loader2 size={24} className="animate-spin text-primary" />
+                                <span className="text-xs font-medium">Memuat konfigurasi tahapan alur kerja...</span>
+                            </div>
+                        ) : previewWorkflow && (!previewWorkflow.steps || previewWorkflow.steps.length === 0) ? (
                             <div className="py-12 text-center text-muted-foreground">
                                 <Layers size={32} className="mx-auto mb-2 opacity-30" />
                                 <p className="text-sm font-medium">Alur kerja ini belum memiliki konfigurasi tahapan.</p>

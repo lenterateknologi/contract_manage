@@ -1177,6 +1177,7 @@ export default function SortableStepItem({
                                                         divisions={divisions}
                                                         locations={locations}
                                                         companyGroups={companyGroups}
+                                                        organizationGroups={organizationGroups}
                                                         companies={companies}
                                                         regions={regions}
                                                         users={users}

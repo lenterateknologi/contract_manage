@@ -321,3 +321,67 @@ test('rejecting adhoc approval sends contract back to revision', function () {
         'status' => 'rejected',
     ]);
 });
+
+test('it executes step action add_adhoc with transition config and advances to the next step', function () {
+    // Setup Step 2 with add_adhoc action
+    $actionId = Str::uuid()->toString();
+    DB::table('m_workflow_step_actions')->where('workflow_step_id', $this->step2->id)->delete();
+    DB::table('m_workflow_step_actions')->insert([
+        'id' => $actionId,
+        'workflow_step_id' => $this->step2->id,
+        'action_code' => 'add_adhoc',
+        'alias' => 'Setujui dan Tambah Reviewer',
+        'target_status' => 'in_review',
+        'transition_config' => json_encode(['type' => 'relative', 'offset' => 1]),
+        'is_active' => true,
+    ]);
+
+    $contract = Contract::create([
+        'title' => 'Test Step Action Adhoc Transition',
+        'form_no' => 'CTR-ADHOC-005',
+        'contract_type_id' => $this->type->id,
+        'created_by' => $this->creator->id,
+        'initiated_by_id' => $this->creator->id,
+        'status' => 'draft',
+    ]);
+
+    $this->actingAs($this->creator);
+    $this->postJson("/api/contracts/{$contract->id}/send", [
+        'workflow_id' => $this->workflow->id,
+    ])->assertSuccessful();
+
+    // Currently at step 2 (after initiator auto-skip)
+    $contract = $contract->fresh();
+    expect($contract->workflow_step_id)->toBe($this->step2->id);
+
+    // Execute add_adhoc action from step 2 as manager targeting step 3
+    $this->actingAs($this->manager);
+    $resp = $this->postJson("/api/contracts/{$contract->id}/add-approver", [
+        'user_ids' => [$this->adhocUser->id],
+        'action_id' => $actionId,
+        'action_code' => 'add_adhoc',
+        'target_step_id' => $this->step3->id,
+        'note' => 'Melengkapi data reviewer ad-hoc untuk step 3',
+    ]);
+    $resp->assertSuccessful();
+
+    $contract = $contract->fresh();
+    // Verify contract advanced from step 2 to step 3
+    expect($contract->workflow_step_id)->toBe($this->step3->id);
+
+    // Verify step 2 manager approval is approved
+    $this->assertDatabaseHas('t_approvals', [
+        'contract_id' => $contract->id,
+        'workflow_step_id' => $this->step2->id,
+        'user_id' => $this->manager->id,
+        'status' => 'approved',
+    ]);
+
+    // Verify step 3 has the ad-hoc approver in pending/waiting status
+    $this->assertDatabaseHas('t_approvals', [
+        'contract_id' => $contract->id,
+        'workflow_step_id' => $this->step3->id,
+        'user_id' => $this->adhocUser->id,
+    ]);
+});
+

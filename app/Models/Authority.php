@@ -19,6 +19,7 @@ class Authority extends Model
     public const CONTEXT_STEP_ACTION_ASSIGNEE = 'step_action_assignee';
     public const CONTEXT_ON_BEHALF_CREATE = 'on_behalf_create';
     public const CONTEXT_DASHBOARD_TYPE = 'dashboard_type';
+    public const CONTEXT_SLA_OVERDUE = 'sla_overdue_notif';
 
     public const AUTHORITY_TYPES = [
         'user',
@@ -210,6 +211,11 @@ class Authority extends Model
         return $this->belongsTo(DashboardType::class, 'context_id');
     }
 
+    public function contractSlaConfig(): BelongsTo
+    {
+        return $this->belongsTo(ContractSlaConfig::class, 'context_id');
+    }
+
     // Scopes
     public function scopeWorkflowInitiator($query, ?string $workflowId = null)
     {
@@ -239,6 +245,15 @@ class Authority extends Model
         $q = $query->where('context_type', self::CONTEXT_DASHBOARD_TYPE);
         if ($dashboardTypeId) {
             $q->where('context_id', $dashboardTypeId);
+        }
+        return $q;
+    }
+
+    public function scopeSlaOverdue($query, ?string $slaConfigId = null)
+    {
+        $q = $query->where('context_type', self::CONTEXT_SLA_OVERDUE);
+        if ($slaConfigId) {
+            $q->where('context_id', $slaConfigId);
         }
         return $q;
     }
@@ -330,7 +345,10 @@ class Authority extends Model
         // Division check
         if ($rule->division_id) {
             $criteriaCount++;
-            $userDivId = $user->division_id ?: data_get($user, 'department.division_id');
+            $userDivId = $user->division_id;
+            if (! $userDivId && $user->relationLoaded('department') && $user->getRelation('department')) {
+                $userDivId = $user->getRelation('department')->division_id;
+            }
             if ((string) $rule->division_id !== (string) $userDivId) {
                 $matches = false;
             }
@@ -371,7 +389,10 @@ class Authority extends Model
         // Organization Group check
         if ($rule->organization_group_id) {
             $criteriaCount++;
-            $userOrgGroupId = data_get($user, 'department.idorg_group') ?: data_get($user, 'idorg_group');
+            $userOrgGroupId = $user->idorg_group ?? null;
+            if (! $userOrgGroupId && $user->relationLoaded('department') && $user->getRelation('department')) {
+                $userOrgGroupId = $user->getRelation('department')->idorg_group;
+            }
             if ((string) $rule->organization_group_id !== (string) $userOrgGroupId) {
                 $matches = false;
             }
