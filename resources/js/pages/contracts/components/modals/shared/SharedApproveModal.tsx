@@ -485,19 +485,25 @@ export function SharedActionModal({
                         const stepKey = contract?.workflow_step_id ? `step_${contract.workflow_step_id}` : 'general';
                         const reviews = ((contract as any)?.doc_reviews?.[stepKey] || contract?.metadata?.doc_reviews?.[stepKey] || contract?.metadata?.[`doc_reviews_${stepKey}`] || {}) as Record<string, any>;
 
+                        // Check which review requirements are active for this action
+                        const reqFields = (activeAction?.required_fields || []) as string[];
+                        const hasSpecificReviewReqs = reqFields.some((f) => f.startsWith('review_') || ['f1', 'f2', 'agreement'].includes(f));
+
                         const docList: any[] = [];
-                        if (hasF1) {
+                        if (hasF1 && (!hasSpecificReviewReqs || reqFields.includes('review_f1') || reqFields.includes('f1') || reqFields.includes('review_all_docs') || meta.require_f1)) {
                             const isRev = !!reviews.f1?.reviewed;
                             docList.push({ id: 'f1', label: 'F1 (Permohonan)', isReviewed: isRev, info: reviews.f1 });
                         }
-                        if (hasF2) {
+                        if (hasF2 && (!hasSpecificReviewReqs || reqFields.includes('review_f2') || reqFields.includes('f2') || reqFields.includes('review_all_docs') || meta.require_f2)) {
                             const isRev = !!reviews.f2?.reviewed;
                             docList.push({ id: 'f2', label: 'F2 (Ringkasan)', isReviewed: isRev, info: reviews.f2 });
                         }
-                        if (hasAgreement) {
+                        if (hasAgreement && (!hasSpecificReviewReqs || reqFields.includes('review_agreement') || reqFields.includes('agreement') || reqFields.includes('review_all_docs') || meta.require_agreement)) {
                             const isRev = !!reviews.agreement?.reviewed;
                             docList.push({ id: 'agreement', label: 'Draft Perjanjian', isReviewed: isRev, info: reviews.agreement });
                         }
+
+                        if (docList.length === 0) return null;
 
                         const reviewedCount = docList.filter(d => d.isReviewed).length;
 
@@ -517,7 +523,7 @@ export function SharedActionModal({
                                         {reviewedCount} / {docList.length} Ditinjau
                                     </span>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+                                <div className={cn("grid gap-1.5", docList.length === 1 ? "grid-cols-1" : docList.length === 2 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-3")}>
                                     {docList.map((doc) => (
                                         <div
                                             key={doc.id}

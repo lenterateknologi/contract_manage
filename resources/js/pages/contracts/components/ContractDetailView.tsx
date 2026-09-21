@@ -5,6 +5,7 @@ import { ContractDetailHeader } from '@/pages/contracts/components/parts/Contrac
 import { AdvancedInfoCard, DraftEditableInfoCard, PicInfoCard, RequesterInfoCard, VendorInfoCard } from '@/pages/contracts/components/parts/DraftEditableInfoCard';
 import { Contract, ContractType } from '@/pages/contracts/types';
 import { contractApi } from '@/pages/contracts/utils';
+import { resolveContractRequirements } from '@/pages/contracts/utils/requirements';
 import { matchUserAgainstWorkflowPool } from '@/pages/workflows/workflow-filter';
 import { detailSidebarStore, type DetailSidebarTabChild, type DetailSidebarTabItem } from '@/stores/useDetailSidebarStore';
 import { usePage } from '@inertiajs/react';
@@ -474,7 +475,8 @@ export const ContractDetailView = ({
     const reviewedInSessionRef = React.useRef<Set<string>>(new Set());
 
     useEffect(() => {
-        if (detailTab === 'documents' && ['f1', 'f2', 'agreement'].includes(docSubTab)) {
+        // Only trigger doc review if user is authorized to approve/review in this step
+        if (contract.can_approve && detailTab === 'documents' && ['f1', 'f2', 'agreement'].includes(docSubTab)) {
             const isAlreadyReviewed = !!stepReviews[docSubTab]?.reviewed;
             const sessionKey = `${contract.id}_${currentStepKey}_${docSubTab}`;
 
@@ -489,12 +491,18 @@ export const ContractDetailView = ({
                 });
             }
         }
-    }, [detailTab, docSubTab, contract.id, currentStepKey, stepReviews]);
+    }, [detailTab, docSubTab, contract.id, contract.can_approve, currentStepKey, stepReviews]);
 
     // Build hierarchical tree tabs for sub-sidebar
     const detailSidebarTabs: DetailSidebarTabItem[] = useMemo(() => {
         const meta = contract.workflow_step?.meta || {};
         const result: DetailSidebarTabItem[] = [];
+
+        // Check required fields for this step/action
+        const reqResult = resolveContractRequirements(contract);
+        const reqReviewF1 = reqResult.items.some((it) => it.id === 'review_f1' || it.id === 'f1');
+        const reqReviewF2 = reqResult.items.some((it) => it.id === 'review_f2' || it.id === 'f2');
+        const reqReviewAgreement = reqResult.items.some((it) => it.id === 'review_agreement' || it.id === 'agreement');
 
         // 1. Dokumen Tab (with subtabs f1, f2, agreement)
         const hasF1 = meta.show_tab_f1 !== false && ((contract as any).f1_mode || 'upload') !== 'none';
@@ -510,7 +518,7 @@ export const ContractDetailView = ({
                     label: 'F1 (Permohonan)',
                     icon: FileText,
                     isReviewed: isRev,
-                    badge: isRev ? 'Direview' : 'Perlu Review',
+                    badge: isRev ? 'Direview' : (reqReviewF1 ? 'Perlu Review' : undefined),
                     badgeVariant: isRev ? 'success' : 'warning',
                 });
             }
@@ -521,7 +529,7 @@ export const ContractDetailView = ({
                     label: 'F2 (Ringkasan)',
                     icon: FileCheck,
                     isReviewed: isRev,
-                    badge: isRev ? 'Direview' : 'Perlu Review',
+                    badge: isRev ? 'Direview' : (reqReviewF2 ? 'Perlu Review' : undefined),
                     badgeVariant: isRev ? 'success' : 'warning',
                 });
             }
@@ -532,7 +540,7 @@ export const ContractDetailView = ({
                     label: 'Draft Perjanjian',
                     icon: PenTool,
                     isReviewed: isRev,
-                    badge: isRev ? 'Direview' : 'Perlu Review',
+                    badge: isRev ? 'Direview' : (reqReviewAgreement ? 'Perlu Review' : undefined),
                     badgeVariant: isRev ? 'success' : 'warning',
                 });
             }
@@ -1212,6 +1220,7 @@ export const ContractDetailView = ({
                     onUpdate={handleContractUpdate}
                     showToast={showToast}
                     actionCode={activeActionCode}
+                    actionId={activeStepAction?.id}
                     actionAlias={activeStepAction?.alias || (applicableStepActions.find((a: any) => a.action_code === activeActionCode)?.alias ?? undefined)}
                 />
             </Suspense>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { ContractType } from '@/pages/contracts/types';
 import { Input } from '@/components/ui/inputs/Input';
+import { Textarea } from '@/components/ui/inputs/Textarea';
 import { SearchableSelect } from '@/components/ui/selection/SearchableSelect';
 import { TreeSelect } from '@/components/ui/selection/TreeSelect';
 import { Checkbox } from '@/components/ui/selection/Checkbox';

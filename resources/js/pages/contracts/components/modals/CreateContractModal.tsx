@@ -26,7 +26,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
     const { auth, povOptions } = usePage<SharedData>().props;
     const pov = usePov(povOptions);
     const [title, setTitle] = useState('');
-    const [desc, setDesc] = useState('');
     const [parentTypeId, setParentTypeId] = useState('');
     const [typeId, setTypeId] = useState('');
     const [transactionType, setTransactionType] = useState('Perjanjian Baru');
@@ -118,7 +117,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
 
         const fd = new FormData();
         fd.append('title', title);
-        fd.append('description', desc);
         fd.append('contract_type_id', typeId);
         if (parentTypeId) {
             fd.append('contract_type_parent_id', parentTypeId);
@@ -148,23 +146,14 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
         try {
             await onSubmit(fd);
             onClose();
-            setTitle('');
-            setDesc('');
-            setParentTypeId('');
-            setTypeId('');
-            setTransactionType('Perjanjian Baru');
-            setTaxRequired(true);
-            setInitiatedById(auth?.user?.id || '');
-            setVendorId('');
-        } catch (err: any) {
-            if (err.response?.data?.errors) setErrors(err.response.data.errors);
-            else setErrors({ general: 'Gagal membuat kontrak.' });
+        } catch (err) {
+            console.error('Failed to create contract', err);
         } finally {
             setLoading(false);
         }
     };
 
-    const isFormValid = Boolean(typeId && workflowId && title.trim());
+    const isFormValid = Boolean(title && typeId && (!workflows.length || workflowId));
 
     return (
         <Modal
@@ -280,14 +269,6 @@ export default function CreateContractModal({ open, onClose, onSubmit, types = [
                     placeholder="Masukkan nama project atau judul kontrak"
                     error={errors.title}
                     required
-                />
-
-                <FormTextarea
-                    label="Keterangan (Optional)"
-                    value={desc}
-                    onChange={(e) => setDesc(e.target.value)}
-                    placeholder="Tambahkan keterangan singkat mengenai kontrak ini..."
-                    rows={2}
                 />
 
                 {errors.general && (

@@ -190,40 +190,69 @@ export function getActionTransitionPreview(
 interface ActionPreviewTooltipProps {
     preview: TransitionPreviewInfo | null;
     children: React.ReactNode;
+    missingRequirements?: Array<{ id: string; label: string }>;
+    disabledReason?: string;
 }
 
-export function ActionPreviewTooltip({ preview, children }: ActionPreviewTooltipProps) {
-    if (!preview) return <>{children}</>;
+export function ActionPreviewTooltip({ preview, children, missingRequirements, disabledReason }: ActionPreviewTooltipProps) {
+    const hasMissingReqs = missingRequirements && missingRequirements.length > 0;
+    if (!preview && !hasMissingReqs && !disabledReason) return <>{children}</>;
 
     return (
         <Tooltip>
-            <TooltipTrigger asChild>{children}</TooltipTrigger>
+            <TooltipTrigger asChild>
+                <span className="w-full inline-block cursor-default">{children}</span>
+            </TooltipTrigger>
             <TooltipContent
                 side="left"
                 align="center"
                 sideOffset={8}
-                className="max-w-[270px] w-auto p-2.5 bg-slate-900 text-slate-100 dark:bg-zinc-900 dark:text-zinc-100 border border-slate-700/80 shadow-2xl rounded-lg text-xs space-y-1.5 z-50 pointer-events-none"
+                className="max-w-[280px] w-auto p-2.5 bg-slate-900 text-slate-100 dark:bg-zinc-900 dark:text-zinc-100 border border-slate-700/80 shadow-2xl rounded-lg text-xs space-y-2 z-50 pointer-events-none"
             >
-                <div className="flex items-center gap-1.5 font-bold text-slate-200 dark:text-zinc-200">
-                    <ArrowRight size={13} className="text-primary shrink-0" />
-                    <span>Pratinjau Alur Langkah:</span>
-                </div>
-                <div className="bg-slate-950/80 dark:bg-black/60 p-2 rounded border border-slate-800/80 space-y-1 text-left">
-                    <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
-                        <span className="font-semibold uppercase tracking-wider">Aksi:</span>
-                        <span className="font-bold text-slate-200 truncate">{preview.label}</span>
-                    </div>
-                    <div className="flex items-start justify-between gap-2 text-[10.5px]">
-                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mt-0.5">Tujuan:</span>
-                        <span className="font-bold text-emerald-400 text-right leading-tight break-words">{preview.targetStepText}</span>
-                    </div>
-                    {preview.targetStatus && (
-                        <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 pt-0.5 border-t border-slate-800/80">
-                            <span className="font-semibold uppercase tracking-wider">Status Target:</span>
-                            <span className="font-bold text-amber-400 uppercase">{preview.targetStatus}</span>
+                {hasMissingReqs && (
+                    <div className="bg-rose-950/80 p-2 rounded border border-rose-800/80 space-y-1 text-left">
+                        <div className="flex items-center gap-1.5 font-bold text-rose-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 shrink-0" />
+                            <span>Syarat Wajib Belum Lengkap:</span>
                         </div>
-                    )}
-                </div>
+                        <ul className="list-disc list-inside text-[10.5px] text-rose-200/90 space-y-0.5 mt-1">
+                            {missingRequirements.map((req) => (
+                                <li key={req.id} className="leading-tight">{req.label}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
+
+                {disabledReason && !hasMissingReqs && (
+                    <div className="bg-amber-950/80 p-2 rounded border border-amber-800/80 space-y-1 text-left text-amber-200 text-[11px]">
+                        {disabledReason}
+                    </div>
+                )}
+
+                {preview && (
+                    <>
+                        <div className="flex items-center gap-1.5 font-bold text-slate-200 dark:text-zinc-200">
+                            <ArrowRight size={13} className="text-primary shrink-0" />
+                            <span>Pratinjau Alur Langkah:</span>
+                        </div>
+                        <div className="bg-slate-950/80 dark:bg-black/60 p-2 rounded border border-slate-800/80 space-y-1 text-left">
+                            <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
+                                <span className="font-semibold uppercase tracking-wider">Aksi:</span>
+                                <span className="font-bold text-slate-200 truncate">{preview.label}</span>
+                            </div>
+                            <div className="flex items-start justify-between gap-2 text-[10.5px]">
+                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider shrink-0 mt-0.5">Tujuan:</span>
+                                <span className="font-bold text-emerald-400 text-right leading-tight break-words">{preview.targetStepText}</span>
+                            </div>
+                            {preview.targetStatus && (
+                                <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 pt-0.5 border-t border-slate-800/80">
+                                    <span className="font-semibold uppercase tracking-wider">Status Target:</span>
+                                    <span className="font-bold text-amber-400 uppercase">{preview.targetStatus}</span>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )}
             </TooltipContent>
         </Tooltip>
     );

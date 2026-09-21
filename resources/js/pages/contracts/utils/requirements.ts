@@ -82,17 +82,17 @@ export function resolveContractRequirements(contract: any, activeAction?: any): 
     if (stepMeta.require_period) metaRequiredList.push('period');
 
     let actionRequiredList: string[] = [];
-    if (activeAction?.required_fields && Array.isArray(activeAction.required_fields) && activeAction.required_fields.length > 0) {
+    if (activeAction?.required_fields && Array.isArray(activeAction.required_fields)) {
         actionRequiredList = activeAction.required_fields;
     } else {
         const stepActions = contract?.workflow_step?.actions || [];
-        const approveAction = stepActions.find((a: any) => a.action_code === 'approve' || a.action_code === 'add_adhoc') || stepActions[0];
-        if (approveAction?.required_fields && Array.isArray(approveAction.required_fields) && approveAction.required_fields.length > 0) {
+        const approveAction = stepActions.find((a: any) => a.action_code === 'approve') || stepActions[0];
+        if (approveAction?.required_fields && Array.isArray(approveAction.required_fields)) {
             actionRequiredList = approveAction.required_fields;
         }
     }
 
-    // Combine both step-level requirements and action-level requirements (deduplicated)
+    // Gated from the outside: combining step-level meta requirements and action required_fields
     const requiredFields = Array.from(new Set([...metaRequiredList, ...actionRequiredList]));
 
     const items: RequirementItem[] = [];

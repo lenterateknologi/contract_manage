@@ -134,6 +134,8 @@ export function SharedAssignModal({ open, onClose, contract, onUpdate, showToast
                 availableUsers = allUsers.filter((u: any) => {
                     return matchUserAgainstWorkflowPool(u, config, contract);
                 });
+            } else {
+                availableUsers = allUsers;
             }
 
             const uniqueUsers = Array.from(new Map(availableUsers.map((u: any) => [u.id, u])).values());

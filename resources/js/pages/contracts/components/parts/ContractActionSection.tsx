@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/feedback/Tooltip';
 import { cn } from '@/lib/utils';
 import { ActionPreviewTooltip, getActionTransitionPreview } from '@/pages/contracts/components/parts/ActionPreviewTooltip';
 import { Contract } from '@/pages/contracts/types';
+import { resolveContractRequirements } from '@/pages/contracts/utils/requirements';
 import {
     AlertCircle,
     CheckCircle2,
@@ -148,54 +149,76 @@ export function ContractActionSection({
                     )}
 
                     {/* BUTTON TENTUKAN / GANTI PIC */}
-                    {canAssignPic && (
-                        <ActionPreviewTooltip preview={getActionTransitionPreview(picAction || { action_code: 'assign' }, contract)}>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                style={picActionConfig?.buttonStyle}
-                                onClick={() => onActionClick(picAction || { action_code: 'assign' }, 'assign', true)}
-                                className={cn(
-                                    'w-full justify-between cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 text-white',
-                                    picActionConfig?.buttonClass || 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800',
-                                )}
+                    {canAssignPic && (() => {
+                        const picReqStatus = resolveContractRequirements(contract, picAction || { action_code: 'assign' });
+                        const isPicBlocked = !picReqStatus.allFilled;
+                        const missingPicItems = isPicBlocked ? picReqStatus.items.filter((i) => !i.isFilled) : [];
+
+                        return (
+                            <ActionPreviewTooltip
+                                preview={getActionTransitionPreview(picAction || { action_code: 'assign' }, contract)}
+                                missingRequirements={missingPicItems}
                             >
-                                <div className="flex items-center gap-2 truncate">
-                                    <UserCheck size={16} className="shrink-0" />
-                                    <span className="text-xs truncate">{hasPic ? (picAction?.alias ? `Ubah ${picAction.alias}` : 'Ubah / Ganti PIC') : (picAction?.alias || 'Tentukan PIC Kontrak')}</span>
-                                </div>
-                                <span className={cn(
-                                    'text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 border',
-                                    hasPic
-                                        ? 'bg-emerald-500/20 text-emerald-100 border-emerald-400/40'
-                                        : 'bg-amber-400/20 text-amber-100 border-amber-300/40',
-                                )}>
-                                    {hasPic
-                                        ? (contract.assigned_pic?.name || (contract as any).assignedPic?.name || 'Sudah Ada PIC')
-                                        : 'Belum Ada PIC'}
-                                </span>
-                            </Button>
-                        </ActionPreviewTooltip>
-                    )}
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    style={picActionConfig?.buttonStyle}
+                                    onClick={() => onActionClick(picAction || { action_code: 'assign' }, 'assign', true)}
+                                    disabled={isPicBlocked}
+                                    className={cn(
+                                        'w-full justify-between font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 text-white',
+                                        isPicBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                                        picActionConfig?.buttonClass || 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800',
+                                    )}
+                                >
+                                    <div className="flex items-center gap-2 truncate">
+                                        <UserCheck size={16} className="shrink-0" />
+                                        <span className="text-xs truncate">{hasPic ? (picAction?.alias ? `Ubah ${picAction.alias}` : 'Ubah / Ganti PIC') : (picAction?.alias || 'Tentukan PIC Kontrak')}</span>
+                                    </div>
+                                    <span className={cn(
+                                        'text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 border',
+                                        hasPic
+                                            ? 'bg-emerald-500/20 text-emerald-100 border-emerald-400/40'
+                                            : 'bg-amber-400/20 text-amber-100 border-amber-300/40',
+                                    )}>
+                                        {hasPic
+                                            ? (contract.assigned_pic?.name || (contract as any).assignedPic?.name || 'Sudah Ada PIC')
+                                            : 'Belum Ada PIC'}
+                                    </span>
+                                </Button>
+                            </ActionPreviewTooltip>
+                        );
+                    })()}
 
                     {/* BUTTON TAMBAH APPROVAL TAMBAHAN / AD-HOC */}
-                    {canAdhoc && (
-                        <ActionPreviewTooltip preview={getActionTransitionPreview(adhocAction || { action_code: 'add_adhoc' }, contract)}>
-                            <Button
-                                variant="primary"
-                                size="sm"
-                                style={adhocActionConfig?.buttonStyle}
-                                onClick={() => onActionClick(adhocAction || { action_code: 'add_adhoc' }, 'add_adhoc', true)}
-                                className={cn(
-                                    'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
-                                    adhocActionConfig?.buttonClass || 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800',
-                                )}
+                    {canAdhoc && (() => {
+                        const adhocReqStatus = resolveContractRequirements(contract, adhocAction || { action_code: 'add_adhoc' });
+                        const isAdhocBlocked = !adhocReqStatus.allFilled;
+                        const missingAdhocItems = isAdhocBlocked ? adhocReqStatus.items.filter((i) => !i.isFilled) : [];
+
+                        return (
+                            <ActionPreviewTooltip
+                                preview={getActionTransitionPreview(adhocAction || { action_code: 'add_adhoc' }, contract)}
+                                missingRequirements={missingAdhocItems}
                             >
-                                <UserPlus size={16} />
-                                <span className="text-xs">{adhocAction?.alias || 'Tambah Persetujuan Ad-Hoc'}</span>
-                            </Button>
-                        </ActionPreviewTooltip>
-                    )}
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    style={adhocActionConfig?.buttonStyle}
+                                    onClick={() => onActionClick(adhocAction || { action_code: 'add_adhoc' }, 'add_adhoc', true)}
+                                    disabled={isAdhocBlocked}
+                                    className={cn(
+                                        'w-full justify-center font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                        isAdhocBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                                        adhocActionConfig?.buttonClass || 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800',
+                                    )}
+                                >
+                                    <UserPlus size={16} />
+                                    <span className="text-xs">{adhocAction?.alias || 'Tambah Persetujuan Ad-Hoc'}</span>
+                                </Button>
+                            </ActionPreviewTooltip>
+                        );
+                    })()}
 
                     {/* BUTTON PINDAH WORKFLOW (SUB-WORKFLOW BRANCHING) */}
                     {canBranch && branchActions.map((branchAction) => {
@@ -208,15 +231,25 @@ export function ContractActionSection({
                             branchAction.target_status_info,
                             masterContractStatuses,
                         );
+                        const branchReqStatus = resolveContractRequirements(contract, branchAction || { action_code: 'branch' });
+                        const isBranchBlocked = !branchReqStatus.allFilled;
+                        const missingBranchItems = isBranchBlocked ? branchReqStatus.items.filter((i) => !i.isFilled) : [];
+
                         return (
-                            <ActionPreviewTooltip key={branchAction.id || branchAction.alias || branchAction.name} preview={getActionTransitionPreview(branchAction || { action_code: 'branch' }, contract)}>
+                            <ActionPreviewTooltip
+                                key={branchAction.id || branchAction.alias || branchAction.name}
+                                preview={getActionTransitionPreview(branchAction || { action_code: 'branch' }, contract)}
+                                missingRequirements={missingBranchItems}
+                            >
                                 <Button
                                     variant="primary"
                                     size="sm"
                                     style={branchConfig?.buttonStyle}
                                     onClick={() => onActionClick(branchAction, 'branch')}
+                                    disabled={isBranchBlocked}
                                     className={cn(
-                                        'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                        'w-full justify-center font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                        isBranchBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                                         branchConfig?.buttonClass || 'bg-violet-600 hover:bg-violet-700 active:bg-violet-800',
                                     )}
                                 >
@@ -240,15 +273,25 @@ export function ContractActionSection({
                             masterContractStatuses,
                         );
                         const IconComponent = otherConfig?.icon || Sparkles;
+                        const otherReqStatus = resolveContractRequirements(contract, otherAction);
+                        const isOtherBlocked = !otherReqStatus.allFilled;
+                        const missingOtherItems = isOtherBlocked ? otherReqStatus.items.filter((i) => !i.isFilled) : [];
+
                         return (
-                            <ActionPreviewTooltip key={otherAction.id || otherAction.alias || otherAction.name} preview={preview}>
+                            <ActionPreviewTooltip
+                                key={otherAction.id || otherAction.alias || otherAction.name}
+                                preview={preview}
+                                missingRequirements={missingOtherItems}
+                            >
                                 <Button
                                     variant="primary"
                                     size="sm"
                                     style={otherConfig?.buttonStyle}
                                     onClick={() => onActionClick(otherAction, otherAction.action_code, true)}
+                                    disabled={isOtherBlocked}
                                     className={cn(
-                                        'w-full justify-center cursor-pointer font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                        'w-full justify-center font-bold shadow-md hover:shadow-lg transition-all h-9.5 px-3 gap-2 text-white',
+                                        isOtherBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                                         otherConfig?.buttonClass || 'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800',
                                     )}
                                 >
@@ -297,13 +340,25 @@ export function ContractActionSection({
                                             const isAssignPicAction = action.action_code === 'assign' || action.action_code === 'assign_pic' || (action.action_code === 'approve' && contract.requires_pic_assignment);
                                             const hasPicAssigned = !!(contract.assigned_pic_id || contract.assigned_pic || (contract as any).assignedPic);
 
+                                            // Requirements validation: only block forward approval actions, allow reject / setup actions
+                                            const isApproveType = action.action_code === 'approve' || action.action_code === 'submit' || action.action_code === 'send';
+                                            const reqStatus = isApproveType ? resolveContractRequirements(contract, action) : null;
+                                            const isActionBlocked = !!(isApproveType && reqStatus && !reqStatus.allFilled);
+                                            const missingItems = isActionBlocked ? reqStatus.items.filter((i) => !i.isFilled) : [];
+
                                             return (
-                                                <ActionPreviewTooltip key={action.id} preview={preview}>
+                                                <ActionPreviewTooltip
+                                                    key={action.id}
+                                                    preview={preview}
+                                                    missingRequirements={missingItems}
+                                                >
                                                     <Button
                                                         style={actionConfig.buttonStyle}
                                                         onClick={() => onActionClick(action, action.action_code, false)}
+                                                        disabled={isActionBlocked}
                                                         className={cn(
-                                                            'w-full h-9.5 font-bold shadow-md cursor-pointer gap-2 transition-all text-white',
+                                                            'w-full h-9.5 font-bold shadow-md gap-2 transition-all text-white',
+                                                            isActionBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                                                             isAssignPicAction ? 'justify-between px-3' : 'justify-center',
                                                             customColorClass,
                                                         )}
@@ -336,13 +391,25 @@ export function ContractActionSection({
                                         {(() => {
                                             const revApproveCfg = getActionConfig({ action_code: 'approve' }, null, false, false, 'approved', null, masterContractStatuses);
                                             const revRejectCfg = getActionConfig({ action_code: 'reject' }, null, false, false, 'rejected', null, masterContractStatuses);
+                                            const revReqStatus = resolveContractRequirements(contract, { action_code: 'approve' });
+                                            const isRevBlocked = !revReqStatus.allFilled;
+                                            const missingRevItems = isRevBlocked ? revReqStatus.items.filter((i) => !i.isFilled) : [];
+
                                             return (
                                                 <>
-                                                    <ActionPreviewTooltip preview={getActionTransitionPreview(null, contract, { isSubStep: true, actionCode: 'approve' })}>
+                                                    <ActionPreviewTooltip
+                                                        preview={getActionTransitionPreview(null, contract, { isSubStep: true, actionCode: 'approve' })}
+                                                        missingRequirements={missingRevItems}
+                                                    >
                                                         <Button
                                                             style={revApproveCfg.buttonStyle}
                                                             onClick={() => onActionClick(null, 'approve')}
-                                                            className={cn('w-full h-9.5 font-bold shadow-md cursor-pointer gap-2 transition-all text-white', revApproveCfg.buttonClass)}
+                                                            disabled={isRevBlocked}
+                                                            className={cn(
+                                                                'w-full h-9.5 font-bold shadow-md gap-2 transition-all text-white',
+                                                                isRevBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
+                                                                revApproveCfg.buttonClass,
+                                                            )}
                                                         >
                                                             <CheckCircle2 size={16} className="shrink-0" />
                                                             <span>Setujui Penelaahan</span>
@@ -441,15 +508,23 @@ export function ContractActionSection({
                                                 null,
                                                 masterContractStatuses,
                                             );
+                                            const mainReqStatus = resolveContractRequirements(contract, { action_code: 'approve' });
+                                            const isMainBlocked = !mainReqStatus.allFilled;
+                                            const missingMainItems = isMainBlocked ? mainReqStatus.items.filter((i) => !i.isFilled) : [];
 
                                             return (
                                                 <>
-                                                    <ActionPreviewTooltip preview={getActionTransitionPreview({ action_code: 'approve' }, contract)}>
+                                                    <ActionPreviewTooltip
+                                                        preview={getActionTransitionPreview({ action_code: 'approve' }, contract)}
+                                                        missingRequirements={missingMainItems}
+                                                    >
                                                         <Button
                                                             style={mainApproveCfg.buttonStyle}
                                                             onClick={() => onActionClick(null, 'approve')}
+                                                            disabled={isMainBlocked}
                                                             className={cn(
-                                                                'w-full h-9.5 font-bold shadow-md hover:shadow-lg cursor-pointer gap-2 transition-all text-white',
+                                                                'w-full h-9.5 font-bold shadow-md hover:shadow-lg gap-2 transition-all text-white',
+                                                                isMainBlocked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
                                                                 mainApproveCfg.buttonClass,
                                                             )}
                                                         >

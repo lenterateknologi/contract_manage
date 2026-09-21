@@ -448,57 +448,84 @@ class ContractController extends Controller
         $now = now()->toIso8601String();
         $stepKey = $contract->workflow_step_id ? 'step_'.$contract->workflow_step_id : 'general';
 
-        // 1. Save to relational table t_submission_reviews
-        \App\Models\SubmissionReview::updateOrCreate(
-            [
-                'submission_id' => $contract->id,
-                'submission_type' => \App\Models\SubmissionReview::TYPE_CONTRACT,
-                'workflow_step_id' => $contract->workflow_step_id,
-                'step_number' => $contract->workflow_step?->step ?? $contract->current_step_number,
-                'workflow_iteration' => $contract->workflow_iteration ?? 1,
-                'context_type' => \App\Models\SubmissionReview::CONTEXT_DOCUMENT_REVIEW,
-                'item_key' => $doc,
-                'document_type' => $doc,
+        // Check if current user is an authorized approver/reviewer for the active step
+        $contract->loadMissing(['approvals.approver', 'workflowStep.approverAuthorities']);
+        $isStepPendingApprover = $contract->approvals
+            ->where('workflow_step_id', $contract->workflow_step_id)
+            ->whereIn('status', ['pending', 'waiting'])
+            ->where('user_id', $user?->id)
+            ->isNotEmpty();
+
+        $isAuthorityMatch = false;
+        if (! $isStepPendingApprover && $contract->workflowStep) {
+            $authorities = $contract->workflowStep->approverAuthorities;
+            if ($authorities && $authorities->isNotEmpty()) {
+                $isAuthorityMatch = $authorities->contains(function ($auth) use ($user) {
+                    if ($auth->authority_type === 'user' && $auth->user_id === $user?->id) return true;
+                    if ($auth->authority_type === 'role' && $auth->role_id === $user?->role_id) return true;
+                    if ($auth->authority_type === 'department' && $auth->department_id === $user?->department_id) return true;
+                    if ($auth->authority_type === 'division' && $auth->division_id === $user?->division_id) return true;
+                    return false;
+                });
+            }
+        }
+
+        $isEligibleReviewer = $isStepPendingApprover || $isAuthorityMatch || ($user?->role === 'Admin' || $user?->role === 'Superadmin');
+
+        // Only save official review record if user is an eligible reviewer for this step
+        if ($isEligibleReviewer) {
+            // 1. Save to relational table t_submission_reviews
+            \App\Models\SubmissionReview::updateOrCreate(
+                [
+                    'submission_id' => $contract->id,
+                    'submission_type' => \App\Models\SubmissionReview::TYPE_CONTRACT,
+                    'workflow_step_id' => $contract->workflow_step_id,
+                    'step_number' => $contract->workflow_step?->step ?? $contract->current_step_number,
+                    'workflow_iteration' => $contract->workflow_iteration ?? 1,
+                    'context_type' => \App\Models\SubmissionReview::CONTEXT_DOCUMENT_REVIEW,
+                    'item_key' => $doc,
+                    'document_type' => $doc,
+                    'user_id' => $user?->id,
+                ],
+                [
+                    'contract_id' => $contract->id,
+                    'status' => \App\Models\SubmissionReview::STATUS_REVIEWED,
+                    'user_name' => $user?->name,
+                    'user_role' => $user?->role ?? $user?->role_name,
+                    'reviewed_at' => now(),
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                    'metadata' => [
+                        'device' => $request->header('Sec-Ch-Ua-Platform') ?? 'Web',
+                    ],
+                ]
+            );
+
+            // 2. Keep JSON metadata synchronized for backward compatibility
+            $metadata = $contract->metadata ?? [];
+            $docReviews = $metadata['doc_reviews'] ?? [];
+
+            $reviewInfo = [
+                'reviewed' => true,
+                'reviewed_at' => $now,
                 'user_id' => $user?->id,
-            ],
-            [
-                'contract_id' => $contract->id,
-                'status' => \App\Models\SubmissionReview::STATUS_REVIEWED,
                 'user_name' => $user?->name,
                 'user_role' => $user?->role ?? $user?->role_name,
-                'reviewed_at' => now(),
-                'ip_address' => $request->ip(),
-                'user_agent' => $request->userAgent(),
-                'metadata' => [
-                    'device' => $request->header('Sec-Ch-Ua-Platform') ?? 'Web',
-                ],
-            ]
-        );
+            ];
 
-        // 2. Keep JSON metadata synchronized for backward compatibility
-        $metadata = $contract->metadata ?? [];
-        $docReviews = $metadata['doc_reviews'] ?? [];
+            if (! isset($docReviews[$stepKey])) {
+                $docReviews[$stepKey] = [];
+            }
+            $docReviews[$stepKey][$doc] = $reviewInfo;
+            $metadata['doc_reviews'] = $docReviews;
+            $metadata["doc_reviews_{$stepKey}"] = $docReviews[$stepKey];
 
-        $reviewInfo = [
-            'reviewed' => true,
-            'reviewed_at' => $now,
-            'user_id' => $user?->id,
-            'user_name' => $user?->name,
-            'user_role' => $user?->role ?? $user?->role_name,
-        ];
-
-        if (! isset($docReviews[$stepKey])) {
-            $docReviews[$stepKey] = [];
+            $contract->update(['metadata' => $metadata]);
         }
-        $docReviews[$stepKey][$doc] = $reviewInfo;
-        $metadata['doc_reviews'] = $docReviews;
-        $metadata["doc_reviews_{$stepKey}"] = $docReviews[$stepKey];
-
-        $contract->update(['metadata' => $metadata]);
 
         return response()->json([
-            'message' => 'Dokumen berhasil ditandai telah direview di database',
-            'metadata' => $metadata,
+            'message' => $isEligibleReviewer ? 'Dokumen berhasil ditandai telah direview di database' : 'Dokumen dibuka (view-only)',
+            'metadata' => $contract->metadata,
             'contract' => ContractFormatter::formatContract($contract->fresh()),
         ]);
     }
